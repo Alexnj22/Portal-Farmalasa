@@ -154,7 +154,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {/* 🚨 CONTENEDOR DE ERROR */}
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                <div className="px-5 py-3.5 bg-red-50/60 backdrop-blur-md border border-red-200/80 rounded-[1.25rem] flex items-center gap-3 shadow-[0_8px_20px_rgba(239,68,68,0.15),inset_0_1px_5px_rgba(255,255,255,1)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_25px_rgba(239,68,68,0.25),inset_0_1px_5px_rgba(255,255,255,1)] hover:bg-white/90 hover:border-red-300">
+                                <div className="px-5 py-3.5 bg-red-50/50 backdrop-blur-md border border-red-200/80 rounded-[1.25rem] flex items-center gap-3 shadow-[0_8px_20px_rgba(239,68,68,0.15),inset_0_1px_5px_rgba(255,255,255,1)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_25px_rgba(239,68,68,0.25),inset_0_1px_5px_rgba(255,255,255,1)] hover:bg-white/90 hover:border-red-300">
                                     <AlertCircle size={18} className="text-red-500 shrink-0 transition-transform duration-300 hover:scale-110" strokeWidth={2.5} />
                                     <p className="text-red-600 text-[10px] font-black uppercase tracking-widest leading-tight mt-0.5">{error}</p>
                                 </div>

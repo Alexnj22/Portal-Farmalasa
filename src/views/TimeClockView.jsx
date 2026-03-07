@@ -66,13 +66,13 @@ const TimeClockView = ({ setView }) => {
   };
 
   return (
-    // Contenedor estricto: 100dvh evita el scroll en móviles, flex-col para el layout
+    // Contenedor estricto: 100dvh evita el scroll en móviles
     <div className="h-[100dvh] w-full bg-[#0A0F1C] relative overflow-hidden font-sans flex flex-col selection:bg-blue-500/30">
       
-      {/* Luces Ambientales para el efecto Glassmorphism */}
+      {/* Luces Ambientales súper sutiles para el efecto Glassmorphism */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] max-w-[600px] max-h-[600px] bg-blue-600/15 rounded-full filter blur-[120px] opacity-70" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[500px] max-h-[500px] bg-purple-600/10 rounded-full filter blur-[120px] opacity-70" />
+        <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] max-w-[600px] max-h-[600px] bg-blue-600/10 rounded-full filter blur-[120px] opacity-60" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[500px] max-h-[500px] bg-purple-600/5 rounded-full filter blur-[120px] opacity-60" />
       </div>
 
       {isRevokeModalOpen && (
@@ -86,19 +86,15 @@ const TimeClockView = ({ setView }) => {
         />
       )}
 
-      {/* Botón de Salida Superior (Estilo Píldora Apple, respetando el Notch) */}
+      {/* Botón de Salida Superior */}
       <button
         onClick={handleLogout}
-        className="absolute top-[calc(env(safe-area-inset-top,16px)+16px)] right-[calc(env(safe-area-inset-right,16px)+16px)] text-white/50 hover:text-white transition-all duration-300 flex items-center gap-2 z-50 font-bold bg-white/5 border border-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full hover:bg-white/10 backdrop-blur-xl active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.2)]"
+        className="absolute top-[calc(env(safe-area-inset-top,16px)+16px)] right-[calc(env(safe-area-inset-right,16px)+16px)] text-white/50 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 z-50 font-medium bg-white/5 border border-white/10 w-10 h-10 sm:w-auto sm:h-11 sm:px-5 rounded-full hover:bg-white/10 backdrop-blur-xl active:scale-95 shadow-sm"
+        title="Salir del Kiosco"
       >
-        <LogOut size={16} strokeWidth={2.5} /> 
-        <span className="hidden sm:inline text-[10px] sm:text-xs uppercase tracking-widest">Salir del Kiosco</span>
+        <LogOut size={16} strokeWidth={2} /> 
+        <span className="hidden sm:inline text-[10px] sm:text-xs uppercase tracking-widest">Salir</span>
       </button>
-
-      {/* Reloj Gigante de Fondo (Responsive) */}
-      <div className="absolute top-[10%] sm:top-[15%] left-1/2 -translate-x-1/2 text-white/[0.02] font-black text-[22vw] sm:text-[14rem] tracking-tighter pointer-events-none select-none whitespace-nowrap z-0 drop-shadow-xl">
-        {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-      </div>
 
       {isConfiguring && (
         <KioskConfigModal
@@ -124,8 +120,19 @@ const TimeClockView = ({ setView }) => {
         />
       )}
 
-      {/* Contenedor Principal Centrado: Ocupa el espacio restante y centra su contenido sin usar margins fijos */}
-      <main className="relative z-10 flex-1 w-full flex flex-col items-center justify-center pb-[calc(env(safe-area-inset-bottom,16px)+16px)]">
+      {/* Contenedor Principal Centrado */}
+      <main className="relative z-10 flex-1 w-full flex flex-col items-center justify-center min-h-0 pb-[calc(env(safe-area-inset-bottom,16px)+16px)]">
+        
+        {/* 🚨 RELOJ SUTIL Y ELEGANTE (Verdadero estilo Lockscreen de iOS) */}
+        <div className="flex flex-col items-center justify-center shrink-0 mb-4 sm:mb-8 animate-in slide-in-from-top-4 fade-in duration-700">
+          <h2 className="text-white/50 font-light text-[3.5rem] sm:text-6xl md:text-[5.5rem] tracking-tight drop-shadow-md tabular-nums leading-none">
+            {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+          </h2>
+          <p className="text-white/40 text-[9px] sm:text-xs font-medium uppercase tracking-[0.3em] mt-2 sm:mt-3 drop-shadow-sm">
+            {time.toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+        </div>
+
         {earlyExitData ? (
           <EarlyExitForm
             earlyExitData={earlyExitData}

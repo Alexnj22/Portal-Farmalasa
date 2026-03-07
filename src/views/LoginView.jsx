@@ -76,8 +76,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     return (
         // 🚨 CRÍTICO: bg-transparent para que tu GlobalBackground de App.js se vea perfectamente
-        <div className="min-h-screen w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden">
-
+<div className="min-h-[100dvh] w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
             {/* Si por alguna razón el GlobalBackground no cubre esta vista, dejamos tu código exacto como capa base aquí */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/10 rounded-full filter blur-[120px] animate-ambient-drift" />

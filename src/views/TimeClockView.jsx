@@ -66,8 +66,8 @@ const TimeClockView = ({ setView }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0B1121] flex flex-col items-center justify-start pt-32 p-8 relative overflow-hidden font-sans">
-      {isRevokeModalOpen && (
+<div className="min-h-[100dvh] w-full bg-[#0B1121] flex flex-col items-center justify-start pt-[calc(env(safe-area-inset-top)+8rem)] p-8 pb-[calc(env(safe-area-inset-bottom)+2rem)] relative overflow-hidden font-sans">
+        {isRevokeModalOpen && (
         <ConfirmModal
           isOpen={isRevokeModalOpen}
           onClose={() => setIsRevokeModalOpen(false)}

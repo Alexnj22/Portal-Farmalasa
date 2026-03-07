@@ -66,8 +66,16 @@ const TimeClockView = ({ setView }) => {
   };
 
   return (
-<div className="min-h-[100dvh] w-full bg-[#0B1121] flex flex-col items-center justify-start pt-[calc(env(safe-area-inset-top)+8rem)] p-8 pb-[calc(env(safe-area-inset-bottom)+2rem)] relative overflow-hidden font-sans">
-        {isRevokeModalOpen && (
+    // Contenedor estricto: 100dvh evita el scroll en móviles, flex-col para el layout
+    <div className="h-[100dvh] w-full bg-[#0A0F1C] relative overflow-hidden font-sans flex flex-col selection:bg-blue-500/30">
+      
+      {/* Luces Ambientales para el efecto Glassmorphism */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] max-w-[600px] max-h-[600px] bg-blue-600/15 rounded-full filter blur-[120px] opacity-70" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[500px] max-h-[500px] bg-purple-600/10 rounded-full filter blur-[120px] opacity-70" />
+      </div>
+
+      {isRevokeModalOpen && (
         <ConfirmModal
           isOpen={isRevokeModalOpen}
           onClose={() => setIsRevokeModalOpen(false)}
@@ -78,14 +86,17 @@ const TimeClockView = ({ setView }) => {
         />
       )}
 
+      {/* Botón de Salida Superior (Estilo Píldora Apple, respetando el Notch) */}
       <button
         onClick={handleLogout}
-        className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors flex items-center gap-2 z-50 font-bold bg-white/5 border border-white/10 px-5 py-2.5 rounded-xl hover:bg-white/10 backdrop-blur-sm"
+        className="absolute top-[calc(env(safe-area-inset-top,16px)+16px)] right-[calc(env(safe-area-inset-right,16px)+16px)] text-white/50 hover:text-white transition-all duration-300 flex items-center gap-2 z-50 font-bold bg-white/5 border border-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full hover:bg-white/10 backdrop-blur-xl active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.2)]"
       >
-        <LogOut size={18} /> Salir del Kiosco
+        <LogOut size={16} strokeWidth={2.5} /> 
+        <span className="hidden sm:inline text-[10px] sm:text-xs uppercase tracking-widest">Salir del Kiosco</span>
       </button>
 
-      <div className="absolute top-6 md:top-10 left-1/2 -translate-x-1/2 text-white/5 font-black text-[7rem] md:text-[11rem] tracking-tighter pointer-events-none select-none whitespace-nowrap z-0">
+      {/* Reloj Gigante de Fondo (Responsive) */}
+      <div className="absolute top-[10%] sm:top-[15%] left-1/2 -translate-x-1/2 text-white/[0.02] font-black text-[22vw] sm:text-[14rem] tracking-tighter pointer-events-none select-none whitespace-nowrap z-0 drop-shadow-xl">
         {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </div>
 
@@ -112,7 +123,9 @@ const TimeClockView = ({ setView }) => {
           onAnnouncementRead={handleAnnouncementRead}
         />
       )}
-      <div className="max-w-2xl w-full text-center relative z-10 flex flex-col items-center mt-32 md:mt-48">
+
+      {/* Contenedor Principal Centrado: Ocupa el espacio restante y centra su contenido sin usar margins fijos */}
+      <main className="relative z-10 flex-1 w-full flex flex-col items-center justify-center pb-[calc(env(safe-area-inset-bottom,16px)+16px)]">
         {earlyExitData ? (
           <EarlyExitForm
             earlyExitData={earlyExitData}
@@ -146,7 +159,7 @@ const TimeClockView = ({ setView }) => {
             specialOutHandler={requestSpecialOut}
           />
         )}
-      </div>
+      </main>
     </div>
   );
 };

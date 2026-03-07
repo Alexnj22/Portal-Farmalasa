@@ -59,6 +59,15 @@ export function useTimeClockEngine(props = {}) {
     const kiosk = useKioskDevice();
 
     useEffect(() => {
+        const clockInterval = setInterval(() => {
+            setTime(new Date());
+        }, 1000);
+        
+        // Limpiamos el intervalo si el componente se desmonta
+        return () => clearInterval(clockInterval);
+    }, []);
+
+    useEffect(() => {
         const interval = setInterval(() => {
             if (
                 inputRef.current && 

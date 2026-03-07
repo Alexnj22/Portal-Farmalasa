@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     Monitor, Calendar,
-    Building2, ShieldCheck, LogOut, Menu, User, 
+    Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Sparkles, Activity,
     Copy, CheckCircle2, ChevronLeft, ChevronRight
 } from 'lucide-react';
@@ -10,12 +10,12 @@ import { getHourlyCode } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleLogout }) => {
-    const { user } = useAuth(); 
+    const { user } = useAuth();
     const branches = useStaff(state => state.branches);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [authPin, setAuthPin] = useState(getHourlyCode());
-    
+
     // Estado para animación de Copy
     const [isCopied, setIsCopied] = useState(false);
 
@@ -32,7 +32,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 const endStr = branch.rent?.contract?.endDate;
                 if (!endStr) return true;
                 const diffTime = Math.ceil((new Date(endStr) - new Date()) / (1000 * 60 * 60 * 24));
-                if (diffTime <= 30) return true; 
+                if (diffTime <= 30) return true;
             }
             return false;
         });
@@ -63,8 +63,8 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
         []
     );
 
-const blurClasses = isOverlayActive
-        ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' 
+    const blurClasses = isOverlayActive
+        ? 'pointer-events-none select-none scale-[0.98] blur-[2px]'
         : 'scale-100 blur-0';
 
     const recomputePill = () => {
@@ -119,7 +119,7 @@ const blurClasses = isOverlayActive
         <div className="flex h-screen bg-transparent font-sans overflow-hidden relative">
             {/* SIDEBAR */}
             <aside className={`${isSidebarOpen ? 'w-[19rem]' : 'w-[5.5rem]'} transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col z-30 relative shrink-0 ml-2 my-2 ${blurClasses}`}>
-                
+
                 <div className="absolute inset-y-0 left-0 right-0 -z-10 pointer-events-none">
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
                     <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
@@ -127,13 +127,13 @@ const blurClasses = isOverlayActive
                 </div>
 
                 <div className={['absolute inset-0', 'rounded-[2.5rem] overflow-hidden flex flex-col', 'border border-white/10', 'bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636]', 'shadow-[0_30px_90px_rgba(0,0,0,0.40),0_14px_34px_rgba(0,0,0,0.22)]', 'transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]'].join(' ')}>
-                    
+
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/18 via-white/6 to-transparent opacity-80" />
 
                     {/* HEADER SIDEBAR (Icono de cierre elegante) */}
                     <div className={['p-6 pb-4 border-b border-white/10 relative', isSidebarOpen ? 'flex items-center justify-between' : 'flex items-center justify-center'].join(' ')}>
-                        
+
                         <div className="flex items-center gap-4">
                             <div className="bg-gradient-to-tr from-[#1D7AFC] to-[#5856D6] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(29,122,252,0.35)] flex-shrink-0 relative group cursor-pointer">
                                 <Building2 className="text-white" size={24} strokeWidth={1.5} />
@@ -195,7 +195,7 @@ const blurClasses = isOverlayActive
 
                     <div className="p-4 border-t border-white/10 bg-black/10 relative flex flex-col gap-3">
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        
+
                         {/* PIN EXPANDIDO */}
                         {isSidebarOpen && (
                             <div className="bg-white/5 rounded-xl p-3 border border-white/5 flex items-center justify-between animate-in fade-in duration-500">
@@ -239,7 +239,7 @@ const blurClasses = isOverlayActive
                         ) : (
                             /* MENU COMPACTO (Cerrado) */
                             <div className="flex flex-col items-center gap-4 py-2 animate-in fade-in duration-500">
-                                
+
                                 <button onClick={() => setIsSidebarOpen(true)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 mb-2 border border-white/5" title="Mostrar menú">
                                     <ChevronRight size={18} strokeWidth={2} />
                                 </button>
@@ -276,7 +276,7 @@ const blurClasses = isOverlayActive
                     </div>
                 </div>
             </aside>
-<main className={`flex-1 flex flex-col overflow-hidden relative z-20 pt-2 pb-4 pr-2 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
+            <main className={`flex-1 flex flex-col overflow-hidden relative z-20 pt-2 pb-4 pr-2 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 <div className="flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem]">
                     <div key={view} className="h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
                         {children}

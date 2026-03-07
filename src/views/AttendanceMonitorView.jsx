@@ -21,7 +21,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { useStaff } from "../context/StaffContext";
+import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
 import BranchChips from "../components/common/BranchChips";
 

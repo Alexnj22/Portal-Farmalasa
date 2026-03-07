@@ -1,328 +1,386 @@
-import React, { useMemo, useState, useLayoutEffect, useRef } from 'react';
+import React, { useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
 import {
-  Building2, MapPin, Users, History, FileText, Briefcase,
-  Zap, ArrowLeft, CheckCircle, AlertTriangle,
-  ChevronRight
+  MapPin, Users, ArrowRightLeft, CheckCircle, Monitor, Clock,
+  ArrowUpRight, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Edit3
 } from 'lucide-react';
-import { useStaff } from '../context/StaffContext';
+import { useStaffStore as useStaff } from '../store/staffStore';
+import { formatDate, formatTime12h } from '../utils/helpers';
+import { WEEK_DAYS } from '../data/constants'; 
+
+import TabHistory from './branch-tabs/TabHistory';
+import TabRegulatory from './branch-tabs/TabRegulatory';
+import TabExpenses from './branch-tabs/TabExpenses';
+import TabStaff from './branch-tabs/TabStaff';
 
 const TABS = [
-  { id: 'overview', label: 'Resumen', icon: Zap },
-  { id: 'history', label: 'Historial', icon: History },
-  { id: 'log', label: 'Bitácora', icon: FileText },
-  { id: 'management', label: 'Gestión', icon: Briefcase },
+  { id: 'history', label: 'Historial', icon: Clock },
+  { id: 'staff', label: 'Personal', icon: Users },
+  { id: 'regulatory', label: 'Carpeta Regulatoria', icon: ShieldCheck },
+  { id: 'expenses', label: 'Operativo', icon: Briefcase },
 ];
 
-const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView }) => {
-  const { employees } = useStaff();
-  const [activeTab, setActiveTab] = useState('overview');
+const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModal }) => {
+  const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
+  const [activeTab, setActiveTab] = useState('history'); 
+  const [kioskCount, setKioskCount] = useState(0);
+  
+  const [history, setHistory] = useState([]);
+  const [historyLoadedFor, setHistoryLoadedFor] = useState(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // ✅ plantilla actual
+  const liveBranch = useMemo(() => {
+      return branches.find(b => String(b.id) === String(branch?.id)) || branch;
+  }, [branches, branch]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadKiosks = async () => {
+      if (liveBranch?.id) {
+        const devices = await getBranchKiosks(liveBranch.id);
+        if (isMounted) setKioskCount(devices ? devices.length : 0);
+      }
+    };
+    loadKiosks();
+    return () => { isMounted = false; };
+  }, [liveBranch?.id, getBranchKiosks]);
+
+  useEffect(() => {
+      if (liveBranch?.id && historyLoadedFor !== liveBranch.id) {
+          const fetchHistory = async () => {
+              setIsLoadingHistory(true);
+              const data = await getBranchHistory(liveBranch.id);
+              setHistory(data);
+              setHistoryLoadedFor(liveBranch.id);
+              setIsLoadingHistory(false);
+          };
+          fetchHistory();
+      }
+  }, [liveBranch?.id, historyLoadedFor, getBranchHistory]);
+
   const currentStaff = useMemo(() => {
-    return (employees || []).filter(e => String(e.branchId) === String(branch?.id));
-  }, [employees, branch?.id]);
+    return (employees || []).filter(e => String(e.branchId) === String(liveBranch?.id));
+  }, [employees, liveBranch?.id]);
 
-  // ✅ manager mejor (no depende de "Admin" exacto)
-  const currentManager = useMemo(() => {
-    const staff = currentStaff || [];
-    const pick = (fn) => staff.find(fn);
+  const openDateStr = liveBranch?.opening_date || liveBranch?.openingDate;
 
-    return (
-      pick(e => String(e.role || '').toLowerCase().includes('gerente')) ||
-      pick(e => String(e.role || '').toLowerCase().includes('admin')) ||
-      pick(e => String(e.role || '').toLowerCase().includes('super')) ||
-      staff[0] ||
-      null
-    );
-  }, [currentStaff]);
+  const goToProfile = (emp) => {
+      if (emp && setActiveEmployee && setView) {
+          setActiveEmployee(emp);
+          setView('employee-detail');
+      }
+  };
 
-  // ✅ KPIs (placeholder elegante si no existe data real)
-  const kpis = useMemo(() => ([
-    {
-      label: 'Plantilla',
-      value: currentStaff.length,
-      icon: Users,
-      tone: 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/15',
-    },
-    {
-      label: 'Alertas',
-      value: '—',
-      icon: AlertTriangle,
-      tone: 'bg-orange-500/10 text-orange-700 border-orange-500/15',
-      hint: 'No disponible aún',
-    },
-  ]), [currentStaff.length]);
+  // ✅ MOTOR DE ESTADOS PARA ALERTAS EN LAS PESTAÑAS
+  const getTabAlert = (tabId) => {
+      const legalData = liveBranch?.settings?.legal || {};
+      
+      // 1. Alertas de Personal
+      if (tabId === 'staff') {
+          const hasJefe = currentStaff.some(e => String(e.role || '').toLowerCase().includes('jefe') && !String(e.role || '').toLowerCase().includes('subjefe'));
+          const hasSubjefe = currentStaff.some(e => String(e.role || '').toLowerCase().includes('subjefe'));
+          const hasRegente = !!legalData.regentEmployeeId;
+          const hasReferente = !!legalData.farmacovigilanciaId;
+          const hasNurse = (legalData.nursingRegents || []).length > 0;
+          
+          if (!hasJefe || !hasSubjefe || !hasRegente || !hasReferente || !hasNurse) return 'critical';
+          return null;
+      }
 
-  // ✅ Tabs: píldora animada tipo “slider”
+      // 2. Alertas Regulatorias
+      if (tabId === 'regulatory') {
+          const getExpStatus = (dateStr) => {
+              if (!dateStr) return 'critical';
+              const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+              if (diff < 0) return 'critical';
+              if (diff <= 30) return 'warning';
+              return 'ok';
+          };
+          
+          const checks = [
+              !legalData.srsPermitUrl ? 'critical' : 'ok',
+              !legalData.regentCredentialUrl ? 'critical' : getExpStatus(legalData.regentCredentialExp),
+              !legalData.farmacovigilanciaAuthUrl ? 'critical' : 'ok',
+              !legalData.nursingServicePermitUrl ? 'warning' : 'ok'
+          ];
+          
+          if (checks.includes('critical')) return 'critical';
+          if (checks.includes('warning')) return 'warning';
+          return null;
+      }
+
+      // 3. Alertas Operativas (Pagos)
+      if (tabId === 'expenses') {
+          const getSvcStatus = (dueDay, paidThrough) => {
+              if (!dueDay || !paidThrough) return 'warning'; // Sin configurar = Naranja
+              const today = new Date();
+              const [ptY, ptM] = paidThrough.split('-').map(Number);
+              if (ptY > today.getFullYear() || (ptY === today.getFullYear() && ptM >= today.getMonth() + 1)) return 'ok';
+              if (ptY === today.getFullYear() && ptM === today.getMonth()) {
+                  return today.getDate() > dueDay ? 'critical' : 'warning';
+              }
+              return 'critical';
+          };
+
+          const rentData = liveBranch?.settings?.rent || {};
+          const svcData = liveBranch?.settings?.services || {};
+          
+          const statuses = [
+              getSvcStatus(rentData.dueDay, rentData.paidThrough),
+              getSvcStatus(svcData.light?.dueDay, svcData.light?.paidThrough),
+              getSvcStatus(svcData.water?.dueDay, svcData.water?.paidThrough),
+              getSvcStatus(svcData.internet?.dueDay, svcData.internet?.paidThrough),
+              getSvcStatus(svcData.phone?.dueDay, svcData.phone?.paidThrough),
+              getSvcStatus(svcData.taxes?.dueDay, svcData.taxes?.paidThrough)
+          ];
+
+          if (statuses.includes('critical')) return 'critical';
+          if (statuses.includes('warning')) return 'warning';
+          return null;
+      }
+
+      return null;
+  };
+
+  const groupedSchedule = useMemo(() => {
+      let raw = liveBranch?.weekly_hours || liveBranch?.weeklyHours || {};
+      if (typeof raw === 'string') {
+          try { raw = JSON.parse(raw); } catch (e) { raw = {}; }
+      }
+      
+      const grouped = [];
+      let currentGroup = null;
+
+      WEEK_DAYS.forEach((day, index) => {
+          const data = raw[day.id] || {};
+          const isOpen = data.isOpen !== false && !!data.start && !!data.end;
+          const timeStr = isOpen ? `${formatTime12h(data.start)} - ${formatTime12h(data.end)}` : 'Cerrado';
+
+          if (!currentGroup) {
+              currentGroup = { days: [day.name], timeStr, isOpen, startIndex: index, endIndex: index };
+          } else if (currentGroup.timeStr === timeStr) {
+              currentGroup.days.push(day.name);
+              currentGroup.endIndex = index;
+          } else {
+              grouped.push(currentGroup);
+              currentGroup = { days: [day.name], timeStr, isOpen, startIndex: index, endIndex: index };
+          }
+      });
+      if (currentGroup) grouped.push(currentGroup);
+
+      return grouped.map(g => {
+          let label = '';
+          if (g.days.length === 1) label = g.days[0];
+          else if (g.days.length === 2) label = `${g.days[0]} y ${g.days[1]}`;
+          else label = `${g.days[0]} a ${g.days[g.days.length - 1]}`;
+
+          const todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+          const isToday = todayIdx >= g.startIndex && todayIdx <= g.endIndex;
+
+          return { label, timeStr: g.timeStr, isOpen: g.isOpen, isToday };
+      });
+  }, [liveBranch]);
+
+  const isClosedToday = useMemo(() => {
+      const todayGroup = groupedSchedule.find(g => g.isToday);
+      return todayGroup ? !todayGroup.isOpen : true;
+  }, [groupedSchedule]);
+
   const tabsRef = useRef(null);
   const tabBtnRefs = useRef(new Map());
   const [pill, setPill] = useState({ left: 8, width: 120, show: false });
 
-  const recomputePill = () => {
+  useLayoutEffect(() => {
     const wrap = tabsRef.current;
     const btn = tabBtnRefs.current.get(activeTab);
     if (!wrap || !btn) return setPill((p) => ({ ...p, show: false }));
-
     const w = wrap.getBoundingClientRect();
     const b = btn.getBoundingClientRect();
-    setPill({
-      left: Math.max(8, b.left - w.left),
-      width: Math.max(90, b.width),
-      show: true,
-    });
-  };
-
-  useLayoutEffect(() => {
-    const raf = requestAnimationFrame(recomputePill);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setPill({ left: Math.max(8, b.left - w.left), width: Math.max(90, b.width), show: true });
   }, [activeTab]);
 
   return (
-    <div className="h-full flex flex-col font-sans max-w-[1600px] mx-auto overflow-hidden">
-      {/* HEADER */}
-      <div className="px-6 md:px-8 pt-7 pb-4 animate-in fade-in slide-in-from-top-4 duration-500">
-        <button
-          onClick={onBack}
-          className="mb-5 flex items-center gap-2 text-slate-400 hover:text-[#007AFF] transition-all font-bold text-[11px] uppercase tracking-[0.2em] group"
-        >
-          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-          Volver a Sucursales
-        </button>
-
-        <div className="glass-surface p-6 md:p-7 rounded-[2.5rem] relative overflow-hidden shadow-[0_18px_46px_rgba(0,0,0,0.06)] border border-white/70">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-            {/* Left */}
-            <div className="flex items-center gap-5 min-w-0">
-              <div className="w-16 h-16 rounded-[1.6rem] bg-gradient-to-br from-slate-900 to-black text-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] flex items-center justify-center ring-4 ring-white/50 flex-shrink-0">
-                <Building2 size={28} strokeWidth={1.4} />
-              </div>
-
-              <div className="min-w-0">
-                <h1 className="text-[24px] md:text-[28px] font-black text-slate-900 leading-tight tracking-tight truncate">
-                  {branch?.name || 'Sucursal'}
-                </h1>
-
-                <div className="flex flex-wrap gap-2 mt-2.5">
-                  <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 flex items-center gap-2">
-                    <CheckCircle size={12} /> Operativo
-                  </span>
-
-                  <span className="px-3 py-1.5 rounded-full bg-black/[0.04] text-slate-600 text-[10px] font-black uppercase tracking-widest border border-black/[0.06] flex items-center gap-2 max-w-[520px]">
-                    <MapPin size={12} className="text-[#007AFF]" />
-                    <span className="truncate">{branch?.address || '—'}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right KPIs */}
-            <div className="flex items-center gap-3 bg-black/[0.03] border border-black/[0.06] p-3 rounded-[1.75rem]">
-              {kpis.map((k) => {
-                const Icon = k.icon;
-                return (
-                  <div
-                    key={k.label}
-                    className="flex items-center gap-3 px-4 py-3 rounded-[1.5rem] bg-white/60 border border-white/70 shadow-sm min-w-[160px]"
-                    title={k.hint || ''}
-                  >
-                    <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${k.tone}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                        {k.label}
-                      </p>
-                      <p className="text-[18px] font-black text-slate-900 leading-tight">
-                        {k.value}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* TABS con píldora */}
-      <div className="px-6 md:px-8 mt-1 animate-in fade-in slide-in-from-left-4 duration-500">
-        <div
-          ref={tabsRef}
-          className="relative glass-surface p-2 rounded-[1.75rem] border border-white/70 shadow-sm max-w-3xl overflow-hidden"
-        >
-          {/* pill */}
-          <div
-            className={[
-              "absolute top-2 bottom-2 rounded-[1.4rem]",
-              "bg-white shadow-[0_12px_26px_rgba(0,0,0,0.10),0_3px_8px_rgba(0,0,0,0.06)]",
-              "transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
-              pill.show ? "opacity-100" : "opacity-0",
-            ].join(" ")}
-            style={{ left: pill.left, width: pill.width }}
-          />
-
-          <div className="relative z-10 grid grid-cols-4 gap-2">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  ref={(el) => {
-                    if (el) tabBtnRefs.current.set(tab.id, el);
-                    else tabBtnRefs.current.delete(tab.id);
-                  }}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={[
-                    "py-3 rounded-[1.4rem] text-[11px] font-black uppercase tracking-[0.15em]",
-                    "flex items-center justify-center gap-2",
-                    "transition-all duration-250",
-                    !isActive ? "hover:bg-white/35 hover:-translate-y-[1px] hover:shadow-[0_10px_20px_rgba(0,0,0,0.08)]" : "",
-                    isActive ? "text-[#007AFF]" : "text-slate-500 hover:text-slate-800",
-                  ].join(" ")}
+    <div className="p-4 md:p-8 min-h-full animate-in fade-in duration-500 font-sans relative z-10">
+        <div className="max-w-6xl mx-auto">
+            
+            {/* --- HEADER SUPERIOR --- */}
+            <div className="flex justify-between items-center mb-8">
+                <button 
+                    onClick={onBack} 
+                    className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 hover:bg-white/90 backdrop-blur-md border border-white shadow-sm text-slate-600 font-bold text-[10px] uppercase tracking-[0.2em] transition-all"
                 >
-                  <Icon size={14} strokeWidth={isActive ? 2.4 : 2} />
-                  <span className="hidden sm:inline">{tab.label}</span>
+                    <ArrowRightLeft className="rotate-180 transition-transform group-hover:-translate-x-1" size={16}/> Volver
                 </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* CONTENIDO */}
-      <div className="flex-1 overflow-y-auto px-6 md:px-8 pt-5 pb-8">
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-400">
-            {/* Left column */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Responsable (más ejecutivo, menos gigante) */}
-              <div className="rounded-[2rem] bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.28)] overflow-hidden">
-                <div className="p-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-4">
-                    Responsable actual
-                  </p>
-
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-[1.25rem] bg-white/10 border border-white/15 overflow-hidden flex items-center justify-center text-white font-black">
-                      {currentManager?.photo ? (
-                        <img src={currentManager.photo} className="w-full h-full object-cover" alt="Foto" />
-                      ) : (
-                        <span className="text-xl">{currentManager?.name?.[0] || '—'}</span>
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-[16px] font-black text-white truncate">
-                        {currentManager?.name || '—'}
-                      </p>
-                      <p className="text-[10px] font-bold text-[#9CC7FF] uppercase tracking-widest mt-1 truncate">
-                        {currentManager?.role || '—'}
-                      </p>
-                    </div>
-                  </div>
+                
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => openModal && openModal('manageKiosks', liveBranch)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white/60 hover:bg-white/90 backdrop-blur-md border border-white text-slate-700 rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:text-[#007AFF] transition-all shadow-sm active:scale-[0.98]"
+                    >
+                        <Monitor size={14}/> Kioscos ({kioskCount}/3)
+                    </button>
+                    <button 
+                        onClick={() => openModal && openModal('editBranch', liveBranch)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-[#0066CC] transition-all shadow-[0_8px_20px_rgba(0,122,255,0.3)] active:scale-[0.98]"
+                    >
+                        <Edit3 size={14}/> Editar Sede
+                    </button>
                 </div>
-                <div className="h-px bg-white/10" />
-                <div className="p-5 flex items-center justify-between text-white/70 text-[11px] font-semibold">
-                  <span>Colaboradores</span>
-                  <span className="text-white font-black">{currentStaff.length}</span>
-                </div>
-              </div>
-
-              {/* KPI Cards (compactas) */}
-              <div className="grid grid-cols-1 gap-4">
-                <div className="glass-surface p-5 rounded-[2rem] border border-white/70 shadow-sm hover:-translate-y-[1px] hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)] transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
-                    Costo planilla
-                  </p>
-                  <p className="text-[20px] font-black text-slate-900">—</p>
-                  <p className="text-[12px] text-slate-500 font-medium mt-2">
-                    (Pendiente de integrar nómina)
-                  </p>
-                </div>
-
-                <div className="glass-surface p-5 rounded-[2rem] border border-white/70 shadow-sm hover:-translate-y-[1px] hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)] transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
-                    Ausencias mes
-                  </p>
-                  <p className="text-[20px] font-black text-slate-900">—</p>
-                  <p className="text-[12px] text-slate-500 font-medium mt-2">
-                    (Pendiente de integrar asistencia)
-                  </p>
-                </div>
-              </div>
             </div>
 
-            {/* Right column - Staff list */}
-            <div className="lg:col-span-8 space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full" />
-                  Plantilla actual
-                </h3>
-                <span className="text-[10px] font-black text-slate-500 bg-black/[0.04] border border-black/[0.06] px-3 py-1.5 rounded-full uppercase tracking-widest">
-                  {currentStaff.length} colaboradores
-                </span>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* PANEL IZQUIERDO LIMPIO */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="relative w-full rounded-[2.5rem] border border-white/60 bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-2xl overflow-hidden animate-in slide-in-from-left-8 fade-in duration-500">
+                        <div className="px-6 pb-6 pt-10 flex flex-col items-center relative z-10">
+                            
+                            <div className="h-28 w-28 rounded-[2rem] bg-white border border-white/80 shadow-[0_10px_30px_rgba(0,122,255,0.15)] flex items-center justify-center text-[#007AFF] mb-5 rotate-3 hover:rotate-0 transition-transform duration-300">
+                                <Building2 size={48} strokeWidth={1.2} />
+                            </div>
+                            
+                            <h2 className="text-3xl font-black text-slate-800 text-center leading-tight mb-2 tracking-tight mt-2">
+                                {liveBranch?.name}
+                            </h2>
+                            <div className={`px-4 py-1.5 rounded-full border font-black text-[9px] uppercase tracking-[0.2em] mb-6 shadow-sm flex items-center gap-1.5 ${isClosedToday ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                                {isClosedToday ? <Clock size={12}/> : <CheckCircle size={12}/>} 
+                                {isClosedToday ? 'Cerrado Hoy' : 'Operativa'}
+                            </div>
+                            
+                            <div className="w-full space-y-2 mb-6">
+                                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/60 border border-white shadow-sm">
+                                    <div className="p-2 bg-blue-50 rounded-xl text-[#007AFF]"><MapPin size={16}/></div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Dirección</p>
+                                        <p className="text-xs font-bold text-slate-700 truncate">{liveBranch?.address || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/60 border border-white shadow-sm">
+                                    <div className="p-2 bg-purple-50 rounded-xl text-purple-600"><Phone size={16}/></div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Contacto</p>
+                                        <p className="text-xs font-bold text-slate-700">{liveBranch?.phone || '-'} / {liveBranch?.cell || '-'}</p>
+                                    </div>
+                                </div>
+                                {openDateStr && (
+                                    <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/60 border border-white shadow-sm">
+                                        <div className="p-2 bg-orange-50 rounded-xl text-orange-500"><CalendarClock size={16}/></div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Inauguración</p>
+                                            <p className="text-xs font-bold text-slate-700">{formatDate(openDateStr.split('T')[0])}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentStaff.map((emp, i) => (
-                  <button
-                    key={emp.id}
-                    onClick={() => { setActiveEmployee(emp); setView('employee-detail'); }}
-                    className={[
-                      "flex items-center gap-4 p-5 rounded-[2rem] text-left",
-                      "bg-white/55 backdrop-blur-xl border border-white/70",
-                      "shadow-[0_10px_24px_rgba(0,0,0,0.06)]",
-                      "transition-all duration-300",
-                      "hover:-translate-y-[1px] hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)] hover:bg-white/75",
-                      "group",
-                    ].join(" ")}
-                    style={{ animationDelay: `${i * 60}ms` }}
-                  >
-                    <div className="w-12 h-12 rounded-[1.25rem] bg-black/[0.04] border border-black/[0.06] overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:scale-[1.03] transition-transform">
-                      {emp.photo ? (
-                        <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 font-black text-lg">
-                          {String(emp.name || '?').charAt(0)}
+                            <div className="w-full bg-white/60 border border-white rounded-[1.5rem] p-4 shadow-sm mb-6">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">
+                                    Horario Comercial
+                                </h4>
+                                <div className="space-y-2">
+                                    {groupedSchedule.map((group, index) => (
+                                        <div key={index} className={`flex flex-col py-1.5 px-2 rounded-lg transition-all text-center ${group.isToday ? 'bg-white border border-slate-100 shadow-sm' : ''}`}>
+                                            <span className={`text-[10px] font-black uppercase tracking-widest ${group.isToday ? 'text-[#007AFF]' : 'text-slate-500'}`}>{group.label}</span>
+                                            <span className={`text-xs font-bold ${group.isOpen ? 'text-slate-800' : 'text-red-500'}`}>
+                                                {group.timeStr}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button onClick={() => setActiveTab('staff')} className="w-full group relative overflow-hidden rounded-[1.5rem] bg-[#007AFF] border border-[#0066CC] p-5 text-left shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:-translate-y-1 transition-all duration-300">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+                                <div className="flex items-center justify-between relative z-10">
+                                    <div>
+                                        <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1 flex items-center gap-1.5"><Users size={12}/> Personal Total</p>
+                                        <p className="text-3xl font-black text-white leading-none">{currentStaff.length}</p>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm border border-white/30 group-hover:bg-white/30 transition-colors shadow-sm">
+                                        <ArrowUpRight size={18} />
+                                    </div>
+                                </div>
+                            </button>
                         </div>
-                      )}
+                    </div>
+                </div>
+
+                {/* CONTENIDO PRINCIPAL (DERECHA CON TABS) */}
+                <div className="lg:col-span-8 flex flex-col gap-6">
+                    
+                    {/* Tabs Glass Animadas con Alertas */}
+                    <div className="relative flex flex-wrap bg-white/40 backdrop-blur-2xl p-1.5 rounded-[1.5rem] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] w-full animate-in fade-in duration-500 delay-100 fill-mode-both shrink-0" ref={tabsRef}>
+                        <div 
+                            className="absolute top-1.5 bottom-1.5 bg-white rounded-[1.25rem] shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
+                            style={{ 
+                                left: `${pill.left}px`,
+                                width: `${pill.width}px`,
+                                opacity: pill.show ? 1 : 0
+                            }}
+                        ></div>
+
+                        {TABS.map(tab => {
+                            const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            const alertStatus = getTabAlert(tab.id); // Llamada al motor de alertas
+
+                            return (
+                                <button 
+                                    key={tab.id} 
+                                    ref={(el) => tabBtnRefs.current.set(tab.id, el)}
+                                    onClick={() => setActiveTab(tab.id)} 
+                                    className={`relative flex-1 flex items-center justify-center gap-2 py-3.5 px-4 text-[11px] font-black uppercase tracking-widest transition-colors duration-300 z-10 min-w-[120px] ${isActive ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    <Icon size={14} strokeWidth={isActive ? 2.5 : 2}/> <span className="hidden sm:inline">{tab.label}</span>
+                                    {/* PUNTOS DE ALERTA DINÁMICOS */}
+                                    {alertStatus === 'critical' && <span className="absolute top-2.5 right-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse shadow-sm"></span>}
+                                    {alertStatus === 'warning' && <span className="absolute top-2.5 right-4 w-2.5 h-2.5 bg-amber-400 rounded-full border-2 border-white shadow-sm"></span>}
+                                </button>
+                            );
+                        })}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-black text-slate-900 truncate group-hover:text-[#007AFF] transition-colors">
-                        {emp.name}
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">
-                        {emp.role || '—'}
-                      </p>
-                    </div>
+                    {/* CONTENEDOR PRINCIPAL DE CONTENIDO */}
+                    <div className="bg-white/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] p-6 md:p-8 min-h-[600px] animate-in fade-in slide-in-from-bottom-8 duration-500 delay-200 fill-mode-both flex-1">
+                        
+                        {activeTab === 'history' && (
+                            <TabHistory 
+                                liveBranch={liveBranch} 
+                                history={history} 
+                                isLoadingHistory={isLoadingHistory} 
+                                employees={employees} 
+                                openModal={openModal} 
+                            />
+                        )}
 
-                    <div className="w-10 h-10 rounded-[1rem] bg-black/[0.03] border border-black/[0.06] flex items-center justify-center text-slate-400 group-hover:bg-[#007AFF]/10 group-hover:text-[#007AFF] transition-all">
-                      <ChevronRight size={18} />
+                        {activeTab === 'staff' && (
+                            <TabStaff 
+                                liveBranch={liveBranch} 
+                                currentStaff={currentStaff} 
+                                employees={employees} 
+                                goToProfile={goToProfile}
+                                openModal={openModal}
+                            />
+                        )}
+
+                        {activeTab === 'regulatory' && (
+                            <TabRegulatory 
+                                liveBranch={liveBranch} 
+                                employees={employees} 
+                                openModal={openModal} 
+                            />
+                        )}
+
+                        {activeTab === 'expenses' && (
+                            <TabExpenses 
+                                liveBranch={liveBranch} 
+                                openModal={openModal} 
+                            />
+                        )}
+
                     </div>
-                  </button>
-                ))}
-              </div>
+                </div>
             </div>
-          </div>
-        )}
-
-        {/* 🔜 History / Log / Management: mismo patrón visual */}
-        {activeTab !== 'overview' && (
-          <div className="glass-surface rounded-[2rem] border border-white/70 shadow-sm p-10 text-center text-slate-600">
-            <p className="text-[12px] font-black uppercase tracking-widest text-slate-500">
-              Sección en construcción
-            </p>
-            <p className="text-[13px] font-medium mt-2">
-              Cuando me pases el contenido de <b>{activeTab}</b>, lo dejamos con este mismo diseño.
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
   );
 };

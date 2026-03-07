@@ -45,3 +45,18 @@
     filter: blur(4px);
     transition: filter 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
+
+/* Bloqueo global cuando hay un modal abierto */
+body:has([role="dialog"]), 
+body.modal-open {
+    overflow: hidden !important;
+}
+
+/* Ocultar barra de scroll visualmente manteniendo la función */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

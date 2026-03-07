@@ -13,15 +13,15 @@ import {
   Building2,
   Edit3,
 } from "lucide-react";
-import { useStaff } from "../context/StaffContext";
+import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
 import BranchChips from "../components/common/BranchChips";
 import ModalShell from "../components/common/ModalShell";
+import ConfirmModal from "../components/common/ConfirmModal"; // <-- NUEVO: Importación del Modal
 
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
   const { user } = useAuth();
 
-  // ✅ IMPORTANTE: traer loadAttendanceLastDays desde el context (si existe)
   const {
     employees,
     branches,
@@ -35,7 +35,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [selectedAudit, setSelectedAudit] = useState(null);
   const [editForms, setEditForms] = useState({});
 
-  // ✅ Cargar asistencia (evita doble llamada en StrictMode)
+  // --- ESTADO PARA EL MODAL DE CONFIRMACIÓN DE INASISTENCIA ---
+  const [isAbsentModalOpen, setIsAbsentModalOpen] = useState(false);
+
   const didLoadRef = useRef(false);
   useEffect(() => {
     if (didLoadRef.current) return;
@@ -46,12 +48,11 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     }
   }, [loadAttendanceLastDays]);
 
-  // ✅ Conexión con el Layout para efecto Blur
   useEffect(() => {
     if (!setOverlayActive) return;
-    setOverlayActive(!!selectedAudit);
+    setOverlayActive(!!selectedAudit || isAbsentModalOpen);
     return () => setOverlayActive(false);
-  }, [selectedAudit, setOverlayActive]);
+  }, [selectedAudit, isAbsentModalOpen, setOverlayActive]);
 
   const now = new Date();
 
@@ -352,14 +353,13 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     setSelectedAudit(null);
   };
 
-  const handleMarkAbsent = () => {
+  // --- NUEVA LÓGICA DE INASISTENCIA CON MODAL PERSONALIZADO ---
+  const handleMarkAbsentClick = () => {
+    setIsAbsentModalOpen(true);
+  };
+
+  const executeMarkAbsent = () => {
     if (!selectedAudit) return;
-    if (
-      !window.confirm(
-        "¿Confirmas que NO laboró este día? Se borrarán las marcas existentes y quedará como INASISTENCIA."
-      )
-    )
-      return;
 
     const absentPunch = {
       timestamp: `${selectedAudit.date}T12:00:00.000Z`,
@@ -395,6 +395,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       }
     );
 
+    setIsAbsentModalOpen(false);
     setSelectedAudit(null);
   };
 
@@ -405,6 +406,17 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   return (
     <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto h-full relative">
+      
+      {/* NUEVO: MODAL DE CONFIRMACIÓN DE INASISTENCIA */}
+      <ConfirmModal 
+        isOpen={isAbsentModalOpen}
+        onClose={() => setIsAbsentModalOpen(false)}
+        onConfirm={executeMarkAbsent}
+        title="¿Reportar como Inasistencia?"
+        message="Se borrarán todos los marcajes existentes de este día y quedará registrado oficialmente como una inasistencia (falta)."
+        confirmText="Sí, reportar falta"
+      />
+
       <header className="space-y-4 mb-6">
         <div>
           <h1 className="text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight">
@@ -704,7 +716,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         <div className="px-8 py-6 border-t border-black/[0.04] bg-white/60 backdrop-blur-md rounded-b-[2rem]">
           <div className="flex justify-end gap-4">
             <button
-              onClick={handleMarkAbsent}
+              onClick={handleMarkAbsentClick} // <-- Usamos la nueva función
               className="px-6 h-12 bg-white border border-slate-200 hover:border-red-200 hover:text-red-600 rounded-[1.25rem] font-bold text-[12px] uppercase tracking-widest transition-all active:scale-[0.98] text-slate-500 shadow-sm hover:shadow-md"
               type="button"
             >

@@ -1,6 +1,6 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { CACHE_KEYS } from "../store/utils";
 
 const AuthContext = createContext(null);
 
@@ -14,15 +14,25 @@ const withTimeout = (promise, ms, label = "timeout") =>
   Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(label)), ms))]);
 
 // -------------------------
-// ⏱️ Idle logout settings
+// ⏱️ Configuraciones de Sesión e Inactividad
 // -------------------------
 const LS_USER = "sb_user";
 const LS_LAST = "sb_last_activity_at";
 
-const IDLE_EMP_MS = 15 * 60 * 1000;        // 15 min
-const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000; // 12h
-const CHECK_EVERY_MS = 15 * 1000;          // revisar cada 15s
-const ACTIVITY_THROTTLE_MS = 2000;         // escribir lastActivity máx cada 2s
+const ERP_CACHE_KEYS = [
+  CACHE_KEYS.BRANCHES,
+  CACHE_KEYS.EMPLOYEES,
+  CACHE_KEYS.SHIFTS,
+  CACHE_KEYS.ROLES,
+  CACHE_KEYS.ANNOUNCEMENTS,
+  CACHE_KEYS.AUDIT,
+  CACHE_KEYS.AT,
+];
+
+const IDLE_EMP_MS = 5 * 60 * 1000;       
+const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000;
+const CHECK_EVERY_MS = 30 * 1000;          
+const ACTIVITY_THROTTLE_MS = 2000;         
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -38,9 +48,9 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   // -------------------------
-  // Helpers idle
+  // Helpers de Inactividad
   // -------------------------
-  const getIdleLimitMs = (u) => (u?.isAdmin ? IDLE_ADMIN_MS : IDLE_EMP_MS);
+  const getIdleLimitMs = (u) => (u?.isAdmin || u?.is_admin ? IDLE_ADMIN_MS : IDLE_EMP_MS);
 
   const writeLastActivity = (force = false) => {
     const now = Date.now();
@@ -49,15 +59,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(LS_LAST, String(now));
   };
 
-  function onActivity() {
+  const onActivity = () => {
     if (!userRef.current) return;
     writeLastActivity(false);
-  }
+  };
 
-  function onVisibilityChange() {
+  const onVisibilityChange = () => {
     if (!userRef.current) return;
     if (document.visibilityState === "visible") writeLastActivity(true);
-  }
+  };
 
   const stopIdleWatcher = () => {
     if (idleIntervalRef.current) {
@@ -66,29 +76,47 @@ export const AuthProvider = ({ children }) => {
     }
     window.removeEventListener("mousemove", onActivity, true);
     window.removeEventListener("keydown", onActivity, true);
-    window.removeEventListener("scroll", onActivity, true);
+    // 🛡️ MEJORA: `wheel` es mucho más seguro que `scroll` para detectar inactividad real.
+    window.removeEventListener("wheel", onActivity, true);
     window.removeEventListener("click", onActivity, true);
     window.removeEventListener("touchstart", onActivity, true);
     document.removeEventListener("visibilitychange", onVisibilityChange, true);
+  };
+
+  const clearErpCache = () => {
+    ERP_CACHE_KEYS.forEach((key) => localStorage.removeItem(key));
+  };
+
+  const clearAuthCache = () => {
+    localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_LAST);
   };
 
   const doLogout = async (reason = "LOGOUT") => {
     try {
       await supabase.auth.signOut();
     } catch (e) {
-      console.warn("signOut error:", e?.message || e);
     } finally {
       stopIdleWatcher();
       setUser(null);
-      localStorage.removeItem(LS_USER);
-      localStorage.removeItem(LS_LAST);
-      // console.log("🔒 Logout:", reason);
+      clearAuthCache();
+      clearErpCache();
+
+      // 🛡️ MEJORA: Evitar un Reload Loop si la sesión expira cuando ya estamos en login.
+      if (window.location.pathname !== "/login" && window.location.pathname !== "/kiosk") {
+          window.location.href = "/login";
+      }
     }
   };
 
   const isExpiredByIdle = (u) => {
     const last = parseInt(localStorage.getItem(LS_LAST) || "0", 10);
-    if (!last) return false;
+    // 🛡️ MEJORA: Si no hay registro de tiempo o el tiempo es del futuro (reloj desincronizado), no expiramos.
+    if (!last || last > Date.now()) return false;
+    
+    // Si la última actividad fue hace menos de 5 segundos, asumimos que acaba de iniciar sesión.
+    if (Date.now() - last < 5000) return false;
+
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
@@ -99,7 +127,7 @@ export const AuthProvider = ({ children }) => {
 
     window.addEventListener("mousemove", onActivity, true);
     window.addEventListener("keydown", onActivity, true);
-    window.addEventListener("scroll", onActivity, true);
+    window.addEventListener("wheel", onActivity, true);
     window.addEventListener("click", onActivity, true);
     window.addEventListener("touchstart", onActivity, true);
     document.addEventListener("visibilitychange", onVisibilityChange, true);
@@ -111,12 +139,14 @@ export const AuthProvider = ({ children }) => {
       if (!last) return;
 
       const diff = Date.now() - last;
-      if (diff >= limit) doLogout("IDLE_TIMEOUT");
+      if (diff >= limit) {
+          doLogout("IDLE_TIMEOUT");
+      }
     }, CHECK_EVERY_MS);
   };
 
   // -------------------------
-  // ✅ Boot: SOLO Admin puede persistir en refresh
+  // ✅ Boot Inicial: Verificación local
   // -------------------------
   useEffect(() => {
     const cached = localStorage.getItem(LS_USER);
@@ -124,34 +154,23 @@ export const AuthProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(cached);
 
-        // 🔥 Si es EMPLEADO: NO persistimos -> limpiar y arrancar en login
-        if (!parsed?.isAdmin) {
-          localStorage.removeItem(LS_USER);
-          localStorage.removeItem(LS_LAST);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        // Admin: ok
-        setUser(parsed);
-
         if (isExpiredByIdle(parsed)) {
           setTimeout(() => doLogout("BOOT_IDLE_EXPIRED"), 0);
         } else {
+          setUser(parsed);
           startIdleWatcher(parsed);
         }
       } catch {
-        localStorage.removeItem(LS_USER);
-        localStorage.removeItem(LS_LAST);
+        clearAuthCache();
+        clearErpCache();
       }
     }
     setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -------------------------
-  // ✅ Rehidratar en background (Admin only)
+  // ✅ Rehidratación de Supabase (Sincronización Auth real)
   // -------------------------
   useEffect(() => {
     aliveRef.current = true;
@@ -183,11 +202,8 @@ export const AuthProvider = ({ children }) => {
 
         const u = ensured.user;
 
-        // 🔥 Si es EMPLEADO: al refresh, forzar logout y no rehidratar
-        if (!u.isAdmin) {
-          await doLogout("EMP_REFRESH_FORCE_LOGIN");
-          return;
-        }
+        // 🚨 Asegurarnos de que actualizamos la actividad si la sesión sigue viva al refrescar (F5)
+        writeLastActivity(true);
 
         if (isExpiredByIdle(u)) {
           await doLogout("REHYDRATE_IDLE_EXPIRED");
@@ -198,7 +214,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
       } catch {
-        // silencioso
+        // silencioso en caso de red inestable
       }
     };
 
@@ -209,8 +225,8 @@ export const AuthProvider = ({ children }) => {
         if (!session?.user) {
           stopIdleWatcher();
           setUser(null);
-          localStorage.removeItem(LS_USER);
-          localStorage.removeItem(LS_LAST);
+          clearAuthCache();
+          clearErpCache();
           return;
         }
 
@@ -231,13 +247,6 @@ export const AuthProvider = ({ children }) => {
 
         const u = ensured.user;
 
-        // 🔥 EMPLEADO: no persistir + si esto ocurre por refresh, se queda logueado
-        // pero tu requisito es: al refresh -> login. Entonces: forzar signOut.
-        if (!u.isAdmin) {
-          await doLogout("EMP_SESSION_DETECTED");
-          return;
-        }
-
         if (isExpiredByIdle(u)) {
           await doLogout("AUTHCHANGE_IDLE_EXPIRED");
           return;
@@ -255,11 +264,11 @@ export const AuthProvider = ({ children }) => {
       aliveRef.current = false;
       sub?.subscription?.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -------------------------
-  // ✅ Login por código (Edge -> Auth)
+  // ✅ Proceso de Login Centralizado
   // -------------------------
   const login = async (identifier) => {
     const cleanId = String(identifier ?? "").trim().toUpperCase();
@@ -283,36 +292,30 @@ export const AuthProvider = ({ children }) => {
 
       if (authErr || !authData?.session) return false;
 
-      // ✅ Set en memoria siempre
       setUser(u);
-
-      // ✅ Timers (ambos)
+      
+      localStorage.setItem(LS_USER, JSON.stringify(u));
+      clearErpCache();
+      
       writeLastActivity(true);
       startIdleWatcher(u);
 
-      // ✅ Persistencia SOLO si admin
-      if (u.isAdmin) {
-        localStorage.setItem(LS_USER, JSON.stringify(u));
-      } else {
-        localStorage.removeItem(LS_USER);
-      }
-
       return true;
-    } catch {
-      return false;
+    } catch (e) {
+        return false;
     }
   };
 
   const logout = async () => {
-    await doLogout("MANUAL");
+    await doLogout("MANUAL_LOGOUT");
   };
 
+  // ✅ Exposición de valores y funciones
   const value = useMemo(
     () => ({
       user,
       isAuthenticated: !!user,
-      isAdmin: user?.isAdmin === true || user?.userType === "admin",
-      isEmployee: user?.userType === "employee",
+      isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
       login,
       logout,

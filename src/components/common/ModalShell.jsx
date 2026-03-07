@@ -20,13 +20,18 @@ export default function ModalShell({
 
     window.addEventListener("keydown", onKeyDown);
 
-    // Lock scroll (opcional pero recomendado)
-    const prevOverflow = document.body.style.overflow;
-    if (lockScroll) document.body.style.overflow = "hidden";
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    if (lockScroll) {
+        document.documentElement.style.overflow = "hidden"; 
+        document.body.style.overflow = "hidden";
+    }
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      if (lockScroll) document.body.style.overflow = prevOverflow;
+      if (lockScroll) {
+          document.documentElement.style.overflow = "";
+          document.body.style.overflow = originalStyle;
+      }
     };
   }, [open, onClose, closeOnEsc, lockScroll]);
 
@@ -34,21 +39,23 @@ export default function ModalShell({
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${zClass} bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4`}
+      // 🚨 OVERLAY NEUTRO Y OSCURECIDO: Eliminamos el tinte gris (slate). Usamos pura sombra (negro) a muy baja opacidad.
+      // 🚨 Esto oscurecerá el fondo (contraste) pero mantendrá la saturación y los matices cian/morado intactos.
+      // 🚨 Mantenemos CERO blur para no ensuciar la refracción del cristal del modal.
+      className={`fixed inset-0 ${zClass} bg-black/[0.06] flex items-center justify-center p-4 sm:p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]`}
       role="dialog"
       aria-modal="true"
     >
-      {/* Click fuera */}
       <button
         type="button"
         aria-label="Cerrar modal"
         onClick={onClose}
-        className="absolute inset-0 cursor-default"
+        className="absolute inset-0 cursor-default w-full h-full"
       />
 
-      {/* Card */}
+      {/* 🚨 CONTENEDOR DESNUDO: Animación premium idéntica */}
       <div
-        className={`relative w-full ${maxWidthClass} bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200`}
+        className={`relative w-full ${maxWidthClass} animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

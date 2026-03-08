@@ -1,25 +1,18 @@
 // src/utils/timeClock.audit.js
+import { 
+  CheckCircle2, 
+  Utensils, 
+  Baby, 
+  LogOut, 
+  ShieldAlert, 
+  AlertTriangle, 
+  CalendarHeart,  
+  DoorOpen, 
+  CircleCheck
+} from 'lucide-react';
+
 // -----------------------------------------------------------------------------
 // 🧾 TimeClock • Auditoría (Modo Pro)
-//
-// Objetivo:
-// - Centralizar la construcción de payloads de auditoría del Kiosco.
-// - Evitar duplicación de lógica en TimeClockView / engine.
-// - Mantener compatibilidad con la tabla `public.audit_logs` (campos dedicados)
-//   y dejar `details` para lo variable.
-//
-// Tabla esperada (campos relevantes):
-// - action (text)
-// - target_id (text)
-// - user_id (text)
-// - user_name (text)
-// - details (jsonb)
-// - source (text)
-// - severity (text)
-// - branch_id (text)
-// - branch_name (text)
-// - device_name (text)
-// - input_method (text)
 // -----------------------------------------------------------------------------
 
 /**
@@ -60,8 +53,6 @@ export const INPUT_METHOD = {
 // -------------------------
 // Guardrails (tamaño / forma)
 // -------------------------
-// Evita meter JSON gigantes en `details` (por ejemplo blobs, listas enormes, etc.)
-// Ajusta si lo necesitas; 20KB suele ser más que suficiente para auditoría.
 export const DETAILS_MAX_BYTES = 20_000;
 
 const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -78,7 +69,6 @@ const compactIfTooLarge = (details, maxBytes = DETAILS_MAX_BYTES) => {
   const bytes = jsonSizeBytes(details);
   if (bytes <= maxBytes) return details;
 
-  // Compacto modo pro: guardamos un resumen para no romper insert ni UI
   const keys = isPlainObject(details) ? Object.keys(details) : [];
   return {
     __truncated: true,
@@ -119,13 +109,8 @@ const safeClone = (obj) => {
   }
 };
 
-/**
- * Remueve campos sensibles que NO deben quedar en `details`.
- * NOTA: employee_dui puede ser considerado sensible. Por defecto lo quitamos.
- */
 export const redactSensitive = (details = {}) => {
   const d = safeClone(details);
-  // Campos típicos sensibles
   delete d.employee_dui;
   delete d.dui;
   delete d.password;
@@ -139,12 +124,6 @@ export const redactSensitive = (details = {}) => {
   return d;
 };
 
-/**
- * Normaliza la info de auditoría que viene del kiosco.
- * Acepta snake_case o camelCase.
- * @param {KioskAuditInfo|Object|null} raw
- * @returns {Required<Pick<KioskAuditInfo,'branch_id'|'branch_name'|'device_name'|'input_method'>> & Partial<KioskAuditInfo>}
- */
 export const normalizeKioskAuditInfo = (raw) => {
   const r = safeObj(raw);
 
@@ -158,8 +137,6 @@ export const normalizeKioskAuditInfo = (raw) => {
   const employee_id = asText(r.employee_id ?? r.employeeId);
   const action_type = asText(r.action_type ?? r.actionType);
 
-  // DUI es sensible: si llega lo dejamos aquí por si la UI lo necesita,
-  // pero NO debe ir a details ni a columnas.
   const employee_dui = asText(r.employee_dui ?? r.employeeDui);
   return {
     branch_id,
@@ -174,48 +151,18 @@ export const normalizeKioskAuditInfo = (raw) => {
   };
 };
 
-/**
- * Deriva severidad según acción.
- * Ajusta esta tabla si agregas más eventos.
- */
 export const deriveSeverity = (action) => {
   const a = asUpper(action) || '';
-
-  // Seguridad / intentos
   if (a.includes('INTENTO_PIN_INCORRECTO') || a.includes('SECURITY')) return AUDIT_SEVERITY.SECURITY;
-
-  // Errores
   if (a.includes('ERROR') || a.includes('FALLO') || a.includes('EXCEPTION')) return AUDIT_SEVERITY.ERROR;
-
-  // Cambios de configuración / acciones delicadas
   if (a.includes('REVOCAR') || a.includes('VINCULAR') || a.includes('BORRAR') || a.includes('ELIMINAR')) return AUDIT_SEVERITY.WARN;
-
   return AUDIT_SEVERITY.INFO;
 };
 
-/**
- * Deriva source según contexto.
- */
 export const deriveSource = ({ isKiosk } = {}) => {
   return isKiosk ? AUDIT_SOURCE.KIOSK : AUDIT_SOURCE.ADMIN;
 };
 
-/**
- * Construye el payload “modo pro” para audit_logs.
- * Esto es lo que debe recibir tu `appendAuditLog` del store (auditSlice)
- * o lo que tu RPC/insert use para guardar en Supabase.
- *
- * @param {Object} params
- * @param {string} params.action
- * @param {string|number|null} [params.targetId]
- * @param {Object} [params.details]
- * @param {Object|null} [params.actor]  // usuario que ejecuta: { id, name }
- * @param {Object|null} [params.kioskAuditInfo]
- * @param {boolean} [params.isKiosk]
- * @param {string|null} [params.source]
- * @param {string|null} [params.severity]
- * @returns {Object}
- */
 export const buildAuditPayload = ({
   action,
   targetId = null,
@@ -233,7 +180,6 @@ export const buildAuditPayload = ({
   const inputMethodValue = pickEnum(norm.input_method, new Set(Object.values(INPUT_METHOD).map((s) => String(s).toUpperCase())), INPUT_METHOD.UNKNOWN);
 
   const payload = {
-    // columnas
     action: asText(action) || 'UNKNOWN',
     target_id: asText(targetId),
     user_id: asText(actor?.id),
@@ -247,13 +193,11 @@ export const buildAuditPayload = ({
     device_name: asText(norm.device_name),
     input_method: asText(inputMethodValue),
 
-    // details json
     details: compactIfTooLarge(
       redactSensitive({
         __schema: 'audit_details_v1',
         __ts_client: new Date().toISOString(),
         ...safeClone(details),
-        // Snapshot pequeño y estable para debug
         audit_info: {
           employee_id: asText(norm.employee_id),
           employee_name: asText(norm.employee_name),
@@ -271,10 +215,6 @@ export const buildAuditPayload = ({
   return payload;
 };
 
-/**
- * Helper para construir details de asistencia en kiosco.
- * Útil para `registerAttendance` y `appendAuditLog`.
- */
 export const buildKioskAttendanceDetails = ({
   employee,
   actionType,
@@ -292,7 +232,6 @@ export const buildKioskAttendanceDetails = ({
         employee_id: asText(employee?.id ?? norm.employee_id),
         employee_name: asText(employee?.name ?? norm.employee_name),
         employee_code: asText(employee?.code ?? norm.employee_code),
-        // NO guardar DUI aquí
         branch_id: asText(norm.branch_id),
         branch_name: asText(norm.branch_name),
         device_name: asText(norm.device_name),
@@ -303,9 +242,6 @@ export const buildKioskAttendanceDetails = ({
   );
 };
 
-/**
- * Determina si un evento debe disparar auditoría extra (seguridad).
- */
 export const isSecurityEvent = (action) => {
   const a = asUpper(action) || '';
   return (
@@ -315,10 +251,6 @@ export const isSecurityEvent = (action) => {
     a.includes('INTRUSION')
   );
 };
-
-// -------------------------
-// Helpers consumidos por useTimeClockEngine
-// -------------------------
 
 export const buildKioskAuditInfo = ({
   employee = null,
@@ -389,44 +321,29 @@ export const buildYesterdayMissedPunchWarning = ({
 export const getApplicableAnnouncement = ({ announcements, employee }) => {
   if (!announcements || !employee) return null;
 
-  // Buscar el primer aviso activo que el empleado NO haya leído y que le corresponda
   return announcements.find(ann => {
-    // 1. Ignorar si está archivado
     if (ann.isArchived) return false;
 
-    // 2. Ignorar si el empleado ya lo leyó
     const hasRead = (ann.readBy || []).some(
       r => String(typeof r === 'object' ? r.employeeId : r) === String(employee.id)
     );
     if (hasRead) return false;
 
-    // 3. Normalizar datos para evitar errores de tipo (String vs Integer)
     const empIdStr = String(employee.id);
-    const empBranchStr = String(employee.branchId || employee.branch_id || ''); // Cubre ambas nomenclaturas
+    const empBranchStr = String(employee.branchId || employee.branch_id || '');
     const empRoleStr = String(employee.role || '').toLowerCase();
 
     const targetVal = ann.targetValue;
 
-    // 4. Evaluar según el tipo de público
     switch (ann.targetType) {
-      case 'GLOBAL':
-        return true;
-
-      case 'BRANCH':
-        // Coincide el ID de la sucursal del empleado con el targetValue del aviso
-        return empBranchStr === String(targetVal);
-
-      case 'ROLE':
-        // Coincide el Rol ignorando mayúsculas
-        return empRoleStr === String(targetVal).toLowerCase();
-
+      case 'GLOBAL': return true;
+      case 'BRANCH': return empBranchStr === String(targetVal);
+      case 'ROLE': return empRoleStr === String(targetVal).toLowerCase();
       case 'EMPLOYEE':
         if (!targetVal) return false;
         const targets = Array.isArray(targetVal) ? targetVal : [targetVal];
         return targets.map(String).includes(empIdStr);
-
-      default:
-        return false;
+      default: return false;
     }
   });
 };
@@ -445,6 +362,19 @@ export const buildAuthPromptState = ({
   extraMins,
 });
 
+// 🚨 MAPEO DINÁMICO DE ICONOS
+const ICON_MAP = {
+  check: CheckCircle2,
+  utensils: Utensils,
+  baby: Baby,
+  logout: LogOut,
+  alert: AlertTriangle,
+  shield: ShieldAlert,
+  calendarHeart: CalendarHeart,
+  plus: CircleCheck,
+  doorOpen: DoorOpen,
+};
+
 export const buildFeedbackState = ({
   employee,
   theme,
@@ -456,6 +386,8 @@ export const buildFeedbackState = ({
   status: 'success',
   employee,
   ...theme,
+  // 🚨 Inyectamos el componente React real en lugar de pasar un string vacío
+  icon: ICON_MAP[theme?.iconKey] || CheckCircle2, 
   time: now.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',

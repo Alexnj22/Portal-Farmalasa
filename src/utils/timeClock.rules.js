@@ -13,18 +13,24 @@ const OPEN_PUNCH_TYPES = ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN'];
 // ✅ BUILD CUSTOM CONFIG (Compat para el Engine)
 // ============================================================
 // Orquesta: lee la configuración del día (turno/almuerzo/lactancia) y construye
-// el objeto `customConfig` con fechas calculadas (shiftStartD, shiftEndD, etc.).
-export const buildCustomConfig = (
+// el objeto `customConfig` con fechas calculadas y el último evento (lastPunch).
+export const buildCustomConfig = ({
   employee,
   now = new Date(),
   shifts = [],
+  todayPunches = [], // 🚨 Agregamos todayPunches a los parámetros esperados
   scheduleResolver = getTodayScheduleConfig
-) => {
+}) => {
   const config = scheduleResolver(employee, shifts, now);
-  return buildTimeClockConfig(employee, config, now);
+  
+  // Extraemos de forma segura el último registro del día
+  const validPunches = Array.isArray(todayPunches) ? todayPunches : [];
+  const lastPunch = validPunches.length > 0 ? validPunches[validPunches.length - 1] : null;
+
+  return buildTimeClockConfig(employee, config, now, lastPunch);
 };
 
-export const buildTimeClockConfig = (employee, config, now = new Date()) => {
+export const buildTimeClockConfig = (employee, config, now = new Date(), lastPunch = null) => {
   const shiftStartD = config?.shift?.start ? buildDateFromTime(config.shift.start, now) : null;
   const shiftEndDBase = config?.shift?.end ? buildDateFromTime(config.shift.end, now) : null;
 
@@ -64,6 +70,7 @@ export const buildTimeClockConfig = (employee, config, now = new Date()) => {
     isGluedToLunch,
     needsSeparateLactationPunch,
     expectedIn,
+    lastPunch, // 🚨 ¡AHORA SÍ ENVIAMOS EL ÚLTIMO REGISTRO AL ENGINE!
   };
 };
 

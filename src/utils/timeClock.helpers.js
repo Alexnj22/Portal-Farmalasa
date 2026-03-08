@@ -51,7 +51,6 @@ export const toLocalISODate = (dateObj = new Date()) => {
   const d = new Date(dateObj);
   if (Number.isNaN(d.getTime())) return '';
   
-  // Mejorado: Usar métodos locales de Date para extraer YYYY-MM-DD sin depender de offsets manuales
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -101,7 +100,6 @@ export const detectInputMethod = (keystrokeTimestamps = []) => {
   const intervals = Math.max(1, times.length - 1);
   const avgTimePerChar = totalTime / intervals;
 
-  // Evitar NaN o Infinity si los timestamps son idénticos o defectuosos
   if (!Number.isFinite(avgTimePerChar)) return 'TECLADO_MANUAL';
 
   return avgTimePerChar < 40 ? 'ESCANER_INFRARROJO' : 'TECLADO_MANUAL';
@@ -111,9 +109,16 @@ export const getKioskInputMethod = (keystrokeTimestamps = []) => {
   return detectInputMethod(keystrokeTimestamps);
 };
 
+// 🚨 CORRECCIÓN ZONA HORARIA: Convierte el UTC de la DB a fecha local antes de comparar
 export const getTodayPunches = (employee, dateObj = new Date()) => {
-  const isoDate = toLocalISODate(dateObj);
-  return (employee?.attendance || []).filter((punch) => punch.timestamp?.startsWith(isoDate));
+  const localIsoDate = toLocalISODate(dateObj); // "2026-03-08" local
+  
+  return (employee?.attendance || []).filter((punch) => {
+    if (!punch.timestamp) return false;
+    // Forzamos el UTC a pasar por el motor local del navegador
+    const punchLocalDate = toLocalISODate(new Date(punch.timestamp));
+    return punchLocalDate === localIsoDate;
+  });
 };
 
 export const getLastPunchOfDay = (employee, dateObj = new Date()) => {
@@ -140,10 +145,9 @@ export const resolveAttendanceFlow = ({
       !customConfig?.isGluedToLunch
   );
 
+  // 🚨 CORRECCIÓN: Patrón startsWith robusto para Special Mode
   if (specialMode) {
-    const isCurrentlyWorking = Boolean(
-      lastPunch && ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN', 'IN_EXTRA'].includes(lastPunch.type)
-    );
+    const isCurrentlyWorking = Boolean(lastPunch && lastPunch.type?.startsWith('IN'));
 
     return {
       type: null,
@@ -167,7 +171,6 @@ export const resolveAttendanceFlow = ({
   }
 
   let type = 'IN';
-
   const currentDateTime = new Date(currentDate).getTime();
 
   if (!lastPunch) {
@@ -201,7 +204,8 @@ export const resolveAttendanceFlow = ({
       type = 'IN_LACTATION';
     } else if (['OUT', 'OUT_EXTRA'].includes(lastType)) {
       type = 'IN_EXTRA';
-    } else if (lastType === 'IN_EXTRA') {
+    } else if (lastType?.startsWith('IN')) {
+      // 🚨 CORRECCIÓN: Catch-all seguro para IN_EXTRA, IN_OFFDAY, etc.
       type = 'OUT_EXTRA';
     }
   }

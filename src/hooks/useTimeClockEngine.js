@@ -18,6 +18,7 @@ import {
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
 import { getHourlyCode, getTodayScheduleConfig, toLocalISO } from '../utils/helpers';
 import useKioskDevice from './useKioskDevice';
+import { XCircle, ShieldAlert } from 'lucide-react';
 
 export function useTimeClockEngine(props = {}) {
     const storeEmployees = useStaff((s) => s.employees) || [];
@@ -440,7 +441,7 @@ export function useTimeClockEngine(props = {}) {
                 message: 'KIOSCO NO AUTORIZADO',
                 subtext: 'Dispositivo no vinculado o permiso revocado.',
                 color: 'red',
-                iconKey: 'lock',
+                iconKey: ShieldAlert,
             });
             setScanCode('');
             scheduleFeedbackClose(4000);
@@ -498,7 +499,7 @@ export function useTimeClockEngine(props = {}) {
                     message: 'CÓDIGO INCORRECTO',
                     subtext: 'Autorización Denegada',
                     color: 'red',
-                    iconKey: 'x',
+                    icon: XCircle,
                 });
                 setScanCode('');
                 scheduleFeedbackClose(2500);
@@ -526,9 +527,9 @@ export function useTimeClockEngine(props = {}) {
             setFeedback({
                 status: 'error',
                 message: 'Código No Encontrado',
-                subtext: `Verifique su carnet • Empleados cargados: ${(employees || []).length}`,
+                subtext: `Verifique su carnet`,
                 color: 'red',
-                iconKey: 'x',
+                icon: XCircle,
             });
             setScanCode('');
             scheduleFeedbackClose(2000);
@@ -558,10 +559,15 @@ export function useTimeClockEngine(props = {}) {
             shiftEndD,
         });
 
-        if (specialMode) {
+if (specialMode) {
+            // 🚨 SOLUCIÓN: Validación dinámica.
+            // Acepta cualquier variante (IN_OFFDAY, IN_UNSCHEDULED, IN_EXTRA)
+            // siempre y cuando sea una entrada y no una salida (OUT).
+            const lastType = customConfig.lastPunch?.type || '';
             const isCurrentlyWorking =
                 customConfig.lastPunch &&
-                ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN', 'IN_EXTRA'].includes(customConfig.lastPunch.type);
+                lastType.includes('IN') &&
+                !lastType.includes('OUT');
 
             if (!isCurrentlyWorking) {
                 setFeedback({
@@ -569,7 +575,7 @@ export function useTimeClockEngine(props = {}) {
                     message: 'TURNO INACTIVO',
                     subtext: 'El empleado no está activo ahora.',
                     color: 'red',
-                    iconKey: 'x',
+                    icon: XCircle,
                 });
                 setScanCode('');
                 scheduleFeedbackClose(3000);

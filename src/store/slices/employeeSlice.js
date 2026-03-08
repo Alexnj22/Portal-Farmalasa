@@ -246,10 +246,18 @@ export const createEmployeeSlice = (set, get) => ({
         );
     },
 
-    registerAttendance: async (employeeId, type, metadata = null) => {
+registerAttendance: async (employeeId, type, metadata = null) => {
+        // 1. Tomamos la estampa de tiempo exacta
         const timestamp = new Date().toISOString();
+        
         try {
-            const { error } = await supabase.from("attendance").insert([{ employee_id: employeeId, timestamp, type, details: metadata || {} }]);
+            // 2. Insertamos en Supabase y SOLICITAMOS el registro de vuelta (.select().single())
+            const { data: newPunch, error } = await supabase
+                .from("attendance")
+                .insert([{ employee_id: employeeId, timestamp, type, details: metadata || {} }])
+                .select()
+                .single();
+
             if (error) throw error;
 
             const state = get();
@@ -276,20 +284,32 @@ export const createEmployeeSlice = (set, get) => ({
                 ...metadata
             };
 
-            await state.appendAuditLog('REGISTRO_ASISTENCIA', employeeId, auditDetails, actorName);
+            // 3. Registramos la auditoría de forma asíncrona pero sin bloquear el flujo principal
+            state.appendAuditLog('REGISTRO_ASISTENCIA', employeeId, auditDetails, actorName).catch(console.error);
 
+            // 4. Actualizamos el estado local de Inmediato (Optimistic + Real Data)
             set((state) => {
                 const next = persistEmployees(
-                    state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
-                        ...emp,
-                        attendance: [...(emp.attendance || []), { timestamp, type, details: metadata }]
+                    state.employees.map(emp => {
+                        if (String(emp.id) !== String(employeeId)) return emp;
+                        
+                        // Si es el empleado afectado, agregamos el nuevo Punch
+                        return {
+                            ...emp,
+                            attendance: [...(emp.attendance || []), newPunch || { timestamp, type, details: metadata }]
+                        };
                     })
                 );
                 return { employees: next };
             });
-        } catch (err) { 
 
+            // 5. 🚨 DEVOLVEMOS EL PUNCH REAL (Crucial para que el Kiosco sepa que sí se guardó)
+            return newPunch || { timestamp, type, details: metadata };
+
+        } catch (err) { 
+            // 🚨 AHORA SÍ AVISAMOS SI HAY ERROR
+            console.error("❌ Error crítico al registrar asistencia en Supabase:", err);
+            throw new Error(err.message || "Fallo al registrar asistencia en la base de datos");
         }
-        return timestamp;
     },
 });

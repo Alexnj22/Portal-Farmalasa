@@ -1,28 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ShieldAlert, XCircle } from 'lucide-react';
 
-// Añadimos esta función segura localmente para evitar que la app 
-// explote si format12hNoSeconds no se pasó como prop o no se importó.
 const formatTime = (dateObj) => {
   if (!dateObj) return '--:--';
-  return new Date(dateObj).toLocaleTimeString('es-ES', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  return new Date(dateObj).toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 const AuthPromptPanel = ({
   authPrompt,
   scanCode,
   inputRef,
-  // 🚨 Props corregidos para que coincidan exactamente con lo que envía TimeClockView
   submitHandler,
   keyDownHandler,
   inputChangeHandler,
   cancelHandler,
-  forceNormalOutHandler
+  forceNormalOutHandler,
+  clearHandler
 }) => {
+  
+  // 🚨 SEGURIDAD: Limpiamos el input sin exponerlo al DOM
+  useEffect(() => {
+    if ((!scanCode || scanCode.length === 0) && inputRef.current) {
+      inputRef.current.value = '';
+    }
+  }, [scanCode, inputRef]);
+
   if (!authPrompt) return null;
 
   const promptType = authPrompt.type;
@@ -30,115 +32,86 @@ const AuthPromptPanel = ({
   const shiftEnd = authPrompt.customConfig?.shiftEndD;
   const expectedIn = authPrompt.customConfig?.expectedIn;
 
+  const hasValue = scanCode && scanCode.length > 0;
+
   return (
-    <div className="animate-in fade-in zoom-in duration-300 w-full">
-      <div className="inline-flex p-5 bg-purple-600 rounded-full mb-6 shadow-[0_0_40px_rgba(147,51,234,0.4)] animate-pulse">
-        <ShieldAlert size={64} className="text-white" />
-      </div>
-
-      {promptType === 'IN_AFTER_SHIFT' ? (
-        <>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter">
-            Turno Finalizado
+    <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
+      
+      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-5 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
+        
+        {/* TOP */}
+        <div className="flex flex-col items-center text-center w-full mb-5 sm:mb-6 shrink-0 group/icon">
+          <div className="inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-4 transition-all duration-300 border backdrop-blur-md bg-orange-500/10 border-orange-500/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]">
+            <ShieldAlert size={42} className="text-orange-400 drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
+            {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : 'Autorización Requerida'}
           </h1>
-          <p className="text-orange-400 text-sm md:text-md mb-2 font-black uppercase tracking-[0.1em]">
-            Tu turno concluyó a las {shiftEnd ? formatTime(shiftEnd) : '--:--'}.
+          <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-orange-400/80 transition-colors px-2">
+            {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
-          <p className="text-slate-400 text-xs mb-8">
-            Requiere autorización para registrar entrada a esta hora.
+          <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
+            {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
-        </>
-      ) : promptType === 'IN_EARLY' ? (
-        <>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter">
-            Entrada Anticipada
-          </h1>
-          <p className="text-orange-400 text-sm md:text-md mb-2 font-black uppercase tracking-[0.1em]">
-            Tu turno inicia a las {expectedIn ? formatTime(expectedIn) : '--:--'}.
-          </p>
-          <p className="text-slate-400 text-xs mb-8">
-            Puedes marcar normalmente 5 minutos antes.
-          </p>
-        </>
-      ) : promptType === 'OUT_LATE' ? (
-        <>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter">
-            Salida Fuera de Tiempo
-          </h1>
-
-          {authPrompt.extraMins >= 25 && (
-            <p className="text-orange-400 text-sm md:text-md mb-2 font-black uppercase tracking-[0.1em]">
-              Han pasado {authPrompt.extraMins} min de tu salida oficial ({shiftEnd ? formatTime(shiftEnd) : '--:--'}).
-            </p>
-          )}
-
-          <p className="text-slate-300 text-xs mb-6 max-w-sm mx-auto leading-relaxed">
-            ¿Este tiempo extra fue solicitado por administración? Solicita el PIN para autorizarlo.
-          </p>
-        </>
-      ) : (
-        <>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tighter">
-            Autorización Requerida
-          </h1>
-          <p className="text-purple-400 text-sm md:text-md mb-8 font-black uppercase tracking-[0.1em]">
-            {promptType === 'SPECIAL_OUT_REQUEST'
-              ? `Permiso para: ${employeeName}`
-              : `Turno Extra: ${employeeName}`}
-          </p>
-        </>
-      )}
-
-      <form onSubmit={submitHandler} className="w-full max-w-sm mx-auto relative group">
-        <div className="relative">
-          <input
-            ref={inputRef}
-            type="password"
-            value={scanCode}
-            onKeyDown={keyDownHandler}
-            onChange={inputChangeHandler}
-            className="w-full bg-purple-900/30 border-2 border-purple-500/50 text-white text-center text-4xl py-6 rounded-2xl focus:outline-none focus:border-purple-400 transition-all tracking-[1em] shadow-2xl"
-            placeholder="••••"
-            maxLength={10}
-            autoComplete="off"
-          />
         </div>
 
-        <p className="mt-6 text-slate-400 text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-center">
-          {promptType === 'OUT_LATE'
-            ? 'INGRESE PIN PARA HORAS EXTRAS'
-            : 'INGRESE EL CÓDIGO DEL MONITOR'}
-        </p>
+        {/* MIDDLE */}
+        <form onSubmit={submitHandler} className="relative z-20 w-full pointer-events-auto flex-1 flex flex-col justify-center min-h-0 shrink-0 py-2 sm:py-3">
+          
+          <div className="relative w-full group/input cursor-text">
+            {/* 🚨 INPUT BLINDADO */}
+            <input
+              ref={inputRef}
+              type="password"
+              onChange={inputChangeHandler}
+              onKeyDown={keyDownHandler}
+              onContextMenu={(e) => e.preventDefault()} 
+              onCopy={(e) => e.preventDefault()} 
+              onPaste={(e) => e.preventDefault()} 
+              onCut={(e) => e.preventDefault()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => e.preventDefault()}
+              autoComplete="new-password"
+              spellCheck="false"
+              placeholder={promptType === 'OUT_LATE' ? 'PIN PARA HORAS EXTRAS' : 'PIN DE SUPERVISOR'}
+              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-4 sm:py-5 rounded-3xl focus:outline-none transition-all duration-300 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] focus:bg-black/40 focus:border-orange-500/50 select-none placeholder:text-orange-400/60
+                ${hasValue 
+                  ? 'text-3xl sm:text-4xl tracking-[0.5em] sm:tracking-[1em]' // Estilo contraseña
+                  : 'text-[10px] sm:text-xs tracking-[0.2em] font-bold uppercase' // Estilo placeholder
+                }`}
+            />
+            
+            {/* Botón Flotante Limpiar */}
+            {hasValue && (
+              <button
+                type="button"
+                onClick={clearHandler}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-95"
+                title="Limpiar código"
+              >
+                <XCircle size={22} strokeWidth={2} />
+              </button>
+            )}
 
-        {promptType === 'OUT_LATE' ? (
-          <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
-            <button
-              type="button"
-              onClick={forceNormalOutHandler}
-              className="w-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all shadow-lg border border-slate-700 hover:border-slate-500"
-            >
-              No, guardar según horario
-            </button>
-            <button
-              type="button"
-              onClick={cancelHandler}
-              className="w-full text-slate-500 hover:text-white uppercase font-bold text-[10px] tracking-widest transition-colors py-2"
-            >
-              Cancelar / Atrás
+            <div className="absolute inset-0 z-10 rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none shadow-[0_0_20px_rgba(249,115,22,0.2)] group-focus-within/input:opacity-100" />
+          </div>
+
+          <div className="mt-5 sm:mt-6 flex flex-col items-center justify-center gap-3 w-full">
+
+            {promptType === 'OUT_LATE' && (
+              <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-300 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-95">
+                No, guardar según horario
+              </button>
+            )}
+            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-red-500/10 px-5 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-95">
+              <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={cancelHandler}
-            className="mt-8 text-slate-500 hover:text-white uppercase font-bold text-xs tracking-widest transition-colors inline-flex items-center gap-2"
-          >
-            <XCircle size={14} /> Cancelar / Atrás
-          </button>
-        )}
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
+
 export { AuthPromptPanel };
 export default AuthPromptPanel;

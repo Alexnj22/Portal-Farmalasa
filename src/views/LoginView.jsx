@@ -118,7 +118,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 {/* 🚨 my-auto: El truco definitivo. Si la pantalla es alta, lo centra. Si la pantalla es baja (teléfono acostado), lo pone arriba y permite scroll hacia abajo. */}
                 <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1">
 
-                    {/* LOGO OFICIAL FLS */}
                     <div className="flex flex-col items-center mb-8">
                         <div className="w-20 h-20 bg-white/60 backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.75rem] flex items-center justify-center mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1">
                             <img 
@@ -204,7 +203,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             {/* DOCK INFERIOR FLOTANTE (Móvil) - Cambiado a Fixed para no romper el scroll */}
-            <div className="fixed bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 p-3 z-30 w-[90%] max-w-[360px] lg:hidden bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in slide-in-from-bottom-8 duration-700">
+            <div className="fixed bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 p-3 z-30 w-[90%] max-w-[360px] lg:hidden bg-white/20 backdrop-blur-3xl backdrop-saturate-[300%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in slide-in-from-bottom-8 duration-700">
                 <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(0,122,255,0.15)] group">
                     <ShoppingCart size={16} strokeWidth={2.5} className="text-[#007AFF] group-hover:scale-110 transition-transform" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#007AFF] transition-colors">Ventas</span>

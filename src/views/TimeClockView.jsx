@@ -113,7 +113,7 @@ const TimeClockView = ({ setView }) => {
             title="¿Desvincular Dispositivo?" 
             message="Este dispositivo dejará de funcionar para marcar asistencia inmediatamente." 
             confirmText="Sí, desvincular" 
-            theme="dark" /* 🚨 ESTA LÍNEA ES LA CLAVE */
+            theme="dark"
         />      )}
 
       {/* Botón Salir */}

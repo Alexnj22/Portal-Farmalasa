@@ -137,8 +137,23 @@ export const createSystemSlice = (set, get) => ({
                             secondary_role: e.sec_role?.name || null,
                         };
                     });
+
+                    // 1. Guardamos en memoria (Zustand) CON TODO el peso para que RRHH vea los datos al instante
                     set({ employees: mappedEmployees });
-                    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(mappedEmployees));
+
+                    // 2. 🚨 SALVAVIDAS DE MEMORIA: Filtramos antes de tocar el LocalStorage
+                    try {
+                        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                        const lightCache = mappedEmployees.map(emp => ({
+                            ...emp,
+                            history: [], // Vaciamos para no saturar el navegador
+                            documents: [], // Vaciamos para no saturar el navegador
+                            attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
+                        }));
+                        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
+                    } catch (cacheError) {
+                        console.warn("⚠️ Advertencia de Caché:", cacheError);
+                    }
                 }
 
                 const { data: annData } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
@@ -447,7 +462,7 @@ export const createSystemSlice = (set, get) => ({
     },
     // ✅ NUEVO: DESCARGA BLINDADA EXCLUSIVA PARA KIOSCOS (Con Caché Offline)
     fetchKioskBoot: async () => {
-try {
+        try {
             // 🚨 PASO CRUCIAL: Descargar sucursales antes de validar la config local
             const { data: bData } = await supabase.from("branches").select("id, name").order("name");
             if (bData) {

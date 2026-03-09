@@ -2,9 +2,27 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 
+// 🚨 CORRECCIÓN CRÍTICA: Prevenir "QuotaExceededError" en el LocalStorage
 const persistEmployees = (employees) => {
-    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(employees));
-    return employees;
+    try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        
+        const lightEmployees = employees.map(emp => {
+            return {
+                ...emp,
+                history: [], // Vaciamos para no saturar caché (se carga bajo demanda)
+                documents: [], // Vaciamos para no saturar caché (se carga bajo demanda)
+                // Solo guardamos asistencia de las últimas 24h para que el Kiosco sobreviva a un F5
+                attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
+            };
+        });
+        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightEmployees));
+    } catch (error) {
+        console.warn("⚠️ Alerta de Memoria LocalStorage:", error);
+    }
+    
+    // Devolvemos el array original INTACTO para que el estado de Zustand siga teniendo todo
+    return employees; 
 };
 
 export const createEmployeeSlice = (set, get) => ({
@@ -37,6 +55,7 @@ export const createEmployeeSlice = (set, get) => ({
     },
 
     uploadPhotoToStorage: (file) => get().uploadFileToStorage(file, 'photos'),
+    
     addEmployee: async (formData) => {
         try {
             let publicPhotoUrl = null;
@@ -44,11 +63,9 @@ export const createEmployeeSlice = (set, get) => ({
                 publicPhotoUrl = await get().uploadPhotoToStorage(formData.photo);
             }
 
-            // ✅ ACTUALIZACIÓN: Transformamos los roles a IDs (null si no vienen)
             const dbPayload = {
                 name: formData.name,
                 code: formData.code,
-                // Ya no mandamos 'role' como texto
                 role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
                 secondary_role_id: formData.secondary_role_id ? parseInt(formData.secondary_role_id, 10) : null,
                 branch_id: formData.branchId ? parseInt(formData.branchId, 10) : null,
@@ -65,7 +82,6 @@ export const createEmployeeSlice = (set, get) => ({
 
             await get().appendAuditLog('CREAR_EMPLEADO', newEmp.id, { nombre: newEmp.name });
 
-            // ✅ RETROCOMPATIBILIDAD UI: Buscamos el nombre del rol en el state de roles para mostrarlo al instante
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === newEmp.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === newEmp.secondary_role_id)?.name || null;
@@ -76,15 +92,16 @@ export const createEmployeeSlice = (set, get) => ({
                 hireDate: newEmp.hire_date,
                 birthDate: newEmp.birth_date,
                 photo: newEmp.photo_url,
-                role: mainRoleName, // <--- Inyectado para UI antigua
-                secondary_role: secRoleName, // <--- Inyectado para UI antigua
+                role: mainRoleName,
+                secondary_role: secRoleName,
                 attendance: [],
                 history: [],
                 documents: []
             };
 
             set((state) => {
-                const next = persistEmployees([...state.employees, appEmp]);
+                const next = [...state.employees, appEmp];
+                persistEmployees(next);
                 return { employees: next };
             });
             return appEmp.id;
@@ -100,42 +117,39 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);
             if (updatedData.photo instanceof File) dbPayload.photo_url = await get().uploadPhotoToStorage(updatedData.photo);
 
-            // ✅ ACTUALIZACIÓN: Asegurar parseo de IDs
             if (updatedData.role_id !== undefined) dbPayload.role_id = updatedData.role_id ? parseInt(updatedData.role_id, 10) : null;
             if (updatedData.secondary_role_id !== undefined) dbPayload.secondary_role_id = updatedData.secondary_role_id ? parseInt(updatedData.secondary_role_id, 10) : null;
 
-            // Limpieza de propiedades UI antes de enviar a DB
+            // Limpieza estricta de UI antes de enviar a BD
             delete dbPayload.branchId;
             delete dbPayload.photo;
             delete dbPayload.history;
             delete dbPayload.documents;
             delete dbPayload.attendance;
-            delete dbPayload.role; // Ya no guardamos el texto en DB
-            delete dbPayload.secondary_role; // Ya no guardamos el texto en DB
+            delete dbPayload.role; 
+            delete dbPayload.secondary_role; 
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
             await get().appendAuditLog('EDITAR_EMPLEADO', id, { cambios: dbPayload });
 
-            // ✅ RETROCOMPATIBILIDAD UI: Actualizar los nombres mostrados
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === updated.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === updated.secondary_role_id)?.name || null;
 
             set((state) => {
-                const next = persistEmployees(
-                    state.employees.map((emp) => String(emp.id) !== String(id) ? emp : {
-                        ...emp,
-                        ...updated,
-                        branchId: updated.branch_id,
-                        photo: updated.photo_url,
-                        birthDate: updated.birth_date,
-                        hireDate: updated.hire_date,
-                        role: mainRoleName || emp.role,
-                        secondary_role: secRoleName !== null ? secRoleName : emp.secondary_role
-                    })
-                );
+                const next = state.employees.map((emp) => String(emp.id) !== String(id) ? emp : {
+                    ...emp,
+                    ...updated,
+                    branchId: updated.branch_id,
+                    photo: updated.photo_url,
+                    birthDate: updated.birth_date,
+                    hireDate: updated.hire_date,
+                    role: mainRoleName || emp.role,
+                    secondary_role: secRoleName !== null ? secRoleName : emp.secondary_role
+                });
+                persistEmployees(next);
                 return { employees: next };
             });
             return true;
@@ -150,7 +164,8 @@ export const createEmployeeSlice = (set, get) => ({
             if (error) throw error;
             await get().appendAuditLog('ELIMINAR_EMPLEADO', id, {});
             set((state) => {
-                const next = persistEmployees(state.employees.filter((emp) => String(emp.id) !== String(id)));
+                const next = state.employees.filter((emp) => String(emp.id) !== String(id));
+                persistEmployees(next);
                 return { employees: next };
             });
             return true;
@@ -176,13 +191,12 @@ export const createEmployeeSlice = (set, get) => ({
             }
 
             set((state) => {
-                const next = persistEmployees(
-                    state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
-                        ...emp,
-                        history: [...(emp.history || []), newEvent],
-                        documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
-                    })
-                );
+                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
+                    ...emp,
+                    history: [...(emp.history || []), newEvent],
+                    documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
+                });
+                persistEmployees(next);
                 return { employees: next };
             });
             return newEvent.id;
@@ -200,12 +214,11 @@ export const createEmployeeSlice = (set, get) => ({
 
             await get().appendAuditLog('SUBIR_DOCUMENTO', employeeId, { archivo: file.name });
             set((state) => {
-                const next = persistEmployees(
-                    state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
-                        ...emp,
-                        documents: [...(emp.documents || []), newDoc]
-                    })
-                );
+                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
+                    ...emp,
+                    documents: [...(emp.documents || []), newDoc]
+                });
+                persistEmployees(next);
                 return { employees: next };
             });
         } catch (e) {
@@ -228,12 +241,11 @@ export const createEmployeeSlice = (set, get) => ({
             });
 
             set((state) => {
-                const next = persistEmployees(
-                    state.employees.map((e) => ({
-                        ...e,
-                        attendance: byEmp.get(String(e.id))?.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) || e.attendance || [],
-                    }))
-                );
+                const next = state.employees.map((e) => ({
+                    ...e,
+                    attendance: byEmp.get(String(e.id))?.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) || e.attendance || [],
+                }));
+                persistEmployees(next);
                 return { employees: next, attendanceLoaded: true };
             });
             return true;
@@ -246,11 +258,11 @@ export const createEmployeeSlice = (set, get) => ({
         );
     },
 
-registerAttendance: async (employeeId, type, metadata = null) => {
+    registerAttendance: async (employeeId, type, metadata = null) => {
         const timestamp = new Date().toISOString();
         
         try {
-            // 1. Insertamos en Supabase y SOLICITAMOS el registro de vuelta
+            // 1. Insertamos en Supabase y esperamos respuesta real
             const { data: newPunch, error } = await supabase
                 .from("attendance")
                 .insert([{ employee_id: employeeId, timestamp, type, details: metadata || {} }])
@@ -264,54 +276,49 @@ registerAttendance: async (employeeId, type, metadata = null) => {
             const employeeName = employee ? employee.name : 'Empleado Desconocido';
             const isKiosk = !!metadata?.audit_info;
 
-            // 2. 🚨 MEJORA: Construcción de Auditoría Compatible con el Kiosco
-            // Extraemos la info del kiosco para que appendAuditLog la entienda nativamente
+            // 2. Auditoría limpia sin duplicar info
             const kioskAuditInfo = metadata?.audit_info || null;
-            
-            // Creamos un detalle limpio para el log (sin duplicar el audit_info adentro)
             const cleanDetails = { ...metadata };
             delete cleanDetails.audit_info;
 
-            // 3. Registramos la auditoría asíncrona usando la firma que espera tu AuditSlice
             state.appendAuditLog(
-                `REGISTRO_ASISTENCIA (${type})`, // Acción clara
-                employeeId, // Target
-                cleanDetails, // Details (Metadata limpia)
-                null, // Actor (Dejamos que appendAuditLog lo calcule basado en isKiosk)
+                `REGISTRO_ASISTENCIA (${type})`,
+                employeeId,
+                cleanDetails,
+                null, 
                 {
                     isKiosk,
                     kioskAuditInfo: isKiosk ? {
                         ...kioskAuditInfo,
-                        employee_name: employeeName // Aseguramos el nombre
+                        employee_name: employeeName 
                     } : null
                 }
-            ).catch(console.error);
+            ).catch(console.error); // Fuego y olvido para no frenar la respuesta
 
-            // 4. Actualizamos el estado local (Optimistic + Real Data)
+            // 3. Actualizamos estado de UI garantizando evitar duplicados
             set((state) => {
-                const next = persistEmployees(
-                    state.employees.map(emp => {
-                        if (String(emp.id) !== String(employeeId)) return emp;
-                        
-                        const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type, details: metadata };
-                        
-                        // 🚨 Filtro defensivo: evitamos meter un punch duplicado en memoria si se escaneó súper rápido
-                        const exists = (emp.attendance || []).some(p => p.id === actualPunch.id);
-                        if (exists) return emp;
+                const next = state.employees.map(emp => {
+                    if (String(emp.id) !== String(employeeId)) return emp;
+                    
+                    const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type, details: metadata };
+                    
+                    const exists = (emp.attendance || []).some(p => p.id === actualPunch.id);
+                    if (exists) return emp;
 
-                        return {
-                            ...emp,
-                            attendance: [...(emp.attendance || []), actualPunch]
-                        };
-                    })
-                );
+                    return {
+                        ...emp,
+                        attendance: [...(emp.attendance || []), actualPunch]
+                    };
+                });
+                
+                persistEmployees(next);
                 return { employees: next };
             });
 
             return newPunch || { timestamp, type, details: metadata };
 
         } catch (err) { 
-            console.error("❌ Error crítico al registrar asistencia en Supabase:", err);
+            console.error("❌ Error al registrar asistencia:", err);
             throw new Error(err.message || "Fallo al registrar asistencia en la base de datos");
         }
     },

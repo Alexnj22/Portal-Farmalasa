@@ -100,5 +100,6 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #F2F2F7; /* El color de fondo de tu app */
+  background-color: #F2F2F7; 
+  overscroll-behavior: none; 
 }

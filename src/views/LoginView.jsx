@@ -120,11 +120,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     <div className="flex flex-col items-center mb-8">
                         <div className="w-20 h-20 bg-white/60 backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.75rem] flex items-center justify-center mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1">
-                            <img 
-                                src="/LogoFLS.svg" 
-                                alt="FarmaLasa" 
-                                className="w-12 h-12 relative z-10 drop-shadow-sm transition-transform duration-500 group-hover:scale-105" 
-                            />
+<img 
+    src="/LogoFLS.svg" 
+    alt="FarmaLasa" 
+    /* 🚨 object-contain soluciona el aplastamiento */
+    className="w-12 h-12 object-contain relative z-10 drop-shadow-sm transition-transform duration-500 group-hover:scale-105" 
+/>
                         </div>
                         <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                             Portal

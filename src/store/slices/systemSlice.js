@@ -183,15 +183,15 @@ export const createSystemSlice = (set, get) => ({
         return await bootPromise;
     },
 
-    addRole: async (name, parentRoleId = null, secondaryParentRoleId = null) => { 
+    addRole: async (name, parentRoleId = null, secondaryParentRoleId = null) => {
         set({ isLoading: true, error: null });
         try {
             const { data, error } = await supabase
                 .from('roles')
-                .insert([{ 
-                    name, 
+                .insert([{
+                    name,
                     parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId 
+                    secondary_parent_role_id: secondaryParentRoleId
                 }])
                 .select()
                 .single();
@@ -226,8 +226,8 @@ export const createSystemSlice = (set, get) => ({
                 return { roles: next };
             });
             return true;
-        } catch (err) { 
-            return false; 
+        } catch (err) {
+            return false;
         }
     },
     updateRole: async (roleId, name, parentRoleId = null, secondaryParentRoleId = null) => {
@@ -235,10 +235,10 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { data, error } = await supabase
                 .from('roles')
-                .update({ 
-                    name, 
+                .update({
+                    name,
                     parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId 
+                    secondary_parent_role_id: secondaryParentRoleId
                 })
                 .eq('id', roleId)
                 .select()
@@ -284,8 +284,8 @@ export const createSystemSlice = (set, get) => ({
                 return { announcements: next };
             });
             return newAnn;
-        } catch (err) { 
-            throw err; 
+        } catch (err) {
+            throw err;
         }
     },
 
@@ -403,8 +403,8 @@ export const createSystemSlice = (set, get) => ({
                 return { shifts: next };
             });
             return newShift;
-        } catch (err) { 
-            throw new Error("Error creando turno"); 
+        } catch (err) {
+            throw new Error("Error creando turno");
         }
     },
 
@@ -419,8 +419,8 @@ export const createSystemSlice = (set, get) => ({
                 return { shifts: next };
             });
             return true;
-        } catch (err) { 
-            return false; 
+        } catch (err) {
+            return false;
         }
     },
 
@@ -441,59 +441,89 @@ export const createSystemSlice = (set, get) => ({
             if (error) throw error;
             await get().appendAuditLog('ASIGNAR_TURNO_SEMANAL', employeeId, { semana: weekStartDate, horario: scheduleData });
             return true;
-        } catch (err) { 
-            throw new Error("Error guardando el roster."); 
+        } catch (err) {
+            throw new Error("Error guardando el roster.");
         }
     },
-    // ✅ NUEVO: DESCARGA BLINDADA EXCLUSIVA PARA KIOSCOS
+    // ✅ NUEVO: DESCARGA BLINDADA EXCLUSIVA PARA KIOSCOS (Con Caché Offline)
     fetchKioskBoot: async () => {
-      try {
-        const kioskConfigStr = localStorage.getItem('kiosk_config');
-        if (!kioskConfigStr) {
-          return false;
-        }
-        const config = JSON.parse(kioskConfigStr);
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        const monday = new Date(today.setDate(diff));
-        const offset = monday.getTimezoneOffset() * 60000;
-        const weekStartDate = new Date(monday.getTime() - offset).toISOString().split('T')[0];
-        const { data, error } = await supabase.rpc('get_kiosk_boot_payload', {
-          p_device_id: config.deviceId,
-          p_device_token: config.deviceToken,
-          p_week_start: weekStartDate
-        });
-        if (error) throw error;
-        if (data) {
-          set({
-            shifts: (data.shifts || []).map(s => ({
-              id: s.id,
-              branchId: s.branch_id,
-              name: s.name,
-              start: s.start_time.substring(0, 5),
-              end: s.end_time.substring(0, 5)
-            })),
-            announcements: (data.announcements || []).map(a => ({
-              id: a.id,
-              title: a.title,
-              message: a.message,
-              targetType: a.target_type,
-              targetValue: a.target_value,
-              priority: a.priority || 'NORMAL',
-              readBy: a.read_by || [],
-              editedAt: a.edited_at // 🚨 Lo incluimos en la sincronización del kiosco por si acaso
-            })),
-            employees: (data.employees || []).map(e => ({
-              ...e,
-              weeklySchedule: e.weekly_roster
-            }))
-          });
-        }
+try {
+            // 🚨 PASO CRUCIAL: Descargar sucursales antes de validar la config local
+            const { data: bData } = await supabase.from("branches").select("id, name").order("name");
+            if (bData) {
+                set({ branches: bData });
+                localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(bData));
+            }
 
-        return true;
-      } catch (error) {
-        return false;
-      }
+            const kioskConfigStr = localStorage.getItem('kiosk_config');
+            if (!kioskConfigStr) return false; // Salimos, pero las sucursales ya están en el Store
+
+            const config = JSON.parse(kioskConfigStr);
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            const monday = new Date(today.setDate(diff));
+            const offset = monday.getTimezoneOffset() * 60000;
+            const weekStartDate = new Date(monday.getTime() - offset).toISOString().split('T')[0];
+
+            const { data, error } = await supabase.rpc('get_kiosk_boot_payload', {
+                p_device_id: config.deviceId,
+                p_device_token: config.deviceToken,
+                p_week_start: weekStartDate
+            });
+
+            if (error) throw error;
+
+            if (data) {
+                // 🚨 CAMBIO 2: Si el RPC no trae sucursales, las pedimos por aparte para que el modal siempre tenga data
+                if (!data.branches) {
+                    const { data: bData } = await supabase.from("branches").select("*").order("name");
+                    if (bData) set({ branches: bData });
+                }
+
+                const mappedShifts = (data.shifts || []).map(s => ({
+                    id: s.id,
+                    branchId: s.branch_id,
+                    name: s.name,
+                    start: s.start_time.substring(0, 5),
+                    end: s.end_time.substring(0, 5)
+                }));
+
+                const mappedAnnouncements = (data.announcements || []).map(a => ({
+                    id: a.id,
+                    title: a.title,
+                    message: a.message,
+                    targetType: a.target_type,
+                    targetValue: a.target_value,
+                    priority: a.priority || 'NORMAL',
+                    readBy: a.read_by || [],
+                    editedAt: a.edited_at
+                }));
+
+                const mappedEmployees = (data.employees || []).map(e => ({
+                    ...e,
+                    weeklySchedule: e.weekly_roster
+                }));
+
+                set({
+                    shifts: mappedShifts,
+                    announcements: mappedAnnouncements,
+                    employees: mappedEmployees,
+                    branches: data.branches || []
+                });
+
+                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
+                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnnouncements));
+                localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(mappedEmployees));
+                if (data.branches) {
+                    localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Error en Kiosk Boot:", error);
+            return false;
+        }
     },
 });

@@ -145,7 +145,7 @@ export const resolveAttendanceFlow = ({
       !customConfig?.isGluedToLunch
   );
 
-  // 🚨 CORRECCIÓN: Patrón startsWith robusto para Special Mode
+  // Patrón startsWith robusto para Special Mode
   if (specialMode) {
     const isCurrentlyWorking = Boolean(lastPunch && lastPunch.type?.startsWith('IN'));
 
@@ -196,7 +196,9 @@ export const resolveAttendanceFlow = ({
 
       pendingOuts.sort((a, b) => Math.abs(currentDateTime - a.targetTime) - Math.abs(currentDateTime - b.targetTime));
       type = pendingOuts[0]?.type || 'OUT';
-    } else if (lastType === 'OUT_EARLY') {
+      
+    // 🚨 CORRECCIÓN VITAL: Agregamos OUT_BUSINESS para que genere un IN_RETURN
+    } else if (['OUT_EARLY', 'OUT_BUSINESS'].includes(lastType)) {
       type = 'IN_RETURN';
     } else if (lastType === 'OUT_LUNCH') {
       type = 'IN_LUNCH';
@@ -205,7 +207,7 @@ export const resolveAttendanceFlow = ({
     } else if (['OUT', 'OUT_EXTRA'].includes(lastType)) {
       type = 'IN_EXTRA';
     } else if (lastType?.startsWith('IN')) {
-      // 🚨 CORRECCIÓN: Catch-all seguro para IN_EXTRA, IN_OFFDAY, etc.
+      // Catch-all seguro para IN_EXTRA, IN_OFFDAY, etc.
       type = 'OUT_EXTRA';
     }
   }

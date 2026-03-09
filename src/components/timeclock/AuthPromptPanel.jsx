@@ -60,26 +60,28 @@ const AuthPromptPanel = ({
           
           <div className="relative w-full group/input cursor-text">
             {/* 🚨 INPUT BLINDADO */}
-            <input
-              ref={inputRef}
-              type="password"
-              onChange={inputChangeHandler}
-              onKeyDown={keyDownHandler}
-              onContextMenu={(e) => e.preventDefault()} 
-              onCopy={(e) => e.preventDefault()} 
-              onPaste={(e) => e.preventDefault()} 
-              onCut={(e) => e.preventDefault()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => e.preventDefault()}
-              autoComplete="new-password"
-              spellCheck="false"
-              placeholder={promptType === 'OUT_LATE' ? 'PIN PARA HORAS EXTRAS' : 'PIN DE SUPERVISOR'}
-              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-4 sm:py-5 rounded-3xl focus:outline-none transition-all duration-300 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] focus:bg-black/40 focus:border-orange-500/50 select-none placeholder:text-orange-400/60
-                ${hasValue 
-                  ? 'text-3xl sm:text-4xl tracking-[0.5em] sm:tracking-[1em]' // Estilo contraseña
-                  : 'text-[10px] sm:text-xs tracking-[0.2em] font-bold uppercase' // Estilo placeholder
-                }`}
-            />
+<input
+  ref={inputRef}
+  type="password"
+  onChange={inputChangeHandler}
+  onKeyDown={keyDownHandler}
+  onContextMenu={(e) => e.preventDefault()} 
+  onCopy={(e) => e.preventDefault()} 
+  onPaste={(e) => e.preventDefault()} 
+  onCut={(e) => e.preventDefault()}
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={(e) => e.preventDefault()}
+  autoComplete="new-password"
+  spellCheck="false"
+  placeholder={promptType === 'OUT_LATE' ? 'PIN PARA HORAS EXTRAS' : 'PIN DE SUPERVISOR'}
+  className="relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-4 sm:py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] focus:bg-black/40 select-none
+    /* 🚨 ESTABILIZACIÓN: Tamaño y espaciado fijo para el valor */
+    text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em]
+    /* 🚨 PLACEHOLDER: Estilo independiente para evitar saltos */
+    placeholder:text-[10px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-orange-400/60
+    /* 🚨 CARET VIRTUAL: Oculta el cursor nativo y activa la animación del CSS */
+    caret-transparent virtual-caret-orange focus:outline-none"
+/>
             
             {/* Botón Flotante Limpiar */}
             {hasValue && (

@@ -206,16 +206,22 @@ export const buildFinalPunchPresentation = ({
       break;
     }
 
-    case 'OUT': {
+case 'OUT': {
       if (isGluedToOut) {
         presentation.message = 'Lactancia y salida';
         presentation.subtext = `Descansa, nos vemos ${nextDayText}`;
         presentation.color = 'pink';
         presentation.iconKey = 'calendarHeart';
         presentation.isLactationAction = true;
+      } else if (presentation.metadata?.skippedLunch) {
+        // 🚨 NUEVO: Presentación para Omisión de Almuerzo
+        presentation.message = 'Salida registrada';
+        presentation.subtext = 'Jornada continua (Sin almuerzo)';
+        presentation.color = 'slate';
+        presentation.iconKey = 'logout';
       } else {
         presentation.message = rawType === 'OUT_LATE' ? 'Horas extra autorizadas' : 'Salida registrada';
-        presentation.subtext = presentation.metadata.adjustedTimestamp
+        presentation.subtext = presentation.metadata?.adjustedTimestamp
           ? `Hora planilla: ${new Date(presentation.metadata.adjustedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Nos vemos ${nextDayText}`
           : `Buen descanso, nos vemos ${nextDayText}`;
         presentation.color = rawType === 'OUT_LATE' ? 'purple' : 'slate';
@@ -223,7 +229,6 @@ export const buildFinalPunchPresentation = ({
       }
       break;
     }
-
     case 'IN_EXTRA': {
       presentation.message = 'Entrada extra autorizada';
       presentation.subtext = 'Turno adicional iniciado';
@@ -240,11 +245,20 @@ export const buildFinalPunchPresentation = ({
       break;
     }
 
-    case 'OUT_EARLY': {
+case 'OUT_EARLY': {
       presentation.message = 'Permiso registrado';
       presentation.subtext = presentation.metadata?.reason || 'Salida anticipada autorizada';
       presentation.color = 'slate';
       presentation.iconKey = 'doorOpen';
+      break;
+    }
+
+    // 🚨 NUEVO: Presentación para Gestión Externa
+    case 'OUT_BUSINESS': {
+      presentation.message = 'Gestión externa';
+      presentation.subtext = presentation.metadata?.notes || 'En labores fuera de sucursal';
+      presentation.color = 'blue';
+      presentation.iconKey = 'check'; 
       break;
     }
 

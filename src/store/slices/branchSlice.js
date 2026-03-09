@@ -245,26 +245,57 @@ export const createBranchSlice = (set, get) => ({
         } catch (err) { return false; }
     },
 
-    registerKioskDevice: async (branchId, deviceName) => {
+registerKioskDevice: async (branchId, deviceName) => {
         try {
-            const { count } = await supabase.from('kiosk_devices').select('*', { count: 'exact', head: true }).eq('branch_id', branchId);
-            if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos autorizados.");
+            // 🚨 AHORA SOLO CONTAMOS LOS ACTIVOS
+            const { count } = await supabase.from('kiosk_devices')
+                .select('*', { count: 'exact', head: true })
+                .eq('branch_id', branchId)
+                .eq('status', 'ACTIVE'); 
+                
+            if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos activos.");
 
-            const { data: newDevice, error } = await supabase.from('kiosk_devices').insert([{ branch_id: branchId, device_name: deviceName }]).select().single();
+            // Insertar el nuevo dispositivo
+            const { data: newDevice, error } = await supabase.from('kiosk_devices')
+                .insert([{ branch_id: branchId, device_name: deviceName }])
+                .select()
+                .single();
+                
             if (error) throw error;
 
             await get().appendAuditLog('VINCULAR_KIOSCO', newDevice.id, { branchId, deviceName }, 'CONTROL_PANEL');
-            return newDevice;
-        } catch (err) { throw err; }
+            
+            // 🚨 SOLUCIÓN: Mapeamos los campos de la BD (snake_case) al formato que espera el Kiosco (camelCase)
+            return {
+                deviceId: newDevice.id,
+                deviceToken: newDevice.device_token,
+                branchId: newDevice.branch_id,
+                deviceName: newDevice.device_name
+            };
+            
+        } catch (err) { 
+            throw err; 
+        }
     },
 
-    revokeKioskDevice: async (deviceId, deviceName) => {
+revokeKioskDevice: async (deviceId, deviceName) => {
         try {
-            const { error } = await supabase.from('kiosk_devices').delete().eq('id', deviceId);
+            // 🚨 BEST PRACTICE: Soft Delete (Inactivación) en lugar de .delete()
+            const { error } = await supabase
+                .from('kiosk_devices')
+                .update({ 
+                    status: 'REVOKED', 
+                    revoked_at: new Date().toISOString() 
+                })
+                .eq('id', deviceId);
+                
             if (error) throw error;
+            
             await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, { dispositivo: deviceName });
             return true;
-        } catch (err) { return false; }
+        } catch (err) { 
+            return false; 
+        }
     },
 
     getBranchKiosks: async (branchId) => {
@@ -272,8 +303,15 @@ export const createBranchSlice = (set, get) => ({
         return data || [];
     },
 
-    validateKioskToken: async (deviceId, token) => {
-        const { data, error } = await supabase.from('kiosk_devices').select('id, branch_id').eq('id', deviceId).eq('device_token', token).single();
+validateKioskToken: async (deviceId, token) => {
+        // 🚨 BLOQUEO DE SEGURIDAD: El token solo es válido si el estado es ACTIVE
+        const { data, error } = await supabase.from('kiosk_devices')
+            .select('id, branch_id')
+            .eq('id', deviceId)
+            .eq('device_token', token)
+            .eq('status', 'ACTIVE') 
+            .single();
+            
         return !(error || !data);
     },
 

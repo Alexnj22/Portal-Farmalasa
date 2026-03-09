@@ -60,3 +60,37 @@ body::-webkit-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* ANIMACIONES DE BORDES (CARET VIRTUAL) */
+@keyframes border-pulse-blue {
+    0%, 100% { 
+        border-color: rgba(59, 130, 246, 0.3); 
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.1), inset 0 2px 15px rgba(0,0,0,0.5); 
+    }
+    50% { 
+        border-color: rgba(59, 130, 246, 1); /* Borde puro */
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.6), inset 0 2px 15px rgba(0,0,0,0.5); /* Glow intenso */
+    }
+}
+
+@keyframes border-pulse-orange {
+    0%, 100% { 
+        border-color: rgba(249, 115, 22, 0.3); 
+        box-shadow: 0 0 8px rgba(249, 115, 22, 0.1), inset 0 2px 15px rgba(0,0,0,0.5); 
+    }
+    50% { 
+        border-color: rgba(249, 115, 22, 1); 
+        box-shadow: 0 0 25px rgba(249, 115, 22, 0.6), inset 0 2px 15px rgba(0,0,0,0.5); 
+    }
+}
+
+/* 🚨 Asignamos la animación DIRECTAMENTE al estado :focus */
+.virtual-caret-blue:focus {
+    animation: border-pulse-blue 1.5s infinite ease-in-out !important;
+    outline: none;
+}
+
+.virtual-caret-orange:focus {
+    animation: border-pulse-orange 1.5s infinite ease-in-out !important;
+    outline: none;
+}

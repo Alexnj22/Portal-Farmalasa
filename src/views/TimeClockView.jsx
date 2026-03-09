@@ -106,10 +106,17 @@ const TimeClockView = ({ setView }) => {
       </div>
 
       {isRevokeModalOpen && (
-        <ConfirmModal isOpen={isRevokeModalOpen} onClose={() => setIsRevokeModalOpen(false)} onConfirm={executeRevokeConfig} title="¿Desvincular Dispositivo?" message="Este dispositivo dejará de funcionar para marcar asistencia inmediatamente." confirmText="Sí, desvincular" />
-      )}
+<ConfirmModal 
+            isOpen={isRevokeModalOpen} 
+            onClose={() => setIsRevokeModalOpen(false)} 
+            onConfirm={executeRevokeConfig} 
+            title="¿Desvincular Dispositivo?" 
+            message="Este dispositivo dejará de funcionar para marcar asistencia inmediatamente." 
+            confirmText="Sí, desvincular" 
+            theme="dark" /* 🚨 ESTA LÍNEA ES LA CLAVE */
+        />      )}
 
-      {/* 🚨 Botón Salir (Con Animación Hover Liquid Glass) */}
+      {/* Botón Salir */}
       <button 
         onClick={handleLogout} 
         className="absolute top-[calc(env(safe-area-inset-top,16px)+16px)] right-[calc(env(safe-area-inset-right,16px)+16px)] text-white/50 hover:text-white flex items-center justify-center gap-2 z-50 font-medium bg-white/5 border border-white/10 w-10 h-10 sm:w-auto sm:h-11 sm:px-5 rounded-full backdrop-blur-xl active:scale-95 transition-all duration-500 hover:scale-105 hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3),inset_0_1px_5px_rgba(255,255,255,0.05)] cursor-pointer" 
@@ -128,11 +135,12 @@ const TimeClockView = ({ setView }) => {
         {/* RELOJ */}
         <div className="flex flex-col items-center justify-center w-full max-w-[420px] mb-4 sm:mb-6 animate-in slide-in-from-top-4 fade-in duration-700">
           <div className="w-full flex flex-col items-center justify-center bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] px-4 py-6 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:border-white/20 hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] cursor-default">
+            {/* 🚨 RELOJ BLINDADO */}
             <h2 className="text-white/80 font-light text-[2.5rem] sm:text-[3rem] md:text-[3.25rem] tracking-tight drop-shadow-md tabular-nums leading-none w-full text-center whitespace-nowrap">
-              {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+              {(time || new Date()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
             </h2>
             <p className="text-white/40 text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.3em] mt-3 drop-shadow-sm transition-colors group-hover:text-white/60 w-full text-center truncate px-2">
-              {time.toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {(time || new Date()).toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </div>

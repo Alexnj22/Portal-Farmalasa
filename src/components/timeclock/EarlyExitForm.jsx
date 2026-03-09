@@ -63,28 +63,37 @@ function EarlyExitForm({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-            <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
-              Motivo autorizado
-            </label>
-            <select
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-orange-500/50 transition-all font-medium text-sm sm:text-base appearance-none shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] cursor-pointer"
-              value={exitReason}
-              onChange={(e) => onChangeReason?.(e.target.value)}
-              required
-              disabled={isProcessing}
-              style={{ colorScheme: 'dark' }}
-            >
-              <option value="" disabled className="bg-slate-900 text-slate-400">
-                Seleccione un motivo...
-              </option>
-              {EARLY_EXIT_OPTIONS.map((option) => (
-                <option key={option} value={option} className="bg-slate-900 text-white">
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+<div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
+  <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
+    Motivo autorizado
+  </label>
+  <select
+    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-orange-500/50 transition-all font-medium text-sm sm:text-base appearance-none shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] cursor-pointer"
+    value={exitReason}
+    onChange={(e) => onChangeReason?.(e.target.value)}
+    required
+    disabled={isProcessing}
+    style={{ colorScheme: 'dark' }}
+  >
+    <option value="" disabled className="bg-slate-900 text-slate-400">
+      Seleccione un motivo...
+    </option>
+    {EARLY_EXIT_OPTIONS.map((option) => (
+      <option key={option} value={option} className="bg-slate-900 text-white">
+        {option}
+      </option>
+    ))}
+  </select>
+
+  {/* 🚨 NUEVO: Feedback visual preventivo */}
+  {exitReason === 'Omisión de Almuerzo' && (
+    <div className="mt-1 px-2 animate-in slide-in-from-top-1 duration-300">
+      <p className="text-[10px] text-orange-400/80 leading-tight italic">
+        * Requiere autorización previa. Solo válido 60 min antes de la salida.
+      </p>
+    </div>
+  )}
+</div>
 
           <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
             <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">

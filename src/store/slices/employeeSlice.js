@@ -247,11 +247,10 @@ export const createEmployeeSlice = (set, get) => ({
     },
 
 registerAttendance: async (employeeId, type, metadata = null) => {
-        // 1. Tomamos la estampa de tiempo exacta
         const timestamp = new Date().toISOString();
         
         try {
-            // 2. Insertamos en Supabase y SOLICITAMOS el registro de vuelta (.select().single())
+            // 1. Insertamos en Supabase y SOLICITAMOS el registro de vuelta
             const { data: newPunch, error } = await supabase
                 .from("attendance")
                 .insert([{ employee_id: employeeId, timestamp, type, details: metadata || {} }])
@@ -263,51 +262,55 @@ registerAttendance: async (employeeId, type, metadata = null) => {
             const state = get();
             const employee = state.employees.find(e => String(e.id) === String(employeeId));
             const employeeName = employee ? employee.name : 'Empleado Desconocido';
-
             const isKiosk = !!metadata?.audit_info;
-            const storedUser = safeJsonParse(localStorage.getItem("sb_user"));
 
-            let actorName = 'Sistema/Anónimo';
-            if (isKiosk) {
-                actorName = `${employeeName} (Vía Kiosco)`;
-            } else if (storedUser && storedUser.name) {
-                actorName = storedUser.name;
-            }
+            // 2. 🚨 MEJORA: Construcción de Auditoría Compatible con el Kiosco
+            // Extraemos la info del kiosco para que appendAuditLog la entienda nativamente
+            const kioskAuditInfo = metadata?.audit_info || null;
+            
+            // Creamos un detalle limpio para el log (sin duplicar el audit_info adentro)
+            const cleanDetails = { ...metadata };
+            delete cleanDetails.audit_info;
 
-            const auditDetails = {
-                accion: type,
-                empleado_afectado: employeeName,
-                sucursal_registro: metadata?.audit_info?.branch_name || 'Panel de Administración',
-                metodo_ingreso: metadata?.audit_info?.input_method || 'MANUAL',
-                dispositivo: metadata?.audit_info?.device_name || 'PC Administrativa',
-                hora_exacta_servidor: new Date(timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                ...metadata
-            };
+            // 3. Registramos la auditoría asíncrona usando la firma que espera tu AuditSlice
+            state.appendAuditLog(
+                `REGISTRO_ASISTENCIA (${type})`, // Acción clara
+                employeeId, // Target
+                cleanDetails, // Details (Metadata limpia)
+                null, // Actor (Dejamos que appendAuditLog lo calcule basado en isKiosk)
+                {
+                    isKiosk,
+                    kioskAuditInfo: isKiosk ? {
+                        ...kioskAuditInfo,
+                        employee_name: employeeName // Aseguramos el nombre
+                    } : null
+                }
+            ).catch(console.error);
 
-            // 3. Registramos la auditoría de forma asíncrona pero sin bloquear el flujo principal
-            state.appendAuditLog('REGISTRO_ASISTENCIA', employeeId, auditDetails, actorName).catch(console.error);
-
-            // 4. Actualizamos el estado local de Inmediato (Optimistic + Real Data)
+            // 4. Actualizamos el estado local (Optimistic + Real Data)
             set((state) => {
                 const next = persistEmployees(
                     state.employees.map(emp => {
                         if (String(emp.id) !== String(employeeId)) return emp;
                         
-                        // Si es el empleado afectado, agregamos el nuevo Punch
+                        const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type, details: metadata };
+                        
+                        // 🚨 Filtro defensivo: evitamos meter un punch duplicado en memoria si se escaneó súper rápido
+                        const exists = (emp.attendance || []).some(p => p.id === actualPunch.id);
+                        if (exists) return emp;
+
                         return {
                             ...emp,
-                            attendance: [...(emp.attendance || []), newPunch || { timestamp, type, details: metadata }]
+                            attendance: [...(emp.attendance || []), actualPunch]
                         };
                     })
                 );
                 return { employees: next };
             });
 
-            // 5. 🚨 DEVOLVEMOS EL PUNCH REAL (Crucial para que el Kiosco sepa que sí se guardó)
             return newPunch || { timestamp, type, details: metadata };
 
         } catch (err) { 
-            // 🚨 AHORA SÍ AVISAMOS SI HAY ERROR
             console.error("❌ Error crítico al registrar asistencia en Supabase:", err);
             throw new Error(err.message || "Fallo al registrar asistencia en la base de datos");
         }

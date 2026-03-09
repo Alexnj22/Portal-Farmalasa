@@ -8,12 +8,13 @@ const AlertModal = ({
     title, 
     message,
     type = 'success', // 'success' | 'error' | 'info'
-    buttonText = 'Entendido'
+    buttonText = 'Entendido',
+    theme = 'light' // 🚨 NUEVA PROPIEDAD: 'light' | 'dark'
 }) => {
 
-    // 🚨 ModalShell maneja internamente: portal, bloqueo de scroll y cierre con Escape o clic afuera
+    const isDark = theme === 'dark';
     
-    // Configuración dinámica de estilos Liquidglass según el tipo de alerta
+    // Configuración dinámica de estilos según el tipo de alerta
     const config = {
         success: {
             icon: CheckCircle2,
@@ -40,27 +41,37 @@ const AlertModal = ({
 
     return (
         <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[9999]">
-            <div className="bg-white/90 backdrop-blur-3xl backdrop-saturate-150 border border-white/80 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.8)] overflow-hidden relative">
+            <div className={`backdrop-blur-3xl backdrop-saturate-150 border rounded-[2.5rem] overflow-hidden relative transition-colors duration-300 ${
+                isDark 
+                    ? 'bg-[#0A0F1C]/90 border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]' 
+                    : 'bg-white/90 border-white/80 shadow-[0_40px_80px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.8)]'
+            }`}>
                 
                 {/* 🚨 Glow de fondo dinámico que tiñe el cristal superior */}
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 blur-[40px] rounded-full pointer-events-none ${currentConfig.glow}`}></div>
 
                 <div className="p-8 text-center flex flex-col items-center relative z-10">
                     {/* ÍCONO SQUIRCLE */}
-                    <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.9)] border border-white/80 bg-white/50 backdrop-blur-md transition-transform duration-500 hover:scale-105 ${currentConfig.iconColor}`}>
+                    <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md transition-transform duration-500 hover:scale-105 border ${
+                        isDark
+                            ? 'bg-white/5 border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.3),inset_0_2px_10px_rgba(255,255,255,0.05)]'
+                            : 'bg-white/50 border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.9)]'
+                    } ${currentConfig.iconColor}`}>
                         <Icon size={36} strokeWidth={2.5} />
                     </div>
                     
-                    <h3 className="text-[20px] font-black text-slate-800 uppercase tracking-tight mb-2 leading-none drop-shadow-sm">
+                    <h3 className={`text-[20px] font-black uppercase tracking-tight mb-2 leading-none drop-shadow-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
                         {title}
                     </h3>
-                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed px-2 mb-2">
+                    <p className={`text-[13px] font-medium leading-relaxed px-2 mb-2 ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
                         {message}
                     </p>
                 </div>
 
                 {/* FOOTER */}
-                <div className="p-5 bg-white/40 backdrop-blur-md border-t border-white/60 flex relative z-10">
+                <div className={`p-5 backdrop-blur-md border-t flex relative z-10 ${
+                    isDark ? 'bg-black/20 border-white/10' : 'bg-white/40 border-white/60'
+                }`}>
                     <button 
                         onClick={onClose}
                         className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 transform-gpu border-none ${currentConfig.btn}`}

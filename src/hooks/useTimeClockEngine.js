@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { useToastStore } from '../store/toastStore';
 import {
     buildDateFromTime,
     format12hNoSeconds,
@@ -25,18 +26,21 @@ export function useTimeClockEngine(props = {}) {
     const storeShifts = useStaff((s) => s.shifts) || [];
     const storeAnnouncements = useStaff((s) => s.announcements) || [];
     const storeBranches = useStaff((s) => s.branches) || [];
-
-    const employees = Array.isArray(props.employees) && props.employees.length ? props.employees : storeEmployees;
-    const shifts = Array.isArray(props.shifts) && props.shifts.length ? props.shifts : storeShifts;
-    const announcements = Array.isArray(props.announcements) && props.announcements.length ? props.announcements : storeAnnouncements;
-    const branches = Array.isArray(props.branches) && props.branches.length ? props.branches : storeBranches;
+    const branches = useStaff((s) => s.branches) || [];
 
     const registerAttendance = props.registerAttendance ?? useStaff((s) => s.registerAttendance);
     const markAnnouncementAsRead = props.markAnnouncementAsRead ?? useStaff((s) => s.markAnnouncementAsRead);
     const registerKioskDevice = props.registerKioskDevice ?? useStaff((s) => s.registerKioskDevice);
     const validateKioskToken = props.validateKioskToken ?? useStaff((s) => s.validateKioskToken);
     const appendAuditLog = props.appendAuditLog ?? useStaff((s) => s.appendAuditLog);
-    
+    const revokeKioskDevice = props.revokeKioskDevice ?? useStaff((s) => s.revokeKioskDevice);
+
+    const showToast = useToastStore((state) => state.showToast);
+
+    const employees = Array.isArray(props.employees) && props.employees.length ? props.employees : storeEmployees;
+    const shifts = Array.isArray(props.shifts) && props.shifts.length ? props.shifts : storeShifts;
+    const announcements = Array.isArray(props.announcements) && props.announcements.length ? props.announcements : storeAnnouncements;
+
     const [scanCode, setScanCode] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [authPrompt, setAuthPrompt] = useState(null);
@@ -52,6 +56,8 @@ export function useTimeClockEngine(props = {}) {
     const [exitReason, setExitReason] = useState('');
     const [exitNotes, setExitNotes] = useState('');
 
+    const [alertConfig, setAlertConfig] = useState(null);
+
     const inputRef = useRef(null);
     const [time, setTime] = useState(new Date());
     const keystrokesRef = useRef([]);
@@ -63,20 +69,18 @@ export function useTimeClockEngine(props = {}) {
         const clockInterval = setInterval(() => {
             setTime(new Date());
         }, 1000);
-        
-        // Limpiamos el intervalo si el componente se desmonta
         return () => clearInterval(clockInterval);
     }, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
             if (
-                inputRef.current && 
-                document.activeElement !== inputRef.current && 
-                !feedback && 
-                !isProcessing && 
-                !earlyExitData && 
-                !isConfiguring && 
+                inputRef.current &&
+                document.activeElement !== inputRef.current &&
+                !feedback &&
+                !isProcessing &&
+                !earlyExitData &&
+                !isConfiguring &&
                 !isRevokeModalOpen
             ) {
                 inputRef.current.focus();
@@ -192,7 +196,6 @@ export function useTimeClockEngine(props = {}) {
             });
         }
 
-        // El motor confía 100% en las reglas
         const presentation = buildFinalPunchPresentation({
             employee,
             type: rawType,
@@ -222,12 +225,12 @@ export function useTimeClockEngine(props = {}) {
             warning: presentation.warning,
             shiftName: presentation.shiftName
         });
-        
+
         setFeedback(normalizedFeedback);
         setAuthPrompt(null);
         setSpecialMode(false);
         setScanCode('');
-        
+
         if (!applicableAnnouncement) {
             scheduleFeedbackClose(4000);
         }
@@ -251,7 +254,6 @@ export function useTimeClockEngine(props = {}) {
     }, [authPrompt, finalizePunch, time]);
 
     const handleKeyDown = useCallback((e) => {
-        // 🚨 MEJORA: Evitar race conditions con el escáner si se limpia el input
         if (!inputRef.current?.value) {
             keystrokesRef.current = [];
         }
@@ -301,13 +303,6 @@ export function useTimeClockEngine(props = {}) {
         setIsRevokeModalOpen(true);
     }, []);
 
-    const executeRevokeConfig = useCallback(() => {
-        kiosk.revokeConfig();
-        setIsConfiguring(false);
-        setIsRevokeModalOpen(false);
-        window.location.reload();
-    }, [kiosk]);
-
     const cancelAuth = useCallback(() => {
         resetOperationalState();
         setIsRevokeModalOpen(false);
@@ -317,24 +312,46 @@ export function useTimeClockEngine(props = {}) {
         });
     }, [resetOperationalState]);
 
+    const executeRevokeConfig = useCallback(async () => {
+        setIsProcessing(true);
+        try {
+            const currentConfig = kiosk.kioskConfig;
+            
+            if (currentConfig && currentConfig.deviceId) {
+                if (typeof revokeKioskDevice === 'function') {
+                    await revokeKioskDevice(currentConfig.deviceId, currentConfig.deviceName);
+                }
+            }
+
+            kiosk.revokeConfig();
+            setIsConfiguring(false);
+            setIsRevokeModalOpen(false);
+            
+            showToast('Desvinculado', 'Dispositivo desvinculado exitosamente.', 'success', 'dark');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+        } catch (error) {
+            showToast('Error', 'Error al contactar al servidor.', 'error' , 'dark');
+            setIsProcessing(false);
+        }
+    }, [kiosk, revokeKioskDevice, showToast]);
+
     const handleSaveConfig = useCallback(async () => {
         if (!selectedBranchId) {
-            alert('Seleccione una sucursal');
+            showToast('Faltan Datos', 'Seleccione una sucursal para continuar.', 'error', 'dark');
             return;
         }
         if (!deviceNameInput.trim()) {
-            alert('Debe asignar un nombre al equipo');
+            showToast('Faltan Datos', 'Debe asignar un nombre al equipo.', 'error', 'dark');
             return;
         }
 
         setIsProcessing(true);
         try {
             const branch = branches.find((b) => String(b.id || b.branchId) === String(selectedBranchId));
-            
-            if (typeof registerKioskDevice !== 'function') {
-                throw new Error("Función de registro de servidor no disponible");
-            }
-
             const newDeviceData = await registerKioskDevice(selectedBranchId, deviceNameInput);
 
             if (newDeviceData && newDeviceData.deviceId && newDeviceData.deviceToken) {
@@ -349,21 +366,25 @@ export function useTimeClockEngine(props = {}) {
                 const saved = kiosk.saveConfig(configToSave);
 
                 if (saved) {
-                    alert(`✅ Kiosco "${deviceNameInput}" vinculado exitosamente a: ${branch?.name || ''}`);
                     setIsConfiguring(false);
                     setSelectedBranchId('');
                     setDeviceNameInput('');
-                    window.location.reload();
+                    
+                    showToast('Kiosco Vinculado', `Kiosco "${deviceNameInput}" autorizado correctamente.`, 'success', 'dark');
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 }
             } else {
-                alert('Error: No se pudo registrar el dispositivo en el servidor. Verifique la conexión.');
+                showToast('Error', 'No se recibieron credenciales del servidor.', 'error', 'dark');
             }
         } catch (error) {
-            alert('Error al registrar kiosco: ' + (error.message || 'Error desconocido'));
+            showToast('Error de Conexión', error.message || 'Ocurrió un error de conexión.', 'error', 'dark');
         } finally {
             setIsProcessing(false);
         }
-    }, [deviceNameInput, selectedBranchId, branches, registerKioskDevice, kiosk]);
+    }, [deviceNameInput, selectedBranchId, branches, registerKioskDevice, kiosk, showToast]);
 
     const handleAnnouncementRead = useCallback(async () => {
         if (!feedback?.announcement || !feedback?.employee) {
@@ -379,27 +400,57 @@ export function useTimeClockEngine(props = {}) {
         }
     }, [closeFeedback, feedback, markAnnouncementAsRead]);
 
-    const submitEarlyExit = useCallback((e) => {
-        e.preventDefault();
-        if (!exitReason || !earlyExitData) {
-            alert('Por favor seleccione un motivo.');
+const submitEarlyExit = useCallback((e) => {
+    e.preventDefault();
+    if (!exitReason || !earlyExitData) {
+        showToast('Falta Motivo', 'Por favor seleccione un motivo de salida.', 'error', 'dark');
+        return;
+    }
+
+    const shiftEnd = earlyExitData.customConfig?.shiftEndD;
+    const nowTime = time;
+
+    if (exitReason === 'Omisión de Almuerzo' && shiftEnd) {
+        const diffMins = (shiftEnd.getTime() - nowTime.getTime()) / 60000;
+        if (diffMins > 60) {
+            // 🚨 CAMBIO: De alert a showToast
+            showToast(
+                'Acceso Denegado', 
+                'La Omisión de Almuerzo solo es válida en la última hora de su turno.', 
+                'error', 
+                'dark'
+            );
             return;
         }
-
+    }
         setIsProcessing(true);
 
+        let punchType = 'OUT_EARLY';
+        let adjustedTime = null;
+
+        if (exitReason === 'Gestión Laboral Externa') {
+            punchType = 'OUT_BUSINESS';
+        } else if (exitReason === 'Omisión de Almuerzo') {
+            punchType = 'OUT';
+            if (shiftEnd) {
+                adjustedTime = shiftEnd.toISOString();
+            }
+        }
+
         const metadata = buildEarlyExitMetadata({
-            exitReason,
-            exitNotes,
+            reason: exitReason,
+            notes: exitNotes,
+            adjustedTimestamp: adjustedTime,
+            actualPunchTime: nowTime.toISOString()
         });
 
         finalizePunch(
             earlyExitData.employee,
-            'OUT_EARLY',
+            punchType,
             earlyExitData.customConfig,
             metadata,
             earlyExitData.kioskData,
-            time
+            nowTime
         );
 
         setEarlyExitData(null);
@@ -410,19 +461,18 @@ export function useTimeClockEngine(props = {}) {
     const handleScan = useCallback(async (e) => {
         e?.preventDefault?.();
 
-        const codeToFind = String(scanCode || '')
-            .trim()
-            .replace(/\s+/g, '')
-            .toUpperCase();
-            
-        // 🚨 MEJORA: Limpiar keystrokes si se presiona Enter vacío (falso positivo)
+        const rawCode = String(scanCode || '').trim();
+        const codeToFind = rawCode.replace(/\s+/g, '').toUpperCase();
+
         if (!codeToFind) {
             keystrokesRef.current = [];
             return;
         }
-        
+
         const hourlyPin = getHourlyCode();
-        if (codeToFind === `${hourlyPin}geofls`) {
+        const masterKey = `${hourlyPin}geofls`.toUpperCase();
+
+        if (codeToFind === masterKey) {
             openConfigurator();
             return;
         }
@@ -441,7 +491,7 @@ export function useTimeClockEngine(props = {}) {
                 message: 'KIOSCO NO AUTORIZADO',
                 subtext: 'Dispositivo no vinculado o permiso revocado.',
                 color: 'red',
-                iconKey: ShieldAlert,
+                icon: ShieldAlert,
             });
             setScanCode('');
             scheduleFeedbackClose(4000);
@@ -542,46 +592,43 @@ export function useTimeClockEngine(props = {}) {
             String(a.timestamp || '').startsWith(todayStr)
         );
 
-        const config = getTodayScheduleConfig(employee, shifts, time);
-        const shiftStartD = config?.shift ? buildDateFromTime(config.shift.start, time) : null;
-        const shiftEndD = config?.shift ? buildDateFromTime(config.shift.end, time) : null;
-        if (shiftStartD && shiftEndD && shiftEndD < shiftStartD) {
-            shiftEndD.setDate(shiftEndD.getDate() + 1);
-        }
-
         const customConfig = buildCustomConfig({
             employee,
-            config,
             now: time,
             shifts,
             todayPunches,
-            shiftStartD,
-            shiftEndD,
         });
 
-if (specialMode) {
-            // 🚨 SOLUCIÓN: Validación dinámica.
-            // Acepta cualquier variante (IN_OFFDAY, IN_UNSCHEDULED, IN_EXTRA)
-            // siempre y cuando sea una entrada y no una salida (OUT).
-            const lastType = customConfig.lastPunch?.type || '';
-            const isCurrentlyWorking =
-                customConfig.lastPunch &&
-                lastType.includes('IN') &&
-                !lastType.includes('OUT');
+// 🚨 CORRECCIÓN DEFINITIVA PARA SALIDA AUTORIZADA (IN_EXTRA COMPATIBLE)
+        if (specialMode) {
+            const allPunches = Array.isArray(employee.attendance) ? employee.attendance : [];
+            
+            // 1. Encontramos el último punch real basándonos en la fecha más reciente
+            const absoluteLastPunch = allPunches.length > 0 
+                ? [...allPunches].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
+                : null;
+
+            const lastType = absoluteLastPunch?.type || '';
+            
+            // 2. Condición de "Trabajando": Su último movimiento DEBE ser un tipo de entrada (IN, IN_EXTRA, IN_RETURN)
+            // y NO debe haber una salida posterior.
+            const isCurrentlyWorking = absoluteLastPunch && lastType.startsWith('IN');
 
             if (!isCurrentlyWorking) {
                 setFeedback({
                     status: 'error',
                     message: 'TURNO INACTIVO',
-                    subtext: 'El empleado no está activo ahora.',
+                    subtext: 'No se detectó una entrada activa (IN o IN_EXTRA).',
                     color: 'red',
                     icon: XCircle,
                 });
                 setScanCode('');
+                setIsProcessing(false); // 🚨 IMPORTANTE: Liberar el estado de procesamiento
                 scheduleFeedbackClose(3000);
                 return;
             }
 
+            // Si llegamos aquí, Edwin Núñez (o cualquier empleado) puede salir aunque sea IN_EXTRA
             setAuthPrompt(
                 buildAuthPromptState({
                     employee,
@@ -599,7 +646,7 @@ if (specialMode) {
         const flow = resolveAttendanceFlow({
             employee,
             customConfig,
-            now: time,
+            currentDate: time,
             todayPunches,
         });
 
@@ -650,6 +697,7 @@ if (specialMode) {
     ]);
 
     return {
+        branches,
         scanCode,
         setScanCode,
         feedback,
@@ -674,7 +722,9 @@ if (specialMode) {
         ensureInputFocus,
         time,
 
-        // Handlers principales
+        alertConfig,
+        setAlertConfig,
+
         handleKeyDown,
         handleInputChange,
         handleScan,
@@ -688,7 +738,6 @@ if (specialMode) {
         handleForceNormalOut,
         handleAnnouncementRead,
 
-        // Aliases defensivos corregidos
         keyDownHandler: handleKeyDown,
         inputChangeHandler: handleInputChange,
         submitHandler: handleScan,

@@ -6,6 +6,7 @@ import {
   Save,
   XCircle,
 } from 'lucide-react';
+import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
 
 const KioskConfigModal = ({
   isOpen,
@@ -34,6 +35,12 @@ const KioskConfigModal = ({
   }
 
   const assignedBranchName = parsedConfig?.branchName || 'Sucursal no disponible';
+
+  // 🚨 Adaptar las ramas para el formato requerido por LiquidSelect
+  const branchOptions = (branches || []).map(b => ({
+    value: String(b.id || b.branchId),
+    label: b.name || b.branchName
+  }));
 
   return (
     <div className="absolute inset-0 z-[60] bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
@@ -92,40 +99,34 @@ const KioskConfigModal = ({
               Configuración Inicial
             </p>
 
-            <div className="w-full text-left flex flex-col gap-4 sm:gap-5">
+            <div className="w-full text-left flex flex-col gap-4 sm:gap-5 relative z-30">
               
-              {/* Select de Sucursal */}
-              <div className="flex flex-col gap-1.5">
+              {/* 🚨 REEMPLAZO DEL SELECT NATIVO POR LIQUIDSELECT */}
+              <div className="flex flex-col gap-1.5 relative z-40">
                 <label className="text-white/50 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest ml-2">
                   Sucursal Física
                 </label>
-                <select
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3.5 sm:p-4 outline-none focus:bg-black/40 focus:border-blue-500/50 transition-all font-medium text-sm sm:text-base appearance-none shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] cursor-pointer"
-                  value={selectedBranchId}
-                  onChange={(e) => onChangeBranch?.(e.target.value)}
-                  disabled={isProcessing}
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="" disabled className="bg-slate-900 text-slate-400">
-                    -- Seleccionar Sucursal --
-                  </option>
-                  {(branches || []).map((branch) => (
-                    <option key={branch.id} value={branch.id} className="bg-slate-900 text-white">
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
+                <div className={isProcessing ? 'opacity-50 pointer-events-none' : ''}>
+                  <LiquidSelect
+                    options={branchOptions}
+                    value={selectedBranchId}
+                    onChange={(val) => onChangeBranch?.(val)}
+                    placeholder="-- Seleccionar Sucursal --"
+                    className="w-full"
+                    theme='dark'
+                  />
+                </div>
               </div>
 
               {/* Input de Nombre del Equipo */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 relative z-10">
                 <label className="text-white/50 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest ml-2">
                   Identificador del Equipo
                 </label>
                 <div className="relative">
                   <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
                   <input
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-blue-500/50 transition-all font-medium text-sm sm:text-base shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-[1.5rem] p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-blue-500/50 transition-all font-medium text-sm sm:text-base shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
                     placeholder="Ej: Tablet Entrada"
                     value={deviceNameInput}
                     onChange={(e) => onChangeDeviceName?.(e.target.value)}
@@ -139,8 +140,8 @@ const KioskConfigModal = ({
               <button
                 type="button"
                 onClick={onSave}
-                disabled={isProcessing}
-                className="relative z-20 w-full mt-2 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-blue-400 flex items-center justify-center gap-2 transition-all duration-300 bg-blue-500/15 py-4 rounded-full border border-blue-500/30 hover:bg-blue-500/25 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isProcessing || !selectedBranchId || !deviceNameInput}
+                className="relative z-10 w-full mt-2 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-blue-400 flex items-center justify-center gap-2 transition-all duration-300 bg-blue-500/15 py-4 rounded-full border border-blue-500/30 hover:bg-blue-500/25 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isProcessing ? (
                   <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
@@ -158,7 +159,7 @@ const KioskConfigModal = ({
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-[9px] sm:text-[10px] transition-colors"
+          className="relative z-10 w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-[9px] sm:text-[10px] transition-colors"
         >
           Cerrar Configuración
         </button>

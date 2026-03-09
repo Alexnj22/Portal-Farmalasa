@@ -170,12 +170,18 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
     if (p.length === 0) return { status: 'ABSENT', label: 'Sin Marcar', color: 'bg-gray-100 text-gray-500 border-gray-200' }; 
     
     const l = p[p.length - 1]; 
-    if (l.type === 'IN' || l.type === 'IN_LUNCH' || l.type === 'IN_LACTATION') 
+    const lastType = l.type || '';
+    
+    // 🚨 CORRECCIÓN: Patrón robusto para detectar si está trabajando, sin importar el tipo de entrada
+    if (lastType.startsWith('IN')) 
         return { status: 'WORKING', label: 'En Labores', color: 'bg-green-100 text-green-700 border-green-200' }; 
-    else if (l.type === 'OUT_LUNCH') 
+    else if (lastType === 'OUT_LUNCH') 
         return { status: 'LUNCH', label: 'En Almuerzo', color: 'bg-orange-100 text-orange-700 border-orange-200' };
-    else if (l.type === 'OUT_LACTATION')
+    else if (lastType === 'OUT_LACTATION')
         return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-pink-100 text-pink-700 border-pink-200' };
+    else if (lastType === 'OUT_BUSINESS')
+        // 🚨 NUEVO: Etiqueta especial para Gestión Externa
+        return { status: 'BUSINESS', label: 'Gestión Externa', color: 'bg-blue-100 text-blue-700 border-blue-200' };
     else 
         return { status: 'OUT', label: 'Salida Laboral', color: 'bg-slate-100 text-slate-700 border-slate-200' }; 
 };

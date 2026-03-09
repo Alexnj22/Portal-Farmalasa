@@ -288,12 +288,32 @@ export const buildLateOutAdjustedMetadata = ({
 export const buildEarlyExitMetadata = ({
   reason = '',
   notes = '',
+  adjustedTimestamp = null,
+  actualPunchTime = null,
 } = {}) => {
-  return {
+  const isMedical = reason === 'Permiso Médico / Consulta';
+  const isBusiness = reason === 'Gestión Laboral Externa';
+  const skippedLunch = reason === 'Omisión de Almuerzo';
+
+  const metadata = {
     reason: asText(reason),
     notes: asText(notes),
-    requiresAttachment: reason === 'Permiso Médico / Consulta',
+    
+    // 🚨 Banderas Inteligentes para RRHH / Planilla
+    requiresAttachment: isMedical, // RRHH pedirá el comprobante
+    isPendingMedical: isMedical, // Congela el descuento de horas temporalmente
+    isPaidBusiness: isBusiness, // RRHH toma la jornada como completa
+    skippedLunch: skippedLunch, // RRHH ignora la salida anticipada
   };
+
+  // 🚨 Ajuste silencioso para Planilla (Si salió 30 min antes sin almuerzo, se calcula como salida normal)
+  if (adjustedTimestamp) {
+    metadata.adjustedTimestamp = adjustedTimestamp;
+    metadata.actualPunchTime = actualPunchTime;
+    metadata.note = `Jornada sin almuerzo. Ajustado a fin de turno para cálculo de planilla.`;
+  }
+
+  return metadata;
 };
 
 export const buildYesterdayMissedPunchWarning = ({
@@ -309,7 +329,9 @@ export const buildYesterdayMissedPunchWarning = ({
   if (!yesterdayPunches.length) return '';
 
   const lastType = yesterdayPunches[yesterdayPunches.length - 1]?.type;
-  const closingTypes = ['OUT', 'OUT_EXTRA', 'OUT_EARLY'];
+  
+  // 🚨 CORRECCIÓN: Agregado 'OUT_BUSINESS' a los tipos de cierre válidos
+  const closingTypes = ['OUT', 'OUT_EXTRA', 'OUT_EARLY', 'OUT_BUSINESS'];
 
   if (!closingTypes.includes(lastType)) {
     return '⚠️ NOTA: Olvidaste marcar tu salida el día de ayer.';

@@ -32,14 +32,13 @@ export default function IdleScanPanel({
 
   return (
     <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
-      
+
       <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-5 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
-        
+
         {/* TOP: Ícono y Títulos */}
         <div className="flex flex-col items-center text-center w-full mb-4 sm:mb-6 shrink-0 group/icon">
-          <div className={`inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${
-            specialMode ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-blue-500/10 border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
-          }`}>
+          <div className={`inline-flex p-4 rounded-[1.5rem] mb-3 sm:mb-5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(249,115,22,0.3)]' : 'bg-blue-500/10 border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover/icon:shadow-[0_0_50px_rgba(59,130,246,0.3)]'
+            }`}>
             {specialMode ? <ShieldAlert size={42} className="text-orange-400 drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} /> : <ScanBarcode size={42} className="text-blue-400 drop-shadow-[0_2px_10px_rgba(59,130,246,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />}
           </div>
           <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight leading-tight mb-1 sm:mb-1.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
@@ -48,7 +47,7 @@ export default function IdleScanPanel({
 
         {/* MIDDLE: Formulario e Input */}
         <form onSubmit={submitHandler} className="relative z-20 w-full pointer-events-auto flex-1 flex flex-col justify-center min-h-0 shrink-0 py-2 sm:py-4">
-          
+
           <div className="relative w-full group/input cursor-text">
             {/* 🚨 INPUT BLINDADO (Anti-Copia, Anti-Inspect) */}
             <input
@@ -56,23 +55,28 @@ export default function IdleScanPanel({
               type="password"
               onChange={inputChangeHandler}
               onKeyDown={keyDownHandler}
-              onContextMenu={(e) => e.preventDefault()} // Bloquea click derecho
-              onCopy={(e) => e.preventDefault()} // Bloquea copiar
-              onPaste={(e) => e.preventDefault()} // Bloquea pegar
-              onCut={(e) => e.preventDefault()} // Bloquea cortar
-              onDragOver={(e) => e.preventDefault()} // Bloquea arrastre
-              onDrop={(e) => e.preventDefault()} // Bloquea soltar texto
+              onContextMenu={(e) => e.preventDefault()}
+              onCopy={(e) => e.preventDefault()}
+              onPaste={(e) => e.preventDefault()}
+              onCut={(e) => e.preventDefault()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => e.preventDefault()}
               autoComplete="new-password"
               spellCheck="false"
               placeholder={specialMode ? 'ESCANEE PARA AUTORIZAR' : 'ESCANEE SU CARNET'}
-              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-4 sm:py-5 rounded-3xl focus:outline-none transition-all duration-300 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] focus:bg-black/40 select-none 
-                ${specialMode ? 'focus:border-orange-500/50 placeholder:text-orange-400/50' : 'focus:border-blue-500/50 placeholder:text-white/40'}
-                ${hasValue 
-                  ? 'text-3xl sm:text-4xl tracking-[0.5em] sm:tracking-[1em]' // Estilo gigante de contraseña
-                  : 'text-xs sm:text-sm tracking-[0.2em] font-bold uppercase' // Estilo elegante de placeholder
-                }`}
+              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-4 sm:py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none 
+    
+    text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em]
+    
+    placeholder:text-[10px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase
+    ${specialMode ? 'placeholder:text-orange-400/50' : 'placeholder:text-white/40'}
+    
+    caret-transparent
+    
+    /* 🚨 LA MAGIA SUCEDE AQUÍ: Clases directas al CSS */
+    ${specialMode ? 'virtual-caret-orange' : 'virtual-caret-blue'}
+  `}
             />
-            
             {/* Botón Flotante Limpiar (Solo visible si hay texto) */}
             {hasValue && (
               <button
@@ -85,9 +89,8 @@ export default function IdleScanPanel({
               </button>
             )}
 
-            <div className={`absolute inset-0 z-10 rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none ${
-              specialMode ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)] group-focus-within/input:opacity-100' : 'shadow-[0_0_20px_rgba(59,130,246,0.2)] group-focus-within/input:opacity-100'
-            }`} />
+            <div className={`absolute inset-0 z-10 rounded-3xl opacity-0 transition-opacity duration-500 pointer-events-none ${specialMode ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)] group-focus-within/input:opacity-100' : 'shadow-[0_0_20px_rgba(59,130,246,0.2)] group-focus-within/input:opacity-100'
+              }`} />
           </div>
 
           <div className="mt-4 sm:mt-6 flex flex-col items-center justify-center gap-3 sm:gap-4">

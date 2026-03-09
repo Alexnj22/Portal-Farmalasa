@@ -116,10 +116,8 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
     }, []);
 
     return (
-        <div className="flex h-screen bg-transparent font-sans overflow-hidden relative">
-            {/* SIDEBAR */}
-            <aside className={`${isSidebarOpen ? 'w-[19rem]' : 'w-[5.5rem]'} transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col z-30 relative shrink-0 ml-2 my-2 ${blurClasses}`}>
-
+        <div className="flex w-full min-h-[100dvh] bg-transparent font-sans overflow-hidden relative">
+            <aside className={`${isSidebarOpen ? 'w-[19rem]' : 'w-[5.5rem]'} transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col z-30 relative shrink-0 ml-[max(env(safe-area-inset-left,8px),8px)] my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}>
                 <div className="absolute inset-y-0 left-0 right-0 -z-10 pointer-events-none">
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
                     <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />

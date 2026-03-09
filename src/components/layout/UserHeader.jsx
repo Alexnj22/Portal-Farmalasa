@@ -1,9 +1,14 @@
 import React from 'react';
-import { LogOut, Building2, ChevronDown } from 'lucide-react';
+import { LogOut, Building2 } from 'lucide-react';
 
 const UserHeader = ({ user, handleLogout }) => {
   return (
-    <header className="sticky top-0 z-50 px-6 py-4 animate-in slide-in-from-top-4 fade-in duration-700">
+    // 🚨 MAGIA PARA IOS: El padding-top se ajusta dinámicamente al notch/isla
+    <header className="sticky top-0 z-50 w-full animate-in slide-in-from-top-4 fade-in duration-700 
+        pt-[max(env(safe-area-inset-top,16px),16px)] 
+        pb-4 
+        pl-[max(env(safe-area-inset-left,24px),24px)] 
+        pr-[max(env(safe-area-inset-right,24px),24px)]">
         
         {/* Contenedor Glass Flotante */}
         <div className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl px-5 py-3 transition-all hover:bg-white/80 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">

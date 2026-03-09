@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Building2, Clock, ScanBarcode, Loader2, ChevronRight,
-    ExternalLink, ShoppingCart, Pill, AlertCircle
+    Clock, ScanBarcode, Loader2, ChevronRight,
+    ShoppingCart, Pill, AlertCircle
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -9,10 +9,12 @@ import { useAuth } from '../context/AuthContext';
 const LoginView = ({ setView, setActiveEmployee }) => {
     const { login, isAdmin, user } = useAuth();
 
-    const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // 🚨 SEGURIDAD: Usamos useRef en lugar de useState para el input.
+    // Esto hace que sea "Uncontrolled". React no imprimirá el 'value' en el HTML crudo, 
+    // protegiendo el código de "Inspeccionar Elemento".
     const inputRef = useRef(null);
 
     useEffect(() => {
@@ -45,7 +47,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         e.preventDefault();
         setError('');
 
-        if (!inputValue.trim()) {
+        // Obtenemos el código directo de la memoria del DOM
+        const code = inputRef.current?.value || '';
+
+        if (!code.trim()) {
             setError('Por favor, ingresa tu código.');
             return;
         }
@@ -53,16 +58,20 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setIsLoading(true);
 
         try {
-            const success = await login(inputValue);
+            const success = await login(code);
 
             if (!success) {
                 setError('Código inválido o no encontrado.');
                 setIsLoading(false);
+                if (inputRef.current) inputRef.current.value = ''; // Limpiamos la caja
+                inputRef.current?.focus();
             }
         } catch (err) {
             console.error(err);
             setError('Error de conexión. Intenta de nuevo.');
             setIsLoading(false);
+            if (inputRef.current) inputRef.current.value = '';
+            inputRef.current?.focus();
         }
     };
 
@@ -70,14 +79,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setView('timeclock');
     };
 
-    // 🚨 CLASES MAESTRAS LIQUIDGLASS EXTREMO
-    const glassPanelClass = "bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.5)]";
-    const glassHoverClass = "transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-white/60 hover:border-white hover:shadow-[0_30px_60px_rgba(0,122,255,0.15),inset_0_2px_20px_rgba(255,255,255,1)] hover:-translate-y-2";
-
     return (
-        // 🚨 CRÍTICO: bg-transparent para que tu GlobalBackground de App.js se vea perfectamente
-<div className="min-h-[100dvh] w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-            {/* Si por alguna razón el GlobalBackground no cubre esta vista, dejamos tu código exacto como capa base aquí */}
+        <div className="min-h-[100dvh] w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+            
+            {/* FONDO AMBIENTAL */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/10 rounded-full filter blur-[120px] animate-ambient-drift" />
                 <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#5856D6]/10 rounded-full filter blur-[120px] animate-ambient-drift-reverse" />
@@ -87,41 +92,64 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 />
             </div>
 
-            {/* 🚨 WIDGETS LATERALES (Liquidglass con levitación extrema) */}
-            <div className="absolute left-[calc(50%+280px)] top-1/2 -translate-y-1/2 flex-col gap-6 z-20 hidden lg:flex">
+            {/* DOCK LATERAL DERECHO */}
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-20 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
+                
+                {/* Botón Ventas */}
                 <a
                     href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex flex-col items-center justify-center w-[110px] h-[110px] rounded-[2.5rem] ${glassPanelClass} ${glassHoverClass} hover:scale-105`}
+                    className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-95"
                 >
-                    <ShoppingCart size={32} className="text-[#007AFF] relative z-10 mb-2 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1" strokeWidth={1.5} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 relative z-10 group-hover:text-[#007AFF] transition-colors">Ventas</span>
-                    <ExternalLink size={14} className="absolute top-4 right-4 text-[#007AFF]/40 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500" />
+                    <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="overflow-hidden flex items-center justify-start">
+                            <span className="text-[#007AFF] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                Ventas
+                            </span>
+                        </div>
+                    </div>
+                    <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                        <ShoppingCart size={24} className="text-slate-500 group-hover:text-[#007AFF] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                    </div>
                 </a>
 
+                {/* Divisor centrado */}
+                <div className="w-10 h-[2px] bg-white/50 mr-3 rounded-full transition-all duration-300 group-hover:bg-white/80" />
+
+                {/* Botón FarmaLasa */}
                 <a
                     href="https://farmalasa.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex flex-col items-center justify-center w-[110px] h-[110px] rounded-[2.5rem] ${glassPanelClass} ${glassHoverClass} hover:scale-105`}
+                    className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(88,86,214,0.2)] transition-all duration-500 overflow-hidden active:scale-95"
                 >
-                    <Pill size={32} className="text-[#5856D6] relative z-10 mb-2 transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-1" strokeWidth={1.5} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 relative z-10 group-hover:text-[#5856D6] transition-colors">FarmaLasa</span>
-                    <ExternalLink size={14} className="absolute top-4 right-4 text-[#5856D6]/40 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500" />
+                    <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="overflow-hidden flex items-center justify-start">
+                            <span className="text-[#5856D6] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                Farmalasa
+                            </span>
+                        </div>
+                    </div>
+                    <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                        <Pill size={24} className="text-slate-500 group-hover:text-[#5856D6] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                    </div>
                 </a>
             </div>
 
-            {/* 🚨 CONTENEDOR PRINCIPAL */}
-            <div className="w-full max-w-[460px] p-5 relative z-10 flex flex-col items-center">
+            {/* CONTENEDOR PRINCIPAL */}
+            <div className="w-full max-w-[460px] p-5 relative z-10 flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
 
-                {/* 🚨 TARJETA MAESTRA: Ahora reacciona al hover general para dar sensación de objeto 3D flotante */}
-                <div className={`w-full rounded-[3.5rem] p-8 md:p-12 relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1`}>
+                <div className="w-full rounded-[3.5rem] p-8 md:p-12 relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1">
 
-                    {/* ICONO Y TÍTULOS */}
+                    {/* LOGO OFICIAL FLS */}
                     <div className="flex flex-col items-center mb-8">
-                        <div className="w-16 h-16 bg-white/60 backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.5rem] flex items-center justify-center text-[#007AFF] mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1">
-                            <Building2 size={30} strokeWidth={2} className="relative z-10" />
+                        <div className="w-20 h-20 bg-white/60 backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.75rem] flex items-center justify-center mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1">
+                            <img 
+                                src="/LogoFLS.svg" 
+                                alt="FarmaLasa" 
+                                className="w-12 h-12 relative z-10 drop-shadow-sm transition-transform duration-500 group-hover:scale-105" 
+                            />
                         </div>
                         <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                             Portal
@@ -133,24 +161,35 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     <form onSubmit={handleLogin} className="flex flex-col gap-5 relative">
 
-                        {/* 🚨 INPUT CÓDIGO CRISTALINO */}
-                        <div className="relative group z-20">
-                            <div className="absolute inset-y-0 left-0 pl-6 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300">
+                        {/* 🚨 CAJA DE CÓDIGO BLINDADA Y PERFECTAMENTE ALINEADA */}
+                        <div className="relative group z-20 flex items-center">
+                            {/* Ícono de Scan Independiente - Ahora usa z-30 y no compite con el input */}
+                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
                                 <ScanBarcode size={24} strokeWidth={2} />
                             </div>
 
+                            {/* - type="text": Evita que salte el gestor de contraseñas
+                              - [-webkit-text-security:disc]: Transforma las letras en puntos visualmente (Hack de Kiosco)
+                              - Eventos OnX: Evitan clic derecho, copiar, pegar o arrastrar
+                            */}
                             <input
                                 ref={inputRef}
                                 type="text"
+                                name="acceso_seguro_fls"
                                 placeholder="CÓDIGO"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:shadow-[0_10px_30px_rgba(0,122,255,0.1),inset_0_2px_10px_rgba(255,255,255,1)] transition-all duration-500 text-lg md:text-xl tracking-[0.15em] font-black uppercase"
+                                onContextMenu={(e) => e.preventDefault()}
+                                onCopy={(e) => e.preventDefault()}
+                                onPaste={(e) => e.preventDefault()}
+                                onCut={(e) => e.preventDefault()}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => e.preventDefault()}
                                 autoComplete="off"
+                                spellCheck="false"
+                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:shadow-[0_10px_30px_rgba(0,122,255,0.1),inset_0_2px_10px_rgba(255,255,255,1)] transition-all duration-500 text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc] select-none"
                             />
                         </div>
 
-                        {/* 🚨 CONTENEDOR DE ERROR */}
+                        {/* CONTENEDOR DE ERROR */}
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="px-5 py-3.5 bg-red-50/50 backdrop-blur-md border border-red-200/80 rounded-[1.25rem] flex items-center gap-3 shadow-[0_8px_20px_rgba(239,68,68,0.15),inset_0_1px_5px_rgba(255,255,255,1)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_25px_rgba(239,68,68,0.25),inset_0_1px_5px_rgba(255,255,255,1)] hover:bg-white/90 hover:border-red-300">
@@ -160,7 +199,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             </div>
                         )}
 
-                        {/* 🚨 BOTÓN INGRESO GLOSSY */}
+                        {/* BOTÓN INGRESO GLOSSY */}
                         <button
                             type="submit"
                             disabled={isLoading}
@@ -172,12 +211,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </button>
                     </form>
 
-                    {/* 🚨 SEPARADOR */}
+                    {/* SEPARADOR */}
                     <div className="flex items-center gap-4 my-8 opacity-60">
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-400/30 to-slate-400/30"></div>
                     </div>
 
-                    {/* 🚨 BOTÓN KIOSCO (Panel flotante interactivo) */}
+                    {/* BOTÓN KIOSCO */}
                     <button
                         onClick={handleGoToKiosk}
                         className={`w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between group cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-white/60 hover:border-white hover:shadow-[0_15px_35px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:-translate-y-1 active:scale-95`}
@@ -199,33 +238,28 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            {/* 🚨 VERSIÓN MÓVIL DE LOS BOTONES EXTERNOS */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-20 lg:hidden px-5">
+            {/* DOCK INFERIOR FLOTANTE (Móvil) */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 p-3 z-20 w-[90%] max-w-[360px] lg:hidden bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in slide-in-from-bottom-8 duration-700 hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1 transition-all ease-[cubic-bezier(0.23,1,0.32,1)]">
                 <a
                     href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] ${glassPanelClass} active:scale-95 transition-transform`}
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(0,122,255,0.15)] group"
                 >
-                    <ShoppingCart size={16} strokeWidth={2.5} className="text-[#007AFF]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Ventas</span>
+                    <ShoppingCart size={16} strokeWidth={2.5} className="text-[#007AFF] group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#007AFF] transition-colors">Ventas</span>
                 </a>
                 <a
                     href="https://farmalasa.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] ${glassPanelClass} active:scale-95 transition-transform`}
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(88,86,214,0.15)] group"
                 >
-                    <Pill size={16} strokeWidth={2.5} className="text-[#5856D6]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">FarmaLasa</span>
+                    <Pill size={16} strokeWidth={2.5} className="text-[#5856D6] group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#5856D6] transition-colors">FarmaLasa</span>
                 </a>
             </div>
 
-            <style>{`
-                @keyframes shimmer {
-                    100% { transform: translateX(100%); }
-                }
-            `}</style>
         </div>
     );
 };

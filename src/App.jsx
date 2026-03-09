@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 // Contextos
 import { useAuth } from "./context/AuthContext";
@@ -24,7 +25,7 @@ import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import LiquidToast from './components/common/LiquidToast';
 
-// ✅ COMPONENTE DE SINCRONIZACIÓN AUTOMÁTICA
+// ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA (Sin recargas de página)
 const AuthSyncHelper = () => {
     const { user } = useAuth();
     const employees = useStaff((state) => state.employees);
@@ -34,12 +35,11 @@ const AuthSyncHelper = () => {
 
         const freshUser = employees.find((e) => String(e.id) === String(user.id));
 
-        if (freshUser) {
-            if (freshUser.photo !== user.photo) {
-                const updatedUser = { ...user, photo: freshUser.photo };
-                localStorage.setItem("sb_user", JSON.stringify(updatedUser));
-                window.location.reload();
-            }
+        if (freshUser && freshUser.photo !== user.photo) {
+            // Actualizamos la caché de forma silenciosa.
+            // Zustand ya tiene los datos frescos para la UI, no necesitamos recargar la página.
+            const updatedUser = { ...user, photo: freshUser.photo };
+            localStorage.setItem("sb_user", JSON.stringify(updatedUser));
         }
     }, [employees, user]);
 
@@ -47,12 +47,12 @@ const AuthSyncHelper = () => {
 };
 
 // ============================================================================
-// 🚀 APLICACIÓN PRINCIPAL (NUEVO MODO ENRUTADOR)
+// 🚀 APLICACIÓN PRINCIPAL (NUEVO MODO ENRUTADOR REACTIVO)
 // ============================================================================
 function MainApp() {
     const { user, logout, isAuthenticated, isAdmin, loading } = useAuth();
 
-    // ✅ OBTENEMOS LAS FUNCIONES DE ZUSTAND (Agrupadas por limpieza)
+    // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
     const updateEmployee = useStaff((state) => state.updateEmployee);
     const registerEmployeeEvent = useStaff((state) => state.registerEmployeeEvent);
@@ -65,27 +65,33 @@ function MainApp() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // 🌟 DISPARADOR DE CARGA INTELIGENTE Y SEGURO
+    // 🌟 DISPARADOR DE CARGA INTELIGENTE (Se ejecuta en segundo plano)
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchBoot();
-        } else if (location.pathname === '/kiosk') {
-            fetchKioskBoot();
-        }
+        let isSubscribed = true;
+
+        const loadData = async () => {
+            if (isAuthenticated) {
+                await fetchBoot();
+            } else if (location.pathname === '/kiosk') {
+                await fetchKioskBoot();
+            }
+        };
+
+        loadData();
+        return () => { isSubscribed = false; };
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
-    // 🌟 LA MAGIA: Leemos la vista actual desde la URL
+    // 🌟 FACHADA DE RUTAS: Convertimos los setView antiguos en cambios de URL reales
     const currentPath = location.pathname.substring(1);
     const view = currentPath || (isAdmin ? "dashboard" : "profile");
 
-    // 🌟 FACHADA: Convertimos los setView antiguos en cambios de URL reales
     const setView = (targetView) => {
         if (targetView === "timeclock") navigate("/kiosk");
         else if (targetView === "login") navigate("/login");
-        else navigate(`/${targetView}`); // Aseguramos ruta absoluta
+        else navigate(`/${targetView}`);
     };
 
-    // Estados de UI (Preservados exactos)
+    // Estados de UI
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedBranch, setSelectedBranch] = useState("ALL");
     const [modalOpen, setModalOpen] = useState(false);
@@ -97,64 +103,17 @@ function MainApp() {
     const [isAuditOverlayActive, setIsAuditOverlayActive] = useState(false);
     const [activeBranch, setActiveBranch] = useState(null);
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+    
     const showAlert = (title, message, type = 'info') => {
         setAlertConfig({ isOpen: true, title, message, type });
     };
 
     const emptyWeekSchedule = () => ({
-        1: { start: "", end: "", isOpen: false },
-        2: { start: "", end: "", isOpen: false },
-        3: { start: "", end: "", isOpen: false },
-        4: { start: "", end: "", isOpen: false },
-        5: { start: "", end: "", isOpen: false },
-        6: { start: "", end: "", isOpen: false },
+        1: { start: "", end: "", isOpen: false }, 2: { start: "", end: "", isOpen: false },
+        3: { start: "", end: "", isOpen: false }, 4: { start: "", end: "", isOpen: false },
+        5: { start: "", end: "", isOpen: false }, 6: { start: "", end: "", isOpen: false },
         0: { start: "", end: "", isOpen: false },
     });
-
-    const normalizeBranchToForm = (branch) => {
-        if (!branch) return null;
-
-        const weekly = branch.weeklyHours || branch.branchSchedule || {};
-        const schedule = emptyWeekSchedule();
-
-        [1, 2, 3, 4, 5, 6, 0].forEach((d) => {
-            const src = weekly?.[d];
-            if (src) {
-                const isOpen = typeof src.isOpen === "boolean" ? src.isOpen : true;
-                const start = src.start ?? "";
-                const end = src.end ?? "";
-
-                schedule[d] = {
-                    isOpen,
-                    start: isOpen ? start : "",
-                    end: isOpen ? end : "",
-                };
-
-                if (schedule[d].isOpen === false) {
-                    schedule[d].start = "";
-                    schedule[d].end = "";
-                }
-            }
-        });
-
-        return {
-            branchId: branch.id ?? branch.branchId ?? null,
-            branchName: branch.branchName ?? branch.name ?? "",
-            address: branch.address ?? "",
-            phone: branch.phone ?? "",
-            cell: branch.cell ?? "",
-            id: branch.id ?? branch.branchId ?? null,
-            name: branch.name ?? branch.branchName ?? "",
-            opening_date: branch.opening_date ?? branch.openingDate ?? "",
-            openingDate: branch.openingDate ?? branch.opening_date ?? "",
-            weekly_hours: branch.weekly_hours ?? branch.weeklyHours ?? {},
-            weeklyHours: branch.weeklyHours ?? branch.weekly_hours ?? {},
-            settings: branch.settings ?? {},
-            branchSchedule: schedule,
-            propertyType: branch.propertyType ?? (branch.settings?.propertyType ?? "OWNED"),
-            rent: branch.rent ?? (branch.settings?.rent ?? null),
-        };
-    };
 
     const defaultNewBranchForm = () => ({
         branchName: "", address: "", phone: "", cell: "",
@@ -162,13 +121,13 @@ function MainApp() {
         propertyType: "OWNED", rent: null, branchSchedule: emptyWeekSchedule(),
     });
 
-    // ✅ Logout Modo Pro (Blindado)
+    // 🚨 LOGOUT FLUIDO: Ya no usamos navigate("/login") aquí.
+    // Al llamar a logout(), el estado isAuthenticated pasa a false y React Router hace el resto al instante.
     const handleLogout = async () => {
         try {
             if (logout) await logout();
-            navigate("/login");
         } catch (error) {
-            navigate("/login");
+            console.error(error);
         }
     };
 
@@ -194,7 +153,6 @@ function MainApp() {
     const handleSubmit = async (payload) => {
         if (payload?.preventDefault) payload.preventDefault();
 
-        // Evitar fallos si payload es null o un evento sintético vacío
         const dataToSave = (payload && !payload.nativeEvent) ? payload : formData;
         const targetId = activeEmployee?.id || dataToSave?.id || dataToSave?.branchId || user?.id;
 
@@ -220,22 +178,25 @@ function MainApp() {
         }
     };
 
-    // --- PANTALLA DE CARGA ---
+    // --- 🚨 PANTALLA DE CARGA LIQUIDGLASS (Sin parpadeos blancos) ---
     if (loading) {
         return (
-            <div className="fixed inset-0 w-full h-full bg-[#F2F2F7] overflow-hidden">
+            <div className="fixed inset-0 w-full h-full bg-[#F2F2F7] overflow-hidden flex items-center justify-center">
                 <GlobalBackground />
-                <div className="relative z-10 w-full h-full grid place-items-center">
-                    <div className="text-slate-500 font-semibold uppercase tracking-widest text-sm animate-pulse">Verificando sesión...</div>
+                <div className="relative z-10 flex flex-col items-center justify-center gap-4 bg-white/40 backdrop-blur-xl border border-white/80 p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in-95 duration-500">
+                    <Loader2 size={32} className="text-[#007AFF] animate-spin" strokeWidth={2.5} />
+                    <span className="text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse">
+                        Verificando sesión...
+                    </span>
                 </div>
             </div>
         );
     }
 
-    // --- ENRUTADOR REACT ROUTER ---
+    // --- ENRUTADOR REACT ROUTER (Reglas estrictas e instantáneas) ---
     return (
         <Routes>
-            {/* 1) KIOSKO */}
+            {/* 1) KIOSKO (Ruta pública/independiente) */}
             <Route path="/kiosk" element={<TimeClockView setView={setView} />} />
 
             {/* 2) LOGIN */}
@@ -277,6 +238,8 @@ function MainApp() {
                                         <Route path="employee-detail" element={activeEmployee ? <EmployeeDetailView activeEmployee={activeEmployee} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} /> : <Navigate to="/dashboard" replace />} />
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
                                         <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
+                                        
+                                        {/* Fallback de rutas Admin */}
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>
                                 </AdminLayout>
@@ -285,6 +248,8 @@ function MainApp() {
                                     <UserHeader user={user} handleLogout={handleLogout} />
                                     <Routes>
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        
+                                        {/* Fallback de rutas Usuario */}
                                         <Route path="*" element={<Navigate to="/profile" replace />} />
                                     </Routes>
                                 </div>
@@ -315,16 +280,28 @@ function MainApp() {
 }
 
 // ============================================================================
-// ENVOLTORIO BASE
+// ENVOLTORIO BASE CON INYECCIÓN DE TOAST DINÁMICA
 // ============================================================================
 export default function App() {
     return (
         <BrowserRouter>
-            <MainApp />
-            <LiquidToast />
+            <AppWithToast />
         </BrowserRouter>
     );
 }
+
+// Sub-componente para poder usar useLocation y determinar el tema del Toast
+const AppWithToast = () => {
+    const location = useLocation();
+    const isKioskMode = location.pathname.startsWith('/kiosk');
+
+    return (
+        <>
+            <MainApp />
+            <LiquidToast theme={isKioskMode ? 'dark' : 'light'} />
+        </>
+    );
+};
 
 const GlobalBackground = () => (
     <div className="absolute inset-0 z-0 pointer-events-none">

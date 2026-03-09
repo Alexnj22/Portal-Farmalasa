@@ -76,7 +76,6 @@ export const AuthProvider = ({ children }) => {
     }
     window.removeEventListener("mousemove", onActivity, true);
     window.removeEventListener("keydown", onActivity, true);
-    // 🛡️ MEJORA: `wheel` es mucho más seguro que `scroll` para detectar inactividad real.
     window.removeEventListener("wheel", onActivity, true);
     window.removeEventListener("click", onActivity, true);
     window.removeEventListener("touchstart", onActivity, true);
@@ -92,31 +91,32 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(LS_LAST);
   };
 
+  // 🚨 LOGOUT FLUIDO (OPTIMISTIC UI)
   const doLogout = async (reason = "LOGOUT") => {
+    // 1. Detenemos los relojes de inmediato
+    stopIdleWatcher();
+    
+    // 2. Limpiamos la memoria local
+    clearAuthCache();
+    clearErpCache();
+
+    // 3. 🚨 ESTO ES LA MAGIA: Vaciamos el usuario. 
+    // React Router detectará esto al instante y te enviará a /login 
+    // sin necesidad de recargar la página bruscamente.
+    setUser(null);
+    
+    // 4. Avisamos a Supabase que cierre la sesión en el servidor en segundo plano
     try {
       await supabase.auth.signOut();
     } catch (e) {
-    } finally {
-      stopIdleWatcher();
-      setUser(null);
-      clearAuthCache();
-      clearErpCache();
-
-      // 🛡️ MEJORA: Evitar un Reload Loop si la sesión expira cuando ya estamos en login.
-      if (window.location.pathname !== "/login" && window.location.pathname !== "/kiosk") {
-          window.location.href = "/login";
-      }
+      console.warn("SignOut silencioso falló:", e);
     }
   };
 
   const isExpiredByIdle = (u) => {
     const last = parseInt(localStorage.getItem(LS_LAST) || "0", 10);
-    // 🛡️ MEJORA: Si no hay registro de tiempo o el tiempo es del futuro (reloj desincronizado), no expiramos.
     if (!last || last > Date.now()) return false;
-    
-    // Si la última actividad fue hace menos de 5 segundos, asumimos que acaba de iniciar sesión.
     if (Date.now() - last < 5000) return false;
-
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // -------------------------
-  // ✅ Boot Inicial: Verificación local
+  // ✅ Boot Inicial: Verificación local ultrarrápida
   // -------------------------
   useEffect(() => {
     const cached = localStorage.getItem(LS_USER);
@@ -155,7 +155,8 @@ export const AuthProvider = ({ children }) => {
         const parsed = JSON.parse(cached);
 
         if (isExpiredByIdle(parsed)) {
-          setTimeout(() => doLogout("BOOT_IDLE_EXPIRED"), 0);
+          clearAuthCache();
+          clearErpCache();
         } else {
           setUser(parsed);
           startIdleWatcher(parsed);
@@ -165,12 +166,13 @@ export const AuthProvider = ({ children }) => {
         clearErpCache();
       }
     }
+    // Quitamos la pantalla de carga casi instantáneamente
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -------------------------
-  // ✅ Rehidratación de Supabase (Sincronización Auth real)
+  // ✅ Rehidratación de Supabase (Sincronización de fondo)
   // -------------------------
   useEffect(() => {
     aliveRef.current = true;
@@ -181,7 +183,7 @@ export const AuthProvider = ({ children }) => {
         if (!aliveRef.current) return;
 
         const sessionUser = data?.session?.user;
-        if (!sessionUser) return;
+        if (!sessionUser) return; // Si no hay sesión válida, onAuthStateChange se encargará
 
         const code =
           (sessionUser.user_metadata?.code && String(sessionUser.user_metadata.code)) ||
@@ -202,11 +204,10 @@ export const AuthProvider = ({ children }) => {
 
         const u = ensured.user;
 
-        // 🚨 Asegurarnos de que actualizamos la actividad si la sesión sigue viva al refrescar (F5)
         writeLastActivity(true);
 
         if (isExpiredByIdle(u)) {
-          await doLogout("REHYDRATE_IDLE_EXPIRED");
+          doLogout("REHYDRATE_IDLE_EXPIRED");
           return;
         }
 
@@ -214,19 +215,21 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
       } catch {
-        // silencioso en caso de red inestable
+        // Silencioso, seguimos confiando en el caché local
       }
     };
 
     rehydrate();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // 🚨 Listener Maestro de Estado de Sesión
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
-        if (!session?.user) {
+        // Si el evento es SIGNED_OUT o ya no hay sesión (ej. en otra pestaña)
+        if (event === 'SIGNED_OUT' || !session?.user) {
           stopIdleWatcher();
-          setUser(null);
           clearAuthCache();
           clearErpCache();
+          setUser(null); // Esto causará un redirect súper fluido al login
           return;
         }
 
@@ -248,7 +251,7 @@ export const AuthProvider = ({ children }) => {
         const u = ensured.user;
 
         if (isExpiredByIdle(u)) {
-          await doLogout("AUTHCHANGE_IDLE_EXPIRED");
+          doLogout("AUTHCHANGE_IDLE_EXPIRED");
           return;
         }
 
@@ -292,12 +295,12 @@ export const AuthProvider = ({ children }) => {
 
       if (authErr || !authData?.session) return false;
 
-      setUser(u);
-      
-      localStorage.setItem(LS_USER, JSON.stringify(u));
+      // 🚨 FLUIDEZ: Limpiamos caché viejo, guardamos nuevo, actualizamos el state y devolvemos true INMEDIATAMENTE
       clearErpCache();
-      
+      localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
+      
+      setUser(u);
       startIdleWatcher(u);
 
       return true;
@@ -310,7 +313,7 @@ export const AuthProvider = ({ children }) => {
     await doLogout("MANUAL_LOGOUT");
   };
 
-  // ✅ Exposición de valores y funciones
+  // ✅ Exposición de valores
   const value = useMemo(
     () => ({
       user,

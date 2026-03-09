@@ -25,7 +25,7 @@ import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import LiquidToast from './components/common/LiquidToast';
 
-// ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA (Sin recargas de página)
+// ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA
 const AuthSyncHelper = () => {
     const { user } = useAuth();
     const employees = useStaff((state) => state.employees);
@@ -36,8 +36,6 @@ const AuthSyncHelper = () => {
         const freshUser = employees.find((e) => String(e.id) === String(user.id));
 
         if (freshUser && freshUser.photo !== user.photo) {
-            // Actualizamos la caché de forma silenciosa.
-            // Zustand ya tiene los datos frescos para la UI, no necesitamos recargar la página.
             const updatedUser = { ...user, photo: freshUser.photo };
             localStorage.setItem("sb_user", JSON.stringify(updatedUser));
         }
@@ -47,7 +45,7 @@ const AuthSyncHelper = () => {
 };
 
 // ============================================================================
-// 🚀 APLICACIÓN PRINCIPAL (NUEVO MODO ENRUTADOR REACTIVO)
+// 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
 function MainApp() {
     const { user, logout, isAuthenticated, isAdmin, loading } = useAuth();
@@ -65,7 +63,6 @@ function MainApp() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // 🌟 DISPARADOR DE CARGA INTELIGENTE (Se ejecuta en segundo plano)
     useEffect(() => {
         let isSubscribed = true;
 
@@ -81,7 +78,6 @@ function MainApp() {
         return () => { isSubscribed = false; };
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
-    // 🌟 FACHADA DE RUTAS: Convertimos los setView antiguos en cambios de URL reales
     const currentPath = location.pathname.substring(1);
     const view = currentPath || (isAdmin ? "dashboard" : "profile");
 
@@ -91,7 +87,6 @@ function MainApp() {
         else navigate(`/${targetView}`);
     };
 
-    // Estados de UI
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedBranch, setSelectedBranch] = useState("ALL");
     const [modalOpen, setModalOpen] = useState(false);
@@ -121,8 +116,6 @@ function MainApp() {
         propertyType: "OWNED", rent: null, branchSchedule: emptyWeekSchedule(),
     });
 
-    // 🚨 LOGOUT FLUIDO: Ya no usamos navigate("/login") aquí.
-    // Al llamar a logout(), el estado isAuthenticated pasa a false y React Router hace el resto al instante.
     const handleLogout = async () => {
         try {
             if (logout) await logout();
@@ -178,10 +171,9 @@ function MainApp() {
         }
     };
 
-    // --- 🚨 PANTALLA DE CARGA LIQUIDGLASS (Sin parpadeos blancos) ---
     if (loading) {
         return (
-            <div className="fixed inset-0 w-full h-full bg-[#F2F2F7] overflow-hidden flex items-center justify-center">
+            <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden flex items-center justify-center">
                 <GlobalBackground />
                 <div className="relative z-10 flex flex-col items-center justify-center gap-4 bg-white/40 backdrop-blur-xl border border-white/80 p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in-95 duration-500">
                     <Loader2 size={32} className="text-[#007AFF] animate-spin" strokeWidth={2.5} />
@@ -193,32 +185,31 @@ function MainApp() {
         );
     }
 
-    // --- ENRUTADOR REACT ROUTER (Reglas estrictas e instantáneas) ---
     return (
         <Routes>
-            {/* 1) KIOSKO (Ruta pública/independiente) */}
             <Route path="/kiosk" element={<TimeClockView setView={setView} />} />
 
-            {/* 2) LOGIN */}
+            {/* 🚨 BLOQUE DE LOGIN AJUSTADO: fixed, inset-0 y h-[100dvh] estricto */}
             <Route path="/login" element={
                 !isAuthenticated ? (
-                    <div className="fixed inset-0 w-full h-full bg-[#F2F2F7] overflow-hidden">
+                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden">
                         <GlobalBackground />
-                        <div className="relative z-10 w-full h-full overflow-y-auto">
+                        {/* El contenedor interior permite scroll SOLO si el contenido es más alto que la pantalla */}
+                        <div className="absolute inset-0 z-10 w-full h-full overflow-y-auto overflow-x-hidden flex items-center justify-center">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>
                 ) : <Navigate to={isAdmin ? "/dashboard" : "/profile"} replace />
             } />
 
-            {/* 3) RUTAS PROTEGIDAS */}
+            {/* 🚨 RUTAS PROTEGIDAS */}
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="fixed inset-0 w-full h-full bg-[#F2F2F7] overflow-hidden">
+                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden flex flex-col">
                         <GlobalBackground />
                         <AuthSyncHelper />
 
-                        <div className="relative z-10 w-full h-full">
+                        <div className="relative z-10 w-full h-full flex flex-col">
                             {isAdmin ? (
                                 <AdminLayout
                                     view={view}
@@ -238,18 +229,14 @@ function MainApp() {
                                         <Route path="employee-detail" element={activeEmployee ? <EmployeeDetailView activeEmployee={activeEmployee} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} /> : <Navigate to="/dashboard" replace />} />
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
                                         <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
-                                        
-                                        {/* Fallback de rutas Admin */}
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>
                                 </AdminLayout>
                             ) : (
-                                <div className="min-h-screen bg-transparent">
+                                <div className="h-full w-full bg-transparent overflow-y-auto">
                                     <UserHeader user={user} handleLogout={handleLogout} />
                                     <Routes>
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
-                                        
-                                        {/* Fallback de rutas Usuario */}
                                         <Route path="*" element={<Navigate to="/profile" replace />} />
                                     </Routes>
                                 </div>
@@ -279,9 +266,6 @@ function MainApp() {
     );
 }
 
-// ============================================================================
-// ENVOLTORIO BASE CON INYECCIÓN DE TOAST DINÁMICA
-// ============================================================================
 export default function App() {
     return (
         <BrowserRouter>
@@ -290,7 +274,6 @@ export default function App() {
     );
 }
 
-// Sub-componente para poder usar useLocation y determinar el tema del Toast
 const AppWithToast = () => {
     const location = useLocation();
     const isKioskMode = location.pathname.startsWith('/kiosk');
@@ -303,8 +286,9 @@ const AppWithToast = () => {
     );
 };
 
+// 🚨 GLOBAL BACKGROUND CON ALTURA FIJA E INMÓVIL
 const GlobalBackground = () => (
-    <div className="absolute inset-0 z-0 pointer-events-none">
+    <div className="fixed inset-0 w-full h-[100dvh] z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
         <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#5856D6]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
         <div

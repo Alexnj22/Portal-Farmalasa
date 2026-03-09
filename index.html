@@ -1,21 +1,30 @@
 <!doctype html>
-<html lang="en">
-<head>
+<html lang="es">
+  <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/LogoFLS.svg" />
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#F2F2F7" />
     
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
-    <meta name="apple-mobile-web-app-title" content="Portal FLS" />
-
     <title>Portal - FarmaSalud</title>
-</head>
+    
+    <style>
+      body, html { background-color: #F2F2F7; margin: 0; padding: 0; }
+      #app-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; width: 100vw; font-family: system-ui, -apple-system, sans-serif; background-color: #F2F2F7; }
+      .spinner { width: 40px; height: 40px; border: 4px solid rgba(0, 122, 255, 0.2); border-left-color: #007AFF; border-radius: 50%; animation: spin 1s linear infinite; }
+      @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+  </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; color: #64748b; font-weight: 800; letter-spacing: 0.15em; font-size: 11px; text-transform: uppercase;">Iniciando Portal</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

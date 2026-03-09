@@ -69,7 +69,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         // 🚨 1. ENVOLTORIO PRINCIPAL: Permite scroll (overflow-y-auto) en lugar de ocultarlo.
         // Ocupa el 100% de la pantalla usando min-h-[100dvh].
         <div className="relative min-h-[100dvh] w-full font-sans bg-transparent overflow-x-hidden overflow-y-auto selection:bg-[#007AFF]/30">
-            
+
             {/* 🚨 2. FONDO AMBIENTAL: Cambiado a 'fixed inset-0'. 
                 Esto asegura que las nubes nunca se muevan aunque el usuario haga scroll, 
                 cubriendo el 100% de la pantalla física. */}
@@ -84,7 +84,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             {/* DOCK LATERAL DERECHO (Desktop) - Cambiado a fixed para que se ancle a la pantalla */}
             <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
-                
+
                 <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
                     <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="overflow-hidden flex items-center justify-start">
@@ -110,22 +110,18 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </a>
             </div>
 
-            {/* 🚨 3. CONTENEDOR CENTRAL: Layout flexible perfecto. 
-                - flex-col + min-h-[100dvh]: Da espacio para crecer.
-                - Padding protector inteligente: pt usa safe-area, pb empuja el contenido hacia arriba para que no lo tape el Dock Móvil. */}
-            <div className="relative z-10 flex flex-col items-center w-full min-h-[100dvh] px-5 pt-[max(env(safe-area-inset-top,24px),24px)] pb-[calc(max(env(safe-area-inset-bottom,24px),24px)+100px)]">
+            <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-[100dvh] px-5 py-12 landscape:py-8 transition-all">
 
-                {/* 🚨 my-auto: El truco definitivo. Si la pantalla es alta, lo centra. Si la pantalla es baja (teléfono acostado), lo pone arriba y permite scroll hacia abajo. */}
-                <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1">
+                <div className="w-full max-w-[460px] rounded-[3.5rem] p-8 md:p-12 relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1">
 
                     <div className="flex flex-col items-center mb-8">
-                        <div className="w-20 h-20 bg-white/60 backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.75rem] flex items-center justify-center mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1">
-<img 
-    src="/LogoFLS.svg" 
-    alt="FarmaLasa" 
-    /* 🚨 object-contain soluciona el aplastamiento */
-    className="w-12 h-12 object-contain relative z-10 drop-shadow-sm transition-transform duration-500 group-hover:scale-105" 
-/>
+                        {/* 🚨 LOGO: bg-white forzado y object-contain */}
+                        <div className="w-20 h-20 bg-white backdrop-blur-md shadow-[0_10px_25px_rgba(0,122,255,0.2),inset_0_2px_5px_rgba(255,255,255,1)] border border-white rounded-[1.75rem] flex items-center justify-center mb-6 relative group transition-all duration-500 hover:scale-110 hover:shadow-[0_15px_35px_rgba(0,122,255,0.3)] hover:-translate-y-1 overflow-hidden">
+                            <img
+                                src="/LogoFLS.svg"
+                                alt="FarmaLasa"
+                                className="w-16 h-16 object-contain relative z-10 drop-shadow-sm transition-transform duration-500 group-hover:scale-105"
+                            />
                         </div>
                         <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                             Portal
@@ -204,14 +200,20 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             {/* DOCK INFERIOR FLOTANTE (Móvil) - Cambiado a Fixed para no romper el scroll */}
-            <div className="fixed bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 p-3 z-30 w-[90%] max-w-[360px] lg:hidden bg-white/20 backdrop-blur-3xl backdrop-saturate-[300%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in slide-in-from-bottom-8 duration-700">
-                <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(0,122,255,0.15)] group">
+            <div className="fixed z-30 flex items-center justify-center gap-3 p-3 transition-all duration-500 bg-white/20 backdrop-blur-3xl backdrop-saturate-[300%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)]
+                /* Modo Vertical (Portrait) */
+                bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] flex-row
+                /* Modo Horizontal (Landscape): Pasa a la derecha */
+                landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:right-[max(env(safe-area-inset-right,24px),24px)] landscape:left-auto landscape:translate-x-0 landscape:w-auto landscape:flex-col
+                lg:hidden
+            ">
+                <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="flex-1 landscape:flex-none landscape:w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(0,122,255,0.15)] group">
                     <ShoppingCart size={16} strokeWidth={2.5} className="text-[#007AFF] group-hover:scale-110 transition-transform" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#007AFF] transition-colors">Ventas</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#007AFF] transition-colors landscape:hidden md:landscape:inline-block">Ventas</span>
                 </a>
-                <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(88,86,214,0.15)] group">
+                <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="flex-1 landscape:flex-none landscape:w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-white/50 hover:bg-white rounded-[1.5rem] transition-all duration-300 active:scale-95 shadow-sm border border-transparent hover:border-white/90 hover:shadow-[0_5px_15px_rgba(88,86,214,0.15)] group">
                     <Pill size={16} strokeWidth={2.5} className="text-[#5856D6] group-hover:scale-110 transition-transform" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#5856D6] transition-colors">FarmaLasa</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-[#5856D6] transition-colors landscape:hidden md:landscape:inline-block">FarmaLasa</span>
                 </a>
             </div>
 

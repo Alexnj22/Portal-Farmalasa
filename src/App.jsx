@@ -189,13 +189,13 @@ function MainApp() {
         <Routes>
             <Route path="/kiosk" element={<TimeClockView setView={setView} />} />
 
-            {/* 🚨 BLOQUE DE LOGIN AJUSTADO: fixed, inset-0 y h-[100dvh] estricto */}
+{/* 🚨 BLOQUE DE LOGIN LIBERADO: Sin overflow-hidden, scroll nativo para iOS */}
             <Route path="/login" element={
                 !isAuthenticated ? (
-                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden">
+                    <div className="relative min-h-[100dvh] w-full bg-[#F2F2F7]">
                         <GlobalBackground />
-                        {/* El contenedor interior permite scroll SOLO si el contenido es más alto que la pantalla */}
-                        <div className="absolute inset-0 z-10 w-full h-full overflow-y-auto overflow-x-hidden flex items-center justify-center">
+                        {/* Ya no hay 'absolute' ni 'justify-center' que corte el contenido */}
+                        <div className="relative z-10 w-full min-h-[100dvh] flex flex-col">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>

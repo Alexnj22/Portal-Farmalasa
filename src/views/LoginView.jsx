@@ -12,9 +12,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // 🚨 SEGURIDAD: Usamos useRef en lugar de useState para el input.
-    // Esto hace que sea "Uncontrolled". React no imprimirá el 'value' en el HTML crudo, 
-    // protegiendo el código de "Inspeccionar Elemento".
+    // SEGURIDAD: Uncontrolled input para proteger el valor de Inspeccionar Elemento
     const inputRef = useRef(null);
 
     useEffect(() => {
@@ -47,7 +45,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         e.preventDefault();
         setError('');
 
-        // Obtenemos el código directo de la memoria del DOM
         const code = inputRef.current?.value || '';
 
         if (!code.trim()) {
@@ -63,7 +60,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             if (!success) {
                 setError('Código inválido o no encontrado.');
                 setIsLoading(false);
-                if (inputRef.current) inputRef.current.value = ''; // Limpiamos la caja
+                if (inputRef.current) inputRef.current.value = '';
                 inputRef.current?.focus();
             }
         } catch (err) {
@@ -80,10 +77,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     };
 
     return (
-        <div className="min-h-[100dvh] w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+        // 🚨 CAMBIO AQUÍ: min-h-screen asegura que cubra todo el viewport,
+        // y mantenemos el padding para el área segura
+        <div className="min-h-screen w-full flex items-center justify-center relative font-sans bg-transparent overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
             
-            {/* FONDO AMBIENTAL */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            {/* 🚨 CAMBIO AQUÍ: fixed asegura que cubra todo el viewport en móvil */}
+            {/* FONDO AMBIENTAL FIJO A LA PANTALLA */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/10 rounded-full filter blur-[120px] animate-ambient-drift" />
                 <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#5856D6]/10 rounded-full filter blur-[120px] animate-ambient-drift-reverse" />
                 <div
@@ -93,7 +93,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             </div>
 
             {/* DOCK LATERAL DERECHO */}
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-20 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-20 p-5 rounded-[3rem] bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:border-white hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-[calc(50%+4px)] transition-all ease-[cubic-bezier(0.23,1,0.32,1)] cursor-default">
                 
                 {/* Botón Ventas */}
                 <a
@@ -161,15 +161,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     <form onSubmit={handleLogin} className="flex flex-col gap-5 relative">
 
-                        {/* 🚨 CAJA DE CÓDIGO BLINDADA Y PERFECTAMENTE ALINEADA */}
+                        {/* CAJA DE CÓDIGO BLINDADA Y PERFECTAMENTE ALINEADA */}
                         <div className="relative group z-20 flex items-center">
-                            {/* Ícono de Scan Independiente - Ahora usa z-30 y no compite con el input */}
+                            {/* Ícono de Scan Independiente */}
                             <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
                                 <ScanBarcode size={24} strokeWidth={2} />
                             </div>
 
                             {/* - type="text": Evita que salte el gestor de contraseñas
-                              - [-webkit-text-security:disc]: Transforma las letras en puntos visualmente (Hack de Kiosco)
+                              - [-webkit-text-security:disc]: Transforma las letras en puntos visualmente
                               - Eventos OnX: Evitan clic derecho, copiar, pegar o arrastrar
                             */}
                             <input
@@ -238,7 +238,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            {/* DOCK INFERIOR FLOTANTE (Móvil) */}
+            {/* DOCK INFERIOR FLOTANTE CON HOVER (Móvil) */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 p-3 z-20 w-[90%] max-w-[360px] lg:hidden bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 rounded-[2rem] shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in slide-in-from-bottom-8 duration-700 hover:bg-white/50 hover:border-white hover:shadow-[0_40px_80px_rgba(0,122,255,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:-translate-y-1 transition-all ease-[cubic-bezier(0.23,1,0.32,1)]">
                 <a
                     href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php"

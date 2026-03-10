@@ -300,26 +300,40 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 </div>
             </aside>
 
-            {/* 🚨 4. ÁREA PRINCIPAL CON TOP-BAR DE CRISTAL (Solo Móvil) */}
+{/* 🚨 4. ÁREA PRINCIPAL CON TOP-BAR "ISLA FLOTANTE" (Tendencia Premium iOS) */}
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 
-                {/* HEADER MÓVIL: Reemplaza al sidebar cuando está cerrado */}
-                <div className="lg:hidden flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top,16px),16px)] pb-4 bg-white/60 backdrop-blur-2xl border-b border-white/60 shadow-sm relative z-20">
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 bg-white/80 hover:bg-white rounded-[1rem] border border-white/80 shadow-sm active:scale-95 transition-all text-[#0A2A5E]">
-                            <Menu size={20} strokeWidth={2.5} />
-                        </button>
-                        <div className="flex flex-col">
-                            <h1 className="text-[15px] font-black text-slate-800 leading-tight tracking-tight">Portal</h1>
-                            <p className="text-[9px] font-bold text-[#1D7AFC] uppercase tracking-[0.2em] leading-tight">La Salud</p>
+                {/* HEADER MÓVIL: Estilo "Floating Pill" (Elimina el look de Android viejo) */}
+                <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
+                    
+                    {/* El contenedor ahora es una pastilla redondeada que no toca los bordes */}
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
+                        
+                        <div className="flex items-center gap-4">
+                            {/* Botón de menú minimalista (sin cuadro de fondo) */}
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-90 transition-transform">
+                                <Menu size={22} strokeWidth={2.5} />
+                            </button>
+                            
+                            {/* Separador vertical elegante */}
+                            <div className="w-px h-6 bg-slate-300/50 rounded-full" /> 
+                            
+                            <div className="flex flex-col justify-center">
+                                <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
+                                <p className="text-[8px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <button onClick={() => setView('profile')} className="w-10 h-10 rounded-[1rem] bg-white border border-white/80 shadow-sm overflow-hidden active:scale-95 transition-all flex items-center justify-center">
-                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Perfil" /> : <User size={18} className="text-slate-400" />}
-                    </button>
+                        {/* Avatar Premium con forma de "Squircle" (Círculo ligeramente cuadrado) */}
+                        <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-95 transition-all flex items-center justify-center relative group">
+                            <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Perfil" /> : <User size={18} className="text-slate-400" />}
+                        </button>
+
+                    </div>
                 </div>
 
+                {/* Contenedor del contenido interno de la app */}
                 <div className="flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0">
                     <div key={view} className="h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
                         {children}

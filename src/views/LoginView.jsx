@@ -73,8 +73,35 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             pb-[max(env(safe-area-inset-bottom,32px),120px)] 
             landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
-            {/* 🚨 2. LA MAGIA CONTRA EL CORTE: 'my-auto' en lugar de justify-center. 
-                Si la pantalla es alta, lo centra. Si la acuestas, se va arriba y deja scrollear. */}
+            {/* 🚨 RESTAURADO: DOCK LATERAL DERECHO (Desktop) */}
+            <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
+                
+                <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
+                    <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="overflow-hidden flex items-center justify-start">
+                            <span className="text-[#007AFF] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Ventas</span>
+                        </div>
+                    </div>
+                    <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                        <ShoppingCart size={24} className="text-slate-500 group-hover:text-[#007AFF] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                    </div>
+                </a>
+
+                <div className="w-10 h-[2px] bg-white/50 mr-3 rounded-full transition-all duration-300 group-hover:bg-white/80" />
+
+                <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(88,86,214,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
+                    <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="overflow-hidden flex items-center justify-start">
+                            <span className="text-[#5856D6] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Farmalasa</span>
+                        </div>
+                    </div>
+                    <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                        <Pill size={24} className="text-slate-500 group-hover:text-[#5856D6] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                    </div>
+                </a>
+            </div>
+
+            {/* 🚨 2. LA MAGIA CONTRA EL CORTE: 'my-auto' en lugar de justify-center. */}
             <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all">
 
                 <div className="flex flex-col items-center mb-8">
@@ -124,24 +151,27 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </button>
                 </form>
 
-                <div className="flex items-center gap-4 my-8 opacity-60">
-                    <div className="flex-1 h-px bg-slate-400/30"></div>
-                </div>
+                {/* 🚨 DIVISOR Y BOTÓN KIOSCO: Solo se renderizan si es una PC */}
                 {!isMobileOrApp() && (
-                    <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm">
-                                <Clock size={20} strokeWidth={2.5} />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-[12px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
-                            </div>
+                    <>
+                        <div className="flex items-center gap-4 my-8 opacity-60">
+                            <div className="flex-1 h-px bg-slate-400/30"></div>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center">
-                            <ChevronRight size={16} className="text-slate-400" strokeWidth={3} />
-                        </div>
-                    </button>
+                        <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm">
+                                    <Clock size={20} strokeWidth={2.5} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[12px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
+                                </div>
+                            </div>
+                            <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center">
+                                <ChevronRight size={16} className="text-slate-400" strokeWidth={3} />
+                            </div>
+                        </button>
+                    </>
                 )}
             </div>
 

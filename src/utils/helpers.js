@@ -274,3 +274,22 @@ export const getHourlyCode = () => {
 // ♻️ BACKWARD-COMPAT: Re-export de utilidades del Store (evita duplicados)
 // ============================================================================
 export { makeId, CACHE_KEYS, safeJsonParse, normalizeBranchPayloadFromModal } from '../store/utils';
+
+// src/utils/helpers.js
+
+export const isMobileOrApp = () => {
+    if (typeof window === 'undefined') return false;
+
+    // 1. Detectar si está corriendo como App Nativa (Capacitor)
+    if (window.Capacitor?.isNativePlatform()) return true;
+
+    // 2. Detectar Celulares y Tablets por User Agent
+    const ua = navigator.userAgent;
+    const isMobile = /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(ua);
+    const isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua);
+    
+    // 3. Detectar iPads modernos (iOS 13+ finge ser una Mac en Safari, la única forma de saberlo es por la pantalla táctil)
+    const isModernIPad = navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform);
+
+    return isMobile || isTablet || isModernIPad;
+};

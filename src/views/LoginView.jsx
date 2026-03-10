@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
+import { isMobileOrApp } from '../utils/helpers';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
     const { login, isAdmin, user } = useAuth();
@@ -65,7 +66,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         }
     };
 
-return (
+    return (
         // 🚨 1. Contenedor Base: Flex column, centra horizontalmente
         <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5 
             pt-[max(env(safe-area-inset-top,32px),32px)] 
@@ -79,11 +80,11 @@ return (
                 <div className="flex flex-col items-center mb-8">
                     {/* 🚨 LOGO: forzamos bg-white y overflow-hidden para limpiar los bordes negros */}
                     <div className="w-20 h-20 bg-white backdrop-blur-md shadow-lg border border-white rounded-[1.75rem] flex items-center justify-center mb-6 overflow-hidden">
-                        <img 
-                            src="/LogoFLS.svg" 
-                            alt="FarmaLasa" 
+                        <img
+                            src="/LogoFLS.svg"
+                            alt="FarmaLasa"
                             /* object-contain asegura que no se deforme */
-                            className="w-16 h-16 object-contain drop-shadow-sm" 
+                            className="w-16 h-16 object-contain drop-shadow-sm"
                         />
                     </div>
                     <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
@@ -126,21 +127,22 @@ return (
                 <div className="flex items-center gap-4 my-8 opacity-60">
                     <div className="flex-1 h-px bg-slate-400/30"></div>
                 </div>
-
-                <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm">
-                            <Clock size={20} strokeWidth={2.5} />
+                {!isMobileOrApp() && (
+                    <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm">
+                                <Clock size={20} strokeWidth={2.5} />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[12px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
+                            </div>
                         </div>
-                        <div className="text-left">
-                            <p className="text-[12px] font-black text-slate-700 uppercase tracking-widest">Terminal Kiosco</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
+                        <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center">
+                            <ChevronRight size={16} className="text-slate-400" strokeWidth={3} />
                         </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center">
-                        <ChevronRight size={16} className="text-slate-400" strokeWidth={3} />
-                    </div>
-                </button>
+                    </button>
+                )}
             </div>
 
             {/* 🚨 3. DOCK MÓVIL (Menú Flotante Inteligente) */}

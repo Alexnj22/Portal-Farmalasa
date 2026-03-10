@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 // Contextos
 import { useAuth } from "./context/AuthContext";
 import { useStaffStore as useStaff } from "./store/staffStore";
+import { isMobileOrApp } from './utils/helpers';
 import AlertModal from "./components/common/AlertModal";
 
 // Layouts y Vistas
@@ -98,7 +99,7 @@ function MainApp() {
     const [isAuditOverlayActive, setIsAuditOverlayActive] = useState(false);
     const [activeBranch, setActiveBranch] = useState(null);
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-    
+
     const showAlert = (title, message, type = 'info') => {
         setAlertConfig({ isOpen: true, title, message, type });
     };
@@ -187,9 +188,14 @@ function MainApp() {
 
     return (
         <Routes>
-            <Route path="/kiosk" element={<TimeClockView setView={setView} />} />
-
-{/* 🚨 BLOQUE DE LOGIN LIBERADO: Sin overflow-hidden, scroll nativo para iOS */}
+            <Route path="/kiosk" element={
+                !isMobileOrApp() ? (
+                    <TimeClockView setView={setView} />
+                ) : (
+                    <Navigate to="/login" replace />
+                )
+            } />
+            {/* 🚨 BLOQUE DE LOGIN LIBERADO: Sin overflow-hidden, scroll nativo para iOS */}
             <Route path="/login" element={
                 !isAuthenticated ? (
                     <div className="relative min-h-[100dvh] w-full bg-[#F2F2F7]">

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Portal-FarmaSalud</string>
+    <string name="title_activity_main">Portal-FarmaSalud</string>
+    <string name="package_name">lat.farmasalud.portal</string>
+    <string name="custom_url_scheme">lat.farmasalud.portal</string>
+</resources>

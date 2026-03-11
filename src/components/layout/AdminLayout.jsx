@@ -333,7 +333,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                     </div>
                 </div>
 
-                {/* Contenedor del contenido interno de la app */}
+                {/* Contenedor del contenido inteerno de la app */}
                 <div className="flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0">
                     <div key={view} className="h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
                         {children}

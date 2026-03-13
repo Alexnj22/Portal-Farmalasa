@@ -6,6 +6,44 @@ const persistBranches = (branches) => {
     return branches;
 };
 
+// Función helper profunda para limpiar objetos antes de mandarlos al JSONB de Supabase
+const sanitizeForJsonb = (obj) => {
+    return JSON.parse(JSON.stringify(obj, (key, value) => {
+        if (value instanceof File || value instanceof Blob || typeof value === 'function') {
+            return undefined;
+        }
+        return value;
+    }));
+};
+
+// 🚨 HELPER PARA VERSIONADO
+const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newFile, oldUrl) => {
+    const timestamp = Date.now();
+    const extension = newFile.name.split('.').pop() || 'pdf';
+    const newFileName = `${fileType}_${timestamp}.${extension}`;
+    const newPath = `branches/${branchId}/${categoryFolder}/${newFileName}`;
+
+    if (oldUrl) {
+        try {
+            const urlParts = oldUrl.split('/public/documents/');
+            if (urlParts.length > 1) {
+                const oldPath = urlParts[1];
+                const pathParts = oldPath.split('/');
+                const fileName = pathParts.pop();
+                const archivePath = `${pathParts.join('/')}/old/${fileName}`;
+                await supabase.storage.from('documents').move(oldPath, archivePath);
+            }
+        } catch (e) {
+            console.warn("No se pudo archivar el documento anterior en Storage:", e);
+        }
+    }
+
+    const { error } = await supabase.storage.from('documents').upload(newPath, newFile, { upsert: true });
+    if (error) throw error;
+    const { data: publicUrlData } = supabase.storage.from('documents').getPublicUrl(newPath);
+    return publicUrlData.publicUrl;
+};
+
 export const createBranchSlice = (set, get) => ({
     branches: safeJsonParse(localStorage.getItem(CACHE_KEYS.BRANCHES), []) || [],
 
@@ -17,20 +55,17 @@ export const createBranchSlice = (set, get) => ({
     addBranch: async (data) => {
         try {
             const payload = { ...data };
-
-            // 1. Filtro de seguridad para JSONs
             if (typeof payload.settings === 'string') { try { payload.settings = JSON.parse(payload.settings); } catch (e) { payload.settings = {}; } }
             if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch (e) { payload.weeklyHours = {}; } }
             if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch (e) { payload.weekly_hours = {}; } }
 
-            // 🚨 2. Extraemos el archivo temporalmente para no mandarlo a la BD todavía
             let pendingRentFile = null;
             if (payload.settings?.rent?.contract?.documentFile instanceof File) {
                 pendingRentFile = payload.settings.rent.contract.documentFile;
-                delete payload.settings.rent.contract.documentFile;
             }
 
-            // 3. Mapeado Estricto a la BD (Creamos la sucursal PRIMERO para obtener el ID)
+            const cleanSettings = sanitizeForJsonb(payload.settings || {});
+
             const dbPayload = {
                 name: payload.name || payload.branchName || "Sin Nombre",
                 address: payload.address || null,
@@ -38,37 +73,30 @@ export const createBranchSlice = (set, get) => ({
                 cell: payload.cell || null,
                 opening_date: payload.opening_date || payload.openingDate || null,
                 weekly_hours: payload.weekly_hours || payload.weeklyHours || {},
-                settings: payload.settings || {}
+                settings: cleanSettings
             };
 
             const { data: newBranch, error } = await supabase.from("branches").insert([dbPayload]).select().single();
             if (error) throw error;
 
-            // 🚨 4. AHORA SÍ tenemos el ID, podemos subir el archivo si lo hay
-            let requiresUpdate = false;
             let finalSettings = typeof newBranch.settings === 'string' ? JSON.parse(newBranch.settings) : (newBranch.settings || {});
 
             if (pendingRentFile) {
-                const documentUrl = await get().uploadFileToStorage(
-                    pendingRentFile,
-                    'documents',
-                    `branches/${newBranch.id}/rent`
-                );
-                
+                const documentUrl = await handleDocumentVersioning(newBranch.id, 'inmueble', 'contrato_alquiler', pendingRentFile, null);
                 if (documentUrl) {
                     if (!finalSettings.rent) finalSettings.rent = {};
                     if (!finalSettings.rent.contract) finalSettings.rent.contract = {};
                     finalSettings.rent.contract.documentUrl = documentUrl;
-                    requiresUpdate = true;
+                    await supabase.from("branches").update({ settings: finalSettings }).eq("id", newBranch.id);
                 }
             }
 
-            // 5. Si subimos un archivo, actualizamos la base de datos con la URL
-            if (requiresUpdate) {
-                await supabase.from("branches").update({ settings: finalSettings }).eq("id", newBranch.id);
-            }
-
-            await get().appendAuditLog('CREAR_SUCURSAL', newBranch.id, { nombre: newBranch.name });
+            await get().appendAuditLog('APERTURA_OFICIAL', newBranch.id, {
+                timeline_title: `Apertura: ${newBranch.name}`,
+                dimension: 'OPERATIVE',
+                branch_id: newBranch.id,
+                new_value: 'Registrada en el sistema'
+            });
 
             const retHours = typeof newBranch.weekly_hours === 'string' ? JSON.parse(newBranch.weekly_hours) : (newBranch.weekly_hours || {});
 
@@ -108,87 +136,74 @@ export const createBranchSlice = (set, get) => ({
             const oldLegal = oldSettings.legal || {};
             const newSettings = (payload.settings || {});
 
-            payload.settings = {
+            const mergedSettings = {
                 ...oldSettings,
                 ...newSettings,
-                legal: {
-                    ...(oldSettings.legal || {}),
-                    ...(newSettings.legal || {}),
-                },
+                legal: { ...oldLegal, ...(newSettings.legal || {}) },
+                rent: { ...(oldSettings.rent || {}), ...(newSettings.rent || {}) },
+                services: { ...(oldSettings.services || {}), ...(newSettings.services || {}) },
+                location: { ...(oldSettings.location || {}), ...(newSettings.location || {}) }
             };
 
             const archiveOldDoc = async (docType, docName, oldUrl, metadata = {}) => {
-                if (!oldUrl && !docType.startsWith('HISTORIAL_')) return;
+                if (!oldUrl) return;
                 await supabase.from('branch_documents').insert([{
                     branch_id: id,
                     document_type: docType,
                     name: docName,
-                    file_url: oldUrl || null,
+                    file_url: oldUrl,
                     status: 'HISTÓRICO',
                     metadata: metadata
                 }]);
             };
 
-            // Archivos de renta
+            // 1. GESTIÓN DE ARCHIVOS DE RENTA
             if (payload.settings?.rent?.contract?.documentFile instanceof File) {
-                const oldRentUrl = oldBranch?.settings?.rent?.contract?.documentUrl;
-                await archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', oldRentUrl);
-                payload.settings.rent.contract.documentUrl = await get().uploadFileToStorage(
-                    payload.settings.rent.contract.documentFile,
-                    'documents',
-                    `branches/${id}/rent_contracts` // Usamos el ID de forma limpia
+                const oldRentUrl = oldSettings?.rent?.contract?.documentUrl;
+                if (oldRentUrl) await archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', oldRentUrl);
+
+                mergedSettings.rent.contract.documentUrl = await handleDocumentVersioning(
+                    id, 'inmueble', 'contrato_alquiler',
+                    payload.settings.rent.contract.documentFile, oldRentUrl
                 );
             }
-            delete payload.settings?.rent?.contract?.documentFile;
 
-            // Archivos legales
-            if (payload.settings.legal) {
-                const legal = payload.settings.legal;
+            // 2. GESTIÓN DE ARCHIVOS LEGALES
+            if (payload.settings?.legal) {
                 const fileFields = [
-                    { file: 'srsPermitFile', url: 'srsPermitUrl', type: 'PERMISO_SRS', label: 'Permiso SRS Anterior' },
-                    { file: 'regentCredentialFile', url: 'regentCredentialUrl', type: 'CREDENCIAL_JVQF', label: 'Credencial JVQF Anterior' },
-                    { file: 'regentInscriptionFile', url: 'regentInscriptionUrl', type: 'INSCRIPCION_REGENCIA', label: 'Inscripción de Regencia Anterior' },
-                    { file: 'farmacovigilanciaAuthFile', url: 'farmacovigilanciaAuthUrl', type: 'AUTORIZACION_FARMACOVIGILANCIA', label: 'Autorización Farmacovigilancia Anterior' },
-                    { file: 'nursingServicePermitFile', url: 'nursingServicePermitUrl', type: 'PERMISO_INYECCIONES', label: 'Permiso Área Inyecciones Anterior' }
+                    { file: 'srsPermitFile', url: 'srsPermitUrl', type: 'PERMISO_SRS', label: 'Licencia CSSP/DNM', dbType: 'permiso_srs' },
+                    { file: 'regentCredentialFile', url: 'regentCredentialUrl', type: 'CREDENCIAL_JVQF', label: 'Credencial Regencia JVQF', dbType: 'credencial_jvqf' },
+                    { file: 'regentInscriptionFile', url: 'regentInscriptionUrl', type: 'INSCRIPCION_REGENCIA', label: 'Inscripción de Regencia', dbType: 'inscripcion_regencia' },
+                    { file: 'farmacovigilanciaAuthFile', url: 'farmacovigilanciaAuthUrl', type: 'AUTORIZACION_FARMACOVIGILANCIA', label: 'Designación Farmacovigilancia', dbType: 'farmacovigilancia' },
+                    { file: 'nursingServicePermitFile', url: 'nursingServicePermitUrl', type: 'PERMISO_INYECCIONES', label: 'Permiso Área Inyecciones', dbType: 'area_inyecciones' },
+                    { file: 'municipalFile', url: 'municipalUrl', type: 'SOLVENCIA_MUNICIPAL', label: 'Solvencia Municipal', dbType: 'solvencia_municipal' },
+                    { file: 'wasteFile', url: 'wasteUrl', type: 'CONTRATO_DESECHOS', label: 'Contrato de Desechos', dbType: 'contrato_desechos' },
+                    { file: 'fumigationFile', url: 'fumigationUrl', type: 'CERTIFICADO_FUMIGACION', label: 'Certificado de Fumigación', dbType: 'certificado_fumigacion' },
+                    { file: 'controlledBooksFile', url: 'controlledBooksUrl', type: 'LIBROS_CONTROLADOS', label: 'Resolución Libros Controlados', dbType: 'libros_controlados' },
                 ];
 
                 for (const f of fileFields) {
-                    if (legal[f.file] instanceof File) {
-                        await archiveOldDoc(f.type, f.label, oldLegal[f.url]);
-                        legal[f.url] = await get().uploadFileToStorage(
-                            legal[f.file],
-                            'documents',
-                            `branches/${id}/legal`
-                        ); 
-                    }
-                    // Siempre limpiamos la propiedad del archivo temporal para que no intente subirlo a DB
-                    delete legal[f.file];
-                }
+                    const newUploadedFile = payload.settings.legal[f.file];
 
-                // 🚨 CORRECCIÓN: Evitar que URLs existentes se borren con `null` si no hay archivo nuevo
-                if (Array.isArray(legal.nursingRegents)) {
-                    for (let nurse of legal.nursingRegents) {
-                        if (nurse.carneFile instanceof File) {
-                            nurse.carneUrl = await get().uploadFileToStorage(nurse.carneFile, 'documents', `branches/${id}/legal/nursing_regents`);
-                        }
-                        if (nurse.anualidadFile instanceof File) {
-                            nurse.anualidadUrl = await get().uploadFileToStorage(nurse.anualidadFile, 'documents', `branches/${id}/legal/nursing_regents`);
-                        }
-                        if (nurse.licenciaFile instanceof File) {
-                            nurse.licenciaUrl = await get().uploadFileToStorage(nurse.licenciaFile, 'documents', `branches/${id}/legal/nursing_regents`);
-                        }
-                        // Limpieza
-                        delete nurse.carneFile;
-                        delete nurse.anualidadFile;
-                        delete nurse.licenciaFile;
+                    if (newUploadedFile instanceof File) {
+                        const oldUrl = oldLegal[f.url];
+                        if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico)`, oldUrl);
+
+                        mergedSettings.legal[f.url] = await handleDocumentVersioning(
+                            id, 'legal', f.dbType, newUploadedFile, oldUrl
+                        );
+                    } else if (payload.settings.legal[f.url] === null) {
+                        const oldUrl = oldLegal[f.url];
+                        if (oldUrl) await archiveOldDoc(f.type, `${f.label} (Histórico - Eliminado)`, oldUrl);
+                        mergedSettings.legal[f.url] = null;
+                    } else if (payload.settings.legal[f.url]) {
+                        mergedSettings.legal[f.url] = payload.settings.legal[f.url];
                     }
                 }
             }
 
-            const changes = {};
-            if (oldBranch.name !== (payload.name || payload.branchName)) {
-                changes.nombre = { anterior: oldBranch.name, nuevo: payload.name || payload.branchName };
-            }
+            // Limpiamos todo el objeto de basura binaria antes de enviar a JSONB
+            const cleanSettingsForDB = sanitizeForJsonb(mergedSettings);
 
             const dbPayload = {
                 name: payload.name || payload.branchName || "Sin Nombre",
@@ -197,15 +212,94 @@ export const createBranchSlice = (set, get) => ({
                 cell: payload.cell || null,
                 opening_date: payload.opening_date || payload.openingDate || null,
                 weekly_hours: payload.weekly_hours || payload.weeklyHours || {},
-                settings: payload.settings || {}
+                settings: cleanSettingsForDB
             };
 
             const { data: updated, error } = await supabase.from("branches").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
-            if (Object.keys(changes).length > 0) {
-                await get().appendAuditLog('EDITAR_SUCURSAL', id, { cambios_detectados: changes });
+            // 🚨========================================================================🚨
+            // LÓGICA DE SINCRONIZACIÓN EN CASCADA Y AUDITORÍA INTELIGENTE
+            // 🚨========================================================================🚨
+
+            const legalNow = updated.settings?.legal || {};
+
+            // 1. Array de empleados que deben pertenecer a esta sucursal obligatoriamente
+            const requiredStaffIds = [];
+
+            if (legalNow.regentEmployeeId) requiredStaffIds.push(legalNow.regentEmployeeId);
+            if (legalNow.farmacovigilanciaId) requiredStaffIds.push(legalNow.farmacovigilanciaId);
+            if (legalNow.nursingRegents && Array.isArray(legalNow.nursingRegents)) {
+                legalNow.nursingRegents.forEach(n => {
+                    if (n.employeeId) requiredStaffIds.push(n.employeeId);
+                });
             }
+
+            // 2. Llamamos a updateEmployee del employeeSlice para actualizar sus branch_id
+            if (requiredStaffIds.length > 0) {
+                const { updateEmployee } = get();
+                if (updateEmployee) {
+                    for (const empId of requiredStaffIds) {
+                        try {
+                            // Actualiza el empleado en bd y estado
+                            await updateEmployee(empId, { branchId: id });
+                        } catch (e) {
+                            console.warn("Fallo al sincronizar empleado con sucursal:", empId, e);
+                        }
+                    }
+                }
+            }
+
+            // 3. Auditoría Inteligente: Detectamos exactamente qué cambió
+            let auditLogFired = false;
+
+            // Detectar cambio de Regente
+            if (oldLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
+                await get().appendAuditLog('EDITAR_SUCURSAL', id, {
+                    timeline_title: 'Asignación de Regente Farmacéutico',
+                    dimension: 'LEGAL',
+                    branch_id: id,
+                    new_value: legalNow.regentEmployeeId ? 'Regente Actualizado' : 'Regente Removido'
+                });
+                auditLogFired = true;
+            }
+
+            // Detectar cambio de Farmacovigilancia
+            if (oldLegal.farmacovigilanciaId !== legalNow.farmacovigilanciaId) {
+                await get().appendAuditLog('EDITAR_SUCURSAL', id, {
+                    timeline_title: 'Asignación de Farmacovigilancia',
+                    dimension: 'LEGAL',
+                    branch_id: id,
+                    new_value: legalNow.farmacovigilanciaId ? 'Referente Actualizado' : 'Referente Removido'
+                });
+                auditLogFired = true;
+            }
+
+            // Detectar cambio en cantidad de enfermeros
+            const oldNurses = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents.length : 0;
+            const newNurses = Array.isArray(legalNow.nursingRegents) ? legalNow.nursingRegents.length : 0;
+
+            if (oldNurses !== newNurses) {
+                await get().appendAuditLog('EDITAR_SUCURSAL', id, {
+                    timeline_title: 'Actualización de Equipo de Enfermería',
+                    dimension: 'LEGAL',
+                    branch_id: id,
+                    new_value: `${newNurses} Profesional(es) Asignado(s)`
+                });
+                auditLogFired = true;
+            }
+
+            // Si no fue un cambio legal pero sí de datos generales
+            if (!auditLogFired && oldBranch.name !== (payload.name || payload.branchName)) {
+                await get().appendAuditLog('EDITAR_SUCURSAL', id, {
+                    timeline_title: `Actualización de Datos: ${payload.name || payload.branchName || 'Sucursal'}`,
+                    dimension: 'OPERATIVE',
+                    branch_id: id,
+                    new_value: 'Se modificaron datos generales'
+                });
+            }
+
+            // 🚨========================================================================🚨
 
             const retSettings = typeof updated.settings === 'string' ? JSON.parse(updated.settings) : (updated.settings || {});
             const retHours = typeof updated.weekly_hours === 'string' ? JSON.parse(updated.weekly_hours) : (updated.weekly_hours || {});
@@ -236,7 +330,13 @@ export const createBranchSlice = (set, get) => ({
         }
         try {
             await supabase.from("branches").delete().eq("id", id);
-            await get().appendAuditLog('ELIMINAR_SUCURSAL', id, {});
+            await get().appendAuditLog('ELIMINAR_SUCURSAL', id, {
+                timeline_title: `Cierre Definitivo de Sucursal`,
+                dimension: 'OPERATIVE',
+                branch_id: id,
+                old_value: 'Activa',
+                new_value: 'Cerrada / Eliminada'
+            });
             set((state) => {
                 const next = state.branches.filter((b) => String(b.id) !== String(id));
                 return { branches: persistBranches(next) };
@@ -245,56 +345,56 @@ export const createBranchSlice = (set, get) => ({
         } catch (err) { return false; }
     },
 
-registerKioskDevice: async (branchId, deviceName) => {
+    registerKioskDevice: async (branchId, deviceName) => {
         try {
-            // 🚨 AHORA SOLO CONTAMOS LOS ACTIVOS
             const { count } = await supabase.from('kiosk_devices')
                 .select('*', { count: 'exact', head: true })
                 .eq('branch_id', branchId)
-                .eq('status', 'ACTIVE'); 
-                
+                .eq('status', 'ACTIVE');
+
             if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos activos.");
 
-            // Insertar el nuevo dispositivo
             const { data: newDevice, error } = await supabase.from('kiosk_devices')
                 .insert([{ branch_id: branchId, device_name: deviceName }])
                 .select()
                 .single();
-                
+
             if (error) throw error;
 
-            await get().appendAuditLog('VINCULAR_KIOSCO', newDevice.id, { branchId, deviceName }, 'CONTROL_PANEL');
-            
-            // 🚨 SOLUCIÓN: Mapeamos los campos de la BD (snake_case) al formato que espera el Kiosco (camelCase)
+            await get().appendAuditLog('VINCULAR_KIOSCO', newDevice.id, {
+                timeline_title: `Nuevo Kiosco Vinculado`,
+                dimension: 'OPERATIVE',
+                branch_id: branchId,
+                new_value: `Dispositivo: ${deviceName}`
+            });
             return {
                 deviceId: newDevice.id,
                 deviceToken: newDevice.device_token,
                 branchId: newDevice.branch_id,
                 deviceName: newDevice.device_name
             };
-            
-        } catch (err) { 
-            throw err; 
+
+        } catch (err) {
+            throw err;
         }
     },
 
-revokeKioskDevice: async (deviceId, deviceName) => {
+    revokeKioskDevice: async (deviceId, deviceName) => {
         try {
-            // 🚨 BEST PRACTICE: Soft Delete (Inactivación) en lugar de .delete()
             const { error } = await supabase
                 .from('kiosk_devices')
-                .update({ 
-                    status: 'REVOKED', 
-                    revoked_at: new Date().toISOString() 
-                })
+                .update({ status: 'REVOKED', revoked_at: new Date().toISOString() })
                 .eq('id', deviceId);
-                
+
             if (error) throw error;
-            
-            await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, { dispositivo: deviceName });
-            return true;
-        } catch (err) { 
-            return false; 
+            await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, {
+                timeline_title: `Kiosco Desvinculado`,
+                dimension: 'OPERATIVE',
+                old_value: deviceName,
+                new_value: 'Acceso Revocado'
+            }); return true;
+        } catch (err) {
+            return false;
         }
     },
 
@@ -303,15 +403,14 @@ revokeKioskDevice: async (deviceId, deviceName) => {
         return data || [];
     },
 
-validateKioskToken: async (deviceId, token) => {
-        // 🚨 BLOQUEO DE SEGURIDAD: El token solo es válido si el estado es ACTIVE
+    validateKioskToken: async (deviceId, token) => {
         const { data, error } = await supabase.from('kiosk_devices')
             .select('id, branch_id')
             .eq('id', deviceId)
             .eq('device_token', token)
-            .eq('status', 'ACTIVE') 
+            .eq('status', 'ACTIVE')
             .single();
-            
+
         return !(error || !data);
     },
 
@@ -333,14 +432,19 @@ validateKioskToken: async (deviceId, token) => {
     registerBranchExpense: async (branchId, expenseData) => {
         try {
             let receiptUrl = null;
+
+            // Usamos handleDocumentVersioning para subir el archivo a Supabase Storage
             if (expenseData.receiptFile instanceof File) {
-                receiptUrl = await get().uploadFileToStorage(
+                receiptUrl = await handleDocumentVersioning(
+                    branchId,
+                    'expenses',
+                    `${expenseData.expense_type}_${expenseData.billing_month}`,
                     expenseData.receiptFile,
-                    'documents',
-                    `branches/${branchId}/expenses/${expenseData.expense_type}`
+                    null
                 );
             }
 
+            // Insertamos en la tabla branch_expenses (Supabase SQL)
             const dbExpense = {
                 branch_id: branchId,
                 expense_type: expenseData.expense_type,
@@ -353,22 +457,46 @@ validateKioskToken: async (deviceId, token) => {
                 notes: expenseData.notes || null
             };
 
-            const { error: expError } = await supabase.from('branch_expenses').insert([dbExpense]);
-            if (expError) throw expError;
+// 1. Verificamos si ya existe un registro en BD para este mes y servicio
+            const { data: existingRecord } = await supabase.from('branch_expenses')
+                .select('id')
+                .eq('branch_id', branchId)
+                .eq('expense_type', expenseData.expense_type)
+                .eq('billing_month', expenseData.billing_month)
+                .single();
 
+            if (existingRecord) {
+                // Si existe (ej. subiendo recibo pendiente), ACTUALIZAMOS
+                const { error: updError } = await supabase.from('branch_expenses').update(dbExpense).eq('id', existingRecord.id);
+                if (updError) throw updError;
+            } else {
+                // Si no existe, INSERTAMOS
+                const { error: insError } = await supabase.from('branch_expenses').insert([dbExpense]);
+                if (insError) throw insError;
+            }
+
+            // Actualizamos la configuración JSONB de la sucursal (Zustand + Supabase)
             const branch = get().branches.find(b => String(b.id) === String(branchId));
             if (branch) {
                 const newSettings = JSON.parse(JSON.stringify(branch.settings || {}));
+                const isPending = !(expenseData.receiptFile instanceof File);
+
                 if (expenseData.expense_type === 'rent') {
                     if (!newSettings.rent) newSettings.rent = {};
                     newSettings.rent.paidThrough = expenseData.billing_month;
+                    newSettings.rent.isReceiptPending = isPending;
+                    newSettings.rent.amount = expenseData.amount; // 🔴 Guarda el monto real pagado
                 } else {
                     if (!newSettings.services) newSettings.services = {};
                     if (!newSettings.services[expenseData.expense_type]) newSettings.services[expenseData.expense_type] = {};
                     newSettings.services[expenseData.expense_type].paidThrough = expenseData.billing_month;
+                    newSettings.services[expenseData.expense_type].isReceiptPending = isPending;
+                    newSettings.services[expenseData.expense_type].amount = expenseData.amount; // 🔴 Guarda el monto real pagado
                 }
 
-                await supabase.from('branches').update({ settings: newSettings }).eq('id', branchId);
+                // Limpiamos antes de mandar a JSONB
+                const cleanSettingsForDB = sanitizeForJsonb(newSettings);
+                await supabase.from('branches').update({ settings: cleanSettingsForDB }).eq('id', branchId);
 
                 set((state) => {
                     const next = state.branches.map(b =>
@@ -379,8 +507,17 @@ validateKioskToken: async (deviceId, token) => {
                     return { branches: persistBranches(next) };
                 });
 
+                const serviceMap = { rent: 'Alquiler', light: 'Energía Eléctrica', water: 'Agua Potable', internet: 'Internet', phone: 'Plan Celular', taxes: 'Impuestos' };
+                const srvName = serviceMap[expenseData.expense_type] || expenseData.expense_type;
+
                 await get().appendAuditLog('PAGO_REGISTRADO', branchId, {
-                    servicio: expenseData.expense_type, monto: expenseData.amount, mes: expenseData.billing_month
+                    timeline_title: `Pago de ${srvName}`,
+                    dimension: 'FINANCE',
+                    branch_id: branchId,
+                    old_value: `Mes: ${expenseData.billing_month}`,
+                    new_value: `Monto: $${expenseData.amount}`,
+                    servicio: expenseData.expense_type,
+                    monto: expenseData.amount
                 });
             }
             return true;

@@ -6,7 +6,7 @@ import { safeJsonParse, CACHE_KEYS } from '../utils';
 const persistEmployees = (employees) => {
     try {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        
+
         const lightEmployees = employees.map(emp => {
             return {
                 ...emp,
@@ -20,9 +20,9 @@ const persistEmployees = (employees) => {
     } catch (error) {
         console.warn("⚠️ Alerta de Memoria LocalStorage:", error);
     }
-    
+
     // Devolvemos el array original INTACTO para que el estado de Zustand siga teniendo todo
-    return employees; 
+    return employees;
 };
 
 export const createEmployeeSlice = (set, get) => ({
@@ -55,7 +55,7 @@ export const createEmployeeSlice = (set, get) => ({
     },
 
     uploadPhotoToStorage: (file) => get().uploadFileToStorage(file, 'photos'),
-    
+
     addEmployee: async (formData) => {
         try {
             let publicPhotoUrl = null;
@@ -80,8 +80,12 @@ export const createEmployeeSlice = (set, get) => ({
             const { data: newEmp, error } = await supabase.from("employees").insert([dbPayload]).select().single();
             if (error) throw error;
 
-            await get().appendAuditLog('CREAR_EMPLEADO', newEmp.id, { nombre: newEmp.name });
-
+            await get().appendAuditLog('PERSONAL_ASIGNADO', newEmp.id, {
+                timeline_title: `Nuevo Ingreso: ${newEmp.name}`,
+                dimension: 'HR',
+                branch_id: newEmp.branch_id,
+                new_value: `Cargo asignado`
+            });
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === newEmp.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === newEmp.secondary_role_id)?.name || null;
@@ -126,14 +130,20 @@ export const createEmployeeSlice = (set, get) => ({
             delete dbPayload.history;
             delete dbPayload.documents;
             delete dbPayload.attendance;
-            delete dbPayload.role; 
-            delete dbPayload.secondary_role; 
+            delete dbPayload.role;
+            delete dbPayload.secondary_role;
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
-            await get().appendAuditLog('EDITAR_EMPLEADO', id, { cambios: dbPayload });
-
+            const empEditado = get().employees.find(e => String(e.id) === String(id));
+            await get().appendAuditLog('EDITAR_EMPLEADO', id, {
+                timeline_title: `Actualización de Personal: ${updatedData.name || empEditado?.name}`,
+                dimension: 'HR',
+                branch_id: updatedData.branchId || empEditado?.branchId,
+                new_value: 'Expediente modificado',
+                ...dbPayload
+            });
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === updated.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === updated.secondary_role_id)?.name || null;
@@ -162,7 +172,14 @@ export const createEmployeeSlice = (set, get) => ({
         try {
             const { error } = await supabase.from("employees").delete().eq("id", id);
             if (error) throw error;
-            await get().appendAuditLog('ELIMINAR_EMPLEADO', id, {});
+            const empEliminar = get().employees.find(e => String(e.id) === String(id));
+            await get().appendAuditLog('ELIMINAR_EMPLEADO', id, {
+                timeline_title: `Baja de Personal: ${empEliminar?.name || 'Desconocido'}`,
+                dimension: 'HR',
+                branch_id: empEliminar?.branchId,
+                old_value: 'Activo',
+                new_value: 'Dado de baja en el sistema'
+            });
             set((state) => {
                 const next = state.employees.filter((emp) => String(emp.id) !== String(id));
                 persistEmployees(next);
@@ -179,8 +196,13 @@ export const createEmployeeSlice = (set, get) => ({
             const dbPayload = { employee_id: employeeId, type: eventData.type, date: eventData.date || new Date().toISOString().split('T')[0], note: eventData.note || '', metadata: eventData };
             const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
             if (error) throw error;
-
-            await get().appendAuditLog('ACCION_RRHH', employeeId, { tipo: eventData.type });
+            const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
+            await get().appendAuditLog('ACCION_RRHH', employeeId, {
+                timeline_title: `Evento RRHH: ${eventData.type.replace(/_/g, ' ')}`,
+                dimension: 'HR',
+                branch_id: empEvento?.branchId,
+                new_value: eventData.note || 'Evento registrado'
+            });
             let docObject = null;
             if (file) {
                 const url = await get().uploadFileToStorage(file, 'documents');
@@ -212,7 +234,14 @@ export const createEmployeeSlice = (set, get) => ({
             const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
             if (error) throw error;
 
-            await get().appendAuditLog('SUBIR_DOCUMENTO', employeeId, { archivo: file.name });
+            const empDoc = get().employees.find(e => String(e.id) === String(employeeId));
+            await get().appendAuditLog('DOCUMENTO_HISTORICO', employeeId, {
+                timeline_title: `Documento RRHH Subido: ${empDoc?.name || ''}`,
+                dimension: 'HR',
+                branch_id: empDoc?.branchId,
+                new_value: file.name,
+                file_url: url // 🚨 Para que el botón de "Ver Archivo" en TabHistory se active
+            });
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
                     ...emp,
@@ -260,7 +289,7 @@ export const createEmployeeSlice = (set, get) => ({
 
     registerAttendance: async (employeeId, type, metadata = null) => {
         const timestamp = new Date().toISOString();
-        
+
         try {
             // 1. Insertamos en Supabase y esperamos respuesta real
             const { data: newPunch, error } = await supabase
@@ -281,27 +310,35 @@ export const createEmployeeSlice = (set, get) => ({
             const cleanDetails = { ...metadata };
             delete cleanDetails.audit_info;
 
+            const tipoMarcaje = type === 'ENTRY' ? 'Entrada' : type === 'EXIT' ? 'Salida' : type === 'BREAK_START' ? 'Inicio Descanso' : type === 'BREAK_END' ? 'Fin Descanso' : type;
+
             state.appendAuditLog(
-                `REGISTRO_ASISTENCIA (${type})`,
+                `REGISTRO_ASISTENCIA`,
                 employeeId,
-                cleanDetails,
-                null, 
+                {
+                    timeline_title: `Marcaje de ${tipoMarcaje}`,
+                    dimension: 'OPERATIVE',
+                    branch_id: employee?.branchId,
+                    new_value: employeeName,
+                    ...cleanDetails
+                },
+                null,
                 {
                     isKiosk,
                     kioskAuditInfo: isKiosk ? {
                         ...kioskAuditInfo,
-                        employee_name: employeeName 
+                        employee_name: employeeName
                     } : null
                 }
-            ).catch(console.error); // Fuego y olvido para no frenar la respuesta
+            ).catch(console.error);
 
             // 3. Actualizamos estado de UI garantizando evitar duplicados
             set((state) => {
                 const next = state.employees.map(emp => {
                     if (String(emp.id) !== String(employeeId)) return emp;
-                    
+
                     const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type, details: metadata };
-                    
+
                     const exists = (emp.attendance || []).some(p => p.id === actualPunch.id);
                     if (exists) return emp;
 
@@ -310,14 +347,14 @@ export const createEmployeeSlice = (set, get) => ({
                         attendance: [...(emp.attendance || []), actualPunch]
                     };
                 });
-                
+
                 persistEmployees(next);
                 return { employees: next };
             });
 
             return newPunch || { timestamp, type, details: metadata };
 
-        } catch (err) { 
+        } catch (err) {
             console.error("❌ Error al registrar asistencia:", err);
             throw new Error(err.message || "Fallo al registrar asistencia en la base de datos");
         }

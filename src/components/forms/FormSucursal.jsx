@@ -17,9 +17,6 @@ const purifySettings = (raw) => {
         }
     }
     if (!s || typeof s !== 'object') s = {};
-    
-    // 🚨 SOLUCIÓN AL BUG: Clonamos el objeto para romper la conexión con Zustand.
-    // Esto asegura que los cambios solo sean "borradores" hasta que se guarde.
     return JSON.parse(JSON.stringify(s)); 
 };
 
@@ -32,8 +29,6 @@ const purifyHours = (raw) => {
     }
     if (!h || typeof h !== 'object') h = {};
     
-    // 🚨 SOLUCIÓN AL BUG: Copia profunda del horario. 
-    // Si cancelas el modal, el horario original nunca se habrá tocado.
     h = JSON.parse(JSON.stringify(h));
 
     if (Object.keys(h).length === 0) {
@@ -42,11 +37,20 @@ const purifyHours = (raw) => {
     return h;
 };
 
-const calculateEndDate = (startDate, durationMonths) => {
-    if (!startDate || !durationMonths) return null;
-    const date = new Date(startDate);
+// CORRECCIÓN MATEMÁTICA DE ZONA HORARIA
+const calculateEndDate = (startDateStr, durationMonths) => {
+    if (!startDateStr || !durationMonths) return null;
+    
+    const [year, month, day] = startDateStr.split('-');
+    
+    const date = new Date(year, month - 1, day, 12, 0, 0); 
     date.setMonth(date.getMonth() + parseInt(durationMonths, 10));
-    return date.toISOString().split('T')[0];
+    
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    
+    return `${y}-${m}-${d}`;
 };
 
 const FormSucursal = ({ formData, setFormData, section = "general" }) => {
@@ -138,8 +142,17 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
     }, [name, formData.address, formData.phone, formData.cell, location]);
 
     return (
-        <div className="w-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <Suspense fallback={<div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Cargando Módulo...</div>}>
+        // 🚨 FIX: Eliminamos `animate-in fade-in slide-in-from-bottom-2 duration-300`
+        // Esto evita que el motor CSS intente recalcular opacidades y transformaciones al hacer scroll.
+        // Hacemos el contenedor relative y le damos un ancho y alto plenos para que no colapse
+        <div className="w-full h-full flex flex-col relative">
+            <Suspense fallback={
+                <div className="flex h-full w-full items-center justify-center p-10">
+                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">
+                        Cargando Módulo...
+                    </span>
+                </div>
+            }>
                 
                 {section === "general" && (
                     <BranchTabGeneral

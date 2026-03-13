@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
 
 export const EL_SALVADOR_GEO = {
     "Ahuachapán": ["Ahuachapán Norte", "Ahuachapán Centro", "Ahuachapán Sur"],
@@ -64,56 +64,71 @@ export const Switch = ({ on, onToggle }) => (
 // ============================================================================
 // ☁️ UPLOADER LIQUIDGLASS (Diseño de Botón Elevado)
 // ============================================================================
-export const FileUploader = ({ label, file, url, onChange }) => (
-    <div className="mt-2 w-full">
-        <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1 mb-1.5 block">{label}</label>
-        <div className={`relative flex items-center gap-3 cursor-pointer group rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
-            (!file && !url) 
-                // 🚨 Estado Vacío: Ámbar brillante que invita a la acción
-                ? 'bg-amber-50/50 backdrop-blur-sm border-amber-200/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-amber-50 hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5' 
-                // 🟢 Estado Lleno: Esmeralda premium sólido
-                : 'bg-emerald-50 backdrop-blur-sm border-emerald-200 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5'
-        }`}>
+export const FileUploader = ({ label, file, url, onChange }) => {
+    const fileInputRef = useRef(null);
+    const hasFile = !!file || !!url;
+
+    const handleView = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        if (file) window.open(URL.createObjectURL(file), '_blank');
+        else if (url) window.open(url, '_blank');
+    };
+
+    const handleClear = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        onChange(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    return (
+        <div className="mt-2 w-full">
+            {label && <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1 mb-1.5 block">{label}</label>}
             
-            {/* Ícono Izquierdo en contenedor Squircle */}
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${
-                (!file && !url) 
-                    ? 'bg-amber-100 text-amber-500 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white' 
-                    : 'bg-emerald-500 text-white shadow-emerald-500/30'
-            }`}>
-                {(!file && !url) ? <UploadCloud size={18} strokeWidth={2.5}/> : <CheckCircle2 size={18} strokeWidth={2.5} />}
-            </div>
-            
-            {/* Textos */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                {file ? (
-                    <>
-                        <p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">{file.name}</p>
-                        <p className="text-[9px] text-emerald-600/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p>
-                    </>
-                ) : url ? (
-                    <>
-                        <p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">Documento Guardado</p>
-                        <p className="text-[9px] text-emerald-600/70 font-black uppercase tracking-widest leading-none">En el sistema</p>
-                    </>
-                ) : (
-                    <>
-                        <p className="text-[11px] text-amber-700 font-bold leading-none mb-1">Documento Pendiente</p>
-                        <p className="text-[9px] text-amber-600/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p>
-                    </>
+            <div className={`relative flex items-center gap-3 rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
+                !hasFile 
+                    ? 'bg-amber-50/50 backdrop-blur-sm border-amber-200/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:bg-amber-50 hover:border-amber-300 hover:shadow-md cursor-pointer group' 
+                    : 'bg-emerald-50 backdrop-blur-sm border-emerald-200 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] hover:shadow-md'
+            }`}
+            onClick={() => !hasFile && fileInputRef.current?.click()}
+            >
+                {/* Ícono Izquierdo */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-sm ${
+                    !hasFile ? 'bg-amber-100 text-amber-500 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white' : 'bg-emerald-500 text-white shadow-emerald-500/30'
+                }`}>
+                    {!hasFile ? <UploadCloud size={18} strokeWidth={2.5}/> : <CheckCircle2 size={18} strokeWidth={2.5} />}
+                </div>
+                
+                {/* Textos */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    {file ? (
+                        <><p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">{file.name}</p>
+                        <p className="text-[9px] text-emerald-600/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p></>
+                    ) : url ? (
+                        <><p className="text-[12px] text-emerald-700 font-bold truncate leading-none mb-1">Documento Guardado</p>
+                        <p className="text-[9px] text-emerald-600/70 font-black uppercase tracking-widest leading-none">En el sistema</p></>
+                    ) : (
+                        <><p className="text-[11px] text-amber-700 font-bold leading-none mb-1">Documento Pendiente</p>
+                        <p className="text-[9px] text-amber-600/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p></>
+                    )}
+                </div>
+
+                {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
+                {hasFile && (
+                    <div className="flex items-center gap-1.5 pr-1 shrink-0">
+                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-white border border-emerald-200 rounded-lg text-emerald-600 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-95 z-20" title="Ver Documento">
+                            <Eye size={16} strokeWidth={2.5} />
+                        </button>
+                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-white border border-red-200 rounded-lg text-red-500 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95 z-20" title="Quitar Documento">
+                            <X size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 )}
+                
+                <input type="file" ref={fileInputRef} accept="application/pdf,image/*" className="hidden" onChange={(e) => onChange(e.target.files?.[0] || null)} />
             </div>
-            
-            {/* Input Invisible */}
-            <input 
-                type="file" 
-                accept="application/pdf,image/*" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                onChange={(e) => onChange(e.target.files?.[0] || null)} 
-            />
         </div>
-    </div>
-);
+    );
+};
 
 // ============================================================================
 // ⌨️ LAZY INPUT LIQUIDGLASS (Reacciona al Focus como los modales)

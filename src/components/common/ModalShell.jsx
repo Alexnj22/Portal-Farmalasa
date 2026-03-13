@@ -20,7 +20,9 @@ export default function ModalShell({
 
     window.addEventListener("keydown", onKeyDown);
 
+    // Guardamos el estilo original
     const originalStyle = window.getComputedStyle(document.body).overflow;
+    
     if (lockScroll) {
         document.documentElement.style.overflow = "hidden"; 
         document.body.style.overflow = "hidden";
@@ -39,10 +41,10 @@ export default function ModalShell({
 
   return createPortal(
     <div
-      // 🚨 OVERLAY NEUTRO Y OSCURECIDO: Eliminamos el tinte gris (slate). Usamos pura sombra (negro) a muy baja opacidad.
-      // 🚨 Esto oscurecerá el fondo (contraste) pero mantendrá la saturación y los matices cian/morado intactos.
-      // 🚨 Mantenemos CERO blur para no ensuciar la refracción del cristal del modal.
-      className={`fixed inset-0 ${zClass} bg-black/[0.06] flex items-center justify-center p-4 sm:p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]`}
+      // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
+      // Esto hace que el fondo aparezca suavemente, pero una vez que termina, 
+      // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
+      className={`fixed inset-0 ${zClass} bg-black/[0.06] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500`}
       role="dialog"
       aria-modal="true"
     >
@@ -50,12 +52,15 @@ export default function ModalShell({
         type="button"
         aria-label="Cerrar modal"
         onClick={onClose}
-        className="absolute inset-0 cursor-default w-full h-full"
+        className="absolute inset-0 cursor-default w-full h-full bg-transparent border-none outline-none"
       />
 
-      {/* 🚨 CONTENEDOR DESNUDO: Animación premium idéntica */}
+      {/* 🚨 FIX 2: ELIMINAMOS transform-gpu.
+          La animación zoom-in ya usa "transform" de forma temporal. 
+          Al quitar transform-gpu, evitamos que todo el modal se convierta en una sola textura rígida,
+          permitiendo que el scroll interno del UnifiedModal se procese de forma independiente y nativa. */}
       <div
-        className={`relative w-full ${maxWidthClass} animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu`}
+        className={`relative w-full ${maxWidthClass} animate-in fade-in zoom-in-95 duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

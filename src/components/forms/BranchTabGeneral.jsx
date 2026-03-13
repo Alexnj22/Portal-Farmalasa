@@ -125,7 +125,7 @@ const BranchTabGeneral = ({
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Enlace Google Maps</label>
                         <LazyInput
                             icon={Map}
-                            placeholder="http://googleusercontent.com..."
+                            placeholder="https://maps.google.com/..."
                             value={location.mapsUrl || ""}
                             onChange={(val) => updateNestedSetting('location', 'mapsUrl', val)}
                             className={`!bg-white border-slate-200/80 shadow-sm h-[40px] text-[13px] ${inputHoverClass}`}

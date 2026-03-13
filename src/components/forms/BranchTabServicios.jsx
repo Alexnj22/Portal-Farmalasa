@@ -1,36 +1,88 @@
 import React from 'react';
-import { Zap, Droplet, Wifi, Smartphone } from 'lucide-react';
+import { Zap, Droplet, Wifi, Smartphone, CalendarDays } from 'lucide-react';
 import { LazyInput, clampInt } from './BranchHelpers';
+import LiquidDatePicker from '../common/LiquidDatePicker';
 
 const BranchTabServicios = ({ services, updateServiceField }) => {
+
+    // 🚨 GPU LOCK: Mantenemos el scroll ultra fluido a 60 FPS
+    const gpuLockStyle = {
+        transform: 'translateZ(0)',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
+        willChange: 'transform'
+    };
+
+    // 🚨 ESTILOS LIQUID GLASS CONSISTENTES
+    const islandClass = "bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(0,0,0,0.06)] hover:bg-white/80 hover:border-white";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-[#007AFF]/30 focus-within:ring-4 focus-within:ring-[#007AFF]/10";
+
+    const servicesList = [
+        { id: 'light', icon: Zap, label: 'Energía Eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE', color: 'text-amber-500', bgIcon: 'bg-amber-50' },
+        { id: 'water', icon: Droplet, label: 'Agua Potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta', color: 'text-cyan-500', bgIcon: 'bg-cyan-50' },
+        { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-[#007AFF]', bgIcon: 'bg-blue-50' },
+        { id: 'mobile', icon: Smartphone, label: 'Telefonía Móvil (Flota)', placeholder: 'Ej. Claro', accountLabel: 'Nº de Teléfono', color: 'text-purple-500', bgIcon: 'bg-purple-50' },
+    ];
+
     return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-            {[
-                { id: 'light', icon: Zap, label: 'Energía Eléctrica', placeholder: 'Ej. CLESA', accountLabel: 'Nº de NIC / NPE' },
-                { id: 'water', icon: Droplet, label: 'Agua Potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta' },
-                { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato' },
-                { id: 'mobile', icon: Smartphone, label: 'Telefonía Móvil (Flota)', placeholder: 'Ej. Movistar', accountLabel: 'Nº de Teléfono Asociado' },
-            ].map((srv) => (
-                <div key={srv.id} className="bg-slate-50 p-5 rounded-[1.5rem] border border-slate-200">
-                    <h4 className={`text-[12px] font-black uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-3 text-slate-800`}>
-                        <srv.icon size={16} /> {srv.label}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                        <div className="md:col-span-2">
-                            <label className="text-[9px] font-black uppercase text-slate-500 ml-1 mb-2 block">Proveedor</label>
-                            <LazyInput placeholder={srv.placeholder} value={services[srv.id]?.provider || ""} onChange={(val) => updateServiceField(srv.id, 'provider', val)} className={`w-full py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none focus:border-[#007AFF] font-bold text-sm`} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full" style={gpuLockStyle}>
+            {servicesList.map((srv) => (
+                <div key={srv.id} className={`${islandClass} ${islandHoverClass} flex flex-col`} style={gpuLockStyle}>
+                    
+                    {/* ENCABEZADO CON ÍCONO COLOREADO */}
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-[0.8rem] border border-white shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]`}>
+                            <srv.icon size={18} strokeWidth={2.5} />
                         </div>
-                        <div className="md:col-span-2">
-                            <label className="text-[9px] font-black uppercase text-slate-500 ml-1 mb-2 block">{srv.accountLabel}</label>
-                            <LazyInput value={services[srv.id]?.account || ""} onChange={(val) => updateServiceField(srv.id, 'account', val)} className={`w-full py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none focus:border-[#007AFF] font-bold font-mono text-slate-600 text-sm`} />
+                        <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">
+                            {srv.label}
+                        </h4>
+                    </div>
+
+                    {/* CAMPOS: Apilados verticalmente */}
+                    <div className="flex flex-col gap-5 flex-1">
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Proveedor</label>
+                            <LazyInput 
+                                placeholder={srv.placeholder} 
+                                value={services[srv.id]?.provider || ""} 
+                                onChange={(val) => updateServiceField(srv.id, 'provider', val)} 
+                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-slate-200/80 ${inputHoverClass}`} 
+                            />
                         </div>
-                        <div className="md:col-span-2">
-                            <label className="text-[9px] font-black uppercase text-slate-500 ml-1 mb-2 block">Día de Pago (1-31)</label>
-                            <LazyInput type="number" min="1" max="31" placeholder="Ej: 15" value={services[srv.id]?.dueDay || ""} onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))} className={`w-full py-2.5 rounded-[1rem] bg-white border border-slate-200 outline-none focus:border-[#007AFF] font-bold text-sm`} />
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">{srv.accountLabel}</label>
+                            <LazyInput 
+                                value={services[srv.id]?.account || ""} 
+                                onChange={(val) => updateServiceField(srv.id, 'account', val)} 
+                                className={`!bg-white shadow-sm h-[42px] text-[13px] font-mono border-slate-200/80 ${inputHoverClass}`} 
+                            />
                         </div>
-                        <div className="md:col-span-2">
-                            <label className="text-[9px] font-black uppercase text-emerald-600 ml-1 mb-2 block">Último Mes Pagado</label>
-                            <LazyInput type="month" value={services[srv.id]?.paidThrough || ""} onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)} className={`w-full py-2.5 rounded-[1rem] bg-white border border-emerald-200 outline-none focus:border-emerald-500 font-bold text-emerald-700 text-sm`} />
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Día de Pago (1-31)</label>
+                            <LazyInput 
+                                type="number" 
+                                placeholder="Ej: 15" 
+                                value={services[srv.id]?.dueDay || ""} 
+                                onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))} 
+                                className={`!bg-white shadow-sm h-[42px] text-[13px] border-slate-200/80 ${inputHoverClass}`} 
+                            />
+                        </div>
+                        
+                        {/* 🚨 FIX: LiquidDatePicker con mode="month" */}
+                        <div className="relative focus-within:z-50">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 ml-1 mb-2 flex items-center gap-1.5">
+                                <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
+                            </label>
+                            <div className="bg-emerald-50/50 rounded-[1rem] border border-emerald-200 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-400/20">
+                                <LiquidDatePicker
+                                    mode="month" 
+                                    value={services[srv.id]?.paidThrough || ""} 
+                                    onChange={(val) => updateServiceField(srv.id, 'paidThrough', val)} 
+                                    placeholder="Seleccionar Mes"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -39,4 +91,4 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
     );
 };
 
-export default BranchTabServicios;
+export default React.memo(BranchTabServicios);

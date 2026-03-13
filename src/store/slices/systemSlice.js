@@ -138,16 +138,14 @@ export const createSystemSlice = (set, get) => ({
                         };
                     });
 
-                    // 1. Guardamos en memoria (Zustand) CON TODO el peso para que RRHH vea los datos al instante
                     set({ employees: mappedEmployees });
 
-                    // 2. 🚨 SALVAVIDAS DE MEMORIA: Filtramos antes de tocar el LocalStorage
                     try {
                         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
                         const lightCache = mappedEmployees.map(emp => ({
                             ...emp,
-                            history: [], // Vaciamos para no saturar el navegador
-                            documents: [], // Vaciamos para no saturar el navegador
+                            history: [],
+                            documents: [],
                             attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
                         }));
                         localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
@@ -156,6 +154,7 @@ export const createSystemSlice = (set, get) => ({
                     }
                 }
 
+                // 🚨 OBTENCIÓN DE AVISOS: El Panel Admin debe ver TODOS (incluso los futuros)
                 const { data: annData } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
                 if (annData) {
                     const mappedAnns = annData.map((a) => ({
@@ -168,7 +167,8 @@ export const createSystemSlice = (set, get) => ({
                         date: a.created_at,
                         readBy: a.read_by || [],
                         isArchived: a.is_archived,
-                        editedAt: a.edited_at // 🚨 Nueva columna para avisos editados
+                        editedAt: a.edited_at,
+                        scheduledFor: a.scheduled_for // 🚨 INYECTAMOS LA FECHA PROGRAMADA
                     }));
                     set({ announcements: mappedAnns });
                     localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
@@ -234,7 +234,12 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await supabase.from('roles').delete().eq('id', roleId);
             if (error) throw error;
-            await get().appendAuditLog('ELIMINAR_CARGO', roleId, { nombre: roleName });
+            await get().appendAuditLog('ELIMINAR_CARGO', roleId, {
+                timeline_title: `Eliminación de Cargo: ${roleName}`,
+                dimension: 'HR',
+                old_value: 'Cargo Activo',
+                new_value: 'Eliminado del Sistema'
+            });
             set((state) => {
                 const next = state.roles.filter(r => r.id !== roleId);
                 localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
@@ -260,8 +265,11 @@ export const createSystemSlice = (set, get) => ({
                 .single();
 
             if (error) throw error;
-            await get().appendAuditLog('EDITAR_CARGO', roleId, { nombre: name });
-
+            await get().appendAuditLog('EDITAR_CARGO', roleId, {
+                timeline_title: `Actualización de Cargo: ${name}`,
+                dimension: 'HR',
+                new_value: 'Configuración actualizada'
+            });
             set((state) => {
                 const next = state.roles.map(r => String(r.id) === String(roleId) ? data : r);
                 localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
@@ -280,17 +288,34 @@ export const createSystemSlice = (set, get) => ({
         try {
             const storedUser = safeJsonParse(localStorage.getItem("sb_user"));
             const payload = {
-                title: announcementData.title, message: announcementData.message,
-                target_type: announcementData.targetType, target_value: announcementData.targetValue,
-                priority: announcementData.priority, is_archived: false, read_by: [], created_by: storedUser?.id || null
+                title: announcementData.title,
+                message: announcementData.message,
+                target_type: announcementData.targetType,
+                target_value: announcementData.targetValue,
+                priority: announcementData.priority,
+                is_archived: false,
+                read_by: [],
+                created_by: storedUser?.id || null,
+                scheduled_for: announcementData.scheduledFor || null // 🚨 INSERTAMOS LA FECHA
             };
             const { data, error } = await supabase.from('announcements').insert([payload]).select().single();
             if (error) throw error;
-            await get().appendAuditLog('CREAR_AVISO', data.id, { titulo: data.title });
-
+            await get().appendAuditLog('CREAR_AVISO', data.id, {
+                timeline_title: `Nuevo Aviso: ${data.title}`,
+                dimension: 'OPERATIVE',
+                new_value: `Prioridad: ${data.priority}`
+            });
             const newAnn = {
-                id: data.id, title: data.title, message: data.message, targetType: data.target_type, targetValue: data.target_value,
-                priority: data.priority || 'NORMAL', date: data.created_at, readBy: data.read_by || [], isArchived: data.is_archived
+                id: data.id,
+                title: data.title,
+                message: data.message,
+                targetType: data.target_type,
+                targetValue: data.target_value,
+                priority: data.priority || 'NORMAL',
+                date: data.created_at,
+                readBy: data.read_by || [],
+                isArchived: data.is_archived,
+                scheduledFor: data.scheduled_for // 🚨 MAPEO AL ESTADO
             };
 
             set((state) => {
@@ -304,12 +329,10 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
-    // 🚨 NUEVO: Lógica de Edición de Avisos (Fuerza Re-lectura)
     updateAnnouncement: async (id, updateData, auditDetails) => {
-        const { title, message, targetType, targetValue, priority } = updateData;
+        const { title, message, targetType, targetValue, priority, scheduledFor } = updateData; // 🚨 ACEPTAMOS LA FECHA
 
         try {
-            // 1. Actualizamos en Supabase y VACIAR read_by para forzar re-lectura
             const { data, error } = await supabase
                 .from('announcements')
                 .update({
@@ -318,7 +341,8 @@ export const createSystemSlice = (set, get) => ({
                     target_type: targetType,
                     target_value: targetValue,
                     priority,
-                    read_by: [], // 🚨 MAGIA: Borramos el historial de lectores
+                    scheduled_for: scheduledFor || null, // 🚨 ACTUALIZAMOS LA FECHA
+                    read_by: [],
                     edited_at: new Date().toISOString()
                 })
                 .eq('id', id)
@@ -327,10 +351,11 @@ export const createSystemSlice = (set, get) => ({
 
             if (error) throw error;
 
-            // 2. Registrar en Auditoría el "Antes y Después"
-            await get().appendAuditLog('EDITAR_AVISO', id, auditDetails);
-
-            // 3. Actualizar el estado local (Zustand)
+            await get().appendAuditLog('EDITAR_AVISO', id, {
+                timeline_title: `Aviso Editado: ${title}`,
+                dimension: 'OPERATIVE',
+                ...auditDetails
+            });
             set((state) => {
                 const next = state.announcements.map((ann) =>
                     ann.id === id
@@ -341,7 +366,8 @@ export const createSystemSlice = (set, get) => ({
                             targetType: data.target_type,
                             targetValue: data.target_value,
                             priority: data.priority,
-                            readBy: [], // Reset local inmediato
+                            scheduledFor: data.scheduled_for, // 🚨 MAPEO DE RESPUESTA
+                            readBy: [],
                             editedAt: data.edited_at
                         }
                         : ann
@@ -360,7 +386,11 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await supabase.from('announcements').delete().eq('id', id);
             if (error) throw error;
-            await get().appendAuditLog('ELIMINAR_AVISO', id, {});
+            await get().appendAuditLog('ELIMINAR_AVISO', id, {
+                timeline_title: `Eliminación de Aviso ID: ${id}`,
+                dimension: 'OPERATIVE',
+                new_value: 'Eliminado Permanentemente'
+            });
             set((state) => {
                 const next = state.announcements.filter(a => String(a.id) !== String(id));
                 localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
@@ -374,7 +404,11 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await supabase.from('announcements').update({ is_archived: true }).eq('id', id);
             if (error) throw error;
-            await get().appendAuditLog('ARCHIVAR_AVISO', id, {});
+            await get().appendAuditLog('ARCHIVAR_AVISO', id, {
+                timeline_title: `Aviso Archivado ID: ${id}`,
+                dimension: 'OPERATIVE',
+                new_value: 'Movido al archivo'
+            });
             set((state) => {
                 const next = state.announcements.map(a => String(a.id) === String(id) ? { ...a, isArchived: true } : a);
                 localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
@@ -409,8 +443,12 @@ export const createSystemSlice = (set, get) => ({
             const payload = { branch_id: shiftData.branchId, name: shiftData.name, start_time: `${shiftData.start}:00`, end_time: `${shiftData.end}:00` };
             const { data, error } = await supabase.from("shifts").insert([payload]).select().single();
             if (error) throw error;
-            await get().appendAuditLog('CREAR_TURNO_CATALOGO', data.id, { detalles: payload });
-
+            await get().appendAuditLog('CREAR_TURNO_CATALOGO', data.id, {
+                timeline_title: `Nuevo Turno Creado: ${data.name}`,
+                dimension: 'OPERATIVE',
+                branch_id: data.branch_id, // 🚨 CRUCIAL PARA TABHISTORY
+                new_value: `${data.start_time.substring(0, 5)} a ${data.end_time.substring(0, 5)}`
+            });
             const newShift = { id: data.id, branchId: data.branch_id, name: data.name, start: data.start_time.substring(0, 5), end: data.end_time.substring(0, 5) };
             set((state) => {
                 const next = [...state.shifts, newShift];
@@ -427,7 +465,11 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { error } = await supabase.from("shifts").delete().eq("id", id);
             if (error) throw error;
-            await get().appendAuditLog('ELIMINAR_TURNO', id, {});
+            await get().appendAuditLog('ELIMINAR_TURNO', id, {
+                timeline_title: `Turno Eliminado ID: ${id}`,
+                dimension: 'OPERATIVE',
+                new_value: 'Eliminado Permanentemente'
+            });
             set((state) => {
                 const next = state.shifts.filter(s => String(s.id) !== String(id));
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
@@ -454,16 +496,20 @@ export const createSystemSlice = (set, get) => ({
             const payload = { employee_id: employeeId, week_start_date: weekStartDate, schedule_data: scheduleData };
             const { error } = await supabase.from('employee_rosters').upsert(payload, { onConflict: 'employee_id, week_start_date' });
             if (error) throw error;
-            await get().appendAuditLog('ASIGNAR_TURNO_SEMANAL', employeeId, { semana: weekStartDate, horario: scheduleData });
+            await get().appendAuditLog('ASIGNAR_TURNO_SEMANAL', employeeId, {
+                timeline_title: `Asignación de Horario Semanal`,
+                dimension: 'HR',
+                new_value: `Semana: ${weekStartDate}`
+            });
             return true;
         } catch (err) {
             throw new Error("Error guardando el roster.");
         }
     },
-    // ✅ NUEVO: DESCARGA BLINDADA EXCLUSIVA PARA KIOSCOS (Con Caché Offline)
+
+    // ✅ KIOSK BOOT REFINADO: Filtramos los avisos futuros para que el kiosco no los sepa
     fetchKioskBoot: async () => {
         try {
-            // 🚨 PASO CRUCIAL: Descargar sucursales antes de validar la config local
             const { data: bData } = await supabase.from("branches").select("id, name").order("name");
             if (bData) {
                 set({ branches: bData });
@@ -471,7 +517,7 @@ export const createSystemSlice = (set, get) => ({
             }
 
             const kioskConfigStr = localStorage.getItem('kiosk_config');
-            if (!kioskConfigStr) return false; // Salimos, pero las sucursales ya están en el Store
+            if (!kioskConfigStr) return false;
 
             const config = JSON.parse(kioskConfigStr);
             const today = new Date();
@@ -490,7 +536,6 @@ export const createSystemSlice = (set, get) => ({
             if (error) throw error;
 
             if (data) {
-                // 🚨 CAMBIO 2: Si el RPC no trae sucursales, las pedimos por aparte para que el modal siempre tenga data
                 if (!data.branches) {
                     const { data: bData } = await supabase.from("branches").select("*").order("name");
                     if (bData) set({ branches: bData });
@@ -504,16 +549,23 @@ export const createSystemSlice = (set, get) => ({
                     end: s.end_time.substring(0, 5)
                 }));
 
-                const mappedAnnouncements = (data.announcements || []).map(a => ({
-                    id: a.id,
-                    title: a.title,
-                    message: a.message,
-                    targetType: a.target_type,
-                    targetValue: a.target_value,
-                    priority: a.priority || 'NORMAL',
-                    readBy: a.read_by || [],
-                    editedAt: a.edited_at
-                }));
+                const nowISO = new Date().toISOString();
+
+                // 🚨 DOBLE FILTRO DEL KIOSCO: 
+                // Excluimos los archivados y los que tienen fecha de publicación en el futuro.
+                const mappedAnnouncements = (data.announcements || [])
+                    .filter(a => !a.is_archived && (!a.scheduled_for || a.scheduled_for <= nowISO))
+                    .map(a => ({
+                        id: a.id,
+                        title: a.title,
+                        message: a.message,
+                        targetType: a.target_type,
+                        targetValue: a.target_value,
+                        priority: a.priority || 'NORMAL',
+                        readBy: a.read_by || [],
+                        editedAt: a.edited_at,
+                        scheduledFor: a.scheduled_for
+                    }));
 
                 const mappedEmployees = (data.employees || []).map(e => ({
                     ...e,

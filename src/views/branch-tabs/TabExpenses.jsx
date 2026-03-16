@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { supabase } from '../../supabaseClient'; // 🔴 ASEGÚRATE DE QUE LA RUTA SEA CORRECTA
+
+// 🚨 IMPORTACIÓN CORRECTA
+import { supabase } from '../../supabaseClient'; 
 
 // ============================================================================
 // MOTOR DE ESTADOS FINANCIEROS
@@ -148,24 +150,21 @@ const TabExpenses = ({ liveBranch, openModal }) => {
             if (!liveBranch?.id) return;
             setIsLoadingData(true);
             try {
-                // Traemos los gastos pagados de los últimos 6 meses (aprox)
-                // Ordenamos por mes de facturación ascendente
+                // Traemos los gastos pagados de los últimos 6 meses
                 const { data, error } = await supabase
                     .from('branch_expenses')
                     .select('billing_month, amount, expense_type')
                     .eq('branch_id', liveBranch.id)
                     .eq('status', 'PAGADO')
                     .order('billing_month', { ascending: true })
-                    // Idealmente, aquí deberías limitar por fecha, pero para simplificar, traemos los recientes.
                     .limit(100); 
 
                 if (error) throw error;
 
                 // Agrupamos por mes (billing_month)
                 const groupedData = data.reduce((acc, curr) => {
-                    const monthKey = curr.billing_month; // Ej: "2026-03"
+                    const monthKey = curr.billing_month; 
                     if (!acc[monthKey]) {
-                        // Formateamos para que se vea bonito en el gráfico (Ej: "Mar 26")
                         const [year, month] = monthKey.split('-');
                         const dateObj = new Date(year, parseInt(month) - 1, 1);
                         const label = dateObj.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }).replace('.', '').replace(' ', ' ');
@@ -278,31 +277,69 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                 </div>
             </div>
 
-            {/* 📊 DASHBOARD ANALÍTICO (LIQUID GLASS MEJORADO) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                
-                {/* Gráfico de Barras */}
-                <div className="group lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,122,255,0.08)]">
-                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#007AFF]/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
-                    
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-white/80 text-[#007AFF] rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
-                                <BarChart3 size={22} strokeWidth={2.5}/>
+            {/* 📊 DASHBOARD ANALÍTICO (SKELETON VS REAL) */}
+            {isLoadingData ? (
+                /* SKELETON DE CARGA DASHBOARD */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-pulse">
+                    {/* Gráfico Skeleton */}
+                    <div className="lg:col-span-2 bg-white/40 border border-white/50 rounded-[2rem] p-6 shadow-sm flex flex-col min-h-[280px]">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 bg-slate-200/50 rounded-[1.25rem]"></div>
+                            <div className="flex flex-col gap-2 w-1/3">
+                                <div className="h-3.5 bg-slate-300/50 rounded-full w-3/4"></div>
+                                <div className="h-2.5 bg-slate-300/50 rounded-full w-1/2"></div>
                             </div>
-                            <div>
-                                <h4 className="text-[14px] font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Últimos 6 meses operacionales</p>
+                        </div>
+                        <div className="flex-1 flex items-end justify-between gap-4 px-2 border-b border-slate-200/50 pb-2">
+                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[40%]"></div>
+                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[60%]"></div>
+                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[30%]"></div>
+                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[80%]"></div>
+                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[50%]"></div>
+                            <div className="w-full bg-[#007AFF]/30 rounded-t-lg h-[90%] relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20 animate-pulse"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex-1 min-h-[180px] w-full relative z-10">
-                        {isLoadingData ? (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
+                    {/* Métricas Rápidas Skeleton */}
+                    <div className="flex flex-col gap-5">
+                        <div className="bg-white/40 border border-white/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded-full bg-slate-200/60"></div>
+                                <div className="h-2.5 bg-slate-300/50 rounded-full w-1/2"></div>
                             </div>
-                        ) : (
+                            <div className="h-8 bg-slate-300/50 rounded-lg w-1/3 mt-2"></div>
+                        </div>
+                        <div className="bg-amber-50/40 border border-amber-100/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-amber-200/50"></div>
+                                <div className="h-2.5 bg-amber-200/80 rounded-full w-1/2"></div>
+                            </div>
+                            <div className="h-5 bg-amber-300/50 rounded-lg w-2/3 mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* DASHBOARD REAL */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
+                    {/* Gráfico de Barras */}
+                    <div className="group lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,122,255,0.08)]">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#007AFF]/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
+                        
+                        <div className="flex justify-between items-start mb-6 relative z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-white/80 text-[#007AFF] rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                    <BarChart3 size={22} strokeWidth={2.5}/>
+                                </div>
+                                <div>
+                                    <h4 className="text-[14px] font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Últimos 6 meses operacionales</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 min-h-[180px] w-full relative z-10">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
@@ -339,49 +376,50 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
-
-                {/* Métricas Rápidas */}
-                <div className="flex flex-col gap-5">
-                    
-                    {/* Tarjeta de Variación Mensual */}
-                    <div className="group bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                        <div className="flex items-center gap-2 mb-3 relative z-10">
-                            <Activity size={16} className="text-slate-400 transition-colors duration-300 group-hover:text-slate-600" strokeWidth={2.5}/>
-                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variación vs Mes Anterior</h5>
                         </div>
-                        <div className="flex items-end gap-3 relative z-10">
-                            <span className="text-3xl font-black text-slate-800 tracking-tight">
-                                {Math.abs(stats.variation).toFixed(1)}%
-                            </span>
-                            <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
-                                {stats.isUp ? <TrendingUp size={12} strokeWidth={3}/> : <TrendingDown size={12} strokeWidth={3}/>}
-                                {stats.isUp ? 'Aumento' : 'Ahorro'}
+                    </div>
+
+                    {/* Métricas Rápidas */}
+                    <div className="flex flex-col gap-5">
+                        
+                        {/* Tarjeta de Variación Mensual */}
+                        <div className="group bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                            <div className="flex items-center gap-2 mb-3 relative z-10">
+                                <Activity size={16} className="text-slate-400 transition-colors duration-300 group-hover:text-slate-600" strokeWidth={2.5}/>
+                                <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variación vs Mes Anterior</h5>
+                            </div>
+                            <div className="flex items-end gap-3 relative z-10">
+                                <span className="text-3xl font-black text-slate-800 tracking-tight">
+                                    {Math.abs(stats.variation).toFixed(1)}%
+                                </span>
+                                <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                                    {stats.isUp ? <TrendingUp size={12} strokeWidth={3}/> : <TrendingDown size={12} strokeWidth={3}/>}
+                                    {stats.isUp ? 'Aumento' : 'Ahorro'}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Tarjeta de Servicio Más Caro */}
-                    <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-amber-200/60 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
-                        <div className="absolute right-0 bottom-0 w-24 h-24 bg-amber-300/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
-                        <div className="flex items-center gap-2 mb-2 relative z-10">
-                            <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center shadow-sm border border-white">
-                                <Zap size={16} className="text-amber-500" strokeWidth={2.5}/>
+                        {/* Tarjeta de Servicio Más Caro */}
+                        <div className="group bg-gradient-to-br from-amber-50/90 to-amber-100/50 backdrop-blur-xl border border-amber-200/60 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                            <div className="absolute right-0 bottom-0 w-24 h-24 bg-amber-300/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
+                            <div className="flex items-center gap-2 mb-2 relative z-10">
+                                <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center shadow-sm border border-white">
+                                    <Zap size={16} className="text-amber-500" strokeWidth={2.5}/>
+                                </div>
+                                <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-600/90">Mayor Gasto Externo</h5>
                             </div>
-                            <h5 className="text-[10px] font-black uppercase tracking-widest text-amber-600/90">Mayor Gasto Externo</h5>
+                            <p className="text-[17px] font-black text-amber-950 leading-tight relative z-10 tracking-tight mt-1">
+                                {stats.highestService}
+                            </p>
                         </div>
-                        <p className="text-[17px] font-black text-amber-950 leading-tight relative z-10 tracking-tight mt-1">
-                            {stats.highestService}
-                        </p>
-                    </div>
 
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* TARJETAS DE SERVICIOS */}
+            {/* Estas tarjetas se renderizan inmediatamente ya que no dependen del historial de Supabase */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(liveBranch?.settings?.propertyType === 'RENTED' || liveBranch?.propertyType === 'RENTED' || liveBranch?.propertyType === 'ALQUILADO') && (
                     <ServiceExpenseCard

@@ -1,4 +1,3 @@
-// src/store/slices/employeeSlice.js
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 
@@ -50,6 +49,7 @@ export const createEmployeeSlice = (set, get) => ({
             const { data } = supabase.storage.from(bucket).getPublicUrl(path);
             return data.publicUrl;
         } catch (error) {
+            console.error(`Error subiendo archivo a ${bucket}:`, error.message);
             return null;
         }
     },
@@ -86,6 +86,10 @@ export const createEmployeeSlice = (set, get) => ({
                 branch_id: newEmp.branch_id,
                 new_value: `Cargo asignado`
             });
+            
+            // 🔴 BENGALA: Avisar a la interfaz global que hubo un cambio en RRHH
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === newEmp.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === newEmp.secondary_role_id)?.name || null;
@@ -110,6 +114,7 @@ export const createEmployeeSlice = (set, get) => ({
             });
             return appEmp.id;
         } catch (err) {
+            console.error("Fallo al crear empleado:", err);
             throw new Error("Fallo al crear empleado.");
         }
     },
@@ -144,6 +149,10 @@ export const createEmployeeSlice = (set, get) => ({
                 new_value: 'Expediente modificado',
                 ...dbPayload
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             const roles = get().roles;
             const mainRoleName = roles.find(r => r.id === updated.role_id)?.name || null;
             const secRoleName = roles.find(r => r.id === updated.secondary_role_id)?.name || null;
@@ -164,6 +173,7 @@ export const createEmployeeSlice = (set, get) => ({
             });
             return true;
         } catch (err) {
+            console.error("Error actualizando empleado:", err);
             return false;
         }
     },
@@ -180,6 +190,10 @@ export const createEmployeeSlice = (set, get) => ({
                 old_value: 'Activo',
                 new_value: 'Dado de baja en el sistema'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.employees.filter((emp) => String(emp.id) !== String(id));
                 persistEmployees(next);
@@ -187,6 +201,7 @@ export const createEmployeeSlice = (set, get) => ({
             });
             return true;
         } catch (err) {
+            console.error("Error eliminando empleado:", err);
             return false;
         }
     },
@@ -196,6 +211,7 @@ export const createEmployeeSlice = (set, get) => ({
             const dbPayload = { employee_id: employeeId, type: eventData.type, date: eventData.date || new Date().toISOString().split('T')[0], note: eventData.note || '', metadata: eventData };
             const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
             if (error) throw error;
+            
             const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
             await get().appendAuditLog('ACCION_RRHH', employeeId, {
                 timeline_title: `Evento RRHH: ${eventData.type.replace(/_/g, ' ')}`,
@@ -203,6 +219,7 @@ export const createEmployeeSlice = (set, get) => ({
                 branch_id: empEvento?.branchId,
                 new_value: eventData.note || 'Evento registrado'
             });
+
             let docObject = null;
             if (file) {
                 const url = await get().uploadFileToStorage(file, 'documents');
@@ -211,6 +228,9 @@ export const createEmployeeSlice = (set, get) => ({
                     docObject = newDoc;
                 }
             }
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
@@ -223,6 +243,7 @@ export const createEmployeeSlice = (set, get) => ({
             });
             return newEvent.id;
         } catch (err) {
+            console.error("Error registrando evento de empleado:", err);
             return null;
         }
     },
@@ -231,6 +252,8 @@ export const createEmployeeSlice = (set, get) => ({
         if (!file) return;
         try {
             const url = await get().uploadFileToStorage(file, 'documents');
+            if (!url) throw new Error("Fallo al subir el archivo al storage");
+
             const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
             if (error) throw error;
 
@@ -240,8 +263,12 @@ export const createEmployeeSlice = (set, get) => ({
                 dimension: 'HR',
                 branch_id: empDoc?.branchId,
                 new_value: file.name,
-                file_url: url // 🚨 Para que el botón de "Ver Archivo" en TabHistory se active
+                file_url: url 
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
                     ...emp,
@@ -251,6 +278,7 @@ export const createEmployeeSlice = (set, get) => ({
                 return { employees: next };
             });
         } catch (e) {
+            console.error("Error subiendo documento al evento:", e);
         }
     },
 
@@ -312,6 +340,8 @@ export const createEmployeeSlice = (set, get) => ({
 
             const tipoMarcaje = type === 'ENTRY' ? 'Entrada' : type === 'EXIT' ? 'Salida' : type === 'BREAK_START' ? 'Inicio Descanso' : type === 'BREAK_END' ? 'Fin Descanso' : type;
 
+            // 🔴 FIX: Integramos la info extra dentro de 'details' correctamente
+            // y usamos una promesa encadenada para disparar la bengala global al terminar
             state.appendAuditLog(
                 `REGISTRO_ASISTENCIA`,
                 employeeId,
@@ -320,17 +350,17 @@ export const createEmployeeSlice = (set, get) => ({
                     dimension: 'OPERATIVE',
                     branch_id: employee?.branchId,
                     new_value: employeeName,
-                    ...cleanDetails
-                },
-                null,
-                {
+                    ...cleanDetails,
                     isKiosk,
                     kioskAuditInfo: isKiosk ? {
                         ...kioskAuditInfo,
                         employee_name: employeeName
                     } : null
                 }
-            ).catch(console.error);
+            ).then(() => {
+                // 🔴 BENGALA: Para que las vistas de kiosco y sucursal se enteren
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            }).catch(console.error);
 
             // 3. Actualizamos estado de UI garantizando evitar duplicados
             set((state) => {

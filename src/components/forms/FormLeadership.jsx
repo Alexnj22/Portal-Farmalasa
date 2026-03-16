@@ -41,7 +41,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                 outgoingBranch: prev.branch?.id || ''
             }));
         }
-    }, [currentAssigneeObj]);
+    }, [currentAssigneeObj, formData.currentAssignee, setFormData, formData.outgoingAction]);
 
     // 3. Buscador
     const filteredEmployees = useMemo(() => {
@@ -57,19 +57,19 @@ const FormLeadership = ({ formData, setFormData }) => {
     const empBranch = useMemo(() => branches.find(b => String(b.id) === String(selectedEmp?.branchId)), [branches, selectedEmp]);
     
     // 4. Lógica de Movimiento
-    let moveType = 'NONE'; 
-    if (selectedEmp && formData.branch) {
+    const moveType = useMemo(() => {
+        if (!selectedEmp || !formData.branch) return 'NONE';
         const isSameBranch = String(selectedEmp.branchId) === String(formData.branch.id);
         const isSameRole = selectedEmp.role === formData.targetRole;
-        if (isSameBranch && !isSameRole) moveType = 'PROMOTION';
-        if (!isSameBranch && isSameRole) moveType = 'TRANSFER';
-        if (!isSameBranch && !isSameRole) moveType = 'TRANSFER_PROMOTION';
-        if (isSameBranch && isSameRole) moveType = 'LATERAL'; 
-    }
+        if (isSameBranch && !isSameRole) return 'PROMOTION';
+        if (!isSameBranch && isSameRole) return 'TRANSFER';
+        if (!isSameBranch && !isSameRole) return 'TRANSFER_PROMOTION';
+        return 'LATERAL';
+    }, [selectedEmp, formData.branch, formData.targetRole]);
 
     useEffect(() => {
         if (formData.moveType !== moveType) setFormData(prev => ({ ...prev, moveType }));
-    }, [moveType]);
+    }, [moveType, formData.moveType, setFormData]);
 
     // Banderas de estado
     const isReplacing = currentAssigneeObj && selectedEmp && selectedEmp.id !== currentAssigneeObj.id;
@@ -197,11 +197,13 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-[#007AFF] shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-[#007AFF] shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER_PROMOTION' && <Award size={20} className="text-purple-500 shrink-0" strokeWidth={2.5}/>}
+                                        {moveType === 'LATERAL' && <Briefcase size={20} className="text-slate-500 shrink-0" strokeWidth={2.5}/>}
                                         <p className="text-[11px] font-bold text-slate-600 leading-tight">
                                             Asumirá como <strong className="text-[#007AFF]">{formData.targetRole}</strong>. 
                                             {moveType === 'PROMOTION' && ' Ascenso interno.'}
                                             {moveType === 'TRANSFER' && ' Traslado operativo.'}
                                             {moveType === 'TRANSFER_PROMOTION' && ' Traslado y ascenso.'}
+                                            {moveType === 'LATERAL' && ' Movimiento lateral.'}
                                         </p>
                                     </div>
                                 </div>
@@ -229,26 +231,32 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                             <div className="mt-4 grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                                                                 <div className="space-y-1.5">
                                                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">A Sucursal</label>
-                                                                    <LiquidSelect 
-                                                                        options={branches.map(b => ({ value: b.id, label: b.name }))}
-                                                                        value={formData.outgoingBranch || ''}
-                                                                        onChange={(val) => setFormData({...formData, outgoingBranch: val?.target ? val.target.value : val})}
-                                                                        placeholder="Selecciona destino..."
-                                                                    />
+                                                                    <div className="rounded-2xl transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md border border-transparent">
+                                                                        <LiquidSelect 
+                                                                            options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                                                            value={formData.outgoingBranch || ''}
+                                                                            onChange={(val) => setFormData({...formData, outgoingBranch: val?.target ? val.target.value : val})}
+                                                                            placeholder="Selecciona destino..."
+                                                                            clearable={false}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
                                                                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Nuevo Rol</label>
-                                                                    <LiquidSelect 
-                                                                        options={[
-                                                                            { value: 'Dependiente de Farmacia', label: 'Dependiente de Farmacia' },
-                                                                            { value: 'Subjefe/a de Sala', label: 'Subjefe/a de Sala' },
-                                                                            { value: 'Jefe/a de Sala', label: 'Jefe/a de Sala' },
-                                                                            ...(isNurse ? [{ value: 'Regente de Enfermería', label: 'Regente de Enfermería' }] : [])
-                                                                        ]}
-                                                                        value={formData.outgoingRole || ''}
-                                                                        onChange={(val) => setFormData({...formData, outgoingRole: val?.target ? val.target.value : val})}
-                                                                        placeholder="Selecciona el rol..."
-                                                                    />
+                                                                    <div className="rounded-2xl transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md border border-transparent">
+                                                                        <LiquidSelect 
+                                                                            options={[
+                                                                                { value: 'Dependiente de Farmacia', label: 'Dependiente de Farmacia' },
+                                                                                { value: 'Subjefe/a de Sala', label: 'Subjefe/a de Sala' },
+                                                                                { value: 'Jefe/a de Sala', label: 'Jefe/a de Sala' },
+                                                                                ...(isNurse ? [{ value: 'Regente de Enfermería', label: 'Regente de Enfermería' }] : [])
+                                                                            ]}
+                                                                            value={formData.outgoingRole || ''}
+                                                                            onChange={(val) => setFormData({...formData, outgoingRole: val?.target ? val.target.value : val})}
+                                                                            placeholder="Selecciona el rol..."
+                                                                            clearable={false}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -285,11 +293,13 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <label className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2 flex items-center gap-1.5 ml-1">
                                                 <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
                                             </label>
-                                            <LiquidDatePicker 
-                                                selectedDate={formData.interimEndDate ? new Date(formData.interimEndDate) : null}
-                                                onChange={(date) => setFormData({...formData, interimEndDate: date.toISOString()})}
-                                                placeholder="Selecciona la fecha límite"
-                                            />
+                                            <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
+                                                <LiquidDatePicker 
+                                                    value={formData.interimEndDate || ''}
+                                                    onChange={(date) => setFormData({...formData, interimEndDate: date})}
+                                                    placeholder="Selecciona la fecha límite"
+                                                />
+                                            </div>
                                         </div>
                                     )}
 

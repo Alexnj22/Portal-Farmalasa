@@ -1,10 +1,12 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
 import { useToastStore } from '../store/toastStore';
+import { supabase } from '../supabaseClient'; // 🚨 Usaremos esta conexión directa
+
 // -------------------------
 // CARGA DIFERIDA
 // -------------------------
@@ -29,11 +31,14 @@ const FormServicePayment = React.lazy(() => import('./forms/FormServicePayment')
 const FormRegisterPayment = React.lazy(() => import('./forms/FormRegisterPayment'));
 const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
 
+const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
+
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
 const HIDES_FOOTER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
-const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService", "editBranchLeadership"]); // <-- NUEVO
+
+const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService", "editBranchLeadership", "addCustomDocument", "editCustomDocument"]);
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
 
@@ -72,6 +77,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "manageService": return "max-w-xl";
             case "registerPayment": return "max-w-lg";
             case "editBranchLeadership": return "max-w-4xl";
+            case "addCustomDocument":
+            case "editCustomDocument": return "max-w-md";
             default: return "max-w-lg";
         }
     };
@@ -99,6 +106,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewDocument": return formData?.title || "Documento";
             case "manageService": return "Configurar Servicio / Gasto";
             case "registerPayment": return "Registrar Pago Real";
+            case "addCustomDocument": return "Nuevo Documento";
+            case "editCustomDocument": return "Actualizar Documento";
             default: return "Gestión Administrativa";
         }
     };
@@ -108,13 +117,149 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
-        if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.name || formData?.branchName || 'NUEVA'}`;
+        if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
     };
+
     const handleLocalSubmit = async (e) => {
         e.preventDefault();
         setValidationError(null);
+
+        // ==========================================
+        // 🚨 LÓGICA: DOCUMENTO DEL EXPEDIENTE (DIRECTO A SUPABASE)
+        // ==========================================
+        if (type === "addCustomDocument" || type === "editCustomDocument") {
+            const docData = formData.newDocData;
+
+            if (!docData || !docData.title?.trim()) {
+                setValidationError("El nombre del documento es obligatorio.");
+                return;
+            }
+
+            setIsSaving(true);
+            try {
+                const docId = formData.docId || crypto.randomUUID();
+                let fileUrl = docData.url || null;
+                let aiSummary = docData.aiSummary || null;
+
+                const originalBranch = formData.branch?.id ? formData.branch : formData;
+                const targetBranchId = originalBranch.id;
+
+// 🚨 1. SUBIDA DIRECTA A SUPABASE (Sin pasar por Zustand) 🚨
+                if (docData.file) {
+                    try {
+                        // 🎯 ¡AQUÍ ESTÁ LA MAGIA! Tu bucket real se llama 'documents'
+                        const NOMBRE_DEL_BUCKET = 'documents'; 
+
+                        const fileExt = docData.file.name.split('.').pop();
+                        // Y lo guardamos dentro de la carpeta 'branches'
+                        const filePath = `branches/${targetBranchId}/customDocs/${docId}_${Date.now()}.${fileExt}`;
+                        
+                        console.log(`Subiendo archivo a Storage [${NOMBRE_DEL_BUCKET}/${filePath}]...`);
+
+                        const { error: uploadError } = await supabase.storage
+                            .from(NOMBRE_DEL_BUCKET) 
+                            .upload(filePath, docData.file, { upsert: true });
+
+                        if (uploadError) {
+                            console.error("Supabase Storage Error:", uploadError);
+                            throw new Error(uploadError.message || "Supabase rechazó la subida del archivo.");
+                        }
+
+                        const { data: publicUrlData } = supabase.storage
+                            .from(NOMBRE_DEL_BUCKET)
+                            .getPublicUrl(filePath);
+                            
+                        fileUrl = publicUrlData.publicUrl;
+                        console.log("¡Archivo subido con éxito! URL:", fileUrl);
+
+// ✨ MAGIA DE LA IA (GEMINI) ✨
+                        try {
+                            console.log("🤖 Activando Gemini AI... Enviando a Supabase Edge Function.");
+                            
+                            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
+                                body: { filePath: filePath, bucketName: NOMBRE_DEL_BUCKET } 
+                            });
+
+                            // 👇 ESTOS DOS LOGS NOS DIRÁN LA VERDAD ABSOLUTA 👇
+                            console.log("📥 Respuesta cruda de la IA (Data):", aiResponse);
+                            console.log("🚨 Posible error de la IA (Error):", aiError);
+
+                            if (!aiError && aiResponse?.success && aiResponse.aiData) {
+                                aiSummary = aiResponse.aiData.aiSummary;
+                                if (aiResponse.aiData.issueDate && !docData.issueDate) docData.issueDate = aiResponse.aiData.issueDate;
+                                if (aiResponse.aiData.expDate && !docData.expDate) docData.expDate = aiResponse.aiData.expDate;
+                                console.log("✅ Resumen de IA guardado con éxito en memoria.");
+                            } else {
+                                console.warn("⚠️ La llamada a la función terminó, pero no trajo un resumen válido.");
+                            }
+                        } catch (aiCatchedError) {
+                            console.error("🔥 Error catastrófico al llamar a la función analyze-document:", aiCatchedError);
+                        }
+
+                    } catch (uploadFail) {
+                        console.error("🔥 ERROR EXACTO DE SUBIDA:", uploadFail);
+                        setValidationError(`Error al subir: ${uploadFail.message}.`);
+                        setIsSaving(false);
+                        return; 
+                    }
+                }
+
+                // 2. Construimos el documento
+                const documentObject = {
+                    id: docId,
+                    title: docData.title.trim(),
+                    category: docData.category,
+                    hasIssueDate: docData.hasIssueDate,
+                    issueDate: docData.hasIssueDate ? docData.issueDate : null,
+                    hasExpiration: docData.hasExpiration,
+                    expDate: docData.hasExpiration ? docData.expDate : null,
+                    url: fileUrl, // Ahora sí estará lleno
+                    aiSummary: aiSummary
+                };
+
+                const currentSettings = originalBranch.settings || {};
+                let currentCustomDocs = currentSettings.customDocs || [];
+
+                if (type === "editCustomDocument") {
+                    currentCustomDocs = currentCustomDocs.map(doc => doc.id === docId ? documentObject : doc);
+                } else {
+                    currentCustomDocs = [...currentCustomDocs, documentObject];
+                }
+
+                const updatedSettings = {
+                    ...currentSettings,
+                    customDocs: currentCustomDocs
+                };
+
+                const payloadToSave = {
+                    ...originalBranch,
+                    settings: updatedSettings
+                };
+
+                // 3. Actualizamos la sucursal
+                const { updateBranch, appendAuditLog } = useStaff.getState();
+                await updateBranch(targetBranchId, payloadToSave);
+
+                if (appendAuditLog) {
+                    await appendAuditLog('DOC_AGREGADO', targetBranchId, {
+                        timeline_title: type === "addCustomDocument" ? `Nuevo Documento: ${documentObject.title}` : `Documento Actualizado: ${documentObject.title}`,
+                        dimension: 'LEGAL',
+                        new_value: documentObject.category
+                    });
+                }
+
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+                onClose();
+            } catch (err) {
+                console.error("Error guardando la base de datos:", err);
+                setValidationError("No se pudo guardar el documento en la base de datos.");
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
 
         if (BRANCH_ACTIONS.has(type)) {
             setIsSaving(true);
@@ -154,6 +299,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 } else {
                     const branchIdToUpdate = payloadToSave.id || payloadToSave.branchId;
                     await updateBranch(branchIdToUpdate, payloadToSave);
+                    window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 }
 
                 onClose();
@@ -180,58 +326,104 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
             setIsSaving(true);
             try {
-                const { updateEmployee, appendAuditLog, employees, branches } = useStaff.getState();
+                const { updateEmployee, appendAuditLog, employees, branches, roles } = useStaff.getState();
                 const selectedEmp = employees.find(e => e.id === formData.selectedEmpId);
                 const currentEmpObj = employees.find(e => e.id === formData.currentAssignee);
 
-                // 1. RELEVAR AL EMPLEADO ANTERIOR (Si existe y es distinto al nuevo)
+                // 🔴 1. RESOLVER IDs SEGUROS PARA BD RELACIONAL
+                const actualBranchId = formData.branch?.id || formData.branchId || formData.id;
+                const actualBranchName = formData.branch?.name || formData.name || 'Sucursal';
+
+                // Buscar el role_id destino exacto en el catálogo
+                const targetRoleObj = roles.find(r => r.name === formData.targetRole);
+                const targetRoleId = targetRoleObj ? targetRoleObj.id : null;
+
+                // ==========================================
+                // 2. RELEVAR AL EMPLEADO ANTERIOR (Si existe)
+                // ==========================================
                 if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
                     if (formData.outgoingAction === 'REASSIGN') {
                         const newBranchName = branches.find(b => String(b.id) === String(formData.outgoingBranch))?.name || 'otra sucursal';
+                        const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
 
+                        // Actualiza empleado
                         await updateEmployee(formData.currentAssignee, {
                             branchId: formData.outgoingBranch,
-                            role: formData.outgoingRole,
-                            assignmentType: 'PERMANENT',
-                            assignmentNotes: `Relevado del cargo de ${formData.targetRole} en ${formData.branch.name}.`
+                            role_id: outRoleObj ? outRoleObj.id : null,
+                            role: formData.outgoingRole // Feedback UI
                         });
 
-                        // Log para el Empleado Antiguo (Cambio de Puesto)
+                        // 🔴 Registra en la tabla employee_history
+                        await supabase.from('employee_history').insert([{
+                            employee_id: formData.currentAssignee,
+                            type: 'REASSIGNMENT',
+                            date: new Date().toISOString().split('T')[0],
+                            previous_branch_id: actualBranchId,
+                            target_branch_id: formData.outgoingBranch,
+                            previous_role: formData.targetRole,
+                            new_role: formData.outgoingRole,
+                            details: { note: `Relevado de jefatura en ${actualBranchName}` }
+                        }]);
+
                         await appendAuditLog('CAMBIO_PUESTO', formData.currentAssignee, {
                             timeline_title: 'Reasignación Operativa',
                             dimension: 'HR',
-                            old_value: `${formData.targetRole} (${formData.branch.name})`,
+                            old_value: `${formData.targetRole} (${actualBranchName})`,
                             new_value: `${formData.outgoingRole} (${newBranchName})`
                         });
                     } else {
-                        // Lo mandamos a la banca (Sin Asignar)
+                        // Lo manda a la banca (Sin Asignar)
                         await updateEmployee(formData.currentAssignee, {
-                            branchId: null, // Lo saca de la sucursal
-                            role: 'Sin Asignar',
-                            assignmentType: 'PERMANENT',
-                            assignmentNotes: `Relevado del cargo de ${formData.targetRole}. Pendiente de reasignación.`
+                            branchId: null, // Queda NULL en DB real
+                            role_id: null,
+                            role: 'Sin Asignar'
                         });
 
-                        // Log para el Empleado Antiguo (Quitado de Sucursal)
+                        await supabase.from('employee_history').insert([{
+                            employee_id: formData.currentAssignee,
+                            type: 'UNASSIGNED',
+                            date: new Date().toISOString().split('T')[0],
+                            previous_branch_id: actualBranchId,
+                            previous_role: formData.targetRole,
+                            new_role: 'Sin Asignar',
+                            details: { note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.` }
+                        }]);
+
                         await appendAuditLog('REMOVIDO_SUCURSAL', formData.currentAssignee, {
                             timeline_title: 'Desvinculación de Sucursal',
                             dimension: 'HR',
-                            old_value: `${formData.targetRole} (${formData.branch.name})`,
+                            old_value: `${formData.targetRole} (${actualBranchName})`,
                             new_value: 'Sin Asignar (Flotante)'
                         });
                     }
                 }
 
-                // 2. ACTUALIZAR AL NUEVO EMPLEADO
+                // ==========================================
+                // 3. ACTUALIZAR AL NUEVO TITULAR
+                // ==========================================
                 await updateEmployee(formData.selectedEmpId, {
-                    branchId: formData.branch.id,
-                    role: formData.targetRole,
-                    assignmentType: formData.isPermanent !== false ? 'PERMANENT' : 'INTERIM',
-                    interimEndDate: formData.isPermanent !== false ? null : formData.interimEndDate,
-                    assignmentNotes: formData.notes || null
+                    branchId: actualBranchId,    // 🔴 GUARDA LA SUCURSAL REAL EN BD
+                    role_id: targetRoleId,       // 🔴 GUARDA EL ID DEL ROL REAL EN BD
+                    role: formData.targetRole    // Actualiza la vista en memoria
                 });
 
-                // 3. AUDITORÍA INTELIGENTE
+                // 🔴 Registrar en la tabla employee_history
+                await supabase.from('employee_history').insert([{
+                    employee_id: formData.selectedEmpId,
+                    type: formData.moveType || 'PROMOTION',
+                    date: new Date().toISOString().split('T')[0],
+                    previous_branch_id: selectedEmp?.branchId || null,
+                    target_branch_id: actualBranchId,
+                    previous_role: selectedEmp?.role || null,
+                    new_role: formData.targetRole,
+                    details: {
+                        note: formData.notes || 'Asignación realizada desde el Panel de Sucursales',
+                        isInterim: formData.isPermanent === false,
+                        interimEndDate: formData.interimEndDate || null
+                    }
+                }]);
+
+                // 4. AUDITORÍA INTELIGENTE PARA LA SUCURSAL
                 let logText = 'Asignación de puesto';
                 if (formData.moveType === 'PROMOTION') logText = 'Ascenso interno';
                 if (formData.moveType === 'TRANSFER') logText = 'Traslado operativo';
@@ -240,27 +432,29 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 let notaHistorial = formData.notes || 'Movimiento estándar';
                 if (currentEmpObj && currentEmpObj.id !== selectedEmp.id) {
-                    notaHistorial += ` | Releva a: ${currentEmpObj.name} (${formData.outgoingAction === 'REASSIGN' ? `Pasó a ${formData.outgoingRole}` : 'Retirado de sucursal'})`;
+                    notaHistorial += ` | Releva a: ${currentEmpObj.name}`;
                 }
 
-                // Log para la Sucursal
-                await appendAuditLog('PERSONAL_ASIGNADO', formData.branch.id, {
+                await appendAuditLog('PERSONAL_ASIGNADO', actualBranchId, {
                     timeline_title: `Nueva Jefatura: ${selectedEmp?.name || 'Asignado'}`,
                     dimension: 'HR',
-                    branch_id: formData.branch.id,
+                    branch_id: actualBranchId,
                     old_value: selectedEmp?.role || 'N/A',
                     new_value: `${formData.targetRole} - ${logText}`,
                     notas: notaHistorial
                 });
 
-                // Log para el Nuevo Empleado
-                await appendAuditLog('CAMBIO_PUESTO', formData.selectedEmpId, {
-                    timeline_title: 'Nueva Asignación',
-                    dimension: 'HR',
-                    old_value: selectedEmp?.role || 'N/A',
-                    new_value: `${formData.targetRole} en ${formData.branch.name}`,
-                    notas: formData.notes || ''
-                });
+                // ==========================================
+                // 5. SINCRONIZACIÓN DE UI (Sin recargar navegador)
+                // ==========================================
+                const { fetchEmployees, fetchBranchHistory } = useStaff.getState();
+
+                // Forzar bajada fresca de base de datos
+                if (fetchEmployees) await fetchEmployees();
+                if (fetchBranchHistory && actualBranchId) await fetchBranchHistory(actualBranchId);
+
+                // 🔴 BENGALA: Disparar evento para actualizar historial globalmente
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
                 onClose();
             } catch (err) {
@@ -318,7 +512,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 }
 
                 // 🔴 NUEVO: Lanzamos tu LiquidToast de éxito
-                // (Revisa exactamente cómo se llama tu función en el store, asumo que es showToast)
                 const { showToast } = useToastStore.getState();
                 if (showToast) {
                     showToast(
@@ -327,6 +520,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         "success"
                     );
                 }
+
+                // 🔴 BENGALA PARA ACTUALIZAR HISTORIAL DE PAGOS
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
                 // Cerramos el modal
                 onClose();
@@ -340,10 +536,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
+        // ============================================================================
+        // FORMULARIO GENÉRICO DEFAULT
+        // ============================================================================
         if (handleSubmit) {
             setIsSaving(true);
             try {
                 await handleSubmit(e);
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             } catch (err) {
                 console.error("Error en Submit general:", err);
                 const errorMsg = err?.message || err?.error_description || (typeof err === 'string' ? err : "Ocurrió un error inesperado.");
@@ -390,6 +591,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             {type === "editBranchHorarios" && <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>}
                             {type === "viewBranchEmployees" && <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>}
                             {type === "editBranchLeadership" && <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>}
+                            {(type === "addCustomDocument" || type === "editCustomDocument") && <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>}
 
                             <div>
                                 <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
@@ -446,6 +648,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "manageService" && <FormServicePayment formData={formData} setFormData={setFormData} />}
                                 {type === "registerPayment" && <FormRegisterPayment formData={formData} setFormData={setFormData} />}
                                 {type === "editBranchLeadership" && <FormLeadership formData={formData} setFormData={setFormData} />}
+                                {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
                             </Suspense>
                         </form>
                     </div>

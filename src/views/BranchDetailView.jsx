@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
 import {
     MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Edit3,
-    Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen
+    Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { formatTime12h } from '../utils/helpers';
@@ -19,12 +19,15 @@ import GlassViewLayout from '../components/GlassViewLayout';
 // ============================================================================
 const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModal }) => {
     const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
+    
     const [activeTab, setActiveTab] = useState('history');
     const [kioskCount, setKioskCount] = useState(0);
 
     const [history, setHistory] = useState([]);
-    const [historyLoadedFor, setHistoryLoadedFor] = useState(null);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    
+    // 🔴 LLAVE DE RECARGA PARA EL EVENTO GLOBAL
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -65,18 +68,45 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
         return () => { isMounted = false; };
     }, [liveBranch?.id, getBranchKiosks]);
 
+    // ============================================================================
+    // 🔴 ESCUCHADOR DE EVENTOS GLOBALES (LA BENGALA)
+    // ============================================================================
     useEffect(() => {
-        if (liveBranch?.id && historyLoadedFor !== liveBranch.id) {
-            const fetchHistory = async () => {
-                setIsLoadingHistory(true);
-                const data = await getBranchHistory(liveBranch.id);
-                setHistory(data);
-                setHistoryLoadedFor(liveBranch.id);
+        const handleForceRefresh = () => {
+            setTimeout(() => {
+                setRefreshKey(prev => prev + 1); 
+            }, 500);
+        };
+
+        window.addEventListener('force-history-refresh', handleForceRefresh);
+        return () => {
+            window.removeEventListener('force-history-refresh', handleForceRefresh);
+        };
+    }, []);
+
+    // ============================================================================
+    // 🔴 CARGA DE HISTORIAL ULTRA-REACTIVA
+    // ============================================================================
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchHistory = async () => {
+            if (!liveBranch?.id) return;
+            
+            if (history.length === 0) setIsLoadingHistory(true);
+            
+            const data = await getBranchHistory(liveBranch.id);
+            
+            if (isMounted) {
+                setHistory(data || []);
                 setIsLoadingHistory(false);
-            };
-            fetchHistory();
-        }
-    }, [liveBranch?.id, historyLoadedFor, getBranchHistory]);
+            }
+        };
+
+        fetchHistory();
+
+        return () => { isMounted = false; };
+    }, [liveBranch?.id, refreshKey, getBranchHistory]); 
 
     const currentStaff = useMemo(() => {
         return (employees || []).filter(e => String(e.branchId) === String(liveBranch?.id) || String(e.branch_id) === String(liveBranch?.id));
@@ -212,21 +242,12 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
         }, 300);
     };
 
-    // 🚨 TOOLBAR MÁGICA: Totalmente blindada contra el scrollbar fantasma
     const renderHeaderActions = () => {
         return (
-            <div
-                // Master wrapper: permite scroll manual si es muuuy pequeño el celular, pero esconde la barrita
-                className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-white/80' : 'bg-white/10'}`}
-            >
+            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-white/80' : 'bg-white/10'}`}>
 
-                {/* ℹ️ ESTADO 1: INFORMACIÓN SUCURSAL (Hover activo desde el título) */}
                 {showProfile ? (
-                    <div
-                        className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max"
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                    >
+                    <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
@@ -260,11 +281,8 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
                         </div>
                     </div>
                 ) : (
-                    /* 🟢 ESTADO 2: TABS DE NAVEGACIÓN Y BOTONERA DE EDICIÓN */
                     <div className="flex items-center h-full shrink-0 transform-gpu origin-right animate-in fade-in zoom-in-95 duration-300">
 
-                        {/* 🚨 SOLUCIÓN SCROLL: Usamos overflow-hidden como máscara animada y un div interno fijo (w-max) */}
-                        {/* Sub-Estado: PESTAÑAS */}
                         <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div ref={tabsRef} className="flex items-center gap-1 md:gap-2 pr-1 md:pr-2 w-max relative">
                                 <div
@@ -298,8 +316,6 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
                             </div>
                         </div>
 
-                        {/* 🚨 SOLUCIÓN SCROLL: Máscara animada con div fijo interno */}
-                        {/* Sub-Estado: BOTONERA DE EDICIÓN */}
                         <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
                                 <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
@@ -311,10 +327,8 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
                             </div>
                         </div>
 
-                        {/* LÍNEA DIVISORIA (Fija) */}
                         <div className="w-px h-6 md:h-8 bg-slate-300/30 mx-1.5 shrink-0"></div>
 
-                        {/* ⚡ BOTÓN MASTER: Edición vs Cerrar (Fijo a la derecha) */}
                         <button
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 transform-gpu active:scale-95 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
@@ -334,28 +348,47 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
     return (
         <>
             <GlassViewLayout
-                icon={Building2}
+                icon={null} // 🚨 Desactivamos el ícono automático
                 title={
-                    // 🚨 EL TÍTULO TAMBIÉN DISPARA EL HOVER (Sincronizado con la botonera)
-                    <div
-                        className="flex flex-col items-start gap-1 cursor-pointer group/title relative transition-all"
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
-                            <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-slate-300'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
+                    <div className="flex items-center gap-3 md:gap-4">
+                        {/* 🚨 1. BOTÓN HOLOGRÁFICO DE REGRESAR (A la extrema izquierda) */}
+                        <button 
+                            onClick={() => {
+                                if (onBack) onBack();
+                                else if (setView) setView('branches');
+                            }} 
+                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            title="Volver a Sucursales"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#007AFF] transition-colors relative z-10" />
+                        </button>
 
-                            {/* La flecha apunta e invita a ver la botonera derecha */}
-                            <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-[#007AFF] border-[#007AFF] text-white translate-x-1' : 'bg-[#007AFF]/10 border-[#007AFF]/20 text-[#007AFF] group-hover/title:translate-x-0.5'}`}>
-                                <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />
-                            </div>
+                        {/* 🚨 2. ÍCONO DE LA SUCURSAL */}
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#007AFF] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,122,255,0.3)] shrink-0">
+                            <Building2 size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                         </div>
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {(liveBranch?.openingDate || liveBranch?.opening_date)
-                                ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
-                                : 'Fecha de inauguración pendiente'}
-                        </span>
+
+                        {/* 🚨 3. TEXTOS */}
+                        <div
+                            className="flex flex-col items-start gap-1 cursor-pointer group/title relative transition-all"
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
+                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-slate-300'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
+
+                                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-[#007AFF] border-[#007AFF] text-white translate-x-1' : 'bg-[#007AFF]/10 border-[#007AFF]/20 text-[#007AFF] group-hover/title:translate-x-0.5'}`}>
+                                    <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />
+                                </div>
+                            </div>
+                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {(liveBranch?.openingDate || liveBranch?.opening_date)
+                                    ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
+                                    : 'Fecha de inauguración pendiente'}
+                            </span>
+                        </div>
                     </div>
                 }
                 onBack={onBack}

@@ -46,6 +46,9 @@ const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newF
 
 export const createBranchSlice = (set, get) => ({
     branches: safeJsonParse(localStorage.getItem(CACHE_KEYS.BRANCHES), []) || [],
+    
+    // 🔴 NUEVO: ESTADO GLOBAL PARA EL HISTORIAL (Vital para que no requiera F5)
+    branchHistory: {}, 
 
     setBranches: (updater) => set((state) => {
         const next = typeof updater === 'function' ? updater(state.branches) : updater;
@@ -115,6 +118,7 @@ export const createBranchSlice = (set, get) => ({
             });
             return appBranch.id;
         } catch (err) {
+            console.error("Fallo al crear sucursal:", err);
             throw new Error("Fallo al crear sucursal.");
         }
     },
@@ -218,15 +222,10 @@ export const createBranchSlice = (set, get) => ({
             const { data: updated, error } = await supabase.from("branches").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
-            // 🚨========================================================================🚨
-            // LÓGICA DE SINCRONIZACIÓN EN CASCADA Y AUDITORÍA INTELIGENTE
-            // 🚨========================================================================🚨
-
+            // 🚨 LÓGICA DE SINCRONIZACIÓN EN CASCADA Y AUDITORÍA INTELIGENTE
             const legalNow = updated.settings?.legal || {};
 
-            // 1. Array de empleados que deben pertenecer a esta sucursal obligatoriamente
             const requiredStaffIds = [];
-
             if (legalNow.regentEmployeeId) requiredStaffIds.push(legalNow.regentEmployeeId);
             if (legalNow.farmacovigilanciaId) requiredStaffIds.push(legalNow.farmacovigilanciaId);
             if (legalNow.nursingRegents && Array.isArray(legalNow.nursingRegents)) {
@@ -235,13 +234,11 @@ export const createBranchSlice = (set, get) => ({
                 });
             }
 
-            // 2. Llamamos a updateEmployee del employeeSlice para actualizar sus branch_id
             if (requiredStaffIds.length > 0) {
                 const { updateEmployee } = get();
                 if (updateEmployee) {
                     for (const empId of requiredStaffIds) {
                         try {
-                            // Actualiza el empleado en bd y estado
                             await updateEmployee(empId, { branchId: id });
                         } catch (e) {
                             console.warn("Fallo al sincronizar empleado con sucursal:", empId, e);
@@ -250,10 +247,9 @@ export const createBranchSlice = (set, get) => ({
                 }
             }
 
-            // 3. Auditoría Inteligente: Detectamos exactamente qué cambió
+            // Auditoría Inteligente: Detectamos exactamente qué cambió
             let auditLogFired = false;
 
-            // Detectar cambio de Regente
             if (oldLegal.regentEmployeeId !== legalNow.regentEmployeeId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: 'Asignación de Regente Farmacéutico',
@@ -264,7 +260,6 @@ export const createBranchSlice = (set, get) => ({
                 auditLogFired = true;
             }
 
-            // Detectar cambio de Farmacovigilancia
             if (oldLegal.farmacovigilanciaId !== legalNow.farmacovigilanciaId) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: 'Asignación de Farmacovigilancia',
@@ -275,7 +270,6 @@ export const createBranchSlice = (set, get) => ({
                 auditLogFired = true;
             }
 
-            // Detectar cambio en cantidad de enfermeros
             const oldNurses = Array.isArray(oldLegal.nursingRegents) ? oldLegal.nursingRegents.length : 0;
             const newNurses = Array.isArray(legalNow.nursingRegents) ? legalNow.nursingRegents.length : 0;
 
@@ -289,7 +283,6 @@ export const createBranchSlice = (set, get) => ({
                 auditLogFired = true;
             }
 
-            // Si no fue un cambio legal pero sí de datos generales
             if (!auditLogFired && oldBranch.name !== (payload.name || payload.branchName)) {
                 await get().appendAuditLog('EDITAR_SUCURSAL', id, {
                     timeline_title: `Actualización de Datos: ${payload.name || payload.branchName || 'Sucursal'}`,
@@ -298,8 +291,6 @@ export const createBranchSlice = (set, get) => ({
                     new_value: 'Se modificaron datos generales'
                 });
             }
-
-            // 🚨========================================================================🚨
 
             const retSettings = typeof updated.settings === 'string' ? JSON.parse(updated.settings) : (updated.settings || {});
             const retHours = typeof updated.weekly_hours === 'string' ? JSON.parse(updated.weekly_hours) : (updated.weekly_hours || {});
@@ -320,6 +311,7 @@ export const createBranchSlice = (set, get) => ({
 
             return true;
         } catch (err) {
+            console.error("Fallo al actualizar sucursal:", err);
             throw err;
         }
     },
@@ -329,7 +321,9 @@ export const createBranchSlice = (set, get) => ({
             throw new Error("No se puede eliminar: Hay colaboradores asignados a esta farmacia.");
         }
         try {
-            await supabase.from("branches").delete().eq("id", id);
+            const { error } = await supabase.from("branches").delete().eq("id", id);
+            if (error) throw error;
+            
             await get().appendAuditLog('ELIMINAR_SUCURSAL', id, {
                 timeline_title: `Cierre Definitivo de Sucursal`,
                 dimension: 'OPERATIVE',
@@ -342,7 +336,10 @@ export const createBranchSlice = (set, get) => ({
                 return { branches: persistBranches(next) };
             });
             return true;
-        } catch (err) { return false; }
+        } catch (err) { 
+            console.error("Error eliminando sucursal:", err);
+            return false; 
+        }
     },
 
     registerKioskDevice: async (branchId, deviceName) => {
@@ -375,6 +372,7 @@ export const createBranchSlice = (set, get) => ({
             };
 
         } catch (err) {
+            console.error("Fallo al registrar Kiosco:", err);
             throw err;
         }
     },
@@ -387,20 +385,29 @@ export const createBranchSlice = (set, get) => ({
                 .eq('id', deviceId);
 
             if (error) throw error;
+            
             await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, {
                 timeline_title: `Kiosco Desvinculado`,
                 dimension: 'OPERATIVE',
                 old_value: deviceName,
                 new_value: 'Acceso Revocado'
-            }); return true;
+            }); 
+            return true;
         } catch (err) {
+            console.error("Fallo al revocar Kiosco:", err);
             return false;
         }
     },
 
     getBranchKiosks: async (branchId) => {
-        const { data } = await supabase.from('kiosk_devices').select('*').eq('branch_id', branchId);
-        return data || [];
+        try {
+            const { data, error } = await supabase.from('kiosk_devices').select('*').eq('branch_id', branchId);
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error obteniendo Kioscos:", error);
+            return [];
+        }
     },
 
     validateKioskToken: async (deviceId, token) => {
@@ -422,18 +429,28 @@ export const createBranchSlice = (set, get) => ({
             const { data: docs } = await supabase.from('branch_documents').select('*').eq('branch_id', branchId).order('created_at', { ascending: false });
             const { data: logs } = await supabase.from('audit_logs').select('*').eq('target_id', branchId).order('created_at', { ascending: false });
 
-            return [
+            const combined = [
                 ...(docs || []).map(d => ({ ...d, isDoc: true, sortDate: new Date(d.created_at) })),
                 ...(logs || []).map(l => ({ ...l, isLog: true, sortDate: new Date(l.created_at) }))
             ].sort((a, b) => b.sortDate - a.sortDate);
-        } catch (err) { return []; }
+
+            // 🔴 NUEVO: ACTUALIZAMOS LA MEMORIA DE ZUSTAND
+            // Esto permite a React reaccionar y mostrar el historial sin dar F5
+            set((state) => ({
+                branchHistory: { ...state.branchHistory, [branchId]: combined }
+            }));
+
+            return combined;
+        } catch (err) { 
+            console.error("Fallo al obtener historial de sucursal:", err);
+            return []; 
+        }
     },
 
     registerBranchExpense: async (branchId, expenseData) => {
         try {
             let receiptUrl = null;
 
-            // Usamos handleDocumentVersioning para subir el archivo a Supabase Storage
             if (expenseData.receiptFile instanceof File) {
                 receiptUrl = await handleDocumentVersioning(
                     branchId,
@@ -444,7 +461,6 @@ export const createBranchSlice = (set, get) => ({
                 );
             }
 
-            // Insertamos en la tabla branch_expenses (Supabase SQL)
             const dbExpense = {
                 branch_id: branchId,
                 expense_type: expenseData.expense_type,
@@ -457,7 +473,7 @@ export const createBranchSlice = (set, get) => ({
                 notes: expenseData.notes || null
             };
 
-// 1. Verificamos si ya existe un registro en BD para este mes y servicio
+            // 1. Verificamos si ya existe un registro en BD para este mes y servicio
             const { data: existingRecord } = await supabase.from('branch_expenses')
                 .select('id')
                 .eq('branch_id', branchId)
@@ -466,16 +482,13 @@ export const createBranchSlice = (set, get) => ({
                 .single();
 
             if (existingRecord) {
-                // Si existe (ej. subiendo recibo pendiente), ACTUALIZAMOS
                 const { error: updError } = await supabase.from('branch_expenses').update(dbExpense).eq('id', existingRecord.id);
                 if (updError) throw updError;
             } else {
-                // Si no existe, INSERTAMOS
                 const { error: insError } = await supabase.from('branch_expenses').insert([dbExpense]);
                 if (insError) throw insError;
             }
 
-            // Actualizamos la configuración JSONB de la sucursal (Zustand + Supabase)
             const branch = get().branches.find(b => String(b.id) === String(branchId));
             if (branch) {
                 const newSettings = JSON.parse(JSON.stringify(branch.settings || {}));
@@ -485,16 +498,15 @@ export const createBranchSlice = (set, get) => ({
                     if (!newSettings.rent) newSettings.rent = {};
                     newSettings.rent.paidThrough = expenseData.billing_month;
                     newSettings.rent.isReceiptPending = isPending;
-                    newSettings.rent.amount = expenseData.amount; // 🔴 Guarda el monto real pagado
+                    newSettings.rent.amount = expenseData.amount; 
                 } else {
                     if (!newSettings.services) newSettings.services = {};
                     if (!newSettings.services[expenseData.expense_type]) newSettings.services[expenseData.expense_type] = {};
                     newSettings.services[expenseData.expense_type].paidThrough = expenseData.billing_month;
                     newSettings.services[expenseData.expense_type].isReceiptPending = isPending;
-                    newSettings.services[expenseData.expense_type].amount = expenseData.amount; // 🔴 Guarda el monto real pagado
+                    newSettings.services[expenseData.expense_type].amount = expenseData.amount; 
                 }
 
-                // Limpiamos antes de mandar a JSONB
                 const cleanSettingsForDB = sanitizeForJsonb(newSettings);
                 await supabase.from('branches').update({ settings: cleanSettingsForDB }).eq('id', branchId);
 
@@ -510,17 +522,35 @@ export const createBranchSlice = (set, get) => ({
                 const serviceMap = { rent: 'Alquiler', light: 'Energía Eléctrica', water: 'Agua Potable', internet: 'Internet', phone: 'Plan Celular', taxes: 'Impuestos' };
                 const srvName = serviceMap[expenseData.expense_type] || expenseData.expense_type;
 
-                await get().appendAuditLog('PAGO_REGISTRADO', branchId, {
-                    timeline_title: `Pago de ${srvName}`,
+                // 🔴 LÓGICA DE AUDITORÍA INTELIGENTE
+                let timelineTitle = `Pago de ${srvName}`;
+                let oldVal = `Mes: ${expenseData.billing_month}`;
+                let newVal = `Monto: $${expenseData.amount}`;
+                let actionType = 'PAGO_REGISTRADO';
+
+                // Si ya existía, significa que entraron a adjuntar el comprobante o actualizar el monto
+                if (existingRecord) {
+                    timelineTitle = receiptUrl ? `Comprobante Adjuntado: ${srvName}` : `Actualización de Pago: ${srvName}`;
+                    oldVal = `Mes: ${expenseData.billing_month}`;
+                    newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a $${expenseData.amount}`;
+                    actionType = 'EDITAR_SUCURSAL'; // Cambiamos el tipo para que no salga el icono de pago duplicado
+                }
+
+                await get().appendAuditLog(actionType, branchId, {
+                    timeline_title: timelineTitle,
                     dimension: 'FINANCE',
                     branch_id: branchId,
-                    old_value: `Mes: ${expenseData.billing_month}`,
-                    new_value: `Monto: $${expenseData.amount}`,
+                    old_value: oldVal,
+                    new_value: newVal,
                     servicio: expenseData.expense_type,
-                    monto: expenseData.amount
+                    monto: expenseData.amount,
+                    file_url: receiptUrl // 🔴 MÁGIA: Si subieron el archivo, aparecerá el botón "Ver Doc" en la línea de tiempo
                 });
             }
             return true;
-        } catch (err) { throw err; }
+        } catch (err) { 
+            console.error("Error registrando pago o adjuntando recibo:", err);
+            throw err; 
+        }
     }
 });

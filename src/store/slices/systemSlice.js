@@ -1,4 +1,3 @@
-// src/store/slices/systemSlice.js
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 
@@ -184,6 +183,8 @@ export const createSystemSlice = (set, get) => ({
 
                 return true;
             } catch (e) {
+                // 🔴 MEJORA: Mostrar el error real en consola para facilitar la depuración
+                console.error("🔥 Error crítico en fetchBoot:", e.message || e);
                 set({ bootStatus: 'error' });
                 return false;
             } finally {
@@ -213,6 +214,9 @@ export const createSystemSlice = (set, get) => ({
 
             if (error) throw error;
 
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => ({ roles: [...state.roles, data] }));
             return data;
         } catch (error) {
@@ -240,6 +244,10 @@ export const createSystemSlice = (set, get) => ({
                 old_value: 'Cargo Activo',
                 new_value: 'Eliminado del Sistema'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.roles.filter(r => r.id !== roleId);
                 localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
@@ -247,6 +255,7 @@ export const createSystemSlice = (set, get) => ({
             });
             return true;
         } catch (err) {
+            console.error("Error eliminando rol:", err);
             return false;
         }
     },
@@ -270,6 +279,10 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'HR',
                 new_value: 'Configuración actualizada'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.roles.map(r => String(r.id) === String(roleId) ? data : r);
                 localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
@@ -305,6 +318,10 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 new_value: `Prioridad: ${data.priority}`
             });
+            
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             const newAnn = {
                 id: data.id,
                 title: data.title,
@@ -325,6 +342,7 @@ export const createSystemSlice = (set, get) => ({
             });
             return newAnn;
         } catch (err) {
+            console.error("Error creando aviso:", err);
             throw err;
         }
     },
@@ -356,6 +374,10 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 ...auditDetails
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.announcements.map((ann) =>
                     ann.id === id
@@ -378,6 +400,7 @@ export const createSystemSlice = (set, get) => ({
 
             return data;
         } catch (err) {
+            console.error("Error editando aviso:", err);
             throw err;
         }
     },
@@ -391,13 +414,20 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 new_value: 'Eliminado Permanentemente'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.announcements.filter(a => String(a.id) !== String(id));
                 localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
             return true;
-        } catch (err) { return false; }
+        } catch (err) { 
+            console.error("Error eliminando aviso:", err);
+            return false; 
+        }
     },
 
     archiveAnnouncement: async (id) => {
@@ -409,13 +439,20 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 new_value: 'Movido al archivo'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.announcements.map(a => String(a.id) === String(id) ? { ...a, isArchived: true } : a);
                 localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
                 return { announcements: next };
             });
             return true;
-        } catch (err) { return false; }
+        } catch (err) { 
+            console.error("Error archivando aviso:", err);
+            return false; 
+        }
     },
 
     markAnnouncementAsRead: async (announcementId, employeeId) => {
@@ -435,7 +472,10 @@ export const createSystemSlice = (set, get) => ({
                 return { announcements: next };
             });
             return true;
-        } catch (error) { return false; }
+        } catch (error) { 
+            console.error("Error marcando aviso como leído:", error);
+            return false; 
+        }
     },
 
     addShift: async (shiftData) => {
@@ -449,6 +489,10 @@ export const createSystemSlice = (set, get) => ({
                 branch_id: data.branch_id, // 🚨 CRUCIAL PARA TABHISTORY
                 new_value: `${data.start_time.substring(0, 5)} a ${data.end_time.substring(0, 5)}`
             });
+            
+            // 🔴 BENGALA: Para que las vistas de sucursales actualicen sus históricos
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             const newShift = { id: data.id, branchId: data.branch_id, name: data.name, start: data.start_time.substring(0, 5), end: data.end_time.substring(0, 5) };
             set((state) => {
                 const next = [...state.shifts, newShift];
@@ -457,6 +501,7 @@ export const createSystemSlice = (set, get) => ({
             });
             return newShift;
         } catch (err) {
+            console.error("Error creando turno:", err);
             throw new Error("Error creando turno");
         }
     },
@@ -470,6 +515,10 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 new_value: 'Eliminado Permanentemente'
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             set((state) => {
                 const next = state.shifts.filter(s => String(s.id) !== String(id));
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
@@ -477,6 +526,7 @@ export const createSystemSlice = (set, get) => ({
             });
             return true;
         } catch (err) {
+            console.error("Error eliminando turno:", err);
             return false;
         }
     },
@@ -488,7 +538,10 @@ export const createSystemSlice = (set, get) => ({
             const rosterMap = {};
             (data || []).forEach(r => { rosterMap[r.employee_id] = r.schedule_data; });
             return rosterMap;
-        } catch (err) { return {}; }
+        } catch (err) { 
+            console.error("Error cargando el roster semanal:", err);
+            return {}; 
+        }
     },
 
     saveWeeklyRoster: async (employeeId, weekStartDate, scheduleData) => {
@@ -501,8 +554,13 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'HR',
                 new_value: `Semana: ${weekStartDate}`
             });
+
+            // 🔴 BENGALA
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
             return true;
         } catch (err) {
+            console.error("Error guardando el roster:", err);
             throw new Error("Error guardando el roster.");
         }
     },

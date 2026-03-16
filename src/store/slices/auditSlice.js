@@ -1,4 +1,3 @@
-// src/store/slices/auditSlice.js
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 
@@ -92,6 +91,7 @@ const pickBranchContext = (details) => {
 const safeDetails = (raw) => {
   const details = raw && typeof raw === 'object' ? raw : {};
 
+  // Extraemos las propiedades que ya tienen su propia columna para no duplicarlas en el JSONB
   const { source, severity, branch_id, branch_name, device_name, input_method, ...rest } = details;
 
   try {
@@ -140,7 +140,7 @@ export const createAuditSlice = (set, get) => ({
     }
 
     const normalizedAction = normalizeAction(action);
-    if (!normalizedAction) return; 
+    if (!normalizedAction) return null; // 🔴 Retornamos null si no hay acción
 
     const ctx = pickBranchContext(det || {});
 
@@ -148,7 +148,6 @@ export const createAuditSlice = (set, get) => ({
     const severityCandidate = String(inferSeverity(normalizedAction, det) || AUDIT_SEVERITY.INFO).toUpperCase();
 
     const source = ALLOWED_SOURCES.has(sourceCandidate) ? sourceCandidate : AUDIT_SOURCES.ADMIN_PANEL;
-    // 🚨 Ahora si la severidad inferida es válida, pasará el chequeo de la base de datos
     const severity = ALLOWED_SEVERITY.has(severityCandidate) ? severityCandidate : AUDIT_SEVERITY.INFO;
 
     const logData = {
@@ -179,18 +178,27 @@ export const createAuditSlice = (set, get) => ({
       }
 
       set((state) => {
+        // Usamos la data real devuelta por Supabase que incluye el ID generado
         const insertedRow = data || { ...logData, created_at: new Date().toISOString() };
         const next = [insertedRow, ...(state.auditLog || [])];
+        // Mantenemos la memoria local ligera (max 1000)
         localStorage.setItem(CACHE_KEYS.AUDIT, JSON.stringify(next.slice(0, 1000)));
         return { auditLog: next };
       });
+      
+      // 🔴 MEJORA: Retornamos la data insertada por si alguna función la necesita
+      return data; 
+      
     } catch (err) {
+      // 🔴 MEJORA: Un console.error interno (que no rompe la UI) es crucial para depurar
+      console.error("Error silencioso al guardar Auditoría en DB:", err.message || err);
+      return null;
     }
   },
 
-fetchAuditLogs: async (limit = 1000) => {
+  fetchAuditLogs: async (limit = 1000) => {
     const now = Date.now();
-    // 🚨 Reducimos el bloqueo a 1.5s (Anti-spam de clics, pero permite navegación fluida)
+    // Reducimos el bloqueo a 1.5s (Anti-spam de clics, pero permite navegación fluida)
     if (now - lastAuditFetchTime < 1500) return; 
     lastAuditFetchTime = now;
 
@@ -209,7 +217,7 @@ fetchAuditLogs: async (limit = 1000) => {
       localStorage.setItem(CACHE_KEYS.AUDIT, JSON.stringify(data || []));
       
     } catch (err) {
-      // 🚨 ALERTA CRÍTICA: Ahora el sistema te gritará si falta una columna en la DB
+      // ALERTA CRÍTICA: Ahora el sistema te gritará si falta una columna en la DB
       console.error("🔥 Error crítico en fetchAuditLogs de Supabase:", err.message || err);
     }
   },

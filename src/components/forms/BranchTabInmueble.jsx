@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
-import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff } from 'lucide-react';
+import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff, Info } from 'lucide-react';
 import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 
-// 🚨 FIX: Definimos safeParse aquí mismo para que no dependa del componente padre
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
     try { return JSON.parse(obj) || {}; } catch { return {}; }
@@ -13,10 +12,8 @@ const safeParse = (obj) => {
 const BranchTabInmueble = ({
     isRented, rent, rentContract, legal, setFormData,
     updateNestedSetting, handleContractChange, getTabStatus
-    // 🚨 Eliminamos safeParse de aquí arriba
 }) => {
 
-    // 🚨 GPU LOCK: Forzamos a la tarjeta gráfica a no "apagar" estos elementos al hacer scroll
     const gpuLockStyle = {
         transform: 'translateZ(0)',
         WebkitBackfaceVisibility: 'hidden',
@@ -36,8 +33,13 @@ const BranchTabInmueble = ({
         { value: 'MIXTO', label: 'Múltiples Tipos' },
     ], []);
 
+    // 🚨 REGLA DE NEGOCIO: Si tiene inyecciones, los desechos son obligatorios
+    const hasInjections = !!legal.injections;
+    
+    // El estado efectivo de los desechos. Si tiene inyecciones, forzamos que sea true.
+    const isWasteManagementActive = hasInjections || !!legal.wasteManagement;
+
     return (
-        // Aplicamos el bloqueo de GPU al contenedor principal también
         <div className="space-y-6 w-full" style={gpuLockStyle}>
 
             {/* ISLA 1: INMUEBLE Y ARRENDAMIENTO */}
@@ -54,7 +56,7 @@ const BranchTabInmueble = ({
                             const nextState = isRented ? "OWNED" : "RENTED";
                             setFormData(prev => ({
                                 ...prev,
-                                propertyType: nextState, // 🚨 FIX: Forzamos la actualización en la raíz del objeto
+                                propertyType: nextState,
                                 settings: {
                                     ...safeParse(prev.settings),
                                     propertyType: nextState,
@@ -158,7 +160,7 @@ const BranchTabInmueble = ({
                                 url={rentContract.documentUrl}
                                 onChange={(f) => {
                                     handleContractChange('documentFile', f);
-                                    if (!f) handleContractChange('documentUrl', null); // 🚨 Limpia la URL
+                                    if (!f) handleContractChange('documentUrl', null);
                                 }}
                             />
                         </div>
@@ -216,23 +218,39 @@ const BranchTabInmueble = ({
                                 url={legal.municipalUrl}
                                 onChange={(f) => {
                                     updateNestedSetting('legal', 'municipalFile', f);
-                                    if (!f) updateNestedSetting('legal', 'municipalUrl', null); // 🚨 Limpia la URL
+                                    if (!f) updateNestedSetting('legal', 'municipalUrl', null);
                                 }}
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* ISLA 3: DESECHOS */}
+                {/* ISLA 3: DESECHOS BIOINFECCIOSOS */}
                 <div className={`bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <div className="flex items-center justify-between mb-5">
-                        <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
-                            <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
-                        </h4>
-                        <Switch on={legal.wasteManagement || false} onToggle={() => updateNestedSetting('legal', 'wasteManagement', !legal.wasteManagement)} />
+                    <div className="flex flex-col mb-5">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
+                                <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
+                            </h4>
+                            <Switch 
+                                on={isWasteManagementActive} 
+                                disabled={hasInjections} 
+                                onToggle={() => {
+                                    // Solo permitimos el toggle si NO tiene inyecciones
+                                    if (!hasInjections) {
+                                        updateNestedSetting('legal', 'wasteManagement', !legal.wasteManagement);
+                                    }
+                                }} 
+                            />
+                        </div>
+                        {hasInjections && (
+                            <p className="text-[9px] font-bold text-blue-500/80 mt-2 flex items-center gap-1 ml-6">
+                                <Info size={10} /> Obligatorio por área de inyecciones activa.
+                            </p>
+                        )}
                     </div>
 
-                    {legal.wasteManagement ? (
+                    {isWasteManagementActive ? (
                         <div className="space-y-4 flex-1">
                             <div className="relative focus-within:z-50">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-2 block flex items-center gap-1.5">
@@ -253,7 +271,7 @@ const BranchTabInmueble = ({
                                     url={legal.wasteUrl}
                                     onChange={(f) => {
                                         updateNestedSetting('legal', 'wasteFile', f);
-                                        if (!f) updateNestedSetting('legal', 'wasteUrl', null); // 🚨 Limpia la URL
+                                        if (!f) updateNestedSetting('legal', 'wasteUrl', null);
                                     }}
                                 />
                             </div>

@@ -3,7 +3,7 @@ import {
     Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,
     Users, Eye, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
     Search, Filter, X, ArrowUpRight, Copy, MessageCircle, ChevronRight,
-    Scale, Zap, Briefcase, Shield, Stethoscope
+    Scale, Zap, Briefcase, Shield, Stethoscope, Sparkles, Activity, ArrowLeft
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { formatTime12h } from "../utils/helpers";
@@ -12,8 +12,10 @@ import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 
+import { supabase } from '../supabaseClient';
+
 const FILTER_OPTIONS = [
-    { value: "ALL", label: "Todas las Sucursales" },
+    { value: "ALL", label: "Todas" },
     { value: "ALERTS", label: "Con Alertas" },
     { value: "INACTIVE", label: "Inactivas" },
     { value: "RENTED", label: "Alquiladas" },
@@ -92,7 +94,6 @@ const getProfileCompletion = (branch) => {
     return { legal: Math.round(legalScore), property: Math.round(propertyScore), services: Math.round(serviceScore) };
 };
 
-// 🚨 MODIFICADO: Ahora evalúa vencimientos de Inmueble, Legal y Servicios
 const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     const alerts = [];
     const settings = safeParse(branch.settings);
@@ -104,7 +105,6 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     const today = new Date(currentTimestamp);
     today.setHours(0, 0, 0, 0);
 
-    // 💡 HELPER: Evaluador de fechas exactas (YYYY-MM-DD) para Documentos
     const evaluateDocExpiration = (dateString, label, warningDays = 45) => {
         if (!dateString) return;
         const [year, month, day] = dateString.split('-');
@@ -115,11 +115,9 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         else if (diffDays <= warningDays) alerts.push({ level: 'warning', message: `${label} vence en ${diffDays} días`, icon: AlertTriangle });
     };
 
-    // 💡 HELPER: Evaluador de pagos mensuales (YYYY-MM) para Servicios
     const evaluateServicePayment = (paidThrough, serviceName) => {
         if (!paidThrough) return;
         const [year, month] = paidThrough.split('-');
-        // El vencimiento asumido es el último día del mes pagado
         const targetDate = new Date(year, month, 0, 0, 0, 0, 0); 
         const diffDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
 
@@ -127,14 +125,12 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         else if (diffDays < 0) alerts.push({ level: 'warning', message: `Revisar pago de ${serviceName}`, icon: AlertCircle });
     };
 
-    // 1. Validaciones de Inmueble (Contrato)
     if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icon: Info });
     else if (pType === 'RENTED') {
         if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta Contrato', icon: Info });
-        else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60); // Avisa 60 días antes
+        else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60); 
     }
 
-    // 2. Validaciones Legales (Permisos y Credenciales)
     if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta Permiso SRS', icon: Info });
     evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
     evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
@@ -144,24 +140,19 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
         evaluateDocExpiration(legalData.controlledBooksExp, "Libros Controlados", 30);
     }
 
-    // 3. Validaciones Generales y Horarios
     if (!branch.address || (!branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos Incompletos', icon: Info });
     if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin Horarios', icon: Clock });
 
-    // 4. Validaciones Estrictas de Personal
     const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
     if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta Jefe de Sucursal', icon: Users });
     if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta Regente', icon: Briefcase });
     if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta Referente', icon: Shield });
     if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta Enfermero/a', icon: Stethoscope });
 
-    // 5. Validaciones de Servicios Básicos (Luz, Agua, Internet)
     evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
     evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
     evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
 
-
-    // Construcción visual de la alerta
     const baseCardStyles = 'bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.7)]';
 
     if (alerts.length === 0) {
@@ -178,12 +169,55 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 };
 
 // ============================================================================
-// 🚀 COMPONENTE DE TARJETA
+// 🚀 COMPONENTE DE TARJETA SKELETON
+// ============================================================================
+const BranchCardSkeleton = () => {
+    return (
+        <div className="bg-white/40 backdrop-blur-[30px] border border-white/50 rounded-[2.5rem] flex flex-col h-full animate-pulse p-6">
+            <div className="flex justify-between items-start mb-6">
+                <div className="flex gap-4">
+                    <div className="w-14 h-14 rounded-[1.25rem] bg-slate-200/60"></div>
+                    <div className="flex flex-col justify-center gap-2">
+                        <div className="w-32 h-4 bg-slate-300/50 rounded"></div>
+                        <div className="w-20 h-2 bg-slate-300/50 rounded"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="flex flex-col gap-2.5">
+                <div className="w-full h-[60px] bg-slate-200/50 rounded-[1.25rem]"></div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="w-full h-[52px] bg-slate-200/50 rounded-[1.2rem]"></div>
+                    <div className="w-full h-[52px] bg-slate-200/50 rounded-[1.2rem]"></div>
+                </div>
+                <div className="w-full h-[46px] bg-slate-200/50 rounded-[1.25rem]"></div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-auto pt-4">
+                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
+                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
+                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-200/50 flex items-center justify-between">
+                <div className="w-24 h-6 bg-slate-300/50 rounded"></div>
+                <div className="w-px h-6 bg-slate-200/50"></div>
+                <div className="w-20 h-6 bg-slate-300/50 rounded"></div>
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
+// 🚀 COMPONENTE DE TARJETA (CON ESTILO IA FUTURISTA)
 // ============================================================================
 const BranchCard = memo(({
     branch, branchEmployees, count, activeKiosks, currentTime, isMobile,
     handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction
 }) => {
+    const [aiMode, setAiMode] = useState(false);
+    const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+    const [aiSummaryData, setAiSummaryData] = useState(null);
 
     const pct = Math.min(Math.round((count / 20) * 100), 100);
     const deleteDisabled = count > 0;
@@ -191,19 +225,145 @@ const BranchCard = memo(({
     const scheduleDefined = isScheduleDefined(branch);
 
     const alertStatus = getAlertStatus(branch, currentTime.timestamp, branchEmployees);
-    
     const currentStatus = isBranchOpenNow(branch, currentTime.day, currentTime.timeStr);
     const todaySchedule = getTodaySchedule(branch, currentTime.day);
     const completion = getProfileCompletion(branch);
 
+    const generateBranchAiSummary = async (e) => {
+        e.stopPropagation();
+        setAiMode(true);
+        setIsGeneratingAi(true);
+
+        try {
+            const snapshotData = {
+                nombre: branch.name,
+                estadoDeApertura: isInactive ? 'Inactiva' : currentStatus.label,
+                horarioDeHoy: todaySchedule,
+                empleadosAsignados: count,
+                kioscosActivos: activeKiosks,
+                alertas: alertStatus.list.length > 0 ? alertStatus.list.map(a => `${a.level.toUpperCase()}: ${a.message}`) : ['Ninguna alerta, todo en orden.'],
+                progresoExpediente: `Documentos Legales: ${completion.legal}%, Datos del Local: ${completion.property}%, Servicios Básicos: ${completion.services}%`
+            };
+
+            const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-branch', {
+                body: { branchName: branch.name, branchData: JSON.stringify(snapshotData) } 
+            });
+
+            if (aiError) throw new Error(aiError.message);
+            if (!aiResponse?.success) throw new Error("Fallo en la generación del resumen.");
+
+            setAiSummaryData(aiResponse.aiSummary);
+        } catch (error) {
+            console.error("Error al generar resumen IA:", error);
+            setAiSummaryData("Ocurrió un error de conexión con la red neuronal. Por favor, intenta de nuevo.");
+        } finally {
+            setIsGeneratingAi(false);
+        }
+    };
+
     return (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px' }} className={`group relative rounded-[2.5rem] transition-all duration-500 flex flex-col h-full will-change-transform ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px' }} className={`group relative rounded-[2.5rem] transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
+            
+            {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
+            <div className={`absolute inset-0 z-50 bg-white/80 backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-indigo-100/50 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
+                
+                {/* 🔮 Esferas de Energía Animatedas de Fondo */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                    <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-indigo-500/20 blur-[50px] rounded-full animate-pulse [animation-duration:4s]"></div>
+                    <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-purple-500/20 blur-[50px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
+                    <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-cyan-400/20 blur-[50px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
+                </div>
+
+                {/* Cabecera del Overlay IA */}
+                <div className="relative z-10 flex items-center justify-between p-5 border-b border-indigo-100/40 bg-white/30">
+                    <div className="flex items-center gap-3">
+                        <div className="relative w-8 h-8 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[3px] opacity-70"></div>
+                            <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-white/30">
+                                <Sparkles size={14} className="text-white" strokeWidth={2.5} />
+                            </div>
+                        </div>
+                        <div>
+                            <h4 className="text-[15px] font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-none tracking-tight">Gemini Insight</h4>
+                            <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mt-0.5 opacity-80">{branch.name}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }} 
+                        className="w-8 h-8 rounded-full bg-white/60 hover:bg-white text-indigo-400 flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:text-indigo-600"
+                    >
+                        <X size={14} strokeWidth={3} />
+                    </button>
+                </div>
+
+                {/* Contenido del Overlay */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-10">
+                    {isGeneratingAi ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <div className="relative w-16 h-16 flex items-center justify-center mb-5">
+                                <div className="absolute inset-0 border-2 border-indigo-200/50 rounded-full animate-ping [animation-duration:2s]"></div>
+                                <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
+                                <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
+                                <Sparkles size={18} className="text-indigo-600" />
+                            </div>
+                            <p className="text-[12px] font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent animate-pulse uppercase tracking-widest">Analizando Telemetría</p>
+                            <p className="text-[10px] font-bold text-indigo-400 mt-1 opacity-70">Ejecutando modelo neuronal</p>
+                        </div>
+                    ) : (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            {aiSummaryData?.split('\n').map((paragraph, index) => (
+                                <div key={index} className="relative mb-4 group/p">
+                                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
+                                    
+                                    <p className="text-[13px] font-medium text-slate-700 leading-relaxed text-justify pl-4">
+                                        {paragraph.split('**').map((text, i) => (
+                                            i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
+                                        ))}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* ZONA TOP-RIGHT: BOTONES FLOTANTES Y ALERTA */}
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-30">
                 <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-white/90 backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
-                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-7 h-7 rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} className="w-7 h-7 rounded-full text-slate-400 hover:text-amber-500 hover:bg-amber-50 flex items-center justify-center transition-all" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={deleteDisabled} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${deleteDisabled ? 'text-slate-300 opacity-50 cursor-not-allowed' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`} title={deleteDisabled ? "Reasigna al personal primero" : "Eliminar Sucursal"}><Trash2 size={14} strokeWidth={2.5} /></button>
+                    
+                    {/* ✨ BOTÓN DISPARADOR DE IA ✨ */}
+{/* ✨ BOTÓN DISPARADOR DE IA ESTANDARIZADO ✨ */}
+                    <button 
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } 
+                            else { generateBranchAiSummary(e); }
+                        }}
+                        className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:-translate-y-0.5"
+                        title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
+                    >
+                        {aiMode ? (
+                            <div className="absolute inset-[1px] bg-indigo-50 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-indigo-200">
+                                <X size={14} strokeWidth={3} className="text-indigo-400 group-hover/ai-btn:text-indigo-600 transition-colors" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-white/95 transition-colors duration-300"></div>
+                                <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
+                                <Sparkles size={14} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
+                            </>
+                        )}
+                    </button>
+                    
+                    <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
+                    
+                    {/* 🚨 OCULTAR BOTÓN DE ELIMINAR SI ESTÁ DESHABILITADO */}
+                    {!deleteDisabled && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-400 hover:text-red-500 hover:bg-red-50" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
+                    )}
                 </div>
                 {alertStatus.hasAlerts && (
                     <div className="relative group/badge flex items-center justify-center ml-1">
@@ -270,7 +430,6 @@ const BranchCard = memo(({
                         </div>
                     </a>
 
-                    {/* 🚨 FIX DE TELÉFONOS: Eliminado el truncate, añadido whitespace-nowrap y tracking-tight, ajustado padding */}
                     <div className="grid grid-cols-2 gap-2">
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-[#007AFF]"><Phone size={14} strokeWidth={2.5} /></div>
@@ -388,6 +547,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
     const getBranchKiosks = useStaff(state => state.getBranchKiosks);
 
     const [kiosksCount, setKiosksCount] = useState({});
+    const [isLoadingKiosks, setIsLoadingKiosks] = useState(true);
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, branch: null });
     const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'error' });
 
@@ -433,8 +593,14 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                         const newCounts = {};
                         results.forEach(res => { newCounts[res.id] = res.count; });
                         setKiosksCount(newCounts);
+                        setIsLoadingKiosks(false);
                     }
-                } catch (error) { console.error("Error cargando kioscos", error); }
+                } catch (error) { 
+                    console.error("Error cargando kioscos", error); 
+                    setIsLoadingKiosks(false);
+                }
+            } else {
+                setIsLoadingKiosks(false);
             }
         };
 
@@ -565,12 +731,16 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
 
     return (
         <>
-            <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, branch: null })} onConfirm={executeDelete} title={`¿Eliminar "${confirmDialog.branch?.name}"?`} message="Esta acción eliminará permanentemente la sucursal y toda su configuración operativa del sistema." confirmText="Sí, eliminar sucursal" />
+            <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, branch: null })} onConfirm={executeDelete} title={`¿Eliminar "${confirmDialog.branch?.name}"?`} message="Esta acción eliminará permanentemente la sucursal y toda su configuración operativa del sistema." confirmText="Eliminar" />
             <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '', type: 'error' })} title={alertDialog.title} message={alertDialog.message} type={alertDialog.type} />
 
             <GlassViewLayout icon={Building2} title="Sucursales" filtersContent={renderFiltersContent()} transparentBody={true}>
                 <div className="w-full flex-1 pb-12">
-                    {filteredBranches.length === 0 ? (
+                    {isLoadingKiosks ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max pt-4 px-2">
+                            {[1, 2, 3].map(i => <BranchCardSkeleton key={i} />)}
+                        </div>
+                    ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
                             <div className={`bg-white/60 backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-white/80 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-emerald-500' : 'text-slate-400'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}

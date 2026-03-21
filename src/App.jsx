@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { Loader2, Settings, Monitor } from "lucide-react"; // 🚨 Asegúrate de importar Settings y Monitor
+import { Loader2, Settings, Monitor } from "lucide-react";
 
 // Contextos
 import { useAuth } from "./context/AuthContext";
@@ -25,6 +25,7 @@ import AttendanceAuditView from "./views/AttendanceAuditView";
 import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import LiquidToast from './components/common/LiquidToast';
+import SalyChatOverlay from "./components/SalyChatOverlay";
 
 // ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA
 const AuthSyncHelper = () => {
@@ -224,7 +225,7 @@ function MainApp() {
                                         <Route path="monitor" element={<AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} />} />
                                         <Route path="audit" element={<AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} />} />
                                         <Route path="dashboard" element={<DashboardView setView={setView} setActiveEmployee={setActiveEmployee} openModal={openModal} searchTerm={searchTerm} setSearchTerm={setSearchTerm} selectedBranch={selectedBranch} setSelectedBranch={setSelectedBranch} />} />
-                                        <Route path="schedules" element={<SchedulesView openModal={openModal} />} />
+                                        <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
                                         <Route path="auditview" element={<AuditView openModal={openModal} />} />
                                         <Route path="branches" element={<BranchesView openModal={openModal} setView={setView} setActiveBranch={setActiveBranch} />} />
                                         <Route path="branch-detail" element={activeBranch ? <BranchDetailView openModal={openModal} branch={activeBranch} onBack={() => setView("branches")} setActiveEmployee={setActiveEmployee} setView={setView} /> : <Navigate to="/branches" replace />} />
@@ -245,6 +246,9 @@ function MainApp() {
                                 </div>
                             )}
                         </div>
+
+                        {/* ✨ SALY CHAT OVERLAY AQUÍ - Se muestra sobre todo */}
+                        <SalyChatOverlay />
 
                         <UnifiedModal
                             isOpen={modalOpen}
@@ -281,9 +285,9 @@ export default function App() {
 const MobileConstructionScreen = () => (
     <div className="lg:hidden fixed inset-0 z-[99999] bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <GlobalBackground />
-        
+
         <div className="relative z-10 flex flex-col items-center max-w-sm bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in duration-700">
-            
+
             {/* Ícono Animado */}
             <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-tr from-[#007AFF]/10 to-[#5856D6]/10 rounded-full mb-6 border border-white">
                 <Settings className="text-[#007AFF] animate-spin" size={40} strokeWidth={1.5} style={{ animationDuration: '4s' }} />
@@ -293,12 +297,12 @@ const MobileConstructionScreen = () => (
             </div>
 
             <h2 className="text-[22px] font-black text-slate-800 tracking-tight mb-3 leading-none">
-                Versión Móvil<br/><span className="text-[#007AFF]">en Desarrollo</span>
+                Versión Móvil<br /><span className="text-[#007AFF]">en Desarrollo</span>
             </h2>
-            
+
             <p className="text-[13px] font-medium text-slate-500 leading-relaxed">
-                Estamos construyendo una experiencia increíble para tu teléfono. 
-                <br/><br/>
+                Estamos construyendo una experiencia increíble para tu teléfono.
+                <br /><br />
                 Por favor, accede desde una <b>computadora</b> para utilizar todas las funciones del portal.
             </p>
 
@@ -311,17 +315,13 @@ const MobileConstructionScreen = () => (
     </div>
 );
 
-// 🚨 ACTUALIZADO PARA ENVOLVER LA APP Y BLOQUEAR MÓVILES
 const AppWithToast = () => {
     const location = useLocation();
     const isKioskMode = location.pathname.startsWith('/kiosk');
 
     return (
         <>
-            {/* Solo se muestra en pantallas menores a lg (móviles/tablets pequeñas) */}
             <MobileConstructionScreen />
-            
-            {/* Solo se muestra en pantallas lg o superiores (PC) */}
             <div className="hidden lg:block w-full h-full">
                 <MainApp />
                 <LiquidToast theme={isKioskMode ? 'dark' : 'light'} />
@@ -330,7 +330,6 @@ const AppWithToast = () => {
     );
 };
 
-// 🚨 GLOBAL BACKGROUND CON ALTURA FIJA E INMÓVIL
 const GlobalBackground = () => (
     <div className="fixed inset-0 w-full h-[100dvh] z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/25 rounded-full filter blur-[100px] animate-ambient-drift" />

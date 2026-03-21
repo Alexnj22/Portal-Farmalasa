@@ -167,7 +167,9 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 const AnnouncementsView = ({ openModal }) => {
   const storeAnnouncements = useStaff(state => state.announcements);
   const announcements = storeAnnouncements || [];
-  const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement } = useStaff();
+  
+  // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
+  const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
 
   const [editingAnnId, setEditingAnnId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, annId: null });
@@ -185,8 +187,7 @@ const AnnouncementsView = ({ openModal }) => {
   const [publishImmediately, setPublishImmediately] = useState(true);
   const [scheduledDate, setScheduledDate] = useState('');
 
-  // 🚨 NUEVA PESTAÑA 'SCHEDULED'
-  const [listTab, setListTab] = useState('ACTIVE'); // ACTIVE, SCHEDULED, ARCHIVED
+  const [listTab, setListTab] = useState('ACTIVE'); 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -197,6 +198,20 @@ const AnnouncementsView = ({ openModal }) => {
   const searchInputRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // 🚨 NUEVO: Escuchador global de "force-history-refresh" (Llamado por SalyChat)
+  useEffect(() => {
+    const handleSalyRefresh = async () => {
+      // Forzamos al store a ir a Supabase y traer la info fresca
+      if (fetchInitialData) {
+         await fetchInitialData();
+         setListTab('ACTIVE'); // Volvemos a Activos por si Saly publicó algo nuevo
+         setCurrentPage(1);
+      }
+    };
+    window.addEventListener('force-history-refresh', handleSalyRefresh);
+    return () => window.removeEventListener('force-history-refresh', handleSalyRefresh);
+  }, [fetchInitialData]);
 
   useEffect(() => {
     const timerId = setTimeout(() => { setDebouncedSearchTerm(announcementSearch); }, 300);
@@ -314,7 +329,7 @@ const AnnouncementsView = ({ openModal }) => {
     if (targetType === 'EMPLOYEE' && selectedEmployees.length === 0) {
       setError('No has seleccionado a nadie. Elige al menos a una persona.'); return;
     }
-// 🚨 Validación estricta de fecha futura
+
     if (!publishImmediately) {
       if (!scheduledDate) {
         setError('Si no publicas inmediatamente, debes elegir una fecha de programación.'); 
@@ -322,14 +337,11 @@ const AnnouncementsView = ({ openModal }) => {
       }
       
       const [year, month, day] = scheduledDate.split('-');
-      // Fecha elegida a las 00:00:00
       const selected = new Date(year, month - 1, day, 0, 0, 0, 0); 
       
-      // Hoy a las 00:00:00
       const today = new Date();
       today.setHours(0, 0, 0, 0); 
       
-      // 🚨 BLINDAJE: Si la fecha es Hoy o en el pasado, lo bloquea.
       if (selected <= today) {
         setError('La fecha programada debe ser a partir de mañana. Si lo necesitas para hoy, usa "Publicar Inmediatamente".'); 
         return;
@@ -338,14 +350,10 @@ const AnnouncementsView = ({ openModal }) => {
 
     const finalTargetValue = targetType === 'EMPLOYEE' ? selectedEmployees.map(String) : String(targetValue);
     
-// 🚨 Generar fecha programada a prueba de zonas horarias
     let finalScheduledFor = null;
     if (!publishImmediately && scheduledDate) {
-      // Creamos la fecha usando la zona horaria local, fijándola a las 00:00:00 del día seleccionado
       const [year, month, day] = scheduledDate.split('-');
       const sDate = new Date(year, month - 1, day, 0, 0, 0, 0); 
-      
-      // Convertimos a ISO (que es lo que acepta Supabase)
       finalScheduledFor = sDate.toISOString();
     }
     setIsSubmitting(true);
@@ -478,14 +486,12 @@ const AnnouncementsView = ({ openModal }) => {
   const currentList = useMemo(() => {
     const now = new Date();
     
-    // Filtramos según la pestaña seleccionada
     const baseList = processedAnnouncements.filter((a) => {
         const isScheduled = a.scheduledFor && new Date(a.scheduledFor) > now;
         
         if (listTab === 'ARCHIVED') return a.isCompleted;
         if (listTab === 'SCHEDULED') return isScheduled && !a.isCompleted;
         
-        // ACTIVE: Solo los que NO están archivados/leídos y NO están en el futuro
         return !a.isCompleted && !isScheduled; 
     });
 
@@ -517,7 +523,6 @@ const AnnouncementsView = ({ openModal }) => {
       .slice(0, 30);
   }, [empSearch, employees, selectedEmployees]);
 
-  // CONTADOR DE PROGRAMADOS PARA EL BADGE
   const scheduledCount = useMemo(() => {
       const now = new Date();
       return processedAnnouncements.filter(a => !a.isCompleted && a.scheduledFor && new Date(a.scheduledFor) > now).length;
@@ -539,7 +544,6 @@ const AnnouncementsView = ({ openModal }) => {
             Activos
           </button>
           
-          {/* 🚨 NUEVA PESTAÑA CON BADGE */}
           <button onClick={() => setListTab('SCHEDULED')} className={`relative px-4 md:px-5 h-9 md:h-10 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'SCHEDULED' ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-indigo-50 hover:text-indigo-600 hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-100'}`}>
             <span className="flex items-center gap-1.5"><CalendarClock size={14} /> Programados</span>
             {scheduledCount > 0 && (
@@ -573,7 +577,6 @@ const AnnouncementsView = ({ openModal }) => {
       <GlassViewLayout icon={Megaphone} title="Centro de Comunicaciones" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
         <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
-{/* COLUMNA IZQUIERDA: Formulario */}
           <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
             <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
             <div className="flex justify-between items-center mb-6">
@@ -683,7 +686,6 @@ const AnnouncementsView = ({ openModal }) => {
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: Lista y Empty States dinámicos */}
           <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
             <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
               {paginatedList.length === 0 ? (

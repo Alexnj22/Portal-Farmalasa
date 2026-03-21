@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -32,9 +32,11 @@ const FormRegisterPayment = React.lazy(() => import('./forms/FormRegisterPayment
 const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
 
 const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
+const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
+const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
-const HIDES_FOOTER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -79,6 +81,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editBranchLeadership": return "max-w-4xl";
             case "addCustomDocument":
             case "editCustomDocument": return "max-w-md";
+            case "viewWfmAnalytics": return "max-w-4xl";
+            case "aiSchedulerPreview": return "max-w-5xl";
             default: return "max-w-lg";
         }
     };
@@ -108,6 +112,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "registerPayment": return "Registrar Pago Real";
             case "addCustomDocument": return "Nuevo Documento";
             case "editCustomDocument": return "Actualizar Documento";
+            case "viewWfmAnalytics": return "Monitor de ventas";
+            case "aiSchedulerPreview": return "Planificación con IA";
             default: return "Gestión Administrativa";
         }
     };
@@ -146,20 +152,20 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const originalBranch = formData.branch?.id ? formData.branch : formData;
                 const targetBranchId = originalBranch.id;
 
-// 🚨 1. SUBIDA DIRECTA A SUPABASE (Sin pasar por Zustand) 🚨
+                // 🚨 1. SUBIDA DIRECTA A SUPABASE (Sin pasar por Zustand) 🚨
                 if (docData.file) {
                     try {
                         // 🎯 ¡AQUÍ ESTÁ LA MAGIA! Tu bucket real se llama 'documents'
-                        const NOMBRE_DEL_BUCKET = 'documents'; 
+                        const NOMBRE_DEL_BUCKET = 'documents';
 
                         const fileExt = docData.file.name.split('.').pop();
                         // Y lo guardamos dentro de la carpeta 'branches'
                         const filePath = `branches/${targetBranchId}/customDocs/${docId}_${Date.now()}.${fileExt}`;
-                        
+
                         console.log(`Subiendo archivo a Storage [${NOMBRE_DEL_BUCKET}/${filePath}]...`);
 
                         const { error: uploadError } = await supabase.storage
-                            .from(NOMBRE_DEL_BUCKET) 
+                            .from(NOMBRE_DEL_BUCKET)
                             .upload(filePath, docData.file, { upsert: true });
 
                         if (uploadError) {
@@ -170,16 +176,16 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         const { data: publicUrlData } = supabase.storage
                             .from(NOMBRE_DEL_BUCKET)
                             .getPublicUrl(filePath);
-                            
+
                         fileUrl = publicUrlData.publicUrl;
                         console.log("¡Archivo subido con éxito! URL:", fileUrl);
 
-// ✨ MAGIA DE LA IA (GEMINI) ✨
+                        // ✨ MAGIA DE LA IA (GEMINI) ✨
                         try {
                             console.log("🤖 Activando Gemini AI... Enviando a Supabase Edge Function.");
-                            
+
                             const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
-                                body: { filePath: filePath, bucketName: NOMBRE_DEL_BUCKET } 
+                                body: { filePath: filePath, bucketName: NOMBRE_DEL_BUCKET }
                             });
 
                             // 👇 ESTOS DOS LOGS NOS DIRÁN LA VERDAD ABSOLUTA 👇
@@ -202,7 +208,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         console.error("🔥 ERROR EXACTO DE SUBIDA:", uploadFail);
                         setValidationError(`Error al subir: ${uploadFail.message}.`);
                         setIsSaving(false);
-                        return; 
+                        return;
                     }
                 }
 
@@ -536,6 +542,50 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
+        // ==========================================
+        // 🚨 LÓGICA: GUARDAR PLANIFICACIÓN DE TURNOS (ROSTER)
+        // ==========================================
+        if (type === "planSchedule") {
+            const { employee, weekStartDate, schedule } = formData;
+
+            if (!employee?.id || !weekStartDate || !schedule) {
+                setValidationError("Datos de planificación incompletos o corruptos.");
+                return;
+            }
+
+            setIsSaving(true);
+            try {
+                const { saveWeeklyRoster, fetchEmployees } = useStaff.getState();
+
+                // 1. Enviamos a Supabase usando tu función del SystemSlice
+                await saveWeeklyRoster(employee.id, weekStartDate, schedule);
+
+                // 2. Sincronización en memoria (opcional pero recomendado para inmediatez)
+                if (fetchEmployees) await fetchEmployees();
+
+                // 3. BENGALA: Repintar el Bento Grid de SchedulesView
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+                // 4. Feedback visual de éxito
+                const { showToast } = useToastStore.getState();
+                if (showToast) {
+                    showToast(
+                        "Turnos Asignados",
+                        `Horario de ${employee.name} actualizado con éxito.`,
+                        "success"
+                    );
+                }
+
+                onClose();
+            } catch (err) {
+                console.error("Error guardando turnos:", err);
+                setValidationError("Ocurrió un error al intentar guardar la programación en la base de datos.");
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
         // ============================================================================
         // FORMULARIO GENÉRICO DEFAULT
         // ============================================================================
@@ -579,32 +629,40 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     style={{ willChange: 'transform', transform: 'translateZ(0)' }}
                 />
 
-                {!hidesHeader && (
-                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex justify-between items-center relative z-10 shrink-0">
-                        <div className="flex items-center gap-4">
-                            {type === 'planSchedule' && <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>}
-                            {type === 'manageShifts' && <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>}
-                            {SHIELD_ICONS.has(type) && <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>}
-                            {(type === "newBranch" || type === "editBranch" || type === "editBranchInmueble") && <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>}
-                            {type === "editBranchLegal" && <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>}
-                            {type === "editBranchServicios" && <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>}
-                            {type === "editBranchHorarios" && <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>}
-                            {type === "viewBranchEmployees" && <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>}
-                            {type === "editBranchLeadership" && <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>}
-                            {(type === "addCustomDocument" || type === "editCustomDocument") && <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>}
 
-                            <div>
-                                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
-                                    {getModalTitle()}
-                                </h3>
-                                <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
-                            </div>
-                        </div>
-                        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
-                            <X size={18} strokeWidth={2.5} />
-                        </button>
-                    </div>
-                )}
+{!hidesHeader && (
+    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex justify-between items-center relative z-10 shrink-0">
+        <div className="flex items-center gap-4">
+            
+            {/* Lógica de iconos con un Fallback seguro */}
+            {(() => {
+                if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
+                if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
+                if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
+                if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
+                if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
+                if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>; // 👈 Icono específico para la IA
+                
+                // Fallback por defecto si el tipo de modal no tiene un icono específico
+                return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
+            })()}
+
+            <div>
+                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
+                    {getModalTitle()}
+                </h3>
+                <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+            </div>
+        </div>
+        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
+            <X size={18} strokeWidth={2.5} />
+        </button>
+    </div>
+)}
 
                 {/* 🚨 FIX DE PERFORMANCE 2: overscroll-contain y aceleración de scroll por hardware */}
                 <div
@@ -634,7 +692,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} />}
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
                                 {type === "planSchedule" && <FormPlanificador formData={formData} setFormData={setFormData} shifts={shifts} saveWeeklyRoster={saveWeeklyRoster} onClose={onClose} />}
-                                {type === "manageShifts" && <FormTurnos formData={formData} setFormData={setFormData} branches={branches} shifts={shifts} addShift={addShift} deleteShift={deleteShift} />}
+                                {type === "manageShifts" && <FormTurnos branches={branches} />}
                                 {type === "viewRoleEmployees" && <FormRoleEmployees formData={formData} />}
                                 {type === "viewAnnouncementReaders" && <FormAnnouncements data={formData} onClose={onClose} />}
                                 {type === "editSrsPermit" && <FormSrsPermit formData={formData} setFormData={setFormData} />}
@@ -643,11 +701,12 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "editNursingRegents" && <FormNursingRegents formData={formData} setFormData={setFormData} />}
 
                                 {type === "viewBranchEmployees" && <FormBranchEmployees formData={formData} setView={setView} setActiveEmployee={setGlobalActiveEmployee} onClose={onClose} />}
-
+                                {type === "viewWfmAnalytics" && <FormWfmAnalytics branches={branches} />}
                                 {type === "viewDocument" && <FormDocumentViewer formData={formData} onClose={onClose} />}
                                 {type === "manageService" && <FormServicePayment formData={formData} setFormData={setFormData} />}
                                 {type === "registerPayment" && <FormRegisterPayment formData={formData} setFormData={setFormData} />}
                                 {type === "editBranchLeadership" && <FormLeadership formData={formData} setFormData={setFormData} />}
+                                {type === "aiSchedulerPreview" && <FormAiSchedulerPreview formData={formData} onClose={onClose} />}
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
                             </Suspense>
                         </form>

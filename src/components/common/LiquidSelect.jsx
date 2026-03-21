@@ -10,7 +10,8 @@ const LiquidSelect = ({
     icon: Icon,
     disabled = false,
     clearable = true,
-    theme = 'light' // 🚨 NUEVA PROPIEDAD: 'light' o 'dark'
+    theme = 'light',
+    compact = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +23,13 @@ const LiquidSelect = ({
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
     const isDark = theme === 'dark';
+
+    // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO ---
+    const textStyle = `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
+    const paddingStyle = compact ? 'pl-10 pr-9 py-2.5' : 'pl-[3.5rem] pr-10 py-3.5';
+    const leftIconPos = compact ? 'left-1.5 w-7 h-7' : 'left-4 w-8 h-8';
+    const rightIconPos = compact ? 'right-1.5 w-6 h-6' : 'right-4 w-6 h-6';
+    const iconSize = compact ? 13 : 14;
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),
@@ -53,7 +61,6 @@ const LiquidSelect = ({
             if (e.key === 'Escape') {
                 setIsOpen(false);
                 setSearchTerm('');
-                inputRef.current?.blur();
             }
         };
 
@@ -63,7 +70,6 @@ const LiquidSelect = ({
             }
             if (isOpen) {
                 setIsOpen(false);
-                inputRef.current?.blur();
             }
         };
 
@@ -94,9 +100,6 @@ const LiquidSelect = ({
         if (disabled) return;
         onChange('');
         setSearchTerm('');
-        if (isOpen) {
-            inputRef.current?.focus();
-        }
     };
 
     const handleToggle = (e) => {
@@ -105,7 +108,6 @@ const LiquidSelect = ({
         if (isOpen) {
             setIsOpen(false);
             setSearchTerm('');
-            inputRef.current?.blur();
         } else {
             handleOpen();
         }
@@ -115,7 +117,6 @@ const LiquidSelect = ({
         onChange(val);
         setIsOpen(false);
         setSearchTerm('');
-        inputRef.current?.blur();
     };
 
     const filteredOptions = useMemo(() => {
@@ -125,17 +126,18 @@ const LiquidSelect = ({
         );
     }, [options, searchTerm]);
 
-    const dropdownContent = isOpen && (
+const dropdownContent = isOpen && (
         <div
             ref={dropdownRef}
             style={{
                 top: coords.top,
                 left: coords.left,
-                width: coords.width
+                width: Math.max(coords.width, compact ? 150 : 200) + 'px'
             }}
-            className={`absolute z-[9999] origin-top transition-all duration-300 rounded-[2rem] max-h-[300px] overflow-y-auto p-3 animate-in fade-in slide-in-from-top-2 duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
+            className={`absolute z-[9999] origin-top transition-all duration-300 rounded-[1.5rem] max-h-[300px] overflow-y-auto p-3 animate-in fade-in slide-in-from-top-2 duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
             ${isDark
                     ? 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]'
+                    // RESTAURADO EL EFECTO GLASS DEL MENÚ DESPLEGABLE AQUÍ:
                     : 'bg-white/40 hover:bg-white/60 backdrop-blur-[10px] backdrop-saturate-[80%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'
                 }`}
         >
@@ -144,7 +146,7 @@ const LiquidSelect = ({
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className={`w-full text-left px-5 py-3.5 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${value === ''
+                        className={`w-full text-left px-4 py-3.5 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${value === ''
                                 ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-[#007AFF]'
                                 : isDark
                                     ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
@@ -160,11 +162,11 @@ const LiquidSelect = ({
                             key={opt.value}
                             type="button"
                             onClick={() => handleSelect(opt.value)}
-                            className={`w-full text-left px-5 py-3 text-[13px] font-bold rounded-[1.25rem] transition-all duration-200 truncate border ${String(value) === String(opt.value)
+                            className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${String(value) === String(opt.value)
                                     ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
                                     : isDark
-                                        ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white hover:shadow-sm'
-                                        : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900 hover:shadow-sm'
+                                        ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
+                                        : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
                                 }`}
                         >
                             {opt.label}
@@ -175,55 +177,73 @@ const LiquidSelect = ({
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
                             <Search size={20} strokeWidth={2} />
                         </div>
-                        No se encontraron resultados
+                        Sin resultados
                     </div>
                 )}
             </div>
         </div>
     );
 
+const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+    } ${
+        isDark
+            ? isOpen
+                ? 'bg-black/50 border border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] text-white'
+                : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
+            : isOpen
+                ? 'bg-white border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] border text-slate-700'
+                : 'bg-white/50 backdrop-blur-[10px] backdrop-saturate-[80%] border border-white/60 group-hover:bg-white/80 group-hover:border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.5)] text-slate-700'
+    }`;
+
     return (
         <div
+            // El w-full permite que el padre defina el ancho. Si quieres que se encoja al contenido, cambia 'w-full' por 'w-max max-w-full'
             className={`relative group w-full transition-all duration-300 transform-gpu ${isOpen || disabled ? '' : 'hover:-translate-y-0.5'}`}
             ref={selectRef}
         >
-            <div className={`absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-[0.8rem] flex items-center justify-center shadow-sm transition-colors duration-300 z-10 pointer-events-none ${isOpen
+            {/* ICONO IZQUIERDO */}
+            <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center shadow-sm transition-colors duration-300 z-10 pointer-events-none ${isOpen
                     ? 'text-white bg-[#007AFF]'
                     : isDark
                         ? 'bg-black/40 text-[#007AFF] border border-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
                         : 'bg-white/80 text-[#007AFF] border border-white'
                 }`}>
-                {isOpen ? <Search size={14} strokeWidth={2.5} /> : (Icon ? <Icon size={14} strokeWidth={2.5} /> : <Search size={14} strokeWidth={2.5} />)}
+                {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>
 
-            <input
-                ref={inputRef}
-                type="text"
-                disabled={disabled}
-                readOnly={!isOpen}
+            {/* CONTENEDOR PRINCIPAL (Multilínea o Input) */}
+            <div 
+                className={pillBaseClasses}
                 onClick={handleOpen}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : '')}
-                placeholder={isOpen ? (selectedOption ? selectedOption.label : placeholder) : placeholder}
-                className={`w-full pl-[3.5rem] pr-10 py-3.5 rounded-[1.5rem] text-[13px] font-bold transition-all duration-300 outline-none disabled:opacity-50 disabled:cursor-not-allowed ${isDark
-                        ? isOpen
-                            ? 'bg-black/50 border border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] text-white placeholder-white/40'
-                            : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white placeholder-white/30 group-hover:bg-black/40 group-hover:border-white/20 cursor-pointer shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
-                        : isOpen
-                            ? 'bg-white border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] border text-slate-700 placeholder-slate-400'
-                            : 'bg-white/50 border border-white/60 group-hover:bg-white group-hover:border-white/90 cursor-pointer shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.5)] text-slate-700 placeholder-slate-400'
-                    }`}
-            />
+            >
+                {isOpen ? (
+                    // MODO BÚSQUEDA (El input sí es 1 sola línea)
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        className={`w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchTerm}
+                        placeholder="Buscar..."
+                    />
+                ) : (
+                    // MODO VISTA (Soporta múltiples líneas gracias al div)
+                    <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </div>
+                )}
+            </div>
 
             {/* BOTÓN DERECHO (Limpiar "X" o Flecha) */}
             {value && clearable && !isOpen ? (
                 <button
                     type="button"
                     onClick={handleClear}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer"
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer flex items-center justify-center`}
                     title="Quitar selección"
                 >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm ${isDark
+                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm ${isDark
                             ? 'bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white'
                             : 'bg-red-50 hover:bg-red-500 text-red-400 hover:text-white'
                         }`}>
@@ -234,13 +254,13 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleToggle}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer"
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-0.5 cursor-pointer flex items-center justify-center`}
                 >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
+                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
                             ? isDark ? 'bg-blue-500/20' : 'bg-blue-50'
                             : isDark ? 'bg-transparent group-hover:bg-white/10 hover:bg-white/20' : 'bg-transparent group-hover:bg-slate-100 hover:bg-slate-200'
                         }`}>
-                        <ChevronDown size={14} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
+                        <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
                                 ? 'rotate-180 text-[#007AFF]'
                                 : isDark ? 'text-white/40' : 'text-slate-400'
                             }`} />

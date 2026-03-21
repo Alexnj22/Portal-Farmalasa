@@ -9,7 +9,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
 // 🚨 IMPORTACIÓN CORREGIDA 🚨
-import { supabase } from '../../supabaseClient'; 
+import { supabase } from '../../supabaseClient';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -81,9 +81,9 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     return (
         <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-[1.5rem] backdrop-blur-xl border border-white/80 cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_10px_rgba(255,255,255,0.6)] ${theme.bg} ${theme.shadow}`}>
-            
+
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
-            
+
             <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/60 backdrop-blur-md border border-white shadow-sm pointer-events-none">
                 <Edit3 size={10} strokeWidth={2.5} className="text-slate-400" />
             </div>
@@ -152,8 +152,8 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="absolute bottom-3 right-3 z-20">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onClick(employee); }} 
+                <button
+                    onClick={(e) => { e.stopPropagation(); onClick(employee); }}
                     className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-[#007AFF] hover:border-[#007AFF] hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] text-slate-400 hover:text-white group/btn"
                     title="Ver Expediente de Personal"
                 >
@@ -173,6 +173,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     const [log, setLog] = useState('');
 
     const getCredentials = (branchName) => {
+        const normalizedName = branchName?.trim();
         const map = {
             "La Popular": { username: "documentop.supervisor", password: "documento9999" },
             "Salud 1": { username: "documento1.supervisor", password: "documento9999" },
@@ -181,14 +182,14 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             "Salud 4": { username: "documento4.supervisor", password: "documento9999" },
             "Salud 5": { username: "documento5.supervisor", password: "documento9999" }
         };
-        return map[branchName] || null;
+        return map[normalizedName] || null;
     };
 
     const generateChunks = (startStr, endStr, daysPerChunk) => {
         let chunks = [];
-        let current = new Date(`${startStr}T00:00:00`); 
+        let current = new Date(`${startStr}T00:00:00`);
         const end = new Date(`${endStr}T00:00:00`);
-        
+
         while (current <= end) {
             let chunkStart = current.toISOString().split('T')[0];
             let nextDate = new Date(current);
@@ -223,7 +224,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         for (let i = 0; i < chunksToSync.length; i++) {
             const chunk = chunksToSync[i];
             setLog(`Descargando: ${chunk.label} (${chunk.i} al ${chunk.f})...`);
-            
+
             try {
                 const payload = {
                     branchId: liveBranch.id,
@@ -234,20 +235,20 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 };
 
                 const { data, error } = await supabase.functions.invoke('sync-wfm-sales', { body: payload });
-                
+
                 if (error) {
                     let errorMsg = error.message;
                     if (error.context && error.context.error) errorMsg = error.context.error;
                     console.error("Detalle del fallo:", errorMsg);
                     throw new Error(errorMsg);
                 }
-                
+
                 successCount++;
-                setLog(`✅ ${chunk.label} completado (${data?.processed_hours || 0} hrs).`);
+                setLog(`✅ ${chunk.label} completado (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
             } catch (err) {
                 console.error(`Error en bloque ${chunk.label}:`, err);
                 setLog(`❌ Falló el bloque ${chunk.label}. Pausando proceso.`);
-                break; 
+                break;
             }
 
             setProgress(Math.round(((i + 1) / chunksToSync.length) * 100));
@@ -258,7 +259,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 
         setIsSyncing(false);
         setLog(`🎉 Volcado Express finalizado. ${successCount}/${chunksToSync.length} meses sincronizados.`);
-        if (onSyncComplete) onSyncComplete(); 
+        if (onSyncComplete) onSyncComplete();
     };
 
     return (
@@ -270,21 +271,21 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                     </h4>
                     <p className="text-slate-400 font-bold text-[10px] mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
                 </div>
-                <button 
-                    onClick={startHistoricalSync} 
+                <button
+                    onClick={startHistoricalSync}
                     disabled={isSyncing}
                     className="px-5 py-2.5 bg-[#007AFF] hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,122,255,0.3)] active:scale-95"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
             </div>
-            
+
             {isSyncing && (
                 <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner">
                     <div className="bg-gradient-to-r from-blue-500 to-[#007AFF] h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
-            
+
             {log && (
                 <div className="bg-black/50 rounded-lg p-3 border border-white/5">
                     <p className="text-[10px] font-mono text-emerald-400 tracking-wide leading-relaxed">{log}</p>
@@ -299,7 +300,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 // ============================================================================
 const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal }) => {
     const [infoAlert, setInfoAlert] = useState({ isOpen: false, title: '', message: '' });
-    
+
     const [historicalSales, setHistoricalSales] = useState([]);
     const [isLoadingWfm, setIsLoadingWfm] = useState(true);
 
@@ -316,7 +317,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 .from('branch_hourly_sales')
                 .select('sale_date, sale_hour, total_sales')
                 .eq('branch_id', liveBranch.id);
-            
+
             if (error) throw error;
             setHistoricalSales(data || []);
         } catch (err) {
@@ -392,18 +393,18 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const textTheme = complianceScore === 100 ? 'text-emerald-600' : complianceScore >= 70 ? 'text-amber-600' : 'text-red-600';
 
     const MIN_CONCURRENT_STAFF = 2;
-    const branchCreationDate = liveBranch?.opening_date || liveBranch?.created_at || null;    
-    
+    const branchCreationDate = liveBranch?.opening_date || liveBranch?.created_at || null;
+
     // El cálculo base corre silenciosamente, siempre garantizando el mínimo operativo.
     const wfmData = calculateMinimumStaff(liveBranch?.weekly_hours || liveBranch?.weeklyHours, historicalSales, MIN_CONCURRENT_STAFF, 80, 0.15, branchCreationDate);
     const { minStaff, totalOpenHours, baseStaffHours, extraVolumeHours, wfmApplied, peakHour, shrinkageHours, totalLaborHoursNeeded, isNewBranch } = wfmData;
-    
+
     const coverageStaffCount = (jefeEmp ? 1 : 0) + (subjefeEmp ? 1 : 0) + generalStaff.length + (hasInjections ? nursingRegents.length : 0);
     const isStaffDeficit = coverageStaffCount < minStaff;
     const wfmProgress = minStaff > 0 ? Math.min(100, Math.round((coverageStaffCount / minStaff) * 100)) : 0;
 
     const handleEditHROperative = (e) => {
-        if(e) e.stopPropagation();
+        if (e) e.stopPropagation();
         setInfoAlert({ isOpen: true, title: "Modificación Operativa", message: "Ve al Módulo General de Empleados (RRHH) para cambiar la sucursal o el cargo de este trabajador." });
     };
 
@@ -413,7 +414,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const generateStaffAiSummary = async () => {
         setAiMode(true);
         setIsGeneratingAi(true);
-        
+
         try {
             const wfmSnapshot = {
                 personalActivo: currentStaff.length,
@@ -427,10 +428,10 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             };
 
             const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-branch', {
-                body: { 
-                    branchName: liveBranch?.name || 'la sucursal', 
-                    branchData: JSON.stringify(wfmSnapshot) 
-                } 
+                body: {
+                    branchName: liveBranch?.name || 'la sucursal',
+                    branchData: JSON.stringify(wfmSnapshot)
+                }
             });
 
             if (aiError) throw new Error(aiError.message);
@@ -459,7 +460,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-                    
+
                     {/* 🚨 PÍLDORA WFM / DÉFICIT (Aparece incluso si el cálculo es tradicional sin datos de ventas) */}
                     {isStaffDeficit && (
                         <div className="relative group/wfm flex items-center gap-2.5 bg-amber-50/50 backdrop-blur-md border border-amber-200/80 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
@@ -481,11 +482,11 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <span>Seguridad (Mín. {MIN_CONCURRENT_STAFF} por turno):</span> <span className="text-white font-black">{baseStaffHours} hrs</span>
                                         </p>
                                         <p className="text-[10px] font-bold text-blue-300 mb-1.5 flex justify-between items-center">
-                                            <span className="flex items-center gap-1"><TrendingUp size={12}/> Picos de facturación:</span> 
+                                            <span className="flex items-center gap-1"><TrendingUp size={12} /> Picos de facturación:</span>
                                             <span className="text-blue-200 font-black">+{extraVolumeHours} hrs</span>
                                         </p>
                                         <p className="text-[10px] font-bold text-purple-300 mb-2 flex justify-between items-center bg-purple-900/30 -mx-2 px-2 py-1 rounded">
-                                            <span className="flex items-center gap-1"><Briefcase size={12}/> Margen ausentismo (15%):</span> 
+                                            <span className="flex items-center gap-1"><Briefcase size={12} /> Margen ausentismo (15%):</span>
                                             <span className="text-purple-200 font-black">+{shrinkageHours} hrs</span>
                                         </p>
                                         <div className="border-t border-slate-700/50 pt-2 mt-1">
@@ -496,14 +497,14 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     </>
                                 ) : isNewBranch ? (
                                     <>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Hourglass size={12}/> Sucursal en Incubación</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
                                         <p className="text-[10px] font-bold text-slate-300 leading-tight mb-2">
                                             Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-white font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-200 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Calculator size={12}/> Cálculo Tradicional</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-200 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
                                         <p className="text-[10px] font-bold text-slate-300 leading-tight">
                                             Basado en los horarios de apertura configurados, necesitas al menos <span className="text-amber-400 font-black">{minStaff} operativos</span> para cubrir los turnos legales.
                                         </p>
@@ -545,7 +546,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     </div>
 
                     {/* 🤖 BOTÓN MAESTRO DE IA (ESTANDARIZADO: SOLO ÍCONO A LA DERECHA) */}
-                    <button 
+                    <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
                         className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-50 animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
@@ -570,12 +571,12 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             {/* 🎭 CONTENEDOR DE TRANSICIÓN FLUIDA ENTRE MODO NORMAL Y MODO IA               */}
             {/* ============================================================================ */}
             <div className="relative w-full">
-                
+
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
                         <div className="bg-white/80 backdrop-blur-3xl border border-indigo-100/50 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
-                            
+
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                                 <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-indigo-500/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
@@ -584,14 +585,14 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             </div>
 
                             <div className="relative z-10 flex flex-col items-center justify-center text-center">
-                                
+
                                 <div className="relative w-16 h-16 flex items-center justify-center mb-6">
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[5px] opacity-70"></div>
                                     <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-white/30">
                                         <Sparkles size={30} className="text-white" strokeWidth={2} />
                                     </div>
                                 </div>
-                                
+
                                 <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico WFM Inteligente</h2>
                                 <p className="text-sm font-bold text-indigo-400/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
 
@@ -637,7 +638,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                 {/* 🏢 VISTA NORMAL (ORGANIGRAMA Y DASHBOARD) */}
                 <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
-                    
+
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
                         <div className="space-y-8 animate-pulse mb-8 pt-2">
@@ -695,7 +696,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <div className="bg-blue-50/80 backdrop-blur-md rounded-xl p-3 border border-blue-100 shadow-[0_2px_10px_rgba(0,122,255,0.05)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-blue-500">Pico Máximo Detectado</p>
                                                 <p className="text-[15px] font-black text-blue-700 mt-1 flex items-center gap-1.5">
-                                                    {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-blue-400"/>
+                                                    {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-blue-400" />
                                                 </p>
                                                 <p className="text-[9px] font-bold text-blue-500">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
@@ -707,7 +708,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         </div>
                                     ) : (
                                         <div className="bg-indigo-50/60 backdrop-blur-md rounded-xl p-4 border border-indigo-100 text-left flex items-start gap-4">
-                                            <Hourglass size={28} className="text-indigo-400 shrink-0 mt-1" strokeWidth={2}/>
+                                            <Hourglass size={28} className="text-indigo-400 shrink-0 mt-1" strokeWidth={2} />
                                             <div>
                                                 <p className="text-[12px] font-black uppercase tracking-widest text-indigo-700 mb-1">Fase de Incubación (Recolección de Datos)</p>
                                                 <p className="text-[10px] font-bold text-indigo-600/80 leading-relaxed">
@@ -725,8 +726,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <Star size={12} className="text-amber-500" strokeWidth={3} /> Dirección de Sucursal
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {jefeEmp ? <ProfileCard employee={jefeEmp} roleLabel="Jefe/a de Sala" colorTheme="amber" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: jefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Asignar en RRHH" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })}/>}
-                                    {subjefeEmp ? <ProfileCard employee={subjefeEmp} roleLabel="Subjefe/a de Sala" colorTheme="blue" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: subjefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Subjefe/a" missingSub="Toca para asignar" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: null })}/>}
+                                    {jefeEmp ? <ProfileCard employee={jefeEmp} roleLabel="Jefe/a de Sala" colorTheme="amber" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: jefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Asignar en RRHH" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })} />}
+                                    {subjefeEmp ? <ProfileCard employee={subjefeEmp} roleLabel="Subjefe/a de Sala" colorTheme="blue" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: subjefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Subjefe/a" missingSub="Toca para asignar" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: null })} />}
                                 </div>
                             </div>
 

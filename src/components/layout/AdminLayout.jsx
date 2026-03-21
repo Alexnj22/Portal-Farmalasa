@@ -9,14 +9,13 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 
 const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleLogout }) => {
     const { user } = useAuth();
-    const branches = useStaff(state => state.branches);
+    const branches = useStaff((state) => state.branches);
 
-    // 🚨 1. ESTADOS DE RESPONSIVIDAD
     const [isMobile, setIsMobile] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
+    const [isHovering, setIsHovering] = useState(false); 
     
-    // El sidebar internamente se comporta como "expandido" si está abierto en PC, o si está en móvil (porque en móvil siempre ocupa 320px).
-    const isExpanded = isMobile ? true : isSidebarOpen;
+    const isExpanded = isMobile ? true : (isSidebarOpen || isHovering);
 
     const [authPin, setAuthPin] = useState(getHourlyCode());
     const [isCopied, setIsCopied] = useState(false);
@@ -25,23 +24,34 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
     const [pill, setPill] = useState({ top: 0, height: 44, show: false });
     const lastGoodPillRef = useRef({ top: 0, height: 44, show: false });
 
-    // Detector de Pantallas
     useEffect(() => {
         const checkMobile = () => {
-            const mobileView = window.innerWidth < 1024; // lg breakpoint
+            const mobileView = window.innerWidth < 1024;
             setIsMobile(mobileView);
-            if (mobileView) setIsSidebarOpen(false); // En móvil inicia cerrado
-            else setIsSidebarOpen(true); // En PC inicia abierto
         };
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Auto-cerrar menú en móvil al cambiar de vista
-    useEffect(() => {
-        if (isMobile) setIsSidebarOpen(false);
+useEffect(() => {
+        if (isMobile) {
+            setIsSidebarOpen(false);
+        } else {
+            if (view !== 'schedules') {
+                setIsSidebarOpen(true);  
+            }
+        }
     }, [view, isMobile]);
+
+    // 🔥 NUEVO EFECTO: Escuchar a SchedulesView
+    useEffect(() => {
+        const handleSidebarOrder = (e) => {
+            setIsSidebarOpen(e.detail);
+        };
+        window.addEventListener('set-sidebar', handleSidebarOrder);
+        return () => window.removeEventListener('set-sidebar', handleSidebarOrder);
+    }, []);
 
     const hasBranchAlerts = useMemo(() => {
         return branches.some(branch => {
@@ -109,7 +119,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
         const r2 = requestAnimationFrame(() => requestAnimationFrame(recomputePill));
         const t = setTimeout(recomputePill, 520);
         return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t); };
-    }, [isSidebarOpen, isMobile]);
+    }, [isSidebarOpen, isMobile, isHovering]);
 
     useEffect(() => {
         const navEl = navRef.current;
@@ -121,10 +131,11 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
         return () => { ro.disconnect(); window.removeEventListener('resize', onWinResize); };
     }, []);
 
+    const isFloating = !isMobile && !isSidebarOpen && isHovering;
+
     return (
         <div className="flex w-full min-h-[100dvh] bg-[#F2F2F7] lg:bg-transparent font-sans overflow-hidden relative">
             
-            {/* 🚨 2. BACKDROP MÓVIL: Toca fuera del menú para cerrarlo */}
             {isMobile && isSidebarOpen && (
                 <div 
                     className="fixed inset-0 bg-[#0A2A5E]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
@@ -132,36 +143,26 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 />
             )}
 
-            {/* 🚨 3. SIDEBAR DINÁMICO (Cajón en Móvil / Columna en PC) */}
-            <aside className={`
-                fixed lg:relative z-50 lg:z-30
-                h-[calc(100dvh-16px)] lg:h-auto
-                /* MAGIA RESPONSIVA: */
-                ${isMobile 
-                    ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[320px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[320px] left-2 shadow-none') 
-                    : (isSidebarOpen ? 'w-[19rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[5.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')
-                }
-                transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0 
-                my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
-                ${blurClasses}
-            `}>
+            <aside 
+                onMouseEnter={() => !isMobile && setIsHovering(true)}
+                onMouseLeave={() => !isMobile && setIsHovering(false)}
+                className={`fixed lg:relative z-50 lg:z-[60] group/sidebar h-[calc(100dvh-16px)] lg:h-auto ${isMobile ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[320px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[320px] left-2 shadow-none') : (isSidebarOpen ? 'w-[19rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[5.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')} transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0 my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
+            >
 
-                <div className="absolute inset-y-0 left-0 right-0 -z-10 pointer-events-none">
+                <div className={`absolute inset-y-0 left-0 -z-10 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isFloating ? 'w-[19rem]' : 'w-full'}`}>
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
                     <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
                     <div className="absolute -inset-8 rounded-[3.6rem] bg-black/20 blur-3xl opacity-25" />
                 </div>
 
-                <div className={['absolute inset-0', 'rounded-[2.5rem] overflow-hidden flex flex-col', 'border border-white/10', 'bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636]', 'shadow-[0_30px_90px_rgba(0,0,0,0.40),0_14px_34px_rgba(0,0,0,0.22)]', 'transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]'].join(' ')}>
+                <div className={`absolute inset-y-0 left-0 ${isFloating ? 'w-[19rem] shadow-[25px_0_60px_rgba(0,0,0,0.5)] z-50 border-white/20' : 'w-full z-10 border-white/10'} rounded-[2.5rem] overflow-hidden flex flex-col border bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] group-hover/sidebar:shadow-[0_30px_90px_rgba(0,0,0,0.5)] group-hover/sidebar:border-white/20`}>
 
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/18 via-white/6 to-transparent opacity-80" />
 
-                    {/* HEADER SIDEBAR */}
-                    <div className={['p-6 pb-4 border-b border-white/10 relative', isExpanded ? 'flex items-center justify-between' : 'flex items-center justify-center'].join(' ')}>
-
+                    <div className={`p-6 pb-4 border-b border-white/10 relative ${isExpanded ? 'flex items-center justify-between' : 'flex items-center justify-center'}`}>
                         <div className="flex items-center gap-4">
-                            <div className="bg-gradient-to-tr from-[#1D7AFC] to-[#5856D6] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(29,122,252,0.35)] flex-shrink-0 relative group cursor-pointer">
+                            <div className="bg-gradient-to-tr from-[#1D7AFC] to-[#5856D6] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(29,122,252,0.35)] flex-shrink-0 relative group cursor-pointer hover:scale-105 hover:shadow-[0_14px_40px_rgba(29,122,252,0.5)] transition-all">
                                 <Building2 className="text-white" size={24} strokeWidth={1.5} />
                                 <Sparkles size={12} className="absolute -top-1 -right-1 text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -174,20 +175,15 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             )}
                         </div>
 
-                        {/* Botón de cierre estético (X en móvil, Flecha en PC) */}
                         {isExpanded && (
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 border border-white/5"
-                                title="Ocultar menú"
-                            >
-                                {isMobile ? <X size={18} strokeWidth={2} /> : <ChevronLeft size={18} strokeWidth={2} />}
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 border border-white/5" title={isSidebarOpen ? "Contraer menú" : "Fijar menú abierto"}>
+                                {isMobile ? <X size={18} strokeWidth={2} /> : (isSidebarOpen ? <ChevronLeft size={18} strokeWidth={2} /> : <ChevronRight size={18} strokeWidth={2} />)}
                             </button>
                         )}
                     </div>
 
                     <nav ref={navRef} className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto scrollbar-hide relative">
-                        <div className={['absolute left-4 right-4', 'rounded-[1rem]', 'bg-white/10 border border-white/10', 'shadow-[0_10px_24px_rgba(0,0,0,0.25)]', 'backdrop-blur-md', 'transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]', pill.show ? 'opacity-100' : 'opacity-0'].join(' ')} style={{ top: pill.top, height: pill.height }}>
+                        <div className={`absolute left-4 right-4 rounded-[1rem] bg-white/10 border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.25)] backdrop-blur-md transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${pill.show ? 'opacity-100' : 'opacity-0'}`} style={{ top: pill.top, height: pill.height }}>
                             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                             <div className="absolute inset-0 bg-gradient-to-r from-[#1D7AFC]/15 via-transparent to-transparent rounded-[1rem]" />
                         </div>
@@ -198,9 +194,9 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             const showItemAlert = item.id === 'branches' && hasBranchAlerts;
 
                             return (
-                                <button key={item.id} ref={(el) => { if (el) itemRefs.current.set(item.id, el); else itemRefs.current.delete(item.id); }} onClick={() => setView(item.id)} type="button" className={['w-full flex items-center gap-3 px-4 py-3.5 rounded-[1rem]', 'transition-all duration-300 group relative overflow-hidden', 'text-left', isActive ? 'text-white' : 'text-white/75 hover:text-white', 'hover:bg-white/[0.06]', 'active:scale-[0.99]'].join(' ')}>
+                                <button key={item.id} ref={(el) => { if (el) itemRefs.current.set(item.id, el); else itemRefs.current.delete(item.id); }} onClick={() => setView(item.id)} type="button" className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-[1rem] transition-all duration-300 group relative overflow-hidden text-left ${isActive ? 'text-white' : 'text-white/75 hover:text-white hover:translate-x-1 hover:bg-white/[0.08]'} active:scale-[0.99]`}>
                                     <div className="relative z-10 flex-shrink-0">
-                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-colors duration-300 ${isActive ? 'text-[#1D7AFC]' : 'text-white/65 group-hover:text-white'}`} />
+                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-all duration-300 ${isActive ? 'text-[#1D7AFC] scale-110' : 'text-white/65 group-hover:text-white group-hover:scale-110'}`} />
                                         {!isExpanded && showItemAlert && (
                                             <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>
                                         )}
@@ -208,7 +204,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
 
                                     {isExpanded && (
                                         <>
-                                            <span className={`text-[14px] flex-1 whitespace-nowrap relative z-10 ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
+                                            <span className={`text-[14px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
                                             {showItemAlert && (
                                                 <span className="relative z-10 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span></span>
                                             )}
@@ -222,9 +218,8 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                     <div className="p-4 border-t border-white/10 bg-black/10 relative flex flex-col gap-3">
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-                        {/* PIN EXPANDIDO */}
                         {isExpanded && (
-                            <div className="bg-white/5 rounded-xl p-3 border border-white/5 flex items-center justify-between animate-in fade-in duration-500">
+                            <div className="bg-white/5 hover:bg-white/10 hover:border-white/15 hover:shadow-md rounded-xl p-3 border border-white/5 flex items-center justify-between animate-in fade-in duration-500 transition-all cursor-default">
                                 <div className="flex items-center gap-2">
                                     <span className="relative flex h-2 w-2">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -233,7 +228,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                     <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">En Línea</span>
                                 </div>
                                 <div className="h-4 w-px bg-white/10"></div>
-                                <button onClick={handleCopyPin} className="flex items-center gap-2 group/pin cursor-pointer outline-none relative" title="Copiar PIN">
+                                <button onClick={handleCopyPin} className="flex items-center gap-2 group/pin cursor-pointer outline-none relative hover:scale-105 transition-transform" title="Copiar PIN">
                                     <ShieldCheck size={14} className="text-[#1D7AFC]" strokeWidth={2} />
                                     <div className="relative w-12 flex items-center justify-center">
                                         <span className={`absolute text-[13px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
@@ -244,11 +239,10 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             </div>
                         )}
 
-                        {/* PERFIL */}
                         {isExpanded ? (
                             <div className="flex items-center gap-2">
-                                <button onClick={() => setView('profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98]" title="Ver mi perfil" type="button">
-                                    <div className="h-10 w-10 rounded-[1rem] bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.20)] border border-white/10 flex items-center justify-center text-white/70 overflow-hidden flex-shrink-0 group-hover:border-[#1D7AFC]/30 transition-colors">
+                                <button onClick={() => setView('profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5" title="Ver mi perfil" type="button">
+                                    <div className="h-10 w-10 rounded-[1rem] bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.20)] border border-white/10 flex items-center justify-center text-white/70 overflow-hidden flex-shrink-0 group-hover:border-[#1D7AFC]/50 group-hover:shadow-[0_0_15px_rgba(29,122,252,0.3)] transition-all duration-300">
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Foto" /> : <User size={20} strokeWidth={1.5} />}
                                     </div>
                                     <div className="flex-1 overflow-hidden transition-all duration-300">
@@ -256,19 +250,17 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-widest truncate">{user?.role || user?.userType || 'Sistema'}</p>
                                     </div>
                                 </button>
-                                <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/10 rounded-[1rem] transition-all flex-shrink-0" title="Cerrar Sesión" type="button">
+                                <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] rounded-[1rem] transition-all flex-shrink-0 hover:scale-105 active:scale-95" title="Cerrar Sesión" type="button">
                                     <LogOut size={18} strokeWidth={1.5} />
                                 </button>
                             </div>
                         ) : (
-                            /* MENU COMPACTO (Cerrado - Solo PC) */
                             <div className="flex flex-col items-center gap-4 py-2 animate-in fade-in duration-500">
-                                <button onClick={() => setIsSidebarOpen(true)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 mb-2 border border-white/5" title="Mostrar menú">
+                                <button onClick={() => setIsSidebarOpen(true)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 mb-2 border border-white/5" title="Mostrar menú">
                                     <ChevronRight size={18} strokeWidth={2} />
                                 </button>
 
-                                {/* PIN COMPACTO */}
-                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 transition-all active:scale-95 flex items-center justify-center text-[#1D7AFC] group overflow-hidden" title="Ver / Copiar PIN">
+                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center text-[#1D7AFC] group overflow-hidden" title="Ver / Copiar PIN">
                                     {isCopied ? (
                                         <CheckCircle2 size={18} className="text-emerald-400" />
                                     ) : (
@@ -287,11 +279,11 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                     )}
                                 </button>
 
-                                <button onClick={() => setView('profile')} type="button" title="Perfil" className="w-11 h-11 rounded-[1.25rem] bg-white/10 border border-white/10 shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-white/15 hover:border-white/15 transition-all active:scale-[0.98] flex items-center justify-center text-white/75">
+                                <button onClick={() => setView('profile')} type="button" title="Perfil" className="w-11 h-11 rounded-[1.25rem] bg-white/10 border border-white/10 shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-white/20 hover:border-white/20 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center text-white/75">
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover rounded-[1.25rem]" alt="Foto" /> : <User size={18} strokeWidth={1.5} />}
                                 </button>
 
-                                <button onClick={handleLogout} type="button" title="Cerrar Sesión" className="w-11 h-11 rounded-[1.25rem] bg-red-500/10 border border-white/10 shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-red-500/15 hover:border-white/15 transition-all active:scale-[0.98] flex items-center justify-center text-red-200">
+                                <button onClick={handleLogout} type="button" title="Cerrar Sesión" className="w-11 h-11 rounded-[1.25rem] bg-red-500/10 border border-white/10 shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-100 hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center text-red-200">
                                     <LogOut size={16} strokeWidth={1.6} />
                                 </button>
                             </div>
@@ -300,40 +292,27 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 </div>
             </aside>
 
-{/* 🚨 4. ÁREA PRINCIPAL CON TOP-BAR "ISLA FLOTANTE" (Tendencia Premium iOS) */}
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
-                
-                {/* HEADER MÓVIL: Estilo "Floating Pill" (Elimina el look de Android viejo) */}
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
-                    
-                    {/* El contenedor ahora es una pastilla redondeada que no toca los bordes */}
                     <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
-                        
                         <div className="flex items-center gap-4">
-                            {/* Botón de menú minimalista (sin cuadro de fondo) */}
                             <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-90 transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
-                            
-                            {/* Separador vertical elegante */}
                             <div className="w-px h-6 bg-slate-300/50 rounded-full" /> 
-                            
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
                                 <p className="text-[8px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
                             </div>
                         </div>
 
-                        {/* Avatar Premium con forma de "Squircle" (Círculo ligeramente cuadrado) */}
-                        <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-95 transition-all flex items-center justify-center relative group">
+                        <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-95 transition-all flex items-center justify-center relative group hover:shadow-lg hover:-translate-y-0.5">
                             <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Perfil" /> : <User size={18} className="text-slate-400" />}
                         </button>
-
                     </div>
                 </div>
 
-                {/* Contenedor del contenido inteerno de la app */}
                 <div className="flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0">
                     <div key={view} className="h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
                         {children}

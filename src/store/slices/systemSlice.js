@@ -75,6 +75,7 @@ export const createSystemSlice = (set, get) => ({
                     localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
                 }
 
+                // 🚨 Reemplaza el bloque de shiftsData por este:
                 const { data: shiftsData } = await supabase.from("shifts").select("*");
                 if (shiftsData) {
                     const mappedShifts = shiftsData.map((s) => ({
@@ -83,11 +84,11 @@ export const createSystemSlice = (set, get) => ({
                         name: s.name,
                         start: s.start_time.substring(0, 5),
                         end: s.end_time.substring(0, 5),
+                        is_active: s.is_active // 🚨 FALTABA ESTO PARA EL ESTADO
                     }));
                     set({ shifts: mappedShifts });
                     localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
                 }
-
                 const today = new Date();
                 const dayOfWeek = today.getDay();
                 const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
@@ -318,7 +319,7 @@ export const createSystemSlice = (set, get) => ({
                 dimension: 'OPERATIVE',
                 new_value: `Prioridad: ${data.priority}`
             });
-            
+
             // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
@@ -424,9 +425,9 @@ export const createSystemSlice = (set, get) => ({
                 return { announcements: next };
             });
             return true;
-        } catch (err) { 
+        } catch (err) {
             console.error("Error eliminando aviso:", err);
-            return false; 
+            return false;
         }
     },
 
@@ -449,9 +450,9 @@ export const createSystemSlice = (set, get) => ({
                 return { announcements: next };
             });
             return true;
-        } catch (err) { 
+        } catch (err) {
             console.error("Error archivando aviso:", err);
-            return false; 
+            return false;
         }
     },
 
@@ -472,9 +473,9 @@ export const createSystemSlice = (set, get) => ({
                 return { announcements: next };
             });
             return true;
-        } catch (error) { 
+        } catch (error) {
             console.error("Error marcando aviso como leído:", error);
-            return false; 
+            return false;
         }
     },
 
@@ -489,7 +490,7 @@ export const createSystemSlice = (set, get) => ({
                 branch_id: data.branch_id, // 🚨 CRUCIAL PARA TABHISTORY
                 new_value: `${data.start_time.substring(0, 5)} a ${data.end_time.substring(0, 5)}`
             });
-            
+
             // 🔴 BENGALA: Para que las vistas de sucursales actualicen sus históricos
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
@@ -531,16 +532,89 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+updateShift: async (id, shiftData) => {
+        try {
+            const { data, error } = await supabase.from("shifts").update(shiftData).eq("id", id).select().single();
+            if (error) throw error;
+            
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            set((state) => {
+                const next = state.shifts.map(s => String(s.id) === String(id) ? { 
+                    ...s, 
+                    branchId: data.branch_id, 
+                    name: data.name, 
+                    start: data.start_time.substring(0, 5), 
+                    end: data.end_time.substring(0, 5),
+                    is_active: data.is_active 
+                } : s);
+                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                return { shifts: next };
+            });
+            return data;
+        } catch (err) {
+            throw new Error(err.message);
+        }
+    },
+
+    archiveShift: async (id) => {
+        try {
+            const { error } = await supabase.from("shifts").update({ is_active: false }).eq("id", id);
+            if (error) throw error;
+            
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            set((state) => {
+                const next = state.shifts.map(s => String(s.id) === String(id) ? { ...s, is_active: false } : s);
+                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                return { shifts: next };
+            });
+            return true;
+        } catch (err) {
+            throw new Error("Error al archivar el turno");
+        }
+    },
+
+    unarchiveShift: async (id) => {
+        try {
+            // Actualiza a activo en la DB
+            const { error } = await supabase.from("shifts").update({ is_active: true }).eq("id", id);
+            if (error) throw error;
+            
+            // Avisa a la vista principal para recargar historiales si es necesario
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            // Actualiza el estado local en Zustand
+            set((state) => {
+                const next = state.shifts.map(s => String(s.id) === String(id) ? { ...s, is_active: true } : s);
+                localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
+                return { shifts: next };
+            });
+            return true;
+        } catch (err) {
+            throw new Error("Error al reactivar el turno");
+        }
+    },
+
     fetchWeekRosters: async (weekStartDate) => {
         try {
             const { data, error } = await supabase.from('employee_rosters').select('*').eq('week_start_date', weekStartDate);
             if (error) throw error;
+
             const rosterMap = {};
-            (data || []).forEach(r => { rosterMap[r.employee_id] = r.schedule_data; });
+            (data || []).forEach(r => {
+                // 🚨 FIX: Asegurarnos de que el JSON se parsee si viene como string
+                let parsedSchedule = r.schedule_data;
+                if (typeof parsedSchedule === 'string') {
+                    try { parsedSchedule = JSON.parse(parsedSchedule); } catch (e) { parsedSchedule = {}; }
+                }
+                rosterMap[r.employee_id] = parsedSchedule;
+            });
+
             return rosterMap;
-        } catch (err) { 
+        } catch (err) {
             console.error("Error cargando el roster semanal:", err);
-            return {}; 
+            return {};
         }
     },
 
@@ -565,6 +639,65 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+    saveBulkWeeklyRosters: async (weekStartDate, schedulesMap) => {
+        try {
+            const inserts = Object.keys(schedulesMap).map(empId => ({
+                employee_id: empId,
+                week_start_date: weekStartDate,
+                schedule_data: schedulesMap[empId],
+                status: 'DRAFT', // 🚨 La magia se guarda siempre en borrador primero
+                updated_at: new Date().toISOString()
+            }));
+
+            const { error } = await supabase
+                .from('employee_rosters')
+                .upsert(inserts, { onConflict: 'employee_id,week_start_date' });
+
+            if (error) throw error;
+
+            // Refrescar la memoria
+            await get().fetchWeekRosters(weekStartDate);
+            return true;
+        } catch (err) {
+            console.error("Error guardando roster masivo de IA:", err);
+            throw new Error("No se pudo guardar la sugerencia de la IA.");
+        }
+    },
+
+    publishWeekRosters: async (weekStartDate, branchId = 'ALL') => {
+        try {
+            let query = supabase
+                .from('employee_rosters')
+                .update({ status: 'PUBLISHED' })
+                .eq('week_start_date', weekStartDate);
+
+            // 🚨 Si hay una sucursal filtrada, solo publicamos a los empleados de ESA sucursal
+            if (branchId !== 'ALL') {
+                const state = get();
+                const branchEmployees = state.employees
+                    .filter(e => String(e.branchId || e.branch_id) === String(branchId))
+                    .map(e => e.id);
+
+                if (branchEmployees.length === 0) return true; // No hay a quién publicarle
+                query = query.in('employee_id', branchEmployees);
+            }
+
+            const { error } = await query;
+            if (error) throw error;
+
+            // Auditoría
+            await get().appendAuditLog('PUBLICAR_HORARIOS', branchId === 'ALL' ? 'GLOBAL' : branchId, {
+                timeline_title: `Publicación de Horarios`,
+                dimension: 'HR',
+                new_value: `Semana del ${weekStartDate}`
+            });
+
+            return true;
+        } catch (err) {
+            console.error("Error publicando horarios:", err);
+            throw new Error("No se pudieron publicar los horarios.");
+        }
+    },
     // ✅ KIOSK BOOT REFINADO: Filtramos los avisos futuros para que el kiosco no los sepa
     fetchKioskBoot: async () => {
         try {

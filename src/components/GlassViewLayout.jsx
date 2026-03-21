@@ -23,7 +23,8 @@ const GlassViewLayout = ({
     }, [isScrolled]);
 
     return (
-        <div className="max-w-7xl mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none">
+        // 🚨 CAMBIO AQUÍ: Cambiamos max-w-7xl por max-w-[1800px] 
+        <div className="max-w-[1800px] 2xl:max-w-[2000px] mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none transition-all duration-500">
 
             {/* HEADER COMPACTO Y DE UNA SOLA LÍNEA */}
             <div className="absolute top-4 md:top-6 left-0 right-0 z-40 px-2 md:px-6 pointer-events-none">

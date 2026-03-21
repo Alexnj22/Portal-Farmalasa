@@ -1,7 +1,6 @@
 import React, { memo, useMemo, useEffect } from 'react';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle } from 'lucide-react';
 
-// 🚨 Asegúrate de que esta ruta apunte bien a tus helpers
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
 
 // ============================================================================
@@ -34,7 +33,6 @@ const formatMins12h = (mins) => {
     return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// Helper para formato de hora ultra-compacto de los badges (Ej: 9am)
 const formatHourCompact = (h) => {
     const period = h >= 12 ? 'pm' : 'am';
     const hour12 = h % 12 || 12;
@@ -56,12 +54,10 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
     const coverageByHour = {};
     for (let h = 0; h < 24; h++) coverageByHour[h] = 0;
     
-    // Matrices de 1440 minutos que guardan SETS de NOMBRES
     const activeStaffNamesByMinute = new Array(1440).fill(null).map(() => new Set()); 
     const employeesOnLunch = new Array(1440).fill(null).map(() => new Set());
     let scheduledPeopleCount = 0;
 
-    // 1. CARGAMOS IDENTIDADES EN LA LÍNEA DE TIEMPO
     allSchedules.forEach(empSch => {
         const dayData = empSch[dNum];
         if (!dayData || dayData.isOff) return;
@@ -79,7 +75,6 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
 
         const empName = empSch.name || 'Personal';
 
-        // Horas estadísticas
         let startH = Math.floor(startMins / 60);
         let endH = Math.floor(endMins / 60);
         for (let h = startH; h < endH; h++) {
@@ -87,13 +82,11 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
             coverageByHour[actualH] += 1;
         }
 
-        // Cargamos al empleado ACTIVO minuto a minuto con su NOMBRE
         for (let m = startMins; m < endMins; m++) {
             let actualM = m >= 1440 ? m - 1440 : m;
             activeStaffNamesByMinute[actualM].add(empName);
         }
 
-        // Restamos al empleado cuando se va a comer (60m)
         if (dayData.hasLunch && dayData.lunchStart) {
             let lStart = timeToMins(dayData.lunchStart);
             let lEnd = lStart + 60; 
@@ -109,7 +102,6 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
     let rawGaps = [];
     let copilotAlerts = [];
     
-    // 2. DETECCIÓN DE HUECOS CRÍTICOS
     if (daySalesStats && daySalesStats.length > 0) {
         daySalesStats.forEach(stat => {
             if (stat.color === '#FF2D55') dayLevel = 'critical';
@@ -124,14 +116,12 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
             }
             if (minActiveInHour === 999) minActiveInHour = 0;
             
-            // Si la hora es crítica y te quedas con menos de 3 personas activas, guardamos la hora
             if (stat.color === '#FF2D55' && minActiveInHour < 3) {
                 rawGaps.push(h);
             }
         });
     }
 
-    // 🚨 3. AGRUPACIÓN INTELIGENTE DE BADGES (Bloques Consecutivos)
     let criticalGaps = [];
     if (rawGaps.length > 0) {
         rawGaps.sort((a, b) => a - b);
@@ -139,19 +129,15 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
 
         for (let i = 1; i < rawGaps.length; i++) {
             if (rawGaps[i] === currentGroup.end + 1) {
-                // Es consecutiva, extendemos el bloque
                 currentGroup.end = rawGaps[i];
             } else {
-                // No es consecutiva, guardamos el bloque actual y abrimos uno nuevo
                 criticalGaps.push({ time: `${formatHourCompact(currentGroup.start)}-${formatHourCompact(currentGroup.end + 1)}` });
                 currentGroup = { start: rawGaps[i], end: rawGaps[i] };
             }
         }
-        // Guardamos el último bloque que quedó en memoria
         criticalGaps.push({ time: `${formatHourCompact(currentGroup.start)}-${formatHourCompact(currentGroup.end + 1)}` });
     }
 
-    // 4. AUDITORÍA DE ABANDONO SEPARANDO BLOQUES POR IDENTIDAD
     if (scheduledPeopleCount > 0) {
         let blocks = [];
         let currentBlock = null;
@@ -169,11 +155,10 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
                     stateKey = 'empty';
                 } else if (activeCount === 1) {
                     stateKey = 'alone';
-                    survivorName = Array.from(activeNames)[0]; // Guardamos quién es el que sobrevive
+                    survivorName = Array.from(activeNames)[0]; 
                 }
             }
 
-            // Si cambia el estado (o la persona que está sola cambia), cerramos el bloque
             if (currentBlock && (currentBlock.stateKey !== stateKey || currentBlock.survivorName !== survivorName)) {
                 blocks.push(currentBlock);
                 currentBlock = null;
@@ -221,8 +206,9 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
 // ============================================================================
 // ⚡ FILA MEMOIZADA (UN EMPLEADO)
 // ============================================================================
-const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCell }) => {
-    let rawSchedule = roster || emp.weeklySchedule || {};
+const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCell, isReadOnly }) => {
+    // 🚨 ARREGLO: Ya no usa emp.weeklySchedule de fallback para semanas pasadas
+    let rawSchedule = roster || {};
     let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
     const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
     const isExcessWeekly = hours > 44;
@@ -275,20 +261,21 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const timeBlocks = hasShift ? getTimeBlocks(startStr, endStr, dayData.hasLunch, dayData.lunchStart, dayData.hasLactation, dayData.lactationStart) : [];
 
                 return (
-                    <td key={date} className="p-0 align-top group/cell cursor-pointer relative z-10 hover:z-[60]" onClick={(e) => {
-                        if (conf) return;
+                    <td key={date} className={`p-0 align-top ${isReadOnly ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
+                        if (conf || isReadOnly) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     }}>
-                        <div className={`min-h-[85px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-all duration-300 flex flex-col group-hover/cell:-translate-y-1 group-hover/cell:shadow-md
+                        <div className={`min-h-[85px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-all duration-300 flex flex-col 
+                            ${!isReadOnly ? 'group-hover/cell:-translate-y-1 group-hover/cell:shadow-md' : ''}
                             ${conf ? conf.bg + ' border border-dashed ' + conf.border : 
-                              hasShift ? 'bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)] group-hover/cell:border-[#007AFF]/40' : 
-                              'border border-dashed border-slate-300/60 bg-slate-50/30 backdrop-blur-sm group-hover/cell:bg-blue-50/50 group-hover/cell:border-[#007AFF]/40'
+                              hasShift ? `bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${!isReadOnly ? 'group-hover/cell:border-[#007AFF]/40' : ''}` : 
+                              `border border-dashed border-slate-300/60 bg-slate-50/30 backdrop-blur-sm ${!isReadOnly ? 'group-hover/cell:bg-blue-50/50 group-hover/cell:border-[#007AFF]/40' : ''}`
                             }
-                            ${isDailyOvertime && hasShift ? '!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)] group-hover/cell:!border-red-400' : ''}
+                            ${isDailyOvertime && hasShift ? `!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)] ${!isReadOnly ? 'group-hover/cell:!border-red-400' : ''}` : ''}
                         `}>
                             
-                            {!conf && (
+                            {!conf && !isReadOnly && (
                                 <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#007AFF] text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-blue-600">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
@@ -333,7 +320,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="w-full flex-1 flex flex-col items-center justify-center text-slate-400 group-hover/cell:text-[#007AFF] transition-colors">
+                                    <div className={`w-full flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors ${!isReadOnly ? 'group-hover/cell:text-[#007AFF]' : ''}`}>
                                         <span className="text-[8px] font-black uppercase tracking-widest">Descanso</span>
                                     </div>
                                 )}
@@ -348,24 +335,25 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     return prev.emp.id === next.emp.id && 
            prev.roster === next.roster && 
            prev.calendarDates === next.calendarDates && 
-           prev.shifts === next.shifts;
+           prev.shifts === next.shifts &&
+           prev.isReadOnly === next.isReadOnly;
 });
 
 // ============================================================================
 // 🚀 VISTA PRINCIPAL DEL CALENDARIO
 // ============================================================================
-const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRosters, shifts, handleEditCell, salesStats, onSalyAlertsUpdate }) => {
+const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRosters, shifts, handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly }) => {
     
     const allSchedulesArray = useMemo(() => {
         return employeesInView.map(emp => {
-            let rawSchedule = weeklyRosters[emp.id] || emp.weeklySchedule || {};
+            // 🚨 ARREGLO: Ya no usa emp.weeklySchedule de fallback para no clonar la semana actual
+            let rawSchedule = weeklyRosters[emp.id] || {}; 
             let parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
             parsed.name = emp.name; 
             return parsed;
         });
     }, [employeesInView, weeklyRosters]);
 
-    // 🚨 PASAR ALERTAS AL COPILOT
     useEffect(() => {
         let weeklyCopilotAlerts = [];
         for (let dNum = 0; dNum < 7; dNum++) {
@@ -418,13 +406,10 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                                     <th key={date} className="p-0 text-center min-w-[135px] 2xl:min-w-[150px] align-bottom group relative z-10 hover:z-[70]">
                                         <div className={`backdrop-blur-xl border shadow-sm rounded-[1.5rem] pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-all duration-300 relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
                                             
-                                            {/* 🚨 BADGES AGRUPADOS (bottom-full) */}
                                             <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-20 pointer-events-none">
-                                                <div className="flex flex-wrap justify-center items-end gap-[3px] w-full">
+                                                <div className="flex flex-wrap justify-center items-end gap-[3px] w-full max-h-[40px] overflow-hidden">
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
-                                                          
-                                                            {/* BLOQUES DE HORAS ROJAS (Agrupados) */}
                                                             {coverageData.criticalGaps.map((gap, i) => (
                                                                 <span key={i} className="text-[6.5px] 2xl:text-[7px] font-black uppercase text-white bg-rose-500 border border-rose-600 px-1.5 py-[2px] rounded-md shadow-sm shrink-0 whitespace-nowrap">
                                                                     {gap.time}
@@ -468,6 +453,7 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                                     shifts={shifts}
                                     calendarDates={calendarDates}
                                     onEditCell={handleEditCell}
+                                    isReadOnly={isReadOnly}
                                 />
                             ))
                         )}

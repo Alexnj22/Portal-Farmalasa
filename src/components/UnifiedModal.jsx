@@ -1,11 +1,11 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
 import { useToastStore } from '../store/toastStore';
-import { supabase } from '../supabaseClient'; // 🚨 Usaremos esta conexión directa
+import { supabase } from '../supabaseClient'; 
 
 // -------------------------
 // CARGA DIFERIDA
@@ -15,12 +15,15 @@ const FormNovedad = React.lazy(() => import('./forms/FormNovedad'));
 const FormUploadOnly = React.lazy(() => import('./forms/FormUploadOnly'));
 const FormDispositivos = React.lazy(() => import('./forms/FormDispositivos'));
 const FormSucursal = React.lazy(() => import('./forms/FormSucursal'));
-const FormEmpleado = React.lazy(() => import('./forms/FormEmpleado'));
+
+// 🚨 SEPARAMOS LOS FORMULARIOS DE EMPLEADO
+const FormEmpleadoNuevo = React.lazy(() => import('./forms/EmployeeFormModal'));
+const FormEditEmployeeBasic = React.lazy(() => import('./forms/EditEmployeeBasicModal')); 
+
 const FormPlanificador = React.lazy(() => import('./forms/FormPlanificador'));
 const FormTurnos = React.lazy(() => import('./forms/FormTurnos'));
 const FormRoleEmployees = React.lazy(() => import('./forms/FormRoleEmployees'));
 const FormAnnouncements = React.lazy(() => import('./forms/FormAnnouncements'));
-
 const FormSrsPermit = React.lazy(() => import('./forms/FormSrsPermit'));
 const FormPharmacyRegent = React.lazy(() => import('./forms/FormPharmacyRegent'));
 const FormPharmacovigilance = React.lazy(() => import('./forms/FormPharmacovigilance'));
@@ -30,11 +33,11 @@ const FormDocumentViewer = React.lazy(() => import('./forms/FormDocumentViewer')
 const FormServicePayment = React.lazy(() => import('./forms/FormServicePayment'));
 const FormRegisterPayment = React.lazy(() => import('./forms/FormRegisterPayment'));
 const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
-
 const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
 const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
 
+// 🚨 CORRECCIÓN: Los formularios de empleados YA NO ocultan el Header ni el Footer
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
 const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
@@ -64,8 +67,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewRoleEmployees":
             case "viewBranchEmployees": return "max-w-2xl";
             case "viewDocument": return "max-w-5xl";
-            case "newEmployee":
-            case "editEmployee": return "max-w-5xl";
+            case "newEmployee": return "max-w-4xl"; // Modal Gigante para Crear
+            case "editEmployee": return "max-w-3xl"; // 🚨 Modal Compacto para Editar
             case "newBranch":
             case "editBranch":
             case "editBranchLegal":
@@ -94,7 +97,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "planSchedule": return "Planificación Semanal";
             case "manageShifts": return "Catálogo de Turnos";
             case "newEmployee": return "Nuevo Colaborador";
-            case "editEmployee": return "Editar Colaborador";
+            case "editEmployee": return "Actualizar Información"; // 🚨 Título más suave
             case "newBranch": return "Nueva Sucursal";
             case "editBranch": return "Configuración General";
             case "editBranchHorarios": return "Horarios de Atención";
@@ -121,6 +124,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
+        if (type === "newEmployee") return "FICHA DE PERSONAL WFM NIVEL ENTERPRISE"; 
+        if (type === "editEmployee") return "EDICIÓN RÁPIDA DE CONTACTO Y NÓMINA"; 
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
@@ -133,7 +138,78 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         setValidationError(null);
 
         // ==========================================
-        // 🚨 LÓGICA: DOCUMENTO DEL EXPEDIENTE (DIRECTO A SUPABASE)
+        // 🚨 LÓGICA: GUARDAR EMPLEADOS
+        // ==========================================
+        if (type === "newEmployee" || type === "editEmployee") {
+            
+            if (type === "newEmployee") {
+                if (!formData.first_names?.trim() || !formData.last_names?.trim() || !formData.code?.trim() || !formData.branch_id || !formData.role_id) {
+                    setValidationError("Faltan campos obligatorios: Nombres, Apellidos, Código, Sucursal Base o Cargo.");
+                    return;
+                }
+            } else {
+                if (!formData.first_names?.trim() || !formData.last_names?.trim()) {
+                    setValidationError("Los Nombres y Apellidos son obligatorios.");
+                    return;
+                }
+            }
+
+            setIsSaving(true);
+            try {
+                const { addEmployee, updateEmployee } = useStaff.getState();
+                
+                // 🚨 LIMPIEZA ESTRICTA PARA SUPABASE (Evita Error PGRST204 y Type Casting)
+                const finalData = { ...formData, username: formData.username?.trim().toLowerCase() };
+                
+                // 1. Borrar datos exclusivos de la UI o variables duplicadas en camelCase
+                delete finalData.photoPreview; 
+                delete finalData.effectiveStatus; 
+                delete finalData.history; 
+                delete finalData.weeklySchedule; 
+                delete finalData.birthDate; 
+                delete finalData.hireDate;
+                delete finalData.branchId;
+                delete finalData.roleId;
+                delete finalData.secondaryRole;
+                delete finalData.created_at; 
+                delete finalData.name; // Ya usamos first_names y last_names en la DB
+
+                // 2. 🚨 PREVENCIÓN DE ERRORES DE TIPO (Convertir "" a null para DB)
+                if (finalData.branch_id === "") finalData.branch_id = null;
+                if (finalData.role_id === "") finalData.role_id = null;
+                if (finalData.secondary_role_id === "") finalData.secondary_role_id = null;
+                if (finalData.birth_date === "") finalData.birth_date = null;
+                if (finalData.contract_end_date === "") finalData.contract_end_date = null;
+                if (finalData.base_salary === "") finalData.base_salary = null;
+                if (finalData.weekly_contracted_hours === "") finalData.weekly_contracted_hours = null;
+
+                // 3. Guardar o Actualizar
+                if (type === "editEmployee" || (formData.id)) {
+                    await updateEmployee(formData.id, finalData);
+                } else {
+                    await addEmployee(finalData);
+                }
+
+                const { showToast } = useToastStore.getState();
+                if (showToast) {
+                    showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
+                }
+                
+                // Destruir borrador si fue un éxito
+                localStorage.removeItem('wfm_employee_draft');
+                
+                onClose();
+            } catch (err) {
+                console.error("Error guardando empleado:", err);
+                setValidationError(err?.message || "Error interno al procesar y guardar la ficha del empleado. Verifica que no falten datos.");
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
+        // ==========================================
+        // LÓGICA: DOCUMENTO DEL EXPEDIENTE
         // ==========================================
         if (type === "addCustomDocument" || type === "editCustomDocument") {
             const docData = formData.newDocData;
@@ -152,24 +228,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const originalBranch = formData.branch?.id ? formData.branch : formData;
                 const targetBranchId = originalBranch.id;
 
-                // 🚨 1. SUBIDA DIRECTA A SUPABASE (Sin pasar por Zustand) 🚨
                 if (docData.file) {
                     try {
-                        // 🎯 ¡AQUÍ ESTÁ LA MAGIA! Tu bucket real se llama 'documents'
                         const NOMBRE_DEL_BUCKET = 'documents';
-
                         const fileExt = docData.file.name.split('.').pop();
-                        // Y lo guardamos dentro de la carpeta 'branches'
                         const filePath = `branches/${targetBranchId}/customDocs/${docId}_${Date.now()}.${fileExt}`;
-
-                        console.log(`Subiendo archivo a Storage [${NOMBRE_DEL_BUCKET}/${filePath}]...`);
 
                         const { error: uploadError } = await supabase.storage
                             .from(NOMBRE_DEL_BUCKET)
                             .upload(filePath, docData.file, { upsert: true });
 
                         if (uploadError) {
-                            console.error("Supabase Storage Error:", uploadError);
                             throw new Error(uploadError.message || "Supabase rechazó la subida del archivo.");
                         }
 
@@ -178,41 +247,28 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             .getPublicUrl(filePath);
 
                         fileUrl = publicUrlData.publicUrl;
-                        console.log("¡Archivo subido con éxito! URL:", fileUrl);
 
-                        // ✨ MAGIA DE LA IA (GEMINI) ✨
                         try {
-                            console.log("🤖 Activando Gemini AI... Enviando a Supabase Edge Function.");
-
                             const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
                                 body: { filePath: filePath, bucketName: NOMBRE_DEL_BUCKET }
                             });
-
-                            // 👇 ESTOS DOS LOGS NOS DIRÁN LA VERDAD ABSOLUTA 👇
-                            console.log("📥 Respuesta cruda de la IA (Data):", aiResponse);
-                            console.log("🚨 Posible error de la IA (Error):", aiError);
 
                             if (!aiError && aiResponse?.success && aiResponse.aiData) {
                                 aiSummary = aiResponse.aiData.aiSummary;
                                 if (aiResponse.aiData.issueDate && !docData.issueDate) docData.issueDate = aiResponse.aiData.issueDate;
                                 if (aiResponse.aiData.expDate && !docData.expDate) docData.expDate = aiResponse.aiData.expDate;
-                                console.log("✅ Resumen de IA guardado con éxito en memoria.");
-                            } else {
-                                console.warn("⚠️ La llamada a la función terminó, pero no trajo un resumen válido.");
                             }
                         } catch (aiCatchedError) {
-                            console.error("🔥 Error catastrófico al llamar a la función analyze-document:", aiCatchedError);
+                            console.error("Error AI:", aiCatchedError);
                         }
 
                     } catch (uploadFail) {
-                        console.error("🔥 ERROR EXACTO DE SUBIDA:", uploadFail);
                         setValidationError(`Error al subir: ${uploadFail.message}.`);
                         setIsSaving(false);
                         return;
                     }
                 }
 
-                // 2. Construimos el documento
                 const documentObject = {
                     id: docId,
                     title: docData.title.trim(),
@@ -221,7 +277,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     issueDate: docData.hasIssueDate ? docData.issueDate : null,
                     hasExpiration: docData.hasExpiration,
                     expDate: docData.hasExpiration ? docData.expDate : null,
-                    url: fileUrl, // Ahora sí estará lleno
+                    url: fileUrl, 
                     aiSummary: aiSummary
                 };
 
@@ -244,7 +300,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     settings: updatedSettings
                 };
 
-                // 3. Actualizamos la sucursal
                 const { updateBranch, appendAuditLog } = useStaff.getState();
                 await updateBranch(targetBranchId, payloadToSave);
 
@@ -259,7 +314,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 onClose();
             } catch (err) {
-                console.error("Error guardando la base de datos:", err);
+                console.error("Error guardando db:", err);
                 setValidationError("No se pudo guardar el documento en la base de datos.");
             } finally {
                 setIsSaving(false);
@@ -310,16 +365,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 onClose();
             } catch (err) {
-                console.error("Error al guardar la sucursal:", err);
-                const errorMsg = err?.message || err?.error_description || (typeof err === 'string' ? err : "Error interno al guardar los datos en el servidor.");
-                setValidationError(errorMsg);
+                setValidationError(err?.message || "Error interno.");
             } finally {
                 setIsSaving(false);
             }
             return;
         }
 
-        // 🚨 Lógica Especial para Liderazgo Dual (Relevo y Asignación)
         if (type === "editBranchLeadership") {
             if (!formData.selectedEmpId) {
                 setValidationError("Debes seleccionar a un colaborador de la lista.");
@@ -336,30 +388,23 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const selectedEmp = employees.find(e => e.id === formData.selectedEmpId);
                 const currentEmpObj = employees.find(e => e.id === formData.currentAssignee);
 
-                // 🔴 1. RESOLVER IDs SEGUROS PARA BD RELACIONAL
                 const actualBranchId = formData.branch?.id || formData.branchId || formData.id;
                 const actualBranchName = formData.branch?.name || formData.name || 'Sucursal';
 
-                // Buscar el role_id destino exacto en el catálogo
                 const targetRoleObj = roles.find(r => r.name === formData.targetRole);
                 const targetRoleId = targetRoleObj ? targetRoleObj.id : null;
 
-                // ==========================================
-                // 2. RELEVAR AL EMPLEADO ANTERIOR (Si existe)
-                // ==========================================
                 if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
                     if (formData.outgoingAction === 'REASSIGN') {
                         const newBranchName = branches.find(b => String(b.id) === String(formData.outgoingBranch))?.name || 'otra sucursal';
                         const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
 
-                        // Actualiza empleado
                         await updateEmployee(formData.currentAssignee, {
                             branchId: formData.outgoingBranch,
                             role_id: outRoleObj ? outRoleObj.id : null,
-                            role: formData.outgoingRole // Feedback UI
+                            role: formData.outgoingRole 
                         });
 
-                        // 🔴 Registra en la tabla employee_history
                         await supabase.from('employee_history').insert([{
                             employee_id: formData.currentAssignee,
                             type: 'REASSIGNMENT',
@@ -371,16 +416,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             details: { note: `Relevado de jefatura en ${actualBranchName}` }
                         }]);
 
-                        await appendAuditLog('CAMBIO_PUESTO', formData.currentAssignee, {
-                            timeline_title: 'Reasignación Operativa',
-                            dimension: 'HR',
-                            old_value: `${formData.targetRole} (${actualBranchName})`,
-                            new_value: `${formData.outgoingRole} (${newBranchName})`
-                        });
                     } else {
-                        // Lo manda a la banca (Sin Asignar)
                         await updateEmployee(formData.currentAssignee, {
-                            branchId: null, // Queda NULL en DB real
+                            branchId: null, 
                             role_id: null,
                             role: 'Sin Asignar'
                         });
@@ -394,26 +432,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             new_role: 'Sin Asignar',
                             details: { note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.` }
                         }]);
-
-                        await appendAuditLog('REMOVIDO_SUCURSAL', formData.currentAssignee, {
-                            timeline_title: 'Desvinculación de Sucursal',
-                            dimension: 'HR',
-                            old_value: `${formData.targetRole} (${actualBranchName})`,
-                            new_value: 'Sin Asignar (Flotante)'
-                        });
                     }
                 }
 
-                // ==========================================
-                // 3. ACTUALIZAR AL NUEVO TITULAR
-                // ==========================================
                 await updateEmployee(formData.selectedEmpId, {
-                    branchId: actualBranchId,    // 🔴 GUARDA LA SUCURSAL REAL EN BD
-                    role_id: targetRoleId,       // 🔴 GUARDA EL ID DEL ROL REAL EN BD
-                    role: formData.targetRole    // Actualiza la vista en memoria
+                    branchId: actualBranchId,    
+                    role_id: targetRoleId,       
+                    role: formData.targetRole    
                 });
 
-                // 🔴 Registrar en la tabla employee_history
                 await supabase.from('employee_history').insert([{
                     employee_id: formData.selectedEmpId,
                     type: formData.moveType || 'PROMOTION',
@@ -429,42 +456,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     }
                 }]);
 
-                // 4. AUDITORÍA INTELIGENTE PARA LA SUCURSAL
-                let logText = 'Asignación de puesto';
-                if (formData.moveType === 'PROMOTION') logText = 'Ascenso interno';
-                if (formData.moveType === 'TRANSFER') logText = 'Traslado operativo';
-                if (formData.moveType === 'TRANSFER_PROMOTION') logText = 'Traslado y Ascenso';
-                if (formData.isPermanent === false) logText += ` (Interinato)`;
-
-                let notaHistorial = formData.notes || 'Movimiento estándar';
-                if (currentEmpObj && currentEmpObj.id !== selectedEmp.id) {
-                    notaHistorial += ` | Releva a: ${currentEmpObj.name}`;
-                }
-
-                await appendAuditLog('PERSONAL_ASIGNADO', actualBranchId, {
-                    timeline_title: `Nueva Jefatura: ${selectedEmp?.name || 'Asignado'}`,
-                    dimension: 'HR',
-                    branch_id: actualBranchId,
-                    old_value: selectedEmp?.role || 'N/A',
-                    new_value: `${formData.targetRole} - ${logText}`,
-                    notas: notaHistorial
-                });
-
-                // ==========================================
-                // 5. SINCRONIZACIÓN DE UI (Sin recargar navegador)
-                // ==========================================
                 const { fetchEmployees, fetchBranchHistory } = useStaff.getState();
-
-                // Forzar bajada fresca de base de datos
                 if (fetchEmployees) await fetchEmployees();
                 if (fetchBranchHistory && actualBranchId) await fetchBranchHistory(actualBranchId);
 
-                // 🔴 BENGALA: Disparar evento para actualizar historial globalmente
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
                 onClose();
             } catch (err) {
-                console.error("Error guardando jefatura:", err);
                 setValidationError("Error al procesar el relevo de personal.");
             } finally {
                 setIsSaving(false);
@@ -472,7 +470,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
-        // 🚨 Lógica Especial para Registrar Pagos de Servicios
         if (type === "registerPayment") {
             const { _currentService, _paymentData, _auditPayload, id, settings } = formData;
 
@@ -483,68 +480,42 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
             setIsSaving(true);
             try {
-                // Traemos las acciones del store de Zustand
-                const { uploadDocument, addBranchExpense, updateBranch, appendAuditLog } = useStaff.getState();
-
+                const { uploadDocument, registerBranchExpense } = useStaff.getState();
                 let fileUrl = null;
 
-                // 1. Subir recibo a Storage (Supabase) si existe
                 if (_paymentData.receiptFile) {
                     const path = `expenses/${id}/${_currentService}/${_paymentData.billing_month}_${Date.now()}`;
-                    if (uploadDocument) {
-                        fileUrl = await uploadDocument(path, _paymentData.receiptFile);
-                    }
+                    if (uploadDocument) fileUrl = await uploadDocument(path, _paymentData.receiptFile);
                 }
 
-                // 2. Armar el due_date (YYYY-MM-DD) usando el dueDay configurado en la sucursal
                 const serviceData = _currentService === 'rent' ? (settings?.rent || {}) : ((settings?.services || {})[_currentService] || {});
-                const dueDay = serviceData.dueDay || 1; // Por defecto día 1 si no hay configurado
+                const dueDay = serviceData.dueDay || 1; 
                 const formattedDueDate = `${_paymentData.billing_month}-${String(dueDay).padStart(2, '0')}`;
 
-                // Preparamos el objeto para el slice (incluyendo el File si existe)
                 const expenseRecord = {
                     expense_type: _currentService,
                     billing_month: _paymentData.billing_month,
                     amount: Number(_paymentData.amount),
                     due_date: formattedDueDate,
-                    receiptFile: _paymentData.receiptFile, // Lo pasamos al slice
+                    receiptFile: _paymentData.receiptFile, 
                     notes: _paymentData.notes || null
                 };
 
-                // Ejecutamos la función completa del slice que ya hace TODO el trabajo
-                const { registerBranchExpense } = useStaff.getState();
-                if (registerBranchExpense) {
-                    await registerBranchExpense(id, expenseRecord);
-                }
+                if (registerBranchExpense) await registerBranchExpense(id, expenseRecord);
 
-                // 🔴 NUEVO: Lanzamos tu LiquidToast de éxito
                 const { showToast } = useToastStore.getState();
-                if (showToast) {
-                    showToast(
-                        "Pago Registrado",
-                        `El pago de ${_paymentData.billing_month} se guardó con éxito.`,
-                        "success"
-                    );
-                }
+                if (showToast) showToast("Pago Registrado", `El pago de ${_paymentData.billing_month} se guardó con éxito.`, "success");
 
-                // 🔴 BENGALA PARA ACTUALIZAR HISTORIAL DE PAGOS
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-                // Cerramos el modal
                 onClose();
-
             } catch (err) {
-                console.error("Error registrando el pago:", err);
-                setValidationError("No se pudo procesar el pago. Revisa la consola para más detalles.");
+                setValidationError("No se pudo procesar el pago.");
             } finally {
                 setIsSaving(false);
             }
             return;
         }
 
-        // ==========================================
-        // 🚨 LÓGICA: GUARDAR PLANIFICACIÓN DE TURNOS (ROSTER)
-        // ==========================================
         if (type === "planSchedule") {
             const { employee, weekStartDate, schedule } = formData;
 
@@ -556,49 +527,30 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 const { saveWeeklyRoster, fetchEmployees } = useStaff.getState();
-
-                // 1. Enviamos a Supabase usando tu función del SystemSlice
                 await saveWeeklyRoster(employee.id, weekStartDate, schedule);
-
-                // 2. Sincronización en memoria (opcional pero recomendado para inmediatez)
                 if (fetchEmployees) await fetchEmployees();
 
-                // 3. BENGALA: Repintar el Bento Grid de SchedulesView
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-                // 4. Feedback visual de éxito
                 const { showToast } = useToastStore.getState();
-                if (showToast) {
-                    showToast(
-                        "Turnos Asignados",
-                        `Horario de ${employee.name} actualizado con éxito.`,
-                        "success"
-                    );
-                }
+                if (showToast) showToast("Turnos Asignados", `Horario de ${employee.name} actualizado con éxito.`, "success");
 
                 onClose();
             } catch (err) {
-                console.error("Error guardando turnos:", err);
-                setValidationError("Ocurrió un error al intentar guardar la programación en la base de datos.");
+                setValidationError("Ocurrió un error al intentar guardar la programación.");
             } finally {
                 setIsSaving(false);
             }
             return;
         }
 
-        // ============================================================================
-        // FORMULARIO GENÉRICO DEFAULT
-        // ============================================================================
         if (handleSubmit) {
             setIsSaving(true);
             try {
                 await handleSubmit(e);
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
             } catch (err) {
-                console.error("Error en Submit general:", err);
-                const errorMsg = err?.message || err?.error_description || (typeof err === 'string' ? err : "Ocurrió un error inesperado.");
-                setValidationError(errorMsg);
+                setValidationError(err?.message || "Ocurrió un error inesperado.");
             } finally {
                 setIsSaving(false);
             }
@@ -623,48 +575,45 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         <ModalShell open={isOpen} onClose={onClose} maxWidthClass={getModalSize()} zClass="z-[100]">
             <div className={`flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-500 ease-out ${getModalHeightClass()}`}>
 
-                {/* 🚨 FIX DE PERFORMANCE 1: Forzamos a la GPU a mantener el blur en su propia capa y que no recalcule. */}
+                {/* 🚨 FIX DE PERFORMANCE */}
                 <div
                     className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none"
                     style={{ willChange: 'transform', transform: 'translateZ(0)' }}
                 />
 
+                {!hidesHeader && (
+                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex justify-between items-center relative z-10 shrink-0">
+                        <div className="flex items-center gap-4">
 
-{!hidesHeader && (
-    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex justify-between items-center relative z-10 shrink-0">
-        <div className="flex items-center gap-4">
-            
-            {/* Lógica de iconos con un Fallback seguro */}
-            {(() => {
-                if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
-                if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
-                if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
-                if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
-                if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
-                if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
-                if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>; // 👈 Icono específico para la IA
-                
-                // Fallback por defecto si el tipo de modal no tiene un icono específico
-                return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
-            })()}
+                            {(() => {
+                                if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                                if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                                if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
+                                if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                                if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#007AFF]`}><UserPlus size={22} strokeWidth={2.5} /></div>; 
+                                if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
+                                if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
+                                if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
+                                if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
+                                if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                                if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>; 
 
-            <div>
-                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
-                    {getModalTitle()}
-                </h3>
-                <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
-            </div>
-        </div>
-        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
-            <X size={18} strokeWidth={2.5} />
-        </button>
-    </div>
-)}
+                                return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
+                            })()}
 
-                {/* 🚨 FIX DE PERFORMANCE 2: overscroll-contain y aceleración de scroll por hardware */}
+                            <div>
+                                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
+                                    {getModalTitle()}
+                                </h3>
+                                <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                            </div>
+                        </div>
+                        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
+                            <X size={18} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                )}
+
                 <div
                     className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full`}
                     style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
@@ -681,8 +630,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <Suspense fallback={<FallbackLoader />}>
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
-                                {(type === "newEmployee" || type === "editEmployee") && <FormEmpleado formData={formData} setFormData={setFormData} branches={branches} roles={roles} />}
-
+                                
+                                {/* 🚨 INYECCIÓN DE LOS FORMULARIOS DE EMPLEADOS SEPARADOS */}
+                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} />}
+                                {type === "editEmployee" && <FormEditEmployeeBasic formData={formData || {}} setFormData={setFormData} />}
+                                
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}
                                 {type === "editBranchLegal" && <FormSucursal formData={formData} setFormData={setFormData} section="legal" />}

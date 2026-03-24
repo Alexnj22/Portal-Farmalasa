@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo, useRef } from 'react';
 import { 
-    Building2, X, Loader2, Archive, Target, Edit3, Copy, 
+    X, Loader2, Archive, Target, Edit3, Copy, 
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle, 
     CheckCircle2, Sparkles, Bot, Zap
 } from 'lucide-react';
@@ -8,13 +8,7 @@ import TimePicker12 from '../../components/common/TimePicker12';
 import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { parseTimeFlexible, formatHourAMPM } from '../../utils/scheduleHelpers';
-
-const timeToMins = (timeStr) => {
-    if (!timeStr) return 0;
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
-};
+import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -22,26 +16,39 @@ const minsToTimeStr = (mins) => {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
+const formatBranchNames = (names) => {
+    if (!names || names.length === 0) return '';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} y ${names[1]}`;
+    const last = names[names.length - 1];
+    const rest = names.slice(0, -1);
+    return `${rest.join(', ')} y ${last}`;
+};
+
 // ============================================================================
-// 🚀 COMPONENTE: TARJETA DE SUGERENCIA DE SALY
+// 🚀 COMPONENTE: TARJETA DE SUGERENCIA DE SALY (AUDITORÍA GLOBAL)
 // ============================================================================
 const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
+    const isError = insight.type === 'error';
+
     return (
-        // 🚨 Sin overflow-hidden para que la sombra salga. El fondo y borde dan el estilo.
-        <div className="p-5 rounded-[2.5rem] border border-cyan-500/30 bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)] group h-full">
-            {/* El resplandor usa un contenedor con overflow-hidden independiente para no afectar la tarjeta entera */}
+        <div className={`p-5 rounded-[2.5rem] border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
+            ${isError ? 'border-rose-500/30 shadow-[inset_0_2px_10px_rgba(244,63,94,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(244,63,94,0.2)]' 
+                      : 'border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_8px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]'}`}>
+            
             <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000"></div>
+                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-rose-500' : 'bg-cyan-500'}`}></div>
             </div>
 
             <div className="flex items-center justify-between relative z-10 pr-8">
-                <span className="flex items-center gap-1.5 text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-cyan-500/20">
-                    <Bot size={12} strokeWidth={2} /> SALY SUGIERE
+                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border 
+                    ${isError ? 'text-rose-300 bg-rose-500/10 border-rose-500/20' : 'text-cyan-300 bg-cyan-500/10 border-cyan-500/20'}`}>
+                    <Bot size={12} strokeWidth={2} /> {isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}
                 </span>
-                <Sparkles size={16} className="text-cyan-400 animate-pulse" />
+                {isError ? <AlertTriangle size={16} className="text-rose-400 animate-pulse" /> : <Sparkles size={16} className="text-cyan-400 animate-pulse" />}
             </div>
 
-            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-cyan-500/50 hover:text-rose-400 hover:bg-rose-500/10 transition-all active:scale-95 z-20" title="Ignorar sugerencia">
+            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 z-20" title="Ignorar aviso">
                 <X size={14} strokeWidth={2.5} />
             </button>
 
@@ -49,24 +56,26 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                 <h4 className="font-black text-white text-[16px] leading-tight tracking-tight mb-2 flex items-center gap-2">
                     {insight.branch}
                 </h4>
-                <p className="text-[12px] font-medium text-cyan-100/70 leading-relaxed">
+                <p className={`text-[12px] font-medium leading-relaxed ${isError ? 'text-rose-100/80' : 'text-cyan-100/70'}`}>
                     {insight.text}
                 </p>
             </div>
 
-            <div className="mt-auto pt-4 relative z-10">
-                 <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <Zap size={14} strokeWidth={2.5} /> Aplicar Sugerencia
-                 </button>
-            </div>
+            {insight.action && (
+                <div className="mt-auto pt-4 relative z-10">
+                     <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <Zap size={14} strokeWidth={2.5} /> Crear este turno
+                     </button>
+                </div>
+            )}
         </div>
     );
 });
 
 // ============================================================================
-// 🚀 COMPONENTE DE TARJETA MULTI-SUCURSAL (LIQUID GLASS PRO)
+// 🚀 COMPONENTE DE TARJETA GLOBAL (LIQUID GLASS PRO)
 // ============================================================================
-const TurnoCard = memo(({ group, branches, onEdit, onDuplicate, onArchive, onUnarchive, isEditingThis, onCancelEditing }) => {
+const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, isEditingThis, onCancelEditing }) => {
     const [confirmAction, setConfirmAction] = useState(null); 
     
     const isArchived = group.shifts_data.every(s => s.is_active === false || s.isActive === false);
@@ -90,7 +99,6 @@ const TurnoCard = memo(({ group, branches, onEdit, onDuplicate, onArchive, onUna
     }, [group]);
 
     return (
-        // 🚨 Sin overflow-hidden. Se asegura que el z-index maneje las capas si hay modales.
         <div
             className={`p-5 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
                 isEditingThis
@@ -110,7 +118,7 @@ const TurnoCard = memo(({ group, branches, onEdit, onDuplicate, onArchive, onUna
                             {confirmAction === 'archive' ? '¿Archivar?' : '¿Reactivar?'}
                         </h4>
                         <p className="text-[11px] font-bold text-slate-500 leading-tight">
-                            {confirmAction === 'archive' ? `Aplica para ${group.branch_ids.length} sucursales.` : 'Volverá a estar disponible.'}
+                            {confirmAction === 'archive' ? `El turno se ocultará del catálogo.` : 'Volverá a estar disponible.'}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
@@ -146,20 +154,9 @@ const TurnoCard = memo(({ group, branches, onEdit, onDuplicate, onArchive, onUna
             </div>
 
             <div className="flex flex-wrap items-center gap-1 pr-16 relative z-10">
-                {group.branch_ids.length === 0 ? (
-                    <span className="flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-slate-200/50">
-                        <Globe size={10} strokeWidth={2} /> General
-                    </span>
-                ) : (
-                    group.branch_ids.map(bId => {
-                        const bName = branches.find(b => String(b.id) === String(bId))?.name || '---';
-                        return (
-                            <span key={bId} className="flex items-center gap-1 text-[#007AFF] bg-[#007AFF]/10 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-[#007AFF]/20">
-                                <Building2 size={10} strokeWidth={2} /> {bName}
-                            </span>
-                        )
-                    })
-                )}
+                <span className="flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-slate-200/50">
+                    <Globe size={10} strokeWidth={2} /> Catálogo Global
+                </span>
                 
                 {hours > 9 && (
                     <span className="flex items-center gap-1 text-white bg-red-500 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[0_2px_10px_rgba(239,68,68,0.3)] animate-pulse">
@@ -194,16 +191,16 @@ const TurnoCard = memo(({ group, branches, onEdit, onDuplicate, onArchive, onUna
 });
 
 // ============================================================================
-// 🚀 VISTA PRINCIPAL (TAB SHIFTS) 
+// 🚀 VISTA PRINCIPAL (TAB SHIFTS) - MODO GLOBAL
 // ============================================================================
-const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
+const TabShifts = ({ branches, shiftTab, shiftSearch }) => {
     const { shifts, addShift, updateShift, archiveShift, unarchiveShift } = useStaffStore();
     const { showToast } = useToastStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [editingGroup, setEditingGroup] = useState(null); 
     
-    const [currentForm, setCurrentForm] = useState({ start: '', end: '', branchIds: [] });
+    const [currentForm, setCurrentForm] = useState({ start: '', end: '' });
     const [dismissedSugs, setDismissedSugs] = useState(new Set()); 
     const [debouncedSearch, setDebouncedSearch] = useState(shiftSearch);
     
@@ -211,6 +208,12 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         const timerId = setTimeout(() => { setDebouncedSearch(shiftSearch); }, 300);
         return () => clearTimeout(timerId);
     }, [shiftSearch]);
+
+    useEffect(() => {
+        if (currentForm.start && !currentForm.end) {
+            setCurrentForm(prev => ({ ...prev, end: "16:00" })); 
+        }
+    }, [currentForm.start]);
 
     const validBranches = useMemo(() => {
         if (!branches) return [];
@@ -220,111 +223,171 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         });
     }, [branches]);
 
-    const hasSelectedBranches = currentForm.branchIds.length > 0;
-
-    useEffect(() => {
-        if (currentForm.start && !currentForm.end) {
-            setCurrentForm(prev => ({ ...prev, end: "16:00" })); 
-        }
-    }, [currentForm.start]);
-
-    // ============================================================================
-    // 🧠 CEREBRO DE SALY AI (Análisis y Auditoría)
-    // ============================================================================
     const getBranchLimits = useCallback((branchId) => {
-        let minO = 1440; let maxC = 0;
         const b = validBranches.find(br => String(br.id) === String(branchId));
+        let minO = 1440; 
+        let maxC = 0;
+        let hasValidHours = false;
+
         if (b) {
-            const sch = b.weeklyHours || b.weekly_hours || b.settings?.schedule;
-            if (sch && typeof sch === 'object') {
+            let sch = b.weekly_hours;
+            if (typeof sch === 'string') {
+                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+            }
+
+            if (sch && typeof sch === 'object' && Object.keys(sch).length > 0) {
                 Object.values(sch).forEach(d => {
-                    if (d && d.open && d.close && !d.isClosed && !d.isOff) {
-                        const oMins = parseTimeFlexible(d.open);
-                        const cMins = parseTimeFlexible(d.close);
-                        if (oMins < minO) minO = oMins;
-                        if (cMins > maxC) maxC = cMins;
+                    if (d && d.isOpen && d.start && d.end) {
+                        const cleanStart = String(d.start).replace(/[^0-9:]/g, '').trim();
+                        const cleanEnd = String(d.end).replace(/[^0-9:]/g, '').trim();
+
+                        if (cleanStart && cleanEnd) {
+                            const oMins = timeToMins(cleanStart);
+                            let cMins = timeToMins(cleanEnd);
+                            if (cMins < oMins) cMins += 1440;
+
+                            if (oMins < minO) minO = oMins;
+                            if (cMins > maxC) maxC = cMins;
+                            hasValidHours = true;
+                        }
                     }
                 });
             }
         }
-        if (minO === 1440) minO = 420; // 7am default
-        if (maxC === 0) maxC = 1200; // 8pm default
-        return { minOpen: minO, maxClose: maxC };
+        
+        return { minOpen: minO, maxClose: maxC, hasValidHours, branchName: b?.name };
     }, [validBranches]);
 
-    // 💡 SUGERENCIAS GLOBALES 
+    // ============================================================================
+    // 🧠 CEREBRO DE SALY AI: PROTOCOLO ESTRICTO + AGRUPACIÓN INTELIGENTE
+    // ============================================================================
     const globalInsights = useMemo(() => {
-        const insights = [];
-        if (hasSelectedBranches || editingGroup) return insights; 
+        if (editingGroup || currentForm.start) return []; 
+
+        const activeShifts = shifts.filter(s => s.is_active !== false && s.isActive !== false);
+
+        if (activeShifts.length === 0) {
+            return [{
+                key: 'empty_catalog',
+                type: 'suggestion',
+                branch: 'Catálogo Vacío',
+                text: 'No tienes ningún turno creado. Te sugiero crear el turno estándar de apertura (7:00 am - 4:00 pm).',
+                action: { start: '07:00', end: '16:00' }
+            }];
+        }
+
+        const catalogMins = activeShifts.map(s => {
+            const sMins = timeToMins(s.start_time?.substring(0,5) || s.start);
+            let eMins = timeToMins(s.end_time?.substring(0,5) || s.end);
+            if (eMins < sMins) eMins += 1440;
+            return { id: s.id, start: sMins, end: eMins };
+        });
+
+        // 🚨 DICCIONARIO PARA AGRUPAR ALERTAS IDENTICAS
+        const groupedInsightsMap = {};
 
         validBranches.forEach(b => {
             const limits = getBranchLimits(b.id);
-            const bShifts = shifts.filter(s => (s.is_active !== false && s.isActive !== false) && String(s.branch_id || s.branchId) === String(b.id));
 
-            if (bShifts.length === 0) {
-                const key = `${b.id}_empty`;
-                if (!dismissedSugs.has(key)) {
-                    insights.push({
-                        key,
-                        type: 'suggestion',
-                        branch: b.name,
-                        text: `La sucursal no tiene turnos base. Te sugiero crear el turno de apertura (${formatHourAMPM(Math.floor(limits.minOpen/60))}).`,
-                        action: { branchId: b.id, start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(limits.minOpen + 540) }
-                    });
-                }
-            } else {
-                let minStart = 1440;
-                let maxEnd = 0;
-                bShifts.forEach(s => {
-                     const start = timeToMins(s.start_time?.substring(0,5) || s.start);
-                     let end = timeToMins(s.end_time?.substring(0,5) || s.end);
-                     if (end < start) end += 1440;
-                     if (start < minStart) minStart = start;
-                     if (end > maxEnd) maxEnd = end;
-                });
+            // 1. Error de Falta de Datos
+            if (!limits.hasValidHours) {
+                const sig = 'error_no_hours';
+                if (!groupedInsightsMap[sig]) groupedInsightsMap[sig] = { type: 'error', branches: [], reason: 'no_hours', action: null };
+                groupedInsightsMap[sig].branches.push(b.name);
+                return; 
+            }
 
-                if (minStart > limits.minOpen + 30) {
-                    const key = `${b.id}_apertura`;
-                    if (!dismissedSugs.has(key)) {
-                        insights.push({
-                            key,
-                            type: 'suggestion',
-                            branch: b.name,
-                            text: `Apertura descubierta. La sucursal abre a las ${formatHourAMPM(Math.floor(limits.minOpen/60))} pero el primer turno inicia a las ${formatHourAMPM(Math.floor(minStart/60))}.`,
-                            action: { branchId: b.id, start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(limits.minOpen + 540) }
-                        });
-                    }
-                } 
-                if (maxEnd < limits.maxClose - 30) {
-                    const key = `${b.id}_cierre`;
-                    if (!dismissedSugs.has(key)) {
-                        insights.push({
-                            key,
-                            type: 'suggestion',
-                            branch: b.name,
-                            text: `Cierre descubierto. La sucursal cierra a las ${formatHourAMPM(Math.floor(limits.maxClose/60))} pero el último turno termina a las ${formatHourAMPM(Math.floor(maxEnd/60))}.`,
-                            action: { branchId: b.id, start: minsToTimeStr(limits.maxClose - 540), end: minsToTimeStr(limits.maxClose) }
-                        });
-                    }
+            // 2. Filtro de Turnos Permitidos
+            const validShiftsForBranch = catalogMins.filter(s => 
+                s.start >= limits.minOpen && s.end <= limits.maxClose
+            );
+
+            // 3. Error: Ningún turno encaja
+            if (validShiftsForBranch.length === 0) {
+                const sig = `error_no_valid_${limits.minOpen}_${limits.maxClose}`;
+                if (!groupedInsightsMap[sig]) {
+                    groupedInsightsMap[sig] = { 
+                        type: 'error', branches: [], reason: 'no_valid_shifts', limits,
+                        action: { start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(Math.min(limits.minOpen + 540, limits.maxClose)) } 
+                    };
                 }
+                groupedInsightsMap[sig].branches.push(b.name);
+                return; 
+            }
+
+            // 4. Auditoría de Aperturas y Cierres
+            let branchMinStart = 1440;
+            let branchMaxEnd = 0;
+            validShiftsForBranch.forEach(s => {
+                if (s.start < branchMinStart) branchMinStart = s.start;
+                if (s.end > branchMaxEnd) branchMaxEnd = s.end;
+            });
+
+            if (branchMinStart > limits.minOpen + 30) {
+                const sig = `sug_apertura_${limits.minOpen}_${branchMinStart}`;
+                if (!groupedInsightsMap[sig]) {
+                    groupedInsightsMap[sig] = { 
+                        type: 'suggestion', branches: [], reason: 'apertura_global', limits, branchMinStart,
+                        action: { start: minsToTimeStr(limits.minOpen), end: minsToTimeStr(Math.min(limits.minOpen + 540, limits.maxClose)) } 
+                    };
+                }
+                groupedInsightsMap[sig].branches.push(b.name);
+            } 
+            
+            if (branchMaxEnd < limits.maxClose - 30) {
+                const sig = `sug_cierre_${limits.maxClose}_${branchMaxEnd}`;
+                if (!groupedInsightsMap[sig]) {
+                    groupedInsightsMap[sig] = { 
+                        type: 'suggestion', branches: [], reason: 'cierre_global', limits, branchMaxEnd,
+                        action: { start: minsToTimeStr(Math.max(limits.maxClose - 540, limits.minOpen)), end: minsToTimeStr(limits.maxClose) } 
+                    };
+                }
+                groupedInsightsMap[sig].branches.push(b.name);
             }
         });
         
-        return insights.slice(0, 6); 
-    }, [validBranches, shifts, hasSelectedBranches, editingGroup, getBranchLimits, dismissedSugs]);
+        // 🚨 TRANSFORMAR EL DICCIONARIO EN TARJETAS FINALES (CON GRAMÁTICA DINÁMICA)
+        const finalInsights = [];
 
-    // 🕵️ AUDITOR EN TIEMPO REAL 
-    const { autoName, activeAlerts, hasBlockingError } = useMemo(() => {
-        if (!hasSelectedBranches) return { autoName: 'Esperando datos...', activeAlerts: [], hasBlockingError: false };
+        Object.entries(groupedInsightsMap).forEach(([key, val]) => {
+            if (dismissedSugs.has(key)) return;
 
-        let minO = 1440; let maxC = 0;
-        currentForm.branchIds.forEach(id => {
-            const lim = getBranchLimits(id);
-            if (lim.minOpen < minO) minO = lim.minOpen;
-            if (lim.maxClose > maxC) maxC = lim.maxClose;
+            const isPlural = val.branches.length > 1;
+            const branchTitle = formatBranchNames([...val.branches]);
+            let text = '';
+
+            if (val.reason === 'no_hours') {
+                text = isPlural
+                    ? 'No tienen su horario operativo configurado. Configúralo en el Módulo Sucursales para que Saly pueda auditar.'
+                    : 'No tiene su horario operativo configurado. Configúralo en el Módulo Sucursales para que Saly pueda auditar.';
+            } else if (val.reason === 'no_valid_shifts') {
+                 text = isPlural
+                     ? `Operan de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno global encaja legalmente aquí.`
+                     : `Opera de ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} a ${formatHourAMPM(Math.floor(val.limits.maxClose/60))}. Ningún turno global encaja legalmente aquí.`;
+            } else if (val.reason === 'apertura_global') {
+                 text = isPlural
+                     ? `Abren a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.`
+                     : `Abre a las ${formatHourAMPM(Math.floor(val.limits.minOpen/60))} pero los turnos válidos empiezan a las ${formatHourAMPM(Math.floor(val.branchMinStart/60))}. Crea un turno de apertura exacto.`;
+            } else if (val.reason === 'cierre_global') {
+                 text = isPlural
+                     ? `Cierran a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.`
+                     : `Cierra a las ${formatHourAMPM(Math.floor(val.limits.maxClose/60))} pero los turnos válidos terminan a las ${formatHourAMPM(Math.floor(val.branchMaxEnd/60))}. Crea un turno de cierre exacto.`;
+            }
+
+            finalInsights.push({
+                key,
+                type: val.type,
+                branch: branchTitle,
+                text,
+                action: val.action
+            });
         });
 
-        let classification = 'Sin Clasificar';
+        return finalInsights.slice(0, 6); 
+    }, [validBranches, shifts, editingGroup, currentForm.start, getBranchLimits, dismissedSugs]);
+
+    const { autoName, activeAlerts, hasBlockingError } = useMemo(() => {
+        let classification = 'Turno Estándar';
         const alerts = [];
         let isBlocking = false;
 
@@ -333,18 +396,13 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
             let eMins = timeToMins(currentForm.end);
             if (eMins < sMins) eMins += 1440;
 
-            if (sMins <= minO + 60) classification = 'Apertura';
-            else if (eMins >= maxC - 60) classification = 'Cierre';
+            if (sMins <= 480) classification = 'Apertura'; 
+            else if (eMins >= 1020) classification = 'Cierre'; 
             else classification = 'Enlace';
 
             const duration = (eMins - sMins) / 60;
             if (duration > 9) {
                 alerts.push({ type: 'warning', text: `El turno excede las 9 horas (${duration.toFixed(1)}h). Considera el cansancio del personal.` });
-            }
-
-            if (sMins < minO || (eMins > 1440 ? eMins - 1440 : eMins) > maxC) {
-                alerts.push({ type: 'error', text: `Horario fuera de rango operativo (${formatHourAMPM(Math.floor(minO/60))} a ${formatHourAMPM(Math.floor(maxC/60))}).` });
-                isBlocking = true;
             }
 
             const isDuplicate = shifts.some(s => {
@@ -353,24 +411,22 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
                 const sStart = s.start_time?.substring(0,5) || s.start;
                 const sEnd = s.end_time?.substring(0,5) || s.end;
                 const matchesTime = sStart === currentForm.start && sEnd === currentForm.end;
-                const matchesBranch = currentForm.branchIds.includes(String(s.branch_id || s.branchId));
                 const isNotEditingCurrent = editingGroup ? !editingGroup.all_ids.includes(s.id) : true;
-                return matchesTime && matchesBranch && isNotEditingCurrent;
+                return matchesTime && isNotEditingCurrent;
             });
 
             if (isDuplicate) {
-                alerts.push({ type: 'error', text: 'Ya existe un turno idéntico activo en las sucursales elegidas.' });
+                alerts.push({ type: 'error', text: 'Ya existe un turno global con exactamente este mismo horario.' });
                 isBlocking = true;
             }
         }
 
         return { autoName: classification, activeAlerts: alerts, hasBlockingError: isBlocking };
-    }, [currentForm, hasSelectedBranches, getBranchLimits, shifts, editingGroup]);
+    }, [currentForm, shifts, editingGroup]);
 
     const applySuggestion = useCallback((action) => {
         setEditingGroup(null);
         setCurrentForm({
-            branchIds: [String(action.branchId)],
             start: action.start,
             end: action.end
         });
@@ -382,9 +438,9 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
     }, []);
 
     // ============================================================================
-    // 🚀 ORDENAMIENTO GLOBAL DE TURNOS 
+    // 🚀 ORDENAMIENTO DE TURNOS GLOBALES
     // ============================================================================
-    const groupedShifts = useMemo(() => {
+    const globalShifts = useMemo(() => {
         if (!shifts) return [];
         
         const filtered = shifts.filter(s => {
@@ -399,54 +455,28 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         filtered.forEach(s => {
             const st = s.start_time || s.start;
             const en = s.end_time || s.end;
-            const bId = String(s.branch_id || s.branchId);
             const key = `${s.name}_${st}_${en}`;
             
             if (!map[key]) {
                 map[key] = { 
                     groupId: key, 
                     name: s.name, start: st, end: en, 
-                    branch_ids: bId && bId !== "null" && bId !== "undefined" ? [bId] : [], 
                     all_ids: [s.id], shifts_data: [s] 
                 };
             } else {
-                if (bId && bId !== "null" && bId !== "undefined" && !map[key].branch_ids.includes(bId)) {
-                    map[key].branch_ids.push(bId);
-                }
                 map[key].all_ids.push(s.id);
                 map[key].shifts_data.push(s);
             }
         });
 
-        return Object.values(map).sort((a, b) => {
-            const getSortKey = (group) => {
-                if (!group.branch_ids || group.branch_ids.length === 0) return '000_general'; 
-                const names = group.branch_ids.map(id => {
-                    const branch = branches.find(br => String(br.id) === String(id));
-                    return branch ? branch.name.toLowerCase() : 'zzz';
-                });
-                return names.sort().join('_');
-            };
-
-            const keyA = getSortKey(a);
-            const keyB = getSortKey(b);
-
-            if (keyA < keyB) return -1;
-            if (keyA > keyB) return 1;
-            return timeToMins(a.start) - timeToMins(b.start);
-        });
-    }, [shifts, shiftTab, debouncedSearch, branches]);
+        return Object.values(map).sort((a, b) => timeToMins(a.start) - timeToMins(b.start));
+    }, [shifts, shiftTab, debouncedSearch]);
 
     // ============================================================================
     // 🚀 ACCIONES DEL FORMULARIO
     // ============================================================================
     const handleSaveShift = async (e) => {
         if (e) e.preventDefault();
-        
-        if (!hasSelectedBranches) {
-            showToast("Selecciona una sucursal", "Debes aplicar el turno a por lo menos una sucursal.", "error");
-            return;
-        }
 
         if (!currentForm.start || !currentForm.end) {
             showToast("Campos incompletos", "Asegúrate de darle horas al turno.", "error");
@@ -461,49 +491,22 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         setIsLoading(true);
         try {
             if (editingGroup) {
-                const originalIds = editingGroup.branch_ids;
-                const newIds = currentForm.branchIds;
-
-                for (const bId of newIds) {
-                    if (originalIds.includes(bId)) {
-                        const existing = editingGroup.shifts_data.find(s => String(s.branch_id || s.branchId) === bId);
-                        if (existing) {
-                            await updateShift(existing.id, {
-                                name: autoName, 
-                                start_time: `${currentForm.start}:00`,
-                                end_time: `${currentForm.end}:00`,
-                                branch_id: parseInt(bId, 10)
-                            });
-                        }
-                    } else {
-                        await addShift({
-                            name: autoName,
-                            start: currentForm.start,
-                            end: currentForm.end,
-                            branchId: parseInt(bId, 10)
-                        });
-                    }
-                }
-                
-                for (const bId of originalIds) {
-                    if (!newIds.includes(bId)) {
-                        const existing = editingGroup.shifts_data.find(s => String(s.branch_id || s.branchId) === bId);
-                        if (existing) {
-                            await archiveShift(existing.id); 
-                        }
-                    }
-                }
-                showToast("Éxito", "Grupo de turnos actualizado", "success");
+                const targetId = editingGroup.shifts_data[0].id;
+                await updateShift(targetId, {
+                    name: autoName, 
+                    start_time: `${currentForm.start}:00`,
+                    end_time: `${currentForm.end}:00`,
+                    branch_id: null 
+                });
+                showToast("Éxito", "Turno actualizado en el catálogo global", "success");
             } else {
-                for (const bId of currentForm.branchIds) {
-                    await addShift({
-                        name: autoName,
-                        start: currentForm.start,
-                        end: currentForm.end,
-                        branchId: parseInt(bId, 10)
-                    });
-                }
-                showToast("Éxito", "Turnos creados en las sucursales elegidas", "success");
+                await addShift({
+                    name: autoName,
+                    start: currentForm.start,
+                    end: currentForm.end,
+                    branchId: null 
+                });
+                showToast("Éxito", "Turno añadido al catálogo global", "success");
             }
             cancelEditing();
         } catch (err) {
@@ -517,23 +520,22 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         setEditingGroup(null);
         setCurrentForm({
             start: group.start,
-            end: group.end,
-            branchIds: group.branch_ids
+            end: group.end
         });
-        showToast("Modo Duplicar", "Copia los horarios a nuevas sucursales.", "info");
+        showToast("Modo Duplicar", "Copia las horas para crear uno nuevo.", "info");
     }, [showToast]);
 
     const handleArchiveGroup = useCallback(async (ids) => {
         try {
             for(let id of ids) await archiveShift(id);
-            showToast("Archivado", `Turnos archivados correctamente.`, "success");
+            showToast("Archivado", `Turno oculto del catálogo.`, "success");
         } catch (err) { showToast("Error", "No se pudo archivar.", "error"); }
     }, [archiveShift, showToast]);
 
     const handleUnarchiveGroup = useCallback(async (ids) => {
         try {
             for(let id of ids) await unarchiveShift(id);
-            showToast("Reactivado", `Turnos disponibles nuevamente.`, "success");
+            showToast("Reactivado", `Turno disponible en catálogo.`, "success");
         } catch (err) { showToast("Error", "No se pudo reactivar.", "error"); }
     }, [unarchiveShift, showToast]);
 
@@ -541,31 +543,20 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
         setEditingGroup(group);
         setCurrentForm({
             start: group.start,
-            end: group.end,
-            branchIds: group.branch_ids
+            end: group.end
         });
     }, []);
 
     const cancelEditing = useCallback(() => {
         setEditingGroup(null);
-        setCurrentForm({ start: '', end: '', branchIds: [] });
+        setCurrentForm({ start: '', end: '' });
     }, []);
-
-    const toggleBranchSelection = (branchId) => {
-        const idStr = String(branchId);
-        setCurrentForm(prev => {
-            const newIds = prev.branchIds.includes(idStr) 
-                ? prev.branchIds.filter(id => id !== idStr) 
-                : [...prev.branchIds, idStr];
-            return { ...prev, branchIds: newIds };
-        });
-    };
 
     return (
         <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-[calc(100vh-230px)] lg:h-[calc(100vh-180px)]">
             <style>{`@keyframes subtle-shake { 0%, 100% { transform: rotate(0deg) scale(1.01); } 25% { transform: rotate(-0.5deg) scale(1.01); } 75% { transform: rotate(0.5deg) scale(1.01); } } .animate-subtle-shake { animation: subtle-shake 0.4s ease-in-out infinite; }`}</style>
             
-            {/* 🚨 COLUMNA IZQUIERDA FIJA CON HOVER SUTIL Y SIN OVERFLOW-HIDDEN */}
+            {/* 🚨 COLUMNA IZQUIERDA FIJA */}
             <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
                 <div className={`bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-white/50 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-amber-300/80 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.03)]'}`}>              
                     
@@ -582,53 +573,31 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
                     </div>
 
                     <form onSubmit={handleSaveShift} className="space-y-6 relative z-10 flex-1 flex flex-col">
-                        {/* Selector de Sucursales */}
-                        <div>
-                            <div className="flex justify-between items-center mb-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
-                                    Aplicar a:
-                                </label>
-                                <span className="text-[10px] font-black text-[#007AFF] bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100 uppercase tracking-widest">
-                                    {currentForm.branchIds.length} Elegidas
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {validBranches.map(b => {
-                                    const isSelected = currentForm.branchIds.includes(String(b.id));
-                                    return (
-                                        <button
-                                            key={b.id}
-                                            type="button"
-                                            onClick={() => toggleBranchSelection(b.id)}
-                                            className={`px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 border ${isSelected ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-[0_4px_15px_rgba(0,122,255,0.3)]' : 'bg-white/80 text-slate-500 border-white hover:border-blue-200 hover:text-[#007AFF]'}`}
-                                        >
-                                            {b.name}
-                                        </button>
-                                    )
-                                })}
-                            </div>
+                        
+                        <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 mb-2">
+                            <Globe size={16} className="text-slate-400 mt-0.5 shrink-0" strokeWidth={2.5} />
+                            <p className="text-[11px] font-medium text-slate-500 leading-snug">
+                                Este turno se añadirá al <strong>Catálogo Global</strong> y podrá ser utilizado por cualquier sucursal de la empresa.
+                            </p>
                         </div>
 
-                        {/* HORARIOS (Visibles solo si hay sucursal elegida) */}
-                        {hasSelectedBranches && (
-                            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="pt-4 border-t border-black/[0.04] grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
-                                        <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm({...currentForm, start: v})} />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
-                                        <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm({...currentForm, end: v})} />
-                                    </div>
+                        {/* HORARIOS */}
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="pt-2 grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
+                                    <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm({...currentForm, start: v})} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
+                                    <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm({...currentForm, end: v})} />
                                 </div>
                             </div>
-                        )}
+                        </div>
                         
-                        {/* 🕵️ PANEL DE ALERTAS DE SALY AI (Minimalista e integrado en la parte inferior) */}
-                        {hasSelectedBranches && currentForm.start && currentForm.end && (
+                        {/* 🕵️ PANEL DE ALERTAS DE SALY AI */}
+                        {currentForm.start && currentForm.end && (
                             <div className="mt-2 animate-in fade-in slide-in-from-top-4 duration-500">
-                               {/* 🚨 IDENTIDAD RESTAURADA DE SALY AI */}
                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-cyan-500/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
                                    <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500 rounded-full blur-[50px] opacity-20 pointer-events-none"></div>
                                    <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3 relative z-10">
@@ -653,7 +622,7 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
                                        ) : (
                                            <div className="p-3 text-center">
                                                <CheckCircle2 size={24} className="text-emerald-400 mx-auto" strokeWidth={1.5} />
-                                               <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mt-2">Todo está perfecto</p>
+                                               <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mt-2">Horario coherente</p>
                                            </div>
                                        )}
                                    </div>
@@ -663,7 +632,7 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
 
                         <button 
                             type="submit" 
-                            disabled={isLoading || !hasSelectedBranches || hasBlockingError} 
+                            disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end} 
                             className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none ${editingGroup ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.3)]' : 'bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)]'}`}
                         >
                             {isLoading ? <><Loader2 size={18} className="animate-spin" /> Procesando...</> : editingGroup ? <><Save size={18} strokeWidth={2.5} /> Guardar Cambios</> : <><Send size={18} strokeWidth={2.5} /> Registrar Turno</>}
@@ -675,7 +644,7 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
             {/* 🚨 COLUMNA DERECHA: GRID DE TARJETAS */}
             <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
                 <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
-                    {groupedShifts.length === 0 && globalInsights.length === 0 ? (
+                    {globalShifts.length === 0 && globalInsights.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${debouncedSearch ? 'bg-[#007AFF]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
@@ -692,7 +661,6 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 w-full">
-                            {/* 💡 RENDERIZAR SUGERENCIAS DE SALY */}
                             {globalInsights.map((insight) => (
                                 <SuggestionCard 
                                     key={insight.key} 
@@ -702,17 +670,15 @@ const TabShifts = ({ branches, filterBranch, shiftTab, shiftSearch }) => {
                                 />
                             ))}
 
-                            {/* 💡 RENDERIZAR TURNOS REALES */}
-                            {groupedShifts.map((group, idx) => (
+                            {globalShifts.map((group, idx) => (
                                 <TurnoCard 
-                                    key={group.groupId} // 🚨 USAMOS GROUPID AQUÍ
+                                    key={group.groupId}
                                     group={group} 
-                                    branches={branches}
-                                    onEdit={() => editingGroup && editingGroup.groupId === group.groupId ? cancelEditing() : startEditing(group)} // 🚨 USAMOS GROUPID AQUÍ
+                                    onEdit={() => editingGroup && editingGroup.groupId === group.groupId ? cancelEditing() : startEditing(group)} 
                                     onDuplicate={handleDuplicate}
                                     onArchive={handleArchiveGroup}
                                     onUnarchive={handleUnarchiveGroup}
-                                    isEditingThis={editingGroup && editingGroup.groupId === group.groupId} // 🚨 USAMOS GROUPID AQUÍ
+                                    isEditingThis={editingGroup && editingGroup.groupId === group.groupId} 
                                     onCancelEditing={cancelEditing}
                                 />
                             ))}

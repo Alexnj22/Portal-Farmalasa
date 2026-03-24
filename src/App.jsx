@@ -13,7 +13,7 @@ import AdminLayout from "./components/layout/AdminLayout";
 import UserHeader from "./components/layout/UserHeader";
 import UnifiedModal from "./components/UnifiedModal";
 import AttendanceMonitorView from "./views/AttendanceMonitorView";
-import DashboardView from "./views/DashboardView";
+import StaffManagementView from "./views/StaffManagementView";
 import BranchesView from "./views/BranchesView";
 import BranchDetailView from "./views/BranchDetailView";
 import RolesView from "./views/RolesView";
@@ -224,7 +224,7 @@ function MainApp() {
                                     <Routes>
                                         <Route path="monitor" element={<AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} />} />
                                         <Route path="audit" element={<AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} />} />
-                                        <Route path="dashboard" element={<DashboardView setView={setView} setActiveEmployee={setActiveEmployee} openModal={openModal} searchTerm={searchTerm} setSearchTerm={setSearchTerm} selectedBranch={selectedBranch} setSelectedBranch={setSelectedBranch} />} />
+                                        <Route path="dashboard" element={<StaffManagementView setView={setView} setActiveEmployee={setActiveEmployee} openModal={openModal} searchTerm={searchTerm} setSearchTerm={setSearchTerm} selectedBranch={selectedBranch} setSelectedBranch={setSelectedBranch} />} />
                                         <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
                                         <Route path="auditview" element={<AuditView openModal={openModal} />} />
                                         <Route path="branches" element={<BranchesView openModal={openModal} setView={setView} setActiveBranch={setActiveBranch} />} />

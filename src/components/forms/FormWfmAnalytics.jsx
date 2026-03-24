@@ -5,7 +5,7 @@ import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePo
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
-import { parseTimeFlexible } from '../../utils/scheduleHelpers';
+import { parseTimeFlexible, timeToMins } from '../../utils/scheduleHelpers';
 
 const DAYS_MAP = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -49,7 +49,6 @@ const FormWfmAnalytics = ({ branches }) => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                // Obtener fecha de Hoy respetando zona horaria local
                 const today = new Date();
                 const yearToday = today.getFullYear();
                 const monthToday = String(today.getMonth() + 1).padStart(2, '0');
@@ -86,39 +85,42 @@ const FormWfmAnalytics = ({ branches }) => {
         fetchData();
     }, [selectedBranch, timeRange]);
 
-    // 🚀 MOTOR DE CÁLCULO DINÁMICO (HORARIO LIMITADO Y ESTÁNDARES ABSOLUTOS)
+    // 🚀 MOTOR DE CÁLCULO ESTADÍSTICO DINÁMICO (CAMPANA DE GAUSS / PERCENTILES)
     const chartData = useMemo(() => {
         if (!salesData.length) return [];
 
-        // 1. OBTENER HORARIO REAL DE APERTURA (IGUAL QUE EN SchedulesView)
-        let openH = 7; let closeH = 18; // Default: Última columna a las 6:00 PM
+        let openH = 7; let closeH = 18; 
         const currentBranch = branches.find(b => String(b.id) === String(selectedBranch));
         
         if (currentBranch) {
-            const sch = currentBranch.weeklyHours || currentBranch.weekly_hours || currentBranch.settings?.schedule;
+            let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
+            if (typeof sch === 'string') {
+                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+            }
+
             if (sch && typeof sch === 'object') {
                 let minOpen = 1440; let maxClose = 0;
                 Object.values(sch).forEach(d => {
-                    if (d && d.open && d.close && !d.isClosed && !d.isOff) {
-                        const oMins = parseTimeFlexible(d.open);
-                        const cMins = parseTimeFlexible(d.close);
+                    if (d && d.isOpen !== false && !d.isClosed && !d.isOff) {
+                        const cleanStart = String(d.start || d.open || '').replace(/[^0-9:]/g, '').trim();
+                        const cleanEnd = String(d.end || d.close || '').replace(/[^0-9:]/g, '').trim();
                         
-                        if (oMins < minOpen) minOpen = oMins;
-                        if (cMins > maxClose) maxClose = cMins;
+                        if (cleanStart && cleanEnd) {
+                            const oMins = timeToMins(cleanStart);
+                            let cMins = timeToMins(cleanEnd);
+                            if (cMins < oMins) cMins += 1440;
+
+                            if (oMins < minOpen) minOpen = oMins;
+                            if (cMins > maxClose) maxClose = cMins;
+                        }
                     }
                 });
-                if (minOpen < 1440) {
-                    openH = Math.floor(minOpen / 60);
-                }
-                if (maxClose > 0) {
-                    // 🚨 LA MATEMÁTICA CORRECTA PARA EL CIERRE (RESTANDO 1 HORA)
-                    closeH = Math.ceil(maxClose / 60) - 1;
-                }
+                if (minOpen < 1440) openH = Math.floor(minOpen / 60);
+                if (maxClose > 0) closeH = Math.ceil(maxClose / 60) - 1;
             }
         }
-        if (closeH <= openH) closeH = openH + 11; // Fallback
+        if (closeH <= openH) closeH = openH + 11; 
 
-        // 2. Filtrar datos para que solo incluyan horas operativas
         const validSalesData = salesData.filter(row => {
             const hour = Number(row.sale_hour);
             return hour >= openH && hour <= closeH;
@@ -126,16 +128,49 @@ const FormWfmAnalytics = ({ branches }) => {
 
         if (validSalesData.length === 0) return [];
 
-        // Obtener la fecha de hoy para Tooltip
         const todayStr = new Date().toISOString().split('T')[0];
 
+        // Función para aplicar colores basados en Percentiles
+        const applyColorsStatistical = (arr) => {
+            const activeAvgs = arr.map(o => o.avgTransactions).filter(v => v > 0);
+            
+            if (activeAvgs.length === 0) {
+                return arr.map(item => ({ ...item, fill: '#e2e8f0' })); 
+            }
+
+            activeAvgs.sort((a, b) => a - b);
+            
+            const q1Index = Math.floor(activeAvgs.length * 0.25);
+            const q3Index = Math.floor(activeAvgs.length * 0.75);
+            const q90Index = Math.floor(activeAvgs.length * 0.90); 
+
+            const q1 = activeAvgs[q1Index];           
+            const q3 = activeAvgs[q3Index];           
+            const q90 = activeAvgs[q90Index];         
+
+            return arr.map(item => {
+                let fill = '#e2e8f0'; // Default: Muerta (Gris)
+                
+                if (item.avgTransactions === 0) {
+                    fill = '#e2e8f0'; 
+                } else if (item.avgTransactions >= q90 && q90 > q3) {
+                    fill = '#FF2D55'; // Crítica (Rojo)
+                } else if (item.avgTransactions >= q3) {
+                    fill = '#FF9500'; // Pico (Naranja)
+                } else if (item.avgTransactions >= q1) {
+                    fill = '#007AFF'; // Normal (Azul)
+                }
+                
+                return { ...item, fill };
+            });
+        };
+
         // ====================================================================
-        // VISTA: DÍAS DE LA SEMANA (Heatmap Relativo Garantizado)
+        // VISTA: DÍAS DE LA SEMANA 
         // ====================================================================
         if (activeView === 'DAYS') {
             const dayMap = {};
             const uniqueDatesMap = {};
-            let maxAvgDayInView = 0; // Pico dentro de los días mostrados
 
             DAYS_ORDER.forEach(d => {
                 dayMap[d] = { totalTrans: 0, totalSales: 0 };
@@ -155,29 +190,15 @@ const FormWfmAnalytics = ({ branches }) => {
                 const dateCount = uniqueDatesMap[d].size || 1;
                 const avgTrans = Math.round(dayMap[d].totalTrans / dateCount);
                 const avgSales = dayMap[d].totalSales / dateCount;
-                if (avgTrans > maxAvgDayInView) maxAvgDayInView = avgTrans; // Encontrar pico de la vista
 
                 return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: avgTrans, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
             });
 
-            // 🚨 GARANTÍA DE DIFERENCIACIÓN: Usamos maxAvgDayInView como Estándar Absoluto de esta vista
-            const absoluteStandard = Math.max(maxAvgDayInView, 1);
-
-            return finalDays.map(item => {
-                const colorIntensity = absoluteStandard > 0 ? item.avgTransactions / absoluteStandard : 0;
-                
-                // Umbrales estrictos de SchedulesView
-                const fill = colorIntensity >= 0.85 ? '#FF2D55' : // Crítica (Rojo: >85% del pico mostrado)
-                             colorIntensity >= 0.50 ? '#FF9500' : // Pico (Naranja: >50%)
-                             colorIntensity >= 0.15 ? '#007AFF' : // Normal (Azul: >15%)
-                             '#94A3B8'; // Muerta (Gris: <15%)
-                
-                return { ...item, fill };
-            });
+            return applyColorsStatistical(finalDays);
 
         } else {
             // ====================================================================
-            // VISTA: HORAS GENERALES O DE UN DÍA (Heatmap Relativo Garantizado)
+            // VISTA: HORAS GENERALES O DE UN DÍA ESPECÍFICO
             // ====================================================================
             const filteredData = activeView === 'GENERAL_HOURS'
                 ? validSalesData
@@ -185,9 +206,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
             const uniqueDatesCount = new Set(filteredData.map(d => d.sale_date)).size || 1;
             const hourlyMap = {};
-            let maxAvgHourInView = 0; // Pico dentro de las horas mostradas
 
-            // Rellenar las horas operativas para que el gráfico no salte huecos
             for (let h = openH; h <= closeH; h++) {
                 hourlyMap[h] = { hour: h, displayLabel: formatHourAMPM(h), totalTrans: 0, totalSales: 0, datesInHour: new Set() };
             }
@@ -201,48 +220,23 @@ const FormWfmAnalytics = ({ branches }) => {
                 }
             });
 
-            // 🚨 DETERMINAR SI ES VISTA DE HOY (para el Tooltip)
             const isTodayView = timeRange === '0';
 
             const finalHours = Object.values(hourlyMap).map(item => {
-                // Si es vista de Hoy, no promediamos (dateCount = 1). Si es histórico, promediamos.
                 const dateCount = isTodayView ? 1 : uniqueDatesCount; 
                 const avgTrans = isTodayView ? item.totalTrans : Math.round(item.totalTrans / dateCount);
                 const avgSales = isTodayView ? item.totalSales : (item.totalSales / dateCount);
-                if (avgTrans > maxAvgHourInView) maxAvgHourInView = avgTrans; // Encontrar pico de la vista
 
-                // Determinar fecha/rango para Tooltip
                 const datesArray = Array.from(item.datesInHour);
                 const tooltipDate = isTodayView ? todayStr : 
-                                   (datesArray.length === 1 ? datesArray[0] : null); // null -> "Promedio Histórico"
+                                   (datesArray.length === 1 ? datesArray[0] : null); 
 
                 return { ...item, avgTransactions: avgTrans, avgSales, tooltipDate };
             }).sort((a, b) => a.hour - b.hour);
 
-            // 🚨 GARANTÍA DE DIFERENCIACIÓN: Usamos maxAvgHourInView como Estándar Absoluto de esta vista
-            const absoluteStandard = Math.max(maxAvgHourInView, 1);
-
-            return finalHours.map(item => {
-                const colorIntensity = absoluteStandard > 0 ? item.avgTransactions / absoluteStandard : 0;
-                
-                // Umbrales estrictos de SchedulesView
-                const fill = colorIntensity >= 0.85 ? '#FF2D55' : // Crítica (Rojo: >85% del pico mostrado)
-                             colorIntensity >= 0.50 ? '#FF9500' : // Pico (Naranja: >50%)
-                             colorIntensity >= 0.15 ? '#007AFF' : // Normal (Azul: >15%)
-                             '#94A3B8'; // Muerta (Gris: <15%)
-                
-                return { ...item, fill };
-            });
+            return applyColorsStatistical(finalHours);
         }
     }, [salesData, activeView, timeRange, branches, selectedBranch]);
-
-    const totalStats = useMemo(() => {
-        if (!salesData.length) return { sales: 0, trans: 0 };
-        return salesData.reduce((acc, curr) => ({
-            sales: acc.sales + Number(curr.total_sales),
-            trans: acc.trans + Number(curr.transaction_count)
-        }), { sales: 0, trans: 0 });
-    }, [salesData]);
 
     const handleBarClick = (data) => {
         if (activeView === 'DAYS' && data?.dayOfWeek !== undefined) {
@@ -250,13 +244,11 @@ const FormWfmAnalytics = ({ branches }) => {
         }
     };
 
-    // 🚀 NUEVO TOOLTIP CON FECHA DINÁMICA SEGÚN RANGO (DISEÑO LIQUIDGLASS)
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             const isHistoricalView = timeRange !== '0';
             
-            // Lógica de fecha/rango para Tooltip
             let dateLabel = "Promedio Histórico";
             if (timeRange === '0') {
                 dateLabel = `Datos de Hoy (${new Date().toISOString().split('T')[0]})`;
@@ -434,6 +426,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-white/70 backdrop-blur-xl rounded-full py-3.5 px-6 border border-white/80 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
+                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#e2e8f0] shadow-sm"></div> Valle / Muerta</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#007AFF] shadow-sm"></div> Tráfico Normal</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF9500] shadow-sm"></div> Hora Pico (Aviso)</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF2D55] shadow-sm"></div> Hora Crítica</div>

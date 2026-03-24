@@ -1,7 +1,6 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
 
-// 🚨 CORRECCIÓN CRÍTICA: Prevenir "QuotaExceededError" en el LocalStorage
 const persistEmployees = (employees) => {
     try {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -9,9 +8,8 @@ const persistEmployees = (employees) => {
         const lightEmployees = employees.map(emp => {
             return {
                 ...emp,
-                history: [], // Vaciamos para no saturar caché (se carga bajo demanda)
-                documents: [], // Vaciamos para no saturar caché (se carga bajo demanda)
-                // Solo guardamos asistencia de las últimas 24h para que el Kiosco sobreviva a un F5
+                history: [], 
+                documents: [], 
                 attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
             };
         });
@@ -19,8 +17,6 @@ const persistEmployees = (employees) => {
     } catch (error) {
         console.warn("⚠️ Alerta de Memoria LocalStorage:", error);
     }
-
-    // Devolvemos el array original INTACTO para que el estado de Zustand siga teniendo todo
     return employees;
 };
 
@@ -34,65 +30,122 @@ export const createEmployeeSlice = (set, get) => ({
         return { employees: next };
     }),
 
-    uploadFileToStorage: async (file, bucket = 'photos', folder = '') => {
-        if (!file) return null;
+    // 🚨 FUNCIÓN MAESTRA DE ARCHIVOS POR EMPLEADO
+    // Estructura: empleados / {employeeId} / {folderPath} / archivo.jpg
+    uploadEmployeeFile: async (file, employeeId, folderPath = 'foto_perfil') => {
+        if (!file || !employeeId) return null;
         try {
+            const bucket = 'empleados'; 
             const fileExt = file.name.split(".").pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const path = folder
-                ? `${String(folder).replace(/\/+$/, '')}/${fileName}`
-                : fileName;
+            
+            const path = `${employeeId}/${folderPath}/${fileName}`;
 
-            const { error } = await supabase.storage.from(bucket).upload(path, file);
+            const { error } = await supabase.storage.from(bucket).upload(path, file, {
+                cacheControl: '3600',
+                upsert: true
+            });
+            
             if (error) throw error;
 
             const { data } = supabase.storage.from(bucket).getPublicUrl(path);
             return data.publicUrl;
         } catch (error) {
-            console.error(`Error subiendo archivo a ${bucket}:`, error.message);
+            console.error(`Error subiendo archivo al expediente:`, error.message);
             return null;
         }
     },
 
-    uploadPhotoToStorage: (file) => get().uploadFileToStorage(file, 'photos'),
+    uploadFileToStorage: async (file, bucket = 'documents', folder = '') => {
+        if (!file) return null;
+        try {
+            const fileExt = file.name.split(".").pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const path = folder ? `${String(folder).replace(/\/+$/, '')}/${fileName}` : fileName;
+            const { error } = await supabase.storage.from(bucket).upload(path, file);
+            if (error) throw error;
+            const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+            return data.publicUrl;
+        } catch (error) {
+            console.error(`Error genérico de subida:`, error.message);
+            return null;
+        }
+    },
 
     addEmployee: async (formData) => {
         try {
-            let publicPhotoUrl = null;
-            if (formData.photo && formData.photo instanceof File) {
-                publicPhotoUrl = await get().uploadPhotoToStorage(formData.photo);
-            }
+            // 🚨 CREAMOS LA VARIABLE NAME COMBINADA
+            const fNames = (formData.first_names || '').trim();
+            const lNames = (formData.last_names || '').trim();
+            const fullName = `${fNames} ${lNames}`.trim() || 'Sin Nombre';
 
             const dbPayload = {
-                name: formData.name,
+                first_names: fNames,
+                last_names: lNames,
+                name: fullName, // 🚨 GUARDADO DIRECTO EN BD
+                username: formData.username ? formData.username.trim().toLowerCase() : null,
                 code: formData.code,
+                
                 role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
                 secondary_role_id: formData.secondary_role_id ? parseInt(formData.secondary_role_id, 10) : null,
-                branch_id: formData.branchId ? parseInt(formData.branchId, 10) : null,
-                phone: formData.phone,
-                dui: formData.dui,
-                is_admin: formData.isAdmin || false,
-                birth_date: formData.birthDate || null,
-                hire_date: formData.hireDate || null,
-                photo_url: publicPhotoUrl || null
+                branch_id: formData.branch_id ? parseInt(formData.branch_id, 10) : null,
+                
+                gender: formData.gender || null,
+                blood_type: formData.blood_type || null,
+                marital_status: formData.marital_status || null,
+                birth_date: formData.birth_date || null,
+                dui: formData.dui || null,
+                phone: formData.phone || null,
+                address: formData.address || null,
+                
+                department: formData.department || null,
+                municipality: formData.municipality || null,
+                education_level: formData.education_level || null,
+                profession: formData.profession || null,
+
+                emergency_contact_name: formData.emergency_contact_name || null,
+                emergency_contact_phone: formData.emergency_contact_phone || null,
+                
+                contract_type: formData.contract_type || 'INDEFINIDO',
+                contract_end_date: formData.contract_type === 'TEMPORAL' ? (formData.contract_end_date || null) : null,
+                weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
+                base_salary: formData.base_salary ? parseFloat(formData.base_salary) : null,
+                hire_date: formData.hire_date || null,
+                afp_number: formData.afp_number || null,
+                isss_number: formData.isss_number || null,
+                bank_name: formData.bank_name || null,
+                account_number: formData.account_number || null,
+                
+                kiosk_pin: formData.kiosk_pin || null,
+                is_admin: formData.is_admin || false,
+                status: 'ACTIVO',
+                photo_url: null, 
             };
 
             const { data: newEmp, error } = await supabase.from("employees").insert([dbPayload]).select().single();
             if (error) throw error;
 
+            const uploadedFile = formData.file || formData.photo;
+            if (uploadedFile && uploadedFile instanceof File) {
+                const publicPhotoUrl = await get().uploadEmployeeFile(uploadedFile, newEmp.id, 'foto_perfil');
+                if (publicPhotoUrl) {
+                    await supabase.from("employees").update({ photo_url: publicPhotoUrl }).eq("id", newEmp.id);
+                    newEmp.photo_url = publicPhotoUrl; 
+                }
+            }
+
             await get().appendAuditLog('PERSONAL_ASIGNADO', newEmp.id, {
                 timeline_title: `Nuevo Ingreso: ${newEmp.name}`,
                 dimension: 'HR',
                 branch_id: newEmp.branch_id,
-                new_value: `Cargo asignado`
+                new_value: `Expediente creado`
             });
             
-            // 🔴 BENGALA: Avisar a la interfaz global que hubo un cambio en RRHH
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             const roles = get().roles;
-            const mainRoleName = roles.find(r => r.id === newEmp.role_id)?.name || null;
-            const secRoleName = roles.find(r => r.id === newEmp.secondary_role_id)?.name || null;
+            const mainRoleName = roles.find(r => String(r.id) === String(newEmp.role_id))?.name || null;
+            const secRoleName = roles.find(r => String(r.id) === String(newEmp.secondary_role_id))?.name || null;
 
             const appEmp = {
                 ...newEmp,
@@ -123,50 +176,84 @@ export const createEmployeeSlice = (set, get) => ({
         try {
             const dbPayload = { ...updatedData };
 
-            if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);
-            if (updatedData.photo instanceof File) dbPayload.photo_url = await get().uploadPhotoToStorage(updatedData.photo);
+            // 🚨 SI SE EDITAN LOS NOMBRES, ACTUALIZAMOS EL CAMPO 'NAME'
+            if (updatedData.first_names !== undefined || updatedData.last_names !== undefined) {
+                const fNames = (updatedData.first_names ?? '').trim();
+                const lNames = (updatedData.last_names ?? '').trim();
+                if (fNames || lNames) {
+                    dbPayload.name = `${fNames} ${lNames}`.trim();
+                }
+            }
+
+            if (updatedData.branch_id) dbPayload.branch_id = parseInt(updatedData.branch_id, 10);
+            else if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);
+            
+            const uploadedFile = updatedData.file || updatedData.photo;
+            if (uploadedFile instanceof File) {
+                dbPayload.photo_url = await get().uploadEmployeeFile(uploadedFile, id, 'foto_perfil');
+            }
 
             if (updatedData.role_id !== undefined) dbPayload.role_id = updatedData.role_id ? parseInt(updatedData.role_id, 10) : null;
             if (updatedData.secondary_role_id !== undefined) dbPayload.secondary_role_id = updatedData.secondary_role_id ? parseInt(updatedData.secondary_role_id, 10) : null;
+            
+            if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
+            if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
+            if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
+            
+            if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL') {
+                dbPayload.contract_end_date = null;
+            }
 
-            // Limpieza estricta de UI antes de enviar a BD
+            // 🚨 LIMPIEZA EXTREMA ANTES DE DB (Ahora respetamos 'name')
+            delete dbPayload.id; 
             delete dbPayload.branchId;
             delete dbPayload.photo;
+            delete dbPayload.file; 
             delete dbPayload.history;
             delete dbPayload.documents;
             delete dbPayload.attendance;
             delete dbPayload.role;
+            delete dbPayload.main_role; 
             delete dbPayload.secondary_role;
+            delete dbPayload.sec_role; 
+            delete dbPayload.effectiveStatus; 
+            delete dbPayload.created_at; 
+            delete dbPayload.photoPreview;
+            delete dbPayload.birthDate; 
+            delete dbPayload.hireDate; 
+            delete dbPayload.weeklySchedule; 
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
             const empEditado = get().employees.find(e => String(e.id) === String(id));
             await get().appendAuditLog('EDITAR_EMPLEADO', id, {
-                timeline_title: `Actualización de Personal: ${updatedData.name || empEditado?.name}`,
+                timeline_title: `Actualización de Personal: ${updated.name}`,
                 dimension: 'HR',
-                branch_id: updatedData.branchId || empEditado?.branchId,
-                new_value: 'Expediente modificado',
-                ...dbPayload
+                branch_id: updated.branch_id,
+                new_value: 'Expediente modificado'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             const roles = get().roles;
-            const mainRoleName = roles.find(r => r.id === updated.role_id)?.name || null;
-            const secRoleName = roles.find(r => r.id === updated.secondary_role_id)?.name || null;
+            const mainRoleName = roles.find(r => String(r.id) === String(updated.role_id))?.name || null;
+            const secRoleName = roles.find(r => String(r.id) === String(updated.secondary_role_id))?.name || null;
 
             set((state) => {
-                const next = state.employees.map((emp) => String(emp.id) !== String(id) ? emp : {
-                    ...emp,
-                    ...updated,
-                    branchId: updated.branch_id,
-                    photo: updated.photo_url,
-                    birthDate: updated.birth_date,
-                    hireDate: updated.hire_date,
-                    role: mainRoleName || emp.role,
-                    secondary_role: secRoleName !== null ? secRoleName : emp.secondary_role
+                const next = state.employees.map((emp) => {
+                    if (String(emp.id) !== String(id)) return emp;
+
+                    return {
+                        ...emp,
+                        ...updated,
+                        branchId: updated.branch_id ?? emp.branchId,
+                        photo: updated.photo_url ?? emp.photo,
+                        birthDate: updated.birth_date ?? emp.birthDate,
+                        hireDate: updated.hire_date ?? emp.hireDate,
+                        role: mainRoleName || emp.role,
+                        secondary_role: secRoleName !== null ? secRoleName : emp.secondary_role
+                    };
                 });
                 persistEmployees(next);
                 return { employees: next };
@@ -174,7 +261,7 @@ export const createEmployeeSlice = (set, get) => ({
             return true;
         } catch (err) {
             console.error("Error actualizando empleado:", err);
-            return false;
+            throw err; 
         }
     },
 
@@ -191,7 +278,6 @@ export const createEmployeeSlice = (set, get) => ({
                 new_value: 'Dado de baja en el sistema'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -222,14 +308,13 @@ export const createEmployeeSlice = (set, get) => ({
 
             let docObject = null;
             if (file) {
-                const url = await get().uploadFileToStorage(file, 'documents');
+                const url = await get().uploadEmployeeFile(file, employeeId, 'documentos/rrhh');
                 if (url) {
                     const { data: newDoc } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: newEvent.id, name: file.name, type: 'DOCUMENT', url: url }]).select().single();
                     docObject = newDoc;
                 }
             }
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -251,7 +336,7 @@ export const createEmployeeSlice = (set, get) => ({
     addDocumentToEvent: async (employeeId, eventId, file) => {
         if (!file) return;
         try {
-            const url = await get().uploadFileToStorage(file, 'documents');
+            const url = await get().uploadEmployeeFile(file, employeeId, 'documentos/rrhh');
             if (!url) throw new Error("Fallo al subir el archivo al storage");
 
             const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
@@ -266,7 +351,6 @@ export const createEmployeeSlice = (set, get) => ({
                 file_url: url 
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -318,11 +402,16 @@ export const createEmployeeSlice = (set, get) => ({
     registerAttendance: async (employeeId, type, metadata = null) => {
         const timestamp = new Date().toISOString();
 
+        let dbType = type;
+        if (type === 'ENTRY') dbType = 'PUNCH_IN';
+        if (type === 'EXIT') dbType = 'PUNCH_OUT';
+        if (type === 'BREAK_START') dbType = 'LUNCH_START';
+        if (type === 'BREAK_END') dbType = 'LUNCH_END';
+
         try {
-            // 1. Insertamos en Supabase y esperamos respuesta real
             const { data: newPunch, error } = await supabase
                 .from("attendance")
-                .insert([{ employee_id: employeeId, timestamp, type, details: metadata || {} }])
+                .insert([{ employee_id: employeeId, timestamp, type: dbType, details: metadata || {} }])
                 .select()
                 .single();
 
@@ -333,15 +422,17 @@ export const createEmployeeSlice = (set, get) => ({
             const employeeName = employee ? employee.name : 'Empleado Desconocido';
             const isKiosk = !!metadata?.audit_info;
 
-            // 2. Auditoría limpia sin duplicar info
             const kioskAuditInfo = metadata?.audit_info || null;
             const cleanDetails = { ...metadata };
             delete cleanDetails.audit_info;
 
-            const tipoMarcaje = type === 'ENTRY' ? 'Entrada' : type === 'EXIT' ? 'Salida' : type === 'BREAK_START' ? 'Inicio Descanso' : type === 'BREAK_END' ? 'Fin Descanso' : type;
+            const tipoMarcaje = dbType === 'PUNCH_IN' ? 'Entrada' : 
+                                dbType === 'PUNCH_OUT' ? 'Salida' : 
+                                dbType === 'LUNCH_START' ? 'Inicio Almuerzo' : 
+                                dbType === 'LUNCH_END' ? 'Fin Almuerzo' : 
+                                dbType === 'LACTATION_START' ? 'Inicio Lactancia' : 
+                                dbType === 'LACTATION_END' ? 'Fin Lactancia' : dbType;
 
-            // 🔴 FIX: Integramos la info extra dentro de 'details' correctamente
-            // y usamos una promesa encadenada para disparar la bengala global al terminar
             state.appendAuditLog(
                 `REGISTRO_ASISTENCIA`,
                 employeeId,
@@ -358,18 +449,16 @@ export const createEmployeeSlice = (set, get) => ({
                     } : null
                 }
             ).then(() => {
-                // 🔴 BENGALA: Para que las vistas de kiosco y sucursal se enteren
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
             }).catch(console.error);
 
-            // 3. Actualizamos estado de UI garantizando evitar duplicados
             set((state) => {
                 const next = state.employees.map(emp => {
                     if (String(emp.id) !== String(employeeId)) return emp;
 
-                    const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type, details: metadata };
+                    const actualPunch = newPunch || { id: `local-${Date.now()}`, timestamp, type: dbType, details: metadata };
 
-                    const exists = (emp.attendance || []).some(p => p.id === actualPunch.id);
+                    const exists = (emp.attendance || []).some(p => String(p.id) === String(actualPunch.id));
                     if (exists) return emp;
 
                     return {
@@ -382,7 +471,7 @@ export const createEmployeeSlice = (set, get) => ({
                 return { employees: next };
             });
 
-            return newPunch || { timestamp, type, details: metadata };
+            return newPunch || { timestamp, type: dbType, details: metadata };
 
         } catch (err) {
             console.error("❌ Error al registrar asistencia:", err);

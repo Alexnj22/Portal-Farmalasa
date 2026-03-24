@@ -2,9 +2,8 @@ import React, { useMemo, useEffect } from 'react';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
-import LiquidSelect from '../common/LiquidSelect'; // <-- Asegúrate de que la ruta sea correcta
+import LiquidSelect from '../common/LiquidSelect'; 
 
-// Helper de antigüedad
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
     const diffDays = Math.floor(Math.abs(new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));

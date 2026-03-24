@@ -18,10 +18,23 @@ import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
 import ScheduleChart from './schedule-tabs/components/ScheduleChart';
 import SalyCopilot from './schedule-tabs/components/SalyCopilot';
 import ScheduleCalendar from './schedule-tabs/components/ScheduleCalendar';
+import ConfirmModal from '../components/common/ConfirmModal'; // 🚨 IMPORTADO EL MODAL UI
+
+const dayNamesMap = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
 
 const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters } = useStaff();
     const [isPublishing, setIsPublishing] = useState(false);
+
+    // 🚨 ESTADO PARA CONTROLAR EL MODAL DE PUBLICACIÓN
+    const [publishState, setPublishState] = useState({
+        isOpen: false,
+        isDestructive: false,
+        title: '',
+        message: '',
+        confirmText: '',
+        bulkUpdates: null // Guardamos los datos aquí para ejecutarlos al confirmar
+    });
 
     const [viewMode, setViewMode] = useState('calendar');
     const [filterBranch, setFilterBranch] = useState('');
@@ -79,11 +92,12 @@ const SchedulesView = ({ openModal, setView }) => {
                     setShiftSearch(''); 
                 }
                 if (editingCell) setEditingCell(null);
+                if (publishState.isOpen) setPublishState(prev => ({ ...prev, isOpen: false })); // Cerrar modal con ESC
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isSearchExpanded, editingCell]);
+    }, [isSearchExpanded, editingCell, publishState.isOpen]);
 
     useEffect(() => {
         if (window.innerWidth >= 1024) {
@@ -127,7 +141,7 @@ const SchedulesView = ({ openModal, setView }) => {
         return `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
     }), [startDate]);
 
-    useEffect(() => {
+useEffect(() => {
         if (!filterBranch || viewMode === 'shifts') return;
         const fetchSales = async () => {
             setIsLoadingSales(true);
@@ -149,23 +163,30 @@ const SchedulesView = ({ openModal, setView }) => {
                 const currentBranch = branches.find(b => String(b.id) === String(filterBranch));
                 
                 if (currentBranch) {
-                    const sch = currentBranch.weeklyHours || currentBranch.weekly_hours || currentBranch.settings?.schedule;
+                    let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
+                    if (typeof sch === 'string') {
+                        try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+                    }
+
                     if (sch && typeof sch === 'object') {
                         let minOpen = 1440; let maxClose = 0;
                         Object.values(sch).forEach(d => {
-                            if (d && d.open && d.close && !d.isClosed && !d.isOff) {
-                                const oMins = parseTimeFlexible(d.open);
-                                const cMins = parseTimeFlexible(d.close);
-                                if (oMins < minOpen) minOpen = oMins;
-                                if (cMins > maxClose) maxClose = cMins;
+                            if (d && d.isOpen !== false && !d.isClosed && !d.isOff) {
+                                const cleanStart = String(d.start || d.open || '').replace(/[^0-9:]/g, '').trim();
+                                const cleanEnd = String(d.end || d.close || '').replace(/[^0-9:]/g, '').trim();
+                                
+                                if (cleanStart && cleanEnd) {
+                                    const oMins = timeToMins(cleanStart);
+                                    let cMins = timeToMins(cleanEnd);
+                                    if (cMins < oMins) cMins += 1440;
+
+                                    if (oMins < minOpen) minOpen = oMins;
+                                    if (cMins > maxClose) maxClose = cMins;
+                                }
                             }
                         });
-                        if (minOpen < 1440) {
-                            openH = Math.floor(minOpen / 60); 
-                        }
-                        if (maxClose > 0) {
-                            closeH = Math.ceil(maxClose / 60) - 1;
-                        }
+                        if (minOpen < 1440) openH = Math.floor(minOpen / 60); 
+                        if (maxClose > 0) closeH = Math.ceil(maxClose / 60) - 1;
                     }
                 }
 
@@ -174,8 +195,8 @@ const SchedulesView = ({ openModal, setView }) => {
                 const daysMap = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
                 const hourlyMap = {};
                 const specificHourlyMap = { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 0: {} };
-                const uniqueDates = new Set();
                 const uniqueDatesByDay = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set(), 0: new Set() };
+                const uniqueDates = new Set();
                 
                 const validHistoricalData = (rawSalesData || []).filter(row => {
                     const hour = Number(row.sale_hour);
@@ -198,39 +219,13 @@ const SchedulesView = ({ openModal, setView }) => {
                     uniqueDatesByDay[dNum].add(dStr);
                 });
 
-                let maxHistoricalAvgDay = 0;
-                [0,1,2,3,4,5,6].forEach(d => {
-                    const count = uniqueDatesByDay[d].size || 1;
-                    const avg = daysMap[d] / count;
-                    if (avg > maxHistoricalAvgDay) maxHistoricalAvgDay = avg;
-                });
-
-                let maxHistoricalAvgHourGeneral = 0;
-                const totalDays = uniqueDates.size || 1;
-                for (let h = openH; h <= closeH; h++) {
-                    const avg = (hourlyMap[h] || 0) / totalDays;
-                    if (avg > maxHistoricalAvgHourGeneral) maxHistoricalAvgHourGeneral = avg;
-                }
-
-                let maxSpecificAvgHour = 0;
-                [0,1,2,3,4,5,6].forEach(d => {
-                    const dCount = uniqueDatesByDay[d].size || 1;
-                    for (let h = openH; h <= closeH; h++) {
-                        const avg = (specificHourlyMap[d][h] || 0) / dCount;
-                        if (avg > maxSpecificAvgHour) maxSpecificAvgHour = avg;
-                    }
-                });
-
-                const absoluteStandardDaily = Math.max(maxHistoricalAvgDay, 1);
-                const absoluteStandardHourlyGeneral = Math.max(maxHistoricalAvgHourGeneral, 1);
-                const absoluteStandardHourlySpecific = Math.max(maxSpecificAvgHour, 1);
-
                 const finalDays = [1, 2, 3, 4, 5, 6, 0].map(d => {
                     const dCount = uniqueDatesByDay[d].size || 1; 
                     const avg = dCount > 0 ? Math.round((daysMap[d] || 0) / dCount) : 0;
                     return { day: d, avg, label: DAY_NAMES[d] };
                 });
 
+                const totalDays = uniqueDates.size || 1;
                 const finalGeneralHours = [];
                 for (let h = openH; h <= closeH; h++) {
                     const avg = totalDays > 0 ? Math.round((hourlyMap[h] || 0) / totalDays) : 0;
@@ -247,33 +242,56 @@ const SchedulesView = ({ openModal, setView }) => {
                     }
                 });
 
-                const applyColorsHistorical = (arr, standard) => {
-                    const maxInCurrentSet = Math.max(...arr.map(o => o.avg), 1);
+                const applyColorsStatistical = (arr) => {
+                    const activeAvgs = arr.map(o => o.avg).filter(v => v > 0);
+                    
+                    if (activeAvgs.length === 0) {
+                        return arr.map(item => ({ ...item, color: '#e2e8f0', height: '0%' })); 
+                    }
+
+                    activeAvgs.sort((a, b) => a - b);
+                    
+                    const q1Index = Math.floor(activeAvgs.length * 0.25);
+                    const q3Index = Math.floor(activeAvgs.length * 0.75);
+                    const q90Index = Math.floor(activeAvgs.length * 0.90); 
+
+                    const q1 = activeAvgs[q1Index];           
+                    const q3 = activeAvgs[q3Index];           
+                    const q90 = activeAvgs[q90Index];         
+                    
+                    const maxVal = activeAvgs[activeAvgs.length - 1];
+
                     return arr.map(item => {
-                        const colorIntensity = standard > 0 ? item.avg / standard : 0;
+                        let color = '#e2e8f0'; 
                         
-                        if (colorIntensity >= 0.85) item.color = '#FF2D55'; 
-                        else if (colorIntensity >= 0.60) item.color = '#FF9500'; 
-                        else if (colorIntensity >= 0.20) item.color = '#007AFF'; 
-                        else item.color = '#94A3B8'; 
-                        
-                        const heightIntensity = maxInCurrentSet > 0 ? item.avg / maxInCurrentSet : 0;
+                        if (item.avg === 0) {
+                            color = '#e2e8f0'; 
+                        } else if (item.avg >= q90 && q90 > q3) {
+                            color = '#FF2D55'; 
+                        } else if (item.avg >= q3) {
+                            color = '#FF9500'; 
+                        } else if (item.avg >= q1) {
+                            color = '#007AFF'; 
+                        }
+
+                        const heightIntensity = maxVal > 0 ? item.avg / maxVal : 0;
                         item.height = heightIntensity > 0 ? `${Math.max(heightIntensity * 100, 15)}%` : '0%';
+                        item.color = color;
                         return item;
                     });
                 };
 
                 setSalesStats({
-                    days: applyColorsHistorical(finalDays, absoluteStandardDaily),
-                    generalHours: applyColorsHistorical(finalGeneralHours, absoluteStandardHourlyGeneral),
+                    days: applyColorsStatistical(finalDays),
+                    generalHours: applyColorsStatistical(finalGeneralHours),
                     specificHours: {
-                        1: applyColorsHistorical(finalSpecificHours[1], absoluteStandardHourlySpecific),
-                        2: applyColorsHistorical(finalSpecificHours[2], absoluteStandardHourlySpecific),
-                        3: applyColorsHistorical(finalSpecificHours[3], absoluteStandardHourlySpecific),
-                        4: applyColorsHistorical(finalSpecificHours[4], absoluteStandardHourlySpecific),
-                        5: applyColorsHistorical(finalSpecificHours[5], absoluteStandardHourlySpecific),
-                        6: applyColorsHistorical(finalSpecificHours[6], absoluteStandardHourlySpecific),
-                        0: applyColorsHistorical(finalSpecificHours[0], absoluteStandardHourlySpecific),
+                        1: applyColorsStatistical(finalSpecificHours[1]),
+                        2: applyColorsStatistical(finalSpecificHours[2]),
+                        3: applyColorsStatistical(finalSpecificHours[3]),
+                        4: applyColorsStatistical(finalSpecificHours[4]),
+                        5: applyColorsStatistical(finalSpecificHours[5]),
+                        6: applyColorsStatistical(finalSpecificHours[6]),
+                        0: applyColorsStatistical(finalSpecificHours[0]),
                     }
                 });
 
@@ -284,7 +302,7 @@ const SchedulesView = ({ openModal, setView }) => {
             }
         };
         fetchSales();
-    }, [filterBranch, viewMode, branches]); 
+    }, [filterBranch, viewMode, branches]);
 
     const employeesInView = useMemo(() => {
         const roleWeight = (role) => {
@@ -301,13 +319,19 @@ const SchedulesView = ({ openModal, setView }) => {
                 const matchesBranch = String(e.branchId || e.branch_id) === String(filterBranch);
                 if (!matchesBranch) return false;
                 if (!searchTerm) return true;
-                return e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.role && e.role.toLowerCase().includes(searchTerm.toLowerCase()));
+                // 🚨 PREVENCIÓN DE ERROR: Si e.name es undefined, usar string vacío
+                const safeName = e.name || '';
+                const safeRole = e.role || '';
+                return safeName.toLowerCase().includes(searchTerm.toLowerCase()) || safeRole.toLowerCase().includes(searchTerm.toLowerCase());
             })
             .sort((a, b) => {
                 const weightA = roleWeight(a.role);
                 const weightB = roleWeight(b.role);
                 if (weightA !== weightB) return weightA - weightB;
-                return a.name.localeCompare(b.name);
+                // 🚨 PREVENCIÓN DE ERROR: localeCompare solo en strings válidos
+                const safeNameA = a.name || 'Sin Nombre';
+                const safeNameB = b.name || 'Sin Nombre';
+                return safeNameA.localeCompare(safeNameB);
             });
     }, [employees, filterBranch, searchTerm]);
 
@@ -317,38 +341,93 @@ const SchedulesView = ({ openModal, setView }) => {
 
         let totalAssignedHours = 0;
 
+        const currentBranch = branches.find(b => String(b.id) === String(filterBranch));
+        let branchSchedule = {};
+        let hasBranchSchedule = false;
+
+        if (currentBranch) {
+            let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
+            if (typeof sch === 'string') {
+                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+            }
+            if (sch && typeof sch === 'object' && Object.keys(sch).length > 0) {
+                branchSchedule = sch;
+                hasBranchSchedule = true;
+            }
+        }
+
+        if (!hasBranchSchedule) {
+            alerts.push({ type: 'danger', emp: null, msg: `SALY REQUIERE DATOS: La sucursal no tiene horario operativo configurado en la base de datos. La auditoría está incompleta.` });
+        }
+
         employeesInView.forEach(emp => {
-            // 🚨 CORRECCIÓN: Usar estrictamente weeklyRosters y si está vacío, se queda vacío.
+            const empName = emp.name || 'Colaborador';
             let rawSchedule = weeklyRosters[emp.id] || {}; 
             let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
             const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
             totalAssignedHours += hours;
 
-            if (hours > 44) alerts.push({ type: 'danger', emp: emp.name, msg: `¡Cuidado! Necesita un respiro (Exceso de ${hours}h).` });
+            if (hours > 44) alerts.push({ type: 'danger', emp: empName, msg: `¡Cuidado! Necesita un respiro (Exceso de ${hours}h semanales).` });
 
             let consecutiveDays = 0;
             [1, 2, 3, 4, 5, 6, 0].forEach(dId => {
                 const day = sch[dId];
                 if (day && !day.isOff && (day.shiftId || day.customStart)) {
                     consecutiveDays++;
-                    const sStart = timeToMins(day.customStart || shifts.find(s => s.id == day.shiftId)?.start);
-                    const sEnd = timeToMins(day.customEnd || shifts.find(s => s.id == day.shiftId)?.end);
-                    let duration = (sEnd < sStart ? sEnd + 1440 : sEnd) - sStart;
-                    if (duration >= 420 && !day.hasLunch) {
-                        alerts.push({ type: 'warning', emp: emp.name, msg: `Alerta de fatiga: Turno mayor a 7h sin almuerzo.` });
+                    
+                    const shiftTemplate = shifts.find(s => String(s.id) === String(day.shiftId));
+                    const sStartStr = day.customStart || shiftTemplate?.start_time?.substring(0, 5) || shiftTemplate?.start;
+                    const sEndStr = day.customEnd || shiftTemplate?.end_time?.substring(0, 5) || shiftTemplate?.end;
+
+                    if (sStartStr && sEndStr) {
+                        const sStartMins = timeToMins(sStartStr);
+                        const sEndMins = timeToMins(sEndStr);
+                        let duration = (sEndMins < sStartMins ? sEndMins + 1440 : sEndMins) - sStartMins;
+                        
+                        if (duration >= 420 && !day.hasLunch) {
+                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Alerta de fatiga: Turno mayor a 7h sin almuerzo.` });
+                        }
+
+                        if (hasBranchSchedule) {
+                            const bDay = branchSchedule[dId];
+                            if (bDay) {
+                                if (bDay.isClosed || bDay.isOff || bDay.isOpen === false) {
+                                    alerts.push({ type: 'danger', emp: empName, msg: `[${dayNamesMap[dId]}] Tiene turno asignado, pero la sucursal está CERRADA hoy.` });
+                                } else {
+                                    const bStartStr = String(bDay.start || bDay.open || '').replace(/[^0-9:]/g, '').trim();
+                                    const bEndStr = String(bDay.end || bDay.close || '').replace(/[^0-9:]/g, '').trim();
+
+                                    if (bStartStr && bEndStr) {
+                                        const bStartMins = timeToMins(bStartStr);
+                                        let bEndMins = timeToMins(bEndStr);
+                                        if (bEndMins < bStartMins) bEndMins += 1440;
+                                        let adjSEnd = sEndMins < sStartMins ? sEndMins + 1440 : sEndMins;
+
+                                        if (sStartMins < bStartMins) {
+                                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Entra a las ${formatHourAMPM(Math.floor(sStartMins/60))}, pero la sucursal abre a las ${formatHourAMPM(Math.floor(bStartMins/60))}.` });
+                                        }
+                                        if (adjSEnd > bEndMins) {
+                                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Sale a las ${formatHourAMPM(Math.floor(adjSEnd/60))}, pero la sucursal cierra a las ${formatHourAMPM(Math.floor(bEndMins/60))}.` });
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                } else consecutiveDays = 0;
+                } else {
+                    consecutiveDays = 0;
+                }
             });
 
-            if (consecutiveDays >= 7) alerts.push({ type: 'danger', emp: emp.name, msg: `¡Riesgo de burnout! Sin días libres en la semana.` });
+            if (consecutiveDays >= 7) alerts.push({ type: 'danger', emp: empName, msg: `¡Riesgo de burnout! Sin días libres en la semana.` });
         });
 
         if (employeesInView.length > 0 && totalAssignedHours < (employeesInView.length * 40 * 0.8)) {
-            alerts.push({ type: 'info', msg: `Signos vitales bajos: Faltan horas asignadas en la sucursal.` });
+            alerts.push({ type: 'info', emp: null, msg: `Signos vitales bajos: Faltan horas asignadas en la sucursal.` });
         }
 
         return alerts;
-    }, [weeklyRosters, employeesInView, shifts, calendarDates, filterBranch]);
+    }, [weeklyRosters, employeesInView, shifts, calendarDates, filterBranch, branches]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
         let scheduleToSave = null;
@@ -384,14 +463,92 @@ const SchedulesView = ({ openModal, setView }) => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });
     }, []);
 
-    const handlePublishWeek = async () => {
-        if (!confirm(`¿Publicar y notificar los horarios de ${formatDateLocal(startDate)}?`)) return;
+    // ============================================================================
+    // 🚀 LA MAGIA DE PUBLICAR: Auditoría Final + UPDATE Masivo a JSONB
+    // ============================================================================
+    const triggerPublishAudit = () => {
+        let incompleteCount = 0;
+        let excessCount = 0;
+
+        // Transformación de los datos a preparar para el Bulk Update
+        const bulkUpdates = employeesInView.map(emp => {
+            let rawSchedule = weeklyRosters[emp.id] || {}; 
+            let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
+            
+            // Evaluamos horas para la auditoría
+            const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
+            let daysOffCount = 0;
+            
+            calendarDates.forEach(date => {
+                const dId = new Date(date + 'T00:00:00').getDay();
+                const dayData = sch[dId] || {};
+                const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
+                const startStr = dayData.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
+                const endStr = dayData.customEnd || shift?.end_time?.substring(0, 5) || shift?.end;
+                
+                const hasShift = !dayData.isOff && startStr && endStr;
+                if (!hasShift) daysOffCount++;
+            });
+
+            if (hours > 44 || daysOffCount === 0) {
+                excessCount++; 
+            } else if (hours < 44 || daysOffCount > 1) {
+                incompleteCount++; 
+            }
+
+            return {
+                id: emp.id,
+                weekly_schedule: sch
+            };
+        });
+
+        // 🚨 Saly decide qué Modal mostrar
+        if (incompleteCount > 0 || excessCount > 0) {
+            const msgs = [];
+            if (incompleteCount > 0) msgs.push(`${incompleteCount} colaborador(es) con horarios incompletos.`);
+            if (excessCount > 0) msgs.push(`${excessCount} colaborador(es) con infracciones por exceso de horas.`);
+            
+            setPublishState({
+                isOpen: true,
+                isDestructive: true, // Modal en Modo Alerta Roja
+                title: "⚠️ Planificación No Óptima",
+                message: `He detectado que el horario tiene deficiencias:\n${msgs.join('\n')}\n\n¿Estás completamente seguro de que quieres publicar y sobreescribir el horario con estos errores?`,
+                confirmText: "Publicar con Errores",
+                bulkUpdates: bulkUpdates
+            });
+        } else {
+            setPublishState({
+                isOpen: true,
+                isDestructive: false, // Modal en Modo Azul Seguro
+                title: "✅ Planificación Perfecta",
+                message: `Todos los empleados están en Verde (Óptimo). ¿Deseas publicar y oficializar los horarios de la semana del ${formatDateLocal(startDate)}?`,
+                confirmText: "Publicar Horarios",
+                bulkUpdates: bulkUpdates
+            });
+        }
+    };
+
+    // La función real que ejecuta Supabase cuando el usuario dice "Acepto" en el Modal
+    const executePublish = async () => {
         setIsPublishing(true);
         try {
-            await publishWeekRosters(startDate, filterBranch);
+            const { error: bulkError } = await supabase
+                .from('employees')
+                .upsert(publishState.bulkUpdates, { onConflict: 'id' });
+
+            if (bulkError) throw bulkError;
+
+            // Mantenemos el disparo a la store (por si maneja lógica de reportes o histórico)
+            if (typeof publishWeekRosters === 'function') {
+                await publishWeekRosters(startDate, filterBranch);
+            }
+
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '', bulkUpdates: null });
+            
         } catch (error) {
-            console.error(error);
+            console.error("Error crítico publicando horarios:", error);
+            alert('❌ Hubo un error de conexión al publicar. Revisa la consola.'); // Este fallback alert está bien para errores técnicos puros
         } finally {
             setIsPublishing(false);
         }
@@ -512,7 +669,9 @@ const SchedulesView = ({ openModal, setView }) => {
                                             <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full border border-white/50"></div>
                                             <HeartPulse size={18} strokeWidth={2.5} className={`text-cyan-500 group-hover/saly:text-indigo-500 relative z-10 transition-colors duration-300 ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek) ? '' : 'animate-pulse'}`} />
                                         </button>
-                                        <button onClick={handlePublishWeek} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,122,255,0.3)] border border-[#007AFF]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                        
+                                        {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
+                                        <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,122,255,0.3)] border border-[#007AFF]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
                                             {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
                                             <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : 'Publicar'}</span>
                                         </button>
@@ -652,6 +811,25 @@ const SchedulesView = ({ openModal, setView }) => {
                     onSave={(dayId, newData) => handleSaveCell(editingCell.empId, dayId, newData)}
                 />
             )}
+
+            {/* 🚨 MODAL DE CONFIRMACIÓN DE PUBLICACIÓN DE SALY */}
+            <ConfirmModal
+                isOpen={publishState.isOpen}
+                onClose={() => setPublishState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={executePublish}
+                title={publishState.title}
+                message={
+                    <span className="whitespace-pre-line text-[13px]">
+                        {publishState.message}
+                    </span>
+                }
+                confirmText={publishState.confirmText}
+                cancelText="Cancelar"
+                isDestructive={publishState.isDestructive}
+                isProcessing={isPublishing}
+                theme="light"
+            />
+
         </GlassViewLayout>
     );
 };

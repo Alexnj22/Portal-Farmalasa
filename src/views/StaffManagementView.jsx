@@ -16,13 +16,14 @@ import {
   ArrowUp,
   Hash,
   User,
-  Edit3 // 🚨 Nuevo icono importado
+  Edit3
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
+import LiquidAvatar from '../components/common/LiquidAvatar';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -31,7 +32,7 @@ const formatShortName = (fullName) => {
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) return parts[0];
   if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
-  if (parts.length >= 3) return `${parts[0]} ${parts[2]}`; // Toma 1er Nombre y 1er Apellido
+  if (parts.length >= 3) return `${parts[0]} ${parts[2]}`;
   return fullName;
 };
 
@@ -49,12 +50,13 @@ const getStatusInfo = (status) => {
       return { text: 'Permiso', className: 'text-purple-600 bg-purple-50/80 border-purple-200' };
     case 'Liquidado':
       return { text: 'Liquidado', className: 'text-red-600 bg-red-50/80 border-red-200' };
+    case 'INACTIVO': 
+      return { text: 'Inactivo', className: 'text-slate-600 bg-slate-100/80 border-slate-300' };
     default:
       return { text: status || 'Sin estado', className: 'text-slate-600 bg-slate-50/80 border-slate-200' };
   }
 };
 
-// 🚨 CEREBRO DE JERARQUÍA: CARGOS
 const getRoleWeight = (roleStr) => {
   const r = (roleStr || '').toUpperCase();
   if (r.includes('GERENTE') || r.includes('DIRECCI')) return 1;
@@ -68,7 +70,6 @@ const getRoleWeight = (roleStr) => {
   return 99;
 };
 
-// 🚨 CEREBRO DE JERARQUÍA: SUCURSALES 
 const getBranchWeight = (branchStr) => {
   const b = (branchStr || '').toUpperCase();
   if (b.includes('POPULAR')) return 1;
@@ -79,9 +80,8 @@ const getBranchWeight = (branchStr) => {
   return 4;
 };
 
-// 🚨 COMPONENTE DE FILA (ACTUALIZADO CON ACCIÓN DE EDICIÓN)
 const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) => {
-  const statusInfo = getStatusInfo(emp.effectiveStatus);
+  const statusInfo = getStatusInfo(emp.effectiveStatus || emp.status);
   const shortName = formatShortName(emp.name);
 
   const rolesArray = useMemo(() => {
@@ -102,7 +102,6 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
 
     for (const r of rawRoles) {
       let display = r.toUpperCase();
-
       display = display.replace(/\/A\b/g, '').replace(/\(A\)/g, '').trim();
 
       if (display.includes('GERENTE GENERAL')) display = 'GERENTE GENERAL';
@@ -128,17 +127,16 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
   return (
-    <tr className="group hover:bg-white/40 transition-colors duration-300">
+    <tr className={`group hover:bg-white/40 transition-colors duration-300 ${emp.status === 'INACTIVO' ? 'opacity-60 grayscale-[50%]' : ''}`}>
       <td className="px-4 md:px-8 py-3.5 border-b border-white/40">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm shrink-0 group-hover:shadow transition-all group-hover:-translate-y-0.5">
-            {emp.photo_url || emp.photo ? (
-              <img src={emp.photo_url || emp.photo} alt={emp.name || 'Empleado'} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[12px] md:text-[13px] font-black uppercase text-[#007AFF]">
-                {shortName.charAt(0)}
-              </span>
-            )}
+            <LiquidAvatar
+              src={emp.photo_url || emp.photo}
+              alt={emp.name || 'Empleado'}
+              fallbackText={shortName}
+              className="w-full h-full"
+            />
           </div>
 
           <div className="min-w-0">
@@ -155,7 +153,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
       <td className="px-4 md:px-8 py-3.5 border-b border-white/40">
         <div className="flex items-center gap-1.5 text-slate-600 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-slate-400 shrink-0" />
-          <span className="truncate">{branchName}</span>
+          <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
       </td>
 
@@ -180,27 +178,22 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
 
       <td className="px-4 md:px-8 py-3.5 text-right border-b border-white/40">
         <div className="flex items-center justify-end gap-2">
-            
-            {/* 🚨 NUEVO BOTÓN: Edición Rápida (Oculto por defecto, aparece al hover) */}
-            <button
-                onClick={() => onEditEmployee(emp)}
-                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
-                title="Edición rápida"
-            >
-                <Edit3 size={14} strokeWidth={2.5} />
-            </button>
-
-            {/* BOTÓN ORIGINAL: Ver Perfil */}
-            <button
+          <button
+            onClick={() => onEditEmployee(emp)}
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+            title="Edición rápida"
+          >
+            <Edit3 size={14} strokeWidth={2.5} />
+          </button>
+          <button
             onClick={() => onOpenEmployee(emp)}
             className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,122,255,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-95"
             title="Ver perfil completo"
-            >
+          >
             <User size={12} strokeWidth={2.5} className="md:hidden" />
             <span className="hidden md:inline">Ver Perfil</span>
             <ChevronRight size={14} strokeWidth={3} className="hidden md:inline" />
-            </button>
-
+          </button>
         </div>
       </td>
     </tr>
@@ -244,30 +237,18 @@ const StaffManagementView = ({
     return m;
   }, [branches]);
 
-  const processedEmployees = useMemo(() => {
-    return (employees || []).map((emp) => {
-      const constructedFullName = [emp.first_names, emp.last_names].filter(Boolean).join(' ') || emp.name || '';
-
-      return {
-        ...emp,
-        name: constructedFullName, 
-        effectiveStatus: getEffectiveStatus(emp),
-      };
-    });
-  }, [employees]);
-
   const searchFilteredEmployees = useMemo(() => {
-    return processedEmployees.filter((emp) => {
-      const name = (emp?.name || '').toLowerCase();
-      const code = (emp?.code || '').toLowerCase();
-      const role = (emp?.role || '').toLowerCase();
+    return (employees || []).filter((emp) => {
+      const safeName = (emp?.name || '').toLowerCase();
+      const safeCode = (emp?.code || '').toLowerCase();
+      const safeRole = (emp?.role || '').toLowerCase();
       const branchNameStr = (branchMap.get(Number(emp.branchId || emp.branch_id)) || '').toLowerCase();
 
       const matchesSearch =
         !normalizedSearch ||
-        name.includes(normalizedSearch) ||
-        code.includes(normalizedSearch) ||
-        role.includes(normalizedSearch) ||
+        safeName.includes(normalizedSearch) ||
+        safeCode.includes(normalizedSearch) ||
+        safeRole.includes(normalizedSearch) ||
         branchNameStr.includes(normalizedSearch);
 
       const matchesBranch =
@@ -275,14 +256,14 @@ const StaffManagementView = ({
 
       return matchesSearch && matchesBranch;
     });
-  }, [processedEmployees, normalizedSearch, selectedBranch, branchMap]);
+  }, [employees, normalizedSearch, selectedBranch, branchMap]);
 
   const stats = useMemo(() => {
     const total = searchFilteredEmployees.length;
-    const active = searchFilteredEmployees.filter((emp) => emp.effectiveStatus === 'Activo').length;
-    const support = searchFilteredEmployees.filter((emp) => emp.effectiveStatus === 'En Apoyo').length;
+    const active = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'Activo').length;
+    const support = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'En Apoyo').length;
     const inactive = searchFilteredEmployees.filter(
-      (emp) => !['Activo', 'En Apoyo'].includes(emp.effectiveStatus)
+      (emp) => !['Activo', 'En Apoyo'].includes(getEffectiveStatus(emp))
     ).length;
 
     return { total, active, support, inactive };
@@ -290,10 +271,11 @@ const StaffManagementView = ({
 
   const filteredEmployees = useMemo(() => {
     return searchFilteredEmployees.filter(emp => {
+      const statusEff = getEffectiveStatus(emp);
       return activeStatFilter === 'ALL' ||
-        (activeStatFilter === 'Activo' && emp.effectiveStatus === 'Activo') ||
-        (activeStatFilter === 'En Apoyo' && emp.effectiveStatus === 'En Apoyo') ||
-        (activeStatFilter === 'Otros' && !['Activo', 'En Apoyo'].includes(emp.effectiveStatus));
+        (activeStatFilter === 'Activo' && statusEff === 'Activo') ||
+        (activeStatFilter === 'En Apoyo' && statusEff === 'En Apoyo') ||
+        (activeStatFilter === 'Otros' && !['Activo', 'En Apoyo'].includes(statusEff));
     });
   }, [searchFilteredEmployees, activeStatFilter]);
 
@@ -343,8 +325,8 @@ const StaffManagementView = ({
       }
 
       if (sortConfig.key === 'status') {
-        const statusA = (a.effectiveStatus || '').toLowerCase();
-        const statusB = (b.effectiveStatus || '').toLowerCase();
+        const statusA = (a.status || '').toLowerCase();
+        const statusB = (b.status || '').toLowerCase();
         if (statusA !== statusB) {
           return sortConfig.direction === 'asc' ? statusA.localeCompare(statusB) : statusB.localeCompare(statusA);
         }
@@ -374,7 +356,6 @@ const StaffManagementView = ({
     setView('employee-detail');
   };
 
-  // 🚨 NUEVA FUNCIÓN: Llama al modal "editEmployee" con los datos del usuario seleccionado
   const handleOpenEditEmployee = useCallback((emp) => {
     openModal?.('editEmployee', emp);
   }, [openModal]);
@@ -413,7 +394,6 @@ const StaffManagementView = ({
   const filtersContent = (
     <div className={`flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
-      {/* BLOQUE BUSCADOR */}
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
         <input
@@ -428,7 +408,6 @@ const StaffManagementView = ({
         <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
-      {/* BLOQUE CONTROLES PRINCIPALES */}
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
 
         <div className="flex items-center min-w-0 flex-1 gap-2 overflow-visible">
@@ -607,9 +586,9 @@ const StaffManagementView = ({
                     <EmployeeRow
                       key={emp.id}
                       emp={emp}
-                      branchName={branchMap.get(Number(emp.branchId || emp.branch_id)) || 'N/A'}
+                      branchName={branchMap.get(Number(emp.branchId || emp.branch_id))}
                       onOpenEmployee={handleOpenEmployee}
-                      onEditEmployee={handleOpenEditEmployee} // 🚨 Propogamos la nueva función
+                      onEditEmployee={handleOpenEditEmployee}
                     />
                   ))
                 ) : (

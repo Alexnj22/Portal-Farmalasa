@@ -265,33 +265,78 @@ export const createEmployeeSlice = (set, get) => ({
         }
     },
 
-    deleteEmployee: async (id) => {
+// 🚨 CIRUGÍA SALY: Soft Delete (Desactivación Segura) en lugar de borrado físico
+    deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
         try {
-            const { error } = await supabase.from("employees").delete().eq("id", id);
-            if (error) throw error;
+            const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
             const empEliminar = get().employees.find(e => String(e.id) === String(id));
-            await get().appendAuditLog('ELIMINAR_EMPLEADO', id, {
-                timeline_title: `Baja de Personal: ${empEliminar?.name || 'Desconocido'}`,
+            
+            if (!empEliminar) throw new Error("Empleado no encontrado en caché local");
+
+            // 1. El "Soft Delete": Cambiamos el estado y lo quitamos de la sucursal activa
+            const dbPayload = {
+                status: 'INACTIVO',
+                branch_id: null,        // Ya no pertenece a ninguna sucursal
+                role_id: null,          // Libera el cargo
+                secondary_role_id: null, 
+                shift_id: null,         // Libera el turno
+                kiosk_pin: null,        // 🚨 CRÍTICO: Invalida su acceso al kiosco biométrico
+                contract_end_date: fechaBaja // Cerramos su contrato actual
+            };
+
+            const { error } = await supabase
+                .from("employees")
+                .update(dbPayload)
+                .eq("id", id);
+                
+            if (error) throw error;
+
+            // 2. Registro Histórico Inmutable (Para que sepas cuándo se fue y por qué)
+            await supabase.from('employee_history').insert([{
+                employee_id: id,
+                type: 'TERMINATION',
+                date: fechaBaja,
+                previous_branch_id: empEliminar.branchId,
+                previous_role: empEliminar.role,
+                new_role: 'Desvinculado',
+                details: { note: `Motivo de salida: ${reason}` }
+            }]);
+
+            // 3. Auditoría de Seguridad (Log de Sistema)
+            await get().appendAuditLog('BAJA_EMPLEADO', id, {
+                timeline_title: `Desvinculación: ${empEliminar.name}`,
                 dimension: 'HR',
-                branch_id: empEliminar?.branchId,
+                branch_id: empEliminar.branchId,
                 old_value: 'Activo',
-                new_value: 'Dado de baja en el sistema'
+                new_value: 'INACTIVO (Soft Delete)',
+                notas: reason
             });
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
+            // 4. Actualizamos el estado global (UI)
             set((state) => {
-                const next = state.employees.filter((emp) => String(emp.id) !== String(id));
+                const next = state.employees.map(emp => {
+                    if (String(emp.id) !== String(id)) return emp;
+                    return {
+                        ...emp,
+                        ...dbPayload,
+                        branchId: null,
+                        role: 'Sin Asignar',
+                        effectiveStatus: 'Liquidado' // O 'Inactivo'
+                    };
+                });
                 persistEmployees(next);
                 return { employees: next };
             });
+            
             return true;
         } catch (err) {
-            console.error("Error eliminando empleado:", err);
+            console.error("Error al procesar la baja del empleado:", err);
             return false;
         }
     },
-
+    
     registerEmployeeEvent: async (employeeId, eventData, file = null) => {
         try {
             const dbPayload = { employee_id: employeeId, type: eventData.type, date: eventData.date || new Date().toISOString().split('T')[0], note: eventData.note || '', metadata: eventData };

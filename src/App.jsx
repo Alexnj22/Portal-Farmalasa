@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
 import { Loader2, Settings, Monitor } from "lucide-react";
 
 // Contextos
@@ -46,6 +46,66 @@ const AuthSyncHelper = () => {
     return null;
 };
 
+// 🚨 ENVOLTORIO INTELIGENTE PARA LA SUCURSAL
+const BranchProfileWrapper = ({ openModal }) => {
+    const { id } = useParams();
+    const branches = useStaff((state) => state.branches);
+
+    const branch = branches.find(b => String(b.id) === String(id));
+
+    if (!branch) {
+        return <Navigate to="/branches" replace />;
+    }
+
+    return (
+        <BranchDetailView
+            branch={branch}
+            openModal={openModal}
+        />
+    );
+};
+
+// 🚨 ENVOLTORIO INTELIGENTE PARA EL PERFIL DEL EMPLEADO (Arquitectura Segura de Hooks)
+const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, setActiveEmployeeGlobal }) => {
+    // Aquí es SEGURO usar useParams porque es el Top-Level del componente
+    const { id } = useParams(); 
+    const navigate = useNavigate();
+    const employees = useStaff((state) => state.employees);
+
+    const emp = employees.find(e => String(e.id) === String(id));
+
+    // Mantenemos el estado global sincronizado (Por si un modal lo ocupa)
+    useEffect(() => {
+        if (emp && setActiveEmployeeGlobal) {
+            setActiveEmployeeGlobal(emp);
+        }
+    }, [emp, setActiveEmployeeGlobal]);
+
+    if (!emp) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    // Interceptamos openModal para asegurar que pasa el evento correcto
+    const handleOpenModal = (type, data = null, eventId = null) => {
+        // Forzamos que data tenga el ID del empleado si no lo trae
+        const safeData = data || { id: emp.id, branchId: emp.branchId || emp.branch_id };
+        openModal(type, safeData, eventId);
+    };
+
+    return (
+        <EmployeeDetailView
+            activeEmployee={emp}
+            setView={(viewName) => {
+                if (viewName === 'dashboard') navigate('/dashboard');
+                else setView(viewName);
+            }}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            openModal={handleOpenModal} // Pasamos la función limpiamente
+        />
+    );
+};
+
 // ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
@@ -80,8 +140,8 @@ function MainApp() {
         return () => { isSubscribed = false; };
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
-    const currentPath = location.pathname.substring(1);
-    const view = currentPath || (isAdmin ? "dashboard" : "profile");
+    const currentPathSegments = location.pathname.substring(1).split('/');
+    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : "profile");
 
     const setView = (targetView) => {
         if (targetView === "timeclock") navigate("/kiosk");
@@ -93,7 +153,10 @@ function MainApp() {
     const [selectedBranch, setSelectedBranch] = useState("ALL");
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState("");
+
+    // Estado global de Empleado (Para modales)
     const [activeEmployee, setActiveEmployee] = useState(null);
+
     const [activeTab, setActiveTab] = useState("history");
     const [formData, setFormData] = useState({});
     const [targetEventId, setTargetEventId] = useState(null);
@@ -126,6 +189,7 @@ function MainApp() {
         }
     };
 
+    // 🚨 FUNCIÓN PURA: No llamar hooks de React aquí
     const openModal = (type, data = null, eventId = null) => {
         setModalType(type);
 
@@ -216,7 +280,7 @@ function MainApp() {
                         <div className="relative z-10 w-full h-full flex flex-col">
                             {isAdmin ? (
                                 <AdminLayout
-                                    view={view}
+                                    view={mainView} 
                                     setView={setView}
                                     isOverlayActive={modalOpen || isAuditOverlayActive}
                                     handleLogout={handleLogout}
@@ -224,15 +288,58 @@ function MainApp() {
                                     <Routes>
                                         <Route path="monitor" element={<AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} />} />
                                         <Route path="audit" element={<AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} />} />
-                                        <Route path="dashboard" element={<StaffManagementView setView={setView} setActiveEmployee={setActiveEmployee} openModal={openModal} searchTerm={searchTerm} setSearchTerm={setSearchTerm} selectedBranch={selectedBranch} setSelectedBranch={setSelectedBranch} />} />
+
+                                        {/* 🚨 DASHBOARD ROUTING LIMPIO */}
+                                        <Route path="dashboard">
+                                            <Route index element={
+                                                <StaffManagementView
+                                                    setView={setView}
+                                                    setActiveEmployee={(emp) => { 
+                                                        setActiveEmployee(emp); 
+                                                        navigate(`/dashboard/empleado/${emp.id}`); 
+                                                    }}
+                                                    openModal={openModal}
+                                                    searchTerm={searchTerm}
+                                                    setSearchTerm={setSearchTerm}
+                                                    selectedBranch={selectedBranch}
+                                                    setSelectedBranch={setSelectedBranch}
+                                                />
+                                            } />
+                                            {/* 🚨 WRAPPER LIMPIO SIN FUNCIONES ANÓNIMAS */}
+                                            <Route path="empleado/:id" element={
+                                                <EmployeeProfileWrapper
+                                                    activeTab={activeTab}
+                                                    setActiveTab={setActiveTab}
+                                                    setView={setView}
+                                                    openModal={openModal} 
+                                                    setActiveEmployeeGlobal={setActiveEmployee}
+                                                />
+                                            } />
+                                        </Route>
+
                                         <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
                                         <Route path="auditview" element={<AuditView openModal={openModal} />} />
-                                        <Route path="branches" element={<BranchesView openModal={openModal} setView={setView} setActiveBranch={setActiveBranch} />} />
-                                        <Route path="branch-detail" element={activeBranch ? <BranchDetailView openModal={openModal} branch={activeBranch} onBack={() => setView("branches")} setActiveEmployee={setActiveEmployee} setView={setView} /> : <Navigate to="/branches" replace />} />
+                                        <Route path="branches">
+                                            <Route index element={
+                                                <BranchesView
+                                                    setView={setView}
+                                                    setActiveBranch={(b) => { setActiveBranch(b); navigate(`/dashboard/branches/${b.id}`); }}
+                                                    openModal={openModal}
+                                                />
+                                            } />
+                                            <Route path=":id" element={
+                                                <BranchProfileWrapper
+                                                    openModal={openModal}
+                                                />
+                                            } />
+                                        </Route>
                                         <Route path="roles" element={<RolesView openModal={openModal} />} />
-                                        <Route path="employee-detail" element={activeEmployee ? <EmployeeDetailView activeEmployee={activeEmployee} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} /> : <Navigate to="/dashboard" replace />} />
+
+                                        <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
+
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
                                         <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
+
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>
                                 </AdminLayout>
@@ -247,7 +354,6 @@ function MainApp() {
                             )}
                         </div>
 
-                        {/* ✨ SALY CHAT OVERLAY AQUÍ - Se muestra sobre todo */}
                         <SalyChatOverlay />
 
                         <UnifiedModal
@@ -281,14 +387,12 @@ export default function App() {
     );
 }
 
-// 🚨 PANTALLA DE BLOQUEO PARA MÓVILES
 const MobileConstructionScreen = () => (
     <div className="lg:hidden fixed inset-0 z-[99999] bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <GlobalBackground />
 
         <div className="relative z-10 flex flex-col items-center max-w-sm bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in duration-700">
 
-            {/* Ícono Animado */}
             <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-tr from-[#007AFF]/10 to-[#5856D6]/10 rounded-full mb-6 border border-white">
                 <Settings className="text-[#007AFF] animate-spin" size={40} strokeWidth={1.5} style={{ animationDuration: '4s' }} />
                 <div className="absolute inset-0 flex items-center justify-center">

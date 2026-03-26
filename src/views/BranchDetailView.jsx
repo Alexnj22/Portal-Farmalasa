@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
     MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Edit3,
     Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft
@@ -17,7 +18,8 @@ import GlassViewLayout from '../components/GlassViewLayout';
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
-const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModal }) => {
+const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
+    const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS NAVEGACIÓN
     const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
     
     const [activeTab, setActiveTab] = useState('history');
@@ -26,12 +28,9 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
     const [history, setHistory] = useState([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     
-    // 🔴 LLAVE DE RECARGA PARA EL EVENTO GLOBAL
     const [refreshKey, setRefreshKey] = useState(0);
-
     const [isEditMode, setIsEditMode] = useState(false);
 
-    // 🚨 ESTADOS PARA EL HOVER DEL TÍTULO
     const [showProfile, setShowProfile] = useState(false);
     const hoverTimeoutRef = useRef(null);
 
@@ -46,9 +45,7 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => {
-                setShowSideNav(!entry.isIntersecting);
-            },
+            ([entry]) => setShowSideNav(!entry.isIntersecting),
             { rootMargin: "-80px 0px 0px 0px" }
         );
         if (sentinelRef.current) observer.observe(sentinelRef.current);
@@ -68,43 +65,26 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
         return () => { isMounted = false; };
     }, [liveBranch?.id, getBranchKiosks]);
 
-    // ============================================================================
-    // 🔴 ESCUCHADOR DE EVENTOS GLOBALES (LA BENGALA)
-    // ============================================================================
     useEffect(() => {
         const handleForceRefresh = () => {
-            setTimeout(() => {
-                setRefreshKey(prev => prev + 1); 
-            }, 500);
+            setTimeout(() => setRefreshKey(prev => prev + 1), 500);
         };
-
         window.addEventListener('force-history-refresh', handleForceRefresh);
-        return () => {
-            window.removeEventListener('force-history-refresh', handleForceRefresh);
-        };
+        return () => window.removeEventListener('force-history-refresh', handleForceRefresh);
     }, []);
 
-    // ============================================================================
-    // 🔴 CARGA DE HISTORIAL ULTRA-REACTIVA
-    // ============================================================================
     useEffect(() => {
         let isMounted = true;
-
         const fetchHistory = async () => {
             if (!liveBranch?.id) return;
-            
             if (history.length === 0) setIsLoadingHistory(true);
-            
             const data = await getBranchHistory(liveBranch.id);
-            
             if (isMounted) {
                 setHistory(data || []);
                 setIsLoadingHistory(false);
             }
         };
-
         fetchHistory();
-
         return () => { isMounted = false; };
     }, [liveBranch?.id, refreshKey, getBranchHistory]); 
 
@@ -112,10 +92,11 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
         return (employees || []).filter(e => String(e.branchId) === String(liveBranch?.id) || String(e.branch_id) === String(liveBranch?.id));
     }, [employees, liveBranch?.id]);
 
+    // 🚨 3. RE-ENRUTAMOS AL PERFIL DEL EMPLEADO MEDIANTE URL
     const goToProfile = (emp) => {
-        if (emp && setActiveEmployee && setView) {
-            setActiveEmployee(emp);
-            setView('employee-detail');
+        if (emp) {
+            if (setActiveEmployee) setActiveEmployee(emp);
+            navigate(`/dashboard/empleado/${emp.id}`);
         }
     };
 
@@ -348,15 +329,12 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
     return (
         <>
             <GlassViewLayout
-                icon={null} // 🚨 Desactivamos el ícono automático
+                icon={null}
                 title={
                     <div className="flex items-center gap-3 md:gap-4">
-                        {/* 🚨 1. BOTÓN HOLOGRÁFICO DE REGRESAR (A la extrema izquierda) */}
+                        {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
-                            onClick={() => {
-                                if (onBack) onBack();
-                                else if (setView) setView('branches');
-                            }} 
+                            onClick={() => navigate('/branches')} 
                             className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Sucursales"
                         >
@@ -364,12 +342,10 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
                             <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#007AFF] transition-colors relative z-10" />
                         </button>
 
-                        {/* 🚨 2. ÍCONO DE LA SUCURSAL */}
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#007AFF] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,122,255,0.3)] shrink-0">
                             <Building2 size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                         </div>
 
-                        {/* 🚨 3. TEXTOS */}
                         <div
                             className="flex flex-col items-start gap-1 cursor-pointer group/title relative transition-all"
                             onMouseEnter={handleMouseEnter}
@@ -391,7 +367,6 @@ const BranchDetailView = ({ branch, onBack, setActiveEmployee, setView, openModa
                         </div>
                     </div>
                 }
-                onBack={onBack}
                 filtersContent={renderHeaderActions()}
                 transparentBody={true}
             >

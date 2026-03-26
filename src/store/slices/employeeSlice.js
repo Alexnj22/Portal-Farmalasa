@@ -1,15 +1,55 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS } from '../utils';
+import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS } from '../utils';
+
+// 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
+const compressImage = (file, maxWidth = 400) => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                
+                // Solo reducimos si la imagen es muy grande, no la estiramos
+                const scaleSize = maxWidth > img.width ? 1 : maxWidth / img.width;
+                canvas.width = img.width * scaleSize;
+                canvas.height = img.height * scaleSize;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Dibujamos la imagen respetando la transparencia
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // 🚨 Usamos formato WebP que SÍ soporta transparencia y además comprime
+                canvas.toBlob((blob) => {
+                    if (!blob) { resolve(file); return; }
+                    // Si un navegador muy viejo no soporta WebP, usamos PNG de respaldo
+                    const finalType = blob.type || 'image/png';
+                    const ext = finalType.includes('webp') ? '.webp' : '.png';
+                    
+                    resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ext, { 
+                        type: finalType, 
+                        lastModified: Date.now() 
+                    }));
+                }, 'image/webp', 0.85); // 85% de calidad
+            };
+        };
+    });
+};
 
 const persistEmployees = (employees) => {
     try {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
         const lightEmployees = employees.map(emp => {
+            const safeEmp = { ...emp };
+            SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
             return {
-                ...emp,
-                history: [], 
-                documents: [], 
+                ...safeEmp,
+                history: [],
+                documents: [],
                 attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
             };
         });
@@ -31,7 +71,6 @@ export const createEmployeeSlice = (set, get) => ({
     }),
 
     // 🚨 FUNCIÓN MAESTRA DE ARCHIVOS POR EMPLEADO
-    // Estructura: empleados / {employeeId} / {folderPath} / archivo.jpg
     uploadEmployeeFile: async (file, employeeId, folderPath = 'foto_perfil') => {
         if (!file || !employeeId) return null;
         try {
@@ -82,7 +121,7 @@ export const createEmployeeSlice = (set, get) => ({
             const dbPayload = {
                 first_names: fNames,
                 last_names: lNames,
-                name: fullName, // 🚨 GUARDADO DIRECTO EN BD
+                name: fullName, 
                 username: formData.username ? formData.username.trim().toLowerCase() : null,
                 code: formData.code,
                 
@@ -127,7 +166,9 @@ export const createEmployeeSlice = (set, get) => ({
 
             const uploadedFile = formData.file || formData.photo;
             if (uploadedFile && uploadedFile instanceof File) {
-                const publicPhotoUrl = await get().uploadEmployeeFile(uploadedFile, newEmp.id, 'foto_perfil');
+                // Comprimimos antes de subir
+                const compressedPhoto = await compressImage(uploadedFile);
+                const publicPhotoUrl = await get().uploadEmployeeFile(compressedPhoto, newEmp.id, 'foto_perfil');
                 if (publicPhotoUrl) {
                     await supabase.from("employees").update({ photo_url: publicPhotoUrl }).eq("id", newEmp.id);
                     newEmp.photo_url = publicPhotoUrl; 
@@ -176,7 +217,6 @@ export const createEmployeeSlice = (set, get) => ({
         try {
             const dbPayload = { ...updatedData };
 
-            // 🚨 SI SE EDITAN LOS NOMBRES, ACTUALIZAMOS EL CAMPO 'NAME'
             if (updatedData.first_names !== undefined || updatedData.last_names !== undefined) {
                 const fNames = (updatedData.first_names ?? '').trim();
                 const lNames = (updatedData.last_names ?? '').trim();
@@ -190,7 +230,9 @@ export const createEmployeeSlice = (set, get) => ({
             
             const uploadedFile = updatedData.file || updatedData.photo;
             if (uploadedFile instanceof File) {
-                dbPayload.photo_url = await get().uploadEmployeeFile(uploadedFile, id, 'foto_perfil');
+                // Comprimimos antes de subir
+                const compressedPhoto = await compressImage(uploadedFile);
+                dbPayload.photo_url = await get().uploadEmployeeFile(compressedPhoto, id, 'foto_perfil');
             }
 
             if (updatedData.role_id !== undefined) dbPayload.role_id = updatedData.role_id ? parseInt(updatedData.role_id, 10) : null;
@@ -204,7 +246,6 @@ export const createEmployeeSlice = (set, get) => ({
                 dbPayload.contract_end_date = null;
             }
 
-            // 🚨 LIMPIEZA EXTREMA ANTES DE DB (Ahora respetamos 'name')
             delete dbPayload.id; 
             delete dbPayload.branchId;
             delete dbPayload.photo;
@@ -265,7 +306,7 @@ export const createEmployeeSlice = (set, get) => ({
         }
     },
 
-// 🚨 CIRUGÍA SALY: Soft Delete (Desactivación Segura) en lugar de borrado físico
+    // 🚨 SOFT DELETE: Desactivación Segura (No borra el registro de BD)
     deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
         try {
             const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
@@ -273,15 +314,14 @@ export const createEmployeeSlice = (set, get) => ({
             
             if (!empEliminar) throw new Error("Empleado no encontrado en caché local");
 
-            // 1. El "Soft Delete": Cambiamos el estado y lo quitamos de la sucursal activa
             const dbPayload = {
                 status: 'INACTIVO',
-                branch_id: null,        // Ya no pertenece a ninguna sucursal
-                role_id: null,          // Libera el cargo
+                branch_id: null,        
+                role_id: null,          
                 secondary_role_id: null, 
-                shift_id: null,         // Libera el turno
-                kiosk_pin: null,        // 🚨 CRÍTICO: Invalida su acceso al kiosco biométrico
-                contract_end_date: fechaBaja // Cerramos su contrato actual
+                shift_id: null,         
+                kiosk_pin: null,        // Invalida acceso biométrico
+                contract_end_date: fechaBaja 
             };
 
             const { error } = await supabase
@@ -291,18 +331,18 @@ export const createEmployeeSlice = (set, get) => ({
                 
             if (error) throw error;
 
-            // 2. Registro Histórico Inmutable (Para que sepas cuándo se fue y por qué)
-            await supabase.from('employee_history').insert([{
+            await supabase.from('employee_events').insert([{
                 employee_id: id,
                 type: 'TERMINATION',
                 date: fechaBaja,
-                previous_branch_id: empEliminar.branchId,
-                previous_role: empEliminar.role,
-                new_role: 'Desvinculado',
-                details: { note: `Motivo de salida: ${reason}` }
+                note: `Motivo de salida: ${reason}`,
+                metadata: {
+                    previous_branch_id: empEliminar.branchId,
+                    previous_role: empEliminar.role,
+                    new_role: 'Desvinculado'
+                }
             }]);
 
-            // 3. Auditoría de Seguridad (Log de Sistema)
             await get().appendAuditLog('BAJA_EMPLEADO', id, {
                 timeline_title: `Desvinculación: ${empEliminar.name}`,
                 dimension: 'HR',
@@ -314,7 +354,6 @@ export const createEmployeeSlice = (set, get) => ({
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-            // 4. Actualizamos el estado global (UI)
             set((state) => {
                 const next = state.employees.map(emp => {
                     if (String(emp.id) !== String(id)) return emp;
@@ -322,8 +361,9 @@ export const createEmployeeSlice = (set, get) => ({
                         ...emp,
                         ...dbPayload,
                         branchId: null,
+                        status: 'INACTIVO',
                         role: 'Sin Asignar',
-                        effectiveStatus: 'Liquidado' // O 'Inactivo'
+                        effectiveStatus: 'Inactivo'
                     };
                 });
                 persistEmployees(next);
@@ -336,7 +376,7 @@ export const createEmployeeSlice = (set, get) => ({
             return false;
         }
     },
-    
+
     registerEmployeeEvent: async (employeeId, eventData, file = null) => {
         try {
             const dbPayload = { employee_id: employeeId, type: eventData.type, date: eventData.date || new Date().toISOString().split('T')[0], note: eventData.note || '', metadata: eventData };
@@ -493,9 +533,7 @@ export const createEmployeeSlice = (set, get) => ({
                         employee_name: employeeName
                     } : null
                 }
-            ).then(() => {
-                window.dispatchEvent(new CustomEvent('force-history-refresh'));
-            }).catch(console.error);
+            ).catch(console.error);
 
             set((state) => {
                 const next = state.employees.map(emp => {
@@ -515,6 +553,8 @@ export const createEmployeeSlice = (set, get) => ({
                 persistEmployees(next);
                 return { employees: next };
             });
+
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             return newPunch || { timestamp, type: dbType, details: metadata };
 

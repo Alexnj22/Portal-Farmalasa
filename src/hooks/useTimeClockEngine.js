@@ -7,6 +7,7 @@ import {
     formatDuration,
     getKioskInputMethod,
     resolveAttendanceFlow,
+    toLocalISODate,
 } from '../utils/timeClock.helpers';
 import {
     buildAuthPromptState,
@@ -482,6 +483,31 @@ const submitEarlyExit = useCallback((e) => {
 
         if ((feedback && !specialMode && !authPrompt) || isProcessing || earlyExitData) return;
 
+        if (!authPrompt && inputMethod === 'TECLADO_MANUAL') {
+            appendAuditLog?.(
+                'INTENTO_MANUAL_BLOQUEADO',
+                'KIOSK',
+                {
+                    codigo_intentado: codeToFind,
+                    source: 'KIOSK',
+                    severity: 'WARNING',
+                    branch_id: kiosk.kioskConfig?.branchId,
+                    branch_name: kiosk.kioskConfig?.branchName,
+                    device_name: kiosk.kioskConfig?.deviceName,
+                }
+            );
+            setFeedback({
+                status: 'error',
+                message: 'USO DE LECTOR REQUERIDO',
+                subtext: 'Por seguridad, solo se permite el carné físico. Contacta a tu supervisor si necesitas ayuda.',
+                color: 'red',
+                icon: ShieldAlert,
+            });
+            setScanCode('');
+            scheduleFeedbackClose(4000);
+            return;
+        }
+
         setIsProcessing(true);
 
         const kioskConfig = await kiosk.verifyDevice();
@@ -532,16 +558,14 @@ const submitEarlyExit = useCallback((e) => {
                         accion_intentada: authPrompt.type,
                         metodo_ingreso: inputMethod,
                         alerta: 'Posible intento de manipulación del sistema / evasión de seguridad',
-                    },
-                    authPrompt.employee?.name || 'Sistema/Anónimo',
-                    {
                         source: 'KIOSK',
-                        severity: 'WARN',
-                        branchId: kioskConfig.branchId,
-                        branchName: kioskConfig.branchName,
-                        deviceName: kioskConfig.deviceName,
-                        inputMethod,
-                    }
+                        severity: 'WARNING',
+                        branch_id: kioskConfig.branchId,
+                        branch_name: kioskConfig.branchName,
+                        device_name: kioskConfig.deviceName,
+                        input_method: inputMethod,
+                    },
+                    authPrompt.employee?.name || 'Sistema/Anónimo'
                 );
 
                 setFeedback({
@@ -589,7 +613,7 @@ const submitEarlyExit = useCallback((e) => {
         const todayStr = toLocalISO(time);
 
         const todayPunches = (employee.attendance || []).filter((a) =>
-            String(a.timestamp || '').startsWith(todayStr)
+            a.timestamp && toLocalISODate(new Date(a.timestamp)) === todayStr
         );
 
         const customConfig = buildCustomConfig({
@@ -649,6 +673,51 @@ const submitEarlyExit = useCallback((e) => {
             currentDate: time,
             todayPunches,
         });
+
+        // ── ANTI-DUPLICATE GUARD ──────────────────────────────────────
+        if (flow?.type) {
+            const ultimoMismoTipo = (employee.attendance || [])
+                .filter(a => a.type === flow.type)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+
+            const minutosDesdeUltimo = ultimoMismoTipo
+                ? (time - new Date(ultimoMismoTipo.timestamp)) / 60000
+                : 999;
+
+            if (minutosDesdeUltimo < 3) {
+                const lastTimeStr = new Date(ultimoMismoTipo.timestamp)
+                    .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                appendAuditLog?.(
+                    'MARCAJE_DUPLICADO_BLOQUEADO',
+                    employee.id,
+                    {
+                        empleado: employee.name,
+                        tipo_marcaje: flow.type,
+                        ultimo_marcaje: ultimoMismoTipo.timestamp,
+                        minutos_desde_ultimo: Math.floor(minutosDesdeUltimo),
+                        source: 'KIOSK',
+                        severity: 'WARNING',
+                        branch_id: kioskConfig.branchId,
+                        branch_name: kioskConfig.branchName,
+                        device_name: kioskConfig.deviceName,
+                    }
+                );
+
+                setFeedback({
+                    status: 'warning',
+                    message: 'MARCAJE DUPLICADO DETECTADO',
+                    subtext: `${employee.name} — Último marcaje: ${lastTimeStr}. Si hay un error, contacta a tu supervisor.`,
+                    color: 'orange',
+                    icon: ShieldAlert,
+                });
+                setScanCode('');
+                setIsProcessing(false);
+                scheduleFeedbackClose(5000);
+                return;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────
 
         const shouldForceAuth = ['IN_EXTRA', 'IN_EARLY', 'IN_AFTER_SHIFT', 'OUT_LATE'].includes(flow?.type);
 

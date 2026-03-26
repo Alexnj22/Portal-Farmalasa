@@ -31,8 +31,8 @@ export const buildCustomConfig = ({
 };
 
 export const buildTimeClockConfig = (employee, config, now = new Date(), lastPunch = null) => {
-  const shiftStartD = config?.shift?.start ? buildDateFromTime(config.shift.start, now) : null;
-  const shiftEndDBase = config?.shift?.end ? buildDateFromTime(config.shift.end, now) : null;
+  const shiftStartD = config?.shift?.start ? buildDateFromTime(now, config.shift.start) : null;
+  const shiftEndDBase = config?.shift?.end ? buildDateFromTime(now, config.shift.end) : null;
 
   let shiftEndD = shiftEndDBase;
   if (shiftStartD && shiftEndD && shiftEndD < shiftStartD) {
@@ -40,10 +40,10 @@ export const buildTimeClockConfig = (employee, config, now = new Date(), lastPun
     shiftEndD.setDate(shiftEndD.getDate() + 1);
   }
 
-  const lunchStartD = config?.lunchTime ? buildDateFromTime(config.lunchTime, now) : null;
+  const lunchStartD = config?.lunchTime ? buildDateFromTime(now, config.lunchTime) : null;
   const lunchEndD = lunchStartD ? new Date(lunchStartD.getTime() + 60 * 60000) : null;
 
-  const lactStartD = config?.lactationTime ? buildDateFromTime(config.lactationTime, now) : null;
+  const lactStartD = config?.lactationTime ? buildDateFromTime(now, config.lactationTime) : null;
   const lactEndD = lactStartD ? new Date(lactStartD.getTime() + 60 * 60000) : null;
 
   const isGluedToIn = !!(lactStartD && shiftStartD && lactStartD.getTime() === shiftStartD.getTime());

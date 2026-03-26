@@ -85,16 +85,23 @@ export const getStartOfWeek = (dateString) => {
 // --- LÓGICA DE NEGOCIO Y HORARIOS ---
 
 export const getEffectiveBranchId = (emp) => {
-    const t = toLocalISO(new Date()); 
-    const s = emp?.history?.find(h => h.type === 'SUPPORT' && h.date <= t && h.endDate >= t);
+    const t = toLocalISO(new Date());
+    const s = emp?.history?.find(h => h.type === 'SUPPORT' && h.date <= t && (h.metadata?.endDate ?? h.endDate) >= t);
     return s ? parseInt(s.targetBranchId, 10) : emp?.branchId;
 };
 
+const TEMPORAL_TYPES = ['VACATION', 'DISABILITY', 'SUPPORT'];
+
 export const getEffectiveStatus = (emp) => {
-    const t = toLocalISO(new Date()); 
+    const t = toLocalISO(new Date());
+    if (emp?.status === 'INACTIVO') return 'Inactivo';
     if (emp?.status === 'Liquidado') return 'Liquidado';
-    
-    const ev = emp?.history?.find(h => h.date <= t && (h.endDate >= t || !h.endDate));
+
+    const ev = emp?.history?.find(h =>
+        TEMPORAL_TYPES.includes(h.type) &&
+        h.date <= t &&
+        ((h.metadata?.endDate ?? h.endDate) >= t || !(h.metadata?.endDate ?? h.endDate))
+    );
     
     if (ev) {
         if (ev.type === 'DISABILITY') return 'Incapacitado';
@@ -172,12 +179,12 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
     const l = p[p.length - 1]; 
     const lastType = l.type || '';
     
-    // 🚨 CORRECCIÓN: Patrón robusto para detectar si está trabajando, sin importar el tipo de entrada
-    if (lastType.startsWith('IN')) 
-        return { status: 'WORKING', label: 'En Labores', color: 'bg-green-100 text-green-700 border-green-200' }; 
-    else if (lastType === 'OUT_LUNCH') 
+    // 🚨 CORRECCIÓN: Tipos exactos de la BD (PUNCH_IN, LUNCH_END, LACTATION_END = trabajando)
+    if (lastType === 'PUNCH_IN' || lastType === 'LUNCH_END' || lastType === 'LACTATION_END')
+        return { status: 'WORKING', label: 'En Labores', color: 'bg-green-100 text-green-700 border-green-200' };
+    else if (lastType === 'LUNCH_START')
         return { status: 'LUNCH', label: 'En Almuerzo', color: 'bg-orange-100 text-orange-700 border-orange-200' };
-    else if (lastType === 'OUT_LACTATION')
+    else if (lastType === 'LACTATION_START')
         return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-pink-100 text-pink-700 border-pink-200' };
     else if (lastType === 'OUT_BUSINESS')
         // 🚨 NUEVO: Etiqueta especial para Gestión Externa

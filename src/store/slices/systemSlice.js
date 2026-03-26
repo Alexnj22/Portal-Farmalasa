@@ -1,10 +1,12 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS } from '../utils';
+import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS } from '../utils';
 
 export const createSystemSlice = (set, get) => ({
+    // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
     shifts: safeJsonParse(localStorage.getItem(CACHE_KEYS.SHIFTS), []) || [],
     roles: safeJsonParse(localStorage.getItem(CACHE_KEYS.ROLES), []) || [],
     announcements: safeJsonParse(localStorage.getItem(CACHE_KEYS.ANNOUNCEMENTS), []) || [],
+    holidays: safeJsonParse(localStorage.getItem(CACHE_KEYS.HOLIDAYS), []) || [],
     isBootSyncing: false,
     bootStatus: 'idle',
     bootPromise: null,
@@ -21,6 +23,10 @@ export const createSystemSlice = (set, get) => ({
     setAnnouncements: (updater) => set((state) => {
         const next = typeof updater === 'function' ? updater(state.announcements) : updater;
         return { announcements: next };
+    }),
+    setHolidays: (updater) => set((state) => {
+        const next = typeof updater === 'function' ? updater(state.holidays) : updater;
+        return { holidays: next };
     }),
 
     resetBootState: () => set({
@@ -57,6 +63,14 @@ export const createSystemSlice = (set, get) => ({
             });
 
             try {
+                // 🚨 1. CARGAMOS LOS ASUETOS DURANTE EL BOOT DEL SISTEMA
+                const { data: holidaysData } = await supabase.from("holidays").select("*").order("holiday_date", { ascending: true });
+                if (holidaysData) {
+                    set({ holidays: holidaysData });
+                    localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
+                }
+
+                // 2. CARGAMOS SUCURSALES
                 const { data: branchData } = await supabase.from("branches").select("*").order("id", { ascending: true });
                 if (branchData) {
                     const mappedBranches = branchData.map((b) => ({
@@ -69,13 +83,14 @@ export const createSystemSlice = (set, get) => ({
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
                 }
 
+                // 3. CARGAMOS ROLES (Asegurándonos de traer max_limit y scope)
                 const { data: rolesData } = await supabase.from("roles").select("*").order("name", { ascending: true });
                 if (rolesData) {
                     set({ roles: rolesData });
                     localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
                 }
 
-                // 🚨 Reemplaza el bloque de shiftsData por este:
+                // 4. CARGAMOS TURNOS
                 const { data: shiftsData } = await supabase.from("shifts").select("*");
                 if (shiftsData) {
                     const mappedShifts = shiftsData.map((s) => ({
@@ -84,11 +99,13 @@ export const createSystemSlice = (set, get) => ({
                         name: s.name,
                         start: s.start_time.substring(0, 5),
                         end: s.end_time.substring(0, 5),
-                        is_active: s.is_active // 🚨 FALTABA ESTO PARA EL ESTADO
+                        is_active: s.is_active
                     }));
                     set({ shifts: mappedShifts });
                     localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
                 }
+
+                // 5. CARGAMOS EMPLEADOS Y ROSTERS
                 const today = new Date();
                 const dayOfWeek = today.getDay();
                 const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
@@ -106,7 +123,7 @@ export const createSystemSlice = (set, get) => ({
                     rosterMap[r.employee_id] = r.schedule_data;
                 });
 
-                const { data: empData } = await supabase.from("employees").select(`
+                const { data: empData } = await supabase.from("employees_safe").select(`
                     *,
                     main_role:roles!employees_role_id_fkey(id, name),
                     sec_role:roles!employees_secondary_role_id_fkey(id, name)
@@ -117,8 +134,8 @@ export const createSystemSlice = (set, get) => ({
 
                 if (empData) {
                     const mappedEmployees = empData.map((e) => {
-                        const myHistory = eventsData ? eventsData.filter((ev) => ev.employee_id === e.id) : [];
-                        const myDocs = docsData ? docsData.filter((d) => d.employee_id === e.id) : [];
+                        const myHistory = eventsData ? eventsData.filter((ev) => String(ev.employee_id) === String(e.id)) : [];
+                        const myDocs = docsData ? docsData.filter((d) => String(d.employee_id) === String(e.id)) : [];
                         const mySchedule = rosterMap[e.id] || {};
 
                         return {
@@ -142,19 +159,23 @@ export const createSystemSlice = (set, get) => ({
 
                     try {
                         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                        const lightCache = mappedEmployees.map(emp => ({
-                            ...emp,
-                            history: [],
-                            documents: [],
-                            attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
-                        }));
+                        const lightCache = mappedEmployees.map(emp => {
+                            const safeEmp = { ...emp };
+                            SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
+                            return {
+                                ...safeEmp,
+                                history: [],
+                                documents: [],
+                                attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
+                            };
+                        });
                         localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
                     } catch (cacheError) {
                         console.warn("⚠️ Advertencia de Caché:", cacheError);
                     }
                 }
 
-                // 🚨 OBTENCIÓN DE AVISOS: El Panel Admin debe ver TODOS (incluso los futuros)
+                // 6. CARGAMOS ANUNCIOS
                 const { data: annData } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
                 if (annData) {
                     const mappedAnns = annData.map((a) => ({
@@ -168,7 +189,7 @@ export const createSystemSlice = (set, get) => ({
                         readBy: a.read_by || [],
                         isArchived: a.is_archived,
                         editedAt: a.edited_at,
-                        scheduledFor: a.scheduled_for // 🚨 INYECTAMOS LA FECHA PROGRAMADA
+                        scheduledFor: a.scheduled_for
                     }));
                     set({ announcements: mappedAnns });
                     localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
@@ -184,7 +205,6 @@ export const createSystemSlice = (set, get) => ({
 
                 return true;
             } catch (e) {
-                // 🔴 MEJORA: Mostrar el error real en consola para facilitar la depuración
                 console.error("🔥 Error crítico en fetchBoot:", e.message || e);
                 set({ bootStatus: 'error' });
                 return false;
@@ -200,7 +220,96 @@ export const createSystemSlice = (set, get) => ({
         return await bootPromise;
     },
 
-    addRole: async (name, parentRoleId = null, secondaryParentRoleId = null) => {
+    // ============================================================================
+    // 🚨 CREAR NOVEDAD / EVENTO RRHH (El motor detrás del FormNovedad)
+    // ============================================================================
+    registerEmployeeEvent: async (employeeId, eventData, file = null) => {
+        try {
+            // 1. Extraemos la fecha de los permisos si es múltiple
+            const isPermission = eventData.type === 'PERMISSION';
+            const primaryDate = isPermission && eventData.permissionDates?.length > 0 
+                ? eventData.permissionDates[0] // Tomamos el primer día como base del registro principal
+                : (eventData.date || new Date().toISOString().split('T')[0]);
+
+            // 2. Armamos el payload seguro para Supabase
+            const dbPayload = { 
+                employee_id: employeeId, 
+                type: eventData.type, 
+                date: primaryDate, 
+                note: eventData.note || '', 
+                metadata: {
+                    ...eventData, // Todo el formData viaja a la BD para tener contexto 
+                    permissionDates: isPermission ? eventData.permissionDates : null // Si son varios días, se guardan aquí
+                }
+            };
+
+            const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
+            if (error) throw error;
+            
+            const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
+            
+            // 3. Auditoría Global
+            await get().appendAuditLog('ACCION_RRHH', employeeId, {
+                timeline_title: `Evento RRHH: ${eventData.type.replace(/_/g, ' ')}`,
+                dimension: 'HR',
+                branch_id: empEvento?.branchId,
+                new_value: eventData.note || 'Evento registrado'
+            });
+
+            // 4. Si hay documento adjunto (Boleta ISSS, Finiquito, etc), lo subimos a Storage
+            let docObject = null;
+            if (file) {
+                const url = await get().uploadFileToStorage(file, 'documents');
+                if (url) {
+                    const { data: newDoc } = await supabase.from('employee_documents').insert([{ 
+                        employee_id: employeeId, 
+                        event_id: newEvent.id, 
+                        name: file.name, 
+                        type: 'DOCUMENT', 
+                        url: url 
+                    }]).select().single();
+                    docObject = newDoc;
+                }
+            }
+
+            // Refrescamos vistas globalmente
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            // 5. Actualizamos el estado en Zustand (Memoria RAM)
+            set((state) => {
+                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
+                    ...emp,
+                    history: [...(emp.history || []), newEvent],
+                    documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
+                });
+                
+                try {
+                    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                    const lightCache = next.map(emp => ({
+                        ...emp,
+                        history: [],
+                        documents: [],
+                        attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
+                    }));
+                    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
+                } catch (e) {
+                    console.warn("⚠️ Advertencia de Caché:", e);
+                }
+
+                return { employees: next };
+            });
+            
+            return newEvent.id;
+        } catch (err) {
+            console.error("Error registrando evento de empleado:", err);
+            return null;
+        }
+    },
+
+    // ============================================================================
+    // RESTO DE FUNCIONES DEL SLICE 
+    // ============================================================================
+addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
         set({ isLoading: true, error: null });
         try {
             const { data, error } = await supabase
@@ -208,17 +317,22 @@ export const createSystemSlice = (set, get) => ({
                 .insert([{
                     name,
                     parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId
+                    secondary_parent_role_id: secondaryParentRoleId,
+                    scope, 
+                    max_limit: maxLimit
                 }])
                 .select()
                 .single();
 
             if (error) throw error;
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-            set((state) => ({ roles: [...state.roles, data] }));
+            set((state) => {
+                const next = [...state.roles, data];
+                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+                return { roles: next };
+            });
             return data;
         } catch (error) {
             set({ error: error.message });
@@ -228,39 +342,7 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
-    deleteRole: async (roleId, roleName) => {
-        const state = get();
-        if (state.employees.some(e => e.role_id === roleId || e.secondary_role_id === roleId)) {
-            throw new Error("No se puede eliminar: Existen colaboradores asignados a este cargo.");
-        }
-        if (state.roles.some(r => r.parent_role_id === roleId || r.secondary_parent_role_id === roleId)) {
-            throw new Error("No se puede eliminar: Este cargo es superior (o reporte matricial) de otros niveles.");
-        }
-        try {
-            const { error } = await supabase.from('roles').delete().eq('id', roleId);
-            if (error) throw error;
-            await get().appendAuditLog('ELIMINAR_CARGO', roleId, {
-                timeline_title: `Eliminación de Cargo: ${roleName}`,
-                dimension: 'HR',
-                old_value: 'Cargo Activo',
-                new_value: 'Eliminado del Sistema'
-            });
-
-            // 🔴 BENGALA
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = state.roles.filter(r => r.id !== roleId);
-                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
-                return { roles: next };
-            });
-            return true;
-        } catch (err) {
-            console.error("Error eliminando rol:", err);
-            return false;
-        }
-    },
-    updateRole: async (roleId, name, parentRoleId = null, secondaryParentRoleId = null) => {
+    updateRole: async (roleId, name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
         set({ isLoading: true, error: null });
         try {
             const { data, error } = await supabase
@@ -268,7 +350,9 @@ export const createSystemSlice = (set, get) => ({
                 .update({
                     name,
                     parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId
+                    secondary_parent_role_id: secondaryParentRoleId,
+                    scope, 
+                    max_limit: maxLimit
                 })
                 .eq('id', roleId)
                 .select()
@@ -281,7 +365,6 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Configuración actualizada'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -298,6 +381,39 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+
+    deleteRole: async (roleId, roleName) => {
+        const state = get();
+        if (state.employees.some(e => String(e.role_id) === String(roleId) || String(e.secondary_role_id) === String(roleId))) {
+            throw new Error("No se puede eliminar: Existen colaboradores asignados a este cargo.");
+        }
+        if (state.roles.some(r => r.parent_role_id === roleId || r.secondary_parent_role_id === roleId)) {
+            throw new Error("No se puede eliminar: Este cargo es superior (o reporte matricial) de otros niveles.");
+        }
+        try {
+            const { error } = await supabase.from('roles').delete().eq('id', roleId);
+            if (error) throw error;
+            await get().appendAuditLog('ELIMINAR_CARGO', roleId, {
+                timeline_title: `Eliminación de Cargo: ${roleName}`,
+                dimension: 'HR',
+                old_value: 'Cargo Activo',
+                new_value: 'Eliminado del Sistema'
+            });
+
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            set((state) => {
+                const next = state.roles.filter(r => r.id !== roleId);
+                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+                return { roles: next };
+            });
+            return true;
+        } catch (err) {
+            console.error("Error eliminando rol:", err);
+            return false;
+        }
+    },
+
     createAnnouncement: async (announcementData) => {
         try {
             const storedUser = safeJsonParse(localStorage.getItem("sb_user"));
@@ -310,7 +426,7 @@ export const createSystemSlice = (set, get) => ({
                 is_archived: false,
                 read_by: [],
                 created_by: storedUser?.id || null,
-                scheduled_for: announcementData.scheduledFor || null // 🚨 INSERTAMOS LA FECHA
+                scheduled_for: announcementData.scheduledFor || null
             };
             const { data, error } = await supabase.from('announcements').insert([payload]).select().single();
             if (error) throw error;
@@ -320,7 +436,6 @@ export const createSystemSlice = (set, get) => ({
                 new_value: `Prioridad: ${data.priority}`
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             const newAnn = {
@@ -333,7 +448,7 @@ export const createSystemSlice = (set, get) => ({
                 date: data.created_at,
                 readBy: data.read_by || [],
                 isArchived: data.is_archived,
-                scheduledFor: data.scheduled_for // 🚨 MAPEO AL ESTADO
+                scheduledFor: data.scheduled_for
             };
 
             set((state) => {
@@ -349,7 +464,7 @@ export const createSystemSlice = (set, get) => ({
     },
 
     updateAnnouncement: async (id, updateData, auditDetails) => {
-        const { title, message, targetType, targetValue, priority, scheduledFor } = updateData; // 🚨 ACEPTAMOS LA FECHA
+        const { title, message, targetType, targetValue, priority, scheduledFor } = updateData;
 
         try {
             const { data, error } = await supabase
@@ -360,8 +475,7 @@ export const createSystemSlice = (set, get) => ({
                     target_type: targetType,
                     target_value: targetValue,
                     priority,
-                    scheduled_for: scheduledFor || null, // 🚨 ACTUALIZAMOS LA FECHA
-                    read_by: [],
+                    scheduled_for: scheduledFor || null,
                     edited_at: new Date().toISOString()
                 })
                 .eq('id', id)
@@ -376,7 +490,6 @@ export const createSystemSlice = (set, get) => ({
                 ...auditDetails
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -389,7 +502,7 @@ export const createSystemSlice = (set, get) => ({
                             targetType: data.target_type,
                             targetValue: data.target_value,
                             priority: data.priority,
-                            scheduledFor: data.scheduled_for, // 🚨 MAPEO DE RESPUESTA
+                            scheduledFor: data.scheduled_for,
                             readBy: [],
                             editedAt: data.edited_at
                         }
@@ -416,7 +529,6 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Eliminado Permanentemente'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -441,7 +553,6 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Movido al archivo'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -487,11 +598,10 @@ export const createSystemSlice = (set, get) => ({
             await get().appendAuditLog('CREAR_TURNO_CATALOGO', data.id, {
                 timeline_title: `Nuevo Turno Creado: ${data.name}`,
                 dimension: 'OPERATIVE',
-                branch_id: data.branch_id, // 🚨 CRUCIAL PARA TABHISTORY
+                branch_id: data.branch_id,
                 new_value: `${data.start_time.substring(0, 5)} a ${data.end_time.substring(0, 5)}`
             });
 
-            // 🔴 BENGALA: Para que las vistas de sucursales actualicen sus históricos
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             const newShift = { id: data.id, branchId: data.branch_id, name: data.name, start: data.start_time.substring(0, 5), end: data.end_time.substring(0, 5) };
@@ -517,7 +627,6 @@ export const createSystemSlice = (set, get) => ({
                 new_value: 'Eliminado Permanentemente'
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -532,21 +641,21 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
-updateShift: async (id, shiftData) => {
+    updateShift: async (id, shiftData) => {
         try {
             const { data, error } = await supabase.from("shifts").update(shiftData).eq("id", id).select().single();
             if (error) throw error;
-            
+
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
-                const next = state.shifts.map(s => String(s.id) === String(id) ? { 
-                    ...s, 
-                    branchId: data.branch_id, 
-                    name: data.name, 
-                    start: data.start_time.substring(0, 5), 
+                const next = state.shifts.map(s => String(s.id) === String(id) ? {
+                    ...s,
+                    branchId: data.branch_id,
+                    name: data.name,
+                    start: data.start_time.substring(0, 5),
                     end: data.end_time.substring(0, 5),
-                    is_active: data.is_active 
+                    is_active: data.is_active
                 } : s);
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
                 return { shifts: next };
@@ -561,7 +670,7 @@ updateShift: async (id, shiftData) => {
         try {
             const { error } = await supabase.from("shifts").update({ is_active: false }).eq("id", id);
             if (error) throw error;
-            
+
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             set((state) => {
@@ -577,14 +686,11 @@ updateShift: async (id, shiftData) => {
 
     unarchiveShift: async (id) => {
         try {
-            // Actualiza a activo en la DB
             const { error } = await supabase.from("shifts").update({ is_active: true }).eq("id", id);
             if (error) throw error;
-            
-            // Avisa a la vista principal para recargar historiales si es necesario
+
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-            // Actualiza el estado local en Zustand
             set((state) => {
                 const next = state.shifts.map(s => String(s.id) === String(id) ? { ...s, is_active: true } : s);
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(next));
@@ -603,7 +709,6 @@ updateShift: async (id, shiftData) => {
 
             const rosterMap = {};
             (data || []).forEach(r => {
-                // 🚨 FIX: Asegurarnos de que el JSON se parsee si viene como string
                 let parsedSchedule = r.schedule_data;
                 if (typeof parsedSchedule === 'string') {
                     try { parsedSchedule = JSON.parse(parsedSchedule); } catch (e) { parsedSchedule = {}; }
@@ -629,7 +734,6 @@ updateShift: async (id, shiftData) => {
                 new_value: `Semana: ${weekStartDate}`
             });
 
-            // 🔴 BENGALA
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
             return true;
@@ -645,7 +749,7 @@ updateShift: async (id, shiftData) => {
                 employee_id: empId,
                 week_start_date: weekStartDate,
                 schedule_data: schedulesMap[empId],
-                status: 'DRAFT', // 🚨 La magia se guarda siempre en borrador primero
+                status: 'DRAFT',
                 updated_at: new Date().toISOString()
             }));
 
@@ -655,7 +759,6 @@ updateShift: async (id, shiftData) => {
 
             if (error) throw error;
 
-            // Refrescar la memoria
             await get().fetchWeekRosters(weekStartDate);
             return true;
         } catch (err) {
@@ -671,21 +774,19 @@ updateShift: async (id, shiftData) => {
                 .update({ status: 'PUBLISHED' })
                 .eq('week_start_date', weekStartDate);
 
-            // 🚨 Si hay una sucursal filtrada, solo publicamos a los empleados de ESA sucursal
             if (branchId !== 'ALL') {
                 const state = get();
                 const branchEmployees = state.employees
                     .filter(e => String(e.branchId || e.branch_id) === String(branchId))
                     .map(e => e.id);
 
-                if (branchEmployees.length === 0) return true; // No hay a quién publicarle
+                if (branchEmployees.length === 0) return true;
                 query = query.in('employee_id', branchEmployees);
             }
 
             const { error } = await query;
             if (error) throw error;
 
-            // Auditoría
             await get().appendAuditLog('PUBLICAR_HORARIOS', branchId === 'ALL' ? 'GLOBAL' : branchId, {
                 timeline_title: `Publicación de Horarios`,
                 dimension: 'HR',
@@ -698,7 +799,6 @@ updateShift: async (id, shiftData) => {
             throw new Error("No se pudieron publicar los horarios.");
         }
     },
-    // ✅ KIOSK BOOT REFINADO: Filtramos los avisos futuros para que el kiosco no los sepa
     fetchKioskBoot: async () => {
         try {
             const { data: bData } = await supabase.from("branches").select("id, name").order("name");
@@ -732,6 +832,12 @@ updateShift: async (id, shiftData) => {
                     if (bData) set({ branches: bData });
                 }
 
+                // 🚨 CARGAMOS LOS ASUETOS PARA EL KIOSCO TAMBIÉN
+                if (data.holidays) {
+                    set({ holidays: data.holidays });
+                    localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(data.holidays));
+                }
+
                 const mappedShifts = (data.shifts || []).map(s => ({
                     id: s.id,
                     branchId: s.branch_id,
@@ -742,8 +848,6 @@ updateShift: async (id, shiftData) => {
 
                 const nowISO = new Date().toISOString();
 
-                // 🚨 DOBLE FILTRO DEL KIOSCO: 
-                // Excluimos los archivados y los que tienen fecha de publicación en el futuro.
                 const mappedAnnouncements = (data.announcements || [])
                     .filter(a => !a.is_archived && (!a.scheduled_for || a.scheduled_for <= nowISO))
                     .map(a => ({
@@ -772,7 +876,12 @@ updateShift: async (id, shiftData) => {
 
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
                 localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnnouncements));
-                localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(mappedEmployees));
+                const safeKioskEmployees = mappedEmployees.map(emp => {
+                    const safeEmp = { ...emp };
+                    SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
+                    return safeEmp;
+                });
+                localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(safeKioskEmployees));
                 if (data.branches) {
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
                 }
@@ -782,6 +891,53 @@ updateShift: async (id, shiftData) => {
         } catch (error) {
             console.error("Error en Kiosk Boot:", error);
             return false;
+        }
+    },
+    addDocumentToEvent: async (employeeId, eventId, file) => {
+        if (!file) return;
+        try {
+            const url = await get().uploadFileToStorage(file, 'documents');
+            if (!url) throw new Error("Fallo al subir el archivo al storage");
+
+            const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
+            if (error) throw error;
+
+            const empDoc = get().employees.find(e => String(e.id) === String(employeeId));
+            await get().appendAuditLog('DOCUMENTO_HISTORICO', employeeId, {
+                timeline_title: `Documento RRHH Subido: ${empDoc?.name || ''}`,
+                dimension: 'HR',
+                branch_id: empDoc?.branchId,
+                new_value: file.name,
+                file_url: url 
+            });
+
+            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+            set((state) => {
+                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
+                    ...emp,
+                    documents: [...(emp.documents || []), newDoc]
+                });
+                
+                try {
+                    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                    const lightCache = next.map(e => {
+                        const safeEmp = { ...e };
+                        SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
+                        return {
+                            ...safeEmp,
+                            history: [],
+                            documents: [],
+                            attendance: (e.attendance || []).filter(a => a.timestamp >= yesterday)
+                        };
+                    });
+                    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
+                } catch(e) {}
+
+                return { employees: next };
+            });
+        } catch (e) {
+            console.error("Error subiendo documento al evento:", e);
         }
     },
 });

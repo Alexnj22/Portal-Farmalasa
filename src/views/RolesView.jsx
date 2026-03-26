@@ -3,7 +3,7 @@ import {
     ShieldCheck, Plus, Trash2, Award, Users,
     CornerDownRight, Network, Target,
     ArrowUpRight, LayoutTemplate, Maximize, Minimize, Download,
-    PartyPopper, AlertCircle, Loader2, Search, X, ChevronRight, GitMerge, Edit3, Save, ChevronDown
+    PartyPopper, AlertCircle, Loader2, Search, X, ChevronRight, GitMerge, Edit3, Save, ChevronDown, MapPin, Hash, Globe, Building2
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { toPng } from 'html-to-image';
@@ -13,6 +13,10 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 
+const SCOPE_OPTIONS = [
+    { value: 'BRANCH', label: 'Por Sucursal' },
+    { value: 'GLOBAL', label: 'Global' }
+];
 
 // ============================================================================
 // 🚀 VISTA PRINCIPAL ROLES
@@ -28,6 +32,9 @@ const RolesView = ({ openModal }) => {
     const [newRole, setNewRole] = useState('');
     const [parentRoleId, setParentRoleId] = useState('');
     const [secondaryParentRoleId, setSecondaryParentRoleId] = useState('');
+    
+    const [scope, setScope] = useState('BRANCH');
+    const [maxLimit, setMaxLimit] = useState(1);
 
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +54,7 @@ const RolesView = ({ openModal }) => {
     const [isExporting, setIsExporting] = useState(false);
 
     // ============================================================================
-    // ⚙️ ESCAPE GLOBAL (Requerimiento 1)
+    // ⚙️ ESCAPE GLOBAL
     // ============================================================================
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -67,7 +74,7 @@ const RolesView = ({ openModal }) => {
 
 
     // ============================================================================
-    // ⚙️ ESTADOS Y LÓGICA PARA ZOOM & PAN (ORGANIGRAMA)
+    // ⚙️ ZOOM & PAN (ORGANIGRAMA)
     // ============================================================================
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -77,16 +84,13 @@ const RolesView = ({ openModal }) => {
     const handleWheel = useCallback((e) => {
         if (activeTab !== 'chart') return;
         e.preventDefault();
-
         const scaleBy = 1.05;
         const newZoom = e.deltaY < 0 ? zoom * scaleBy : zoom / scaleBy;
-
         setZoom(Math.min(Math.max(newZoom, 0.3), 3));
     }, [zoom, activeTab]);
 
     const handleMouseDown = (e) => {
         if (e.target.closest('.org-node-card') || e.target.closest('button')) return;
-
         setIsDragging(true);
         dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
     };
@@ -115,14 +119,9 @@ const RolesView = ({ openModal }) => {
         };
     }, [handleWheel, activeTab]);
 
-    // ============================================================================
-    // ⏱️ AUTO-LIMPIEZA DE ERRORES
-    // ============================================================================
     useEffect(() => {
         if (error) {
-            const timer = setTimeout(() => {
-                setError('');
-            }, 10000);
+            const timer = setTimeout(() => setError(''), 10000);
             return () => clearTimeout(timer);
         }
     }, [error]);
@@ -144,13 +143,8 @@ const RolesView = ({ openModal }) => {
 
     const isRoleExternal = (roleName) => {
         const nameUpper = roleName.toUpperCase();
-        if (nameUpper.includes('ENFERMERÍA') || nameUpper.includes('ENFERMERIA')) {
-            return false;
-        }
-        return nameUpper.includes('REGENTE') ||
-            nameUpper.includes('REFERENTE') ||
-            nameUpper.includes('EXTERNO') ||
-            nameUpper.includes('CONSULTOR');
+        if (nameUpper.includes('ENFERMERÍA') || nameUpper.includes('ENFERMERIA')) return false;
+        return nameUpper.includes('REGENTE') || nameUpper.includes('REFERENTE') || nameUpper.includes('EXTERNO') || nameUpper.includes('CONSULTOR');
     };
 
     const getRoleDepth = (roleId) => {
@@ -164,10 +158,7 @@ const RolesView = ({ openModal }) => {
     };
 
     const filteredAndSortedRoles = useMemo(() => {
-        const filtered = roles.filter(role =>
-            role.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
+        const filtered = roles.filter(role => role.name.toLowerCase().includes(searchQuery.toLowerCase()));
         return filtered.sort((a, b) => {
             const depthA = getRoleDepth(a.id);
             const depthB = getRoleDepth(b.id);
@@ -185,11 +176,10 @@ const RolesView = ({ openModal }) => {
         });
     }, [roles]);
 
-    // 🚨 Convertimos los roles a formato de opciones para el LiquidSelect
     const roleOptions = useMemo(() => {
         return sortedRolesForDropdown
-            .filter(r => r.id !== editingRoleId) // Evitar que se asigne a sí mismo
-            .map(r => ({ value: r.id, label: r.name }));
+            .filter(r => r.id !== editingRoleId) 
+            .map(r => ({ value: String(r.id), label: r.name })); 
     }, [sortedRolesForDropdown, editingRoleId]);
 
     // ============================================================================
@@ -200,8 +190,11 @@ const RolesView = ({ openModal }) => {
         setError('');
         setEditingRoleId(role.id);
         setNewRole(role.name);
-        setParentRoleId(role.parent_role_id || '');
-        setSecondaryParentRoleId(role.secondary_parent_role_id || '');
+        setParentRoleId(role.parent_role_id ? String(role.parent_role_id) : '');
+        setSecondaryParentRoleId(role.secondary_parent_role_id ? String(role.secondary_parent_role_id) : '');
+        setScope(role.scope || 'BRANCH');
+        setMaxLimit(role.max_limit ?? 99);
+        
         if (activeTab === 'chart') setActiveTab('list');
     };
 
@@ -211,6 +204,8 @@ const RolesView = ({ openModal }) => {
         setNewRole('');
         setParentRoleId('');
         setSecondaryParentRoleId('');
+        setScope('BRANCH');
+        setMaxLimit(99);
     };
 
     const handleDeleteRoleRequest = (e, role) => {
@@ -244,9 +239,7 @@ const RolesView = ({ openModal }) => {
         if (!confirmDialog.role) return;
         try {
             await deleteRole(confirmDialog.role.id, confirmDialog.role.name);
-            if (editingRoleId === confirmDialog.role.id) {
-                handleCancelEdit();
-            }
+            if (editingRoleId === confirmDialog.role.id) handleCancelEdit();
             useToastStore.getState().showToast('Cargo Eliminado', `El cargo ha sido removido del sistema.`, 'success');
         } catch (err) {
             useToastStore.getState().showToast('Error', `Error al eliminar: ${err.message || 'Desconocido'}`, 'error');
@@ -264,7 +257,6 @@ const RolesView = ({ openModal }) => {
         }
 
         const hasRootRole = roles.some(r => !r.parent_role_id && r.id !== editingRoleId);
-
         if (hasRootRole && !parentRoleId) {
             setError('¡Alto ahí! Ya hay un jefe supremo (Nivel Raíz). Asígnale un superior a este cargo.');
             return;
@@ -274,13 +266,18 @@ const RolesView = ({ openModal }) => {
             setError('El reporte principal y matricial no pueden ser la misma persona.');
             return;
         }
+        
+        if (maxLimit < 1) {
+            setError('El límite de plazas debe ser al menos 1.');
+            return;
+        }
 
         try {
             if (editingRoleId) {
-                await updateRole(editingRoleId, newRole, parentRoleId || null, secondaryParentRoleId || null);
+                await updateRole(editingRoleId, newRole, parentRoleId || null, secondaryParentRoleId || null, scope, Number(maxLimit));
                 useToastStore.getState().showToast('Cargo Actualizado', 'Los cambios en el organigrama se han guardado.', 'success');
             } else {
-                await addRole(newRole, parentRoleId || null, secondaryParentRoleId || null);
+                await addRole(newRole, parentRoleId || null, secondaryParentRoleId || null, scope, Number(maxLimit));
                 useToastStore.getState().showToast('Cargo Creado', 'El nuevo cargo ha sido añadido al organigrama.', 'success');
             }
 
@@ -293,7 +290,6 @@ const RolesView = ({ openModal }) => {
     const toggleFullScreen = () => {
         if (!document.fullscreenElement) {
             orgChartContainerRef.current?.requestFullscreen().catch(err => {
-                console.error("Error pantalla completa:", err);
                 useToastStore.getState().showToast('Error', 'No se pudo entrar a pantalla completa.', 'error');
             });
         } else {
@@ -323,7 +319,6 @@ const RolesView = ({ openModal }) => {
                 useToastStore.getState().showToast('Exportación Exitosa', 'El organigrama se ha descargado como imagen.', 'success');
             }, 500);
         } catch (err) {
-            console.error("Error al exportar:", err);
             useToastStore.getState().showToast('Error', 'Hubo un problema al generar la imagen.', 'error');
             setIsExporting(false);
         }
@@ -341,13 +336,15 @@ const RolesView = ({ openModal }) => {
         const roleEmps = getEmployeesInRole(role.id);
         const hasDualReporting = !!role.secondary_parent_role_id;
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
+        const isGlobal = role.scope === 'GLOBAL';
 
         return (
             <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-[1.5rem] p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-slate-50/70 border border-slate-300/50' : 'bg-white/70 border border-white/90'}`}>
 
+                {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
-                    <div className="absolute -top-3 bg-white/90 text-slate-500 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-200 shadow-sm z-10">
-                        Staff / Externo
+                    <div className={`absolute -top-3 left-4 bg-white/90 text-slate-500 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-200 shadow-sm z-10`}>
+                        Staff
                     </div>
                 )}
 
@@ -502,7 +499,7 @@ const RolesView = ({ openModal }) => {
     );
 
     // ==========================================================
-    // 렌 RENDER FINAL USANDO EL ESQUELETO
+    // 렌 RENDER FINAL
     // ==========================================================
     return (
         <GlassViewLayout
@@ -513,7 +510,6 @@ const RolesView = ({ openModal }) => {
             fixedScrollMode={true}
         >
             <style>{`
-                /* Estilos de organigrama encapsulados con Liquidglass Lines */
                 .org-chart-tree-wrapper .org-tree ul { padding-top: 16px; position: relative; display: flex; justify-content: center; padding-left: 0; }
                 .org-chart-tree-wrapper .org-tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 16px 8px 0 8px; }
                 .org-chart-tree-wrapper .org-tree li::before, .org-chart-tree-wrapper .org-tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 3px solid rgba(203, 213, 225, 0.5); width: 50%; height: 16px; }
@@ -530,21 +526,12 @@ const RolesView = ({ openModal }) => {
                 .export-compact .icon-container svg { width: 16px !important; height: 16px !important; }
                 .export-compact .node-title { font-size: 10px !important; margin-bottom: 4px !important; }
 
-                /* ANIMACIÓN DE SHAKE PARA LA TARJETA EN EDICIÓN */
                 @keyframes subtle-shake {
                     0%, 100% { transform: rotate(0deg) scale(1.02); }
                     25% { transform: rotate(-1deg) scale(1.02); }
                     75% { transform: rotate(1deg) scale(1.02); }
                 }
-                .animate-subtle-shake {
-                    animation: subtle-shake 0.5s ease-in-out infinite;
-                }
-
-                /* ESTILOS PARA SCROLLBAR DEL SELECT */
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+                .animate-subtle-shake { animation: subtle-shake 0.5s ease-in-out infinite; }
             `}</style>
 
             <ConfirmModal
@@ -564,12 +551,11 @@ const RolesView = ({ openModal }) => {
             />
 
             <div className="w-full flex-1 pb-32">
-
                 {activeTab === 'list' ? (
                     <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
-                        {/* PANEL IZQUIERDA: MODO MASTER-DETAIL */}
-                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-20 lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
+                        {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
+                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-[100] lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
                             <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
                                 ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
@@ -599,7 +585,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
                                 )}
 
-                                <form className="space-y-5">
+                                <form className="space-y-4">
                                     <div>
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Nombre del Cargo
@@ -611,38 +597,82 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className={`w-full pl-14 pr-4 py-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400`}
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-[1.25rem] text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* 🚨 REQUERIMIENTO 2: Selects reemplazados por LiquidSelect */}
-                                    <div>
+                                    {/* 🚨 CONTROLES DE HEADCOUNT */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="relative z-[70]">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                                Alcance
+                                            </label>
+                                            <div className="h-[44px]">
+                                                <LiquidSelect
+                                                    value={scope}
+                                                    onChange={(val) => setScope(val)}
+                                                    options={SCOPE_OPTIONS}
+                                                    icon={MapPin}
+                                                    menuPosition="fixed"
+                                                    clearable={false}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                                Límite de Plazas
+                                            </label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#007AFF] transition-colors z-10">
+                                                    <Hash size={16} />
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="99"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-[1.25rem] text-[13px] outline-none font-bold text-[#007AFF] transition-all duration-300 relative z-0"
+                                                    value={maxLimit}
+                                                    onChange={(e) => setMaxLimit(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative z-[60]">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Dependencia (Reporta a)
                                         </label>
-                                        <LiquidSelect 
-                                            value={parentRoleId}
-                                            onChange={(val) => { setParentRoleId(val); if(error) setError(''); }}
-                                            options={roleOptions}
-                                            placeholder="-- Sin Superior (Nivel Raíz) --"
-                                            icon={CornerDownRight}
-                                        />
+                                        <div className="h-[44px]">
+                                            <LiquidSelect 
+                                                value={parentRoleId || ''}
+                                                onChange={(val) => { setParentRoleId(val); if(error) setError(''); }}
+                                                options={roleOptions}
+                                                placeholder="-- Nivel Raíz --"
+                                                icon={CornerDownRight}
+                                                clearable={true}
+                                                menuPosition="fixed"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div>
+                                    <div className="relative z-[50]">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
-                                            Reporte Matricial (Opcional)
+                                            Reporte Matricial
                                         </label>
-                                        <LiquidSelect 
-                                            value={secondaryParentRoleId}
-                                            onChange={(val) => { setSecondaryParentRoleId(val); if(error) setError(''); }}
-                                            options={roleOptions}
-                                            placeholder="-- Sin Reporte Secundario --"
-                                            icon={GitMerge}
-                                        />
+                                        <div className="h-[44px]">
+                                            <LiquidSelect 
+                                                value={secondaryParentRoleId || ''}
+                                                onChange={(val) => { setSecondaryParentRoleId(val); if(error) setError(''); }}
+                                                options={roleOptions}
+                                                placeholder="-- Opcional --"
+                                                icon={GitMerge}
+                                                clearable={true}
+                                                menuPosition="fixed"
+                                            />
+                                        </div>
                                     </div>
 
                                     <button
@@ -656,8 +686,8 @@ const RolesView = ({ openModal }) => {
                             </div>
                         </div>
 
-                        {/* PANEL DERECHO: GRID DE TARJETAS (Liquidglass List) */}
-                        <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+                        {/* PANEL DERECHO: GRID DE TARJETAS */}
+                        <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {filteredAndSortedRoles.map((role) => {
                                     const isRoot = !role.parent_role_id;
@@ -665,6 +695,7 @@ const RolesView = ({ openModal }) => {
                                     const isExternal = isRoleExternal(role.name);
                                     const hasDualReporting = !!role.secondary_parent_role_id;
                                     const isEditingThis = editingRoleId === role.id;
+                                    const isGlobal = role.scope === 'GLOBAL';
 
                                     return (
                                         <div
@@ -675,13 +706,21 @@ const RolesView = ({ openModal }) => {
                                                     : 'bg-white/60 backdrop-blur-xl border border-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/80 hover:-translate-y-1'
                                                 }`}
                                         >
+                                            {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
+                                            {role.max_limit < 99 && (
+                                                <div className={`absolute -top-3 right-4 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-indigo-50/90 text-indigo-600 border-indigo-200/80' : 'bg-amber-50/90 text-amber-600 border-amber-200/80'}`}>
+                                                    {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
+                                                    <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
+                                                </div>
+                                            )}
+
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="flex gap-3.5 items-start min-w-0 w-full pr-2">
+                                                <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
                                                     <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-[#007AFF] text-white border-[#007AFF]/20' : isExternal ? 'bg-white/60 text-slate-400 border-white/60' : 'bg-white text-[#007AFF] border-white group-hover:bg-[#007AFF]/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
-                                                    <div className="min-w-0 flex-1">
+                                                    <div className="min-w-0 flex-1 pt-1">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
                                                             <h4 className={`font-black text-[14px] leading-tight transition-colors ${isExternal ? 'text-slate-600' : 'text-slate-800'}`} title={role.name}>
                                                                 {role.name}
@@ -779,7 +818,7 @@ const RolesView = ({ openModal }) => {
                     </div>
                 ) : (
                     // VISTA 2: ORGANIGRAMA VISUAL 
-                    <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full">
+                    <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
                             className={`relative flex flex-col select-none bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-[200] w-screen h-screen bg-[#F2F2F7] rounded-none m-0 border-none' : 'rounded-[3rem]'}`}

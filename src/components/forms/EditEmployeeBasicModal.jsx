@@ -1,13 +1,13 @@
 import React, { useMemo, memo } from 'react';
-import { User, Phone, MapPin, Building2, CreditCard, HeartPulse, GraduationCap, Camera, AlertCircle, FileText, Map as MapIcon, Navigation } from 'lucide-react';
+import { User, Phone, MapPin, Building2, CreditCard, HeartPulse, GraduationCap, Camera, FileText, Map as MapIcon, Navigation, CalendarDays, Lock } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
+import LiquidDatePicker from '../common/LiquidDatePicker'; // 🚨 IMPORTAMOS EL DATE PICKER
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
 
 // ============================================================================
 // 🚀 CATÁLOGOS (Solo los necesarios para edición básica)
 // ============================================================================
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
-const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 const EDUCATION_OPTIONS = [{ value: 'BACHILLERATO', label: 'Bachillerato' }, { value: 'TECNICO', label: 'Técnico Superior' }, { value: 'UNIVERSITARIO_E', label: 'Universitario (Estudiante)' }, { value: 'UNIVERSITARIO_G', label: 'Universitario (Graduado)' }, { value: 'MAESTRIA', label: 'Maestría / Postgrado' }];
 
 const BANKS_OPTIONS = [
@@ -97,6 +97,14 @@ const EditEmployeeBasicModal = ({ formData, setFormData }) => {
         });
     };
 
+    // 🚨 MANEJADOR PARA LA FECHA (Súper limpio, recibe el texto directo)
+    const handleDateChange = (val) => {
+        setFormData(prev => ({
+            ...prev,
+            birth_date: val || null
+        }));
+    };
+
     const handlePhotoUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -163,13 +171,32 @@ const EditEmployeeBasicModal = ({ formData, setFormData }) => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <PortalInput label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="0000-0000" maskType="PHONE" />
                     
-                    <div className="relative z-10">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Estado Civil</label>
+                    {/* 🚨 FECHA DE NACIMIENTO (AHORA CON TEXTO DIRECTO) */}
+                    <div className="relative z-20">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Nacimiento</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                            <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." {...portalSelectProps} />
+                            <LiquidDatePicker
+                                value={formData.birth_date || ''} // Mandamos el texto directo
+                                onChange={handleDateChange}
+                                icon={CalendarDays}
+                                placeholder="Día/Mes/Año"
+                            />
+                        </div>
+                    </div>
+                    
+                    {/* 🚨 ESTADO CIVIL (BLOQUEADO TIPO READ-ONLY) */}
+                    <div className="relative z-10">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                            <span>Estado Civil</span>
+                        </label>
+                        <div className="flex items-center justify-between w-full h-[40px] px-4 bg-slate-50/50 border border-slate-200/60 rounded-[1rem] shadow-sm cursor-not-allowed" title="Para cambiar este estado legal, use la pestaña Acción de Personal">
+                            <span className="text-[13px] font-bold text-slate-400 truncate">{formData.marital_status || 'No registrado'}</span>
+                            <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 bg-slate-200/50 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
+                               <Lock size={10} strokeWidth={3} /> Acción RRHH
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -228,7 +255,7 @@ const EditEmployeeBasicModal = ({ formData, setFormData }) => {
                     <div className="col-span-1 relative z-10">
                         <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                            <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." {...portalSelectProps} />
+                            <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Seleccionar..." {...portalSelectProps} />
                         </div>
                     </div>
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">

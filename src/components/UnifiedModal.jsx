@@ -16,7 +16,7 @@ const FormUploadOnly = React.lazy(() => import('./forms/FormUploadOnly'));
 const FormDispositivos = React.lazy(() => import('./forms/FormDispositivos'));
 const FormSucursal = React.lazy(() => import('./forms/FormSucursal'));
 
-// 🚨 SEPARAMOS LOS FORMULARIOS DE EMPLEADO
+// 🚨 FORMULARIOS DE EMPLEADO
 const FormEmpleadoNuevo = React.lazy(() => import('./forms/EmployeeFormModal'));
 const FormEditEmployeeBasic = React.lazy(() => import('./forms/EditEmployeeBasicModal')); 
 
@@ -37,7 +37,6 @@ const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocu
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
 const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
 
-// 🚨 CORRECCIÓN: Los formularios de empleados YA NO ocultan el Header ni el Footer
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
 const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
@@ -51,10 +50,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // 🚨 ESTADO DE VALIDACIÓN (Hijo -> Padre)
+    const [isFormValid, setIsFormValid] = useState(true);
 
     useEffect(() => {
         setValidationError(null);
         setIsSaving(false);
+        setIsFormValid(true); 
     }, [type, isOpen]);
 
     const getModalSize = () => {
@@ -67,8 +70,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewRoleEmployees":
             case "viewBranchEmployees": return "max-w-2xl";
             case "viewDocument": return "max-w-5xl";
-            case "newEmployee": return "max-w-4xl"; // Modal Gigante para Crear
-            case "editEmployee": return "max-w-3xl"; // 🚨 Modal Compacto para Editar
+            case "newEmployee": return "max-w-4xl"; 
+            case "editEmployee": return "max-w-3xl"; 
             case "newBranch":
             case "editBranch":
             case "editBranchLegal":
@@ -97,7 +100,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "planSchedule": return "Planificación Semanal";
             case "manageShifts": return "Catálogo de Turnos";
             case "newEmployee": return "Nuevo Colaborador";
-            case "editEmployee": return "Actualizar Información"; // 🚨 Título más suave
+            case "editEmployee": return "Actualizar Información"; 
             case "newBranch": return "Nueva Sucursal";
             case "editBranch": return "Configuración General";
             case "editBranchHorarios": return "Horarios de Atención";
@@ -158,10 +161,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             try {
                 const { addEmployee, updateEmployee } = useStaff.getState();
                 
-                // 🚨 LIMPIEZA ESTRICTA PARA SUPABASE (Evita Error PGRST204 y Type Casting)
                 const finalData = { ...formData, username: formData.username?.trim().toLowerCase() };
                 
-                // 1. Borrar datos exclusivos de la UI o variables duplicadas en camelCase
                 delete finalData.photoPreview; 
                 delete finalData.effectiveStatus; 
                 delete finalData.history; 
@@ -172,9 +173,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 delete finalData.roleId;
                 delete finalData.secondaryRole;
                 delete finalData.created_at; 
-                delete finalData.name; // Ya usamos first_names y last_names en la DB
+                delete finalData.name; 
 
-                // 2. 🚨 PREVENCIÓN DE ERRORES DE TIPO (Convertir "" a null para DB)
                 if (finalData.branch_id === "") finalData.branch_id = null;
                 if (finalData.role_id === "") finalData.role_id = null;
                 if (finalData.secondary_role_id === "") finalData.secondary_role_id = null;
@@ -183,7 +183,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (finalData.base_salary === "") finalData.base_salary = null;
                 if (finalData.weekly_contracted_hours === "") finalData.weekly_contracted_hours = null;
 
-                // 3. Guardar o Actualizar
                 if (type === "editEmployee" || (formData.id)) {
                     await updateEmployee(formData.id, finalData);
                 } else {
@@ -195,9 +194,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
                 }
                 
-                // Destruir borrador si fue un éxito
                 localStorage.removeItem('wfm_employee_draft');
-                
                 onClose();
             } catch (err) {
                 console.error("Error guardando empleado:", err);
@@ -365,7 +362,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 onClose();
             } catch (err) {
-                setValidationError(err?.message || "Error interno.");
+                console.error("Error al guardar la sucursal:", err);
+                const errorMsg = err?.message || err?.error_description || (typeof err === 'string' ? err : "Error interno al guardar los datos en el servidor.");
+                setValidationError(errorMsg);
             } finally {
                 setIsSaving(false);
             }
@@ -463,6 +462,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 onClose();
             } catch (err) {
+                console.error("Error guardando jefatura:", err);
                 setValidationError("Error al procesar el relevo de personal.");
             } finally {
                 setIsSaving(false);
@@ -575,7 +575,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         <ModalShell open={isOpen} onClose={onClose} maxWidthClass={getModalSize()} zClass="z-[100]">
             <div className={`flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-500 ease-out ${getModalHeightClass()}`}>
 
-                {/* 🚨 FIX DE PERFORMANCE */}
                 <div
                     className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none"
                     style={{ willChange: 'transform', transform: 'translateZ(0)' }}
@@ -631,7 +630,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
-                                {/* 🚨 INYECCIÓN DE LOS FORMULARIOS DE EMPLEADOS SEPARADOS */}
                                 {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} />}
                                 {type === "editEmployee" && <FormEditEmployeeBasic formData={formData || {}} setFormData={setFormData} />}
                                 
@@ -641,7 +639,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "editBranchInmueble" && <FormSucursal formData={formData} setFormData={setFormData} section="inmueble" />}
                                 {type === "editBranchServicios" && <FormSucursal formData={formData} setFormData={setFormData} section="servicios" />}
 
-                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} />}
+                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={setIsFormValid} />}
+                                
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
                                 {type === "planSchedule" && <FormPlanificador formData={formData} setFormData={setFormData} shifts={shifts} saveWeeklyRoster={saveWeeklyRoster} onClose={onClose} />}
                                 {type === "manageShifts" && <FormTurnos branches={branches} />}
@@ -670,7 +669,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-50">
                             Cancelar
                         </button>
-                        <button type="submit" form="unified-modal-form" disabled={isSaving} className="px-8 py-3 h-12 bg-[#007AFF] text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-full shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center gap-2">
+                        
+                        <button 
+                            type="submit" 
+                            form="unified-modal-form" 
+                            disabled={isSaving || !isFormValid} 
+                            className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95'}`}
+                        >
                             {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                         </button>
                     </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,
     Users, Eye, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
@@ -169,46 +170,6 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 };
 
 // ============================================================================
-// 🚀 COMPONENTE DE TARJETA SKELETON
-// ============================================================================
-const BranchCardSkeleton = () => {
-    return (
-        <div className="bg-white/40 backdrop-blur-[30px] border border-white/50 rounded-[2.5rem] flex flex-col h-full animate-pulse p-6">
-            <div className="flex justify-between items-start mb-6">
-                <div className="flex gap-4">
-                    <div className="w-14 h-14 rounded-[1.25rem] bg-slate-200/60"></div>
-                    <div className="flex flex-col justify-center gap-2">
-                        <div className="w-32 h-4 bg-slate-300/50 rounded"></div>
-                        <div className="w-20 h-2 bg-slate-300/50 rounded"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="flex flex-col gap-2.5">
-                <div className="w-full h-[60px] bg-slate-200/50 rounded-[1.25rem]"></div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="w-full h-[52px] bg-slate-200/50 rounded-[1.2rem]"></div>
-                    <div className="w-full h-[52px] bg-slate-200/50 rounded-[1.2rem]"></div>
-                </div>
-                <div className="w-full h-[46px] bg-slate-200/50 rounded-[1.25rem]"></div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mt-auto pt-4">
-                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
-                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
-                <div className="w-full h-[48px] bg-slate-200/50 rounded-[1rem]"></div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-slate-200/50 flex items-center justify-between">
-                <div className="w-24 h-6 bg-slate-300/50 rounded"></div>
-                <div className="w-px h-6 bg-slate-200/50"></div>
-                <div className="w-20 h-6 bg-slate-300/50 rounded"></div>
-            </div>
-        </div>
-    );
-};
-
-// ============================================================================
 // 🚀 COMPONENTE DE TARJETA (CON ESTILO IA FUTURISTA)
 // ============================================================================
 const BranchCard = memo(({
@@ -331,8 +292,6 @@ const BranchCard = memo(({
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-30">
                 <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-white/90 backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
                     
-                    {/* ✨ BOTÓN DISPARADOR DE IA ✨ */}
-{/* ✨ BOTÓN DISPARADOR DE IA ESTANDARIZADO ✨ */}
                     <button 
                         onClick={(e) => { 
                             e.stopPropagation(); 
@@ -360,7 +319,6 @@ const BranchCard = memo(({
                     <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
                     <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
                     
-                    {/* 🚨 OCULTAR BOTÓN DE ELIMINAR SI ESTÁ DESHABILITADO */}
                     {!deleteDisabled && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-400 hover:text-red-500 hover:bg-red-50" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
                     )}
@@ -388,7 +346,6 @@ const BranchCard = memo(({
             </div>
 
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
-                {/* HEADER */}
                 <div className="flex items-start gap-3">
                     <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header focus:outline-none w-full pr-[140px]">
                         <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-white/90 text-[#007AFF] shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
@@ -415,7 +372,6 @@ const BranchCard = memo(({
                     </button>
                 </div>
 
-                {/* CUERPO CENTRAL */}
                 <div className="flex flex-col gap-2.5 mt-2">
                     <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-[1.25rem] ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
                         <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-[#007AFF] border border-slate-100"><MapPin size={16} strokeWidth={2.5} /></div>
@@ -461,7 +417,6 @@ const BranchCard = memo(({
                     </button>
                 </div>
 
-                {/* PÍLDORAS UNIFICADAS */}
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
                         <div className="flex items-center justify-between w-full">
@@ -541,13 +496,19 @@ const BranchCard = memo(({
 // 🚀 VISTA PRINCIPAL
 // ============================================================================
 const BranchesView = ({ openModal, setView, setActiveBranch }) => {
+    const navigate = useNavigate(); 
     const branches = useStaff(state => state.branches);
     const employees = useStaff(state => state.employees);
     const deleteBranch = useStaff(state => state.deleteBranch);
     const getBranchKiosks = useStaff(state => state.getBranchKiosks);
 
+    // 🚨 LEEMOS EL CACHÉ GLOBAL DE ZUSTAND SI EXISTE (Si no, lo inicializamos)
+    // Asumiremos que el Store tiene un "kiosksCountCache" o usamos un estado local pre-cargado
     const [kiosksCount, setKiosksCount] = useState({});
-    const [isLoadingKiosks, setIsLoadingKiosks] = useState(true);
+    
+    // 🚨 MODIFICACIÓN: Si ya tenemos branches, NO bloqueamos la pantalla completa.
+    const [isLoadingKiosks, setIsLoadingKiosks] = useState(branches.length === 0);
+    
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, branch: null });
     const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'error' });
 
@@ -575,6 +536,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isSearchActive, isFilterPickerOpen]);
 
+    // 🚨 OPTIMIZACIÓN: Carga silenciosa en segundo plano (Stale-While-Revalidate)
     useEffect(() => {
         let isMounted = true;
         const refreshData = async () => {
@@ -582,10 +544,11 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
             setCurrentTime({ day: d.getDay(), timeStr: d.toTimeString().slice(0, 5), timestamp: d.getTime() });
 
             if (branches.length > 0) {
+                // Ya no bloqueamos la UI con skeleton si ya teníamos data
                 try {
                     const results = await Promise.all(
                         branches.map(branch => getBranchKiosks(branch.id).then(devices => {
-                            const activeDevices = devices ? devices.filter(d => d.status === 'ACTIVE') : [];
+                            const activeDevices = devices ? devices.filter(dev => dev.status === 'ACTIVE') : [];
                             return { id: branch.id, count: activeDevices.length };
                         }))
                     );
@@ -593,7 +556,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                         const newCounts = {};
                         results.forEach(res => { newCounts[res.id] = res.count; });
                         setKiosksCount(newCounts);
-                        setIsLoadingKiosks(false);
+                        setIsLoadingKiosks(false); // Solo apaga el skeleton si estaba prendido
                     }
                 } catch (error) { 
                     console.error("Error cargando kioscos", error); 
@@ -605,11 +568,10 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
         };
 
         refreshData();
-        const timer = setInterval(refreshData, 60000);
+        const timer = setInterval(refreshData, 60000); // Se refresca en silencio cada minuto
         return () => { isMounted = false; clearInterval(timer); };
     }, [branches, getBranchKiosks]);
 
-    // 🚨 MAPA INTELIGENTE DE EMPLEADOS
     const employeesMap = useMemo(() => {
         const m = new Map();
         (employees || []).forEach((e) => {
@@ -644,8 +606,8 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
 
     const handleViewProfile = useCallback((branch) => {
         if (setActiveBranch) setActiveBranch(branch);
-        if (setView) setView('branch-detail');
-    }, [setActiveBranch, setView]);
+        navigate(`/branches/${branch.id}`); 
+    }, [setActiveBranch, navigate]);
 
     const handleDeleteClick = useCallback((branch, count) => {
         if (!branch) return;

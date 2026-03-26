@@ -2,6 +2,8 @@
 
 export const makeId = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
+export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
+
 export const CACHE_KEYS = {
     BRANCHES: "sb_cache_branches_v1",
     EMPLOYEES: "sb_cache_employees_v1",
@@ -9,6 +11,7 @@ export const CACHE_KEYS = {
     ROLES: "sb_cache_roles_v1",
     ANNOUNCEMENTS: "sb_cache_announcements_v1",
     AUDIT: "sb_cache_audit_v1",
+    HOLIDAYS: "sb_cache_holidays_v1", // 🚨 NUEVA LLAVE AÑADIDA PARA ASUETOS
     AT: "sb_cache_staff_at_v1"
 };
 
@@ -20,7 +23,7 @@ export const normalizeWeeklyHours = (weeklyHours) => {
     const src = weeklyHours || {};
     const out = {};
     [1, 2, 3, 4, 5, 6, 0].forEach((d) => {
-        const v = src?.[d] || {};
+        const v = (src?.[d] ?? src?.[d === 0 ? 7 : d]) || {};
         const start = typeof v.start === "string" ? v.start : "";
         const end = typeof v.end === "string" ? v.end : "";
         const isOpen = typeof v.isOpen === "boolean" ? v.isOpen : false;

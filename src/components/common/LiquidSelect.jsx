@@ -20,7 +20,15 @@ const LiquidSelect = ({
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
-    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
+    const [coords, setCoords] = useState({ 
+        top: 0, 
+        left: 0, 
+        width: 0, 
+        maxHeight: 300, 
+        transformOrigin: 'origin-top',
+        isFlipped: false // Indica si se abrió hacia arriba
+    });
 
     const isDark = theme === 'dark';
 
@@ -35,13 +43,49 @@ const LiquidSelect = ({
         options.find(opt => String(opt.value) === String(value)),
         [options, value]);
 
+    // 🚨 CEREBRO DE POSICIONAMIENTO Y COLISIÓN DE BORDES
     const updateCoords = () => {
         if (selectRef.current) {
             const rect = selectRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            
+            // Constantes de diseño
+            const DROPDOWN_IDEAL_HEIGHT = 300; 
+            const MARGIN = 15; // Margen de seguridad desde los bordes de la pantalla
+            
+            // Cálculos de espacio disponible
+            const spaceBelow = viewportHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            let finalTop = rect.bottom + window.scrollY + 8; // Posición normal (abajo)
+            let finalMaxHeight = DROPDOWN_IDEAL_HEIGHT;
+            let finalOrigin = 'origin-top';
+            let flipped = false;
+
+            // Lógica de decisión: ¿Hacia arriba o hacia abajo?
+            if (spaceBelow < DROPDOWN_IDEAL_HEIGHT && spaceAbove > spaceBelow) {
+                // Hay más espacio arriba, así que abrimos hacia arriba (Flipped)
+                flipped = true;
+                finalOrigin = 'origin-bottom';
+                
+                // El maxHeight es el espacio de arriba menos un margen
+                finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceAbove - MARGIN); 
+                
+                // La posición Y será exactamente la parte superior del input, menos la altura del dropdown y un margen.
+                // Restamos window.scrollY para compensar si el usuario bajó la página.
+                finalTop = (rect.top + window.scrollY) - finalMaxHeight - 8; 
+            } else {
+                // Abrimos hacia abajo normal, pero aseguramos que el scroll interno funcione si roza el piso
+                finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceBelow - MARGIN);
+            }
+
             setCoords({
-                top: rect.bottom + window.scrollY + 8,
+                top: finalTop,
                 left: rect.left + window.scrollX,
-                width: rect.width
+                width: rect.width,
+                maxHeight: Math.max(finalMaxHeight, 150), // Nunca dejar que sea más pequeño que 150px
+                transformOrigin: finalOrigin,
+                isFlipped: flipped
             });
         }
     };
@@ -89,7 +133,7 @@ const LiquidSelect = ({
 
     const handleOpen = () => {
         if (disabled) return;
-        updateCoords();
+        updateCoords(); // Calculamos el espacio antes de abrir
         setIsOpen(true);
         setSearchTerm('');
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -126,27 +170,30 @@ const LiquidSelect = ({
         );
     }, [options, searchTerm]);
 
-const dropdownContent = isOpen && (
+    const dropdownContent = isOpen && (
         <div
             ref={dropdownRef}
             style={{
                 top: coords.top,
                 left: coords.left,
-                width: Math.max(coords.width, compact ? 150 : 200) + 'px'
+                width: Math.max(coords.width, compact ? 150 : 200) + 'px',
+                maxHeight: coords.maxHeight + 'px', // 🚨 EL MAX-HEIGHT DINÁMICO
             }}
-            className={`absolute z-[9999] origin-top transition-all duration-300 rounded-[1.5rem] max-h-[300px] overflow-y-auto p-3 animate-in fade-in slide-in-from-top-2 duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
+            className={`absolute z-[99999] ${coords.transformOrigin} transition-all duration-300 rounded-[1.5rem] overflow-y-auto p-3 
+            ${coords.isFlipped ? 'animate-in fade-in slide-in-from-bottom-2' : 'animate-in fade-in slide-in-from-top-2'} 
+            duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
             ${isDark
                     ? 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]'
-                    // RESTAURADO EL EFECTO GLASS DEL MENÚ DESPLEGABLE AQUÍ:
-                    : 'bg-white/40 hover:bg-white/60 backdrop-blur-[10px] backdrop-saturate-[80%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'
+                    : 'bg-white/60 hover:bg-white/70 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'
                 }`}
         >
+            {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
             <div className="flex flex-col gap-1 w-full">
                 {!searchTerm && clearable && (
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className={`w-full text-left px-4 py-3.5 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${value === ''
+                        className={`w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${value === ''
                                 ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-[#007AFF]'
                                 : isDark
                                     ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
@@ -184,7 +231,7 @@ const dropdownContent = isOpen && (
         </div>
     );
 
-const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
+    const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${
         isDark
@@ -198,7 +245,6 @@ const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 out
 
     return (
         <div
-            // El w-full permite que el padre defina el ancho. Si quieres que se encoja al contenido, cambia 'w-full' por 'w-max max-w-full'
             className={`relative group w-full transition-all duration-300 transform-gpu ${isOpen || disabled ? '' : 'hover:-translate-y-0.5'}`}
             ref={selectRef}
         >
@@ -212,13 +258,12 @@ const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 out
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>
 
-            {/* CONTENEDOR PRINCIPAL (Multilínea o Input) */}
+            {/* CONTENEDOR PRINCIPAL */}
             <div 
                 className={pillBaseClasses}
                 onClick={handleOpen}
             >
                 {isOpen ? (
-                    // MODO BÚSQUEDA (El input sí es 1 sola línea)
                     <input
                         ref={inputRef}
                         type="text"
@@ -228,14 +273,13 @@ const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 out
                         placeholder="Buscar..."
                     />
                 ) : (
-                    // MODO VISTA (Soporta múltiples líneas gracias al div)
                     <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </div>
                 )}
             </div>
 
-            {/* BOTÓN DERECHO (Limpiar "X" o Flecha) */}
+            {/* BOTÓN DERECHO */}
             {value && clearable && !isOpen ? (
                 <button
                     type="button"

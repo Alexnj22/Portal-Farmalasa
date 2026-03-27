@@ -50,8 +50,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
-    
-    // 🚨 ESTADO DE VALIDACIÓN (Hijo -> Padre)
     const [isFormValid, setIsFormValid] = useState(true);
 
     useEffect(() => {
@@ -163,7 +161,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 const { addEmployee, updateEmployee } = useStaff.getState();
-                
                 const finalData = { ...formData, username: formData.username?.trim().toLowerCase() };
                 
                 delete finalData.photoPreview; 
@@ -193,9 +190,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 }
 
                 const { showToast } = useToastStore.getState();
-                if (showToast) {
-                    showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
-                }
+                if (showToast) showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
                 
                 localStorage.removeItem('wfm_employee_draft');
                 onClose();
@@ -238,9 +233,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             .from(NOMBRE_DEL_BUCKET)
                             .upload(filePath, docData.file, { upsert: true });
 
-                        if (uploadError) {
-                            throw new Error(uploadError.message || "Supabase rechazó la subida del archivo.");
-                        }
+                        if (uploadError) throw new Error(uploadError.message || "Supabase rechazó la subida del archivo.");
 
                         const { data: publicUrlData } = supabase.storage
                             .from(NOMBRE_DEL_BUCKET)
@@ -290,15 +283,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     currentCustomDocs = [...currentCustomDocs, documentObject];
                 }
 
-                const updatedSettings = {
-                    ...currentSettings,
-                    customDocs: currentCustomDocs
-                };
-
-                const payloadToSave = {
-                    ...originalBranch,
-                    settings: updatedSettings
-                };
+                const updatedSettings = { ...currentSettings, customDocs: currentCustomDocs };
+                const payloadToSave = { ...originalBranch, settings: updatedSettings };
 
                 const { updateBranch, appendAuditLog } = useStaff.getState();
                 await updateBranch(targetBranchId, payloadToSave);
@@ -547,26 +533,56 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
+        // ==========================================
+        // 🚨 AQUÍ ESTÁ EL REFACTOR ANTI-401
+        // ==========================================
         if (type === "setEmployeePassword") {
             const password = formData?.password || '';
             const confirm = formData?.confirm || '';
             if (password.length < 6) { setValidationError("Mínimo 6 caracteres."); return; }
             if (password !== confirm) { setValidationError("Las contraseñas no coinciden."); return; }
+            
             setIsSaving(true);
+            
             try {
                 const username = formData?.username || formData?.code?.toLowerCase();
+                
+                // 🚨 1. FORZAR LA EXTRACCIÓN DEL TOKEN JWT ACTUAL
+                const { data: authData, error: authError } = await supabase.auth.getSession();
+                const token = authData?.session?.access_token;
+                
+                if (authError || !token) {
+                    setValidationError("Tu sesión caducó. Por favor, cierra sesión y vuelve a entrar.");
+                    setIsSaving(false);
+                    return;
+                }
+
+                // 🚨 2. INYECTAR EL TOKEN MANUALMENTE EN LOS HEADERS 
                 const { data, error } = await supabase.functions.invoke('set-employee-password', {
                     body: { username, password },
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 });
-                if (error || !data?.ok) {
-                    setValidationError(data?.error || 'Error al establecer la contraseña.');
-                } else {
+
+                // Si Kong (Supabase API Gateway) bloquea la petición antes de ejecutar el código
+                if (error) {
+                    console.error("Error de invocación Kong/Edge:", error);
+                    setValidationError("Error 401: Autorización denegada. Asegúrate de haber configurado los Secrets en Supabase.");
+                } 
+                // Si nuestro código Deno se ejecuta y devuelve un error controlado
+                else if (!data?.ok) {
+                    setValidationError(`Error: ${data?.error} ${data?.details ? '- ' + data.details : ''}`);
+                } 
+                // Todo perfecto
+                else {
                     const { showToast } = useToastStore.getState();
                     if (showToast) showToast("Contraseña Establecida", `Acceso configurado para ${formData?.name}.`, "success");
                     onClose();
                 }
             } catch (err) {
-                setValidationError(err?.message || 'Error de conexión.');
+                console.error("Error crítico de fetch:", err);
+                setValidationError(err?.message || 'Error de conexión con el servidor.');
             } finally {
                 setIsSaving(false);
             }

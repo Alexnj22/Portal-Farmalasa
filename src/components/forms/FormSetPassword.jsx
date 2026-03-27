@@ -54,7 +54,7 @@ const FormSetPassword = ({ formData, onClose }) => {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
+        <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
             {/* Email pill */}
             <div className="px-4 py-3 bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-[1rem]">
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Usuario del Portal</p>
@@ -104,7 +104,8 @@ const FormSetPassword = ({ formData, onClose }) => {
 
             {/* Submit */}
             <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading || !password || !confirm}
                 className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
             >
@@ -113,7 +114,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                     : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>
                 }
             </button>
-        </form>
+        </div>
     );
 };
 

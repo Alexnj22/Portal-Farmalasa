@@ -342,7 +342,16 @@ export const AuthProvider = ({ children }) => {
     const email = `${username.toLowerCase().trim()}@farmalasa.app`;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data?.session) return { ok: false, error: "Usuario o contraseña incorrectos" };
+      if (error || !data?.session) {
+        const status = error?.status ?? error?.code;
+        if (status === 400 || error?.message?.includes('Invalid login credentials')) {
+          return { ok: false, error: "Usuario o contraseña incorrectos. Si es tu primer acceso, contacta al administrador." };
+        }
+        if (status === 401) {
+          return { ok: false, error: "Credenciales incorrectas." };
+        }
+        return { ok: false, error: "Error de conexión. Intenta de nuevo." };
+      }
 
       const code =
         (data.session.user.user_metadata?.code && String(data.session.user.user_metadata.code)) ||

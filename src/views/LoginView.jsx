@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon
+    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const inputRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
     const scannerRef = useRef(null);
+    const [torchSupported, setTorchSupported] = useState(false);
+    const [torchOn, setTorchOn] = useState(false);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
 
@@ -44,7 +46,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 scannerRef.current = scanner;
                 await scanner.start(
                     { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 260, height: 100 } },
+                    {
+                        fps: 15,
+                        qrbox: { width: 280, height: 80 },
+                        aspectRatio: 1.7,
+                        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+                    },
                     async (decodedText) => {
                         const s = scannerRef.current;
                         scannerRef.current = null;
@@ -59,6 +66,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     },
                     () => {}
                 );
+                // Detectar soporte de linterna
+                try {
+                    const track = scanner.getRunningTrackCameraCapabilities();
+                    if (track?.torchFeature()?.isSupported()) setTorchSupported(true);
+                } catch { /* dispositivo sin linterna */ }
             } catch {
                 if (!cancelled) {
                     setScannerActive(false);
@@ -97,6 +109,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         scannerRef.current = null;
         if (s) s.stop().catch(() => {});
         setScannerActive(false);
+        setTorchSupported(false);
+        setTorchOn(false);
+    };
+
+    const toggleTorch = async () => {
+        try {
+            const track = scannerRef.current?.getRunningTrackCameraCapabilities();
+            await track?.torchFeature()?.applyConstraint(!torchOn);
+            setTorchOn(t => !t);
+        } catch { /* silencioso si falla */ }
     };
 
     const handleUsernameLogin = async (e) => {
@@ -156,10 +178,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     return (
         // 🚨 1. Contenedor Base: Flex column, centra horizontalmente
-        <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5 
+        <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5
             pt-[max(env(safe-area-inset-top,32px),32px)] 
             pb-[max(env(safe-area-inset-bottom,32px),120px)] 
             landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
+
+            {/* MEJORA 1: overlay blanco de iluminación cuando cámara activa */}
+            {scannerActive && <div className="fixed inset-0 bg-white z-[5]" />}
 
             {/* 🚨 RESTAURADO: DOCK LATERAL DERECHO (Desktop) */}
             <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
@@ -264,13 +289,33 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                             {scannerActive && (
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-                                    <div id="qr-reader" className="w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-black/80 border border-white/20" />
+                                    {/* MEJORA 2: fondo blanco + línea de escaneo animada */}
+                                    <div id="qr-reader" className="relative w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-white border border-white/20">
+                                        <style>{`@keyframes scan{0%{top:10%}50%{top:85%}100%{top:10%}}`}</style>
+                                        <div style={{
+                                            position: 'absolute', left: '5%', right: '5%',
+                                            height: '2px', background: 'rgba(255,0,0,0.8)',
+                                            animation: 'scan 2s ease-in-out infinite',
+                                            zIndex: 10, boxShadow: '0 0 8px rgba(255,0,0,0.6)'
+                                        }} />
+                                    </div>
                                     <div className="flex items-center justify-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
                                             Apunta la cámara al código de barras de tu carné
                                         </p>
                                     </div>
+                                    {/* MEJORA 4: botón linterna (solo si el dispositivo lo soporta) */}
+                                    {torchSupported && (
+                                        <button
+                                            type="button"
+                                            onClick={toggleTorch}
+                                            className="flex items-center justify-center gap-1.5 mx-auto mt-1 px-4 py-2 bg-white/60 hover:bg-white border border-white/80 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all active:scale-95"
+                                        >
+                                            {torchOn ? <ZapOff size={13} strokeWidth={2.5} /> : <Zap size={13} strokeWidth={2.5} />}
+                                            {torchOn ? 'Apagar linterna' : 'Linterna'}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

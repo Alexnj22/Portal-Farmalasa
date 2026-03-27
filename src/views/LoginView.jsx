@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff, X
+    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -215,12 +215,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all">
 
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-20 h-20 bg-transparent backdrop-blur-md shadow-lg border border-white/40 rounded-[1.75rem] flex items-center justify-center mb-6 overflow-hidden">
+                    <div className="w-20 h-20 flex items-center justify-center mb-6">
                         <img
                             src="/LogoFLS.svg"
                             alt="FarmaLasa"
-                            /* object-contain asegura que no se deforme */
-                            className="w-16 h-16 object-contain drop-shadow-sm"
+                            className="w-20 h-20 object-contain"
+                            style={{ background: 'transparent' }}
                         />
                     </div>
                     <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
@@ -285,26 +285,28 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                             {scannerActive && (
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={stopScanner}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/90 hover:bg-red-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 mb-2"
-                                    >
-                                        <X size={14} strokeWidth={3}/> Cerrar Cámara
-                                    </button>
-                                    <div id="qr-reader" className="relative w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-white border border-white/20">
-                                        <style>{`@keyframes scan{0%{top:10%}50%{top:85%}100%{top:10%}}`}</style>
+                                    {/* Visor con esquinas decorativas */}
+                                    <div className="relative w-full h-[260px] rounded-[1.5rem] overflow-hidden bg-black border border-black/20">
+                                        <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
+                                        {/* Línea de escaneo */}
                                         <div style={{
                                             position: 'absolute', left: '5%', right: '5%',
-                                            height: '2px', background: 'rgba(255,0,0,0.8)',
+                                            height: '2px', background: 'rgba(0,122,255,0.9)',
                                             animation: 'scan 2s ease-in-out infinite',
-                                            zIndex: 10, boxShadow: '0 0 8px rgba(255,0,0,0.6)'
+                                            zIndex: 10, boxShadow: '0 0 10px rgba(0,122,255,0.7)'
                                         }} />
+                                        {/* Esquinas decorativas */}
+                                        <div style={{position:'absolute',top:12,left:12,width:22,height:22,borderTop:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'4px 0 0 0',zIndex:11}} />
+                                        <div style={{position:'absolute',top:12,right:12,width:22,height:22,borderTop:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 4px 0 0',zIndex:11}} />
+                                        <div style={{position:'absolute',bottom:12,left:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'0 0 0 4px',zIndex:11}} />
+                                        <div style={{position:'absolute',bottom:12,right:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 0 4px 0',zIndex:11}} />
+                                        <div id="qr-reader" className="w-full h-full" />
                                     </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
-                                            Apunta la cámara al código de barras de tu carné
+                                    {/* Instrucción con fondo semitransparente */}
+                                    <div className="flex items-center justify-center gap-2 px-3 py-2 bg-black/10 backdrop-blur-sm rounded-[1rem] mt-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] animate-pulse shrink-0" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 text-center">
+                                            Apunta al código de barras de tu carné
                                         </p>
                                     </div>
                                     {/* MEJORA 4: botón linterna (solo si el dispositivo lo soporta) */}

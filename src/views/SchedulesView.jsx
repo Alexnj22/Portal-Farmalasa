@@ -23,8 +23,14 @@ import ConfirmModal from '../components/common/ConfirmModal'; // 🚨 IMPORTADO 
 const dayNamesMap = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
 
 const SchedulesView = ({ openModal, setView }) => {
-    const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters } = useStaff();
+    const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters, fetchBoot } = useStaff();
     const [isPublishing, setIsPublishing] = useState(false);
+
+    useEffect(() => {
+        if (shifts.length === 0) {
+            fetchBoot?.();
+        }
+    }, []);
 
     // 🚨 ESTADO PARA CONTROLAR EL MODAL DE PUBLICACIÓN
     const [publishState, setPublishState] = useState({

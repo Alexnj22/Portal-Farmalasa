@@ -352,7 +352,7 @@ export const createBranchSlice = (set, get) => ({
             if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos activos.");
 
             const { data: newDevice, error } = await supabase.from('kiosk_devices')
-                .insert([{ branch_id: branchId, device_name: deviceName }])
+                .insert([{ branch_id: branchId, device_name: deviceName, status: 'ACTIVE' }])
                 .select()
                 .single();
 

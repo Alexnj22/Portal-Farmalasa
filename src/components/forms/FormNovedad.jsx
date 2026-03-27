@@ -20,7 +20,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const isVacation = type === 'VACATION';
     const isDisability = type === 'DISABILITY'; 
     const isCodeChange = type === 'CODE_CHANGE'; 
-    const isPermission = type === 'PERMISSION';
+    const isPermission = type === 'PERMIT';
     const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion; 
     const isTemporalRange = ['VACATION', 'DISABILITY', 'SUPPORT'].includes(type); // Rango continuo
     const isSingleDate = ['TERMINATION', 'SALARY', 'PROMOTION', 'TRANSFER', 'CODE_CHANGE'].includes(type);
@@ -85,8 +85,25 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             end.setDate(start.getDate() + daysToAdd);
             const endStr = end.toISOString().split('T')[0];
             if (formData.endDate !== endStr) setFormData(prev => ({ ...prev, endDate: endStr }));
+        } else if (isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') {
+            if (formData.endDate) setFormData(prev => ({ ...prev, endDate: null }));
         }
     }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, setFormData]);
+
+    useEffect(() => {
+        if (!formData?.newCode) return;
+        const generatePin = async () => {
+            const encoder = new TextEncoder();
+            const hashBuffer = await crypto.subtle.digest(
+                'SHA-256',
+                encoder.encode(formData.newCode.trim().replace(/\s+/g, '').toUpperCase())
+            );
+            const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(hashBuffer)));
+            const pin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
+            setFormData(prev => ({ ...prev, newKioskPin: pin }));
+        };
+        generatePin();
+    }, [formData?.newCode, setFormData]);
 
     const periodDaysCount = useMemo(() => {
         if (!formData?.date || !formData?.endDate) return 0;
@@ -395,7 +412,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex-1">
                             <label className={labelClasses}>Código Actual</label>
                             <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-400 line-through decoration-slate-300 opacity-60">
-                                {activeEmployee?.code || 'S/N'}
+                                {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                             </div>
                         </div>
                         

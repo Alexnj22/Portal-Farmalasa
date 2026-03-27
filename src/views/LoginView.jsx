@@ -87,13 +87,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     setIsLoading(true);
                     const success = await login(scannedCode);
                     if (!success) {
-                        setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado en el sistema' });
+                        setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado. Presiona el ícono de cámara para reintentar.' });
                         setIsLoading(false);
-                        // Reabrir cámara después de 4s — cooldown evita releer mismo código
-                        setTimeout(() => {
-                            setScanFeedback(null);
-                            setScannerActive(true);
-                        }, 4000);
+                        // No reabrir — el usuario presiona el botón manualmente
                     } else {
                         cooldownRef.current = false;
                         setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });
@@ -303,7 +299,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => scannerActive ? stopScanner() : setScannerActive(true)}
+                                    onClick={() => scannerActive ? stopScanner() : (setScanFeedback(null), setScannerActive(true))}
                                     title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
                                     className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
                                         scannerActive

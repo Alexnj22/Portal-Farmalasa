@@ -1,16 +1,18 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Edit, Mail, Phone, Shield, 
-    Clock, FileText, Paperclip, 
+import {
+    Edit, Mail, Phone, Shield,
+    Clock, FileText, Paperclip,
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
-    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, AlertTriangle
+    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, AlertTriangle,
+    KeyRound, X, Loader2
 } from 'lucide-react';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
 import { formatDate, formatTime12h } from '../utils/helpers';
-import { useStaffStore } from '../store/staffStore'; 
+import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -25,6 +27,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const setCurrentTab = setActiveTab || _setActiveTab;
 
     const [showExceptionModal, setShowExceptionModal] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [pwForm, setPwForm] = useState({ password: '', confirm: '', loading: false, error: '', success: false });
 
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
@@ -136,6 +140,27 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (typeof openModal === 'function') openModal('newEvent', { type: 'TRANSFER', employeeId: emp.id });
     }, [openModal, emp.id]);
 
+    const handleSetPassword = async () => {
+        if (pwForm.password.length < 6) {
+            setPwForm(p => ({ ...p, error: 'Mínimo 6 caracteres.' }));
+            return;
+        }
+        if (pwForm.password !== pwForm.confirm) {
+            setPwForm(p => ({ ...p, error: 'Las contraseñas no coinciden.' }));
+            return;
+        }
+        setPwForm(p => ({ ...p, loading: true, error: '' }));
+        const username = emp.username || emp.code?.toLowerCase();
+        const { data, error } = await supabase.functions.invoke('set-employee-password', {
+            body: { username, password: pwForm.password },
+        });
+        if (error || !data?.ok) {
+            setPwForm(p => ({ ...p, loading: false, error: data?.error || 'Error al establecer contraseña.' }));
+        } else {
+            setPwForm(p => ({ ...p, loading: false, success: true }));
+        }
+    };
+
     const handleUploadConstancia = useCallback((e, punchTimestamp) => {
         e.preventDefault();
         e.stopPropagation();
@@ -196,6 +221,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     <button onClick={handleEditProfile} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/60 hover:bg-white text-slate-500 hover:text-[#007AFF] rounded-full border border-white shadow-sm transition-all hover:scale-105" title="Editar Perfil">
                         <Edit size={14} strokeWidth={2.5}/>
                     </button>
+                    <button onClick={() => { setPwForm({ password: '', confirm: '', loading: false, error: '', success: false }); setShowPasswordModal(true); }} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/60 hover:bg-white text-slate-500 hover:text-amber-500 rounded-full border border-white shadow-sm transition-all hover:scale-105" title="Establecer Contraseña">
+                        <KeyRound size={14} strokeWidth={2.5}/>
+                    </button>
                     <button onClick={handleNewHRAction} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 ml-1">
                         <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
                     </button>
@@ -204,7 +232,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         </div>
     );
 
-    return (
+    return (<>
         <GlassViewLayout
             icon={null} 
             title={
@@ -660,16 +688,103 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     </div>
 
                     {showExceptionModal && (
-                        <ShiftExceptionModal 
-                            employee={emp} 
-                            onClose={() => setShowExceptionModal(false)} 
+                        <ShiftExceptionModal
+                            employee={emp}
+                            onClose={() => setShowExceptionModal(false)}
                         />
                     )}
 
                 </div>
             </div>
         </GlassViewLayout>
-    );
+
+        {/* MINI-MODAL: Establecer Contraseña */}
+        {showPasswordModal && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="w-full max-w-sm bg-white/80 backdrop-blur-3xl rounded-[2.5rem] border border-white/80 shadow-[0_30px_80px_rgba(0,0,0,0.12),inset_0_2px_20px_rgba(255,255,255,0.9)] p-8 relative animate-in zoom-in-95 duration-300">
+
+                    <button
+                        onClick={() => setShowPasswordModal(false)}
+                        className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center bg-slate-100/80 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"
+                    >
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-[0.9rem] bg-amber-50 border border-amber-100 flex items-center justify-center shadow-sm">
+                            <KeyRound size={18} className="text-amber-500" strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Seguridad de Cuenta</p>
+                            <p className="text-[15px] font-black text-slate-800 leading-tight">Establecer Contraseña</p>
+                        </div>
+                    </div>
+
+                    <p className="text-[11px] font-bold text-slate-500 mb-5 leading-relaxed">
+                        Usuario: <span className="font-black text-[#007AFF]">
+                            {emp.username || emp.code?.toLowerCase()}@farmalasa.app
+                        </span>
+                    </p>
+
+                    {pwForm.success ? (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                                <CheckCircle size={24} className="text-emerald-500" strokeWidth={2.5} />
+                            </div>
+                            <p className="text-[12px] font-black uppercase tracking-widest text-emerald-600">Contraseña establecida</p>
+                            <button
+                                onClick={() => setShowPasswordModal(false)}
+                                className="mt-2 px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[1rem] text-[11px] font-black uppercase tracking-widest transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nueva Contraseña</label>
+                                <input
+                                    type="password"
+                                    placeholder="Mínimo 6 caracteres"
+                                    value={pwForm.password}
+                                    onChange={e => setPwForm(p => ({ ...p, password: e.target.value, error: '' }))}
+                                    className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Confirmar Contraseña</label>
+                                <input
+                                    type="password"
+                                    placeholder="Repite la contraseña"
+                                    value={pwForm.confirm}
+                                    onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value, error: '' }))}
+                                    className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                />
+                            </div>
+
+                            {pwForm.error && (
+                                <div className="px-4 py-2.5 bg-red-50/80 border border-red-200/80 rounded-[0.9rem] flex items-center gap-2">
+                                    <AlertCircle size={14} className="text-red-500 shrink-0" strokeWidth={2.5} />
+                                    <p className="text-[11px] font-black text-red-600">{pwForm.error}</p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleSetPassword}
+                                disabled={pwForm.loading}
+                                className="w-full h-[48px] bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+                            >
+                                {pwForm.loading
+                                    ? <Loader2 size={18} className="animate-spin" />
+                                    : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>
+                                }
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+    </>);
 };
 
 export default EmployeeDetailView;

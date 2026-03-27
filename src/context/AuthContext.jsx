@@ -338,6 +338,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithUsername = async (username, password) => {
+    const email = `${username.toLowerCase().trim()}@farmalasa.app`;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data?.session) return { ok: false, error: "Usuario o contraseña incorrectos" };
+
+      const code =
+        (data.session.user.user_metadata?.code && String(data.session.user.user_metadata.code)) ||
+        username.trim().toUpperCase();
+
+      const { data: ensured, error: fnErr } = await supabase.functions.invoke("ensure_user_by_code", {
+        body: { code: String(code).trim().toUpperCase() },
+      });
+      if (fnErr || !ensured?.ok || !ensured?.user)
+        return { ok: false, error: "Usuario no encontrado en el sistema" };
+
+      const u = ensured.user;
+      clearErpCache();
+      localStorage.setItem(LS_USER, JSON.stringify(u));
+      writeLastActivity(true);
+      setUser(u);
+      startIdleWatcher(u);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Error de conexión. Intenta de nuevo." };
+    }
+  };
+
   const logout = async () => {
     await doLogout("MANUAL_LOGOUT");
   };
@@ -351,6 +379,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       login,
       loginWithEmail,
+      loginWithUsername,
       logout,
     }),
     [user, loading]

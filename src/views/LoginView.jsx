@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff
+    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -16,8 +16,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const inputRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
     const scannerRef = useRef(null);
-    const [torchSupported, setTorchSupported] = useState(false);
-    const [torchOn, setTorchOn] = useState(false);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
 
@@ -30,47 +28,34 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         return () => {
             const s = scannerRef.current;
             scannerRef.current = null;
-            if (s) s.stop().catch(() => {});
+            if (s) { try { s.reset(); } catch {} }
         };
     }, []);
 
-    // Inicializar scanner cuando scannerActive pasa a true (el div ya está en el DOM)
+    // Inicializar scanner cuando scannerActive pasa a true (el video ya está en el DOM)
     useEffect(() => {
         if (!scannerActive) return;
         let cancelled = false;
         (async () => {
             try {
-                const { Html5Qrcode } = await import('html5-qrcode');
+                const { BrowserMultiFormatReader } = await import('@zxing/browser');
                 if (cancelled) return;
-                const scanner = new Html5Qrcode("qr-reader");
-                scannerRef.current = scanner;
-                await scanner.start(
-                    { facingMode: "environment" },
-                    {
-                        fps: 15,
-                        qrbox: { width: 280, height: 80 },
-                        aspectRatio: 1.7,
-                        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-                    },
-                    async (decodedText) => {
-                        const s = scannerRef.current;
-                        scannerRef.current = null;
-                        setScannerActive(false);
-                        if (s) await s.stop().catch(() => {});
-                        setIsLoading(true);
-                        const success = await login(decodedText.trim().toUpperCase());
-                        if (!success) {
-                            setError('Código no encontrado. Intenta de nuevo.');
-                            setIsLoading(false);
-                        }
-                    },
-                    () => {}
-                );
-                // Detectar soporte de linterna
-                try {
-                    const track = scanner.getRunningTrackCameraCapabilities();
-                    if (track?.torchFeature()?.isSupported()) setTorchSupported(true);
-                } catch { /* dispositivo sin linterna */ }
+                const codeReader = new BrowserMultiFormatReader();
+                scannerRef.current = codeReader;
+                const videoEl = document.getElementById('qr-video');
+                await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
+                    if (!result) return;
+                    const s = scannerRef.current;
+                    scannerRef.current = null;
+                    if (s) { try { s.reset(); } catch {} }
+                    setScannerActive(false);
+                    setIsLoading(true);
+                    const success = await login(result.getText().trim().toUpperCase());
+                    if (!success) {
+                        setError('Código no encontrado. Intenta de nuevo.');
+                        setIsLoading(false);
+                    }
+                });
             } catch {
                 if (!cancelled) {
                     setScannerActive(false);
@@ -82,7 +67,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             cancelled = true;
             const s = scannerRef.current;
             scannerRef.current = null;
-            if (s) s.stop().catch(() => {});
+            if (s) { try { s.reset(); } catch {} }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scannerActive]);
@@ -107,18 +92,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const stopScanner = () => {
         const s = scannerRef.current;
         scannerRef.current = null;
-        if (s) s.stop().catch(() => {});
+        if (s) { try { s.reset(); } catch {} }
         setScannerActive(false);
-        setTorchSupported(false);
-        setTorchOn(false);
-    };
-
-    const toggleTorch = async () => {
-        try {
-            const track = scannerRef.current?.getRunningTrackCameraCapabilities();
-            await track?.torchFeature()?.applyConstraint(!torchOn);
-            setTorchOn(t => !t);
-        } catch { /* silencioso si falla */ }
     };
 
     const handleUsernameLogin = async (e) => {
@@ -287,13 +262,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
                                     {/* Visor con esquinas decorativas */}
                                     <div className="relative w-full h-[260px] rounded-[1.5rem] overflow-hidden bg-black border border-black/20">
-                                        <style>{`
-                                            @keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}
-                                            #qr-reader__scan_region{border:none !important;background:transparent !important;}
-                                            #qr-reader__scan_region img{display:none !important;}
-                                            #qr-reader video{border-radius:0 !important;object-fit:cover !important;width:100% !important;height:100% !important;}
-                                            #qr-reader__dashboard{display:none !important;}
-                                        `}</style>
+                                        <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
                                         {/* Línea de escaneo */}
                                         <div style={{
                                             position: 'absolute', left: '5%', right: '5%',
@@ -306,7 +275,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <div style={{position:'absolute',top:12,right:12,width:22,height:22,borderTop:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 4px 0 0',zIndex:11}} />
                                         <div style={{position:'absolute',bottom:12,left:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'0 0 0 4px',zIndex:11}} />
                                         <div style={{position:'absolute',bottom:12,right:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 0 4px 0',zIndex:11}} />
-                                        <div id="qr-reader" className="w-full h-full" />
+                                        <video id="qr-video" className="w-full h-full object-cover" autoPlay playsInline muted />
                                     </div>
                                     {/* Instrucción con fondo semitransparente */}
                                     <div className="flex items-center justify-center gap-2 px-3 py-2 bg-black/10 backdrop-blur-sm rounded-[1rem] mt-1">
@@ -315,17 +284,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             Apunta al código de barras de tu carné
                                         </p>
                                     </div>
-                                    {/* MEJORA 4: botón linterna (solo si el dispositivo lo soporta) */}
-                                    {torchSupported && (
-                                        <button
-                                            type="button"
-                                            onClick={toggleTorch}
-                                            className="flex items-center justify-center gap-1.5 mx-auto mt-1 px-4 py-2 bg-white/60 hover:bg-white border border-white/80 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all active:scale-95"
-                                        >
-                                            {torchOn ? <ZapOff size={13} strokeWidth={2.5} /> : <Zap size={13} strokeWidth={2.5} />}
-                                            {torchOn ? 'Apagar linterna' : 'Linterna'}
-                                        </button>
-                                    )}
                                 </div>
                             )}
                         </div>

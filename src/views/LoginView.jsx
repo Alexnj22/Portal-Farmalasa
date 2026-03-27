@@ -40,8 +40,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         (async () => {
             try {
                 const { BrowserMultiFormatReader } = await import('@zxing/browser');
+                const { DecodeHintType, BarcodeFormat } = await import('@zxing/library');
                 if (cancelled) return;
-                const codeReader = new BrowserMultiFormatReader();
+                const hints = new Map();
+                hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+                    BarcodeFormat.CODE_128,
+                    BarcodeFormat.CODE_39,
+                    BarcodeFormat.CODE_93,
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.EAN_8,
+                    BarcodeFormat.QR_CODE,
+                ]);
+                hints.set(DecodeHintType.TRY_HARDER, true);
+                const codeReader = new BrowserMultiFormatReader(hints);
                 scannerRef.current = codeReader;
                 const videoEl = document.getElementById('qr-video');
                 await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {

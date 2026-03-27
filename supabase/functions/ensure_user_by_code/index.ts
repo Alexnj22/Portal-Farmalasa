@@ -61,18 +61,40 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "INACTIVE", details: "El empleado ha sido dado de baja." });
     }
 
-    // 🚨 FIX 2: Construimos el correo usando tu campo "username"
-    const baseEmail = employee.username || employee.code.toLowerCase();
-    const email = `${baseEmail}@farmalasa.app`;
+    // Determinar si el match fue por kiosk_pin o por code/username
+    const matchedByKioskPin = employee.kiosk_pin != null &&
+      employee.kiosk_pin.trim().toUpperCase() === clean;
 
-    // Intentamos crear el usuario en Auth por si no existía (Sincronización silenciosa)
-    const createRes = await admin.auth.admin.createUser({
-      id: employee.id, // VITAL para mantener sincronizadas ambas tablas
-      email,
-      password: clean, 
-      email_confirm: true,
-      user_metadata: { code: employee.code },
-    });
+    let email: string;
+    let createPayload: Record<string, unknown>;
+
+    if (matchedByKioskPin) {
+      // Usuario kiosk: email propio, password = kiosk_pin
+      // No usamos id: employee.id porque el usuario portal ya lo ocupa
+      email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
+      createPayload = {
+        email,
+        password: employee.kiosk_pin,
+        email_confirm: true,
+        user_metadata: { code: employee.code, kiosk: true },
+      };
+    } else {
+      // Usuario portal: email username@farmalasa.app
+      // Usamos id: employee.id para mantener la FK con la tabla employees
+      // La password la maneja set-employee-password — aquí solo creamos si no existe
+      const baseEmail = employee.username || employee.code.toLowerCase();
+      email = `${baseEmail}@farmalasa.app`;
+      createPayload = {
+        id: employee.id,
+        email,
+        password: `init_${employee.code}`, // placeholder solo para creación inicial
+        email_confirm: true,
+        user_metadata: { code: employee.code },
+      };
+    }
+
+    // Crear usuario Auth si no existe (si ya existe, el error se ignora silenciosamente)
+    const createRes = await admin.auth.admin.createUser(createPayload);
 
     if (createRes.error) {
       const msg = (createRes.error.message || "").toLowerCase();
@@ -82,21 +104,21 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Respuesta limpia
+    // Respuesta limpia — igual en ambos flujos
     return json({
-        ok: true,
-        user: {
-          id: employee.id,
-          name: employee.name,
-          code: employee.code,
-          role: employee.roles?.name || "Sin Cargo", // Extraído directo de la tabla de roles
-          branchId: employee.branch_id,
-          photo: employee.photo_url,
-          email: email,
-          phone: employee.phone,
-          isAdmin: employee.is_admin === true,
-          userType: employee.is_admin ? "admin" : "employee",
-        }
+      ok: true,
+      user: {
+        id: employee.id,
+        name: employee.name,
+        code: employee.code,
+        role: employee.roles?.name || "Sin Cargo",
+        branchId: employee.branch_id,
+        photo: employee.photo_url,
+        email,
+        phone: employee.phone,
+        isAdmin: employee.is_admin === true,
+        userType: employee.is_admin ? "admin" : "employee",
+      },
     });
 
   } catch (e) {

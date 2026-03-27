@@ -459,3 +459,9 @@ entrypoint = "./functions/saly-ai/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/saly-ai/*.html" ]
+
+[functions.set-employee-password]
+enabled = true
+verify_jwt = true
+import_map = "./functions/set-employee-password/deno.json"
+entrypoint = "./functions/set-employee-password/index.ts"

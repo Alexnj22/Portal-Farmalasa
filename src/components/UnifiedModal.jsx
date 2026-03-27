@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus, KeyRound
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -89,6 +89,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editCustomDocument": return "max-w-md";
             case "viewWfmAnalytics": return "max-w-4xl";
             case "aiSchedulerPreview": return "max-w-5xl";
+            case "setEmployeePassword": return "max-w-sm";
             default: return "max-w-lg";
         }
     };
@@ -120,6 +121,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editCustomDocument": return "Actualizar Documento";
             case "viewWfmAnalytics": return "Monitor de ventas";
             case "aiSchedulerPreview": return "Planificación con IA";
+            case "setEmployeePassword": return "Establecer Contraseña";
             default: return "Gestión Administrativa";
         }
     };
@@ -131,6 +133,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "editEmployee") return "EDICIÓN RÁPIDA DE CONTACTO Y NÓMINA"; 
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
+        if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "COLABORADOR";
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
@@ -544,6 +547,32 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
+        if (type === "setEmployeePassword") {
+            const password = formData?.password || '';
+            const confirm = formData?.confirm || '';
+            if (password.length < 6) { setValidationError("Mínimo 6 caracteres."); return; }
+            if (password !== confirm) { setValidationError("Las contraseñas no coinciden."); return; }
+            setIsSaving(true);
+            try {
+                const username = formData?.username || formData?.code?.toLowerCase();
+                const { data, error } = await supabase.functions.invoke('set-employee-password', {
+                    body: { username, password },
+                });
+                if (error || !data?.ok) {
+                    setValidationError(data?.error || 'Error al establecer la contraseña.');
+                } else {
+                    const { showToast } = useToastStore.getState();
+                    if (showToast) showToast("Contraseña Establecida", `Acceso configurado para ${formData?.name}.`, "success");
+                    onClose();
+                }
+            } catch (err) {
+                setValidationError(err?.message || 'Error de conexión.');
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
         if (handleSubmit) {
             setIsSaving(true);
             try {
@@ -659,6 +688,37 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "editBranchLeadership" && <FormLeadership formData={formData} setFormData={setFormData} />}
                                 {type === "aiSchedulerPreview" && <FormAiSchedulerPreview formData={formData} onClose={onClose} />}
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
+
+                                {type === "setEmployeePassword" && (
+                                    <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
+                                        <div className="px-4 py-3 bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-[1rem]">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Usuario del Portal</p>
+                                            <p className="text-[13px] font-bold text-[#007AFF] truncate">
+                                                {formData?.username || formData?.code?.toLowerCase()}@farmalasa.app
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nueva Contraseña</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Mínimo 6 caracteres"
+                                                value={formData?.password || ''}
+                                                onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
+                                                className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Confirmar Contraseña</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Repite la contraseña"
+                                                value={formData?.confirm || ''}
+                                                onChange={e => setFormData(p => ({ ...p, confirm: e.target.value }))}
+                                                className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </Suspense>
                         </form>
                     </div>
@@ -676,7 +736,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             disabled={isSaving || !isFormValid} 
                             className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95'}`}
                         >
-                            {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
+                            {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : type === "setEmployeePassword" ? <><KeyRound size={16} strokeWidth={3} /> Guardar Contraseña</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                         </button>
                     </div>
                 )}

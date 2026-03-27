@@ -33,7 +33,11 @@ serve(async (req: Request) => {
       return json({ ok: false, error: "PASSWORD_TOO_SHORT" }, 400);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
+    // Intentar custom secret primero, luego la variable built-in de Supabase
+    const serviceKey =
+      Deno.env.get("SERVICE_ROLE_KEY") ??
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+      "";
 
     if (!supabaseUrl || !serviceKey)
       return json({ ok: false, error: "MISSING_ENV" }, 500);

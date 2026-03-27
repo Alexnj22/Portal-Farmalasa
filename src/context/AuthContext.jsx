@@ -337,31 +337,33 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
   };
-
   const loginWithUsername = async (username, password) => {
-    const email = `${username.toLowerCase().trim()}@farmalasa.app`;
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data?.session) {
-        const status = error?.status ?? error?.code;
-        if (status === 400 || error?.message?.includes('Invalid login credentials')) {
-          return { ok: false, error: "Usuario o contraseña incorrectos. Si es tu primer acceso, contacta al administrador." };
+      const cleanUsername = username.toLowerCase().trim();
+      const emailToLogin = `${cleanUsername}@farmalasa.app`;
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailToLogin,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          return { ok: false, error: 'Usuario no encontrado o contraseña incorrecta.' };
         }
-        if (status === 401) {
-          return { ok: false, error: "Credenciales incorrectas." };
-        }
-        return { ok: false, error: "Error de conexión. Intenta de nuevo." };
+        return { ok: false, error: error.message };
       }
 
-      const code =
-        (data.session.user.user_metadata?.code && String(data.session.user.user_metadata.code)) ||
-        username.trim().toUpperCase();
+      if (!data?.session) return { ok: false, error: 'Error de sesión. Intenta de nuevo.' };
 
-      const { data: ensured, error: fnErr } = await supabase.functions.invoke("ensure_user_by_code", {
-        body: { code: String(code).trim().toUpperCase() },
+      const usernameFromEmail = emailToLogin.split('@')[0];
+      const { data: ensured, error: fnErr } = await supabase.functions.invoke('ensure_user_by_code', {
+        body: { code: usernameFromEmail.toUpperCase() },
       });
-      if (fnErr || !ensured?.ok || !ensured?.user)
-        return { ok: false, error: "Usuario no encontrado en el sistema" };
+
+      if (fnErr || !ensured?.ok || !ensured?.user) {
+        return { ok: false, error: 'Usuario no encontrado en el sistema.' };
+      }
 
       const u = ensured.user;
       clearErpCache();
@@ -370,8 +372,8 @@ export const AuthProvider = ({ children }) => {
       setUser(u);
       startIdleWatcher(u);
       return { ok: true };
-    } catch {
-      return { ok: false, error: "Error de conexión. Intenta de nuevo." };
+    } catch (err) {
+      return { ok: false, error: 'Error de conexión con el servidor.' };
     }
   };
 

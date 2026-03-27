@@ -1,144 +1,105 @@
 // supabase/functions/ensure_user_by_code/index.ts
 
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno&no-check";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
-const corsHeaders: Record<string, string> = {
+const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-serve(async (req: Request) => {
-  // ✅ Preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+const json = (body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status: 200, 
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" });
 
   try {
-    if (req.method !== "POST") {
-      return new Response(
-        JSON.stringify({ ok: false, error: "METHOD_NOT_ALLOWED" }),
-        {
-          status: 405,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
     const body = await req.json().catch(() => ({}));
-    const clean = typeof body?.code === "string"
-      ? body.code.trim().toUpperCase()
-      : "";
+    const clean = typeof body?.code === "string" ? body.code.trim().toUpperCase() : "";
 
-    if (!clean) {
-      return new Response(JSON.stringify({ ok: false, error: "CODE_REQUIRED" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!clean) return json({ ok: false, error: "CODE_REQUIRED", details: "El código no puede estar vacío." });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-    if (!supabaseUrl || !serviceKey) {
-      return new Response(JSON.stringify({ ok: false, error: "MISSING_ENV" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!supabaseUrl || !serviceKey) return json({ ok: false, error: "MISSING_ENV", details: "Faltan Secrets en Supabase." });
 
-    // ✅ Cliente admin (service role) — bypass RLS
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // 1) Buscar empleado por code
-    const { data: rows, error } = await admin
+    // 🚨 FIX 1: Pedimos las columnas EXACTAS que existen en tu esquema.
+    // Usamos "roles(name)" para traer el nombre del cargo automáticamente.
+    const { data: rows, error: dbError } = await admin
       .from("employees")
-      .select("id, code, kiosk_pin, name, role, branch_id, photo_url, email, phone, is_admin, status")
+      .select(`
+        id, 
+        code, 
+        kiosk_pin, 
+        name, 
+        role_id, 
+        branch_id, 
+        photo_url, 
+        username, 
+        phone, 
+        is_admin, 
+        status,
+        roles ( name )
+      `)
       .or(`code.eq.${clean},kiosk_pin.eq.${clean}`)
       .limit(1);
 
-    if (error) {
-      return new Response(JSON.stringify({ ok: false, error: "DB_ERROR", details: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!rows?.length) {
-      return new Response(JSON.stringify({ ok: false, error: "NOT_FOUND" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (dbError) return json({ ok: false, error: "DB_ERROR", details: dbError.message });
+    if (!rows?.length) return json({ ok: false, error: "NOT_FOUND", details: "Código o PIN no encontrado en el sistema." });
 
     const employee = rows[0];
 
     if (employee.status && employee.status !== "ACTIVO") {
-      return new Response(JSON.stringify({ ok: false, error: "INACTIVE" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, error: "INACTIVE", details: "El empleado ha sido dado de baja." });
     }
 
-    // 2) Asegurar usuario Auth (email = code@staff.local, password = code)
-    const email = employee.email || `${clean.toLowerCase()}@staff.local`;
+    // 🚨 FIX 2: Construimos el correo usando tu campo "username"
+    const baseEmail = employee.username || employee.code.toLowerCase();
+    const email = `${baseEmail}@farmalasa.app`;
 
-    // si no tenía email, lo guardamos (no es obligatorio, pero ayuda a consistencia)
-    if (!employee.email) {
-      await admin.from("employees").update({ email }).eq("id", employee.id);
-    }
-
-    // ✅ Mejor que listUsers(): intentamos create y si ya existe, seguimos sin fallar
+    // Intentamos crear el usuario en Auth por si no existía (Sincronización silenciosa)
     const createRes = await admin.auth.admin.createUser({
+      id: employee.id, // VITAL para mantener sincronizadas ambas tablas
       email,
-      password: clean,     // regla: password = code
+      password: clean, 
       email_confirm: true,
-      user_metadata: { code: clean },
+      user_metadata: { code: employee.code },
     });
 
-    // Si ya existe, Supabase suele devolver error 422/400 dependiendo del caso.
-    // No queremos bloquear login por eso.
     if (createRes.error) {
       const msg = (createRes.error.message || "").toLowerCase();
-      const isAlready =
-        msg.includes("already") ||
-        msg.includes("exists") ||
-        msg.includes("registered") ||
-        msg.includes("duplicate");
-
+      const isAlready = msg.includes("already") || msg.includes("exists") || msg.includes("registered") || msg.includes("duplicate");
       if (!isAlready) {
-        return new Response(
-          JSON.stringify({ ok: false, error: "AUTH_CREATE_ERROR", details: createRes.error.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return json({ ok: false, error: "AUTH_CREATE_ERROR", details: createRes.error.message });
       }
     }
 
-    // 3) Respuesta final
-    return new Response(
-      JSON.stringify({
+    // Respuesta limpia
+    return json({
         ok: true,
         user: {
           id: employee.id,
           name: employee.name,
           code: employee.code,
-          role: employee.role,
+          role: employee.roles?.name || "Sin Cargo", // Extraído directo de la tabla de roles
           branchId: employee.branch_id,
           photo: employee.photo_url,
-          email,
+          email: email,
           phone: employee.phone,
           isAdmin: employee.is_admin === true,
           userType: employee.is_admin ? "admin" : "employee",
-        },
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+        }
+    });
+
   } catch (e) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });
   }
 });

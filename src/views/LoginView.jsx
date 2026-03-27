@@ -13,107 +13,153 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [loginMode, setLoginMode] = useState('code');
-    const inputRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
-    const scannerRef = useRef(null);
-    const cooldownRef = useRef(false);
     const [scanFeedback, setScanFeedback] = useState(null);
+
+    // Refs de UI
+    const inputRef = useRef(null);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
 
-    useEffect(() => {
-        if (inputRef.current) inputRef.current.focus();
-    }, []);
+    // 🚨 REF PARA RASTREAR LA PESTAÑA: Evita que la cámara se abra si te fuiste a "Usuario"
+    const loginModeRef = useRef(loginMode);
+    useEffect(() => { loginModeRef.current = loginMode; }, [loginMode]);
 
-    // Cleanup: detener cámara al desmontar el componente
+    // Refs Seguros para la Cámara
+    const videoRef = useRef(null);
+    const scannerRef = useRef(null);
+    const streamRef = useRef(null); 
+    const cooldownRef = useRef(false);
+
+    // Auto-focus inteligente al cambiar de pestaña
     useEffect(() => {
-        return () => {
-            const s = scannerRef.current;
+        if (loginMode === 'code' && inputRef.current && !scannerActive) {
+            inputRef.current.focus();
+        } else if (loginMode === 'username' && usernameRef.current) {
+            usernameRef.current.focus();
+        }
+    }, [loginMode, scannerActive]);
+
+    // Función robusta para apagar la cámara y limpiar memoria
+    const stopCameraSafely = () => {
+        if (scannerRef.current) {
+            try { scannerRef.current.reset(); } catch {}
             scannerRef.current = null;
-            if (s) { try { s.reset(); } catch {} }
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current && videoRef.current.srcObject) {
             try {
-                const videoEl = document.getElementById('qr-video');
-                if (videoEl?.srcObject) {
-                    videoEl.srcObject.getTracks().forEach(t => t.stop());
-                    videoEl.srcObject = null;
-                }
+                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+                videoRef.current.src = "";
+                videoRef.current.removeAttribute('src');
             } catch {}
-        };
+        }
+    };
+
+    // Cleanup global al desmontar el componente
+    useEffect(() => {
+        return () => stopCameraSafely();
     }, []);
 
-    // Inicializar scanner cuando scannerActive pasa a true (el video ya está en el DOM)
+    // 🚨 MOTOR DEL ESCÁNER MEJORADO (Con tu configuración original + Auto-Reintento)
     useEffect(() => {
         if (!scannerActive) return;
+        
         let cancelled = false;
+        
+        // FASE DE CALENTAMIENTO: Ignoramos todo por 1.5 segundos
+        let isWarmup = true;
+        const warmupTimer = setTimeout(() => { 
+            isWarmup = false; 
+        }, 500);
+
         (async () => {
             try {
                 const { BrowserMultiFormatReader } = await import('@zxing/browser');
                 const { DecodeHintType, BarcodeFormat } = await import('@zxing/library');
+                
                 if (cancelled) return;
+                
                 const hints = new Map();
+                // Usamos TU configuración original que funciona perfecto con tus carnés
                 hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-                    BarcodeFormat.CODE_128,
-                    BarcodeFormat.CODE_39,
-                    BarcodeFormat.CODE_93,
-                    BarcodeFormat.EAN_13,
-                    BarcodeFormat.EAN_8,
-                    BarcodeFormat.QR_CODE,
+                    BarcodeFormat.CODE_128, BarcodeFormat.CODE_39, BarcodeFormat.CODE_93,
+                    BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.QR_CODE,
                 ]);
                 hints.set(DecodeHintType.TRY_HARDER, true);
+                
                 const codeReader = new BrowserMultiFormatReader(hints);
                 scannerRef.current = codeReader;
-                const videoEl = document.getElementById('qr-video');
-                // 500ms delay antes de empezar a leer — evita que ZXing re-emita el último código
-                await new Promise(res => setTimeout(res, 500));
-                if (cancelled) return;
+                
+                await new Promise(res => setTimeout(res, 300));
+                if (cancelled || !videoRef.current) return;
+                
                 cooldownRef.current = false;
-                await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
-                    if (!result) return;
-                    if (cooldownRef.current) return; // ignorar lecturas durante cooldown
+                
+                await codeReader.decodeFromVideoDevice(undefined, videoRef.current, async (result) => {
+                    if (!result || cooldownRef.current || isWarmup || cancelled) return;
+                    
                     cooldownRef.current = true;
                     const scannedCode = result.getText().trim().toUpperCase();
-                    const s = scannerRef.current;
-                    scannerRef.current = null;
-                    if (s) { try { s.reset(); } catch {} }
-                    // Liberar stream
-                    try {
-                        if (videoEl?.srcObject) {
-                            videoEl.srcObject.getTracks().forEach(t => t.stop());
-                            videoEl.srcObject = null;
-                        }
-                    } catch {}
+                    
+                    if (inputRef.current) {
+                        inputRef.current.value = scannedCode;
+                    }
+                    
+                    if (videoRef.current?.srcObject) {
+                        streamRef.current = videoRef.current.srcObject;
+                    }
+
+                    stopCameraSafely();
                     setScannerActive(false);
+                    
                     setScanFeedback({ status: 'reading', code: scannedCode, message: 'Verificando...' });
                     setIsLoading(true);
+                    
                     const success = await login(scannedCode);
+                    
                     if (!success) {
-                        setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado. Presiona el ícono de cámara para reintentar.' });
+                        // 🚨 1. LIMPIEZA INMEDIATA DEL INPUT
+                        if (inputRef.current) inputRef.current.value = '';
+                        
+                        // 🚨 2. FEEDBACK VISUAL
+                        setScanFeedback({ 
+                            status: 'error', 
+                            code: scannedCode, 
+                            message: 'Inválido. Reabriendo cámara...' 
+                        });
                         setIsLoading(false);
-                        // No reabrir — el usuario presiona el botón manualmente
+
+                        // 🚨 3. AUTO-REINTENTO (Reabre la cámara tras 2.5s)
+                        setTimeout(() => {
+                            // Solo si el usuario no se ha ido a otra pestaña
+                            if (loginModeRef.current === 'code') {
+                                setScanFeedback(null);
+                                setScannerActive(true);
+                            }
+                        }, 1000);
+
                     } else {
-                        cooldownRef.current = false;
                         setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });
                     }
                 });
-            } catch {
+            } catch (err) {
                 if (!cancelled) {
+                    stopCameraSafely();
                     setScannerActive(false);
-                    setError('No se pudo acceder a la cámara.');
+                    setError('No se pudo acceder a la cámara. Verifica los permisos.');
                 }
             }
         })();
+
         return () => {
             cancelled = true;
-            const s = scannerRef.current;
-            scannerRef.current = null;
-            if (s) { try { s.reset(); } catch {} }
-            try {
-                const videoEl = document.getElementById('qr-video');
-                if (videoEl?.srcObject) {
-                    videoEl.srcObject.getTracks().forEach(t => t.stop());
-                    videoEl.srcObject = null;
-                }
-            } catch {}
+            clearTimeout(warmupTimer);
+            stopCameraSafely();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scannerActive]);
@@ -130,24 +176,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     useEffect(() => {
         if (error) {
-            const timer = setTimeout(() => setError(''), 3000);
+            const timer = setTimeout(() => setError(''), 4000);
             return () => clearTimeout(timer);
         }
     }, [error]);
 
-    const stopScanner = () => {
+    const handleStopScannerBtn = () => {
         cooldownRef.current = false;
-        const s = scannerRef.current;
-        scannerRef.current = null;
-        if (s) { try { s.reset(); } catch {} }
-        // Liberar el MediaStream explícitamente — reset() de ZXing no lo hace
-        try {
-            const videoEl = document.getElementById('qr-video');
-            if (videoEl?.srcObject) {
-                videoEl.srcObject.getTracks().forEach(t => t.stop());
-                videoEl.srcObject = null;
-            }
-        } catch {}
+        stopCameraSafely();
         setScannerActive(false);
         setScanFeedback(null);
     };
@@ -157,10 +193,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setError('');
         const username = usernameRef.current?.value?.trim() || '';
         const password = userPasswordRef.current?.value || '';
+        
         if (!username || !password) {
             setError('Ingresa usuario y contraseña.');
             return;
         }
+        
         setIsLoading(true);
         try {
             const result = await loginWithUsername(username, password);
@@ -179,7 +217,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
-
         const code = inputRef.current?.value || '';
 
         if (!code.trim()) {
@@ -188,18 +225,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         }
 
         setIsLoading(true);
-
         try {
             const success = await login(code);
-
             if (!success) {
-                setError('Código inválido o no encontrado.');
-                setIsLoading(false);
+                // 🚨 LIMPIEZA INMEDIATA SI SE DIGITÓ A MANO
                 if (inputRef.current) inputRef.current.value = '';
+                setError('Código inválido. Intenta de nuevo.');
+                setIsLoading(false);
                 inputRef.current?.focus();
             }
         } catch (err) {
-            console.error(err);
             setError('Error de conexión. Intenta de nuevo.');
             setIsLoading(false);
             if (inputRef.current) inputRef.current.value = '';
@@ -208,15 +243,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     };
 
     return (
-        // 🚨 1. Contenedor Base: Flex column, centra horizontalmente
         <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5
             pt-[max(env(safe-area-inset-top,32px),32px)] 
             pb-[max(env(safe-area-inset-bottom,32px),120px)] 
             landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
-            {/* 🚨 RESTAURADO: DOCK LATERAL DERECHO (Desktop) */}
             <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
-                
                 <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
                     <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="overflow-hidden flex items-center justify-start">
@@ -242,17 +274,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </a>
             </div>
 
-            {/* 🚨 2. LA MAGIA CONTRA EL CORTE: 'my-auto' en lugar de justify-center. */}
             <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all">
 
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-20 h-20 flex items-center justify-center mb-6">
-                        <img
-                            src="/LogoFLS.svg"
-                            alt="FarmaLasa"
-                            className="w-20 h-20 object-contain"
-                            style={{ background: 'transparent' }}
-                        />
+                        <img src="/LogoFLS.svg" alt="FarmaLasa" className="w-20 h-20 object-contain" style={{ background: 'transparent' }} />
                     </div>
                     <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                         Portal
@@ -262,18 +288,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </p>
                 </div>
 
-                {/* TAB TOGGLE: Carné / Usuario */}
                 <div className="flex bg-white/30 backdrop-blur-md border border-white/60 rounded-[2rem] p-1.5 mb-6 shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
                     <button
                         type="button"
-                        onClick={() => { stopScanner(); setLoginMode('code'); setError(''); }}
+                        onClick={() => { handleStopScannerBtn(); setLoginMode('code'); setError(''); }}
                         className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'code' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Carné
                     </button>
                     <button
                         type="button"
-                        onClick={() => { stopScanner(); setLoginMode('username'); setError(''); }}
+                        onClick={() => { handleStopScannerBtn(); setLoginMode('username'); setError(''); }}
                         className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'username' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Usuario
@@ -290,6 +315,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     </div>
                                     <input
                                         ref={inputRef}
+                                        id="login-code"
+                                        name="login-code"
                                         type="text"
                                         placeholder="CÓDIGO"
                                         autoComplete="off"
@@ -301,11 +328,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     type="button"
                                     onClick={() => {
                                         if (scannerActive) {
-                                            stopScanner();
+                                            handleStopScannerBtn();
                                         } else {
+                                            if (inputRef.current) inputRef.current.value = '';
                                             setScanFeedback(null);
                                             cooldownRef.current = false;
-                                            setScannerActive(prev => !prev);
+                                            setScannerActive(true);
                                         }
                                     }}
                                     title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
@@ -315,56 +343,39 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
                                     }`}
                                 >
-                                    {scannerActive
-                                        ? <CameraOff size={20} strokeWidth={2} />
-                                        : <Camera size={20} strokeWidth={2} />
-                                    }
+                                    {scannerActive ? <CameraOff size={20} strokeWidth={2} /> : <Camera size={20} strokeWidth={2} />}
                                 </button>
                             </div>
 
                             {scannerActive && (
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-                                    {/* Visor con esquinas decorativas */}
                                     <div className="relative w-full h-[260px] rounded-[1.5rem] overflow-hidden bg-black border border-black/20">
                                         <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
-                                        {/* Línea de escaneo */}
-                                        <div style={{
-                                            position: 'absolute', left: '5%', right: '5%',
-                                            height: '2px', background: 'rgba(0,122,255,0.9)',
-                                            animation: 'scan 2s ease-in-out infinite',
-                                            zIndex: 10, boxShadow: '0 0 10px rgba(0,122,255,0.7)'
-                                        }} />
-                                        {/* Esquinas decorativas */}
+                                        <div style={{ position: 'absolute', left: '5%', right: '5%', height: '2px', background: 'rgba(0,122,255,0.9)', animation: 'scan 2s ease-in-out infinite', zIndex: 10, boxShadow: '0 0 10px rgba(0,122,255,0.7)' }} />
                                         <div style={{position:'absolute',top:12,left:12,width:22,height:22,borderTop:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'4px 0 0 0',zIndex:11}} />
                                         <div style={{position:'absolute',top:12,right:12,width:22,height:22,borderTop:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 4px 0 0',zIndex:11}} />
                                         <div style={{position:'absolute',bottom:12,left:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'0 0 0 4px',zIndex:11}} />
                                         <div style={{position:'absolute',bottom:12,right:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 0 4px 0',zIndex:11}} />
-                                        <video id="qr-video" className="w-full h-full object-cover" autoPlay playsInline muted />
+                                        
+                                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                                     </div>
-                                    {/* Instrucción con fondo semitransparente */}
                                     <div className="flex items-center justify-center gap-2 px-3 py-2 bg-black/10 backdrop-blur-sm rounded-[1rem] mt-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] animate-pulse shrink-0" />
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 text-center">
-                                            Apunta al código de barras de tu carné
-                                        </p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 text-center">Apunta al código de barras de tu carné</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Feedback de lectura de código */}
                             {scanFeedback && (
                                 <div className={`p-3 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${
                                     scanFeedback.status === 'error'   ? 'bg-red-50 border border-red-200' :
                                     scanFeedback.status === 'success' ? 'bg-emerald-50 border border-emerald-200' :
                                     'bg-[#007AFF]/5 border border-[#007AFF]/20'
                                 }`}>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                                        Código detectado: {scanFeedback.code}
-                                    </p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Código detectado: <span className="font-bold">{scanFeedback.code}</span></p>
                                     <p className={`text-[12px] font-bold flex items-center justify-center gap-1 ${
                                         scanFeedback.status === 'error'   ? 'text-red-600' :
-                                        scanFeedback.status === 'success' ? 'text-emerald-600' :
-                                        'text-[#007AFF]'
+                                        scanFeedback.status === 'success' ? 'text-emerald-600' : 'text-[#007AFF]'
                                     }`}>
                                         {scanFeedback.status === 'reading' && <Loader2 size={12} className="animate-spin" />}
                                         {scanFeedback.message}
@@ -380,6 +391,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                                 <input
                                     ref={usernameRef}
+                                    id="username"
+                                    name="username"
                                     type="text"
                                     placeholder="nombre.apellido"
                                     autoComplete="username"
@@ -392,6 +405,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                                 <input
                                     ref={userPasswordRef}
+                                    id="password"
+                                    name="password"
                                     type="password"
                                     placeholder="Contraseña"
                                     autoComplete="current-password"
@@ -410,20 +425,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </div>
                     )}
 
-                    <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#007AFF] to-[#005CE6] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2">
+                    <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#007AFF] to-[#005CE6] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100">
                         {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Ingresar al Portal'}
                     </button>
                 </form>
 
-                {/* 🚨 DIVISOR Y BOTÓN KIOSCO: Solo se renderizan si es una PC */}
                 {!isMobileOrApp() && (
                     <>
                         <div className="flex items-center gap-4 my-8 opacity-60">
                             <div className="flex-1 h-px bg-slate-400/30"></div>
                         </div>
-                        <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform">
+                        <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform group hover:bg-white/40">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm">
+                                <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm group-hover:text-[#007AFF] transition-colors">
                                     <Clock size={20} strokeWidth={2.5} />
                                 </div>
                                 <div className="text-left">
@@ -431,22 +445,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
                                 </div>
                             </div>
-                            <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center">
-                                <ChevronRight size={16} className="text-slate-400" strokeWidth={3} />
+                            <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center group-hover:bg-[#007AFF] group-hover:text-white group-hover:border-transparent transition-all">
+                                <ChevronRight size={16} className="text-slate-400 group-hover:text-white" strokeWidth={3} />
                             </div>
                         </button>
                     </>
                 )}
             </div>
 
-            {/* 🚨 3. DOCK MÓVIL (Menú Flotante Inteligente) */}
-            <div className="fixed z-40 flex items-center justify-center gap-3 p-3 transition-all duration-500 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-xl
-                /* MODO VERTICAL (Abajo) */
-                bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] flex-row
-                /* MODO HORIZONTAL (A la derecha, seguro del notch) */
-                landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:right-[max(env(safe-area-inset-right,24px),24px)] landscape:left-auto landscape:translate-x-0 landscape:w-auto landscape:flex-col
-                lg:hidden
-            ">
+            <div className="fixed z-40 flex items-center justify-center gap-3 p-3 transition-all duration-500 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-xl bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] flex-row landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:right-[max(env(safe-area-inset-right,24px),24px)] landscape:left-auto landscape:translate-x-0 landscape:w-auto landscape:flex-col lg:hidden">
                 <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="flex-1 landscape:flex-none landscape:w-16 flex items-center justify-center gap-2 py-3.5 px-4 bg-white/60 hover:bg-white rounded-[1.5rem]">
                     <ShoppingCart size={18} strokeWidth={2.5} className="text-[#007AFF]" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 landscape:hidden">Ventas</span>

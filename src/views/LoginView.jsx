@@ -1,24 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Mail, Lock, Camera, CameraOff, User as UserIcon
+    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithEmail, loginWithUsername, isAdmin, user } = useAuth();
+    const { login, loginWithUsername, isAdmin, user } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [loginMode, setLoginMode] = useState('code');
     const inputRef = useRef(null);
-    const emailRef = useRef(null);
-    const passwordRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
     const scannerRef = useRef(null);
-    const [usernameMode, setUsernameMode] = useState(false);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
 
@@ -102,12 +99,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setScannerActive(false);
     };
 
-    const switchToUsernameMode = () => {
-        stopScanner();
-        setUsernameMode(true);
-        setError('');
-    };
-
     const handleUsernameLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -125,30 +116,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 setIsLoading(false);
                 if (userPasswordRef.current) userPasswordRef.current.value = '';
                 userPasswordRef.current?.focus();
-            }
-        } catch {
-            setError('Error de conexión. Intenta de nuevo.');
-            setIsLoading(false);
-        }
-    };
-
-    const handleAdminLogin = async (e) => {
-        e.preventDefault();
-        setError('');
-        const email = emailRef.current?.value?.trim() || '';
-        const password = passwordRef.current?.value || '';
-        if (!email || !password) {
-            setError('Ingresa email y contraseña.');
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const success = await loginWithEmail(email, password);
-            if (!success) {
-                setError('Credenciales inválidas.');
-                setIsLoading(false);
-                if (passwordRef.current) passwordRef.current.value = '';
-                passwordRef.current?.focus();
             }
         } catch {
             setError('Error de conexión. Intenta de nuevo.');
@@ -243,114 +210,67 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </p>
                 </div>
 
-                {/* TAB TOGGLE: Personal / Administrador */}
+                {/* TAB TOGGLE: Carné / Usuario */}
                 <div className="flex bg-white/30 backdrop-blur-md border border-white/60 rounded-[2rem] p-1.5 mb-6 shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
                     <button
                         type="button"
-                        onClick={() => { setLoginMode('code'); setUsernameMode(false); setError(''); }}
+                        onClick={() => { stopScanner(); setLoginMode('code'); setError(''); }}
                         className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'code' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        Personal
+                        Carné
                     </button>
                     <button
                         type="button"
-                        onClick={() => { stopScanner(); setUsernameMode(false); setLoginMode('admin'); setError(''); }}
-                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'admin' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={() => { stopScanner(); setLoginMode('username'); setError(''); }}
+                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'username' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        Administrador
+                        Usuario
                     </button>
                 </div>
 
-                <form onSubmit={loginMode === 'admin' ? handleAdminLogin : usernameMode ? handleUsernameLogin : handleLogin} className="flex flex-col gap-5 relative">
+                <form onSubmit={loginMode === 'username' ? handleUsernameLogin : handleLogin} className="flex flex-col gap-5 relative">
                     {loginMode === 'code' ? (
                         <div className="flex flex-col gap-3">
-                            {!usernameMode ? (
-                                <>
-                                    <div className="relative group z-20 flex items-center gap-2">
-                                        <div className="relative flex-1 flex items-center">
-                                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
-                                                <ScanBarcode size={24} strokeWidth={2} />
-                                            </div>
-                                            <input
-                                                ref={inputRef}
-                                                type="text"
-                                                placeholder="CÓDIGO"
-                                                autoComplete="off"
-                                                spellCheck="false"
-                                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => scannerActive ? stopScanner() : setScannerActive(true)}
-                                            title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
-                                            className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
-                                                scannerActive
-                                                    ? 'bg-red-50/80 border-red-200/60 text-red-400 hover:bg-red-100 hover:text-red-500'
-                                                    : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
-                                            }`}
-                                        >
-                                            {scannerActive
-                                                ? <CameraOff size={20} strokeWidth={2} />
-                                                : <Camera size={20} strokeWidth={2} />
-                                            }
-                                        </button>
+                            <div className="relative group z-20 flex items-center gap-2">
+                                <div className="relative flex-1 flex items-center">
+                                    <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
+                                        <ScanBarcode size={24} strokeWidth={2} />
                                     </div>
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        placeholder="CÓDIGO"
+                                        autoComplete="off"
+                                        spellCheck="false"
+                                        className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => scannerActive ? stopScanner() : setScannerActive(true)}
+                                    title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
+                                    className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
+                                        scannerActive
+                                            ? 'bg-red-50/80 border-red-200/60 text-red-400 hover:bg-red-100 hover:text-red-500'
+                                            : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
+                                    }`}
+                                >
+                                    {scannerActive
+                                        ? <CameraOff size={20} strokeWidth={2} />
+                                        : <Camera size={20} strokeWidth={2} />
+                                    }
+                                </button>
+                            </div>
 
-                                    {scannerActive && (
-                                        <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-                                            <div id="qr-reader" className="w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-black/80 border border-white/20" />
-                                            <div className="flex items-center justify-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
-                                                    Apunta la cámara al código de barras de tu carné
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        onClick={switchToUsernameMode}
-                                        className="text-center mt-1 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#007AFF] transition-colors duration-200"
-                                    >
-                                        ¿No tienes tu carné?{' '}
-                                        <span className="text-[#007AFF]">Ingresa con usuario →</span>
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <div className="relative group flex items-center">
-                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
-                                            <UserIcon size={20} strokeWidth={2} />
-                                        </div>
-                                        <input
-                                            ref={usernameRef}
-                                            type="text"
-                                            placeholder="nombre.apellido"
-                                            autoComplete="username"
-                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
-                                        />
+                            {scannerActive && (
+                                <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
+                                    <div id="qr-reader" className="w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-black/80 border border-white/20" />
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                                            Apunta la cámara al código de barras de tu carné
+                                        </p>
                                     </div>
-                                    <div className="relative group flex items-center">
-                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
-                                            <Lock size={20} strokeWidth={2} />
-                                        </div>
-                                        <input
-                                            ref={userPasswordRef}
-                                            type="password"
-                                            placeholder="Contraseña"
-                                            autoComplete="current-password"
-                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setUsernameMode(false); setError(''); }}
-                                        className="text-center py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#007AFF] transition-colors duration-200"
-                                    >
-                                        ← Volver al código de carné
-                                    </button>
                                 </div>
                             )}
                         </div>
@@ -358,13 +278,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="relative group flex items-center">
                                 <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
-                                    <Mail size={20} strokeWidth={2} />
+                                    <UserIcon size={20} strokeWidth={2} />
                                 </div>
                                 <input
-                                    ref={emailRef}
-                                    type="email"
-                                    placeholder="correo@empresa.com"
-                                    autoComplete="email"
+                                    ref={usernameRef}
+                                    type="text"
+                                    placeholder="nombre.apellido"
+                                    autoComplete="username"
                                     className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
                                 />
                             </div>
@@ -373,7 +293,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     <Lock size={20} strokeWidth={2} />
                                 </div>
                                 <input
-                                    ref={passwordRef}
+                                    ref={userPasswordRef}
                                     type="password"
                                     placeholder="Contraseña"
                                     autoComplete="current-password"

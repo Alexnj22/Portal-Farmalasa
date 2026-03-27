@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus, KeyRound
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -36,9 +36,10 @@ const FormLeadership = React.lazy(() => import('./forms/FormLeadership'));
 const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocument'));
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
 const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
+const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -533,62 +534,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
-        // ==========================================
-        // 🚨 AQUÍ ESTÁ EL REFACTOR ANTI-401
-        // ==========================================
-        if (type === "setEmployeePassword") {
-            const password = formData?.password || '';
-            const confirm = formData?.confirm || '';
-            if (password.length < 6) { setValidationError("Mínimo 6 caracteres."); return; }
-            if (password !== confirm) { setValidationError("Las contraseñas no coinciden."); return; }
-            
-            setIsSaving(true);
-            
-            try {
-                const username = formData?.username || formData?.code?.toLowerCase();
-                
-                // 🚨 1. FORZAR LA EXTRACCIÓN DEL TOKEN JWT ACTUAL
-                const { data: authData, error: authError } = await supabase.auth.getSession();
-                const token = authData?.session?.access_token;
-                
-                if (authError || !token) {
-                    setValidationError("Tu sesión caducó. Por favor, cierra sesión y vuelve a entrar.");
-                    setIsSaving(false);
-                    return;
-                }
-
-                // 🚨 2. INYECTAR EL TOKEN MANUALMENTE EN LOS HEADERS 
-                const { data, error } = await supabase.functions.invoke('set-employee-password', {
-                    body: { username, password },
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-                // Si Kong (Supabase API Gateway) bloquea la petición antes de ejecutar el código
-                if (error) {
-                    console.error("Error de invocación Kong/Edge:", error);
-                    setValidationError("Error 401: Autorización denegada. Asegúrate de haber configurado los Secrets en Supabase.");
-                } 
-                // Si nuestro código Deno se ejecuta y devuelve un error controlado
-                else if (!data?.ok) {
-                    setValidationError(`Error: ${data?.error} ${data?.details ? '- ' + data.details : ''}`);
-                } 
-                // Todo perfecto
-                else {
-                    const { showToast } = useToastStore.getState();
-                    if (showToast) showToast("Contraseña Establecida", `Acceso configurado para ${formData?.name}.`, "success");
-                    onClose();
-                }
-            } catch (err) {
-                console.error("Error crítico de fetch:", err);
-                setValidationError(err?.message || 'Error de conexión con el servidor.');
-            } finally {
-                setIsSaving(false);
-            }
-            return;
-        }
-
         if (handleSubmit) {
             setIsSaving(true);
             try {
@@ -705,36 +650,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "aiSchedulerPreview" && <FormAiSchedulerPreview formData={formData} onClose={onClose} />}
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
 
-                                {type === "setEmployeePassword" && (
-                                    <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
-                                        <div className="px-4 py-3 bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-[1rem]">
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Usuario del Portal</p>
-                                            <p className="text-[13px] font-bold text-[#007AFF] truncate">
-                                                {formData?.username || formData?.code?.toLowerCase()}@farmalasa.app
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nueva Contraseña</label>
-                                            <input
-                                                type="password"
-                                                placeholder="Mínimo 6 caracteres"
-                                                value={formData?.password || ''}
-                                                onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
-                                                className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Confirmar Contraseña</label>
-                                            <input
-                                                type="password"
-                                                placeholder="Repite la contraseña"
-                                                value={formData?.confirm || ''}
-                                                onChange={e => setFormData(p => ({ ...p, confirm: e.target.value }))}
-                                                className="w-full bg-white border border-slate-200/80 rounded-[1rem] h-[44px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                {type === "setEmployeePassword" && <FormSetPassword formData={formData} onClose={onClose} />}
                             </Suspense>
                         </form>
                     </div>
@@ -752,7 +668,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             disabled={isSaving || !isFormValid} 
                             className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95'}`}
                         >
-                            {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : type === "setEmployeePassword" ? <><KeyRound size={16} strokeWidth={3} /> Guardar Contraseña</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
+                            {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                         </button>
                     </div>
                 )}

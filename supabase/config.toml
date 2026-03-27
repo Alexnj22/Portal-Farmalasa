@@ -462,6 +462,6 @@ entrypoint = "./functions/saly-ai/index.ts"
 
 [functions.set-employee-password]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/set-employee-password/deno.json"
 entrypoint = "./functions/set-employee-password/index.ts"

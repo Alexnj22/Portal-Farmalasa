@@ -6,13 +6,18 @@ import {
 
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
+import { supabase } from '../supabaseClient';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithUsername, isAdmin, user } = useAuth();
+    const { login, loginWithUsername, isAdmin, user, mustChangePassword, setMustChangePassword } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [loginMode, setLoginMode] = useState('code');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [changePassError, setChangePassError] = useState('');
+    const [changePassLoading, setChangePassLoading] = useState(false);
     const [scannerActive, setScannerActive] = useState(false);
     const [scanFeedback, setScanFeedback] = useState(null);
 
@@ -241,6 +246,77 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             inputRef.current?.focus();
         }
     };
+
+    const handleChangePassword = async () => {
+        setChangePassError('');
+        if (newPassword.length < 6) { setChangePassError('Mínimo 6 caracteres.'); return; }
+        if (newPassword !== confirmPassword) { setChangePassError('Las contraseñas no coinciden.'); return; }
+        setChangePassLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword,
+                data: { must_change_password: false },
+            });
+            if (error) { setChangePassError(error.message); setChangePassLoading(false); return; }
+            setMustChangePassword(false);
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch {
+            setChangePassError('Error de conexión. Intenta de nuevo.');
+        }
+        setChangePassLoading(false);
+    };
+
+    if (mustChangePassword) {
+        return (
+            <div className="relative flex flex-col items-center justify-center w-full min-h-[100dvh] px-5 py-12">
+                <div className="w-full max-w-[400px] rounded-[3.5rem] p-8 bg-white/40 backdrop-blur-3xl border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] flex flex-col gap-6">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mb-1">
+                            <Lock size={24} className="text-amber-500" strokeWidth={2} />
+                        </div>
+                        <h3 className="text-[20px] font-black text-slate-800 tracking-tight text-center">Cambia tu contraseña</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Es tu primer acceso. Debes establecer una contraseña personal.</p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <div className="relative flex items-center">
+                            <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                                type="password"
+                                placeholder="Nueva contraseña (mín. 6 caracteres)"
+                                value={newPassword}
+                                onChange={e => { setNewPassword(e.target.value); setChangePassError(''); }}
+                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                            />
+                        </div>
+                        <div className="relative flex items-center">
+                            <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                                type="password"
+                                placeholder="Confirmar contraseña"
+                                value={confirmPassword}
+                                onChange={e => { setConfirmPassword(e.target.value); setChangePassError(''); }}
+                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                            />
+                        </div>
+                    </div>
+                    {changePassError && (
+                        <div className="px-4 py-2.5 bg-red-50/80 border border-red-200/80 rounded-[0.9rem]">
+                            <p className="text-[11px] font-black text-red-600">{changePassError}</p>
+                        </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleChangePassword}
+                        disabled={changePassLoading || !newPassword || !confirmPassword}
+                        className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                    >
+                        {changePassLoading ? <Loader2 size={18} className="animate-spin" /> : 'Guardar contraseña'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5

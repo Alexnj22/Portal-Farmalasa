@@ -81,12 +81,13 @@ Deno.serve(async (req: Request) => {
 
     if (existingAuth?.user) {
       const { error: updErr } = await admin.auth.admin.updateUserById(employee.id, {
-        password, user_metadata: { username, code: employee.code },
+        password, user_metadata: { username, code: employee.code, must_change_password: false },
       });
       if (updErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: updErr.message });
     } else {
       const { error: createErr } = await admin.auth.admin.createUser({
-        id: employee.id, email, password, email_confirm: true, user_metadata: { username, code: employee.code },
+        id: employee.id, email, password: "1234", email_confirm: true,
+        user_metadata: { username, code: employee.code, must_change_password: true },
       });
       if (createErr) return json({ ok: false, error: "AUTH_CREATE_ERROR", details: createErr.message });
     }

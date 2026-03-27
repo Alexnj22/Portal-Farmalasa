@@ -37,6 +37,7 @@ const ACTIVITY_THROTTLE_MS = 2000;
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const idleIntervalRef = useRef(null);
   const lastWriteRef = useRef(0);
@@ -278,13 +279,9 @@ export const AuthProvider = ({ children }) => {
     if (!cleanId) return false;
 
     try {
-      console.log('LOGIN DEBUG - cleanId:', cleanId);
-      console.log('LOGIN DEBUG - calling ensure_user_by_code with:', { code: cleanId });
       const { data: ensured, error: fnErr } = await supabase.functions.invoke("ensure_user_by_code", {
         body: { code: cleanId },
       });
-      console.log('LOGIN DEBUG - ensured response:', ensured);
-      console.log('LOGIN DEBUG - fnErr:', fnErr);
 
       if (fnErr || !ensured?.ok || !ensured?.user) return false;
 
@@ -375,6 +372,11 @@ export const AuthProvider = ({ children }) => {
       writeLastActivity(true);
       setUser(u);
       startIdleWatcher(u);
+
+      const session = await supabase.auth.getSession();
+      const mustChange = session.data.session?.user?.user_metadata?.must_change_password === true;
+      if (mustChange) setMustChangePassword(true);
+
       return { ok: true };
     } catch (err) {
       return { ok: false, error: 'Error de conexión con el servidor.' };
@@ -392,6 +394,8 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!user,
       isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
+      mustChangePassword,
+      setMustChangePassword,
       login,
       loginWithEmail,
       loginWithUsername,

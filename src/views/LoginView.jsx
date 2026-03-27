@@ -63,6 +63,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 const codeReader = new BrowserMultiFormatReader(hints);
                 scannerRef.current = codeReader;
                 const videoEl = document.getElementById('qr-video');
+                // 500ms delay antes de empezar a leer — evita que ZXing re-emita el último código
+                await new Promise(res => setTimeout(res, 500));
+                if (cancelled) return;
                 await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
                     if (!result) return;
                     if (cooldownRef.current) return; // ignorar lecturas durante cooldown
@@ -85,12 +88,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     if (!success) {
                         setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado en el sistema' });
                         setIsLoading(false);
-                        // Reabrir cámara después de 2.5s — cooldown evita releer mismo código
+                        // Reabrir cámara después de 4s — cooldown evita releer mismo código
                         setTimeout(() => {
                             cooldownRef.current = false;
                             setScanFeedback(null);
                             setScannerActive(true);
-                        }, 2500);
+                        }, 4000);
                     } else {
                         cooldownRef.current = false;
                         setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });

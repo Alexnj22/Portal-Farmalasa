@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Mail, Lock
+    ShoppingCart, Pill, AlertCircle, Mail, Lock, Camera, CameraOff
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +16,64 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const inputRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
+    const [scannerActive, setScannerActive] = useState(false);
+    const scannerRef = useRef(null);
 
     useEffect(() => {
         if (inputRef.current) inputRef.current.focus();
     }, []);
+
+    // Cleanup: detener cámara al desmontar el componente
+    useEffect(() => {
+        return () => {
+            const s = scannerRef.current;
+            scannerRef.current = null;
+            if (s) s.stop().catch(() => {});
+        };
+    }, []);
+
+    // Inicializar scanner cuando scannerActive pasa a true (el div ya está en el DOM)
+    useEffect(() => {
+        if (!scannerActive) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { Html5Qrcode } = await import('html5-qrcode');
+                if (cancelled) return;
+                const scanner = new Html5Qrcode("qr-reader");
+                scannerRef.current = scanner;
+                await scanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 260, height: 100 } },
+                    async (decodedText) => {
+                        const s = scannerRef.current;
+                        scannerRef.current = null;
+                        setScannerActive(false);
+                        if (s) await s.stop().catch(() => {});
+                        setIsLoading(true);
+                        const success = await login(decodedText.trim().toUpperCase());
+                        if (!success) {
+                            setError('Código no encontrado. Intenta de nuevo.');
+                            setIsLoading(false);
+                        }
+                    },
+                    () => {}
+                );
+            } catch {
+                if (!cancelled) {
+                    setScannerActive(false);
+                    setError('No se pudo acceder a la cámara.');
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+            const s = scannerRef.current;
+            scannerRef.current = null;
+            if (s) s.stop().catch(() => {});
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scannerActive]);
 
     useEffect(() => {
         if (user) {
@@ -37,6 +91,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             return () => clearTimeout(timer);
         }
     }, [error]);
+
+    const stopScanner = () => {
+        const s = scannerRef.current;
+        scannerRef.current = null;
+        if (s) s.stop().catch(() => {});
+        setScannerActive(false);
+    };
 
     const handleAdminLogin = async (e) => {
         e.preventDefault();
@@ -160,7 +221,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setLoginMode('admin'); setError(''); }}
+                        onClick={() => { stopScanner(); setLoginMode('admin'); setError(''); }}
                         className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'admin' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                         Administrador
@@ -169,18 +230,49 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                 <form onSubmit={loginMode === 'code' ? handleLogin : handleAdminLogin} className="flex flex-col gap-5 relative">
                     {loginMode === 'code' ? (
-                        <div className="relative group z-20 flex items-center">
-                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
-                                <ScanBarcode size={24} strokeWidth={2} />
+                        <div className="flex flex-col gap-3">
+                            <div className="relative group z-20 flex items-center gap-2">
+                                <div className="relative flex-1 flex items-center">
+                                    <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
+                                        <ScanBarcode size={24} strokeWidth={2} />
+                                    </div>
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        placeholder="CÓDIGO"
+                                        autoComplete="off"
+                                        spellCheck="false"
+                                        className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => scannerActive ? stopScanner() : setScannerActive(true)}
+                                    title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
+                                    className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
+                                        scannerActive
+                                            ? 'bg-red-50/80 border-red-200/60 text-red-400 hover:bg-red-100 hover:text-red-500'
+                                            : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
+                                    }`}
+                                >
+                                    {scannerActive
+                                        ? <CameraOff size={20} strokeWidth={2} />
+                                        : <Camera size={20} strokeWidth={2} />
+                                    }
+                                </button>
                             </div>
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                placeholder="CÓDIGO"
-                                autoComplete="off"
-                                spellCheck="false"
-                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
-                            />
+
+                            {scannerActive && (
+                                <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
+                                    <div id="qr-reader" className="w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-black/80 border border-white/20" />
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                                            Apunta la cámara al código de barras de tu carné
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">

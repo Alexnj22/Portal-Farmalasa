@@ -30,6 +30,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             const s = scannerRef.current;
             scannerRef.current = null;
             if (s) { try { s.reset(); } catch {} }
+            try {
+                const videoEl = document.getElementById('qr-video');
+                if (videoEl?.srcObject) {
+                    videoEl.srcObject.getTracks().forEach(t => t.stop());
+                    videoEl.srcObject = null;
+                }
+            } catch {}
         };
     }, []);
 
@@ -88,6 +95,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             const s = scannerRef.current;
             scannerRef.current = null;
             if (s) { try { s.reset(); } catch {} }
+            try {
+                const videoEl = document.getElementById('qr-video');
+                if (videoEl?.srcObject) {
+                    videoEl.srcObject.getTracks().forEach(t => t.stop());
+                    videoEl.srcObject = null;
+                }
+            } catch {}
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scannerActive]);
@@ -113,6 +127,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         const s = scannerRef.current;
         scannerRef.current = null;
         if (s) { try { s.reset(); } catch {} }
+        // Liberar el MediaStream explícitamente — reset() de ZXing no lo hace
+        try {
+            const videoEl = document.getElementById('qr-video');
+            if (videoEl?.srcObject) {
+                videoEl.srcObject.getTracks().forEach(t => t.stop());
+                videoEl.srcObject = null;
+            }
+        } catch {}
         setScannerActive(false);
         setScanFeedback(null);
     };

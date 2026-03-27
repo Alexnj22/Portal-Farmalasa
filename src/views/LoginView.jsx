@@ -16,6 +16,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const inputRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
     const scannerRef = useRef(null);
+    const cooldownRef = useRef(false);
     const [scanFeedback, setScanFeedback] = useState(null);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
@@ -64,10 +65,19 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 const videoEl = document.getElementById('qr-video');
                 await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
                     if (!result) return;
+                    if (cooldownRef.current) return; // ignorar lecturas durante cooldown
+                    cooldownRef.current = true;
                     const scannedCode = result.getText().trim().toUpperCase();
                     const s = scannerRef.current;
                     scannerRef.current = null;
                     if (s) { try { s.reset(); } catch {} }
+                    // Liberar stream
+                    try {
+                        if (videoEl?.srcObject) {
+                            videoEl.srcObject.getTracks().forEach(t => t.stop());
+                            videoEl.srcObject = null;
+                        }
+                    } catch {}
                     setScannerActive(false);
                     setScanFeedback({ status: 'reading', code: scannedCode, message: 'Verificando...' });
                     setIsLoading(true);
@@ -75,7 +85,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     if (!success) {
                         setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado en el sistema' });
                         setIsLoading(false);
+                        // Reabrir cámara después de 2.5s — cooldown evita releer mismo código
+                        setTimeout(() => {
+                            cooldownRef.current = false;
+                            setScanFeedback(null);
+                            setScannerActive(true);
+                        }, 2500);
                     } else {
+                        cooldownRef.current = false;
                         setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });
                     }
                 });
@@ -120,6 +137,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     }, [error]);
 
     const stopScanner = () => {
+        cooldownRef.current = false;
         const s = scannerRef.current;
         scannerRef.current = null;
         if (s) { try { s.reset(); } catch {} }

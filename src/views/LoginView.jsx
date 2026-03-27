@@ -16,6 +16,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const inputRef = useRef(null);
     const [scannerActive, setScannerActive] = useState(false);
     const scannerRef = useRef(null);
+    const [scanFeedback, setScanFeedback] = useState(null);
     const usernameRef = useRef(null);
     const userPasswordRef = useRef(null);
 
@@ -45,15 +46,23 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 const videoEl = document.getElementById('qr-video');
                 await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
                     if (!result) return;
+                    const scannedCode = result.getText().trim().toUpperCase();
                     const s = scannerRef.current;
                     scannerRef.current = null;
                     if (s) { try { s.reset(); } catch {} }
                     setScannerActive(false);
+                    setScanFeedback({ status: 'reading', code: scannedCode, message: 'Verificando...' });
                     setIsLoading(true);
-                    const success = await login(result.getText().trim().toUpperCase());
+                    const success = await login(scannedCode);
                     if (!success) {
-                        setError('Código no encontrado. Intenta de nuevo.');
+                        setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado en el sistema' });
                         setIsLoading(false);
+                        setTimeout(() => {
+                            setScanFeedback(null);
+                            setScannerActive(true);
+                        }, 2500);
+                    } else {
+                        setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });
                     }
                 });
             } catch {
@@ -94,6 +103,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         scannerRef.current = null;
         if (s) { try { s.reset(); } catch {} }
         setScannerActive(false);
+        setScanFeedback(null);
     };
 
     const handleUsernameLogin = async (e) => {
@@ -284,6 +294,27 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             Apunta al código de barras de tu carné
                                         </p>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Feedback de lectura de código */}
+                            {scanFeedback && (
+                                <div className={`p-3 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${
+                                    scanFeedback.status === 'error'   ? 'bg-red-50 border border-red-200' :
+                                    scanFeedback.status === 'success' ? 'bg-emerald-50 border border-emerald-200' :
+                                    'bg-[#007AFF]/5 border border-[#007AFF]/20'
+                                }`}>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                        Código detectado: {scanFeedback.code}
+                                    </p>
+                                    <p className={`text-[12px] font-bold flex items-center justify-center gap-1 ${
+                                        scanFeedback.status === 'error'   ? 'text-red-600' :
+                                        scanFeedback.status === 'success' ? 'text-emerald-600' :
+                                        'text-[#007AFF]'
+                                    }`}>
+                                        {scanFeedback.status === 'reading' && <Loader2 size={12} className="animate-spin" />}
+                                        {scanFeedback.message}
+                                    </p>
                                 </div>
                             )}
                         </div>

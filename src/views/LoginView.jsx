@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff
+    ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff, User as UserIcon, Zap, ZapOff, X
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -183,9 +183,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             pb-[max(env(safe-area-inset-bottom,32px),120px)] 
             landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
-            {/* MEJORA 1: overlay blanco de iluminación cuando cámara activa */}
-            {scannerActive && <div className="fixed inset-0 bg-white z-[5]" />}
-
             {/* 🚨 RESTAURADO: DOCK LATERAL DERECHO (Desktop) */}
             <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
                 
@@ -218,8 +215,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             <div className="w-full max-w-[460px] my-auto rounded-[3.5rem] p-8 md:p-12 relative bg-white/40 backdrop-blur-3xl backdrop-saturate-[200%] border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all">
 
                 <div className="flex flex-col items-center mb-8">
-                    {/* 🚨 LOGO: forzamos bg-white y overflow-hidden para limpiar los bordes negros */}
-                    <div className="w-20 h-20 bg-white backdrop-blur-md shadow-lg border border-white rounded-[1.75rem] flex items-center justify-center mb-6 overflow-hidden">
+                    <div className="w-20 h-20 bg-transparent backdrop-blur-md shadow-lg border border-white/40 rounded-[1.75rem] flex items-center justify-center mb-6 overflow-hidden">
                         <img
                             src="/LogoFLS.svg"
                             alt="FarmaLasa"
@@ -289,7 +285,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                             {scannerActive && (
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-                                    {/* MEJORA 2: fondo blanco + línea de escaneo animada */}
+                                    <button
+                                        type="button"
+                                        onClick={stopScanner}
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/90 hover:bg-red-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 mb-2"
+                                    >
+                                        <X size={14} strokeWidth={3}/> Cerrar Cámara
+                                    </button>
                                     <div id="qr-reader" className="relative w-full h-[220px] rounded-[1.5rem] overflow-hidden bg-white border border-white/20">
                                         <style>{`@keyframes scan{0%{top:10%}50%{top:85%}100%{top:10%}}`}</style>
                                         <div style={{

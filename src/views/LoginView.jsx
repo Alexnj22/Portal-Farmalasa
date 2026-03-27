@@ -75,10 +75,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     if (!success) {
                         setScanFeedback({ status: 'error', code: scannedCode, message: 'Código no encontrado en el sistema' });
                         setIsLoading(false);
-                        setTimeout(() => {
-                            setScanFeedback(null);
-                            setScannerActive(true);
-                        }, 2500);
                     } else {
                         setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' });
                     }

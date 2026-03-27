@@ -235,8 +235,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             filtersContent={headerControls}
             transparentBody={true}
         >
-            <div className="p-4 md:p-6 lg:p-1 h-full overflow-y-auto hide-scrollbar w-full relative z-10 animate-in fade-in duration-500">
-                <div className="max-w-7xl mx-auto w-full pb-12 -mt-10 md:-mt-[80px] lg:-mt-[100px]">
+            <div className="p-4 md:p-6 lg:p-6 h-full overflow-y-auto hide-scrollbar w-full relative z-10 animate-in fade-in duration-500">
+                <div className="max-w-7xl mx-auto w-full pb-12 -mt-10 md:-mt-[60px] lg:-mt-[70px]">
 
                     {/* 🚨 PÍLDORA DE AUDITORÍA ("Modo Solución") */}
                     {isAdmin && missingData.length > 0 && (

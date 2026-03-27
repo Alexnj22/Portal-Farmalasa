@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
-    ShoppingCart, Pill, AlertCircle
+    ShoppingCart, Pill, AlertCircle, Mail, Lock
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, isAdmin, user } = useAuth();
+    const { login, loginWithEmail, isAdmin, user } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [loginMode, setLoginMode] = useState('code');
     const inputRef = useRef(null);
+    const emailRef = useRef(null);
+    const passwordRef = useRef(null);
 
     useEffect(() => {
         if (inputRef.current) inputRef.current.focus();
@@ -34,6 +37,30 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             return () => clearTimeout(timer);
         }
     }, [error]);
+
+    const handleAdminLogin = async (e) => {
+        e.preventDefault();
+        setError('');
+        const email = emailRef.current?.value?.trim() || '';
+        const password = passwordRef.current?.value || '';
+        if (!email || !password) {
+            setError('Ingresa email y contraseña.');
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const success = await loginWithEmail(email, password);
+            if (!success) {
+                setError('Credenciales inválidas.');
+                setIsLoading(false);
+                if (passwordRef.current) passwordRef.current.value = '';
+                passwordRef.current?.focus();
+            }
+        } catch {
+            setError('Error de conexión. Intenta de nuevo.');
+            setIsLoading(false);
+        }
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -122,20 +149,67 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className="flex flex-col gap-5 relative">
-                    <div className="relative group z-20 flex items-center">
-                        <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
-                            <ScanBarcode size={24} strokeWidth={2} />
+                {/* TAB TOGGLE: Personal / Administrador */}
+                <div className="flex bg-white/30 backdrop-blur-md border border-white/60 rounded-[2rem] p-1.5 mb-6 shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
+                    <button
+                        type="button"
+                        onClick={() => { setLoginMode('code'); setError(''); }}
+                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'code' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Personal
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setLoginMode('admin'); setError(''); }}
+                        className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'admin' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Administrador
+                    </button>
+                </div>
+
+                <form onSubmit={loginMode === 'code' ? handleLogin : handleAdminLogin} className="flex flex-col gap-5 relative">
+                    {loginMode === 'code' ? (
+                        <div className="relative group z-20 flex items-center">
+                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
+                                <ScanBarcode size={24} strokeWidth={2} />
+                            </div>
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                placeholder="CÓDIGO"
+                                autoComplete="off"
+                                spellCheck="false"
+                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
+                            />
                         </div>
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            placeholder="CÓDIGO"
-                            autoComplete="off"
-                            spellCheck="false"
-                            className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
-                        />
-                    </div>
+                    ) : (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="relative group flex items-center">
+                                <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
+                                    <Mail size={20} strokeWidth={2} />
+                                </div>
+                                <input
+                                    ref={emailRef}
+                                    type="email"
+                                    placeholder="correo@empresa.com"
+                                    autoComplete="email"
+                                    className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
+                                />
+                            </div>
+                            <div className="relative group flex items-center">
+                                <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
+                                    <Lock size={20} strokeWidth={2} />
+                                </div>
+                                <input
+                                    ref={passwordRef}
+                                    type="password"
+                                    placeholder="Contraseña"
+                                    autoComplete="current-password"
+                                    className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300">

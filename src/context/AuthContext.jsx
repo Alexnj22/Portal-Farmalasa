@@ -309,6 +309,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithEmail = async (email, password) => {
+    try {
+      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (authErr || !authData?.session) return false;
+
+      const sessionUser = authData.session.user;
+      const code =
+        (sessionUser.user_metadata?.code && String(sessionUser.user_metadata.code)) ||
+        (sessionUser.email ? sessionUser.email.split("@")[0] : "");
+      const cleanCode = String(code || "").trim().toUpperCase();
+      if (!cleanCode) return false;
+
+      const { data: ensured, error: fnErr } = await supabase.functions.invoke("ensure_user_by_code", {
+        body: { code: cleanCode },
+      });
+      if (fnErr || !ensured?.ok || !ensured?.user) return false;
+
+      const u = ensured.user;
+      clearErpCache();
+      localStorage.setItem(LS_USER, JSON.stringify(u));
+      writeLastActivity(true);
+      setUser(u);
+      startIdleWatcher(u);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const logout = async () => {
     await doLogout("MANUAL_LOGOUT");
   };
@@ -321,6 +350,7 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
       login,
+      loginWithEmail,
       logout,
     }),
     [user, loading]

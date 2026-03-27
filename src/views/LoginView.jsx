@@ -66,6 +66,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 // 500ms delay antes de empezar a leer — evita que ZXing re-emita el último código
                 await new Promise(res => setTimeout(res, 500));
                 if (cancelled) return;
+                cooldownRef.current = false;
                 await codeReader.decodeFromVideoDevice(undefined, videoEl, async (result) => {
                     if (!result) return;
                     if (cooldownRef.current) return; // ignorar lecturas durante cooldown
@@ -90,7 +91,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         setIsLoading(false);
                         // Reabrir cámara después de 4s — cooldown evita releer mismo código
                         setTimeout(() => {
-                            cooldownRef.current = false;
                             setScanFeedback(null);
                             setScannerActive(true);
                         }, 4000);

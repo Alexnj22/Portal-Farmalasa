@@ -278,9 +278,13 @@ export const AuthProvider = ({ children }) => {
     if (!cleanId) return false;
 
     try {
+      console.log('LOGIN DEBUG - cleanId:', cleanId);
+      console.log('LOGIN DEBUG - calling ensure_user_by_code with:', { code: cleanId });
       const { data: ensured, error: fnErr } = await supabase.functions.invoke("ensure_user_by_code", {
         body: { code: cleanId },
       });
+      console.log('LOGIN DEBUG - ensured response:', ensured);
+      console.log('LOGIN DEBUG - fnErr:', fnErr);
 
       if (fnErr || !ensured?.ok || !ensured?.user) return false;
 

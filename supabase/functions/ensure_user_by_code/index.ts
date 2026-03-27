@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
         phone, 
         is_admin, 
         status,
-        roles ( name )
+        role:roles!employees_role_id_fkey ( name )
       `)
       .or(`code.eq.${clean},kiosk_pin.eq.${clean}`)
       .limit(1);
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
         id: employee.id,
         name: employee.name,
         code: employee.code,
-        role: employee.roles?.name || "Sin Cargo",
+        role: (employee.role as { name?: string } | null)?.name || "Sin Cargo",
         branchId: employee.branch_id,
         photo: employee.photo_url,
         email,

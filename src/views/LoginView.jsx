@@ -299,7 +299,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => scannerActive ? stopScanner() : (setScanFeedback(null), setScannerActive(true))}
+                                    onClick={() => {
+                                        if (scannerActive) {
+                                            stopScanner();
+                                        } else {
+                                            setScanFeedback(null);
+                                            cooldownRef.current = false;
+                                            setScannerActive(prev => !prev);
+                                        }
+                                    }}
                                     title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
                                     className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
                                         scannerActive

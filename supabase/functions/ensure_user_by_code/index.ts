@@ -40,7 +40,7 @@ serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (!supabaseUrl || !serviceKey) {
       return new Response(JSON.stringify({ ok: false, error: "MISSING_ENV" }), {
@@ -55,8 +55,8 @@ serve(async (req: Request) => {
     // 1) Buscar empleado por code
     const { data: rows, error } = await admin
       .from("employees")
-      .select("id, code, name, role, branch_id, photo_url, email, phone, is_admin, status")
-      .eq("code", clean)
+      .select("id, code, kiosk_pin, name, role, branch_id, photo_url, email, phone, is_admin, status")
+      .or(`code.eq.${clean},kiosk_pin.eq.${clean}`)
       .limit(1);
 
     if (error) {

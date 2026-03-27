@@ -287,7 +287,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
                                     {/* Visor con esquinas decorativas */}
                                     <div className="relative w-full h-[260px] rounded-[1.5rem] overflow-hidden bg-black border border-black/20">
-                                        <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
+                                        <style>{`
+                                            @keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}
+                                            #qr-reader__scan_region{border:none !important;background:transparent !important;}
+                                            #qr-reader__scan_region img{display:none !important;}
+                                            #qr-reader video{border-radius:0 !important;object-fit:cover !important;width:100% !important;height:100% !important;}
+                                            #qr-reader__dashboard{display:none !important;}
+                                        `}</style>
                                         {/* Línea de escaneo */}
                                         <div style={{
                                             position: 'absolute', left: '5%', right: '5%',

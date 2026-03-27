@@ -34,19 +34,31 @@ Deno.serve(async (req: Request) => {
     const { data: { user: caller }, error: authErr } = await admin.auth.getUser(token);
     if (authErr || !caller) return json({ ok: false, error: "INVALID_TOKEN", details: "El token expiró o es inválido." });
 
-    // 🚨 FIX MAESTRO: Búsqueda Inteligente (Ignorando mayúsculas)
-    let { data: callerData } = await admin.from("employees").select("is_admin").eq("id", caller.id).single();
-    
+    // Buscar por id primero
+    let { data: callerData } = await admin.from("employees")
+      .select("is_admin, id, username, code")
+      .eq("id", caller.id).single();
+
+    // Fallback 1: buscar por username (para login con username@farmalasa.app)
     if (!callerData) {
-        // Obligamos a que el correo se lea en minúsculas para que haga match con la DB
-        const callerUsername = caller.email ? caller.email.split('@')[0].toLowerCase() : '';
-        const { data: fallbackData } = await admin.from("employees").select("is_admin").eq("username", callerUsername).single();
-        callerData = fallbackData;
+      const callerUsername = caller.email?.split('@')[0].toLowerCase();
+      const { data: f1 } = await admin.from("employees")
+        .select("is_admin")
+        .eq("username", callerUsername).single();
+      callerData = f1;
     }
 
-    if (!callerData?.is_admin) {
-        return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: `La base de datos rechazó al usuario: ${caller.email}` });
+    // Fallback 2: buscar por code (para login con carné: EMP001@staff.local)
+    if (!callerData) {
+      const callerCode = caller.email?.split('@')[0].toUpperCase();
+      const { data: f2 } = await admin.from("employees")
+        .select("is_admin")
+        .eq("code", callerCode).single();
+      callerData = f2;
     }
+
+    if (!callerData?.is_admin)
+      return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: `Acceso denegado para: ${caller.email}` });
 
     // 2. Procesar datos
     const body = await req.json().catch(() => ({}));

@@ -66,7 +66,10 @@ Deno.serve(async (req: Request) => {
     const password = typeof body?.password === "string" ? body.password : "";
 
     if (!username || !password) return json({ ok: false, error: "MISSING_FIELDS" });
-    if (password.length < 6) return json({ ok: false, error: "PASSWORD_TOO_SHORT" });
+    const isInitialPassword = password === '1234';
+    if (!isInitialPassword && password.length < 6) {
+        return json({ ok: false, error: "PASSWORD_TOO_SHORT" });
+    }
 
     const email = `${username}@farmalasa.app`;
 

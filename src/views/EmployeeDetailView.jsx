@@ -17,6 +17,7 @@ import { useToastStore } from '../store/toastStore';
 import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -28,6 +29,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const setCurrentTab = setActiveTab || _setActiveTab;
 
     const [showExceptionModal, setShowExceptionModal] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
@@ -145,8 +147,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (typeof openModal === 'function') openModal('uploadConstancia', { employeeId: emp.id, punchTimestamp });
     }, [openModal, emp.id]);
 
-    const handleResetPassword = async () => {
-        if (!confirm(`¿Restablecer contraseña de ${emp.name} a temporal?`)) return;
+    const handleResetPassword = () => setShowResetConfirm(true);
+
+    const executeResetPassword = async () => {
+        setShowResetConfirm(false);
         try {
             const { data } = await supabase.functions.invoke(
                 'set-employee-password',
@@ -214,6 +218,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     );
 
     return (
+        <>
         <GlassViewLayout
             icon={null} 
             title={
@@ -684,6 +689,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </div>
             </div>
         </GlassViewLayout>
+
+        {showResetConfirm && (
+            <ConfirmModal
+                isOpen={showResetConfirm}
+                onClose={() => setShowResetConfirm(false)}
+                onConfirm={executeResetPassword}
+                title="Restablecer Contraseña"
+                message={`¿Restablecer contraseña de ${emp.name} a temporal? El empleado deberá cambiarla en su próximo acceso.`}
+                confirmText="Restablecer"
+                isDestructive={false}
+            />
+        )}
+        </>
     );
 };
 

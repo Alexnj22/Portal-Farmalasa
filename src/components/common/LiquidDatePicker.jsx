@@ -281,7 +281,11 @@ const LiquidDatePicker = ({
                                 const inBetween = drawStart && drawEnd && cellTime > drawStart.getTime() && cellTime < drawEnd.getTime();
                                 
                                 const isSolidDot = isStartBoundary || isEndBoundary || (currentValObj && cellTime === currentValObj.getTime());
-                                
+
+                                const todayObj = new Date();
+                                todayObj.setHours(0, 0, 0, 0);
+                                const isToday = cellTime === todayObj.getTime();
+
                                 // 🚨 DETECCIÓN DE ASUETO
                                 const holiday = getHolidayInfo(day, currentMonth, currentYear);
 
@@ -303,7 +307,9 @@ const LiquidDatePicker = ({
                                     // 🚨 Estilo de Asueto (Rojo claro)
                                     btnClass += "text-red-500 font-black bg-red-50/80 hover:bg-red-100";
                                 } else {
-                                    btnClass += "text-slate-600 hover:bg-slate-100 hover:text-[#007AFF]";
+                                    btnClass += isToday
+                                        ? "text-[#007AFF] font-black hover:bg-slate-100 ring-1 ring-[#007AFF]/40"
+                                        : "text-slate-600 hover:bg-slate-100 hover:text-[#007AFF]";
                                 }
 
                                 return (
@@ -320,6 +326,10 @@ const LiquidDatePicker = ({
                                         {/* Puntito rojo decorativo inferior para asuetos */}
                                         {holiday && !isSolidDot && !inBetween && (
                                             <div className="absolute bottom-0 w-1 h-1 rounded-full bg-red-400"></div>
+                                        )}
+                                        {/* Puntito azul para hoy */}
+                                        {isToday && !isSolidDot && !holiday && (
+                                            <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#007AFF]"></div>
                                         )}
                                     </div>
                                 );

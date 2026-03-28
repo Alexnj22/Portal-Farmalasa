@@ -155,12 +155,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     // 🚨 MODO PRO 3: Auditoría Proactiva
     const missingData = useMemo(() => {
         const missing = [];
-        if (!branch) missing.push("Sucursal Base");
+        if (!branch && branches.length > 0) missing.push("Sucursal Base");
         if (!emp.role) missing.push("Cargo Oficial");
-        if (!emp.dui) missing.push("Documento (DUI)");
-        if (!emp.phone) missing.push("Teléfono");
+        if (!emp.dui || emp.dui.trim() === '') missing.push("Documento (DUI)");
+        if (!emp.phone || emp.phone.trim() === '') missing.push("Teléfono");
         return missing;
-    }, [emp, branch]);
+    }, [emp, branch, branches]);
 
     const headerControls = (
         <div className="flex items-center gap-2 md:gap-3 bg-white/40 backdrop-blur-2xl border border-white/60 p-2 md:p-2.5 rounded-[2.5rem] shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">

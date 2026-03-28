@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
 
   const idleIntervalRef = useRef(null);
   const lastWriteRef = useRef(0);
@@ -376,19 +377,36 @@ export const AuthProvider = ({ children }) => {
         userType: emp.is_admin ? 'admin' : 'employee',
         role: emp.role_id,
       };
+
+      const mustChange = data.session.user?.user_metadata?.must_change_password === true;
+
+      if (mustChange) {
+        // Guardar el usuario temporalmente sin setUser — evita que el useEffect de navegación dispare
+        setPendingUser(u);
+        setMustChangePassword(true);
+        return { ok: true };
+      }
+
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
       setUser(u);
       startIdleWatcher(u);
-
-      const mustChange = data.session.user?.user_metadata?.must_change_password === true;
-      if (mustChange) setMustChangePassword(true);
-
       return { ok: true };
     } catch (err) {
       return { ok: false, error: 'Error de conexión con el servidor.' };
     }
+  };
+
+  const commitPendingUser = () => {
+    if (!pendingUser) return;
+    clearErpCache();
+    localStorage.setItem(LS_USER, JSON.stringify(pendingUser));
+    writeLastActivity(true);
+    setUser(pendingUser);
+    startIdleWatcher(pendingUser);
+    setPendingUser(null);
+    setMustChangePassword(false);
   };
 
   const logout = async () => {
@@ -403,7 +421,7 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
       mustChangePassword,
-      setMustChangePassword,
+      commitPendingUser,
       login,
       loginWithEmail,
       loginWithUsername,

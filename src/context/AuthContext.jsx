@@ -357,24 +357,32 @@ export const AuthProvider = ({ children }) => {
 
       if (!data?.session) return { ok: false, error: 'Error de sesión. Intenta de nuevo.' };
 
-      const usernameFromEmail = emailToLogin.split('@')[0];
-      const { data: ensured, error: fnErr } = await supabase.functions.invoke('ensure_user_by_code', {
-        body: { code: usernameFromEmail.toUpperCase() },
-      });
+      const { data: emp } = await supabase
+        .from('employees_safe')
+        .select('*')
+        .eq('username', cleanUsername)
+        .single();
 
-      if (fnErr || !ensured?.ok || !ensured?.user) {
-        return { ok: false, error: 'Usuario no encontrado en el sistema.' };
-      }
+      if (!emp) return { ok: false, error: 'Usuario no encontrado en el sistema.' };
 
-      const u = ensured.user;
+      const u = {
+        id: emp.id,
+        name: emp.name,
+        code: emp.code,
+        username: emp.username,
+        branchId: emp.branch_id,
+        photo: emp.photo_url,
+        isAdmin: emp.is_admin === true,
+        userType: emp.is_admin ? 'admin' : 'employee',
+        role: emp.role_id,
+      };
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
       setUser(u);
       startIdleWatcher(u);
 
-      const session = await supabase.auth.getSession();
-      const mustChange = session.data.session?.user?.user_metadata?.must_change_password === true;
+      const mustChange = data.session.user?.user_metadata?.must_change_password === true;
       if (mustChange) setMustChangePassword(true);
 
       return { ok: true };

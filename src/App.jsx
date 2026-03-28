@@ -388,7 +388,7 @@ export default function App() {
 }
 
 const MobileConstructionScreen = () => (
-    <div className="lg:hidden fixed inset-0 z-[99999] bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+    <div className="sm:hidden fixed inset-0 z-[99999] bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <GlobalBackground />
 
         <div className="relative z-10 flex flex-col items-center max-w-sm bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in duration-700">
@@ -426,7 +426,7 @@ const AppWithToast = () => {
     return (
         <>
             <MobileConstructionScreen />
-            <div className="hidden lg:block w-full h-full">
+            <div className="hidden sm:block w-full h-full">
                 <MainApp />
                 <LiquidToast theme={isKioskMode ? 'dark' : 'light'} />
             </div>

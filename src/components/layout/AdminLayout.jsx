@@ -12,9 +12,10 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
     const branches = useStaff((state) => state.branches);
 
     const [isMobile, setIsMobile] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
-    const [isHovering, setIsHovering] = useState(false); 
-    
+    const [isWide, setIsWide] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isHovering, setIsHovering] = useState(false);
+
     const isExpanded = isMobile ? true : (isSidebarOpen || isHovering);
 
     const [authPin, setAuthPin] = useState(getHourlyCode());
@@ -26,23 +27,23 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
 
     useEffect(() => {
         const checkMobile = () => {
-            const mobileView = window.innerWidth < 1024;
-            setIsMobile(mobileView);
+            setIsMobile(window.innerWidth < 1024);
+            setIsWide(window.innerWidth >= 1280);
         };
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-useEffect(() => {
+    useEffect(() => {
         if (isMobile) {
             setIsSidebarOpen(false);
         } else {
             if (view !== 'schedules') {
-                setIsSidebarOpen(true);  
+                setIsSidebarOpen(isWide);
             }
         }
-    }, [view, isMobile]);
+    }, [view, isMobile, isWide]);
 
     // 🔥 NUEVO EFECTO: Escuchar a SchedulesView
     useEffect(() => {

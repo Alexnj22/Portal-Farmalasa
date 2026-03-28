@@ -243,9 +243,9 @@ const RangeDatePicker = ({
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
-                className="fixed z-[9999] bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.18)] p-6"
+                className="fixed z-[9999] bg-white/70 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.15),inset_0_2px_10px_rgba(255,255,255,0.8)] p-6"
                 style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
-                onMouseLeave={() => setHoverDate(null)}
+                onMouseLeave={() => selecting === 'end' && setHoverDate(null)}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
@@ -280,7 +280,7 @@ const RangeDatePicker = ({
                         <MonthGrid
                             year={viewYear} month={viewMonth}
                             startDate={draftStart} endDate={draftEnd}
-                            hoverDate={hoverDate}
+                            hoverDate={selecting === 'end' ? hoverDate : null}
                             onDayClick={handleDayClick}
                             onDayHover={setHoverDate}
                             holidays={holidays}
@@ -289,7 +289,7 @@ const RangeDatePicker = ({
                         <MonthGrid
                             year={secondYear} month={secondMonth}
                             startDate={draftStart} endDate={draftEnd}
-                            hoverDate={hoverDate}
+                            hoverDate={selecting === 'end' ? hoverDate : null}
                             onDayClick={handleDayClick}
                             onDayHover={setHoverDate}
                             holidays={holidays}
@@ -303,8 +303,15 @@ const RangeDatePicker = ({
 
                 {/* Footer */}
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-bold text-slate-400">
-                        {daysCount > 0 ? `${daysCount} días seleccionados` : 'Sin período seleccionado'}
+                    <p className={`text-[10px] font-bold ${
+                        daysCount === 15 ? 'text-emerald-600' :
+                        daysCount > 0 && daysCount < 15 ? 'text-orange-500' :
+                        daysCount > 15 ? 'text-[#007AFF]' : 'text-slate-400'
+                    }`}>
+                        {daysCount === 15 ? '✓ 15 días de vacaciones' :
+                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días (mínimo 15)` :
+                         daysCount > 15 ? `${daysCount} días seleccionados` :
+                         'Sin período seleccionado'}
                     </p>
                     <button
                         type="button"

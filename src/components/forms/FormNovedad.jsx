@@ -352,7 +352,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="h-[40px]">
                                 <LiquidDatePicker
                                     value={formData?.date || ''}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, date: val || null, manualEndDateOverride: false }))}
+                                    onChange={(val) => setFormData(prev => {
+                                        const days = prev.disabilityDays || 0;
+                                        const newEnd = val && days > 0
+                                            ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
+                                            : prev.endDate;
+                                        return { ...prev, date: val || null, endDate: isDisability ? newEnd : prev.endDate, manualEndDateOverride: false };
+                                    })}
                                     placeholder="DD/MM/AAAA"
                                     icon={CalendarDays}
                                     highlightRangeStart={formData?.date}

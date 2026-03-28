@@ -5,7 +5,7 @@ import {
     Clock, FileText, Paperclip,
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
-    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, AlertTriangle,
+    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft,
     KeyRound
 } from 'lucide-react';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -152,16 +152,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         return `https://wa.me/${cleanPhone}`;
     };
 
-    // 🚨 MODO PRO 3: Auditoría Proactiva
-    const missingData = useMemo(() => {
-        const missing = [];
-        if (!branch && branches.length > 0) missing.push("Sucursal Base");
-        if (!emp.role) missing.push("Cargo Oficial");
-        if (!emp.dui || emp.dui.trim() === '') missing.push("Documento (DUI)");
-        if (!emp.phone || emp.phone.trim() === '') missing.push("Teléfono");
-        return missing;
-    }, [emp, branch, branches]);
-
     const headerControls = (
         <div className="flex items-center gap-2 md:gap-3 bg-white/40 backdrop-blur-2xl border border-white/60 p-2 md:p-2.5 rounded-[2.5rem] shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
             
@@ -242,18 +232,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             <div className="p-4 md:p-6 lg:p-6 h-full overflow-y-auto hide-scrollbar w-full relative z-10 animate-in fade-in duration-500">
                 <div className="max-w-7xl mx-auto w-full pb-12 -mt-10 md:-mt-[60px] lg:-mt-[70px]">
 
-                    {/* 🚨 PÍLDORA DE AUDITORÍA ("Modo Solución") */}
-                    {isAdmin && missingData.length > 0 && (
-                        <div className="bg-amber-50/90 border border-amber-200 p-3 mb-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm animate-in slide-in-from-top-4">
-                            <div className="flex items-center gap-2 text-amber-700">
-                                <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0 text-amber-500"/>
-                                <span className="text-[11px] font-bold">Perfil Incompleto. Falta: <span className="font-black uppercase">{missingData.join(', ')}</span></span>
-                            </div>
-                            <button onClick={handleEditProfile} className="text-[9px] font-black uppercase tracking-widest bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg transition-colors shadow-sm active:scale-95 shrink-0">
-                                Completar Datos
-                            </button>
-                        </div>
-                    )}
 
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">

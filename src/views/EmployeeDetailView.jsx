@@ -30,6 +30,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     const [showExceptionModal, setShowExceptionModal] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
 
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
@@ -150,23 +151,26 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const handleResetPassword = () => setShowResetConfirm(true);
 
     const executeResetPassword = async () => {
-        setShowResetConfirm(false);
+        setIsResetting(true);
         try {
             const { data } = await supabase.functions.invoke(
                 'set-employee-password',
                 { body: { username: emp.username, password: '1234' } }
             );
             if (data?.ok) {
+                setShowResetConfirm(false);
                 useToastStore.getState().showToast(
                     'Contraseña Restablecida',
-                    `${emp.name} deberá cambiar su contraseña en el próximo acceso.`,
+                    `${emp.name} deberá cambiar su contraseña en su próximo acceso.`,
                     'success'
                 );
             } else {
-                useToastStore.getState().showToast('Error', 'No se pudo restablecer la contraseña.', 'error');
+                useToastStore.getState().showToast('Error', 'No se pudo restablecer.', 'error');
             }
         } catch {
             useToastStore.getState().showToast('Error', 'Error de conexión.', 'error');
+        } finally {
+            setIsResetting(false);
         }
     };
 
@@ -693,12 +697,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         {showResetConfirm && (
             <ConfirmModal
                 isOpen={showResetConfirm}
-                onClose={() => setShowResetConfirm(false)}
+                onClose={() => !isResetting && setShowResetConfirm(false)}
                 onConfirm={executeResetPassword}
                 title="Restablecer Contraseña"
-                message={`¿Restablecer contraseña de ${emp.name} a temporal? El empleado deberá cambiarla en su próximo acceso.`}
+                message={`¿Restablecer contraseña de ${emp.name}? Deberá cambiarla en su próximo acceso.`}
                 confirmText="Restablecer"
                 isDestructive={false}
+                isProcessing={isResetting}
             />
         )}
         </>

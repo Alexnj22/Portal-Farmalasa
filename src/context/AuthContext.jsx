@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }) => {
   const lastWriteRef = useRef(0);
   const aliveRef = useRef(true);
   const userRef = useRef(null);
+  const skipAuthListener = useRef(false);
 
   useEffect(() => {
     userRef.current = user;
@@ -149,25 +150,39 @@ export const AuthProvider = ({ children }) => {
   // ✅ Boot Inicial: Verificación local ultrarrápida
   // -------------------------
   useEffect(() => {
-    const cached = localStorage.getItem(LS_USER);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
+    (async () => {
+      const cached = localStorage.getItem(LS_USER);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
 
-        if (isExpiredByIdle(parsed)) {
+          // Verificar must_change_password antes de restaurar sesión
+          const authSession = await supabase.auth.getSession();
+          const meta = authSession.data?.session?.user?.user_metadata;
+          const mustChange = meta !== undefined && meta?.must_change_password !== false;
+
+          if (mustChange) {
+            // Usuario debe cambiar contraseña — no restaurar, forzar login manual
+            clearAuthCache();
+            clearErpCache();
+            setLoading(false);
+            return;
+          }
+
+          if (isExpiredByIdle(parsed)) {
+            clearAuthCache();
+            clearErpCache();
+          } else {
+            setUser(parsed);
+            startIdleWatcher(parsed);
+          }
+        } catch {
           clearAuthCache();
           clearErpCache();
-        } else {
-          setUser(parsed);
-          startIdleWatcher(parsed);
         }
-      } catch {
-        clearAuthCache();
-        clearErpCache();
       }
-    }
-    // Quitamos la pantalla de carga casi instantáneamente
-    setLoading(false);
+      setLoading(false);
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -224,6 +239,8 @@ export const AuthProvider = ({ children }) => {
     // 🚨 Listener Maestro de Estado de Sesión
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
+        if (skipAuthListener.current) return;
+
         // Si el evento es SIGNED_OUT o ya no hay sesión (ej. en otra pestaña)
         if (event === 'SIGNED_OUT' || !session?.user) {
           stopIdleWatcher();
@@ -342,12 +359,16 @@ export const AuthProvider = ({ children }) => {
       const cleanUsername = username.toLowerCase().trim();
       const emailToLogin = `${cleanUsername}@farmalasa.app`;
 
+      // Bloquear onAuthStateChange hasta saber si debe cambiar contraseña
+      skipAuthListener.current = true;
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToLogin,
         password,
       });
 
       if (error) {
+        skipAuthListener.current = false;
         if (error.message.includes('Invalid login credentials')) {
           return { ok: false, error: 'Usuario no encontrado o contraseña incorrecta.' };
         }
@@ -384,6 +405,8 @@ export const AuthProvider = ({ children }) => {
         return { ok: true, mustChangePassword: true, user: u };
       }
 
+      // Flujo normal: resetear flag y completar login
+      skipAuthListener.current = false;
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
@@ -391,11 +414,21 @@ export const AuthProvider = ({ children }) => {
       startIdleWatcher(u);
       return { ok: true };
     } catch (err) {
+      skipAuthListener.current = false;
       return { ok: false, error: 'Error de conexión con el servidor.' };
     }
   };
 
   const completeLogin = (u) => {
+    clearErpCache();
+    localStorage.setItem(LS_USER, JSON.stringify(u));
+    writeLastActivity(true);
+    setUser(u);
+    startIdleWatcher(u);
+  };
+
+  const completePasswordChange = (u) => {
+    skipAuthListener.current = false;
     clearErpCache();
     localStorage.setItem(LS_USER, JSON.stringify(u));
     writeLastActivity(true);
@@ -415,6 +448,7 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
       completeLogin,
+      completePasswordChange,
       login,
       loginWithEmail,
       loginWithUsername,

@@ -9,7 +9,7 @@ import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithUsername, isAdmin, user, completeLogin } = useAuth();
+    const { login, loginWithUsername, isAdmin, user, completePasswordChange } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -267,7 +267,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 data: { must_change_password: false },
             });
             if (error) { setChangePassError(error.message); setChangePassLoading(false); return; }
-            completeLogin(pendingUserLocal);
+            completePasswordChange(pendingUserLocal);
             setMustChangePwd(false);
             setPendingUserLocal(null);
             setNewPassword('');

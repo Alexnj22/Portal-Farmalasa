@@ -9,7 +9,7 @@ import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithUsername, isAdmin, user, mustChangePassword, commitPendingUser } = useAuth();
+    const { login, loginWithUsername, isAdmin, user, completeLogin } = useAuth();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -18,6 +18,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [changePassError, setChangePassError] = useState('');
     const [changePassLoading, setChangePassLoading] = useState(false);
+    const [mustChangePwd, setMustChangePwd] = useState(false);
+    const [pendingUserLocal, setPendingUserLocal] = useState(null);
     const [scannerActive, setScannerActive] = useState(false);
     const [scanFeedback, setScanFeedback] = useState(null);
 
@@ -186,11 +188,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         }
     }, [error]);
 
-    useEffect(() => {
-        if (mustChangePassword) {
-            setIsLoading(false);
-        }
-    }, [mustChangePassword]);
 
     const handleStopScannerBtn = () => {
         cooldownRef.current = false;
@@ -218,6 +215,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 setIsLoading(false);
                 if (userPasswordRef.current) userPasswordRef.current.value = '';
                 userPasswordRef.current?.focus();
+            } else if (result.mustChangePassword) {
+                setPendingUserLocal(result.user);
+                setMustChangePwd(true);
+                setIsLoading(false);
             } else {
                 setIsLoading(false);
             }
@@ -266,7 +267,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 data: { must_change_password: false },
             });
             if (error) { setChangePassError(error.message); setChangePassLoading(false); return; }
-            commitPendingUser();
+            completeLogin(pendingUserLocal);
+            setMustChangePwd(false);
+            setPendingUserLocal(null);
             setNewPassword('');
             setConfirmPassword('');
         } catch {
@@ -275,7 +278,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setChangePassLoading(false);
     };
 
-    if (mustChangePassword) {
+    if (mustChangePwd) {
         return (
             <div className="relative flex flex-col items-center justify-center w-full min-h-[100dvh] px-5 py-12">
                 <div className="w-full max-w-[400px] rounded-[3.5rem] p-8 bg-white/40 backdrop-blur-3xl border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] flex flex-col gap-6">

@@ -37,8 +37,6 @@ const ACTIVITY_THROTTLE_MS = 2000;
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mustChangePassword, setMustChangePassword] = useState(false);
-  const [pendingUser, setPendingUser] = useState(null);
 
   const idleIntervalRef = useRef(null);
   const lastWriteRef = useRef(0);
@@ -381,10 +379,8 @@ export const AuthProvider = ({ children }) => {
       const mustChange = data.session.user?.user_metadata?.must_change_password === true;
 
       if (mustChange) {
-        // Guardar el usuario temporalmente sin setUser — evita que el useEffect de navegación dispare
-        setPendingUser(u);
-        setMustChangePassword(true);
-        return { ok: true };
+        // No llamar setUser — LoginView lo hace después del cambio de contraseña
+        return { ok: true, mustChangePassword: true, user: u };
       }
 
       clearErpCache();
@@ -398,15 +394,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const commitPendingUser = () => {
-    if (!pendingUser) return;
+  const completeLogin = (u) => {
     clearErpCache();
-    localStorage.setItem(LS_USER, JSON.stringify(pendingUser));
+    localStorage.setItem(LS_USER, JSON.stringify(u));
     writeLastActivity(true);
-    setUser(pendingUser);
-    startIdleWatcher(pendingUser);
-    setPendingUser(null);
-    setMustChangePassword(false);
+    setUser(u);
+    startIdleWatcher(u);
   };
 
   const logout = async () => {
@@ -420,8 +413,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!user,
       isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
       loading,
-      mustChangePassword,
-      commitPendingUser,
+      completeLogin,
       login,
       loginWithEmail,
       loginWithUsername,

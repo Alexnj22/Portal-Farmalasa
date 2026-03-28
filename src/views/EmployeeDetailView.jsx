@@ -6,7 +6,7 @@ import {
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
     Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft,
-    KeyRound
+    KeyRound, Camera
 } from 'lucide-react';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
 import { formatDate, formatTime12h } from '../utils/helpers';
@@ -183,17 +183,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             {isAdmin && <div className="w-px h-6 bg-white/50 mx-1 shrink-0"></div>}
 
             {isAdmin && (
-                <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={handleEditProfile} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/60 hover:bg-white text-slate-500 hover:text-[#007AFF] rounded-full border border-white shadow-sm transition-all hover:scale-105" title="Editar Perfil">
-                        <Edit size={14} strokeWidth={2.5}/>
-                    </button>
-                    <button onClick={() => openModal('setEmployeePassword', { ...emp, password: '', confirm: '' })} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/60 hover:bg-white text-slate-500 hover:text-amber-500 rounded-full border border-white shadow-sm transition-all hover:scale-105" title="Establecer Contraseña">
-                        <KeyRound size={14} strokeWidth={2.5}/>
-                    </button>
-                    <button onClick={handleNewHRAction} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 ml-1">
-                        <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
-                    </button>
-                </div>
+                <button onClick={handleNewHRAction} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95">
+                    <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
+                </button>
             )}
         </div>
     );
@@ -279,6 +271,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="h-full w-full rounded-full overflow-hidden bg-slate-100 relative shadow-inner">
                                             <LiquidAvatar src={emp.photo_url || emp.photo} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                         </div>
+                                        {isAdmin && (
+                                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                                                onClick={handleEditProfile}>
+                                                <Camera size={24} className="text-white"/>
+                                            </div>
+                                        )}
                                         {(emp.effectiveStatus === 'Activo' || emp.effectiveStatus === 'En Apoyo') && (
                                             <span className="absolute bottom-2 right-4 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full shadow-sm z-10"></span>
                                         )}
@@ -295,6 +293,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                             CÓD: {emp.code || 'S/N'}
                                         </span>
+                                        {isAdmin && (
+                                            <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
+                                                <button onClick={handleEditProfile}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)]">
+                                                    <Edit size={12}/> Editar
+                                                </button>
+                                                <button onClick={() => openModal('setEmployeePassword', { ...emp, password: '', confirm: '' })}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-amber-500 text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(245,158,11,0.3)]">
+                                                    <KeyRound size={12}/> Contraseña
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     <div className="w-full space-y-3">

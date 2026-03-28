@@ -121,7 +121,6 @@ export const createEmployeeSlice = (set, get) => ({
             const dbPayload = {
                 first_names: fNames,
                 last_names: lNames,
-                name: fullName, 
                 username: formData.username ? formData.username.trim().toLowerCase() : null,
                 code: formData.code,
                 
@@ -260,9 +259,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.first_names !== undefined || updatedData.last_names !== undefined) {
                 const fNames = (updatedData.first_names ?? '').trim();
                 const lNames = (updatedData.last_names ?? '').trim();
-                if (fNames || lNames) {
-                    dbPayload.name = `${fNames} ${lNames}`.trim();
-                }
+                // name es columna GENERATED en BD, no se envía en UPDATE
             }
 
             if (updatedData.branch_id) dbPayload.branch_id = parseInt(updatedData.branch_id, 10);

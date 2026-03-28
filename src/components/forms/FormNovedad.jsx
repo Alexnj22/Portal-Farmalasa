@@ -106,6 +106,12 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         generatePin();
     }, [formData?.newCode, setFormData]);
 
+    useEffect(() => {
+        if (type === 'DISABILITY' && !formData?.disabilityType) {
+            setFormData(prev => ({ ...prev, disabilityType: 'Enfermedad Común' }));
+        }
+    }, [type, formData?.disabilityType, setFormData]);
+
     const periodDaysCount = useMemo(() => {
         if (!formData?.date || !formData?.endDate) return 0;
         const s = new Date(formData.date + 'T12:00:00');
@@ -262,6 +268,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </div>
             )}
 
+            {isDisability && (
+                <div className="relative z-[30] animate-in fade-in">
+                    <label className={labelClasses}>Origen de la Incapacidad</label>
+                    <div className="h-[40px]">
+                        <LiquidSelect value={formData?.disabilityType || ''} onChange={(val) => setFormData(prev => ({ ...prev, disabilityType: val, disabilityDays: null, endDate: null }))} options={disabilityTypes} placeholder="Seleccionar..." icon={Activity} menuPosition="fixed" />
+                    </div>
+                </div>
+            )}
+
             {(isVacation || (isDisability && formData?.disabilityType === 'Maternidad')) && (
                 <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-red-50/90 border-red-300 shadow-[0_4px_15px_rgba(239,68,68,0.15)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-orange-50/90 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.15)]' : 'bg-emerald-50/80 border-emerald-200'}`}>
                     {getHolidayInfo ? <AlertTriangle className="text-red-500 shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-orange-500 shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={18}/>}
@@ -332,7 +347,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                         </div>
 
-                        {isTemporalRange && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') && (
+                        {isTemporalRange && !isVacation && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') && (
                             <div className="relative z-[40] animate-in fade-in">
                                 <label className={labelClasses}>Fecha de Retorno / Fin</label>
                                 <div className="h-[40px]">
@@ -379,7 +394,16 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     </div>
                 )}
             </div>
-            
+
+            {isVacation && formData?.date && formData?.endDate && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-2xl animate-in fade-in zoom-in-95">
+                    <CheckCircle size={14} className="text-emerald-500 shrink-0" strokeWidth={2.5}/>
+                    <p className="text-[11px] font-bold text-emerald-700">
+                        Del {formatDate(formData.date)} al {formatDate(formData.endDate)} — 15 días de vacaciones
+                    </p>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isPromotion && (
                     <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-blue-50/50 p-4 border border-blue-100 rounded-[1.5rem]">
@@ -406,21 +430,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isDisability && (
-                    <>
-                        <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in">
-                            <label className={labelClasses}>Origen de la Incapacidad</label>
-                            <div className="h-[40px]">
-                                <LiquidSelect value={formData?.disabilityType || ''} onChange={(val) => setFormData(prev => ({ ...prev, disabilityType: val }))} options={disabilityTypes} placeholder="Seleccionar..." icon={Activity} menuPosition="fixed" />
-                            </div>
+                    <div className="col-span-1 md:col-span-2 animate-in fade-in">
+                        <label className={labelClasses}>N° Boleta ISSS / Médico</label>
+                        <div className="relative">
+                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} strokeWidth={2.5}/>
+                            <input type="text" placeholder="Ej. B-12345678" className={`${inputClasses} pl-9 uppercase`} value={formData?.certificateNumber || ''} onChange={(e) => setFormData(prev => ({ ...prev, certificateNumber: e.target.value }))} />
                         </div>
-                        <div className="col-span-1 md:col-span-2 animate-in fade-in">
-                            <label className={labelClasses}>N° Boleta ISSS / Médico</label>
-                            <div className="relative">
-                                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} strokeWidth={2.5}/>
-                                <input type="text" placeholder="Ej. B-12345678" className={`${inputClasses} pl-9 uppercase`} value={formData?.certificateNumber || ''} onChange={(e) => setFormData(prev => ({ ...prev, certificateNumber: e.target.value }))} />
-                            </div>
-                        </div>
-                    </>
+                    </div>
                 )}
 
                 {isTermination && (

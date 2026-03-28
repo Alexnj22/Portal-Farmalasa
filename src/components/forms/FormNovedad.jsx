@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import RangeDatePicker from '../common/RangeDatePicker';
 import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
@@ -296,8 +297,22 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             {/* 🚨 ISLA DE FECHAS (Liquid Glass) */}
             <div className="bg-white/60 backdrop-blur-md p-5 rounded-[1.5rem] border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
                 
-                {/* SI ES PERMISO MÚLTIPLE (DÍAS SALTEADOS) */}
-                {isPermission ? (
+                {/* SI ES VACACIONES — RangeDatePicker estilo booking */}
+                {isVacation ? (
+                    <div className="animate-in fade-in zoom-in-95">
+                        <label className={labelClasses}>Período de Vacaciones</label>
+                        <RangeDatePicker
+                            startDate={formData?.date || ''}
+                            endDate={formData?.endDate || ''}
+                            onRangeChange={(start, end) => setFormData(prev => ({
+                                ...prev, date: start, endDate: end, manualEndDateOverride: true
+                            }))}
+                            holidays={holidays}
+                            defaultDays={15}
+                        />
+                    </div>
+                ) : /* SI ES PERMISO MÚLTIPLE (DÍAS SALTEADOS) */
+                isPermission ? (
                     <div className="space-y-4 animate-in fade-in zoom-in-95">
                         <div className="flex items-end gap-3 relative z-[50]">
                             <div className="flex-1">

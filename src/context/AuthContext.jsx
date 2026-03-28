@@ -150,38 +150,23 @@ export const AuthProvider = ({ children }) => {
   // ✅ Boot Inicial: Verificación local ultrarrápida
   // -------------------------
   useEffect(() => {
-    (async () => {
-      const cached = localStorage.getItem(LS_USER);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-
-          // Verificar must_change_password antes de restaurar sesión
-          const authSession = await supabase.auth.getSession();
-          const meta = authSession.data?.session?.user?.user_metadata;
-          const mustChange = meta === undefined || meta?.must_change_password !== false;
-
-          if (mustChange) {
-            localStorage.removeItem(LS_USER);
-            try { await supabase.auth.signOut(); } catch {}
-            setLoading(false);
-            return;
-          }
-
-          if (isExpiredByIdle(parsed)) {
-            clearAuthCache();
-            clearErpCache();
-          } else {
-            setUser(parsed);
-            startIdleWatcher(parsed);
-          }
-        } catch {
+    const cached = localStorage.getItem(LS_USER);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (isExpiredByIdle(parsed)) {
           clearAuthCache();
           clearErpCache();
+        } else {
+          setUser(parsed);
+          startIdleWatcher(parsed);
         }
+      } catch {
+        clearAuthCache();
+        clearErpCache();
       }
-      setLoading(false);
-    })();
+    }
+    setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -218,6 +203,11 @@ export const AuthProvider = ({ children }) => {
 
         const u = ensured.user;
 
+        // No restaurar sesión si debe cambiar contraseña
+        const meta = sessionUser?.user_metadata;
+        const mustChange = meta?.must_change_password !== false;
+        if (mustChange) return;
+
         writeLastActivity(true);
 
         if (isExpiredByIdle(u)) {
@@ -246,6 +236,17 @@ export const AuthProvider = ({ children }) => {
           clearAuthCache();
           clearErpCache();
           setUser(null); // Esto causará un redirect súper fluido al login
+          return;
+        }
+
+        // Verificar must_change_password ANTES de setUser
+        const meta = session.user?.user_metadata;
+        const mustChange = meta?.must_change_password !== false;
+        if (mustChange) {
+          // Usuario con contraseña temporal — limpiar caché, no setUser
+          // loginWithUsername se encarga del flujo de cambio de contraseña
+          clearAuthCache();
+          clearErpCache();
           return;
         }
 

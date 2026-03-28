@@ -7,7 +7,8 @@ import {
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EVENT_TYPES } from '../../data/constants';
-import { useStaffStore } from '../../store/staffStore'; 
+import { formatDate } from '../../utils/helpers';
+import { useStaffStore } from '../../store/staffStore';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
     
@@ -324,14 +325,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     onChange={(val) => setFormData(prev => ({ ...prev, date: val || null, manualEndDateOverride: false }))}
                                     placeholder="DD/MM/AAAA"
                                     icon={CalendarDays}
-                                    rangeStart={formData?.date}
-                                    rangeEnd={formData?.endDate}
+                                    highlightRangeStart={formData?.date}
+                                    highlightRangeEnd={formData?.endDate}
                                     holidays={holidays}
                                 />
                             </div>
                         </div>
 
-                        {isTemporalRange && (
+                        {isTemporalRange && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') && (
                             <div className="relative z-[40] animate-in fade-in">
                                 <label className={labelClasses}>Fecha de Retorno / Fin</label>
                                 <div className="h-[40px]">
@@ -340,11 +341,39 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         onChange={(val) => setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }))}
                                         placeholder="DD/MM/AAAA"
                                         icon={CalendarClock}
-                                        rangeStart={formData?.date}
-                                        rangeEnd={formData?.endDate}
-                                        holidays={holidays} 
+                                        highlightRangeStart={formData?.date}
+                                        highlightRangeEnd={formData?.endDate}
+                                        holidays={holidays}
                                     />
                                 </div>
+                            </div>
+                        )}
+
+                        {isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad' && (
+                            <div className="animate-in fade-in">
+                                <label className={labelClasses}>Días de Incapacidad</label>
+                                <div className="relative flex items-center h-[40px]">
+                                    <input
+                                        type="number"
+                                        min="1" max="365"
+                                        value={formData?.disabilityDays || ''}
+                                        onChange={e => {
+                                            const days = parseInt(e.target.value) || 0;
+                                            const end = formData?.date && days > 0
+                                                ? (() => { const d = new Date(formData.date + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
+                                                : '';
+                                            setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
+                                        }}
+                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                        placeholder="Ej: 3"
+                                    />
+                                    <span className="absolute right-4 text-slate-400 text-[11px] font-black uppercase tracking-widest">días</span>
+                                </div>
+                                {formData?.endDate && formData?.disabilityDays > 0 && (() => {
+                                    const retorno = new Date(formData.endDate + 'T12:00:00');
+                                    retorno.setDate(retorno.getDate() + 1);
+                                    return <p className="text-[10px] text-slate-500 font-bold px-1 mt-1">Regresa el {formatDate(retorno.toISOString().split('T')[0])}</p>;
+                                })()}
                             </div>
                         )}
                     </div>

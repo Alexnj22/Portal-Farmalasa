@@ -137,6 +137,7 @@ const RangeDatePicker = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selecting, setSelecting] = useState('start');
+    const [rangeConfirmed, setRangeConfirmed] = useState(false);
     const [draftStart, setDraftStart] = useState(startDate || null);
     const [draftEnd, setDraftEnd] = useState(endDate || null);
     const [hoverDate, setHoverDate] = useState(null);
@@ -160,6 +161,7 @@ const RangeDatePicker = ({
         setDraftStart(startDate || null);
         setDraftEnd(endDate || null);
         setSelecting('start');
+        setRangeConfirmed(false);
         setHoverDate(null);
         if (startDate) {
             const d = new Date(startDate + 'T12:00:00');
@@ -188,11 +190,19 @@ const RangeDatePicker = ({
     };
 
     const handleDayClick = useCallback((dayStr) => {
-        if (selecting === 'start') {
-            const newEnd = addDays(dayStr, defaultDays - 1);
+        if (rangeConfirmed) {
+            setRangeConfirmed(false);
+            setSelecting('start');
             setDraftStart(dayStr);
-            setDraftEnd(newEnd);
+            setDraftEnd(addDays(dayStr, defaultDays - 1));
             setSelecting('end');
+            return;
+        }
+        if (selecting === 'start') {
+            setDraftStart(dayStr);
+            setDraftEnd(addDays(dayStr, defaultDays - 1));
+            setSelecting('end');
+            setRangeConfirmed(false);
         } else {
             if (dayStr > draftStart) {
                 setDraftEnd(dayStr);
@@ -200,8 +210,9 @@ const RangeDatePicker = ({
                 setDraftStart(dayStr);
                 setDraftEnd(addDays(dayStr, defaultDays - 1));
             }
+            setRangeConfirmed(true);
         }
-    }, [selecting, draftStart, defaultDays]);
+    }, [selecting, draftStart, defaultDays, rangeConfirmed]);
 
     const handleConfirm = () => {
         if (draftStart && draftEnd) {
@@ -243,9 +254,9 @@ const RangeDatePicker = ({
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
-                className="fixed z-[9999] bg-white/70 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.15),inset_0_2px_10px_rgba(255,255,255,0.8)] p-6"
+                className="fixed z-[9999] bg-white/40 backdrop-blur-2xl border border-white/50 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.9)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
                 style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
-                onMouseLeave={() => selecting === 'end' && setHoverDate(null)}
+                onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
@@ -280,7 +291,7 @@ const RangeDatePicker = ({
                         <MonthGrid
                             year={viewYear} month={viewMonth}
                             startDate={draftStart} endDate={draftEnd}
-                            hoverDate={selecting === 'end' ? hoverDate : null}
+                            hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
                             onDayClick={handleDayClick}
                             onDayHover={setHoverDate}
                             holidays={holidays}
@@ -289,7 +300,7 @@ const RangeDatePicker = ({
                         <MonthGrid
                             year={secondYear} month={secondMonth}
                             startDate={draftStart} endDate={draftEnd}
-                            hoverDate={selecting === 'end' ? hoverDate : null}
+                            hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
                             onDayClick={handleDayClick}
                             onDayHover={setHoverDate}
                             holidays={holidays}

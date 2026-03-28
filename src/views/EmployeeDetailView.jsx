@@ -229,8 +229,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             filtersContent={headerControls}
             transparentBody={true}
         >
-            <div className="p-4 md:p-6 lg:p-6 h-full overflow-y-auto hide-scrollbar w-full relative z-10 animate-in fade-in duration-500">
-                <div className="max-w-7xl mx-auto w-full pb-12 -mt-10 md:-mt-[60px] lg:-mt-[70px] pt-4 md:pt-6 lg:pt-8">
+            <div className="w-full relative z-10 animate-in fade-in duration-500">
+                <div className="max-w-7xl mx-auto w-full pb-12">
 
 
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}

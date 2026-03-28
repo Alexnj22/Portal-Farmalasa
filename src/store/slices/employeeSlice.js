@@ -161,8 +161,37 @@ export const createEmployeeSlice = (set, get) => ({
                 photo_url: null, 
             };
 
+            // Validar headcount del cargo seleccionado
+            if (dbPayload.role_id) {
+                const state = get();
+                const roleConfig = state.roles.find(r => String(r.id) === String(dbPayload.role_id));
+
+                if (roleConfig && roleConfig.max_limit < 99) {
+                    const occupants = state.employees.filter(e => {
+                        if (e.status !== 'ACTIVO') return false;
+                        if (String(e.role_id) !== String(dbPayload.role_id)) return false;
+                        if (roleConfig.scope === 'BRANCH') {
+                            return String(e.branch_id || e.branchId) === String(dbPayload.branch_id);
+                        }
+                        return true; // GLOBAL
+                    });
+
+                    if (occupants.length >= roleConfig.max_limit) {
+                        const names = occupants.map(o => o.name).join(', ');
+                        throw new Error(
+                            `HEADCOUNT_LIMIT: El cargo "${roleConfig.name}" ` +
+                            `ya tiene ${roleConfig.max_limit} ocupante(s): ${names}. ` +
+                            `No se puede asignar este cargo.`
+                        );
+                    }
+                }
+            }
+
             const { data: newEmp, error } = await supabase.from("employees").insert([dbPayload]).select().single();
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase INSERT error:', error.message, error.details, error.hint);
+                throw error;
+            }
 
             const uploadedFile = formData.file || formData.photo;
             if (uploadedFile && uploadedFile instanceof File) {

@@ -197,7 +197,12 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 onClose();
             } catch (err) {
                 console.error("Error guardando empleado:", err);
-                setValidationError(err?.message || "Error interno al procesar y guardar la ficha del empleado. Verifica que no falten datos.");
+                if (err?.message?.startsWith('HEADCOUNT_LIMIT:')) {
+                    const { showToast } = useToastStore.getState();
+                    showToast('Límite de Organigrama', err.message.replace('HEADCOUNT_LIMIT: ', ''), 'error');
+                } else {
+                    setValidationError(err?.message || "Error interno al procesar y guardar la ficha del empleado. Verifica que no falten datos.");
+                }
             } finally {
                 setIsSaving(false);
             }

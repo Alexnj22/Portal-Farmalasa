@@ -206,11 +206,19 @@ export const createEmployeeSlice = (set, get) => ({
             // Crear usuario Auth automáticamente (no bloquea la creación si falla)
             if (dbPayload.username) {
                 try {
-                    await supabase.functions.invoke('set-employee-password', {
-                        body: { username: dbPayload.username, password: '1234' }
-                    });
+                    const { data: authResult, error: authError } =
+                        await supabase.functions.invoke('set-employee-password', {
+                            body: { username: dbPayload.username, password: '1234' }
+                        });
+                    if (authError) {
+                        console.warn('Auth creation error:', authError);
+                    } else if (!authResult?.ok) {
+                        console.warn('Auth creation failed:', authResult);
+                    } else {
+                        console.log('Usuario Auth creado:', dbPayload.username);
+                    }
                 } catch (authErr) {
-                    console.warn('No se pudo crear usuario Auth para', dbPayload.username, authErr);
+                    console.warn('No se pudo crear usuario Auth:', authErr);
                 }
             }
 

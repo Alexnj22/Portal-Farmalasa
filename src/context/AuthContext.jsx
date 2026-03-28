@@ -159,12 +159,11 @@ export const AuthProvider = ({ children }) => {
           // Verificar must_change_password antes de restaurar sesión
           const authSession = await supabase.auth.getSession();
           const meta = authSession.data?.session?.user?.user_metadata;
-          const mustChange = meta !== undefined && meta?.must_change_password !== false;
+          const mustChange = meta === undefined || meta?.must_change_password !== false;
 
           if (mustChange) {
-            // Usuario debe cambiar contraseña — no restaurar, forzar login manual
-            clearAuthCache();
-            clearErpCache();
+            localStorage.removeItem(LS_USER);
+            try { await supabase.auth.signOut(); } catch {}
             setLoading(false);
             return;
           }

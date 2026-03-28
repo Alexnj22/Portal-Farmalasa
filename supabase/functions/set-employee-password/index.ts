@@ -84,8 +84,9 @@ Deno.serve(async (req: Request) => {
 
     if (existingAuth?.user) {
       const isReset = password === '1234';
+      const effectivePassword = isReset ? '123456' : password;
       const { error: updErr } = await admin.auth.admin.updateUserById(employee.id, {
-        password, user_metadata: { username, code: employee.code, must_change_password: isReset },
+        password: effectivePassword, user_metadata: { username, code: employee.code, must_change_password: isReset },
       });
       if (updErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: updErr.message });
     } else {

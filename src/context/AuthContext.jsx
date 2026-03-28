@@ -376,6 +376,7 @@ export const AuthProvider = ({ children }) => {
         role: emp.role_id,
       };
 
+      console.log('METADATA:', data.session?.user?.user_metadata);
       const mustChange = data.session.user?.user_metadata?.must_change_password === true;
 
       if (mustChange) {

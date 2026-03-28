@@ -208,7 +208,7 @@ export const createEmployeeSlice = (set, get) => ({
                 try {
                     const { data: authResult, error: authError } =
                         await supabase.functions.invoke('set-employee-password', {
-                            body: { username: dbPayload.username, password: '1234' }
+                            body: { username: dbPayload.username, password: '123456' }
                         });
                     if (authError) {
                         console.warn('Auth creation error:', authError);

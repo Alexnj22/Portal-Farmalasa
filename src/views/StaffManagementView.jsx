@@ -577,7 +577,7 @@ const StaffManagementView = ({
     >
       <div className="p-4 md:p-6 lg:p-8 space-y-6 flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-700">
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
           <button onClick={() => setActiveStatFilter('ALL')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'ALL' ? 'border-[#007AFF] shadow-[0_0_15px_rgba(0,122,255,0.2)] ring-1 ring-[#007AFF] -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
             <div>
               <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'ALL' ? 'text-[#007AFF]' : 'text-slate-500'}`}>Total</p>

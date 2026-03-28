@@ -280,7 +280,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     if (mustChangePwd) {
         return (
-            <div className="relative flex flex-col items-center justify-center w-full min-h-[100dvh] px-5 py-12">
+            <div className="relative flex flex-col items-center justify-center w-full min-h-[100dvh] overflow-y-auto px-5 py-12">
                 <div className="w-full max-w-[400px] rounded-[3.5rem] p-8 bg-white/40 backdrop-blur-3xl border border-white/60 shadow-[0_24px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] flex flex-col gap-6">
                     <div className="flex flex-col items-center gap-2">
                         <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mb-1">
@@ -331,9 +331,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     }
 
     return (
-        <div className="relative flex flex-col items-center w-full min-h-[100dvh] px-5
-            pt-[max(env(safe-area-inset-top,32px),32px)] 
-            pb-[max(env(safe-area-inset-bottom,32px),120px)] 
+        <div className="relative flex flex-col items-center w-full min-h-[100dvh] overflow-y-auto px-5
+            pt-[max(env(safe-area-inset-top,32px),32px)]
+            pb-[max(env(safe-area-inset-bottom,32px),120px)]
             landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
             <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">

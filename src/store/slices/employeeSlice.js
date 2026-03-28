@@ -171,7 +171,18 @@ export const createEmployeeSlice = (set, get) => ({
                 const publicPhotoUrl = await get().uploadEmployeeFile(compressedPhoto, newEmp.id, 'foto_perfil');
                 if (publicPhotoUrl) {
                     await supabase.from("employees").update({ photo_url: publicPhotoUrl }).eq("id", newEmp.id);
-                    newEmp.photo_url = publicPhotoUrl; 
+                    newEmp.photo_url = publicPhotoUrl;
+                }
+            }
+
+            // Crear usuario Auth automáticamente (no bloquea la creación si falla)
+            if (dbPayload.username) {
+                try {
+                    await supabase.functions.invoke('set-employee-password', {
+                        body: { username: dbPayload.username, password: '1234' }
+                    });
+                } catch (authErr) {
+                    console.warn('No se pudo crear usuario Auth para', dbPayload.username, authErr);
                 }
             }
 

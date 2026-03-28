@@ -277,6 +277,22 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
   );
 });
 
+const SkeletonRow = () => (
+  <tr>
+    <td colSpan="5">
+      <div className="flex items-center gap-4 px-8 py-3.5 animate-pulse">
+        <div className="w-10 h-10 rounded-full bg-slate-200/80 shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 bg-slate-200/80 rounded w-1/3" />
+          <div className="h-2 bg-slate-200/60 rounded w-1/4" />
+        </div>
+        <div className="h-3 bg-slate-200/80 rounded w-1/5" />
+        <div className="h-6 bg-slate-200/80 rounded-full w-16" />
+      </div>
+    </td>
+  </tr>
+);
+
 const StaffManagementView = ({
   setView, // 💡 Lo mantenemos por retrocompatibilidad con modales viejos, pero ya no se usa para navegar
   setActiveEmployee,
@@ -644,7 +660,9 @@ const StaffManagementView = ({
               </thead>
 
               <tbody className="divide-y divide-white/40">
-                {paginatedEmployees.length > 0 ? (
+                {employees.length === 0 ? (
+                  Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+                ) : paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((emp) => (
                     <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} />
                   ))

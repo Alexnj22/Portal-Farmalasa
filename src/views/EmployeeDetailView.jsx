@@ -12,6 +12,8 @@ import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
 import { formatDate, formatTime12h } from '../utils/helpers';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
+import { useToastStore } from '../store/toastStore';
 import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -142,6 +144,27 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         e.stopPropagation();
         if (typeof openModal === 'function') openModal('uploadConstancia', { employeeId: emp.id, punchTimestamp });
     }, [openModal, emp.id]);
+
+    const handleResetPassword = async () => {
+        if (!confirm(`¿Restablecer contraseña de ${emp.name} a temporal?`)) return;
+        try {
+            const { data } = await supabase.functions.invoke(
+                'set-employee-password',
+                { body: { username: emp.username, password: '1234' } }
+            );
+            if (data?.ok) {
+                useToastStore.getState().showToast(
+                    'Contraseña Restablecida',
+                    `${emp.name} deberá cambiar su contraseña en el próximo acceso.`,
+                    'success'
+                );
+            } else {
+                useToastStore.getState().showToast('Error', 'No se pudo restablecer la contraseña.', 'error');
+            }
+        } catch {
+            useToastStore.getState().showToast('Error', 'Error de conexión.', 'error');
+        }
+    };
 
     // 🚨 MODO PRO 2: Inteligencia Regional (WhatsApp SV)
     const formatWhatsAppLink = (phoneString) => {
@@ -299,7 +322,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)]">
                                                     <Edit size={12}/> Editar
                                                 </button>
-                                                <button onClick={() => openModal('setEmployeePassword', { ...emp, password: '', confirm: '' })}
+                                                <button onClick={handleResetPassword}
                                                     className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-amber-500 text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(245,158,11,0.3)]">
                                                     <KeyRound size={12}/> Contraseña
                                                 </button>

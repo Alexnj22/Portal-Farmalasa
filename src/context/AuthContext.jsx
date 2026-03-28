@@ -376,8 +376,8 @@ export const AuthProvider = ({ children }) => {
         role: emp.role_id,
       };
 
-      console.log('METADATA:', data.session?.user?.user_metadata);
-      const mustChange = data.session.user?.user_metadata?.must_change_password === true;
+      const meta = data.session.user?.user_metadata;
+      const mustChange = meta?.must_change_password !== false;
 
       if (mustChange) {
         // No llamar setUser — LoginView lo hace después del cambio de contraseña

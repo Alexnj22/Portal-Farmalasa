@@ -249,7 +249,7 @@ export const createEmployeeSlice = (set, get) => ({
             return appEmp.id;
         } catch (err) {
             console.error("Fallo al crear empleado:", err);
-            throw new Error("Fallo al crear empleado.");
+            throw err; // Re-lanzar el error original sin modificarlo
         }
     },
 

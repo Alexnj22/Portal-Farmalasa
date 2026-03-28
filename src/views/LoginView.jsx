@@ -186,6 +186,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         }
     }, [error]);
 
+    useEffect(() => {
+        if (mustChangePassword) {
+            setIsLoading(false);
+        }
+    }, [mustChangePassword]);
+
     const handleStopScannerBtn = () => {
         cooldownRef.current = false;
         stopCameraSafely();
@@ -212,6 +218,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 setIsLoading(false);
                 if (userPasswordRef.current) userPasswordRef.current.value = '';
                 userPasswordRef.current?.focus();
+            } else {
+                setIsLoading(false);
             }
         } catch {
             setError('Error de conexión. Intenta de nuevo.');

@@ -303,7 +303,7 @@ const StaffManagementView = ({
   setSelectedBranch,
 }) => {
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
-  const { employees, branches } = useStaff();
+  const { employees, branches, bootStatus } = useStaff();
 
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
@@ -660,7 +660,7 @@ const StaffManagementView = ({
               </thead>
 
               <tbody className="divide-y divide-white/40">
-                {employees.length === 0 ? (
+                {bootStatus !== 'ready' && employees.length === 0 ? (
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((emp) => (

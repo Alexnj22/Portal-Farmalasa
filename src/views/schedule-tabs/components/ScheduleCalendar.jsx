@@ -433,6 +433,11 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     <div className={`w-full flex-1 flex flex-col items-center justify-center ${conf.text}`}>
                                         <conf.icon className="w-4 h-4 2xl:w-[18px] 2xl:h-[18px] mb-1" strokeWidth={2.5} />
                                         <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
+                                        {hasShift && (
+                                            <span className="text-[6.5px] font-bold mt-1 opacity-60 truncate px-1 text-center leading-tight">
+                                                {shift?.name || 'Manual'} · {netShiftDurationHrs}h
+                                            </span>
+                                        )}
                                     </div>
                                 ) : hasShift ? (
                                     <div className="flex flex-col h-full">

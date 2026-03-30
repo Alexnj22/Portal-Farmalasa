@@ -89,13 +89,23 @@ export const getTimeBlocks = (startStr, endStr, hasLunch, lunchStart, hasLactati
     return blocks;
 };
 
+const isConflictOnDate = (ev, dateStr) => {
+    const meta = typeof ev.metadata === 'string' ? (() => { try { return JSON.parse(ev.metadata); } catch { return {}; } })() : (ev.metadata || {});
+    if (ev.type === 'PERMIT') {
+        const pDates = meta.permissionDates;
+        if (Array.isArray(pDates) && pDates.length > 0) return pDates.includes(dateStr);
+        return ev.date === dateStr; // fallback si no hay permissionDates
+    }
+    return ev.date <= dateStr && (!meta.endDate || meta.endDate >= dateStr);
+};
+
 export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, calendarDates) => {
     if (!schedule || !shifts) return 0;
     let totalMins = 0;
     [1, 2, 3, 4, 5, 6, 0].forEach((dayId, idx) => {
         const dateStr = calendarDates[idx];
         const hasConflict = (history || []).some(ev =>
-            ['VACATION', 'DISABILITY', 'PERMISSION', 'HOLIDAY'].includes(ev.type) && ev.date <= dateStr && (!ev.metadata?.endDate || ev.metadata.endDate >= dateStr)
+            ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY'].includes(ev.type) && isConflictOnDate(ev, dateStr)
         );
         if (hasConflict) return;
 
@@ -128,15 +138,14 @@ export const getRoleTheme = (roleName) => {
 
 export const getDayConflictLocal = (dateStr, history) => {
     const event = (history || []).find(ev =>
-        ['VACATION', 'DISABILITY', 'PERMISSION', 'HOLIDAY'].includes(ev.type) &&
-        ev.date <= dateStr && (!ev.metadata?.endDate || ev.metadata.endDate >= dateStr)
+        ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY'].includes(ev.type) && isConflictOnDate(ev, dateStr)
     );
     if (!event) return null;
     const config = {
-        VACATION: { label: 'Vacaciones', icon: Palmtree, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
-        DISABILITY: { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' },
-        PERMISSION: { label: 'Permiso', icon: FileText, bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-        HOLIDAY: { label: 'Asueto', icon: CalendarOff, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }
+        VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-200' },
+        DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50',    text: 'text-red-600',    border: 'border-red-200' },
+        PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+        HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }
     };
-    return config[event.type] || config.PERMISSION;
+    return config[event.type] || config.PERMIT;
 };

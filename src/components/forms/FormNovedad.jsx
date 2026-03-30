@@ -10,6 +10,7 @@ import RangeDatePicker from '../common/RangeDatePicker';
 import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -325,6 +326,20 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             defaultDays={15}
                         />
                     </div>
+                ) : /* SI ES APOYO TEMPORAL — RangeDatePicker */
+                isSupport ? (
+                    <div className="animate-in fade-in zoom-in-95">
+                        <label className={labelClasses}>Período de Apoyo Temporal</label>
+                        <RangeDatePicker
+                            startDate={formData?.date || ''}
+                            endDate={formData?.endDate || ''}
+                            onRangeChange={(start, end) => setFormData(prev => ({
+                                ...prev, date: start, endDate: end, manualEndDateOverride: true
+                            }))}
+                            holidays={holidays}
+                            defaultDays={7}
+                        />
+                    </div>
                 ) : /* SI ES PERMISO MÚLTIPLE (DÍAS SALTEADOS) */
                 isPermission ? (
                     <div className="space-y-4 animate-in fade-in zoom-in-95">
@@ -372,7 +387,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         const days = prev.disabilityDays || 0;
                                         const newEnd = (isDisability && val && days > 0)
                                             ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
-                                            : (isDisability ? null : prev.endDate);
+                                            : (isDisability ? null : (val && prev.endDate && val > prev.endDate ? null : prev.endDate));
                                         return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
                                     })}
                                     placeholder="DD/MM/AAAA"
@@ -390,7 +405,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="h-[40px]">
                                     <LiquidDatePicker
                                         value={formData?.endDate || ''}
-                                        onChange={(val) => setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }))}
+                                        onChange={(val) => {
+                                            if (val && formData?.date && val < formData.date) {
+                                                useToastStore.getState().showToast('Fecha inválida', 'La fecha de fin no puede ser anterior al inicio.', 'error');
+                                                return;
+                                            }
+                                            setFormData(prev => ({ ...prev, endDate: val || null, manualEndDateOverride: true }));
+                                        }}
                                         placeholder="DD/MM/AAAA"
                                         icon={CalendarClock}
                                         highlightRangeStart={formData?.date}
@@ -510,13 +531,22 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 onClick={() => {
                                     const win = window.open('', '_blank');
                                     win.document.write(`
-                                        <html><body style="font-family:sans-serif;text-align:center;padding:32px">
-                                        <h3 style="margin:0 0 4px">${activeEmployee?.name || ''}</h3>
-                                        <p style="margin:0 0 16px;color:#555;font-size:13px">Código: ${formData.newCode}</p>
-                                        <svg id="barcode"></svg>
-                                        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
-                                        <script>JsBarcode("#barcode","${formData.newKioskPin}",{format:"CODE128",width:2,height:80,displayValue:true,margin:10})</script>
-                                        </body></html>
+                                        <html>
+                                        <head>
+                                        <style>
+                                            @page { margin: 0; size: 85mm 30mm; }
+                                            body { margin: 0; padding: 8mm 4mm; font-family: Arial, sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                                            h3 { margin: 0 0 3mm; font-size: 11pt; font-weight: bold; }
+                                            svg { max-width: 75mm; }
+                                        </style>
+                                        </head>
+                                        <body>
+                                            <h3>${activeEmployee?.name || ''}</h3>
+                                            <svg id="barcode"></svg>
+                                            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
+                                            <script>JsBarcode("#barcode","${formData.newKioskPin}",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})</script>
+                                        </body>
+                                        </html>
                                     `);
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);

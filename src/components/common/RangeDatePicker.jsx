@@ -28,7 +28,7 @@ const getHolidayInfo = (day, month, year, holidays) => {
     return holidays.find(h => h.is_recurring ? h.holiday_date.endsWith(md) : h.holiday_date === ymd) || null;
 };
 
-const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, holidays, onPrev, onNext }) => {
+const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, holidays, onPrev, onNext, selectedRanges = [] }) => {
     const firstDay = new Date(year, month, 1).getDay();
     const offset = (firstDay + 6) % 7; // Monday-first
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -99,13 +99,30 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         }
                     }
 
+                    // Rangos confirmados (multiRange)
+                    const isInAnyRange = selectedRanges.some(r => dayStr > r.start && dayStr < r.end);
+                    const isAnyRangeStart = selectedRanges.some(r => r.start === dayStr);
+                    const isAnyRangeEnd = selectedRanges.some(r => r.end === dayStr);
+                    if (!wrapBg && selectedRanges.length > 0) {
+                        const isSingleSel = isAnyRangeStart && isAnyRangeEnd;
+                        if (!isSingleSel) {
+                            if (isAnyRangeStart) wrapBg = 'bg-gradient-to-r from-transparent to-emerald-100';
+                            else if (isAnyRangeEnd) wrapBg = 'bg-gradient-to-l from-transparent to-emerald-100';
+                            else if (isInAnyRange) wrapBg = 'bg-emerald-100';
+                        }
+                    }
+
                     let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 select-none ';
                     if (holiday) {
                         btnClass += 'text-red-400 bg-red-50 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
                         btnClass += 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110 cursor-pointer';
+                    } else if (isAnyRangeStart || isAnyRangeEnd) {
+                        btnClass += 'bg-emerald-500 text-white shadow-[0_4px_12px_rgba(16,185,129,0.4)] scale-105 cursor-pointer';
                     } else if (inRange) {
                         btnClass += 'text-[#007AFF] font-black cursor-pointer hover:bg-white hover:shadow-sm';
+                    } else if (isInAnyRange) {
+                        btnClass += 'text-emerald-700 font-black cursor-pointer hover:bg-white hover:shadow-sm';
                     } else if (isToday) {
                         btnClass += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 cursor-pointer hover:bg-slate-100';
                     } else {
@@ -149,6 +166,10 @@ const RangeDatePicker = ({
     holidays = [],
     defaultDays = 15,
     placeholder = 'Seleccionar período',
+    label = 'período',
+    multiRange = false,
+    onMultiChange,
+    initialRanges = [],
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selecting, setSelecting] = useState('start');
@@ -158,6 +179,7 @@ const RangeDatePicker = ({
     const [hoverDate, setHoverDate] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState(null);
+    const [selectedRanges, setSelectedRanges] = useState(initialRanges);
     const [viewYear, setViewYear] = useState(() => {
         const base = startDate ? new Date(startDate + 'T12:00:00') : new Date();
         return base.getFullYear();
@@ -175,13 +197,20 @@ const RangeDatePicker = ({
     const secondYear = viewMonth === 11 ? viewYear + 1 : viewYear;
 
     const handleOpen = () => {
-        setDraftStart(startDate || null);
-        setDraftEnd(endDate || null);
+        if (multiRange) {
+            setSelectedRanges(initialRanges || []);
+            setDraftStart(null);
+            setDraftEnd(null);
+        } else {
+            setDraftStart(startDate || null);
+            setDraftEnd(endDate || null);
+        }
         setSelecting('start');
         setRangeConfirmed(false);
         setHoverDate(null);
-        if (startDate) {
-            const d = new Date(startDate + 'T12:00:00');
+        const base = startDate || (initialRanges[0]?.start);
+        if (base) {
+            const d = new Date(base + 'T12:00:00');
             setViewYear(d.getFullYear());
             setViewMonth(d.getMonth());
         } else {
@@ -220,11 +249,30 @@ const RangeDatePicker = ({
         setIsDragging(false);
         const start = dragStart <= dayStr ? dragStart : dayStr;
         const end   = dragStart <= dayStr ? dayStr   : dragStart;
-        setDraftStart(start);
-        setDraftEnd(end);
-        setRangeConfirmed(true);
+        if (multiRange) {
+            // Click en día ya seleccionado → quitar ese rango
+            if (start === end) {
+                const existingIdx = selectedRanges.findIndex(r => dayStr >= r.start && dayStr <= r.end);
+                if (existingIdx >= 0) {
+                    const next = selectedRanges.filter((_, i) => i !== existingIdx);
+                    setSelectedRanges(next);
+                    onMultiChange && onMultiChange(next);
+                    setDraftStart(null); setDraftEnd(null); setDragStart(null);
+                    return;
+                }
+            }
+            const next = [...selectedRanges, { start, end }];
+            setSelectedRanges(next);
+            onMultiChange && onMultiChange(next);
+            setDraftStart(null);
+            setDraftEnd(null);
+        } else {
+            setDraftStart(start);
+            setDraftEnd(end);
+            setRangeConfirmed(true);
+        }
         setDragStart(null);
-    }, [isDragging, dragStart]);
+    }, [isDragging, dragStart, multiRange, selectedRanges, onMultiChange]);
 
     const handleDayHover = useCallback((dayStr) => {
         setHoverDate(dayStr);
@@ -237,7 +285,7 @@ const RangeDatePicker = ({
     }, [isDragging, dragStart]);
 
     const handleConfirm = () => {
-        if (draftStart && draftEnd) {
+        if (!multiRange && draftStart && draftEnd) {
             onRangeChange(draftStart, draftEnd);
         }
         setIsOpen(false);
@@ -295,12 +343,12 @@ const RangeDatePicker = ({
                         </div>
                         <div>
                             <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">
-                                {selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin'}
+                                {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin')}
                             </p>
                             <p className="text-[10px] text-slate-400 font-bold">
-                                {draftStart && draftEnd
-                                    ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)}`
-                                    : 'Haz click en el calendario'}
+                                {multiRange
+                                    ? (selectedRanges.length > 0 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}` : 'Arrastra para seleccionar períodos')
+                                    : (draftStart && draftEnd ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)}` : 'Haz click en el calendario')}
                             </p>
                         </div>
                     </div>
@@ -320,6 +368,7 @@ const RangeDatePicker = ({
                         onDayHover={handleDayHover}
                         holidays={holidays}
                         onPrev={handlePrev}
+                        selectedRanges={selectedRanges}
                     />
                     <div className="w-px bg-white/30 self-stretch shrink-0" />
                     <MonthGrid
@@ -330,6 +379,7 @@ const RangeDatePicker = ({
                         onDayHover={handleDayHover}
                         holidays={holidays}
                         onNext={handleNext}
+                        selectedRanges={selectedRanges}
                     />
                 </div>
 
@@ -337,28 +387,39 @@ const RangeDatePicker = ({
                 <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
                     {(() => {
                         let cls = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ';
-                        let label;
-                        if (daysCount === 0) {
+                        let badgeText;
+                        if (multiRange) {
+                            if (selectedRanges.length === 0) {
+                                cls += 'bg-slate-100/80 text-slate-400 border border-slate-200';
+                                badgeText = 'Sin períodos seleccionados';
+                            } else {
+                                const total = selectedRanges.reduce((sum, r) => {
+                                    return sum + Math.round((new Date(r.end + 'T12:00:00') - new Date(r.start + 'T12:00:00')) / 86400000) + 1;
+                                }, 0);
+                                cls += 'bg-emerald-100/80 text-emerald-700 border border-emerald-200';
+                                badgeText = `✓ ${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} · ${total} días`;
+                            }
+                        } else if (daysCount === 0) {
                             cls += 'bg-slate-100/80 text-slate-400 border border-slate-200';
-                            label = 'Sin período seleccionado';
-                        } else if (daysCount === 15) {
+                            badgeText = 'Sin período seleccionado';
+                        } else if (daysCount === defaultDays) {
                             cls += 'bg-emerald-100/80 text-emerald-700 border border-emerald-200';
-                            label = '✓ 15 días de vacaciones';
-                        } else if (daysCount < 15) {
+                            badgeText = `✓ ${daysCount} días de ${label}`;
+                        } else if (daysCount < defaultDays) {
                             cls += 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse';
-                            label = `⚠ Faltan ${15 - daysCount} días (mínimo 15)`;
+                            badgeText = `⚠ Faltan ${defaultDays - daysCount} días (mínimo ${defaultDays})`;
                         } else {
                             cls += 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse';
-                            label = `⚠ ${daysCount} días — máximo recomendado: 15`;
+                            badgeText = `⚠ ${daysCount} días — máximo recomendado: ${defaultDays}`;
                         }
-                        return <div className={cls}>{label}</div>;
+                        return <div className={cls}>{badgeText}</div>;
                     })()}
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        disabled={!draftStart || !draftEnd}
+                        disabled={!multiRange && (!draftStart || !draftEnd)}
                         className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
-                        <Check size={14} strokeWidth={3} /> Confirmar rango
+                        <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
                     </button>
                 </div>
             </div>
@@ -368,26 +429,57 @@ const RangeDatePicker = ({
 
     return (
         <>
-            <div ref={triggerRef} className="flex gap-2 cursor-pointer" onClick={handleOpen}>
-                <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
-                    <CalendarDays size={14} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Inicio</p>
-                        <p className={`text-[12px] font-bold truncate ${startDate ? 'text-slate-700' : 'text-slate-400'}`}>
-                            {startDate ? formatDisplay(startDate) : 'DD/MM/AAAA'}
+            <div ref={triggerRef} onClick={handleOpen} className="cursor-pointer">
+                {multiRange ? (
+                    <div className={`flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
+                        <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-emerald-500' : 'text-slate-400'} strokeWidth={2.5} />
+                        <p className={`text-[12px] font-bold ${selectedRanges.length > 0 ? 'text-slate-700' : 'text-slate-400'}`}>
+                            {selectedRanges.length > 0
+                                ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
+                                : placeholder}
                         </p>
                     </div>
-                </div>
-                <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
-                    <CalendarDays size={14} className={endDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Fin</p>
-                        <p className={`text-[12px] font-bold truncate ${endDate ? 'text-slate-700' : 'text-slate-400'}`}>
-                            {endDate ? formatDisplay(endDate) : 'DD/MM/AAAA'}
-                        </p>
+                ) : (
+                    <div className="flex gap-2">
+                        <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
+                            <CalendarDays size={14} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Inicio</p>
+                                <p className={`text-[12px] font-bold truncate ${startDate ? 'text-slate-700' : 'text-slate-400'}`}>
+                                    {startDate ? formatDisplay(startDate) : 'DD/MM/AAAA'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
+                            <CalendarDays size={14} className={endDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Fin</p>
+                                <p className={`text-[12px] font-bold truncate ${endDate ? 'text-slate-700' : 'text-slate-400'}`}>
+                                    {endDate ? formatDisplay(endDate) : 'DD/MM/AAAA'}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
+            {multiRange && selectedRanges.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selectedRanges.map((range, i) => (
+                        <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold">
+                            {range.start === range.end ? formatDisplay(range.start) : `${formatDisplay(range.start)} → ${formatDisplay(range.end)}`}
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const next = selectedRanges.filter((_, idx) => idx !== i);
+                                    setSelectedRanges(next);
+                                    onMultiChange && onMultiChange(next);
+                                }}
+                                className="ml-0.5 text-emerald-400 hover:text-red-500 transition-colors font-black leading-none">×</button>
+                        </span>
+                    ))}
+                </div>
+            )}
             {popup}
         </>
     );

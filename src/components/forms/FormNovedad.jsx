@@ -29,7 +29,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const isSupport = type === 'SUPPORT';
     const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion;
     const isTemporalRange = ['VACATION', 'DISABILITY', 'SUPPORT'].includes(type); // Rango continuo
-    const isSingleDate = ['TERMINATION', 'SALARY', 'PROMOTION', 'TRANSFER', 'CODE_CHANGE'].includes(type);
+    const isSingleDate = ['TERMINATION', 'SALARY', 'PROMOTION', 'TRANSFER'].includes(type);
 
     // ============================================================================
     // 🚧 AUDITORÍA DE ORGANIGRAMA (¿LA PLAZA ESTÁ OCUPADA?)
@@ -107,7 +107,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             );
             const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(hashBuffer)));
             const pin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
-            setFormData(prev => ({ ...prev, newKioskPin: pin }));
+            setFormData(prev => ({
+                ...prev,
+                newKioskPin: pin,
+                date: prev.date || new Date().toISOString().split('T')[0]
+            }));
         };
         generatePin();
     }, [formData?.newCode, setFormData]);
@@ -329,6 +333,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             }))}
                             holidays={holidays}
                             defaultDays={15}
+                            label="vacaciones"
                         />
                     </div>
                 ) : /* SI ES APOYO TEMPORAL — RangeDatePicker */
@@ -336,13 +341,17 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div className="animate-in fade-in zoom-in-95">
                         <label className={labelClasses}>Período de Apoyo Temporal</label>
                         <RangeDatePicker
-                            startDate={formData?.date || ''}
-                            endDate={formData?.endDate || ''}
-                            onRangeChange={(start, end) => setFormData(prev => ({
-                                ...prev, date: start, endDate: end, manualEndDateOverride: true
+                            multiRange={true}
+                            initialRanges={formData?.supportRanges || []}
+                            onMultiChange={(ranges) => setFormData(prev => ({
+                                ...prev,
+                                supportRanges: ranges,
+                                date: ranges[0]?.start || null,
+                                endDate: ranges[ranges.length - 1]?.end || null,
                             }))}
                             holidays={holidays}
                             defaultDays={7}
+                            label="apoyo temporal"
                         />
                     </div>
                 ) : /* SI ES PERMISO MÚLTIPLE (DÍAS SALTEADOS) */

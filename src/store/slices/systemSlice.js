@@ -226,20 +226,20 @@ export const createSystemSlice = (set, get) => ({
     registerEmployeeEvent: async (employeeId, eventData, file = null) => {
         try {
             // 1. Extraemos la fecha de los permisos si es múltiple
-            const isPermission = eventData.type === 'PERMISSION';
-            const primaryDate = isPermission && eventData.permissionDates?.length > 0 
-                ? eventData.permissionDates[0] // Tomamos el primer día como base del registro principal
+            const isPermission = eventData.type === 'PERMIT';
+            const primaryDate = isPermission && eventData.permissionDates?.length > 0
+                ? eventData.permissionDates[0] // Primer día como fecha principal del registro
                 : (eventData.date || new Date().toISOString().split('T')[0]);
 
             // 2. Armamos el payload seguro para Supabase
-            const dbPayload = { 
-                employee_id: employeeId, 
-                type: eventData.type, 
-                date: primaryDate, 
-                note: eventData.note || '', 
+            const dbPayload = {
+                employee_id: employeeId,
+                type: eventData.type,
+                date: primaryDate,
+                note: eventData.note || '',
                 metadata: {
-                    ...eventData, // Todo el formData viaja a la BD para tener contexto 
-                    permissionDates: isPermission ? eventData.permissionDates : null // Si son varios días, se guardan aquí
+                    ...eventData,
+                    permissionDates: isPermission ? (eventData.permissionDates || []) : null
                 }
             };
 

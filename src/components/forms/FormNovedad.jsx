@@ -324,6 +324,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         placeholder="Seleccione el día..."
                                         icon={CalendarDays}
                                         holidays={holidays}
+                                        selectedDates={formData?.permissionDates || []}
                                     />
                                 </div>
                             </div>
@@ -356,8 +357,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         const days = prev.disabilityDays || 0;
                                         const newEnd = val && days > 0
                                             ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
-                                            : prev.endDate;
-                                        return { ...prev, date: val || null, endDate: isDisability ? newEnd : prev.endDate, manualEndDateOverride: false };
+                                            : null;
+                                        return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
                                     })}
                                     placeholder="DD/MM/AAAA"
                                     icon={CalendarDays}

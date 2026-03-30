@@ -28,7 +28,7 @@ const getHolidayInfo = (day, month, year, holidays) => {
     return holidays.find(h => h.is_recurring ? h.holiday_date.endsWith(md) : h.holiday_date === ymd) || null;
 };
 
-const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover, holidays }) => {
+const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover, holidays, onPrev, onNext }) => {
     const firstDay = new Date(year, month, 1).getDay();
     const offset = (firstDay + 6) % 7; // Monday-first
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -46,12 +46,26 @@ const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onD
 
     return (
         <div className="flex-1 min-w-[240px]">
-            <p className="text-center text-[12px] font-black uppercase tracking-widest text-slate-700 mb-4">
-                {MONTHS[month]} {year}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+                {onPrev ? (
+                    <button type="button" onClick={onPrev}
+                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
+                        <ChevronLeft size={14} strokeWidth={3} />
+                    </button>
+                ) : <div className="w-7" />}
+                <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">
+                    {MONTHS[month]} {year}
+                </p>
+                {onNext ? (
+                    <button type="button" onClick={onNext}
+                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
+                        <ChevronRight size={14} strokeWidth={3} />
+                    </button>
+                ) : <div className="w-7" />}
+            </div>
             <div className="grid grid-cols-7 mb-2">
                 {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400 py-1">{d}</div>
+                    <div key={d} className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400/70 py-1">{d}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7">
@@ -254,7 +268,7 @@ const RangeDatePicker = ({
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
-                className="fixed z-[9999] bg-white/40 backdrop-blur-2xl border border-white/50 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.9)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
+                className="fixed z-[9999] bg-white/30 backdrop-blur-3xl border border-white/40 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
                 style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
@@ -282,48 +296,41 @@ const RangeDatePicker = ({
                 </div>
 
                 {/* Calendars */}
-                <div className="flex items-start gap-2">
-                    <button type="button" onClick={handlePrev}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 shrink-0 mt-6">
-                        <ChevronLeft size={16} strokeWidth={3} />
-                    </button>
-                    <div className="flex gap-4 flex-1">
-                        <MonthGrid
-                            year={viewYear} month={viewMonth}
-                            startDate={draftStart} endDate={draftEnd}
-                            hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
-                            onDayClick={handleDayClick}
-                            onDayHover={setHoverDate}
-                            holidays={holidays}
-                        />
-                        <div className="w-px bg-slate-100 self-stretch shrink-0" />
-                        <MonthGrid
-                            year={secondYear} month={secondMonth}
-                            startDate={draftStart} endDate={draftEnd}
-                            hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
-                            onDayClick={handleDayClick}
-                            onDayHover={setHoverDate}
-                            holidays={holidays}
-                        />
-                    </div>
-                    <button type="button" onClick={handleNext}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 shrink-0 mt-6">
-                        <ChevronRight size={16} strokeWidth={3} />
-                    </button>
+                <div className="flex gap-4">
+                    <MonthGrid
+                        year={viewYear} month={viewMonth}
+                        startDate={draftStart} endDate={draftEnd}
+                        hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
+                        onDayClick={handleDayClick}
+                        onDayHover={setHoverDate}
+                        holidays={holidays}
+                        onPrev={handlePrev}
+                    />
+                    <div className="w-px bg-white/30 self-stretch shrink-0" />
+                    <MonthGrid
+                        year={secondYear} month={secondMonth}
+                        startDate={draftStart} endDate={draftEnd}
+                        hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
+                        onDayClick={handleDayClick}
+                        onDayHover={setHoverDate}
+                        holidays={holidays}
+                        onNext={handleNext}
+                    />
                 </div>
 
                 {/* Footer */}
-                <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                    <p className={`text-[10px] font-bold ${
-                        daysCount === 15 ? 'text-emerald-600' :
-                        daysCount > 0 && daysCount < 15 ? 'text-orange-500' :
-                        daysCount > 15 ? 'text-[#007AFF]' : 'text-slate-400'
+                <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${
+                        daysCount === 15 ? 'bg-emerald-100/80 text-emerald-700 border border-emerald-200' :
+                        daysCount > 0 && daysCount < 15 ? 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse' :
+                        daysCount > 15 ? 'bg-blue-100/80 text-[#007AFF] border border-blue-200' :
+                        'bg-slate-100/80 text-slate-400 border border-slate-200'
                     }`}>
                         {daysCount === 15 ? '✓ 15 días de vacaciones' :
-                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días (mínimo 15)` :
+                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días` :
                          daysCount > 15 ? `${daysCount} días seleccionados` :
-                         'Sin período seleccionado'}
-                    </p>
+                         'Sin período'}
+                    </div>
                     <button
                         type="button"
                         onClick={handleConfirm}

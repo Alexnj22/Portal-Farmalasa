@@ -9,15 +9,16 @@ const DAYS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
 const POPOVER_WIDTH = 280;
 const POPOVER_HEIGHT = 350; 
 
-const LiquidDatePicker = ({ 
-    value, 
-    onChange, 
-    onOpenChange, 
+const LiquidDatePicker = ({
+    value,
+    onChange,
+    onOpenChange,
     mode = "full",
     icon: CustomIcon,
-    highlightRangeEnd = null, 
+    highlightRangeEnd = null,
     highlightRangeStart = null,
-    holidays = [] // 🚨 NUEVA PROP: Ingesta de Asuetos desde Supabase
+    holidays = [],
+    selectedDates = []
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMode, setCurrentMode] = useState(mode === 'full' ? 'days' : mode === 'month' ? 'months' : 'years');
@@ -330,6 +331,10 @@ const LiquidDatePicker = ({
                                         {/* Puntito azul para hoy */}
                                         {isToday && !isSolidDot && !holiday && (
                                             <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#007AFF]"></div>
+                                        )}
+                                        {/* Puntito verde para días ya seleccionados (PERMISO) */}
+                                        {selectedDates.includes(`${String(currentYear)}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`) && !isSolidDot && (
+                                            <div className="absolute bottom-0 w-1 h-1 rounded-full bg-emerald-500"></div>
                                         )}
                                     </div>
                                 );

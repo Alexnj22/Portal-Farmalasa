@@ -65,7 +65,7 @@ const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onD
             </div>
             <div className="grid grid-cols-7 mb-2">
                 {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[10px] font-black uppercase tracking-widest text-slate-400/70 py-1">{d}</div>
+                    <div key={d} className="text-center text-[10px] font-black uppercase tracking-widest text-slate-500 py-1">{d}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7">
@@ -268,7 +268,7 @@ const RangeDatePicker = ({
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
-                className="fixed z-[9999] bg-white/30 backdrop-blur-3xl border border-white/40 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
+                className="fixed z-[9999] bg-white/80 backdrop-blur-md border border-white/60 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
                 style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
@@ -322,14 +322,13 @@ const RangeDatePicker = ({
                 <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
                     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${
                         daysCount === 15 ? 'bg-emerald-100/80 text-emerald-700 border border-emerald-200' :
-                        daysCount > 0 && daysCount < 15 ? 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse' :
-                        daysCount > 15 ? 'bg-blue-100/80 text-[#007AFF] border border-blue-200' :
+                        daysCount > 0 ? 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse' :
                         'bg-slate-100/80 text-slate-400 border border-slate-200'
                     }`}>
                         {daysCount === 15 ? '✓ 15 días de vacaciones' :
-                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días` :
-                         daysCount > 15 ? `${daysCount} días seleccionados` :
-                         'Sin período'}
+                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días (mínimo 15)` :
+                         daysCount > 15 ? `⚠ ${daysCount} días — máximo recomendado: 15` :
+                         'Sin período seleccionado'}
                     </div>
                     <button
                         type="button"

@@ -129,6 +129,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         if (!currentDates.includes(dateStr)) {
             const newDates = [...currentDates, dateStr].sort();
             setFormData(prev => ({ ...prev, permissionDates: newDates, tempDate: '' }));
+        } else {
+            setFormData(prev => ({ ...prev, tempDate: '' }));
         }
     };
 
@@ -295,7 +297,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {/* 🚨 ISLA DE FECHAS (Liquid Glass) */}
-            <div className="bg-white/60 backdrop-blur-md p-5 rounded-[1.5rem] border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
+            {type && <div className="bg-white/60 backdrop-blur-md p-5 rounded-[1.5rem] border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]">
                 
                 {/* SI ES VACACIONES — RangeDatePicker estilo booking */}
                 {isVacation ? (
@@ -355,9 +357,9 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     value={formData?.date || ''}
                                     onChange={(val) => setFormData(prev => {
                                         const days = prev.disabilityDays || 0;
-                                        const newEnd = val && days > 0
+                                        const newEnd = (isDisability && val && days > 0)
                                             ? (() => { const d = new Date(val + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
-                                            : null;
+                                            : (isDisability ? null : prev.endDate);
                                         return { ...prev, date: val || null, endDate: newEnd, manualEndDateOverride: false };
                                     })}
                                     placeholder="DD/MM/AAAA"
@@ -415,7 +417,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         )}
                     </div>
                 )}
-            </div>
+            </div>}
 
             {isVacation && formData?.date && formData?.endDate && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-2xl animate-in fade-in zoom-in-95">

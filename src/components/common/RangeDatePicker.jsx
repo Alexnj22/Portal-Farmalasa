@@ -28,7 +28,7 @@ const getHolidayInfo = (day, month, year, holidays) => {
     return holidays.find(h => h.is_recurring ? h.holiday_date.endsWith(md) : h.holiday_date === ymd) || null;
 };
 
-const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover, holidays, onPrev, onNext }) => {
+const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, holidays, onPrev, onNext }) => {
     const firstDay = new Date(year, month, 1).getDay();
     const offset = (firstDay + 6) % 7; // Monday-first
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -42,7 +42,7 @@ const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onD
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const rangeEnd = hoverDate || endDate;
+    const rangeEnd = endDate;
 
     return (
         <div className="flex-1 min-w-[240px]">
@@ -121,7 +121,8 @@ const MonthGrid = ({ year, month, startDate, endDate, hoverDate, onDayClick, onD
                             <button
                                 type="button"
                                 disabled={!!holiday}
-                                onClick={() => !holiday && onDayClick(dayStr)}
+                                onMouseDown={(e) => { e.preventDefault(); !holiday && onDayMouseDown(dayStr); }}
+                                onMouseUp={() => !holiday && onDayMouseUp(dayStr)}
                                 className={btnClass}
                                 title={holiday ? holiday.name : undefined}
                             >
@@ -155,6 +156,8 @@ const RangeDatePicker = ({
     const [draftStart, setDraftStart] = useState(startDate || null);
     const [draftEnd, setDraftEnd] = useState(endDate || null);
     const [hoverDate, setHoverDate] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState(null);
     const [viewYear, setViewYear] = useState(() => {
         const base = startDate ? new Date(startDate + 'T12:00:00') : new Date();
         return base.getFullYear();
@@ -203,30 +206,35 @@ const RangeDatePicker = ({
         setIsOpen(true);
     };
 
-    const handleDayClick = useCallback((dayStr) => {
-        if (rangeConfirmed) {
-            setRangeConfirmed(false);
-            setSelecting('start');
-            setDraftStart(dayStr);
-            setDraftEnd(addDays(dayStr, defaultDays - 1));
-            setSelecting('end');
-            return;
+    const handleDayMouseDown = useCallback((dayStr) => {
+        setIsDragging(true);
+        setDragStart(dayStr);
+        setDraftStart(dayStr);
+        setDraftEnd(dayStr);
+        setRangeConfirmed(false);
+        setSelecting('end');
+    }, []);
+
+    const handleDayMouseUp = useCallback((dayStr) => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        const start = dragStart <= dayStr ? dragStart : dayStr;
+        const end   = dragStart <= dayStr ? dayStr   : dragStart;
+        setDraftStart(start);
+        setDraftEnd(end);
+        setRangeConfirmed(true);
+        setDragStart(null);
+    }, [isDragging, dragStart]);
+
+    const handleDayHover = useCallback((dayStr) => {
+        setHoverDate(dayStr);
+        if (isDragging && dragStart) {
+            const start = dragStart <= dayStr ? dragStart : dayStr;
+            const end   = dragStart <= dayStr ? dayStr   : dragStart;
+            setDraftStart(start);
+            setDraftEnd(end);
         }
-        if (selecting === 'start') {
-            setDraftStart(dayStr);
-            setDraftEnd(addDays(dayStr, defaultDays - 1));
-            setSelecting('end');
-            setRangeConfirmed(false);
-        } else {
-            if (dayStr > draftStart) {
-                setDraftEnd(dayStr);
-            } else {
-                setDraftStart(dayStr);
-                setDraftEnd(addDays(dayStr, defaultDays - 1));
-            }
-            setRangeConfirmed(true);
-        }
-    }, [selecting, draftStart, defaultDays, rangeConfirmed]);
+    }, [isDragging, dragStart]);
 
     const handleConfirm = () => {
         if (draftStart && draftEnd) {
@@ -258,6 +266,13 @@ const RangeDatePicker = ({
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!isDragging) return;
+        const cancel = () => { setIsDragging(false); setDragStart(null); };
+        document.addEventListener('mouseup', cancel);
+        return () => document.removeEventListener('mouseup', cancel);
+    }, [isDragging]);
 
     const daysCount = draftStart && draftEnd
         ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
@@ -300,9 +315,9 @@ const RangeDatePicker = ({
                     <MonthGrid
                         year={viewYear} month={viewMonth}
                         startDate={draftStart} endDate={draftEnd}
-                        hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
-                        onDayClick={handleDayClick}
-                        onDayHover={setHoverDate}
+                        onDayMouseDown={handleDayMouseDown}
+                        onDayMouseUp={handleDayMouseUp}
+                        onDayHover={handleDayHover}
                         holidays={holidays}
                         onPrev={handlePrev}
                     />
@@ -310,9 +325,9 @@ const RangeDatePicker = ({
                     <MonthGrid
                         year={secondYear} month={secondMonth}
                         startDate={draftStart} endDate={draftEnd}
-                        hoverDate={(!rangeConfirmed && selecting === 'end') ? hoverDate : null}
-                        onDayClick={handleDayClick}
-                        onDayHover={setHoverDate}
+                        onDayMouseDown={handleDayMouseDown}
+                        onDayMouseUp={handleDayMouseUp}
+                        onDayHover={handleDayHover}
                         holidays={holidays}
                         onNext={handleNext}
                     />

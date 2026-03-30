@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Paperclip, GitPullRequest, MapPin, Briefcase,
     CalendarClock, FileText, AlertTriangle, DollarSign,
-    CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer
+    CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer, AlertCircle
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -16,6 +16,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
     const { holidays = [], employees = [], roles = [] } = useStaffStore();
     const [permPickerKey, setPermPickerKey] = useState(0);
+    const [codeConflict, setCodeConflict] = useState(null);
 
     const type = formData?.type;
     const isPromotion = type === 'PROMOTION';
@@ -116,6 +117,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             setFormData(prev => ({ ...prev, disabilityType: 'Enfermedad Común' }));
         }
     }, [type, formData?.disabilityType, setFormData]);
+
+    useEffect(() => {
+        setFormData(prev => ({ ...prev, hasConflict: !!codeConflict }));
+    }, [codeConflict, setFormData]);
 
     const periodDaysCount = useMemo(() => {
         if (!formData?.date || !formData?.endDate) return 0;
@@ -521,13 +526,37 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
                                     <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#007AFF]/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#007AFF] uppercase text-center focus:!ring-[#007AFF]/20`} value={formData?.newCode || ''} onChange={(e) => setFormData(prev => ({ ...prev, newCode: e.target.value }))} />
+                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#007AFF] uppercase text-center focus:!ring-[#007AFF]/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                        const upperVal = e.target.value.toUpperCase().trim();
+                                        setFormData(prev => ({ ...prev, newCode: upperVal }));
+                                        if (upperVal.length > 0) {
+                                            const conflict = employees.find(emp =>
+                                                emp.id !== activeEmployee?.id &&
+                                                emp.status === 'ACTIVO' &&
+                                                (emp.code?.toUpperCase() === upperVal ||
+                                                 emp.kiosk_pin?.toUpperCase() === upperVal ||
+                                                 emp.username?.toLowerCase() === upperVal.toLowerCase())
+                                            );
+                                            setCodeConflict(conflict || null);
+                                        } else {
+                                            setCodeConflict(null);
+                                        }
+                                    }} />
                                 </div>
                             </div>
                         </div>
 
+                        {codeConflict && (
+                            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-red-50 border border-red-200 rounded-2xl">
+                                <AlertCircle size={14} className="text-red-500 shrink-0" />
+                                <p className="text-[11px] font-bold text-red-600">
+                                    El código ya está en uso por <b>{codeConflict.name}</b>. Elige otro código.
+                                </p>
+                            </div>
+                        )}
+
                         {formData?.newKioskPin && (
-                            <button type="button"
+                            <button type="button" disabled={!!codeConflict}
                                 onClick={() => {
                                     const win = window.open('', '_blank');
                                     win.document.write(`
@@ -551,7 +580,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
                                 <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
                             </button>
                         )}

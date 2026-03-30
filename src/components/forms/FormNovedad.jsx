@@ -505,39 +505,43 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
             </div>}
 
-            {type && <div>
-                <label className={labelClasses}>Observaciones o Justificación</label>
-                <div className="relative">
-                    <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
-                    <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
-                </div>
-            </div>
+            {type && (
+                <>
+                    <div>
+                        <label className={labelClasses}>Observaciones o Justificación</label>
+                        <div className="relative">
+                            <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
+                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                        </div>
+                    </div>
 
-            <div>
-                <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300/60 bg-white/40 hover:bg-white/70 hover:border-[#007AFF]/50'}`}>
-                    {formData?.file ? (
-                        <div className="flex flex-col items-center gap-1 text-emerald-600 animate-in zoom-in-95">
-                            <div className="p-2 bg-emerald-100 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
-                            <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-[#007AFF] transition-colors">
-                            <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
-                            <div className="text-center">
-                                <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
-                                <p className="text-[9px] font-black uppercase tracking-widest opacity-60">PDF, JPG o PNG</p>
-                            </div>
-                        </div>
-                    )}
-                    {formData?.file && (
-                        <div className="absolute top-2 right-2 p-1.5 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
-                            <XCircle size={14} strokeWidth={3}/>
-                        </div>
-                    )}
-                    <input type="file" className="hidden" accept=".pdf, image/*" onChange={(e) => setFormData(prev => ({ ...prev, file: e.target.files?.[0] }))} />
-                </label>
-            </div>}
+                    <div>
+                        <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
+                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300/60 bg-white/40 hover:bg-white/70 hover:border-[#007AFF]/50'}`}>
+                            {formData?.file ? (
+                                <div className="flex flex-col items-center gap-1 text-emerald-600 animate-in zoom-in-95">
+                                    <div className="p-2 bg-emerald-100 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
+                                    <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-[#007AFF] transition-colors">
+                                    <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
+                                    <div className="text-center">
+                                        <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest opacity-60">PDF, JPG o PNG</p>
+                                    </div>
+                                </div>
+                            )}
+                            {formData?.file && (
+                                <div className="absolute top-2 right-2 p-1.5 bg-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
+                                    <XCircle size={14} strokeWidth={3}/>
+                                </div>
+                            )}
+                            <input type="file" className="hidden" accept=".pdf, image/*" onChange={(e) => setFormData(prev => ({ ...prev, file: e.target.files?.[0] }))} />
+                        </label>
+                    </div>
+                </>
+            )}
 
         </div>
     );

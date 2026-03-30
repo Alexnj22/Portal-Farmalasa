@@ -1,6 +1,6 @@
 import {
   FileText, IdCard, User, HeartPulse, AlertCircle, Paperclip, Calendar,
-  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList
+  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign
 } from 'lucide-react';
 
 export const DOCUMENT_TYPES = {
@@ -17,6 +17,7 @@ export const EVENT_TYPES = {
   DISABILITY: { label: 'Incapacidad Médica', color: 'bg-red-100 text-red-800', icon: HeartPulse, requiresDuration: true, defaultDocType: 'MEDICAL' },
   PERMIT: { label: 'Permiso / Licencia', color: 'bg-yellow-100 text-yellow-800', icon: ClipboardList, requiresDuration: true, defaultDocType: 'MEMO' },
   PROMOTION: { label: 'Cambio de Cargo', color: 'bg-purple-100 text-purple-800', icon: TrendingUp, requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
+  SALARY: { label: 'Ajuste Salarial', color: 'bg-green-100 text-green-800', icon: DollarSign, requiresDuration: false, requiresNewCode: false, defaultDocType: 'OTHER' },
   TRANSFER: { label: 'Traslado de Sucursal', color: 'bg-blue-100 text-blue-800', icon: ArrowRightLeft, requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
   SUPPORT: { label: 'Apoyo Temporal', color: 'bg-orange-100 text-orange-800', icon: Building2, requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
   CODE_CHANGE: { label: 'Cambio de Código/ID', color: 'bg-indigo-100 text-indigo-800', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },

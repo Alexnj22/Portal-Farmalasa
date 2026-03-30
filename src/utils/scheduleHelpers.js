@@ -1,4 +1,4 @@
-import { Palmtree, HeartPulse, FileText, CalendarOff } from 'lucide-react';
+import { Palmtree, HeartPulse, FileText, CalendarOff, Building2 } from 'lucide-react';
 
 export const getLocalMonday = (dateStr) => {
     let y, m, day;
@@ -89,12 +89,24 @@ export const getTimeBlocks = (startStr, endStr, hasLunch, lunchStart, hasLactati
     return blocks;
 };
 
+const parseMeta = (ev) =>
+    typeof ev.metadata === 'string'
+        ? (() => { try { return JSON.parse(ev.metadata); } catch { return {}; } })()
+        : (ev.metadata || {});
+
 const isConflictOnDate = (ev, dateStr) => {
-    const meta = typeof ev.metadata === 'string' ? (() => { try { return JSON.parse(ev.metadata); } catch { return {}; } })() : (ev.metadata || {});
+    const meta = parseMeta(ev);
     if (ev.type === 'PERMIT') {
         const pDates = meta.permissionDates;
         if (Array.isArray(pDates) && pDates.length > 0) return pDates.includes(dateStr);
-        return ev.date === dateStr; // fallback si no hay permissionDates
+        return ev.date === dateStr;
+    }
+    if (ev.type === 'SUPPORT') {
+        const ranges = meta.supportRanges;
+        if (Array.isArray(ranges) && ranges.length > 0) {
+            return ranges.some(r => dateStr >= r.start && dateStr <= r.end);
+        }
+        return ev.date <= dateStr && (!meta.endDate || meta.endDate >= dateStr);
     }
     return ev.date <= dateStr && (!meta.endDate || meta.endDate >= dateStr);
 };
@@ -105,7 +117,7 @@ export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, cal
     [1, 2, 3, 4, 5, 6, 0].forEach((dayId, idx) => {
         const dateStr = calendarDates[idx];
         const hasConflict = (history || []).some(ev =>
-            ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY'].includes(ev.type) && isConflictOnDate(ev, dateStr)
+            ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY', 'SUPPORT'].includes(ev.type) && isConflictOnDate(ev, dateStr)
         );
         if (hasConflict) return;
 
@@ -137,15 +149,33 @@ export const getRoleTheme = (roleName) => {
 };
 
 export const getDayConflictLocal = (dateStr, history) => {
+    // Eventos principales (mayor prioridad)
     const event = (history || []).find(ev =>
         ['VACATION', 'DISABILITY', 'PERMIT', 'HOLIDAY'].includes(ev.type) && isConflictOnDate(ev, dateStr)
     );
-    if (!event) return null;
-    const config = {
-        VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-200' },
-        DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50',    text: 'text-red-600',    border: 'border-red-200' },
-        PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-        HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }
-    };
-    return config[event.type] || config.PERMIT;
+    if (event) {
+        const config = {
+            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-200' },
+            DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-red-50',    text: 'text-red-600',    border: 'border-red-200' },
+            PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+            HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' }
+        };
+        return config[event.type] || config.PERMIT;
+    }
+    // Apoyo Temporal (menor prioridad — informativo)
+    const supportEvent = (history || []).find(ev =>
+        ev.type === 'SUPPORT' && isConflictOnDate(ev, dateStr)
+    );
+    if (supportEvent) {
+        const meta = parseMeta(supportEvent);
+        const targetBranch = meta.targetBranchId || 'otra sucursal';
+        return {
+            label: `Apoyo en ${targetBranch}`,
+            icon: Building2,
+            bg: 'bg-orange-50',
+            text: 'text-orange-600',
+            border: 'border-orange-200'
+        };
+    }
+    return null;
 };

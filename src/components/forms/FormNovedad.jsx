@@ -182,15 +182,20 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         else if (isDisability && (!formData?.disabilityType || !formData?.certificateNumber)) isValid = false;
         else if (isTermination && !formData?.terminationReason) isValid = false;
         else if (isCodeChange && !formData?.newCode) isValid = false;
+        else if (isCodeChange && formData?.hasConflict) {
+            isValid = false;
+            errorMessage = 'El código ya está en uso por otro empleado.';
+        }
         else if (!formData?.note || formData.note.trim() === '') isValid = false;
 
         onValidationChange(isValid, errorMessage);
 
     }, [
-        type, formData?.date, formData?.endDate, formData?.targetBranchId, formData?.newRole, 
+        type, formData?.date, formData?.endDate, formData?.targetBranchId, formData?.newRole,
         formData?.newSalary, formData?.disabilityType, formData?.certificateNumber,
         formData?.terminationReason, formData?.newCode, formData?.note, formData?.permissionDates,
-        isVacation, getHolidayInfo, isTemporalRange, isTransfer, isPromotion, 
+        formData?.hasConflict,
+        isVacation, getHolidayInfo, isTemporalRange, isTransfer, isPromotion,
         isSalary, isDisability, isTermination, isCodeChange, isPermission, headcountWarning, onValidationChange
     ]);
 

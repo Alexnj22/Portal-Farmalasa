@@ -320,16 +320,24 @@ const RangeDatePicker = ({
 
                 {/* Footer */}
                 <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${
-                        daysCount === 15 ? 'bg-emerald-100/80 text-emerald-700 border border-emerald-200' :
-                        daysCount > 0 ? 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse' :
-                        'bg-slate-100/80 text-slate-400 border border-slate-200'
-                    }`}>
-                        {daysCount === 15 ? '✓ 15 días de vacaciones' :
-                         daysCount > 0 && daysCount < 15 ? `⚠ Faltan ${15 - daysCount} días (mínimo 15)` :
-                         daysCount > 15 ? `⚠ ${daysCount} días — máximo recomendado: 15` :
-                         'Sin período seleccionado'}
-                    </div>
+                    {(() => {
+                        let cls = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ';
+                        let label;
+                        if (daysCount === 0) {
+                            cls += 'bg-slate-100/80 text-slate-400 border border-slate-200';
+                            label = 'Sin período seleccionado';
+                        } else if (daysCount === 15) {
+                            cls += 'bg-emerald-100/80 text-emerald-700 border border-emerald-200';
+                            label = '✓ 15 días de vacaciones';
+                        } else if (daysCount < 15) {
+                            cls += 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse';
+                            label = `⚠ Faltan ${15 - daysCount} días (mínimo 15)`;
+                        } else {
+                            cls += 'bg-orange-100/80 text-orange-600 border border-orange-200 animate-pulse';
+                            label = `⚠ ${daysCount} días — máximo recomendado: 15`;
+                        }
+                        return <div className={cls}>{label}</div>;
+                    })()}
                     <button
                         type="button"
                         onClick={handleConfirm}

@@ -12,8 +12,9 @@ import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
-    
+
     const { holidays = [], employees = [], roles = [] } = useStaffStore();
+    const [permPickerKey, setPermPickerKey] = useState(0);
 
     const type = formData?.type;
     const isPromotion = type === 'PROMOTION';
@@ -88,7 +89,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             const endStr = end.toISOString().split('T')[0];
             if (formData.endDate !== endStr) setFormData(prev => ({ ...prev, endDate: endStr }));
         } else if (isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') {
-            if (formData.endDate) setFormData(prev => ({ ...prev, endDate: null }));
+            // Solo limpiar si no hay días de incapacidad definidos (si hay, onChange ya calculó endDate)
+            if (formData.endDate && !formData?.disabilityDays) setFormData(prev => ({ ...prev, endDate: null }));
         }
     }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, setFormData]);
 
@@ -125,12 +127,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     const handleAddPermissionDate = (dateStr) => {
         if (!dateStr) return;
+        setPermPickerKey(k => k + 1); // siempre resetea el picker (force remount)
         const currentDates = formData.permissionDates || [];
         if (!currentDates.includes(dateStr)) {
             const newDates = [...currentDates, dateStr].sort();
-            setFormData(prev => ({ ...prev, permissionDates: newDates, tempDate: '' }));
-        } else {
-            setFormData(prev => ({ ...prev, tempDate: '' }));
+            setFormData(prev => ({ ...prev, permissionDates: newDates }));
         }
     };
 
@@ -321,7 +322,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <label className={labelClasses}>Agregar Fecha de Ausencia</label>
                                 <div className="h-[40px]">
                                     <LiquidDatePicker
-                                        value={formData?.tempDate || ''}
+                                        key={permPickerKey}
+                                        value=""
                                         onChange={(val) => handleAddPermissionDate(val)}
                                         placeholder="Seleccione el día..."
                                         icon={CalendarDays}
@@ -419,16 +421,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
             </div>}
 
-            {isVacation && formData?.date && formData?.endDate && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-2xl animate-in fade-in zoom-in-95">
-                    <CheckCircle size={14} className="text-emerald-500 shrink-0" strokeWidth={2.5}/>
-                    <p className="text-[11px] font-bold text-emerald-700">
-                        Del {formatDate(formData.date)} al {formatDate(formData.endDate)} — 15 días de vacaciones
-                    </p>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {type && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isPromotion && (
                     <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-blue-50/50 p-4 border border-blue-100 rounded-[1.5rem]">
                         <div className="flex items-center justify-between mb-3">
@@ -510,9 +503,9 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
                     </div>
                 )}
-            </div>
+            </div>}
 
-            <div>
+            {type && <div>
                 <label className={labelClasses}>Observaciones o Justificación</label>
                 <div className="relative">
                     <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
@@ -544,7 +537,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     )}
                     <input type="file" className="hidden" accept=".pdf, image/*" onChange={(e) => setFormData(prev => ({ ...prev, file: e.target.files?.[0] }))} />
                 </label>
-            </div>
+            </div>}
 
         </div>
     );

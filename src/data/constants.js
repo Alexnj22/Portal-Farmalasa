@@ -19,7 +19,7 @@ export const EVENT_TYPES = {
   PROMOTION: { label: 'Cambio de Cargo', color: 'bg-purple-100 text-purple-800', icon: TrendingUp, requiresDuration: false, requiresNewRole: true, defaultDocType: 'CONTRACT' },
   TRANSFER: { label: 'Traslado de Sucursal', color: 'bg-blue-100 text-blue-800', icon: ArrowRightLeft, requiresDuration: false, requiresTargetBranch: true, defaultDocType: 'MEMO' },
   SUPPORT: { label: 'Apoyo Temporal', color: 'bg-orange-100 text-orange-800', icon: Building2, requiresDuration: true, requiresTargetBranch: true, defaultDocType: 'MEMO' },
-  ID_CHANGE: { label: 'Cambio de Código/ID', color: 'bg-indigo-100 text-indigo-800', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
+  CODE_CHANGE: { label: 'Cambio de Código/ID', color: 'bg-indigo-100 text-indigo-800', icon: IdCard, requiresDuration: false, requiresNewCode: true, defaultDocType: 'OTHER' },
   INDUCTION: { label: 'Inducción', color: 'bg-teal-100 text-teal-800', icon: GraduationCap, requiresDuration: true, defaultDocType: 'OTHER' },
   SHIFT_CHANGE: { label: 'Cambio de Turno', color: 'bg-cyan-100 text-cyan-800', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
   TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-gray-800 text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },

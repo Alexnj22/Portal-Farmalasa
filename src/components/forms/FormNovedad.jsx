@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    Paperclip, GitPullRequest, MapPin, Briefcase, 
-    CalendarClock, FileText, AlertTriangle, DollarSign, 
-    CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus
+import {
+    Paperclip, GitPullRequest, MapPin, Briefcase,
+    CalendarClock, FileText, AlertTriangle, DollarSign,
+    CalendarDays, XCircle, CheckCircle, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -24,7 +24,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const isDisability = type === 'DISABILITY'; 
     const isCodeChange = type === 'CODE_CHANGE'; 
     const isPermission = type === 'PERMIT';
-    const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion; 
+    const isSupport = type === 'SUPPORT';
+    const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion;
     const isTemporalRange = ['VACATION', 'DISABILITY', 'SUPPORT'].includes(type); // Rango continuo
     const isSingleDate = ['TERMINATION', 'SALARY', 'PROMOTION', 'TRANSFER', 'CODE_CHANGE'].includes(type);
 
@@ -246,12 +247,22 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </div>
             )}
             
-            {isTransfer && !isPromotion && (
+            {isTransfer && !isPromotion && !isSupport && (
                 <div className="bg-blue-50/80 border border-blue-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <MapPin className="text-[#007AFF] shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Cambio de Sucursal</p>
                         <p className="text-[12px] text-blue-800/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
+                    </div>
+                </div>
+            )}
+
+            {isSupport && (
+                <div className="bg-orange-50/80 border border-orange-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                    <Info className="text-orange-500 shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                    <div>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-orange-600">Apoyo Temporal</p>
+                        <p className="text-[12px] text-orange-800/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
                     </div>
                 </div>
             )}
@@ -470,27 +481,50 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isCodeChange && (
-                    <div className="col-span-1 md:col-span-2 flex items-center justify-between gap-3 animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
-                        <div className="flex-1">
-                            <label className={labelClasses}>Código Actual</label>
-                            <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-400 line-through decoration-slate-300 opacity-60">
-                                {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
+                    <div className="col-span-1 md:col-span-2 animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1">
+                                <label className={labelClasses}>Código Actual</label>
+                                <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-400 line-through decoration-slate-300 opacity-60">
+                                    {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-center pt-5 px-1">
-                            <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-full shadow-sm">
-                                <ArrowRight size={16} strokeWidth={3} />
+
+                            <div className="flex items-center justify-center pt-5 px-1">
+                                <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-full shadow-sm">
+                                    <ArrowRight size={16} strokeWidth={3} />
+                                </div>
+                            </div>
+
+                            <div className="flex-1">
+                                <label className={labelClasses}>Nuevo Código</label>
+                                <div className="relative">
+                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#007AFF]/50" size={14} strokeWidth={2.5}/>
+                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#007AFF] uppercase text-center focus:!ring-[#007AFF]/20`} value={formData?.newCode || ''} onChange={(e) => setFormData(prev => ({ ...prev, newCode: e.target.value }))} />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex-1">
-                            <label className={labelClasses}>Nuevo Código</label>
-                            <div className="relative">
-                                <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#007AFF]/50" size={14} strokeWidth={2.5}/>
-                                <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#007AFF] uppercase text-center focus:!ring-[#007AFF]/20`} value={formData?.newCode || ''} onChange={(e) => setFormData(prev => ({ ...prev, newCode: e.target.value }))} />
-                            </div>
-                        </div>
+                        {formData?.newKioskPin && (
+                            <button type="button"
+                                onClick={() => {
+                                    const win = window.open('', '_blank');
+                                    win.document.write(`
+                                        <html><body style="font-family:sans-serif;text-align:center;padding:32px">
+                                        <h3 style="margin:0 0 4px">${activeEmployee?.name || ''}</h3>
+                                        <p style="margin:0 0 16px;color:#555;font-size:13px">Código: ${formData.newCode}</p>
+                                        <svg id="barcode"></svg>
+                                        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
+                                        <script>JsBarcode("#barcode","${formData.newKioskPin}",{format:"CODE128",width:2,height:80,displayValue:true,margin:10})</script>
+                                        </body></html>
+                                    `);
+                                    win.document.close();
+                                    setTimeout(() => win.print(), 600);
+                                }}
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
+                            </button>
+                        )}
                     </div>
                 )}
 

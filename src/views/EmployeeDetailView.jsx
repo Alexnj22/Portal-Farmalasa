@@ -5,7 +5,7 @@ import {
     Clock, FileText, Paperclip,
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
-    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft,
+    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban,
     KeyRound, Camera
 } from 'lucide-react';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -31,6 +31,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [showExceptionModal, setShowExceptionModal] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [cancelingEventId, setCancelingEventId] = useState(null);
+    const [cancelReason, setCancelReason] = useState('');
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
@@ -452,7 +455,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
                                                         <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-emerald-500' : 'border-[#007AFF]'}`}></div>
                                                         
-                                                        <div className="bg-white/60 hover:bg-white/90 rounded-3xl p-5 border border-white/80 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)]">
+                                                        <div className={`bg-white/60 hover:bg-white/90 rounded-3xl p-5 border border-white/80 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
                                                                     {evTheme.label}
@@ -483,16 +486,27 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             
                                                             {!ev.isSystem && typeof openModal === 'function' && (
                                                                 <div className="pt-4 mt-3 border-t border-slate-200/60 flex justify-between items-center">
-                                                                    {ev.documentId ? (
+                                                                    {ev.metadata?.status === 'CANCELLED' ? (
+                                                                        <span className="px-2 py-1 bg-red-100 text-red-500 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                                                            CANCELADO
+                                                                        </span>
+                                                                    ) : ev.documentId ? (
                                                                         <button className="flex items-center gap-1.5 text-[#007AFF] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
                                                                         </button>
                                                                     ) : (
-                                                                        <button 
+                                                                        <button
                                                                             onClick={() => openModal('uploadDocument', {}, ev.id)}
                                                                             className="flex items-center gap-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors"
                                                                         >
                                                                             <Paperclip size={12} strokeWidth={2.5}/> Adjuntar Soporte
+                                                                        </button>
+                                                                    )}
+                                                                    {isAdmin && ev.metadata?.status !== 'CANCELLED' && (
+                                                                        <button
+                                                                            onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                                                            <Ban size={11} strokeWidth={2.5}/> Cancelar
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -705,6 +719,52 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 isDestructive={false}
                 isProcessing={isResetting}
             />
+        )}
+
+        {showCancelModal && (
+            <>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
+                    onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}/>
+                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] p-6 w-[400px] max-w-[calc(100vw-32px)]">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-red-100 rounded-2xl">
+                            <Ban size={20} className="text-red-500"/>
+                        </div>
+                        <div>
+                            <p className="font-black text-slate-800">Cancelar Acción de RRHH</p>
+                            <p className="text-[11px] text-slate-500 font-bold">Esta acción quedará registrada como cancelada</p>
+                        </div>
+                    </div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Motivo de cancelación *</label>
+                    <textarea
+                        value={cancelReason}
+                        onChange={e => setCancelReason(e.target.value)}
+                        placeholder="Explica el motivo de la cancelación..."
+                        rows={3}
+                        className="w-full bg-white/60 border border-white/80 rounded-2xl p-3 text-[13px] text-slate-700 outline-none focus:ring-2 focus:ring-red-200 resize-none mb-4"
+                    />
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
+                            className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            Cancelar
+                        </button>
+                        <button
+                            disabled={!cancelReason.trim()}
+                            onClick={async () => {
+                                const { cancelEmployeeEvent } = useStaffStore.getState();
+                                const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
+                                if (ok) useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                setShowCancelModal(false);
+                                setCancelReason('');
+                                setCancelingEventId(null);
+                            }}
+                            className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            Confirmar Cancelación
+                        </button>
+                    </div>
+                </div>
+            </>
         )}
         </>
     );

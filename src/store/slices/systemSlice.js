@@ -378,6 +378,59 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+    cancelEmployeeEvent: async (eventId, reason) => {
+        try {
+            const { data: existing, error: fetchErr } = await supabase
+                .from('employee_events')
+                .select('metadata, employee_id')
+                .eq('id', eventId)
+                .single();
+            if (fetchErr) throw fetchErr;
+
+            const currentMeta = typeof existing.metadata === 'string'
+                ? JSON.parse(existing.metadata)
+                : (existing.metadata || {});
+
+            const { error: updateErr } = await supabase
+                .from('employee_events')
+                .update({
+                    metadata: {
+                        ...currentMeta,
+                        status: 'CANCELLED',
+                        cancelledAt: new Date().toISOString(),
+                        cancelReason: reason
+                    }
+                })
+                .eq('id', eventId);
+            if (updateErr) throw updateErr;
+
+            // Actualizar estado local sin refetch completo
+            set((state) => ({
+                employees: state.employees.map(emp =>
+                    String(emp.id) !== String(existing.employee_id) ? emp : {
+                        ...emp,
+                        history: (emp.history || []).map(ev =>
+                            String(ev.id) !== String(eventId) ? ev : {
+                                ...ev,
+                                metadata: {
+                                    ...(typeof ev.metadata === 'object' ? ev.metadata : {}),
+                                    status: 'CANCELLED',
+                                    cancelledAt: new Date().toISOString(),
+                                    cancelReason: reason
+                                }
+                            }
+                        )
+                    }
+                )
+            }));
+
+            return true;
+        } catch (err) {
+            console.error('Error cancelando evento:', err);
+            return false;
+        }
+    },
+
     // ============================================================================
     // RESTO DE FUNCIONES DEL SLICE 
     // ============================================================================

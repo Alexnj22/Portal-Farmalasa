@@ -233,7 +233,11 @@ function MainApp() {
             setFormData({});
             setTargetEventId(null);
         } catch (error) {
-            throw error;
+            if (error?.message?.startsWith('OVERLAP_ERROR:')) {
+                showAlert('Conflicto de Fechas', error.message.replace('OVERLAP_ERROR: ', ''), 'error');
+            } else {
+                throw error;
+            }
         }
     };
 

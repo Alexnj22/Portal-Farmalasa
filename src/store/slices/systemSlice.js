@@ -242,6 +242,49 @@ export const createSystemSlice = (set, get) => ({
                 targetBranchName = targetBranch?.name || null;
             }
 
+            // 2.5 Validar solapamiento de eventos del mismo tipo (antes de insertar)
+            if (['VACATION', 'DISABILITY', 'SUPPORT'].includes(eventData.type)) {
+                const { data: existing } = await supabase
+                    .from('employee_events')
+                    .select('date, metadata')
+                    .eq('employee_id', employeeId)
+                    .eq('type', eventData.type);
+
+                if (existing && existing.length > 0) {
+                    const parseMeta = (ev) => {
+                        try { return typeof ev.metadata === 'string' ? JSON.parse(ev.metadata) : (ev.metadata || {}); }
+                        catch { return {}; }
+                    };
+
+                    if (eventData.type === 'SUPPORT') {
+                        const newRanges = eventData.supportRanges || [];
+                        for (const ev of existing) {
+                            const meta = parseMeta(ev);
+                            const existingRanges = meta.supportRanges || [];
+                            for (const nr of newRanges) {
+                                const conflict = existingRanges.some(
+                                    er => nr.start <= er.end && nr.end >= er.start
+                                );
+                                if (conflict) throw new Error('OVERLAP_ERROR: Ya existe un Apoyo Temporal en esas fechas.');
+                            }
+                        }
+                    } else {
+                        // VACATION / DISABILITY — fecha + endDate en metadata
+                        const newStart = eventData.date;
+                        const newEnd = eventData.endDate || eventData.date;
+                        for (const ev of existing) {
+                            const meta = parseMeta(ev);
+                            const exStart = ev.date;
+                            const exEnd = meta.endDate || ev.date;
+                            if (newStart <= exEnd && newEnd >= exStart) {
+                                const typeLabel = eventData.type === 'VACATION' ? 'Vacaciones' : 'Incapacidad';
+                                throw new Error(`OVERLAP_ERROR: Ya existe una ${typeLabel} activa en esas fechas.`);
+                            }
+                        }
+                    }
+                }
+            }
+
             // 3. Armamos el payload seguro para Supabase
             const dbPayload = {
                 employee_id: employeeId,

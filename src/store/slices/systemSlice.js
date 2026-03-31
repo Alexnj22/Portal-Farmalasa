@@ -262,10 +262,19 @@ export const createSystemSlice = (set, get) => ({
                             const meta = parseMeta(ev);
                             const existingRanges = meta.supportRanges || [];
                             for (const nr of newRanges) {
-                                const conflict = existingRanges.some(
+                                const conflictingRanges = existingRanges.filter(
                                     er => nr.start <= er.end && nr.end >= er.start
                                 );
-                                if (conflict) throw new Error('OVERLAP_ERROR: Ya existe un Apoyo Temporal en esas fechas.');
+                                if (conflictingRanges.length > 0) {
+                                    const branchName = meta.targetBranchName ||
+                                        (meta.targetBranchId ? `Sucursal ID ${meta.targetBranchId}` : 'otra sucursal');
+                                    const conflictDates = conflictingRanges
+                                        .map(r => `${r.start} al ${r.end}`)
+                                        .join(', ');
+                                    throw new Error(
+                                        `OVERLAP_ERROR: Ya existe un Apoyo Temporal en ${branchName} del ${conflictDates}. No se puede registrar un período solapado.`
+                                    );
+                                }
                             }
                         }
                     } else {
@@ -277,8 +286,15 @@ export const createSystemSlice = (set, get) => ({
                             const exStart = ev.date;
                             const exEnd = meta.endDate || ev.date;
                             if (newStart <= exEnd && newEnd >= exStart) {
-                                const typeLabel = eventData.type === 'VACATION' ? 'Vacaciones' : 'Incapacidad';
-                                throw new Error(`OVERLAP_ERROR: Ya existe una ${typeLabel} activa en esas fechas.`);
+                                if (eventData.type === 'VACATION') {
+                                    throw new Error(
+                                        `OVERLAP_ERROR: Ya existe un período de Vacaciones del ${exStart} al ${exEnd}. No se puede registrar un nuevo período solapado.`
+                                    );
+                                } else {
+                                    throw new Error(
+                                        `OVERLAP_ERROR: Ya existe una Incapacidad activa del ${exStart} al ${exEnd}. No se puede registrar otra incapacidad en esas fechas.`
+                                    );
+                                }
                             }
                         }
                     }

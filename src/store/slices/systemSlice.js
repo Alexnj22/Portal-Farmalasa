@@ -357,6 +357,7 @@ export const createSystemSlice = (set, get) => ({
             return newEvent.id;
         } catch (err) {
             console.error("Error registrando evento de empleado:", err);
+            if (err?.message?.startsWith('OVERLAP_ERROR:')) throw err;
             return null;
         }
     },

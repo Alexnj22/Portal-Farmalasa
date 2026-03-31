@@ -601,15 +601,54 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     </div>
                 )}
 
-                {isSalary && (
-                    <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
-                        <label className={labelClasses}>Nuevo Salario Base Mensual</label>
-                        <div className="relative max-w-xs">
-                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={16} strokeWidth={3}/>
-                            <input type="number" step="0.01" placeholder="0.00" className={`w-full bg-white border border-emerald-100 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-emerald-700 outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300`} value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                {isSalary && (() => {
+                    const currentSalary = activeEmployee?.base_salary || activeEmployee?.salary;
+                    const currentRole = activeEmployee?.role || activeEmployee?.main_role?.name || '—';
+                    const hireDate = activeEmployee?.hireDate || activeEmployee?.hire_date;
+                    let tenure = '—';
+                    if (hireDate) {
+                        const ms = Date.now() - new Date(hireDate).getTime();
+                        const years = Math.floor(ms / (1000 * 60 * 60 * 24 * 365.25));
+                        const months = Math.floor((ms % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
+                        tenure = years > 0 ? `${years} año${years !== 1 ? 's' : ''} ${months > 0 ? `${months} mes${months !== 1 ? 'es' : ''}` : ''}`.trim() : `${months} mes${months !== 1 ? 'es' : ''}`;
+                    }
+                    const newSalary = parseFloat(formData?.newSalary);
+                    const diff = currentSalary && newSalary ? newSalary - parseFloat(currentSalary) : null;
+                    return (
+                        <div className="col-span-1 md:col-span-2 relative animate-in fade-in bg-white/60 p-5 border border-white/90 rounded-[1.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] space-y-4">
+                            {/* Contexto actual */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Salario Actual</p>
+                                    <p className="text-[15px] font-black text-slate-700">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
+                                </div>
+                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Cargo</p>
+                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{currentRole}</p>
+                                </div>
+                                <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Antigüedad</p>
+                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{tenure}</p>
+                                </div>
+                            </div>
+                            {/* Nuevo salario */}
+                            <div>
+                                <label className={labelClasses}>Nuevo Salario Base Mensual</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative flex-1 max-w-xs">
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={16} strokeWidth={3}/>
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-white border border-emerald-100 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-emerald-700 outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-300" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                    </div>
+                                    {diff !== null && !isNaN(diff) && (
+                                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-emerald-100 text-emerald-700' : diff < 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                                            {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}${diff.toFixed(2)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>}
 
             {type && (

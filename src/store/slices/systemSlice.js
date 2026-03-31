@@ -223,7 +223,7 @@ export const createSystemSlice = (set, get) => ({
     // ============================================================================
     // 🚨 CREAR NOVEDAD / EVENTO RRHH (El motor detrás del FormNovedad)
     // ============================================================================
-    registerEmployeeEvent: async (employeeId, eventData, file = null) => {
+    registerEmployeeEvent: async (employeeId, eventData, file = null, options = {}) => {
         try {
             // 1. Extraemos la fecha de los permisos si es múltiple
             const isPermission = eventData.type === 'PERMIT';
@@ -244,11 +244,13 @@ export const createSystemSlice = (set, get) => ({
 
             // 2.5 Validar solapamiento de eventos del mismo tipo (antes de insertar)
             if (['VACATION', 'DISABILITY', 'SUPPORT'].includes(eventData.type)) {
-                const { data: existing } = await supabase
+                let query = supabase
                     .from('employee_events')
                     .select('date, metadata')
                     .eq('employee_id', employeeId)
                     .eq('type', eventData.type);
+                if (options.excludeEventId) query = query.neq('id', options.excludeEventId);
+                const { data: existing } = await query;
 
                 if (existing && existing.length > 0) {
                     const parseMeta = (ev) => {
@@ -424,6 +426,7 @@ export const createSystemSlice = (set, get) => ({
                 )
             }));
 
+            window.dispatchEvent(new CustomEvent('employee-event-updated', { detail: { employeeId: existing.employee_id } }));
             return true;
         } catch (err) {
             console.error('Error cancelando evento:', err);
@@ -457,11 +460,12 @@ export const createSystemSlice = (set, get) => ({
             const cleanData = { ...newEventData };
             delete cleanData._editingEventId;
 
-            const newId = await get().registerEmployeeEvent(employeeId, {
-                ...cleanData,
-                originalEventId: eventId,
-                isEdit: true
-            });
+            const newId = await get().registerEmployeeEvent(
+                employeeId,
+                { ...cleanData, originalEventId: eventId, isEdit: true },
+                null,
+                { excludeEventId: eventId }
+            );
 
             set((state) => ({
                 employees: state.employees.map(emp =>
@@ -481,6 +485,7 @@ export const createSystemSlice = (set, get) => ({
                 )
             }));
 
+            window.dispatchEvent(new CustomEvent('employee-event-updated', { detail: { employeeId } }));
             return newId;
         } catch (err) {
             console.error('Error editando evento:', err);

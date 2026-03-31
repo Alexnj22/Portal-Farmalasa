@@ -138,7 +138,12 @@ const SchedulesView = ({ openModal, setView }) => {
         loadRosters(false);
         const handleRefresh = () => loadRosters(true);
         window.addEventListener('force-history-refresh', handleRefresh);
-        return () => { isMounted = false; window.removeEventListener('force-history-refresh', handleRefresh); };
+        window.addEventListener('employee-event-updated', handleRefresh);
+        return () => {
+            isMounted = false;
+            window.removeEventListener('force-history-refresh', handleRefresh);
+            window.removeEventListener('employee-event-updated', handleRefresh);
+        };
     }, [startDate, fetchWeekRosters, viewMode, filterBranch]);
 
     const calendarDates = useMemo(() => Array.from({ length: 7 }).map((_, i) => {

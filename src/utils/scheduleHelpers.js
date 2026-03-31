@@ -170,11 +170,13 @@ export const getDayConflictLocal = (dateStr, history) => {
         const meta = parseMeta(supportEvent);
         const targetBranch = meta.targetBranchName || meta.targetBranchId || 'otra sucursal';
         return {
+            type: 'SUPPORT',
             label: `Apoyo en ${targetBranch}`,
             icon: Building2,
             bg: 'bg-orange-50',
             text: 'text-orange-600',
-            border: 'border-orange-200'
+            border: 'border-orange-200',
+            targetBranchId: meta.targetBranchId || null
         };
     }
     return null;

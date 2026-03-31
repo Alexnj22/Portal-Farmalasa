@@ -116,6 +116,7 @@ function MainApp() {
     const addEmployee = useStaff((state) => state.addEmployee);
     const updateEmployee = useStaff((state) => state.updateEmployee);
     const registerEmployeeEvent = useStaff((state) => state.registerEmployeeEvent);
+    const editEmployeeEvent = useStaff((state) => state.editEmployeeEvent);
     const addDocumentToEvent = useStaff((state) => state.addDocumentToEvent);
     const addBranch = useStaff((state) => state.addBranch);
     const updateBranch = useStaff((state) => state.updateBranch);
@@ -219,7 +220,19 @@ function MainApp() {
             switch (modalType) {
                 case "newEmployee": await addEmployee(dataToSave); break;
                 case "editEmployee": if (targetId) await updateEmployee(targetId, dataToSave); break;
-                case "newEvent": if (targetId) await registerEmployeeEvent(targetId, dataToSave, dataToSave.file); break;
+                case "newEvent": {
+                    if (targetId) {
+                        const editingId = dataToSave._editingEventId;
+                        if (editingId) {
+                            const cleanData = { ...dataToSave };
+                            delete cleanData._editingEventId;
+                            await editEmployeeEvent(editingId, cleanData, cleanData.employeeId || targetId);
+                        } else {
+                            await registerEmployeeEvent(targetId, dataToSave, dataToSave.file);
+                        }
+                    }
+                    break;
+                }
                 case "uploadDocument": if (targetId && targetEventId && dataToSave.file) await addDocumentToEvent(targetId, targetEventId, dataToSave.file); break;
                 case "newBranch": await addBranch(dataToSave); break;
                 case "editBranch": const bId = dataToSave.branchId || dataToSave.id; if (bId) await updateBranch(bId, dataToSave); break;

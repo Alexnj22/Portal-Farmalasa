@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
     Edit, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
-    Cake, AlertCircle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban,
+    Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
     KeyRound, Camera
 } from 'lucide-react';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -34,6 +35,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [cancelingEventId, setCancelingEventId] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelModalRender, setCancelModalRender] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+
+    useEffect(() => {
+        if (showCancelModal) setCancelModalRender(true);
+        else { const t = setTimeout(() => setCancelModalRender(false), 300); return () => clearTimeout(t); }
+    }, [showCancelModal]);
 
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
@@ -455,7 +463,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
                                                         <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-emerald-500' : 'border-[#007AFF]'}`}></div>
                                                         
-                                                        <div className={`bg-white/60 hover:bg-white/90 rounded-3xl p-5 border border-white/80 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
+                                                        <div className={`bg-white/60 hover:bg-white/90 rounded-3xl p-5 border border-white/80 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
                                                                     {evTheme.label}
@@ -490,6 +498,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <span className="px-2 py-1 bg-red-100 text-red-500 rounded-full text-[9px] font-black uppercase tracking-widest">
                                                                             CANCELADO
                                                                         </span>
+                                                                    ) : ev.metadata?.status === 'SUPERSEDED' ? (
+                                                                        <span className="px-2 py-1 bg-slate-200 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                                                            EDITADO
+                                                                        </span>
                                                                     ) : ev.documentId ? (
                                                                         <button className="flex items-center gap-1.5 text-[#007AFF] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
@@ -502,7 +514,22 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                             <Paperclip size={12} strokeWidth={2.5}/> Adjuntar Soporte
                                                                         </button>
                                                                     )}
-                                                                    {isAdmin && ev.metadata?.status !== 'CANCELLED' && (
+                                                                    {isAdmin && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
+                                                                        <button
+                                                                            onClick={() => openModal('newEvent', {
+                                                                                type: ev.type,
+                                                                                date: ev.date,
+                                                                                endDate: ev.metadata?.endDate,
+                                                                                note: ev.note,
+                                                                                ...ev.metadata,
+                                                                                employeeId: emp.id,
+                                                                                _editingEventId: ev.id
+                                                                            })}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                                                            <Edit size={11} strokeWidth={2.5}/> Editar
+                                                                        </button>
+                                                                    )}
+                                                                    {isAdmin && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
                                                                         <button
                                                                             onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}
                                                                             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
@@ -721,50 +748,63 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             />
         )}
 
-        {showCancelModal && (
-            <>
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
-                    onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}/>
-                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[2rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] p-6 w-[400px] max-w-[calc(100vw-32px)]">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 bg-red-100 rounded-2xl">
-                            <Ban size={20} className="text-red-500"/>
+        {cancelModalRender && createPortal(
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                <div
+                    className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : undefined}
+                />
+                <div className={`relative w-full max-w-sm bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[2rem] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.2)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-red-500"></div>
+                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-10">
+                        <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-5 border bg-white/60 border-white/80 shadow-sm text-red-500">
+                            {isCancelling ? <Loader2 size={28} strokeWidth={2.5} className="animate-spin"/> : <AlertTriangle size={28} strokeWidth={2.5}/>}
                         </div>
-                        <div>
-                            <p className="font-black text-slate-800">Cancelar Acción de RRHH</p>
-                            <p className="text-[11px] text-slate-500 font-bold">Esta acción quedará registrada como cancelada</p>
-                        </div>
+                        <h3 className="text-[18px] font-black uppercase tracking-tight mb-2 text-slate-800 text-center">
+                            {isCancelling ? 'Procesando...' : 'Cancelar Acción de RRHH'}
+                        </h3>
+                        <p className={`text-[13px] font-medium text-slate-500 text-center mb-5 transition-opacity duration-300 ${isCancelling ? 'opacity-60' : 'opacity-100'}`}>
+                            {isCancelling ? 'Por favor, no cierres esta ventana.' : 'Esta acción quedará registrada como cancelada. No se puede deshacer.'}
+                        </p>
+                        {!isCancelling && (
+                            <>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 self-start">Motivo de cancelación *</label>
+                                <textarea
+                                    value={cancelReason}
+                                    onChange={e => setCancelReason(e.target.value)}
+                                    placeholder="Explica el motivo de la cancelación..."
+                                    rows={3}
+                                    className="w-full bg-white/60 border border-white/80 rounded-2xl p-3 text-[13px] text-slate-700 outline-none focus:ring-2 focus:ring-red-200 resize-none"
+                                />
+                            </>
+                        )}
                     </div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Motivo de cancelación *</label>
-                    <textarea
-                        value={cancelReason}
-                        onChange={e => setCancelReason(e.target.value)}
-                        placeholder="Explica el motivo de la cancelación..."
-                        rows={3}
-                        className="w-full bg-white/60 border border-white/80 rounded-2xl p-3 text-[13px] text-slate-700 outline-none focus:ring-2 focus:ring-red-200 resize-none mb-4"
-                    />
-                    <div className="flex gap-3">
+                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-slate-50/50 border-slate-100 flex gap-3 relative z-10">
                         <button
                             onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
-                            className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                            Cancelar
+                            disabled={isCancelling}
+                            className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm'}`}>
+                            Volver
                         </button>
                         <button
-                            disabled={!cancelReason.trim()}
+                            disabled={!cancelReason.trim() || isCancelling}
                             onClick={async () => {
+                                setIsCancelling(true);
                                 const { cancelEmployeeEvent } = useStaffStore.getState();
                                 const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
                                 if (ok) useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                setIsCancelling(false);
                                 setShowCancelModal(false);
                                 setCancelReason('');
                                 setCancelingEventId(null);
                             }}
-                            className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-red-500 hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
                             Confirmar Cancelación
                         </button>
                     </div>
                 </div>
-            </>
+            </div>,
+            document.body
         )}
         </>
     );

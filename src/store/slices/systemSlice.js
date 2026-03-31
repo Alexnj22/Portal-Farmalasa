@@ -431,6 +431,63 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+    editEmployeeEvent: async (eventId, newEventData, employeeId) => {
+        try {
+            const { data: existing } = await supabase
+                .from('employee_events')
+                .select('metadata')
+                .eq('id', eventId)
+                .single();
+
+            const currentMeta = typeof existing.metadata === 'string'
+                ? JSON.parse(existing.metadata)
+                : (existing.metadata || {});
+
+            await supabase
+                .from('employee_events')
+                .update({
+                    metadata: {
+                        ...currentMeta,
+                        status: 'SUPERSEDED',
+                        editedAt: new Date().toISOString()
+                    }
+                })
+                .eq('id', eventId);
+
+            const cleanData = { ...newEventData };
+            delete cleanData._editingEventId;
+
+            const newId = await get().registerEmployeeEvent(employeeId, {
+                ...cleanData,
+                originalEventId: eventId,
+                isEdit: true
+            });
+
+            set((state) => ({
+                employees: state.employees.map(emp =>
+                    String(emp.id) !== String(employeeId) ? emp : {
+                        ...emp,
+                        history: (emp.history || []).map(ev =>
+                            String(ev.id) !== String(eventId) ? ev : {
+                                ...ev,
+                                metadata: {
+                                    ...(typeof ev.metadata === 'object' ? ev.metadata : {}),
+                                    status: 'SUPERSEDED',
+                                    editedAt: new Date().toISOString()
+                                }
+                            }
+                        )
+                    }
+                )
+            }));
+
+            return newId;
+        } catch (err) {
+            console.error('Error editando evento:', err);
+            return null;
+        }
+    },
+
     // ============================================================================
     // RESTO DE FUNCIONES DEL SLICE 
     // ============================================================================

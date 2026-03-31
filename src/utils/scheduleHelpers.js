@@ -168,7 +168,7 @@ export const getDayConflictLocal = (dateStr, history) => {
     );
     if (supportEvent) {
         const meta = parseMeta(supportEvent);
-        const targetBranch = meta.targetBranchId || 'otra sucursal';
+        const targetBranch = meta.targetBranchName || meta.targetBranchId || 'otra sucursal';
         return {
             label: `Apoyo en ${targetBranch}`,
             icon: Building2,

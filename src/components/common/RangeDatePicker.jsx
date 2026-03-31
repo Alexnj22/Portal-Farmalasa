@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
+import { useToastStore } from '../../store/toastStore';
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
@@ -260,6 +261,12 @@ const RangeDatePicker = ({
                     setDraftStart(null); setDraftEnd(null); setDragStart(null);
                     return;
                 }
+            }
+            const hasOverlap = selectedRanges.some(r => start <= r.end && end >= r.start);
+            if (hasOverlap) {
+                useToastStore.getState().showToast('Fechas duplicadas', 'El período seleccionado se solapa con uno ya registrado.', 'error');
+                setDraftStart(null); setDraftEnd(null); setDragStart(null); setIsDragging(false);
+                return;
             }
             const next = [...selectedRanges, { start, end }];
             setSelectedRanges(next);

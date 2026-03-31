@@ -231,7 +231,18 @@ export const createSystemSlice = (set, get) => ({
                 ? eventData.permissionDates[0] // Primer día como fecha principal del registro
                 : (eventData.date || new Date().toISOString().split('T')[0]);
 
-            // 2. Armamos el payload seguro para Supabase
+            // 2. Resolver nombre de sucursal destino (SUPPORT / TRANSFER)
+            const needsBranchName = eventData.type === 'SUPPORT' || eventData.type === 'TRANSFER';
+            let targetBranchName = null;
+            if (needsBranchName && eventData.targetBranchId) {
+                const state = get();
+                const targetBranch = (state.branches || []).find(
+                    b => String(b.id) === String(eventData.targetBranchId)
+                );
+                targetBranchName = targetBranch?.name || null;
+            }
+
+            // 3. Armamos el payload seguro para Supabase
             const dbPayload = {
                 employee_id: employeeId,
                 type: eventData.type,
@@ -239,7 +250,8 @@ export const createSystemSlice = (set, get) => ({
                 note: eventData.note || '',
                 metadata: {
                     ...eventData,
-                    permissionDates: isPermission ? (eventData.permissionDates || []) : null
+                    permissionDates: isPermission ? (eventData.permissionDates || []) : null,
+                    ...(needsBranchName && { targetBranchName })
                 }
             };
 

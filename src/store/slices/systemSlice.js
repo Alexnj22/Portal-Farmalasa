@@ -345,8 +345,10 @@ export const createSystemSlice = (set, get) => ({
                 }
             }
 
-            // Refrescamos vistas globalmente
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            // Refrescamos vistas globalmente (skip si se llama desde editEmployeeEvent)
+            if (!options.skipRefresh) {
+                window.dispatchEvent(new CustomEvent('force-history-refresh'));
+            }
 
             // 5. Actualizamos el estado en Zustand (Memoria RAM)
             set((state) => {
@@ -464,7 +466,7 @@ export const createSystemSlice = (set, get) => ({
                 employeeId,
                 { ...cleanData, originalEventId: eventId, isEdit: true },
                 null,
-                { excludeEventId: eventId }
+                { excludeEventId: eventId, skipRefresh: true }
             );
 
             set((state) => ({

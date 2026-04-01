@@ -81,20 +81,35 @@ Deno.serve(async (req: Request) => {
     } else {
       // Usuario portal: email username@farmalasa.app
       // Usamos id: employee.id para mantener la FK con la tabla employees
-      // La password la maneja set-employee-password — aquí solo creamos si no existe
       const baseEmail = employee.username || employee.code.toLowerCase();
       email = `${baseEmail}@farmalasa.app`;
+
+      // Generar contraseña inicial aleatoria segura (sin caracteres ambiguos O/0/l/1/I)
+      const randomPassword = (): string => {
+        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let result = '';
+        const array = new Uint8Array(12);
+        crypto.getRandomValues(array);
+        array.forEach(b => result += chars[b % chars.length]);
+        return result;
+      };
+      const initialPassword = randomPassword();
+
       createPayload = {
         id: employee.id,
         email,
-        password: `init_${employee.code}`, // placeholder solo para creación inicial
+        password: initialPassword,
         email_confirm: true,
-        user_metadata: { code: employee.code },
+        user_metadata: {
+          code: employee.code,
+          must_change_password: true,
+        },
       };
     }
 
     // Crear usuario Auth si no existe (si ya existe, el error se ignora silenciosamente)
     const createRes = await admin.auth.admin.createUser(createPayload);
+    const isNewUser = !createRes.error;
 
     if (createRes.error) {
       const msg = (createRes.error.message || "").toLowerCase();
@@ -107,6 +122,7 @@ Deno.serve(async (req: Request) => {
     // Respuesta limpia — igual en ambos flujos
     return json({
       ok: true,
+      isNewUser,
       user: {
         id: employee.id,
         name: employee.name,

@@ -55,25 +55,20 @@ const isUnavailable = async (employeeId) => {
 };
 
 /**
- * Resuelve el aprobador designado para una solicitud siguiendo la jerarquía:
- * 1. Empleados con el rol padre (parent_role_id) en la misma sucursal, activos y disponibles
- * 2. Empleados con el rol padre secundario (secondary_parent_role_id)
- * 3. Cualquier admin activo en la misma sucursal
- * Retorna el UUID del aprobador o null si no se encuentra ninguno.
+ * Resuelve el aprobador designado subiendo recursivamente por la jerarquía de roles
+ * hasta encontrar un empleado disponible, con fallback a admin de sucursal y global.
  */
 const resolveApprover = async (employeeId, branchId, roleId) => {
     try {
-        // Obtener roles padre del cargo del empleado
-        const { data: role } = await supabase
+        // Cargar todos los roles de una vez para recorrer el árbol sin N queries
+        const { data: allRoles } = await supabase
             .from('roles')
-            .select('parent_role_id, secondary_parent_role_id')
-            .eq('id', roleId)
-            .single();
+            .select('id, name, parent_role_id, secondary_parent_role_id');
 
-        if (!role) return null;
+        if (!allRoles) return null;
+        const roleMap = Object.fromEntries(allRoles.map(r => [r.id, r]));
 
-        // Buscar empleados activos con un rol dado en la misma sucursal
-        const findCandidates = async (targetRoleId) => {
+        const findAvailableInRole = async (targetRoleId) => {
             const { data } = await supabase
                 .from('employees')
                 .select('id')
@@ -81,26 +76,38 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
                 .eq('branch_id', branchId)
                 .eq('status', 'ACTIVO')
                 .neq('id', employeeId);
-            return data || [];
+
+            for (const c of (data || [])) {
+                if (!(await isUnavailable(c.id))) return c.id;
+            }
+            return null;
         };
 
-        // Nivel 1: parent_role_id
-        if (role.parent_role_id) {
-            const candidates = await findCandidates(role.parent_role_id);
-            for (const c of candidates) {
-                if (!(await isUnavailable(c.id))) return c.id;
+        // Subir por la jerarquía hasta encontrar aprobador
+        let currentRoleId = roleId;
+        const visited = new Set();
+
+        while (currentRoleId && !visited.has(currentRoleId)) {
+            visited.add(currentRoleId);
+            const role = roleMap[currentRoleId];
+            if (!role) break;
+
+            if (role.parent_role_id) {
+                const found = await findAvailableInRole(role.parent_role_id);
+                if (found) return found;
+
+                if (role.secondary_parent_role_id) {
+                    const found2 = await findAvailableInRole(role.secondary_parent_role_id);
+                    if (found2) return found2;
+                }
+
+                currentRoleId = role.parent_role_id;
+            } else {
+                break; // Llegamos a la raíz
             }
         }
 
-        // Nivel 2: secondary_parent_role_id
-        if (role.secondary_parent_role_id) {
-            const candidates = await findCandidates(role.secondary_parent_role_id);
-            for (const c of candidates) {
-                if (!(await isUnavailable(c.id))) return c.id;
-            }
-        }
-
-        // Nivel 3: cualquier admin activo en la sucursal
+        // Fallback: cualquier admin activo en la sucursal
         const { data: admins } = await supabase
             .from('employees')
             .select('id')
@@ -109,7 +116,18 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
             .eq('status', 'ACTIVO')
             .neq('id', employeeId);
 
-        return admins?.[0]?.id || null;
+        if (admins?.[0]?.id) return admins[0].id;
+
+        // Último fallback: cualquier admin global
+        const { data: globalAdmins } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('is_admin', true)
+            .eq('status', 'ACTIVO')
+            .neq('id', employeeId)
+            .limit(1);
+
+        return globalAdmins?.[0]?.id || null;
     } catch (err) {
         console.error('Error resolviendo aprobador:', err);
         return null;

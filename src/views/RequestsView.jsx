@@ -206,7 +206,7 @@ const RequestsView = () => {
         e.preventDefault();
         if (!formNote.trim()) return;
         setIsSubmitting(true);
-        const result = await createRequest(user.id, formType, formNote.trim());
+        const result = await createRequest(user.id, formType, {}, formNote.trim());
         setIsSubmitting(false);
         if (result) {
             useToastStore.getState().showToast('Solicitud Enviada', `Tu solicitud de ${REQUEST_TYPES[formType]?.label} fue registrada.`, 'success');

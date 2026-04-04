@@ -171,9 +171,20 @@ export const createRequestsSlice = (set, get) => ({
     isLoadingRequests: false,
 
     // ── Fetch ──────────────────────────────────────────────────────────────
-    fetchRequests: async (employeeId = null) => {
+    fetchRequests: async (employeeId = null, branchId = null) => {
         set({ isLoadingRequests: true });
         try {
+            // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
+            let branchEmpIds = null;
+            if (branchId) {
+                const { data: branchEmps } = await supabase
+                    .from('employees')
+                    .select('id')
+                    .eq('branch_id', branchId)
+                    .eq('status', 'ACTIVO');
+                branchEmpIds = (branchEmps || []).map(e => e.id);
+            }
+
             // 1. Fetch solicitudes sin joins
             let query = supabase
                 .from('approval_requests')
@@ -181,6 +192,7 @@ export const createRequestsSlice = (set, get) => ({
                 .order('created_at', { ascending: false });
 
             if (employeeId) query = query.eq('employee_id', employeeId);
+            if (branchEmpIds && branchEmpIds.length > 0) query = query.in('employee_id', branchEmpIds);
 
             const { data: requests, error } = await query;
             if (error) throw error;
@@ -300,6 +312,21 @@ export const createRequestsSlice = (set, get) => ({
             // Notificar al empleado via anuncio interno
             if (req?.employee?.id) {
                 await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+
+                // Registrar evento de RRHH derivado de la solicitud aprobada
+                const registerEmployeeEvent = get().registerEmployeeEvent;
+                if (registerEmployeeEvent) {
+                    const meta = parseMeta(req.metadata);
+                    await registerEmployeeEvent(req.employee.id, {
+                        type: req.type,
+                        date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                        endDate: meta.endDate,
+                        note: req.note,
+                        approvedBy: approverId,
+                        fromRequest: req.id,
+                        ...meta,
+                    }).catch(() => {}); // no-bloqueante
+                }
             }
 
             return true;

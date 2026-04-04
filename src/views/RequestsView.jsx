@@ -121,7 +121,7 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
 
 // ─── Vista principal (solo admin) ─────────────────────────────────────────────
 const RequestsView = () => {
-    const { user } = useAuth();
+    const { user, isJefe } = useAuth();
 
     const requests       = useStaff(s => s.requests);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
@@ -134,7 +134,7 @@ const RequestsView = () => {
     const [actionNote, setActionNote]     = useState('');
     const [isActioning, setIsActioning]   = useState(false);
 
-    useEffect(() => { fetchRequests(); }, []);
+    useEffect(() => { fetchRequests(null, isJefe ? user?.branchId : null); }, []);
 
     // PENDING: asignadas a mí o sin aprobador
     // APPROVED/REJECTED: procesadas por mí

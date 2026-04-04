@@ -8,7 +8,7 @@ import { getHourlyCode } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleLogout }) => {
-    const { user } = useAuth();
+    const { user, isJefe } = useAuth();
     const branches = useStaff((state) => state.branches);
 
     const [isMobile, setIsMobile] = useState(false);
@@ -78,20 +78,24 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
         setTimeout(() => setIsCopied(false), 2000);
     };
 
-    const menuItems = useMemo(
-        () => [
-            { id: 'dashboard', label: 'Personal', icon: User },
-            { id: 'monitor', label: 'Monitor Real-Time', icon: Monitor },
-            { id: 'audit', label: 'Auditoría de Tiempos', icon: AlertTriangle },
-            { id: 'schedules', label: 'Horarios y Turnos', icon: Calendar },
-            { id: 'branches', label: 'Gestión de Sucursales', icon: Building2 },
-            { id: 'roles', label: 'Cargos / Organigrama', icon: ShieldCheck },
-            { id: 'announcements', label: 'Avisos', icon: Megaphone },
-            { id: 'requests', label: 'Solicitudes', icon: ClipboardList },
-            { id: 'auditview', label: 'Auditoría', icon: Activity },
-        ],
-        []
-    );
+    const menuItems = useMemo(() => {
+        const all = [
+            { id: 'dashboard',     label: 'Personal',               icon: User         },
+            { id: 'monitor',       label: 'Monitor Real-Time',       icon: Monitor      },
+            { id: 'audit',         label: 'Auditoría de Tiempos',    icon: AlertTriangle},
+            { id: 'schedules',     label: 'Horarios y Turnos',       icon: Calendar     },
+            { id: 'branches',      label: 'Gestión de Sucursales',   icon: Building2    },
+            { id: 'roles',         label: 'Cargos / Organigrama',    icon: ShieldCheck  },
+            { id: 'announcements', label: 'Avisos',                  icon: Megaphone    },
+            { id: 'requests',      label: 'Solicitudes',             icon: ClipboardList},
+            { id: 'auditview',     label: 'Auditoría',               icon: Activity     },
+            { id: 'staff',         label: 'Personal',                icon: User         },
+        ];
+        if (isJefe) return all.filter(i =>
+            ['requests', 'schedules', 'staff', 'announcements'].includes(i.id)
+        );
+        return all.filter(i => i.id !== 'staff');
+    }, [isJefe]);
 
     const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : 'scale-100 blur-0';
 

@@ -395,6 +395,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin: emp.is_admin === true,
         userType: emp.is_admin ? 'admin' : 'employee',
         role: emp.role_id,
+        systemRole: emp.system_role || 'EMPLEADO',
       };
 
       const meta = data.session.user?.user_metadata;
@@ -441,11 +442,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ✅ Exposición de valores
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const systemRole = user?.systemRole || 'EMPLEADO';
+    const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(systemRole)
+      || user?.isAdmin === true || user?.is_admin === true || user?.userType === 'admin';
+    const isJefe = ['JEFE', 'SUBJEFE'].includes(systemRole);
+    const isSupervisor = systemRole === 'SUPERVISOR';
+    const canApprove = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR', 'JEFE', 'SUBJEFE'].includes(systemRole);
+    return {
       user,
       isAuthenticated: !!user,
-      isAdmin: user?.isAdmin === true || user?.is_admin === true || user?.userType === "admin",
+      isAdmin,
+      isJefe,
+      isSupervisor,
+      canApprove,
+      systemRole,
       loading,
       completeLogin,
       completePasswordChange,
@@ -453,9 +464,8 @@ export const AuthProvider = ({ children }) => {
       loginWithEmail,
       loginWithUsername,
       logout,
-    }),
-    [user, loading]
-  );
+    };
+  }, [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

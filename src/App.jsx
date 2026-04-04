@@ -111,7 +111,7 @@ const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, s
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
 function MainApp() {
-    const { user, logout, isAuthenticated, isAdmin, loading } = useAuth();
+    const { user, logout, isAuthenticated, isAdmin, isJefe, isSupervisor, loading } = useAuth();
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
@@ -143,7 +143,7 @@ function MainApp() {
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
     const currentPathSegments = location.pathname.substring(1).split('/');
-    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : "profile");
+    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : (isJefe || isSupervisor) ? "requests" : "profile");
 
     const setView = (targetView) => {
         if (targetView === "timeclock") navigate("/kiosk");
@@ -286,7 +286,7 @@ function MainApp() {
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>
-                ) : <Navigate to={isAdmin ? "/dashboard" : "/profile"} replace />
+                ) : <Navigate to={isAdmin ? "/dashboard" : (isJefe || isSupervisor) ? "/requests" : "/profile"} replace />
             } />
 
             <Route path="/*" element={
@@ -360,6 +360,35 @@ function MainApp() {
                                         <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
 
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                                    </Routes>
+                                </AdminLayout>
+                            ) : (isJefe || isSupervisor) ? (
+                                <AdminLayout
+                                    view={mainView}
+                                    setView={setView}
+                                    isOverlayActive={modalOpen || isAuditOverlayActive}
+                                    handleLogout={handleLogout}
+                                >
+                                    <Routes>
+                                        <Route path="requests" element={<RequestsView />} />
+                                        <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
+                                        <Route path="staff" element={
+                                            <StaffManagementView
+                                                setView={setView}
+                                                setActiveEmployee={(emp) => {
+                                                    setActiveEmployee(emp);
+                                                    navigate(`/staff/empleado/${emp.id}`);
+                                                }}
+                                                openModal={openModal}
+                                                searchTerm={searchTerm}
+                                                setSearchTerm={setSearchTerm}
+                                                selectedBranch={selectedBranch}
+                                                setSelectedBranch={setSelectedBranch}
+                                            />
+                                        } />
+                                        <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
+                                        <Route path="employee-detail" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="*" element={<Navigate to="/requests" replace />} />
                                     </Routes>
                                 </AdminLayout>
                             ) : (

@@ -36,17 +36,18 @@ Deno.serve(async (req: Request) => {
     const { data: rows, error: dbError } = await admin
       .from("employees")
       .select(`
-        id, 
-        code, 
-        kiosk_pin, 
-        name, 
-        role_id, 
-        branch_id, 
-        photo_url, 
-        username, 
-        phone, 
-        is_admin, 
+        id,
+        code,
+        kiosk_pin,
+        name,
+        role_id,
+        branch_id,
+        photo_url,
+        username,
+        phone,
+        is_admin,
         status,
+        system_role,
         role:roles!employees_role_id_fkey ( name )
       `)
       .or(`code.eq.${clean},kiosk_pin.eq.${clean}`)
@@ -134,6 +135,7 @@ Deno.serve(async (req: Request) => {
         phone: employee.phone,
         isAdmin: employee.is_admin === true,
         userType: employee.is_admin ? "admin" : "employee",
+        systemRole: (employee.system_role as string | null) || "EMPLEADO",
       },
     });
 

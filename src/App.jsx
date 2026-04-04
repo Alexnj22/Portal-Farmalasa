@@ -24,6 +24,7 @@ import AnnouncementsView from "./views/AnnouncementsView";
 import AttendanceAuditView from "./views/AttendanceAuditView";
 import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
+import RequestsView from "./views/RequestsView";
 import LiquidToast from './components/common/LiquidToast';
 import SalyChatOverlay from "./components/SalyChatOverlay";
 
@@ -355,6 +356,7 @@ function MainApp() {
                                         <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
 
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="requests" element={<RequestsView />} />
                                         <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
 
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />

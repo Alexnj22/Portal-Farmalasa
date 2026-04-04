@@ -367,6 +367,7 @@ function MainApp() {
                                     <UserHeader user={user} handleLogout={handleLogout} />
                                     <Routes>
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="requests" element={<RequestsView />} />
                                         <Route path="*" element={<Navigate to="/profile" replace />} />
                                     </Routes>
                                 </div>

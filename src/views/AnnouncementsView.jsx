@@ -10,6 +10,7 @@ import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { useToastStore } from '../store/toastStore';
+import { useAuth } from '../context/AuthContext';
 
 const makeId = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
@@ -170,6 +171,7 @@ const AnnouncementsView = ({ openModal }) => {
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
   const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
+  const { user, isJefe } = useAuth();
 
   const [editingAnnId, setEditingAnnId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, annId: null });
@@ -178,8 +180,8 @@ const AnnouncementsView = ({ openModal }) => {
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [targetType, setTargetType] = useState('GLOBAL');
-  const [targetValue, setTargetValue] = useState('');
+  const [targetType, setTargetType] = useState(() => isJefe ? 'BRANCH' : 'GLOBAL');
+  const [targetValue, setTargetValue] = useState(() => isJefe ? String(user?.branchId || '') : '');
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [empSearch, setEmpSearch] = useState('');
   const [priority, setPriority] = useState('NORMAL');
@@ -305,13 +307,13 @@ const AnnouncementsView = ({ openModal }) => {
     setEditingAnnId(null);
     setTitle('');
     setMessage('');
-    setTargetType('GLOBAL');
-    setTargetValue('');
+    setTargetType(isJefe ? 'BRANCH' : 'GLOBAL');
+    setTargetValue(isJefe ? String(user?.branchId || '') : '');
     setSelectedEmployees([]);
     setPriority('NORMAL');
     setPublishImmediately(true);
     setScheduledDate('');
-  }, []);
+  }, [isJefe, user?.branchId]);
 
   const handlePublish = async (e) => {
     e.preventDefault();
@@ -348,7 +350,8 @@ const AnnouncementsView = ({ openModal }) => {
       }
     }
 
-    const finalTargetValue = targetType === 'EMPLOYEE' ? selectedEmployees.map(String) : String(targetValue);
+    const effectiveTargetType  = isJefe ? 'BRANCH' : targetType;
+    const effectiveTargetValue = isJefe ? String(user?.branchId) : (targetType === 'EMPLOYEE' ? selectedEmployees.map(String) : String(targetValue));
     
     let finalScheduledFor = null;
     if (!publishImmediately && scheduledDate) {
@@ -364,8 +367,8 @@ const AnnouncementsView = ({ openModal }) => {
         const updatePayload = {
           title: title.trim(),
           message: message.trim(),
-          targetType,
-          targetValue: finalTargetValue,
+          targetType: effectiveTargetType,
+          targetValue: effectiveTargetValue,
           priority,
           scheduledFor: finalScheduledFor,
           editedAt: new Date().toISOString()
@@ -379,10 +382,10 @@ const AnnouncementsView = ({ openModal }) => {
         await createAnnouncement({
           title: title.trim(),
           message: message.trim(),
-          targetType,
-          targetValue: finalTargetValue,
+          targetType: effectiveTargetType,
+          targetValue: effectiveTargetValue,
           priority,
-          scheduledFor: finalScheduledFor 
+          scheduledFor: finalScheduledFor
         });
         useToastStore.getState().showToast(
           finalScheduledFor ? 'Aviso Programado' : '¡Boom! Enviado',
@@ -485,26 +488,33 @@ const AnnouncementsView = ({ openModal }) => {
   // 🚨 LÓGICA DE SEPARACIÓN EN PESTAÑAS MEJORADA
   const currentList = useMemo(() => {
     const now = new Date();
-    
+
     const baseList = processedAnnouncements.filter((a) => {
         const isScheduled = a.scheduledFor && new Date(a.scheduledFor) > now;
-        
+
         if (listTab === 'ARCHIVED') return a.isCompleted;
         if (listTab === 'SCHEDULED') return isScheduled && !a.isCompleted;
-        
-        return !a.isCompleted && !isScheduled; 
+
+        return !a.isCompleted && !isScheduled;
     });
 
-    if (!debouncedSearchTerm.trim()) return baseList;
+    const branchFiltered = isJefe && user?.branchId
+        ? baseList.filter(a =>
+              a.targetType === 'GLOBAL' ||
+              (a.targetType === 'BRANCH' && String(a.targetValue) === String(user.branchId))
+          )
+        : baseList;
+
+    if (!debouncedSearchTerm.trim()) return branchFiltered;
     const query = debouncedSearchTerm.toLowerCase();
 
-    return baseList.filter(a => {
+    return branchFiltered.filter(a => {
       const matchesBasic = a.title.toLowerCase().includes(query) || a.message.toLowerCase().includes(query) || (a.badgeText && a.badgeText.toLowerCase().includes(query));
       if (matchesBasic) return true;
       if (Array.isArray(a.audience)) return a.audience.some(emp => emp.name && emp.name.toLowerCase().includes(query));
       return false;
     });
-  }, [processedAnnouncements, listTab, debouncedSearchTerm]);
+  }, [processedAnnouncements, listTab, debouncedSearchTerm, isJefe, user?.branchId]);
 
   const totalItems = currentList.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -613,17 +623,24 @@ const AnnouncementsView = ({ openModal }) => {
                 </div>
 
                 <div className="pt-3 border-t border-white/50">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
-                  <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] mb-4">
-                    {targetTypes.map((type) => {
-                      const isActive = targetType === type.id;
-                      return (
-                        <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-[#007AFF] border-white shadow-sm scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`}>{type.label}</button>
-                      );
-                    })}
-                  </div>
-                  {targetType === 'BRANCH' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Sucursal --</option>{(branches || []).map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}</select>)}
-                  {targetType === 'ROLE' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Cargo --</option>{uniqueRoles.map((r) => (<option key={r} value={r}>{r}</option>))}</select>)}
+                  {isJefe ? (
+                    <div className="flex items-center gap-2 px-1 py-2 mb-1">
+                      <Building2 size={14} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-bold text-slate-600">Dirigido a tu sucursal</span>
+                    </div>
+                  ) : (
+                    <>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
+                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] mb-4">
+                        {targetTypes.map((type) => {
+                          const isActive = targetType === type.id;
+                          return (
+                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-[#007AFF] border-white shadow-sm scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`}>{type.label}</button>
+                          );
+                        })}
+                      </div>
+                      {targetType === 'BRANCH' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Sucursal --</option>{(branches || []).map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}</select>)}
+                      {targetType === 'ROLE' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Cargo --</option>{uniqueRoles.map((r) => (<option key={r} value={r}>{r}</option>))}</select>)}
                   {targetType === 'EMPLOYEE' && (
                     <div className="space-y-3">
                       {selectedEmployees.length > 0 && (
@@ -646,6 +663,8 @@ const AnnouncementsView = ({ openModal }) => {
                         )}
                       </div>
                     </div>
+                  )}
+                    </>
                   )}
                 </div>
 

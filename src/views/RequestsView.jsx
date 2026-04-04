@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import ReactDOM from 'react-dom';
 import {
     Inbox, Check, X, ChevronDown, ChevronUp,
     User, Calendar, Loader2,
@@ -231,7 +232,7 @@ const RequestsView = () => {
             </div>
 
             {/* Modal aprobar / rechazar */}
-            {actionModal && (
+            {actionModal && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !isActioning && setActionModal(null)} />
                     <div className="relative bg-white/95 backdrop-blur-xl border border-white/80 rounded-[2rem] shadow-[0_32px_80px_rgba(0,0,0,0.18)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
@@ -284,7 +285,8 @@ const RequestsView = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </GlassViewLayout>
     );

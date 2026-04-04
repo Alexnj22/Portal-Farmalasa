@@ -34,6 +34,7 @@ import {
   Medal
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
@@ -304,6 +305,7 @@ const StaffManagementView = ({
 }) => {
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
   const { employees, branches, bootStatus } = useStaff();
+  const { user, isJefe } = useAuth();
 
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
@@ -338,7 +340,10 @@ const StaffManagementView = ({
   }, [branches]);
 
   const searchFilteredEmployees = useMemo(() => {
-    return (employees || []).filter((emp) => {
+    const baseEmployees = isJefe
+        ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
+        : (employees || []);
+    return baseEmployees.filter((emp) => {
       const safeName = (emp?.name || '').toLowerCase();
       const safeCode = (emp?.code || '').toLowerCase();
       const safeRole = (emp?.role || '').toLowerCase();
@@ -356,7 +361,7 @@ const StaffManagementView = ({
 
       return matchesSearch && matchesBranch;
     });
-  }, [employees, normalizedSearch, selectedBranch, branchMap]);
+  }, [employees, normalizedSearch, selectedBranch, branchMap, isJefe, user?.branchId]);
 
   const stats = useMemo(() => {
     const total = searchFilteredEmployees.length;

@@ -183,17 +183,22 @@ export const createRequestsSlice = (set, get) => ({
     // payload: datos estructurados de la solicitud (fechas, turno destino, etc.)
     // note:    descripción/motivo libre del empleado
     createRequest: async (employeeId, type, payload = {}, note = '') => {
+        console.log('createRequest called:', employeeId, type);
         try {
             // Obtener datos del empleado para resolver el aprobador
-            const { data: emp } = await supabase
+            const { data: emp, error: empError } = await supabase
                 .from('employees')
                 .select('role_id, branch_id')
                 .eq('id', employeeId)
                 .single();
 
+            console.log('employee lookup:', emp, empError);
+
             const approverId = emp
                 ? await resolveApprover(employeeId, emp.branch_id, emp.role_id)
                 : null;
+
+            console.log('resolved approverId:', approverId);
 
             const { data, error } = await supabase
                 .from('approval_requests')
@@ -208,6 +213,7 @@ export const createRequestsSlice = (set, get) => ({
                 .select(SELECT_FIELDS)
                 .single();
 
+            console.log('insert result:', data, error);
             if (error) throw error;
 
             set((state) => ({ requests: [data, ...state.requests] }));
@@ -219,7 +225,7 @@ export const createRequestsSlice = (set, get) => ({
 
             return data;
         } catch (err) {
-            console.error('Error creando solicitud:', err);
+            console.error('createRequest error:', err);
             return null;
         }
     },

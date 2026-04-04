@@ -145,12 +145,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
 
 // ── Slice ───────────────────────────────────────────────────────────────────
 
-const SELECT_FIELDS = `
-    id, type, status, note, metadata,
-    approver_note, created_at, updated_at,
-    employee:employee_id ( id, name, code, role_id, branch_id ),
-    approver:approver_id ( id, name, code )
-`;
+const SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id';
 
 export const createRequestsSlice = (set, get) => ({
     // ── State ──────────────────────────────────────────────────────────────
@@ -161,21 +156,47 @@ export const createRequestsSlice = (set, get) => ({
     fetchRequests: async (employeeId = null) => {
         set({ isLoadingRequests: true });
         try {
+            // 1. Fetch solicitudes sin joins
             let query = supabase
                 .from('approval_requests')
-                .select(SELECT_FIELDS)
+                .select(SIMPLE_SELECT)
                 .order('created_at', { ascending: false });
 
             if (employeeId) query = query.eq('employee_id', employeeId);
 
-            const { data, error } = await query;
+            const { data: requests, error } = await query;
             if (error) throw error;
 
-            set({ requests: data || [] });
+            // 2. IDs únicos de empleados y aprobadores
+            const empIds = [...new Set([
+                ...(requests || []).map(r => r.employee_id),
+                ...(requests || []).map(r => r.approver_id).filter(Boolean),
+            ])];
+
+            // 3. Fetch empleados por IDs
+            let empRows = [];
+            if (empIds.length > 0) {
+                const { data } = await supabase
+                    .from('employees')
+                    .select('id, name, code, role_id, branch_id')
+                    .in('id', empIds);
+                empRows = data || [];
+            }
+
+            // 4. Combinar en memoria
+            const empMap = Object.fromEntries(empRows.map(e => [e.id, e]));
+            const enriched = (requests || []).map(r => ({
+                ...r,
+                employee: empMap[r.employee_id] || null,
+                approver: empMap[r.approver_id] || null,
+            }));
+
+            set({ requests: enriched, isLoadingRequests: false });
+            return enriched;
         } catch (err) {
             console.error('Error cargando solicitudes:', err);
-        } finally {
             set({ isLoadingRequests: false });
+            return [];
         }
     },
 
@@ -205,19 +226,27 @@ export const createRequestsSlice = (set, get) => ({
                     note,
                     metadata: payload,
                 }])
-                .select(SELECT_FIELDS)
+                .select(SIMPLE_SELECT)
                 .single();
 
             if (error) throw error;
 
-            set((state) => ({ requests: [data, ...state.requests] }));
+            // Enriquecer con employee/approver desde el store
+            const allEmps = get().employees || [];
+            const enriched = {
+                ...data,
+                employee: allEmps.find(e => String(e.id) === String(data.employee_id)) || null,
+                approver: allEmps.find(e => String(e.id) === String(data.approver_id)) || null,
+            };
+
+            set((state) => ({ requests: [enriched, ...state.requests] }));
 
             await get().appendAuditLog('SOLICITUD_CREADA', employeeId, {
                 dimension: 'HR',
                 new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type}`,
             });
 
-            return data;
+            return enriched;
         } catch (err) {
             console.error('createRequest error:', err);
             return null;

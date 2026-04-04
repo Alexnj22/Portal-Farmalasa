@@ -148,8 +148,8 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
 const SELECT_FIELDS = `
     id, type, status, note, metadata,
     approver_note, created_at, updated_at,
-    employee:employees!approval_requests_employee_id_fkey ( id, name, code, role_id, branch_id ),
-    approver:employees!approval_requests_approver_id_fkey ( id, name, code )
+    employee:employee_id ( id, name, code, role_id, branch_id ),
+    approver:approver_id ( id, name, code )
 `;
 
 export const createRequestsSlice = (set, get) => ({
@@ -183,22 +183,17 @@ export const createRequestsSlice = (set, get) => ({
     // payload: datos estructurados de la solicitud (fechas, turno destino, etc.)
     // note:    descripción/motivo libre del empleado
     createRequest: async (employeeId, type, payload = {}, note = '') => {
-        console.log('createRequest called:', employeeId, type);
         try {
             // Obtener datos del empleado para resolver el aprobador
-            const { data: emp, error: empError } = await supabase
+            const { data: emp } = await supabase
                 .from('employees')
                 .select('role_id, branch_id')
                 .eq('id', employeeId)
                 .single();
 
-            console.log('employee lookup:', emp, empError);
-
             const approverId = emp
                 ? await resolveApprover(employeeId, emp.branch_id, emp.role_id)
                 : null;
-
-            console.log('resolved approverId:', approverId);
 
             const { data, error } = await supabase
                 .from('approval_requests')
@@ -213,7 +208,6 @@ export const createRequestsSlice = (set, get) => ({
                 .select(SELECT_FIELDS)
                 .single();
 
-            console.log('insert result:', data, error);
             if (error) throw error;
 
             set((state) => ({ requests: [data, ...state.requests] }));

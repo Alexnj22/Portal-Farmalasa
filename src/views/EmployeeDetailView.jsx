@@ -20,10 +20,12 @@ import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
+import RangeDatePicker from '../components/common/RangeDatePicker';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
-    const { employees, branches, shifts } = useStaffStore();
+    const { employees, branches, shifts, holidays } = useStaffStore();
     const { user, isAdmin } = useAuth();
     
     const [_activeTab, _setActiveTab] = useState('history');
@@ -44,6 +46,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [isLoadingEmpReqs, setIsLoadingEmpReqs] = useState(false);
     const [reqFormType, setReqFormType]       = useState('VACATION');
     const [reqFormNote, setReqFormNote]       = useState('');
+    const [reqPayload, setReqPayload]         = useState({});
     const [isCreatingReq, setIsCreatingReq]   = useState(false);
     const [showReqForm, setShowReqForm]       = useState(false);
 
@@ -791,7 +794,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <button
                                                                     key={key}
                                                                     type="button"
-                                                                    onClick={() => setReqFormType(key)}
+                                                                    onClick={() => { setReqFormType(key); setReqPayload({}); }}
                                                                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
                                                                         reqFormType === key
                                                                             ? `${conf.color} ${conf.border} shadow-sm`
@@ -804,6 +807,31 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             );
                                                         })}
                                                     </div>
+                                                </div>
+
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                                                        {reqFormType === 'VACATION' ? 'Período de Vacaciones' :
+                                                         reqFormType === 'PERMIT'   ? 'Días de Permiso' :
+                                                         'Fecha'}
+                                                    </p>
+                                                    {reqFormType === 'VACATION' ? (
+                                                        <RangeDatePicker
+                                                            startDate={reqPayload.startDate || ''}
+                                                            endDate={reqPayload.endDate || ''}
+                                                            onRangeChange={(s, e) => setReqPayload(prev => ({ ...prev, startDate: s, endDate: e }))}
+                                                            holidays={holidays}
+                                                            defaultDays={15}
+                                                            label="vacaciones"
+                                                        />
+                                                    ) : (
+                                                        <LiquidDatePicker
+                                                            value={reqPayload.date || ''}
+                                                            onChange={(v) => setReqPayload(prev => ({ ...prev, date: v }))}
+                                                            placeholder="Seleccionar fecha"
+                                                            holidays={holidays}
+                                                        />
+                                                    )}
                                                 </div>
 
                                                 <div>
@@ -820,7 +848,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <div className="flex gap-2 justify-end">
                                                     <button
                                                         type="button"
-                                                        onClick={() => { setShowReqForm(false); setReqFormNote(''); }}
+                                                        onClick={() => { setShowReqForm(false); setReqFormNote(''); setReqPayload({}); }}
                                                         className="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-[12px] font-medium hover:bg-slate-50 transition-all"
                                                     >
                                                         Cancelar
@@ -831,11 +859,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         onClick={async () => {
                                                             const eid = activeEmployee?.id || user?.id;
                                                             setIsCreatingReq(true);
-                                                            const result = await createRequest(eid, reqFormType, {}, reqFormNote.trim());
+                                                            const result = await createRequest(eid, reqFormType, reqPayload, reqFormNote.trim());
                                                             setIsCreatingReq(false);
                                                             if (result) {
                                                                 useToastStore.getState().showToast('Enviada', `Solicitud de ${REQUEST_TYPES[reqFormType]?.label} registrada.`, 'success');
                                                                 setReqFormNote('');
+                                                                setReqPayload({});
                                                                 setShowReqForm(false);
                                                                 loadEmpRequests();
                                                             } else {

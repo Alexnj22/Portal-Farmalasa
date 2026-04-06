@@ -1,4 +1,5 @@
 import { supabase } from '../../supabaseClient';
+import { useToastStore } from '../toastStore';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -134,6 +135,40 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
     }
 };
 
+const resolveNextApprover = async (level, branchId) => {
+    try {
+        const findByRole = async (roles, anyBranch = false) => {
+            for (const role of roles) {
+                const q = supabase.from('employees')
+                    .select('id')
+                    .eq('system_role', role)
+                    .eq('status', 'ACTIVO');
+                if (!anyBranch && branchId) q.eq('branch_id', branchId);
+                const { data } = await q;
+                for (const c of (data || [])) {
+                    if (!(await isUnavailable(c.id))) return c.id;
+                }
+            }
+            return null;
+        };
+
+        if (level === 2) {
+            return await findByRole(['SUPERVISOR'], true)
+                || await findByRole(['ADMIN'], true)
+                || await findByRole(['SUPERADMIN'], true);
+        }
+        if (level === 3) {
+            return await findByRole(['ADMIN'], true)
+                || await findByRole(['SUPERADMIN'], true)
+                || (await supabase.from('employees')
+                    .select('id').eq('is_admin', true)
+                    .eq('status', 'ACTIVO').limit(1))
+                    .data?.[0]?.id || null;
+        }
+        return null;
+    } catch { return null; }
+};
+
 /**
  * Crea un anuncio interno dirigido al empleado notificándole el resultado
  * de su solicitud. No lanza error si falla — la notificación es no-bloqueante.
@@ -171,7 +206,7 @@ export const createRequestsSlice = (set, get) => ({
     isLoadingRequests: false,
 
     // ── Fetch ──────────────────────────────────────────────────────────────
-    fetchRequests: async (employeeId = null, branchId = null) => {
+    fetchRequests: async (employeeId = null, branchId = null, approverId = null) => {
         set({ isLoadingRequests: true });
         try {
             // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
@@ -193,6 +228,7 @@ export const createRequestsSlice = (set, get) => ({
 
             if (employeeId) query = query.eq('employee_id', employeeId);
             if (branchEmpIds && branchEmpIds.length > 0) query = query.in('employee_id', branchEmpIds);
+            if (approverId) query = query.eq('approver_id', approverId);
 
             const { data: requests, error } = await query;
             if (error) throw error;
@@ -286,50 +322,109 @@ export const createRequestsSlice = (set, get) => ({
     // ── Approve ────────────────────────────────────────────────────────────
     approveRequest: async (requestId, approverId, approverNote = '') => {
         try {
-            // Obtener el employeeId antes de actualizar (para la notificación)
             const req = get().requests.find(r => r.id === requestId);
+            if (!req) return false;
 
-            const { error } = await supabase
-                .from('approval_requests')
-                .update({
-                    status: 'APPROVED',
-                    approver_id: approverId,
-                    approver_note: approverNote,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', requestId);
+            const currentLevel = req.current_level || 1;
+            const nextLevel = currentLevel + 1;
 
-            if (error) throw error;
+            const existingApprovals = Array.isArray(req.approvals) ? req.approvals : [];
+            const newApprovals = [...existingApprovals, {
+                level: currentLevel,
+                approverId,
+                approverNote,
+                approvedAt: new Date().toISOString(),
+            }];
 
-            set((state) => ({
-                requests: state.requests.map(r =>
-                    r.id === requestId
-                        ? { ...r, status: 'APPROVED', approver_note: approverNote }
-                        : r
-                ),
-            }));
+            const maxLevels = req.type === 'SHIFT_CHANGE' ? 1 : 3;
 
-            // Notificar al empleado via anuncio interno
-            if (req?.employee?.id) {
-                await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+            if (nextLevel <= maxLevels) {
+                // Avanzar al siguiente nivel
+                const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id);
 
-                // Registrar evento de RRHH derivado de la solicitud aprobada
-                const registerEmployeeEvent = get().registerEmployeeEvent;
-                if (registerEmployeeEvent) {
-                    const meta = parseMeta(req.metadata);
-                    await registerEmployeeEvent(req.employee.id, {
-                        type: req.type,
-                        date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
-                        endDate: meta.endDate,
-                        note: req.note,
-                        approvedBy: approverId,
-                        fromRequest: req.id,
-                        ...meta,
-                    }).catch(() => {}); // no-bloqueante
+                const { error } = await supabase
+                    .from('approval_requests')
+                    .update({
+                        current_level: nextLevel,
+                        approver_id: nextApprover,
+                        approvals: newApprovals,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', requestId);
+
+                if (error) throw error;
+
+                set(state => ({
+                    requests: state.requests.map(r =>
+                        r.id === requestId
+                            ? { ...r, current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals }
+                            : r
+                    ),
+                }));
+
+                if (nextApprover) {
+                    await supabase.from('announcements').insert([{
+                        title: 'Nueva Solicitud Pendiente',
+                        message: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}`,
+                        target_type: 'EMPLOYEE',
+                        target_value: [String(nextApprover)],
+                        read_by: [],
+                        is_archived: false,
+                        created_by: approverId,
+                        priority: 'HIGH',
+                    }]);
                 }
-            }
 
-            return true;
+                useToastStore.getState().showToast(
+                    'Aprobado — Nivel ' + currentLevel,
+                    `Solicitud avanzada al nivel ${nextLevel}. ${nextApprover ? 'Notificado el siguiente aprobador.' : 'Sin aprobador disponible en el siguiente nivel.'}`,
+                    'success'
+                );
+
+                return true;
+            } else {
+                // APROBACIÓN FINAL
+                const { error } = await supabase
+                    .from('approval_requests')
+                    .update({
+                        status: 'APPROVED',
+                        approver_id: approverId,
+                        approver_note: approverNote,
+                        approvals: newApprovals,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', requestId);
+
+                if (error) throw error;
+
+                set(state => ({
+                    requests: state.requests.map(r =>
+                        r.id === requestId
+                            ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
+                            : r
+                    ),
+                }));
+
+                if (req.employee?.id) {
+                    await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+
+                    const registerEmployeeEvent = get().registerEmployeeEvent;
+                    if (registerEmployeeEvent) {
+                        const meta = parseMeta(req.metadata);
+                        await registerEmployeeEvent(req.employee.id, {
+                            type: req.type,
+                            date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                            endDate: meta.endDate,
+                            note: req.note,
+                            approvedBy: approverId,
+                            fromRequest: req.id,
+                            ...meta,
+                        }).catch(() => {});
+                    }
+                }
+
+                return true;
+            }
         } catch (err) {
             console.error('Error aprobando solicitud:', err);
             return false;

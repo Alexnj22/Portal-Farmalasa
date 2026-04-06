@@ -49,6 +49,11 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
                         </span>
+                        {req.current_level && req.status === 'PENDING' && (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                                Nivel {req.current_level} de {req.type === 'SHIFT_CHANGE' ? 1 : 3}
+                            </span>
+                        )}
                     </div>
 
                     {req.employee && (
@@ -121,7 +126,7 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
 
 // ─── Vista principal (solo admin) ─────────────────────────────────────────────
 const RequestsView = () => {
-    const { user, isJefe } = useAuth();
+    const { user, isJefe, isSupervisor } = useAuth();
 
     const requests       = useStaff(s => s.requests);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
@@ -134,7 +139,11 @@ const RequestsView = () => {
     const [actionNote, setActionNote]     = useState('');
     const [isActioning, setIsActioning]   = useState(false);
 
-    useEffect(() => { fetchRequests(null, isJefe ? user?.branchId : null); }, []);
+    useEffect(() => {
+        const apId = (isJefe || isSupervisor) ? user?.id : null;
+        const brId = isJefe ? user?.branchId : null;
+        fetchRequests(null, brId, apId);
+    }, []);
 
     // PENDING: asignadas a mí o sin aprobador
     // APPROVED/REJECTED: procesadas por mí

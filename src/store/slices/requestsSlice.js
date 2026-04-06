@@ -137,13 +137,27 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
 
 const resolveNextApprover = async (level, branchId) => {
     try {
-        const findByRole = async (roles, anyBranch = false) => {
+        const findBySystemRole = async (roles) => {
             for (const role of roles) {
-                const q = supabase.from('employees')
+                const { data } = await supabase
+                    .from('employees')
                     .select('id')
                     .eq('system_role', role)
                     .eq('status', 'ACTIVO');
-                if (!anyBranch && branchId) q.eq('branch_id', branchId);
+                for (const c of (data || [])) {
+                    if (!(await isUnavailable(c.id))) return c.id;
+                }
+            }
+            return null;
+        };
+
+        const findByRoleId = async (roleIds, sameBranch = false) => {
+            for (const roleId of roleIds) {
+                let q = supabase.from('employees')
+                    .select('id')
+                    .eq('role_id', roleId)
+                    .eq('status', 'ACTIVO');
+                if (sameBranch && branchId) q = q.eq('branch_id', branchId);
                 const { data } = await q;
                 for (const c of (data || [])) {
                     if (!(await isUnavailable(c.id))) return c.id;
@@ -153,18 +167,25 @@ const resolveNextApprover = async (level, branchId) => {
         };
 
         if (level === 2) {
-            return await findByRole(['SUPERVISOR'], true)
-                || await findByRole(['ADMIN'], true)
-                || await findByRole(['SUPERADMIN'], true);
+            // Supervisor de Ventas (role_id=13) o system_role=SUPERVISOR
+            return await findBySystemRole(['SUPERVISOR'])
+                || await findByRoleId([13])
+                || await findBySystemRole(['ADMIN', 'SUPERADMIN']);
         }
+
         if (level === 3) {
-            return await findByRole(['ADMIN'], true)
-                || await findByRole(['SUPERADMIN'], true)
+            // Talento Humano (role_id=11) o system_role=ADMIN
+            return await findByRoleId([11])
+                || await findBySystemRole(['ADMIN'])
+                || await findBySystemRole(['SUPERADMIN'])
                 || (await supabase.from('employees')
-                    .select('id').eq('is_admin', true)
-                    .eq('status', 'ACTIVO').limit(1))
-                    .data?.[0]?.id || null;
+                    .select('id')
+                    .eq('is_admin', true)
+                    .eq('status', 'ACTIVO')
+                    .limit(1)).data?.[0]?.id
+                || null;
         }
+
         return null;
     } catch { return null; }
 };

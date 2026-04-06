@@ -11,6 +11,10 @@ import AlertModal from "./components/common/AlertModal";
 // Layouts y Vistas
 import AdminLayout from "./components/layout/AdminLayout";
 import UserHeader from "./components/layout/UserHeader";
+import EmployeeLayout from "./components/layout/EmployeeLayout";
+import EmployeeHomeView from "./views/employee/EmployeeHomeView";
+import EmployeeScheduleView from "./views/employee/EmployeeScheduleView";
+import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsView";
 import UnifiedModal from "./components/UnifiedModal";
 import AttendanceMonitorView from "./views/AttendanceMonitorView";
 import StaffManagementView from "./views/StaffManagementView";
@@ -143,7 +147,7 @@ function MainApp() {
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
     const currentPathSegments = location.pathname.substring(1).split('/');
-    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : (isJefe || isSupervisor) ? "requests" : "profile");
+    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : (isJefe || isSupervisor) ? "requests" : "home");
 
     const setView = (targetView) => {
         if (targetView === "timeclock") navigate("/kiosk");
@@ -286,7 +290,7 @@ function MainApp() {
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>
-                ) : <Navigate to={isAdmin ? "/dashboard" : (isJefe || isSupervisor) ? "/requests" : "/profile"} replace />
+                ) : <Navigate to={isAdmin ? "/dashboard" : (isJefe || isSupervisor) ? "/requests" : "/home"} replace />
             } />
 
             <Route path="/*" element={
@@ -392,14 +396,16 @@ function MainApp() {
                                     </Routes>
                                 </AdminLayout>
                             ) : (
-                                <div className="h-full w-full bg-transparent overflow-y-auto">
-                                    <UserHeader user={user} handleLogout={handleLogout} />
+                                <EmployeeLayout user={user} handleLogout={handleLogout}>
                                     <Routes>
+                                        <Route path="home" element={<EmployeeHomeView />} />
+                                        <Route path="schedule" element={<EmployeeScheduleView />} />
+                                        <Route path="requests" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab="requests" setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="announcements" element={<EmployeeAnnouncementsView />} />
                                         <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
-                                        <Route path="requests" element={<RequestsView />} />
-                                        <Route path="*" element={<Navigate to="/profile" replace />} />
+                                        <Route path="*" element={<Navigate to="/home" replace />} />
                                     </Routes>
-                                </div>
+                                </EmployeeLayout>
                             )}
                         </div>
 

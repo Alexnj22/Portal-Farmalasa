@@ -219,7 +219,7 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
 
 // ── Slice ───────────────────────────────────────────────────────────────────
 
-const SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id';
+const SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
 
 export const createRequestsSlice = (set, get) => ({
     // ── State ──────────────────────────────────────────────────────────────
@@ -265,13 +265,26 @@ export const createRequestsSlice = (set, get) => ({
             if (empIds.length > 0) {
                 const { data } = await supabase
                     .from('employees')
-                    .select('id, name, code, role_id, branch_id')
+                    .select('id, name, code, role_id, branch_id, system_role')
                     .in('id', empIds);
                 empRows = data || [];
             }
 
             // 4. Combinar en memoria
             const empMap = Object.fromEntries(empRows.map(e => [e.id, e]));
+
+            // 4b. Fetch adicional para aprobadores que no estén en empMap
+            const missingIds = [...new Set(
+                (requests || []).map(r => r.approver_id).filter(id => id && !empMap[id])
+            )];
+            if (missingIds.length > 0) {
+                const { data: extra } = await supabase
+                    .from('employees')
+                    .select('id, name, code, role_id, branch_id, system_role')
+                    .in('id', missingIds);
+                (extra || []).forEach(e => { empMap[e.id] = e; });
+            }
+
             const enriched = (requests || []).map(r => ({
                 ...r,
                 employee: empMap[r.employee_id] || null,
@@ -402,6 +415,7 @@ export const createRequestsSlice = (set, get) => ({
                     'success'
                 );
 
+                window.dispatchEvent(new CustomEvent('requests-updated'));
                 return true;
             } else {
                 // APROBACIÓN FINAL
@@ -444,6 +458,7 @@ export const createRequestsSlice = (set, get) => ({
                     }
                 }
 
+                window.dispatchEvent(new CustomEvent('requests-updated'));
                 return true;
             }
         } catch (err) {

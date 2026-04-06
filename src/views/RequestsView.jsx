@@ -98,6 +98,27 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                             </p>
                         </div>
                     )}
+                    {req.approvals && req.approvals.length > 0 && (
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Historial de Aprobaciones</p>
+                            <div className="space-y-2">
+                                {req.approvals.map((ap, i) => (
+                                    <div key={i} className="flex items-start gap-2 bg-emerald-50 border border-emerald-100 rounded-xl p-2.5">
+                                        <CheckCircle2 size={13} className="text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
+                                        <div>
+                                            <p className="text-[10px] font-black text-emerald-700">Nivel {ap.level} aprobado</p>
+                                            {ap.approverNote && (
+                                                <p className="text-[11px] text-slate-600 mt-0.5">"{ap.approverNote}"</p>
+                                            )}
+                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                                {new Date(ap.approvedAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     {req.employee?.code && (
                         <p className="text-[11px] text-slate-400">Código: <span className="font-mono font-bold text-slate-600">{req.employee.code}</span></p>
                     )}
@@ -143,6 +164,16 @@ const RequestsView = () => {
         const apId = (isJefe || isSupervisor) ? user?.id : null;
         const brId = isJefe ? user?.branchId : null;
         fetchRequests(null, brId, apId);
+    }, []);
+
+    useEffect(() => {
+        const handler = () => {
+            const apId = (isJefe || isSupervisor) ? user?.id : null;
+            const brId = isJefe ? user?.branchId : null;
+            fetchRequests(null, brId, apId);
+        };
+        window.addEventListener('requests-updated', handler);
+        return () => window.removeEventListener('requests-updated', handler);
     }, []);
 
     // PENDING: asignadas a mí o sin aprobador

@@ -15,6 +15,8 @@ import EmployeeLayout from "./components/layout/EmployeeLayout";
 import EmployeeHomeView from "./views/employee/EmployeeHomeView";
 import EmployeeScheduleView from "./views/employee/EmployeeScheduleView";
 import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsView";
+import EmployeeRequestsView from "./views/employee/EmployeeRequestsView";
+import EmployeeProfileView from "./views/employee/EmployeeProfileView";
 import UnifiedModal from "./components/UnifiedModal";
 import AttendanceMonitorView from "./views/AttendanceMonitorView";
 import StaffManagementView from "./views/StaffManagementView";
@@ -400,9 +402,9 @@ function MainApp() {
                                     <Routes>
                                         <Route path="home" element={<EmployeeHomeView />} />
                                         <Route path="schedule" element={<EmployeeScheduleView />} />
-                                        <Route path="requests" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab="requests" setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="requests" element={<EmployeeRequestsView />} />
                                         <Route path="announcements" element={<EmployeeAnnouncementsView />} />
-                                        <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
+                                        <Route path="profile" element={<EmployeeProfileView />} />
                                         <Route path="*" element={<Navigate to="/home" replace />} />
                                     </Routes>
                                 </EmployeeLayout>

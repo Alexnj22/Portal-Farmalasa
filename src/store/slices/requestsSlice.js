@@ -348,7 +348,6 @@ export const createRequestsSlice = (set, get) => ({
                     .select(SIMPLE_SELECT)
                     .single();
                 if (peerError) throw peerError;
-                const allEmps = get().employees || [];
                 const enrichedPeer = {
                     ...peerData,
                     employee: allEmps.find(e => String(e.id) === String(peerData.employee_id)) || null,

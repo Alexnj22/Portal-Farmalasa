@@ -12,6 +12,7 @@ import RangeDatePicker from '../../components/common/RangeDatePicker';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -58,40 +59,69 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         ? req.metadata
         : (() => { try { return JSON.parse(req.metadata); } catch { return {}; } })();
 
+    const dateStr = meta.date
+        ? new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })
+        : null;
+
     return (
-        <div className="p-5 rounded-[2rem] border border-cyan-300/60 bg-cyan-50/40 backdrop-blur-xl flex flex-col gap-3 shadow-[0_4px_16px_rgba(6,182,212,0.08)]">
-            <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest bg-cyan-100 text-cyan-800 border border-cyan-200">
-                    <RefreshCw size={11} strokeWidth={2} /> Cambio de Turno
-                </span>
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest bg-amber-100 text-amber-700 border border-amber-200">
-                    Requiere tu aprobación
-                </span>
+        <div className="p-5 rounded-[2rem] border-2 border-cyan-300/60 bg-gradient-to-br from-cyan-50/60 to-white/80 backdrop-blur-2xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(6,182,212,0.1)]">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-[0.875rem] bg-cyan-100 border border-cyan-200 flex items-center justify-center flex-shrink-0">
+                        <RefreshCw size={16} strokeWidth={2} className="text-cyan-600" />
+                    </div>
+                    <div>
+                        <p className="text-[13px] font-black text-slate-800 leading-tight">
+                            {req.employee?.name || 'Compañero'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-medium">quiere cambiar turno contigo</p>
+                    </div>
+                </div>
+                {dateStr && (
+                    <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100 border border-cyan-200 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                        {dateStr}
+                    </span>
+                )}
             </div>
-            <div>
-                <p className="text-[13px] font-bold text-slate-700">
-                    <span className="text-slate-500 font-medium">Solicitado por: </span>
-                    {req.employee?.name || 'Compañero'}
-                </p>
-                {meta.date && (
-                    <p className="text-[12px] text-slate-500 font-medium mt-0.5">
-                        Fecha: {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })}
+
+            {/* Shift comparison grid */}
+            <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/80 border border-slate-100 rounded-2xl p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno ese día</p>
+                    <p className="text-[12px] font-black text-slate-700">
+                        {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                     </p>
-                )}
-                {req.note && (
-                    <p className="text-[12px] text-slate-500 italic mt-1">"{req.note}"</p>
-                )}
+                    {(!meta.targetShift || meta.targetShift === 'No especificado') && (
+                        <p className="text-[9px] text-slate-400 mt-0.5">Lo que darías</p>
+                    )}
+                </div>
+                <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
+                    <p className="text-[9px] font-black text-cyan-500 uppercase tracking-widest mb-1">Turno que tomarías</p>
+                    <p className="text-[12px] font-black text-cyan-700">
+                        {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
+                    </p>
+                    {(!meta.myShift || meta.myShift === 'No especificado') && (
+                        <p className="text-[9px] text-cyan-400 mt-0.5">Lo que recibirías</p>
+                    )}
+                </div>
             </div>
-            <div className="flex gap-2 justify-end">
+
+            {req.note && (
+                <p className="text-[12px] text-slate-500 italic leading-relaxed">"{req.note}"</p>
+            )}
+
+            {/* Full-width action buttons */}
+            <div className="grid grid-cols-2 gap-2">
                 <button
                     onClick={() => onReject(req.id)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95"
                 >
                     <X size={12} strokeWidth={2.5} /> Rechazar
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-95"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>
@@ -155,11 +185,21 @@ const RequestCard = memo(({ req, onCancel }) => {
                 <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno actual</p>
-                        <p className="text-[12px] font-black text-slate-700">{meta.myShift || 'No especificado'}</p>
+                        <p className="text-[12px] font-black text-slate-700">
+                            {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
+                        </p>
+                        {(!meta.myShift || meta.myShift === 'No especificado') && (
+                            <p className="text-[9px] text-slate-400 mt-0.5">Sin turno asignado</p>
+                        )}
                     </div>
                     <div className="bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-2xl p-3">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Turno a tomar</p>
-                        <p className="text-[12px] font-black text-slate-700">{meta.targetShift || meta.targetEmployeeName || 'No especificado'}</p>
+                        <p className="text-[12px] font-black text-slate-700">
+                            {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
+                        </p>
+                        {(!meta.targetShift || meta.targetShift === 'No especificado') && (
+                            <p className="text-[9px] text-slate-400 mt-0.5">Sin turno asignado</p>
+                        )}
                     </div>
                 </div>
             )}
@@ -187,7 +227,7 @@ const RequestCard = memo(({ req, onCancel }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const EmployeeRequestsView = () => {
     const { user } = useAuth();
-    const { createRequest, cancelRequest, approveRequest, rejectRequest, holidays, employees } = useStaffStore();
+    const { createRequest, cancelRequest, approvePeerRequest, rejectPeerRequest, holidays, employees } = useStaffStore();
 
     const [requests, setRequests]         = useState([]);
     const [peerRequests, setPeerRequests] = useState([]);
@@ -199,6 +239,7 @@ const EmployeeRequestsView = () => {
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError]               = useState('');
+    const [cancelConfirmId, setCancelConfirmId] = useState(null);
 
     // Compañeros de la misma sucursal (excluyendo al usuario actual)
     const branchEmployees = useMemo(() =>
@@ -292,12 +333,12 @@ const EmployeeRequestsView = () => {
     };
 
     const handlePeerAccept = async (id) => {
-        await approveRequest(id, user.id, '');
+        await approvePeerRequest(id, user.id, '');
         load();
     };
 
     const handlePeerReject = async (id) => {
-        await rejectRequest(id, user.id, 'Cambio rechazado por el empleado');
+        await rejectPeerRequest(id, user.id, 'Cambio rechazado por el compañero');
         load();
     };
 
@@ -596,21 +637,29 @@ const EmployeeRequestsView = () => {
 
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
                         {peerRequests.length > 0 && (
-                            <div className="space-y-3">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] ml-1">
-                                    Requieren tu aprobación
+                            <div className="col-span-full">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-cyan-600 mb-3 flex items-center gap-1.5">
+                                    <RefreshCw size={10} /> Requieren tu aprobación
                                 </p>
-                                {peerRequests.map(req => (
-                                    <PeerRequestCard
-                                        key={req.id}
-                                        req={req}
-                                        onAccept={handlePeerAccept}
-                                        onReject={handlePeerReject}
-                                    />
-                                ))}
-                                <div className="border-t border-white/40 my-2" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {peerRequests.map(req => (
+                                        <PeerRequestCard
+                                            key={req.id}
+                                            req={req}
+                                            onAccept={handlePeerAccept}
+                                            onReject={handlePeerReject}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="border-t border-slate-200/50 mt-5 mb-1" />
                             </div>
                         )}
+
+                        <div className="col-span-full">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
+                                <ClipboardList size={10} /> Mis Solicitudes
+                            </p>
+                        </div>
 
                         {isLoading ? (
                             <div className="flex justify-center py-16 text-slate-400 gap-2">
@@ -648,13 +697,22 @@ const EmployeeRequestsView = () => {
                             </div>
                         ) : (
                             filtered.map(req => (
-                                <RequestCard key={req.id} req={req} onCancel={handleCancel} />
+                                <RequestCard key={req.id} req={req} onCancel={id => setCancelConfirmId(id)} />
                             ))
                         )}
                     </div>
                 </div>
 
             </div>
+        <ConfirmModal
+            isOpen={!!cancelConfirmId}
+            onClose={() => setCancelConfirmId(null)}
+            onConfirm={async () => { await handleCancel(cancelConfirmId); setCancelConfirmId(null); }}
+            title="Cancelar Solicitud"
+            message="¿Estás seguro que deseas cancelar esta solicitud? Esta acción no se puede deshacer."
+            confirmText="Sí, cancelar"
+            isDestructive={true}
+        />
         </GlassViewLayout>
     );
 };

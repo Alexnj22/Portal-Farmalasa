@@ -621,6 +621,51 @@ export const createRequestsSlice = (set, get) => ({
         }
     },
 
+    // ── Peer approve/reject (fetch-enrich-then-delegate) ──────────────────
+    approvePeerRequest: async (requestId, approverId, approverNote = '') => {
+        try {
+            const { data: reqData } = await supabase
+                .from('approval_requests')
+                .select(SIMPLE_SELECT)
+                .eq('id', requestId)
+                .single();
+            if (!reqData) return false;
+            const allEmps = get().employees || [];
+            const enriched = {
+                ...reqData,
+                employee: allEmps.find(e => String(e.id) === String(reqData.employee_id)) || null,
+                approver: allEmps.find(e => String(e.id) === String(reqData.approver_id)) || null,
+            };
+            set(state => ({ requests: [...state.requests.filter(r => r.id !== requestId), enriched] }));
+            return await get().approveRequest(requestId, approverId, approverNote);
+        } catch (err) {
+            console.error('approvePeerRequest error:', err);
+            return false;
+        }
+    },
+
+    rejectPeerRequest: async (requestId, approverId, approverNote = '') => {
+        try {
+            const { data: reqData } = await supabase
+                .from('approval_requests')
+                .select(SIMPLE_SELECT)
+                .eq('id', requestId)
+                .single();
+            if (!reqData) return false;
+            const allEmps = get().employees || [];
+            const enriched = {
+                ...reqData,
+                employee: allEmps.find(e => String(e.id) === String(reqData.employee_id)) || null,
+                approver: allEmps.find(e => String(e.id) === String(reqData.approver_id)) || null,
+            };
+            set(state => ({ requests: [...state.requests.filter(r => r.id !== requestId), enriched] }));
+            return await get().rejectRequest(requestId, approverId, approverNote);
+        } catch (err) {
+            console.error('rejectPeerRequest error:', err);
+            return false;
+        }
+    },
+
     // ── Cancel (by employee) ───────────────────────────────────────────────
     cancelRequest: async (requestId) => {
         try {

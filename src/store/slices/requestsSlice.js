@@ -312,6 +312,43 @@ export const createRequestsSlice = (set, get) => ({
                 .eq('id', employeeId)
                 .single();
 
+            // SHIFT_CHANGE: enrutar directamente al compañero para aprobación de par
+            if (type === 'SHIFT_CHANGE' && payload.targetEmployeeId) {
+                const { data: peerEmp } = await supabase
+                    .from('employees').select('name').eq('id', payload.targetEmployeeId).single();
+                const enrichedPayload = {
+                    ...payload,
+                    peerApprovalRequired: true,
+                    targetEmployeeName: peerEmp?.name || '',
+                };
+                const { data: peerData, error: peerError } = await supabase
+                    .from('approval_requests')
+                    .insert([{
+                        employee_id: employeeId,
+                        approver_id: payload.targetEmployeeId,
+                        type,
+                        status: 'PENDING',
+                        note,
+                        metadata: enrichedPayload,
+                        current_level: 1,
+                    }])
+                    .select(SIMPLE_SELECT)
+                    .single();
+                if (peerError) throw peerError;
+                const allEmps = get().employees || [];
+                const enrichedPeer = {
+                    ...peerData,
+                    employee: allEmps.find(e => String(e.id) === String(peerData.employee_id)) || null,
+                    approver: allEmps.find(e => String(e.id) === String(peerData.approver_id)) || null,
+                };
+                set((state) => ({ requests: [enrichedPeer, ...state.requests] }));
+                await get().appendAuditLog('SOLICITUD_CREADA', employeeId, {
+                    dimension: 'HR',
+                    new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type} (cambio de par)`,
+                });
+                return enrichedPeer;
+            }
+
             const approverId = emp
                 ? await resolveApprover(employeeId, emp.branch_id, emp.role_id)
                 : null;
@@ -370,7 +407,7 @@ export const createRequestsSlice = (set, get) => ({
                 approvedAt: new Date().toISOString(),
             }];
 
-            const maxLevels = req.type === 'SHIFT_CHANGE' ? 1 : 3;
+            const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
 
             if (nextLevel <= maxLevels) {
                 // Avanzar al siguiente nivel
@@ -455,6 +492,19 @@ export const createRequestsSlice = (set, get) => ({
                             fromRequest: req.id,
                             ...meta,
                         }).catch(() => {});
+
+                        // Para SHIFT_CHANGE: registrar evento y notificar también al compañero
+                        if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
+                            const today = new Date().toISOString().split('T')[0];
+                            await registerEmployeeEvent(meta.targetEmployeeId, {
+                                type: 'SHIFT_CHANGE',
+                                date: meta.date || today,
+                                note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
+                                approvedBy: approverId,
+                                fromRequest: req.id,
+                            }).catch(() => {});
+                            await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                        }
                     }
                 }
 

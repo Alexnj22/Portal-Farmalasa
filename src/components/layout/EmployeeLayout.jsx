@@ -1,11 +1,10 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Calendar, ClipboardList, Bell, User, LogOut, Building2, Sparkles } from 'lucide-react';
+import { Home, ClipboardList, Bell, User, LogOut, Building2, Sparkles } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 
 const NAV_ITEMS = [
     { id: 'home',          label: 'Inicio',       icon: Home },
-    { id: 'schedule',      label: 'Mi Horario',   icon: Calendar },
     { id: 'requests',      label: 'Solicitudes',  icon: ClipboardList },
     { id: 'announcements', label: 'Avisos',        icon: Bell },
     { id: 'profile',       label: 'Mi Perfil',    icon: User },

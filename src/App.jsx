@@ -13,7 +13,6 @@ import AdminLayout from "./components/layout/AdminLayout";
 import UserHeader from "./components/layout/UserHeader";
 import EmployeeLayout from "./components/layout/EmployeeLayout";
 import EmployeeHomeView from "./views/employee/EmployeeHomeView";
-import EmployeeScheduleView from "./views/employee/EmployeeScheduleView";
 import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsView";
 import EmployeeRequestsView from "./views/employee/EmployeeRequestsView";
 import EmployeeProfileView from "./views/employee/EmployeeProfileView";
@@ -401,7 +400,6 @@ function MainApp() {
                                 <EmployeeLayout user={user} handleLogout={handleLogout}>
                                     <Routes>
                                         <Route path="home" element={<EmployeeHomeView />} />
-                                        <Route path="schedule" element={<EmployeeScheduleView />} />
                                         <Route path="requests" element={<EmployeeRequestsView />} />
                                         <Route path="announcements" element={<EmployeeAnnouncementsView />} />
                                         <Route path="profile" element={<EmployeeProfileView />} />

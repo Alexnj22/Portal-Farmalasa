@@ -51,7 +51,7 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                         </span>
                         {req.current_level && req.status === 'PENDING' && (
                             <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-                                Nivel {req.current_level} de {req.type === 'SHIFT_CHANGE' ? 1 : 3}
+                                Nivel {req.current_level} de {req.type === 'SHIFT_CHANGE' ? 2 : 3}
                             </span>
                         )}
                     </div>

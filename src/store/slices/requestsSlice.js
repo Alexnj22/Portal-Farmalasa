@@ -135,15 +135,16 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
     }
 };
 
-const resolveNextApprover = async (level, branchId) => {
+const resolveNextApprover = async (level, branchId, excludeId = null) => {
     try {
         const findBySystemRole = async (roles) => {
             for (const role of roles) {
-                const { data } = await supabase
-                    .from('employees')
+                let q = supabase.from('employees')
                     .select('id')
                     .eq('system_role', role)
                     .eq('status', 'ACTIVO');
+                if (excludeId) q = q.neq('id', excludeId);
+                const { data } = await q;
                 for (const c of (data || [])) {
                     if (!(await isUnavailable(c.id))) return c.id;
                 }
@@ -158,6 +159,7 @@ const resolveNextApprover = async (level, branchId) => {
                     .eq('role_id', roleId)
                     .eq('status', 'ACTIVO');
                 if (sameBranch && branchId) q = q.eq('branch_id', branchId);
+                if (excludeId) q = q.neq('id', excludeId);
                 const { data } = await q;
                 for (const c of (data || [])) {
                     if (!(await isUnavailable(c.id))) return c.id;
@@ -316,10 +318,21 @@ export const createRequestsSlice = (set, get) => ({
             if (type === 'SHIFT_CHANGE' && payload.targetEmployeeId) {
                 const { data: peerEmp } = await supabase
                     .from('employees').select('name').eq('id', payload.targetEmployeeId).single();
+
+                const myDayOfWeek = payload.date ? new Date(payload.date + 'T12:00:00').getDay() : null;
+                const allEmps = get().employees || [];
+                const myEmpStore     = allEmps.find(e => String(e.id) === String(employeeId));
+                const targetEmpStore = allEmps.find(e => String(e.id) === String(payload.targetEmployeeId));
+                const fmtShift = (s) => s?.start && s?.end ? `${s.start} → ${s.end}` : null;
+                const myShift     = myDayOfWeek !== null ? fmtShift(myEmpStore?.weeklySchedule?.[myDayOfWeek])     : null;
+                const targetShift = myDayOfWeek !== null ? fmtShift(targetEmpStore?.weeklySchedule?.[myDayOfWeek]) : null;
+
                 const enrichedPayload = {
                     ...payload,
                     peerApprovalRequired: true,
                     targetEmployeeName: peerEmp?.name || '',
+                    myShift:     myShift     || 'No especificado',
+                    targetShift: targetShift || 'No especificado',
                 };
                 const { data: peerData, error: peerError } = await supabase
                     .from('approval_requests')
@@ -411,7 +424,62 @@ export const createRequestsSlice = (set, get) => ({
 
             if (nextLevel <= maxLevels) {
                 // Avanzar al siguiente nivel
-                const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id);
+                const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id, approverId);
+
+                if (!nextApprover) {
+                    // No hay siguiente aprobador disponible → aprobación final directa
+                    const { error: finalErr } = await supabase
+                        .from('approval_requests')
+                        .update({
+                            status: 'APPROVED',
+                            approver_id: approverId,
+                            approver_note: approverNote,
+                            approvals: newApprovals,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', requestId);
+                    if (finalErr) throw finalErr;
+
+                    set(state => ({
+                        requests: state.requests.map(r =>
+                            r.id === requestId
+                                ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
+                                : r
+                        ),
+                    }));
+
+                    if (req.employee?.id) {
+                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+                        const registerEmployeeEvent = get().registerEmployeeEvent;
+                        if (registerEmployeeEvent) {
+                            const meta = parseMeta(req.metadata);
+                            await registerEmployeeEvent(req.employee.id, {
+                                type: req.type,
+                                date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                                endDate: meta.endDate,
+                                note: req.note,
+                                approvedBy: approverId,
+                                fromRequest: req.id,
+                                ...meta,
+                            }).catch(() => {});
+                            if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
+                                const today = new Date().toISOString().split('T')[0];
+                                await registerEmployeeEvent(meta.targetEmployeeId, {
+                                    type: 'SHIFT_CHANGE',
+                                    date: meta.date || today,
+                                    note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
+                                    approvedBy: approverId,
+                                    fromRequest: req.id,
+                                }).catch(() => {});
+                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                            }
+                        }
+                    }
+
+                    useToastStore.getState().showToast('Aprobado', 'Solicitud aprobada (sin aprobador disponible en nivel siguiente).', 'success');
+                    window.dispatchEvent(new CustomEvent('requests-updated'));
+                    return true;
+                }
 
                 const { error } = await supabase
                     .from('approval_requests')

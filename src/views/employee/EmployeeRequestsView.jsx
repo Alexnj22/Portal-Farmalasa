@@ -11,6 +11,7 @@ import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice'
 import RangeDatePicker from '../../components/common/RangeDatePicker';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
+import LiquidSelect from '../../components/common/LiquidSelect';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -107,6 +108,7 @@ const RequestCard = memo(({ req, onCancel }) => {
     const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-slate-100 text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
     const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
+    const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
 
     const cardBg =
         req.status === 'PENDING'   ? 'border-[#007AFF]/30 shadow-[0_4px_20px_rgba(0,122,255,0.05)] bg-white/80 backdrop-blur-2xl' :
@@ -147,6 +149,19 @@ const RequestCard = memo(({ req, onCancel }) => {
                 <p className="text-slate-700 text-[14px] leading-relaxed font-medium line-clamp-2 whitespace-pre-wrap">
                     {req.note}
                 </p>
+            )}
+
+            {req.type === 'SHIFT_CHANGE' && (
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno actual</p>
+                        <p className="text-[12px] font-black text-slate-700">{meta.myShift || 'No especificado'}</p>
+                    </div>
+                    <div className="bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-2xl p-3">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Turno a tomar</p>
+                        <p className="text-[12px] font-black text-slate-700">{meta.targetShift || meta.targetEmployeeName || 'No especificado'}</p>
+                    </div>
+                </div>
             )}
 
             {req.approver_note && (
@@ -379,16 +394,12 @@ const EmployeeRequestsView = () => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                             Compañero de intercambio
                         </label>
-                        <select
+                        <LiquidSelect
                             value={payload.targetEmployeeId || ''}
-                            onChange={e => setPayload(prev => ({ ...prev, targetEmployeeId: e.target.value }))}
-                            className="w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 transition-all duration-300"
-                        >
-                            <option value="">Seleccionar compañero...</option>
-                            {branchEmployees.map(e => (
-                                <option key={e.id} value={e.id}>{e.name}</option>
-                            ))}
-                        </select>
+                            onChange={v => setPayload(prev => ({ ...prev, targetEmployeeId: v }))}
+                            placeholder="Seleccionar compañero..."
+                            options={branchEmployees.map(e => ({ value: String(e.id), label: `${e.name} — ${e.role || 'Empleado'}` }))}
+                        />
                     </div>
                     <div>
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
@@ -443,26 +454,17 @@ const EmployeeRequestsView = () => {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">
                         Tipo de Constancia
                     </label>
-                    <div className="space-y-2">
-                        {CERT_TYPES.map(({ key, label, desc }) => {
-                            const isActive = payload.certificateType === key;
-                            return (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setPayload(prev => ({ ...prev, certificateType: key }))}
-                                    className={`w-full flex flex-col items-start px-4 py-3 rounded-2xl border text-left transition-all duration-300 ${
-                                        isActive
-                                            ? 'bg-blue-50 border-blue-300 text-blue-800 shadow-sm scale-[1.01]'
-                                            : 'bg-white/50 border-white/60 text-slate-600 hover:bg-white hover:border-slate-200 hover:-translate-y-0.5'
-                                    }`}
-                                >
-                                    <span className="text-[12px] font-black">{label}</span>
-                                    <span className="text-[10px] font-medium opacity-70">{desc}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <LiquidSelect
+                        value={payload.certificateType || ''}
+                        onChange={v => setPayload(prev => ({ ...prev, certificateType: v }))}
+                        placeholder="Seleccionar tipo de constancia..."
+                        options={CERT_TYPES.map(c => ({ value: c.key, label: c.label }))}
+                    />
+                    {payload.certificateType && (
+                        <p className="text-[11px] text-slate-400 mt-1.5 ml-1">
+                            {CERT_TYPES.find(c => c.key === payload.certificateType)?.desc}
+                        </p>
+                    )}
                 </div>
             );
         }
@@ -590,7 +592,7 @@ const EmployeeRequestsView = () => {
 
                 {/* ── PANEL DERECHO: Lista ── */}
                 <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
-                    <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 pt-4 px-3 md:px-4 content-start">
 
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
                         {peerRequests.length > 0 && (
@@ -616,34 +618,32 @@ const EmployeeRequestsView = () => {
                                 <span className="text-[13px] font-medium">Cargando solicitudes…</span>
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8">
-                                <div className="flex flex-col items-center justify-center min-h-[300px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                                    <div className="relative group flex flex-col items-center text-center">
-                                        <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${
-                                            statusFilter === 'PENDING' || statusFilter === 'ALL' ? 'bg-[#007AFF]' :
-                                            statusFilter === 'APPROVED' ? 'bg-emerald-500' :
-                                            statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'
-                                        }`} />
-                                        <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${
-                                            statusFilter === 'PENDING' || statusFilter === 'ALL' ? 'text-[#007AFF]' :
-                                            statusFilter === 'APPROVED' ? 'text-emerald-500' :
-                                            statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'
-                                        }`}>
-                                            {statusFilter === 'PENDING' || statusFilter === 'ALL'
-                                                ? <CheckCircle2 size={40} strokeWidth={2} />
-                                                : <ClipboardList size={40} strokeWidth={2} />
-                                            }
-                                        </div>
-                                        <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
-                                            {statusFilter === 'PENDING' ? 'Todo al día' :
-                                             statusFilter === 'ALL'     ? 'Sin solicitudes' : 'Sin resultados'}
-                                        </h3>
-                                        <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
-                                            {statusFilter === 'PENDING' ? 'No tienes solicitudes pendientes de respuesta.' :
-                                             statusFilter === 'ALL'     ? 'Aún no has creado ninguna solicitud.' :
-                                             'Sin solicitudes en esta categoría.'}
-                                        </p>
+                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] col-span-full">
+                                <div className="relative group flex flex-col items-center text-center">
+                                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${
+                                        statusFilter === 'PENDING' || statusFilter === 'ALL' ? 'bg-[#007AFF]' :
+                                        statusFilter === 'APPROVED' ? 'bg-emerald-500' :
+                                        statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'
+                                    }`} />
+                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${
+                                        statusFilter === 'PENDING' || statusFilter === 'ALL' ? 'text-[#007AFF]' :
+                                        statusFilter === 'APPROVED' ? 'text-emerald-500' :
+                                        statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'
+                                    }`}>
+                                        {statusFilter === 'PENDING' || statusFilter === 'ALL'
+                                            ? <CheckCircle2 size={40} strokeWidth={2} />
+                                            : <ClipboardList size={40} strokeWidth={2} />
+                                        }
                                     </div>
+                                    <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
+                                        {statusFilter === 'PENDING' ? 'Todo al día' :
+                                         statusFilter === 'ALL'     ? 'Sin solicitudes' : 'Sin resultados'}
+                                    </h3>
+                                    <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                        {statusFilter === 'PENDING' ? 'No tienes solicitudes pendientes de respuesta.' :
+                                         statusFilter === 'ALL'     ? 'Aún no has creado ninguna solicitud.' :
+                                         'Sin solicitudes en esta categoría.'}
+                                    </p>
                                 </div>
                             </div>
                         ) : (

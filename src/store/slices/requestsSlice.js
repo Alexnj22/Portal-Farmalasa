@@ -137,12 +137,13 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
 
 const resolveNextApprover = async (level, branchId, excludeId = null) => {
     try {
-        const findBySystemRole = async (roles) => {
+        const findBySystemRole = async (roles, sameBranch = false) => {
             for (const role of roles) {
                 let q = supabase.from('employees')
                     .select('id')
                     .eq('system_role', role)
                     .eq('status', 'ACTIVO');
+                if (sameBranch && branchId) q = q.eq('branch_id', branchId);
                 if (excludeId) q = q.neq('id', excludeId);
                 const { data } = await q;
                 for (const c of (data || [])) {
@@ -167,6 +168,12 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
             }
             return null;
         };
+
+        if (level === 'JEFE_SUCURSAL') {
+            // Jefe o Subjefe activo en la misma sucursal, excluyendo al peer
+            return await findBySystemRole(['JEFE', 'SUBJEFE'], true)
+                || await findBySystemRole(['ADMIN'], false);
+        }
 
         if (level === 2) {
             // Supervisor de Ventas (role_id=13) o system_role=SUPERVISOR
@@ -418,6 +425,111 @@ export const createRequestsSlice = (set, get) => ({
                 approverNote,
                 approvedAt: new Date().toISOString(),
             }];
+
+            // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ──────────────────
+            if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
+                const { data: peerEmp } = await supabase
+                    .from('employees')
+                    .select('system_role')
+                    .eq('id', approverId)
+                    .single();
+                const peerIsJefe = ['JEFE', 'SUBJEFE'].includes(peerEmp?.system_role);
+
+                const nextApprover = peerIsJefe
+                    ? null
+                    : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
+
+                if (!nextApprover) {
+                    // Peer es jefe, o no hay jefe disponible → aprobación final directa
+                    const { error: fe } = await supabase
+                        .from('approval_requests')
+                        .update({
+                            status: 'APPROVED',
+                            approver_id: approverId,
+                            approver_note: approverNote,
+                            approvals: newApprovals,
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', requestId);
+                    if (fe) throw fe;
+
+                    set(state => ({
+                        requests: state.requests.map(r =>
+                            r.id === requestId
+                                ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
+                                : r
+                        ),
+                    }));
+
+                    if (req.employee?.id) {
+                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+                        const registerEmployeeEvent = get().registerEmployeeEvent;
+                        if (registerEmployeeEvent) {
+                            const meta = parseMeta(req.metadata);
+                            await registerEmployeeEvent(req.employee.id, {
+                                type: req.type,
+                                date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                                endDate: meta.endDate,
+                                note: req.note,
+                                approvedBy: approverId,
+                                fromRequest: req.id,
+                                ...meta,
+                            }).catch(() => {});
+                            if (meta.targetEmployeeId) {
+                                const today = new Date().toISOString().split('T')[0];
+                                await registerEmployeeEvent(meta.targetEmployeeId, {
+                                    type: 'SHIFT_CHANGE',
+                                    date: meta.date || today,
+                                    note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
+                                    approvedBy: approverId,
+                                    fromRequest: req.id,
+                                }).catch(() => {});
+                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                            }
+                        }
+                    }
+
+                    useToastStore.getState().showToast('Aprobado', peerIsJefe ? 'Cambio de turno aprobado.' : 'Aprobado (sin jefe disponible en sucursal).', 'success');
+                    window.dispatchEvent(new CustomEvent('requests-updated'));
+                    return true;
+                }
+
+                // Avanzar a nivel 2 → jefe de sucursal
+                const { error: adv } = await supabase
+                    .from('approval_requests')
+                    .update({
+                        current_level: 2,
+                        approver_id: nextApprover,
+                        approvals: newApprovals,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', requestId);
+                if (adv) throw adv;
+
+                set(state => ({
+                    requests: state.requests.map(r =>
+                        r.id === requestId
+                            ? { ...r, current_level: 2, approver_id: nextApprover, approvals: newApprovals }
+                            : r
+                    ),
+                }));
+
+                await supabase.from('announcements').insert([{
+                    title: 'Nueva Solicitud Pendiente',
+                    message: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final`,
+                    target_type: 'EMPLOYEE',
+                    target_value: [String(nextApprover)],
+                    read_by: [],
+                    is_archived: false,
+                    created_by: approverId,
+                    priority: 'HIGH',
+                }]);
+
+                useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
+                window.dispatchEvent(new CustomEvent('requests-updated'));
+                return true;
+            }
+            // ─────────────────────────────────────────────────────────────────────
 
             const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
 

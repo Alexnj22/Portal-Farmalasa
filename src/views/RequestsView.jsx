@@ -181,6 +181,8 @@ const RequestsView = () => {
     // ALL: todas
     const filtered = requests.filter(r => {
         const myId = String(user?.id);
+        // SHIFT_CHANGE: solo el aprobador asignado lo ve en su bandeja
+        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
         const assignedToMe = !r.approver || String(r.approver?.id) === myId;
         const processedByMe = String(r.approver?.id) === myId;
 
@@ -192,6 +194,7 @@ const RequestsView = () => {
 
     const pendingCount = requests.filter(r => {
         const myId = String(user?.id);
+        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
         return r.status === 'PENDING' && (!r.approver || String(r.approver?.id) === myId);
     }).length;
 

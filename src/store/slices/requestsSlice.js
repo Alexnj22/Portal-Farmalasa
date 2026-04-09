@@ -410,9 +410,9 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     // ── Approve ────────────────────────────────────────────────────────────
-    approveRequest: async (requestId, approverId, approverNote = '') => {
+    approveRequest: async (requestId, approverId, approverNote = '', _reqOverride = null) => {
         try {
-            const req = get().requests.find(r => r.id === requestId);
+            const req = _reqOverride || get().requests.find(r => r.id === requestId);
             if (!req) return false;
 
             const currentLevel = req.current_level || 1;
@@ -749,7 +749,7 @@ export const createRequestsSlice = (set, get) => ({
                 approver: allEmps.find(e => String(e.id) === String(reqData.approver_id)) || null,
             };
             set(state => ({ requests: [...state.requests.filter(r => r.id !== requestId), enriched] }));
-            return await get().approveRequest(requestId, approverId, approverNote);
+            return await get().approveRequest(requestId, approverId, approverNote, enriched);
         } catch (err) {
             console.error('approvePeerRequest error:', err);
             return false;

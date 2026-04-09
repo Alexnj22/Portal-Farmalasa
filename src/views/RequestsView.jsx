@@ -84,6 +84,40 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
 
             {expanded && (
                 <div className="px-5 pb-4 border-t border-slate-100/80 pt-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                    {req.type === 'SHIFT_CHANGE' && (() => {
+                        const meta = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
+                        return (
+                            <div className="space-y-2">
+                                {meta.targetEmployeeName && (
+                                    <p className="text-[12px] font-bold text-slate-700 flex items-center gap-1.5">
+                                        <RefreshCw size={11} className="text-cyan-500" />
+                                        {req.employee?.name} ↔ {meta.targetEmployeeName}
+                                    </p>
+                                )}
+                                {meta.date && (
+                                    <p className="text-[11px] text-slate-500 font-medium">
+                                        Fecha: {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })}
+                                    </p>
+                                )}
+                                {(meta.myShift || meta.targetShift) && (
+                                    <div className="grid grid-cols-2 gap-2 mt-1">
+                                        <div className="bg-white/70 border border-slate-100 rounded-xl p-2.5">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                                                Turno de {req.employee?.name?.split(' ')[0]}
+                                            </p>
+                                            <p className="text-[11px] font-black text-slate-700">{meta.myShift || '—'}</p>
+                                        </div>
+                                        <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-2.5">
+                                            <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest mb-0.5">
+                                                Turno de {meta.targetEmployeeName?.split(' ')[0]}
+                                            </p>
+                                            <p className="text-[11px] font-black text-slate-700">{meta.targetShift || '—'}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                     {req.note && (
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Motivo del empleado</p>

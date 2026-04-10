@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
-    Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2, ChevronLeft, ChevronRight, X, ClipboardList
+    Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2, ChevronLeft, ChevronRight, X, ClipboardList, Palmtree
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode } from '../../utils/helpers';
@@ -88,11 +88,12 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
             { id: 'roles',         label: 'Cargos / Organigrama',    icon: ShieldCheck  },
             { id: 'announcements', label: 'Avisos',                  icon: Megaphone    },
             { id: 'requests',      label: 'Solicitudes',             icon: ClipboardList},
+            { id: 'vacation-plan', label: 'Plan de Vacaciones',      icon: Palmtree     },
             { id: 'auditview',     label: 'Auditoría',               icon: Activity     },
             { id: 'staff',         label: 'Personal',                icon: User         },
         ];
         if (isJefe) return all.filter(i =>
-            ['requests', 'schedules', 'staff', 'announcements'].includes(i.id)
+            ['requests', 'schedules', 'staff', 'announcements', 'vacation-plan'].includes(i.id)
         );
         return all.filter(i => i.id !== 'staff');
     }, [isJefe]);

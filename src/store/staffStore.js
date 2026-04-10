@@ -5,6 +5,7 @@ import { createBranchSlice } from './slices/branchSlice';
 import { createEmployeeSlice } from './slices/employeeSlice';
 import { createSystemSlice } from './slices/systemSlice';
 import { createRequestsSlice } from './slices/requestsSlice';
+import { createVacationPlanSlice } from './slices/vacationPlanSlice';
 
 export const useStaffStore = create((...args) => ({
   ...createAuditSlice(...args),
@@ -12,4 +13,5 @@ export const useStaffStore = create((...args) => ({
   ...createEmployeeSlice(...args),
   ...createSystemSlice(...args),
   ...createRequestsSlice(...args),
+  ...createVacationPlanSlice(...args),
 }));

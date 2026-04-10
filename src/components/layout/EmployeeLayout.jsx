@@ -11,6 +11,7 @@ const NAV_ITEMS = [
 ];
 
 const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false }) => {
+    const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : 'scale-100 blur-0';
     const navigate = useNavigate();
     const location = useLocation();
     const announcements = useStaffStore(s => s.announcements);
@@ -79,7 +80,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
         <div className="flex w-full h-full bg-[#F2F2F7] lg:bg-transparent font-sans overflow-hidden relative">
 
             {/* ── Sidebar Desktop ── */}
-            <aside className="hidden lg:flex flex-col shrink-0 w-[15.5rem] my-2 ml-2 relative">
+            <aside className={`hidden lg:flex flex-col shrink-0 w-[15.5rem] my-2 ml-2 relative transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Glow layers */}
                 <div className="absolute inset-y-0 left-0 -z-10 w-full pointer-events-none">
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
@@ -157,7 +158,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
             </aside>
 
             {/* ── Contenido principal ── */}
-            <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : 'scale-100 blur-0'}`}>
+            <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Header móvil */}
                 <div className="lg:hidden px-4 pt-3 pb-2 shrink-0">
                     <div className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[1.5rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
@@ -188,7 +189,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
             </main>
 
             {/* ── Nav inferior móvil ── */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4">
+            <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 <div className="flex items-center justify-around bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[1.75rem] shadow-[0_-4px_30px_rgba(0,0,0,0.06)] px-2 py-2">
                     {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
                         const isActive = active === id;

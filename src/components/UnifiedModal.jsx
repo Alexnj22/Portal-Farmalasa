@@ -37,9 +37,11 @@ const FormAddCustomDocument = React.lazy(() => import('./forms/FormAddCustomDocu
 const FormWfmAnalytics = React.lazy(() => import('./forms/FormWfmAnalytics'));
 const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerPreview'));
 const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
+const FormChangeOwnPassword = React.lazy(() => import('./forms/FormChangeOwnPassword'));
+const FormEditContact = React.lazy(() => import('./forms/FormEditContact'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -89,6 +91,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewWfmAnalytics": return "max-w-4xl";
             case "aiSchedulerPreview": return "max-w-5xl";
             case "setEmployeePassword": return "max-w-sm";
+            case "changeOwnPassword": return "max-w-sm";
+            case "editContact": return "max-w-sm";
             default: return "max-w-lg";
         }
     };
@@ -121,6 +125,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewWfmAnalytics": return "Monitor de ventas";
             case "aiSchedulerPreview": return "Planificación con IA";
             case "setEmployeePassword": return "Establecer Contraseña";
+            case "changeOwnPassword": return "Cambiar Contraseña";
+            case "editContact": return "Editar Perfil";
             default: return "Gestión Administrativa";
         }
     };
@@ -133,6 +139,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "COLABORADOR";
+        if (type === "changeOwnPassword") return "TU CUENTA";
+        if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
@@ -656,6 +664,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {(type === "addCustomDocument" || type === "editCustomDocument") && <FormAddCustomDocument formData={formData} setFormData={setFormData} type={type} />}
 
                                 {type === "setEmployeePassword" && <FormSetPassword formData={formData} onClose={onClose} />}
+                                {type === "changeOwnPassword" && <FormChangeOwnPassword onClose={onClose} />}
+                                {type === "editContact" && <FormEditContact formData={formData} onClose={onClose} />}
                             </Suspense>
                         </form>
                     </div>

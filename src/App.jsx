@@ -402,7 +402,7 @@ function MainApp() {
                                         <Route path="home" element={<EmployeeHomeView />} />
                                         <Route path="requests" element={<EmployeeRequestsView />} />
                                         <Route path="announcements" element={<EmployeeAnnouncementsView />} />
-                                        <Route path="profile" element={<EmployeeProfileView />} />
+                                        <Route path="profile" element={<EmployeeProfileView openModal={openModal} />} />
                                         <Route path="*" element={<Navigate to="/home" replace />} />
                                     </Routes>
                                 </EmployeeLayout>

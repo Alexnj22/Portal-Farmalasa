@@ -10,7 +10,7 @@ const NAV_ITEMS = [
     { id: 'profile',       label: 'Mi Perfil',    icon: User },
 ];
 
-const EmployeeLayout = ({ user, handleLogout, children }) => {
+const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const announcements = useStaffStore(s => s.announcements);
@@ -157,7 +157,7 @@ const EmployeeLayout = ({ user, handleLogout, children }) => {
             </aside>
 
             {/* ── Contenido principal ── */}
-            <main className="flex-1 flex flex-col overflow-hidden relative z-20">
+            <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : 'scale-100 blur-0'}`}>
                 {/* Header móvil */}
                 <div className="lg:hidden px-4 pt-3 pb-2 shrink-0">
                     <div className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[1.5rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">

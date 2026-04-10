@@ -397,7 +397,7 @@ function MainApp() {
                                     </Routes>
                                 </AdminLayout>
                             ) : (
-                                <EmployeeLayout user={user} handleLogout={handleLogout}>
+                                <EmployeeLayout user={user} handleLogout={handleLogout} isOverlayActive={modalOpen}>
                                     <Routes>
                                         <Route path="home" element={<EmployeeHomeView />} />
                                         <Route path="requests" element={<EmployeeRequestsView />} />

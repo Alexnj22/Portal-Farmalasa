@@ -181,7 +181,7 @@ const EmployeeLayout = ({ user, handleLogout, children }) => {
 
                 {/* Área de contenido */}
                 <div className="flex-1 overflow-y-auto pb-20 lg:pb-4 lg:pr-2 lg:pt-2">
-                    <div key={active} className="h-full w-full animate-in fade-in zoom-in-[0.99] duration-300">
+                    <div key={active} className="h-full w-full animate-in fade-in duration-300">
                         {children}
                     </div>
                 </div>

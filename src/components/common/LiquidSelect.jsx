@@ -167,8 +167,9 @@ const LiquidSelect = ({
         if (!searchTerm) return options;
         const lower = searchTerm.toLowerCase();
         return options.filter(opt =>
-            opt.label.toLowerCase().includes(lower) ||
-            (opt.sublabel && opt.sublabel.toLowerCase().includes(lower))
+            !opt.isSeparator &&
+            (opt.label.toLowerCase().includes(lower) ||
+            (opt.sublabel && opt.sublabel.toLowerCase().includes(lower)))
         );
     }, [options, searchTerm]);
 
@@ -207,29 +208,38 @@ const LiquidSelect = ({
                 )}
                 {filteredOptions.length > 0 ? (
                     filteredOptions.map((opt) => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => !opt.disabled && handleSelect(opt.value)}
-                            className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${
-                                opt.disabled
-                                    ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
-                                    : String(value) === String(opt.value)
-                                        ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
-                                        : isDark
-                                            ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
-                                            : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
-                            }`}
-                        >
-                            <span className="block leading-tight">{opt.label}</span>
-                            {opt.sublabel && (
-                                <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
-                                    String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
-                                }`}>
-                                    {opt.sublabel}
-                                </span>
-                            )}
-                        </button>
+                        opt.isSeparator ? (
+                            <div
+                                key={opt.value}
+                                className={`px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t first:border-t-0 first:pt-1 ${isDark ? 'text-white/30 border-white/10' : 'text-slate-400 border-slate-100'}`}
+                            >
+                                {opt.label}
+                            </div>
+                        ) : (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => !opt.disabled && handleSelect(opt.value)}
+                                className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${
+                                    opt.disabled
+                                        ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
+                                        : String(value) === String(opt.value)
+                                            ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
+                                            : isDark
+                                                ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
+                                                : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
+                                }`}
+                            >
+                                <span className="block leading-tight">{opt.label}</span>
+                                {opt.sublabel && (
+                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
+                                        String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
+                                    }`}>
+                                        {opt.sublabel}
+                                    </span>
+                                )}
+                            </button>
+                        )
                     ))
                 ) : (
                     <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>

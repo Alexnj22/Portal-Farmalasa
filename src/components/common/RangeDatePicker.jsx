@@ -274,12 +274,20 @@ const RangeDatePicker = ({
             setDraftStart(null);
             setDraftEnd(null);
         } else {
+            let finalEnd = end;
+            if (start === end) {
+                // Click simple — auto-calcular defaultDays
+                const d = new Date(start + 'T12:00:00');
+                d.setDate(d.getDate() + (defaultDays - 1));
+                finalEnd = d.toISOString().split('T')[0];
+                onRangeChange(start, finalEnd);
+            }
             setDraftStart(start);
-            setDraftEnd(end);
+            setDraftEnd(finalEnd);
             setRangeConfirmed(true);
         }
         setDragStart(null);
-    }, [isDragging, dragStart, multiRange, selectedRanges, onMultiChange]);
+    }, [isDragging, dragStart, multiRange, selectedRanges, onMultiChange, defaultDays, onRangeChange]);
 
     const handleDayHover = useCallback((dayStr) => {
         setHoverDate(dayStr);

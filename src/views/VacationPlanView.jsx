@@ -287,6 +287,14 @@ const VacationPlanView = () => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
     }, [year, branchFilter]);
 
+    const assignedEmployeeIds = useMemo(() => {
+        return new Set(
+            vacationPlans
+                .filter(vp => vp.year === year && vp.status !== 'CANCELLED')
+                .map(vp => String(vp.employee_id))
+        );
+    }, [vacationPlans, year]);
+
     const employeeOptions = useMemo(() => {
         const now = new Date();
         let emps = (employees || []).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
@@ -295,6 +303,14 @@ const VacationPlanView = () => {
         }
         return emps.map(e => {
             const branch = uniqueBranches.find(b => String(b.id) === String(e.branch_id || e.branchId));
+            if (assignedEmployeeIds.has(String(e.id))) {
+                return {
+                    value: String(e.id),
+                    label: e.name,
+                    sublabel: `✓ Vacaciones asignadas ${year} · ${branch?.name || '—'}`,
+                    disabled: true,
+                };
+            }
             if (!e.hire_date) {
                 return {
                     value: String(e.id),
@@ -315,11 +331,42 @@ const VacationPlanView = () => {
                     : `⏳ ${monthsWorked} mes${monthsWorked !== 1 ? 'es' : ''} · Falta ${12 - monthsWorked} mes(es) · ${branch?.name || '—'}`,
                 disabled: !isEligible,
             };
-        }).sort((a, b) => {
-            if (a.disabled !== b.disabled) return a.disabled ? 1 : -1;
-            return a.label.localeCompare(b.label);
         });
-    }, [employees, uniqueBranches, branchFilter]);
+    }, [employees, uniqueBranches, branchFilter, assignedEmployeeIds]);
+
+    const groupedOptions = useMemo(() => {
+        const eligible = employeeOptions
+            .filter(o => !o.disabled)
+            .sort((a, b) => {
+                const empA = employees.find(e => String(e.id) === a.value);
+                const empB = employees.find(e => String(e.id) === b.value);
+                const brA = uniqueBranches.find(b => String(b.id) === String(empA?.branch_id || empA?.branchId))?.name || '';
+                const brB = uniqueBranches.find(b => String(b.id) === String(empB?.branch_id || empB?.branchId))?.name || '';
+                if (brA !== brB) return brA.localeCompare(brB);
+                return a.label.localeCompare(b.label);
+            });
+        const notEligible = employeeOptions
+            .filter(o => o.disabled)
+            .sort((a, b) => a.label.localeCompare(b.label));
+
+        const result = [];
+        let currentBranch = null;
+        eligible.forEach(opt => {
+            const emp = employees.find(e => String(e.id) === opt.value);
+            const branch = uniqueBranches.find(b => String(b.id) === String(emp?.branch_id || emp?.branchId));
+            const branchName = branch?.name || '—';
+            if (branchName !== currentBranch) {
+                currentBranch = branchName;
+                result.push({ value: `__sep_${branchName}`, label: branchName, isSeparator: true, disabled: true });
+            }
+            result.push(opt);
+        });
+        if (notEligible.length > 0) {
+            result.push({ value: '__sep_not_eligible', label: 'Sin elegibilidad', isSeparator: true, disabled: true });
+            result.push(...notEligible);
+        }
+        return result;
+    }, [employeeOptions, employees, uniqueBranches]);
 
     const branchOptions = useMemo(() => [
         { value: 'ALL', label: 'Todas las sucursales' },
@@ -476,6 +523,7 @@ const VacationPlanView = () => {
                     onChange={val => setBranchFilter(val)}
                     options={branchOptions}
                     placeholder="Todas las sucursales"
+                    clearable={false}
                 />
             </div>
 
@@ -523,7 +571,7 @@ const VacationPlanView = () => {
                                     <LiquidSelect
                                         value={empId}
                                         onChange={val => setEmpId(val)}
-                                        options={employeeOptions}
+                                        options={groupedOptions}
                                         placeholder="Seleccionar empleado…"
                                     />
                                 </div>

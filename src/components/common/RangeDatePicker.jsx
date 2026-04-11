@@ -447,25 +447,20 @@ const RangeDatePicker = ({
                         </p>
                     </div>
                 ) : (
-                    <div className="flex gap-2">
-                        <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
-                            <CalendarDays size={14} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Inicio</p>
-                                <p className={`text-[12px] font-bold truncate ${startDate ? 'text-slate-700' : 'text-slate-400'}`}>
-                                    {startDate ? formatDisplay(startDate) : 'DD/MM/AAAA'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className={`flex-1 flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
-                            <CalendarDays size={14} className={endDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none mb-0.5">Fin</p>
-                                <p className={`text-[12px] font-bold truncate ${endDate ? 'text-slate-700' : 'text-slate-400'}`}>
-                                    {endDate ? formatDisplay(endDate) : 'DD/MM/AAAA'}
-                                </p>
-                            </div>
-                        </div>
+                    <div className={`flex items-center gap-3 h-[48px] px-4 bg-white/50 border rounded-2xl transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
+                        <CalendarDays size={14} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
+                        <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-slate-700' : 'text-slate-400'}`}>
+                            {startDate && endDate
+                                ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
+                                : startDate
+                                ? `${formatDisplay(startDate)} → selecciona fin`
+                                : placeholder}
+                        </span>
+                        {startDate && endDate && (
+                            <span className="shrink-0 text-[10px] font-black text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full">
+                                {Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

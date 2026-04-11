@@ -165,8 +165,10 @@ const LiquidSelect = ({
 
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return options;
+        const lower = searchTerm.toLowerCase();
         return options.filter(opt =>
-            opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+            opt.label.toLowerCase().includes(lower) ||
+            (opt.sublabel && opt.sublabel.toLowerCase().includes(lower))
         );
     }, [options, searchTerm]);
 
@@ -208,15 +210,25 @@ const LiquidSelect = ({
                         <button
                             key={opt.value}
                             type="button"
-                            onClick={() => handleSelect(opt.value)}
-                            className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${String(value) === String(opt.value)
-                                    ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
-                                    : isDark
-                                        ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
-                                        : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
-                                }`}
+                            onClick={() => !opt.disabled && handleSelect(opt.value)}
+                            className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${
+                                opt.disabled
+                                    ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
+                                    : String(value) === String(opt.value)
+                                        ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
+                                        : isDark
+                                            ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
+                                            : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
+                            }`}
                         >
-                            {opt.label}
+                            <span className="block leading-tight">{opt.label}</span>
+                            {opt.sublabel && (
+                                <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
+                                    String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
+                                }`}>
+                                    {opt.sublabel}
+                                </span>
+                            )}
                         </button>
                     ))
                 ) : (
@@ -274,7 +286,16 @@ const LiquidSelect = ({
                     />
                 ) : (
                     <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
-                        {selectedOption ? selectedOption.label : placeholder}
+                        {selectedOption ? (
+                            <>
+                                <span className="block leading-tight">{selectedOption.label}</span>
+                                {selectedOption.sublabel && (
+                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
+                                        {selectedOption.sublabel}
+                                    </span>
+                                )}
+                            </>
+                        ) : placeholder}
                     </div>
                 )}
             </div>

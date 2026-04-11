@@ -258,6 +258,15 @@ const VacationPlanView = () => {
     const updateVacationPlan     = useStaffStore(s => s.updateVacationPlan);
     const updateVacationPlanStatus = useStaffStore(s => s.updateVacationPlanStatus);
 
+    const uniqueBranches = useMemo(() => {
+        const seen = new Set();
+        return (branches || []).filter(b => {
+            if (seen.has(b.id)) return false;
+            seen.add(b.id);
+            return true;
+        });
+    }, [branches]);
+
     const currentYear = new Date().getFullYear();
     const [year, setYear]               = useState(currentYear);
     const [branchFilter, setBranchFilter] = useState('ALL');
@@ -278,20 +287,44 @@ const VacationPlanView = () => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
     }, [year, branchFilter]);
 
-    // All active employees (remove 1yr filter — eligibility shown as warning)
-    const activeEmployees = useMemo(() => {
-        return (employees || []).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
-    }, [employees]);
-
-    const employeeOptions = useMemo(() => activeEmployees.map(e => ({
-        value: String(e.id),
-        label: e.name,
-    })), [activeEmployees]);
+    const employeeOptions = useMemo(() => {
+        const now = new Date();
+        let emps = (employees || []).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
+        if (branchFilter !== 'ALL') {
+            emps = emps.filter(e => String(e.branch_id || e.branchId) === String(branchFilter));
+        }
+        return emps.map(e => {
+            const branch = uniqueBranches.find(b => String(b.id) === String(e.branch_id || e.branchId));
+            if (!e.hire_date) {
+                return {
+                    value: String(e.id),
+                    label: e.name,
+                    sublabel: '⚠ Sin fecha de ingreso — Actualizar datos',
+                    disabled: true,
+                };
+            }
+            const hire = new Date(e.hire_date + 'T12:00:00');
+            const yearsWorked = (now - hire) / (1000 * 60 * 60 * 24 * 365.25);
+            const monthsWorked = Math.floor(yearsWorked * 12);
+            const isEligible = yearsWorked >= 1;
+            return {
+                value: String(e.id),
+                label: e.name,
+                sublabel: isEligible
+                    ? `${e.role || e.position || 'Empleado'} · ${branch?.name || '—'}`
+                    : `⏳ ${monthsWorked} mes${monthsWorked !== 1 ? 'es' : ''} · Falta ${12 - monthsWorked} mes(es) · ${branch?.name || '—'}`,
+                disabled: !isEligible,
+            };
+        }).sort((a, b) => {
+            if (a.disabled !== b.disabled) return a.disabled ? 1 : -1;
+            return a.label.localeCompare(b.label);
+        });
+    }, [employees, uniqueBranches, branchFilter]);
 
     const branchOptions = useMemo(() => [
         { value: 'ALL', label: 'Todas las sucursales' },
-        ...(branches || []).map(b => ({ value: String(b.id), label: b.name })),
-    ], [branches]);
+        ...uniqueBranches.map(b => ({ value: String(b.id), label: b.name })),
+    ], [uniqueBranches]);
 
     const selectedEmployee = useMemo(() => employees.find(e => String(e.id) === String(empId)), [employees, empId]);
 
@@ -330,9 +363,9 @@ const VacationPlanView = () => {
         return daysBetween(startDate, endDate);
     }, [startDate, endDate]);
 
-    const handleRangeChange = ({ startDate: s, endDate: e }) => {
-        setStartDate(s || '');
-        setEndDate(e || '');
+    const handleRangeChange = (start, end) => {
+        setStartDate(start || '');
+        setEndDate(end || '');
     };
 
     const handleSubmit = async (ev) => {
@@ -635,7 +668,7 @@ const VacationPlanView = () => {
                                                                             <RangeDatePicker
                                                                                 startDate={editingPlan.start_date}
                                                                                 endDate={editingPlan.end_date}
-                                                                                onRangeChange={({ startDate: s, endDate: e }) =>
+                                                                                onRangeChange={(s, e) =>
                                                                                     setEditingPlan(prev => ({ ...prev, start_date: s || prev.start_date, end_date: e || prev.end_date }))
                                                                                 }
                                                                                 holidays={holidays || []}

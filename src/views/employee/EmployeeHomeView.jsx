@@ -64,6 +64,7 @@ const EmployeeHomeView = () => {
     const [weekOffset, setWeekOffset]         = useState(0);
     const [scheduleData, setScheduleData]     = useState(null);
     const [weekEvents, setWeekEvents]         = useState([]);
+    const [myVacationPlans, setMyVacationPlans] = useState([]);
     const [isLoadingWeek, setIsLoadingWeek]   = useState(false);
 
     const emp    = employees.find(e => String(e.id) === String(user?.id));
@@ -129,6 +130,18 @@ const EmployeeHomeView = () => {
             .in('type', ['VACATION', 'DISABILITY', 'PERMIT', 'BIRTHDAY'])
             .gte('date', today).order('date', { ascending: true }).limit(5)
             .then(({ data }) => setUpcomingEvents(data || []));
+    }, [user?.id]);
+
+    // Mis vacaciones (plan anual)
+    useEffect(() => {
+        if (!user?.id) return;
+        supabase
+            .from('vacation_plans')
+            .select('id, year, start_date, end_date, days, status')
+            .eq('employee_id', user.id)
+            .neq('status', 'CANCELLED')
+            .order('start_date', { ascending: true })
+            .then(({ data }) => setMyVacationPlans(data || []));
     }, [user?.id]);
 
     // Horario semanal
@@ -505,6 +518,41 @@ const EmployeeHomeView = () => {
                     {upcomingEvents.some(ev => ev.type === 'VACATION') && (
                         <p className="text-[10px] text-slate-400 mt-3 italic">* Las vacaciones previstas están sujetas a cambio.</p>
                     )}
+                </div>
+            )}
+
+            {/* ══ SECCIÓN 5: MIS VACACIONES ══ */}
+            {myVacationPlans.length > 0 && (
+                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5">
+                        <Palmtree size={12} className="text-emerald-500" /> Mis Vacaciones
+                    </p>
+                    <div className="space-y-3">
+                        {myVacationPlans.map(vp => {
+                            const STATUS_CFG = {
+                                PLANNED:   { label: 'Planificado', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+                                CONFIRMED: { label: 'Confirmado',  color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+                                TAKEN:     { label: 'Completado',  color: 'bg-slate-100 text-slate-500 border-slate-200' },
+                            };
+                            const s = STATUS_CFG[vp.status] || STATUS_CFG.PLANNED;
+                            const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
+                            return (
+                                <div key={vp.id} className="flex items-center gap-3 p-3 bg-white/50 border border-white/80 rounded-2xl">
+                                    <div className="p-2 bg-emerald-50 rounded-xl flex-shrink-0">
+                                        <Palmtree size={14} className="text-emerald-500" strokeWidth={1.8} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">{vp.days} días · {vp.year}</p>
+                                    </div>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border flex-shrink-0 ${s.color}`}>
+                                        {s.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <p className="text-[10px] text-slate-400 italic mt-3">* Las vacaciones planificadas están sujetas a cambio.</p>
                 </div>
             )}
 

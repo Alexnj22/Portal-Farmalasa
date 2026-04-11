@@ -150,6 +150,25 @@ export const createVacationPlanSlice = (set, get) => ({
                 .update({ status, updated_at: new Date().toISOString() })
                 .eq('id', planId);
             if (error) throw error;
+
+            if (status === 'CONFIRMED') {
+                const plan = get().vacationPlans.find(vp => vp.id === planId);
+                if (plan?.employee_id) {
+                    const fmtDate = (d) => d
+                        ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })
+                        : '—';
+                    await supabase.from('announcements').insert([{
+                        title: '🌴 Vacaciones Confirmadas',
+                        message: `Tus vacaciones han sido confirmadas del ${fmtDate(plan.start_date)} al ${fmtDate(plan.end_date)} (${plan.days} días). ¡Disfrútalas!`,
+                        target_type: 'EMPLOYEE',
+                        target_value: [String(plan.employee_id)],
+                        read_by: [],
+                        is_archived: false,
+                        priority: 'HIGH',
+                    }]);
+                }
+            }
+
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
                     vp.id === planId ? { ...vp, status } : vp

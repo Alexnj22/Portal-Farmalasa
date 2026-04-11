@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
-    Loader2, Clock, Edit3, Calendar, ArrowRightLeft, Sparkles
+    Loader2, Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -61,6 +61,7 @@ const EmployeeProfileView = ({ openModal }) => {
     const [events, setEvents]           = useState([]);
     const [evLoading, setEvLoading]     = useState(true);
     const [activeCount, setActiveCount] = useState(0);
+    const [myVacPlans, setMyVacPlans]   = useState([]);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -84,6 +85,17 @@ const EmployeeProfileView = ({ openModal }) => {
             setEvLoading(false);
         };
         load();
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        supabase
+            .from('vacation_plans')
+            .select('id, year, start_date, end_date, days, status')
+            .eq('employee_id', user.id)
+            .neq('status', 'CANCELLED')
+            .order('start_date', { ascending: false })
+            .then(({ data }) => setMyVacPlans(data || []));
     }, [user?.id]);
 
     const tenure = useMemo(() => {
@@ -201,6 +213,38 @@ const EmployeeProfileView = ({ openModal }) => {
                             {emp.weekly_hours   && <Field label="Horas semanales"  value={`${emp.weekly_hours}h`} />}
                         </div>
                     </SectionCard>
+
+                    {/* Vacaciones */}
+                    {myVacPlans.length > 0 && (
+                        <SectionCard>
+                            <SectionLabel icon={Palmtree} label="Plan de Vacaciones" color="text-emerald-500" />
+                            <div className="space-y-2">
+                                {myVacPlans.map(vp => {
+                                    const STATUS_CFG = {
+                                        PLANNED:   { label: 'Planificado', bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'    },
+                                        CONFIRMED: { label: 'Confirmado',  bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                                        TAKEN:     { label: 'Completado',  bg: 'bg-slate-100',  text: 'text-slate-500',   border: 'border-slate-200'   },
+                                    };
+                                    const s = STATUS_CFG[vp.status] || STATUS_CFG.PLANNED;
+                                    const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
+                                    return (
+                                        <div key={vp.id} className="flex items-center gap-3 p-3 bg-white/60 border border-white/80 rounded-2xl hover:bg-white/85 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200">
+                                            <div className="p-2 bg-emerald-50 rounded-xl flex-shrink-0">
+                                                <Palmtree size={13} className="text-emerald-500" strokeWidth={1.8} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[12px] font-black text-slate-700 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">{vp.days} días · {vp.year}</p>
+                                            </div>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border flex-shrink-0 ${s.bg} ${s.text} ${s.border}`}>
+                                                {s.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </SectionCard>
+                    )}
 
                     {/* Timeline */}
                     <SectionCard>

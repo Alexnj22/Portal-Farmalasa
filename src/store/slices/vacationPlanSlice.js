@@ -9,7 +9,7 @@ export const createVacationPlanSlice = (set, get) => ({
         try {
             let query = supabase
                 .from('vacation_plans')
-                .select('id, year, employee_id, branch_id, start_date, end_date, days, status, notes, created_at')
+                .select('id, year, employee_id, branch_id, start_date, end_date, days, status, notes, metadata, created_at')
                 .eq('year', year)
                 .order('start_date', { ascending: true });
             if (branchId) query = query.eq('branch_id', branchId);
@@ -36,13 +36,19 @@ export const createVacationPlanSlice = (set, get) => ({
             const employees = get().employees || [];
             const emp = employees.find(e => String(e.id) === String(planData.employee_id));
 
-            // Validar antigüedad mínima de 1 año
+            let metadata = planData.metadata || {};
+
+            // Registrar antigüedad al momento de la asignación
             if (emp?.hire_date) {
                 const hireDate  = new Date(emp.hire_date      + 'T12:00:00');
                 const startDate = new Date(planData.start_date + 'T12:00:00');
                 const yearsWorked = (startDate - hireDate) / (1000 * 60 * 60 * 24 * 365.25);
+
                 if (yearsWorked < 1) {
-                    throw new Error('ELIGIBILITY_ERROR: El empleado no cumple 1 año de antigüedad en la fecha de inicio de vacaciones.');
+                    // Asignación anticipada — se guarda como advertencia en metadata
+                    metadata = { ...metadata, earlyAssignment: true, yearsWorkedAtAssignment: Math.round(yearsWorked * 100) / 100 };
+                } else {
+                    metadata = { ...metadata, earlyAssignment: false, yearsWorkedAtAssignment: Math.round(yearsWorked * 100) / 100 };
                 }
             }
 
@@ -86,6 +92,7 @@ export const createVacationPlanSlice = (set, get) => ({
                     days:        planData.days || 15,
                     status:      'PLANNED',
                     notes:       planData.notes || null,
+                    metadata:    metadata,
                     created_by:  planData.created_by,
                 }])
                 .select()
@@ -106,6 +113,33 @@ export const createVacationPlanSlice = (set, get) => ({
         } catch (err) {
             console.error('Error creating vacation plan:', err);
             throw err;
+        }
+    },
+
+    updateVacationPlan: async (planId, updates) => {
+        try {
+            const { data, error } = await supabase
+                .from('vacation_plans')
+                .update({
+                    start_date:  updates.start_date,
+                    end_date:    updates.end_date,
+                    days:        updates.days,
+                    notes:       updates.notes ?? null,
+                    updated_at:  new Date().toISOString(),
+                })
+                .eq('id', planId)
+                .select()
+                .single();
+            if (error) throw error;
+            set(state => ({
+                vacationPlans: state.vacationPlans.map(vp =>
+                    vp.id === planId ? { ...vp, ...data } : vp
+                ),
+            }));
+            return true;
+        } catch (err) {
+            console.error('Error updating vacation plan:', err);
+            return false;
         }
     },
 

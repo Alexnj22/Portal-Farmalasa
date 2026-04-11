@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle,
-    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban
+    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
+import LiquidSelect from '../components/common/LiquidSelect';
+import RangeDatePicker from '../components/common/RangeDatePicker';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -36,6 +38,84 @@ const InputLabel = ({ children }) => (
 
 const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
+// ── Eligibility Banner ────────────────────────────────────────────────────────
+const EligibilityBanner = ({ info }) => {
+    if (!info) return null;
+    const { isEligible, isNearEligible, inWindow, yearsWorked, monthsWorked, lastAnniversary, windowEnd, nextAnniversary } = info;
+
+    let cfg;
+    if (isEligible && inWindow) {
+        cfg = {
+            bg: 'bg-emerald-50/80 border-emerald-200/60',
+            icon: <CheckCircle2 size={10} strokeWidth={2.5} className="text-emerald-700" />,
+            label: 'Dentro de ventana válida',
+            labelColor: 'text-emerald-700',
+            bodyColor: 'text-emerald-800',
+        };
+    } else if (isEligible && !inWindow) {
+        cfg = {
+            bg: 'bg-amber-50/80 border-amber-200/60',
+            icon: <AlertCircle size={10} strokeWidth={2.5} className="text-amber-700" />,
+            label: 'Fuera de ventana óptima',
+            labelColor: 'text-amber-700',
+            bodyColor: 'text-amber-800',
+        };
+    } else if (!isEligible && isNearEligible) {
+        cfg = {
+            bg: 'bg-orange-50/80 border-orange-200/60',
+            icon: <Clock size={10} strokeWidth={2.5} className="text-orange-700" />,
+            label: 'Asignación anticipada',
+            labelColor: 'text-orange-700',
+            bodyColor: 'text-orange-800',
+        };
+    } else {
+        cfg = {
+            bg: 'bg-red-50/80 border-red-200/60',
+            icon: <Ban size={10} strokeWidth={2.5} className="text-red-700" />,
+            label: 'No elegible',
+            labelColor: 'text-red-700',
+            bodyColor: 'text-red-800',
+        };
+    }
+
+    return (
+        <div className={`rounded-2xl p-4 border space-y-1.5 ${cfg.bg}`}>
+            <p className={`font-black uppercase tracking-widest text-[9px] flex items-center gap-1.5 ${cfg.labelColor}`}>
+                {cfg.icon} {cfg.label}
+            </p>
+            {isEligible ? (
+                <>
+                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                        Antigüedad: <strong>{yearsWorked} años</strong>
+                    </p>
+                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                        Último aniversario: <strong>{fmtDate(lastAnniversary?.toISOString().split('T')[0])}</strong>
+                    </p>
+                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                        Ventana válida hasta: <strong>{fmtDate(windowEnd?.toISOString().split('T')[0])}</strong>
+                    </p>
+                </>
+            ) : (
+                <>
+                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                        Antigüedad actual: <strong>{monthsWorked} meses</strong>
+                    </p>
+                    {nextAnniversary && (
+                        <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                            Próximo aniversario: <strong>{fmtDate(nextAnniversary.toISOString().split('T')[0])}</strong>
+                        </p>
+                    )}
+                    {isNearEligible && (
+                        <p className={`text-[10px] font-medium ${cfg.bodyColor} opacity-80`}>
+                            Se puede asignar con advertencia de anticipación.
+                        </p>
+                    )}
+                </>
+            )}
+        </div>
+    );
+};
+
 // ── Gantt ─────────────────────────────────────────────────────────────────────
 const GanttChart = ({ plans, year }) => {
     const months = Array.from({ length: 12 }, (_, i) => ({
@@ -58,14 +138,23 @@ const GanttChart = ({ plans, year }) => {
         return Math.max(0.8, ((e - s) / totalMs) * 100);
     };
 
+    // Sort by branch name → role → employee name
     const rows = useMemo(() => {
         const map = new Map();
         plans.filter(p => p.status !== 'CANCELLED').forEach(p => {
             const key = String(p.employee_id);
-            if (!map.has(key)) map.set(key, { emp: p.employee, bars: [] });
+            if (!map.has(key)) map.set(key, { emp: p.employee, branch: p.branch, bars: [] });
             map.get(key).bars.push(p);
         });
-        return Array.from(map.values());
+        return Array.from(map.values()).sort((a, b) => {
+            const branchA = a.branch?.name || '';
+            const branchB = b.branch?.name || '';
+            if (branchA !== branchB) return branchA.localeCompare(branchB);
+            const roleA = a.emp?.role || a.emp?.position || '';
+            const roleB = b.emp?.role || b.emp?.position || '';
+            if (roleA !== roleB) return roleA.localeCompare(roleB);
+            return (a.emp?.name || '').localeCompare(b.emp?.name || '');
+        });
     }, [plans]);
 
     if (rows.length === 0) return (
@@ -74,6 +163,8 @@ const GanttChart = ({ plans, year }) => {
             <p className="text-[13px] font-bold text-slate-500">Sin planes para este año</p>
         </div>
     );
+
+    let lastBranchName = null;
 
     return (
         <div className="overflow-x-auto">
@@ -92,36 +183,52 @@ const GanttChart = ({ plans, year }) => {
                 </div>
 
                 {/* Rows */}
-                <div className="space-y-2">
-                    {rows.map(({ emp, bars }) => (
-                        <div key={emp?.id || bars[0]?.employee_id} className="flex items-center gap-2 group/row">
-                            <div className="w-[130px] shrink-0 truncate text-[11px] font-bold text-slate-600 text-right pr-3 group-hover/row:text-[#007AFF] transition-colors">
-                                {emp?.name || 'Empleado'}
-                            </div>
-                            <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-hidden">
-                                {/* Month grid lines */}
-                                {months.map(m => (
-                                    <div
-                                        key={m.idx}
-                                        className="absolute top-0 bottom-0 border-l border-slate-100/60"
-                                        style={{ left: `${pct(`${year}-${String(m.idx + 1).padStart(2, '0')}-01`)}%` }}
-                                    />
-                                ))}
-                                {/* Bars */}
-                                {bars.map(p => {
-                                    const meta = STATUS_META[p.status] || STATUS_META.PLANNED;
-                                    return (
-                                        <div
-                                            key={p.id}
-                                            title={`${emp?.name} • ${fmtShort(p.start_date)} → ${fmtShort(p.end_date)} • ${p.days}d • ${meta.label}`}
-                                            className={`absolute top-1 bottom-1 rounded-lg ${meta.bar} opacity-75 hover:opacity-100 transition-opacity cursor-default`}
-                                            style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
+                <div className="space-y-1">
+                    {rows.map(({ emp, branch, bars }) => {
+                        const branchName = branch?.name || '';
+                        const showHeader = branchName !== lastBranchName;
+                        lastBranchName = branchName;
+
+                        return (
+                            <React.Fragment key={emp?.id || bars[0]?.employee_id}>
+                                {showHeader && branchName && (
+                                    <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-[130px] text-right pr-3 shrink-0">
+                                            {branchName}
+                                        </span>
+                                        <div className="flex-1 h-px bg-slate-100" />
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 group/row">
+                                    <div className="w-[130px] shrink-0 truncate text-[11px] font-bold text-slate-600 text-right pr-3 group-hover/row:text-[#007AFF] transition-colors">
+                                        {emp?.name || 'Empleado'}
+                                    </div>
+                                    <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-hidden">
+                                        {/* Month grid lines */}
+                                        {months.map(m => (
+                                            <div
+                                                key={m.idx}
+                                                className="absolute top-0 bottom-0 border-l border-slate-100/60"
+                                                style={{ left: `${pct(`${year}-${String(m.idx + 1).padStart(2, '0')}-01`)}%` }}
+                                            />
+                                        ))}
+                                        {/* Bars */}
+                                        {bars.map(p => {
+                                            const meta = STATUS_META[p.status] || STATUS_META.PLANNED;
+                                            return (
+                                                <div
+                                                    key={p.id}
+                                                    title={`${emp?.name} • ${fmtShort(p.start_date)} → ${fmtShort(p.end_date)} • ${p.days}d • ${meta.label}`}
+                                                    className={`absolute top-1 bottom-1 rounded-lg ${meta.bar} opacity-75 hover:opacity-100 transition-opacity cursor-default`}
+                                                    style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
 
                 {/* Legend */}
@@ -143,10 +250,12 @@ const VacationPlanView = () => {
     const { user } = useAuth();
     const employees              = useStaffStore(s => s.employees);
     const branches               = useStaffStore(s => s.branches);
+    const holidays               = useStaffStore(s => s.holidays);
     const vacationPlans          = useStaffStore(s => s.vacationPlans);
     const isLoadingVacationPlans = useStaffStore(s => s.isLoadingVacationPlans);
     const fetchVacationPlans     = useStaffStore(s => s.fetchVacationPlans);
     const createVacationPlan     = useStaffStore(s => s.createVacationPlan);
+    const updateVacationPlan     = useStaffStore(s => s.updateVacationPlan);
     const updateVacationPlanStatus = useStaffStore(s => s.updateVacationPlanStatus);
 
     const currentYear = new Date().getFullYear();
@@ -161,19 +270,28 @@ const VacationPlanView = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [cancelConfirm, setCancelConfirm] = useState({ open: false, planId: null });
 
+    // Inline edit state
+    const [editingPlan, setEditingPlan] = useState(null); // { id, start_date, end_date, notes }
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
     useEffect(() => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
     }, [year, branchFilter]);
 
-    // Empleados elegibles (≥1 año antigüedad, activos)
-    const eligibleEmployees = useMemo(() => {
-        const now = new Date();
-        return (employees || []).filter(e => {
-            if (e.status !== 'ACTIVO' && e.status !== 'ACTIVE') return false;
-            if (!e.hire_date) return false;
-            return (now - new Date(e.hire_date + 'T12:00:00')) / (1000 * 60 * 60 * 24 * 365.25) >= 1;
-        });
+    // All active employees (remove 1yr filter — eligibility shown as warning)
+    const activeEmployees = useMemo(() => {
+        return (employees || []).filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE');
     }, [employees]);
+
+    const employeeOptions = useMemo(() => activeEmployees.map(e => ({
+        value: String(e.id),
+        label: e.name,
+    })), [activeEmployees]);
+
+    const branchOptions = useMemo(() => [
+        { value: 'ALL', label: 'Todas las sucursales' },
+        ...(branches || []).map(b => ({ value: String(b.id), label: b.name })),
+    ], [branches]);
 
     const selectedEmployee = useMemo(() => employees.find(e => String(e.id) === String(empId)), [employees, empId]);
 
@@ -181,8 +299,11 @@ const VacationPlanView = () => {
         if (!selectedEmployee?.hire_date) return null;
         const hire = new Date(selectedEmployee.hire_date + 'T12:00:00');
         const now  = new Date();
-        const yearsWorked = (now - hire) / (1000 * 60 * 60 * 24 * 365.25);
-        const isEligible  = yearsWorked >= 1;
+        const msWorked    = now - hire;
+        const yearsWorked = msWorked / (1000 * 60 * 60 * 24 * 365.25);
+        const monthsWorked = Math.floor(msWorked / (1000 * 60 * 60 * 24 * 30.44));
+        const isEligible   = yearsWorked >= 1;
+        const isNearEligible = !isEligible && monthsWorked >= 9;
 
         const nextAnniversary = new Date(now.getFullYear(), hire.getMonth(), hire.getDate());
         if (nextAnniversary < now) nextAnniversary.setFullYear(now.getFullYear() + 1);
@@ -190,9 +311,18 @@ const VacationPlanView = () => {
         lastAnniversary.setFullYear(lastAnniversary.getFullYear() - 1);
         const windowEnd = new Date(lastAnniversary);
         windowEnd.setMonth(windowEnd.getMonth() + 3);
-        const inWindow = now >= lastAnniversary && now <= windowEnd;
+        const inWindow = isEligible && now >= lastAnniversary && now <= windowEnd;
 
-        return { isEligible, yearsWorked: Math.floor(yearsWorked * 10) / 10, nextAnniversary, lastAnniversary, windowEnd, inWindow };
+        return {
+            isEligible,
+            isNearEligible,
+            yearsWorked: Math.floor(yearsWorked * 10) / 10,
+            monthsWorked,
+            nextAnniversary,
+            lastAnniversary,
+            windowEnd,
+            inWindow,
+        };
     }, [selectedEmployee]);
 
     const computedDays = useMemo(() => {
@@ -200,8 +330,13 @@ const VacationPlanView = () => {
         return daysBetween(startDate, endDate);
     }, [startDate, endDate]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleRangeChange = ({ startDate: s, endDate: e }) => {
+        setStartDate(s || '');
+        setEndDate(e || '');
+    };
+
+    const handleSubmit = async (ev) => {
+        ev.preventDefault();
         if (!empId || !startDate || !endDate) {
             useToastStore.getState().showToast('Error', 'Completa empleado y fechas.', 'error');
             return;
@@ -227,9 +362,7 @@ const VacationPlanView = () => {
             setEmpId(''); setStartDate(''); setEndDate(''); setNotes('');
         } catch (err) {
             const msg = err.message || '';
-            if (msg.startsWith('ELIGIBILITY_ERROR:')) {
-                useToastStore.getState().showToast('No elegible', msg.replace('ELIGIBILITY_ERROR: ', ''), 'error');
-            } else if (msg.startsWith('WINDOW_ERROR:')) {
+            if (msg.startsWith('WINDOW_ERROR:')) {
                 useToastStore.getState().showToast('Fuera de ventana', msg.replace('WINDOW_ERROR: ', ''), 'warning');
             } else if (msg.startsWith('OVERLAP_ERROR:')) {
                 useToastStore.getState().showToast('Solapamiento', msg.replace('OVERLAP_ERROR: ', ''), 'error');
@@ -253,8 +386,41 @@ const VacationPlanView = () => {
         useToastStore.getState().showToast('Cancelado', 'Plan cancelado.', 'success');
     };
 
+    const handleSaveEdit = async () => {
+        if (!editingPlan) return;
+        setIsSavingEdit(true);
+        const days = editingPlan.start_date && editingPlan.end_date
+            ? daysBetween(editingPlan.start_date, editingPlan.end_date)
+            : 0;
+        const ok = await updateVacationPlan(editingPlan.id, {
+            start_date: editingPlan.start_date,
+            end_date:   editingPlan.end_date,
+            days,
+            notes:      editingPlan.notes,
+        });
+        setIsSavingEdit(false);
+        if (ok) {
+            useToastStore.getState().showToast('Guardado', 'Plan actualizado.', 'success');
+            setEditingPlan(null);
+        } else {
+            useToastStore.getState().showToast('Error', 'No se pudo actualizar.', 'error');
+        }
+    };
+
+    // Sort filtered plans by branch → role → start_date
     const filtered = useMemo(() => {
-        return vacationPlans.filter(p => statusFilter === 'ALL' || p.status === statusFilter);
+        return vacationPlans
+            .filter(p => statusFilter === 'ALL' || p.status === statusFilter)
+            .slice()
+            .sort((a, b) => {
+                const brA = a.branch?.name || '';
+                const brB = b.branch?.name || '';
+                if (brA !== brB) return brA.localeCompare(brB);
+                const roA = a.employee?.role || a.employee?.position || '';
+                const roB = b.employee?.role || b.employee?.position || '';
+                if (roA !== roB) return roA.localeCompare(roB);
+                return a.start_date.localeCompare(b.start_date);
+            });
     }, [vacationPlans, statusFilter]);
 
     const filtersContent = (
@@ -271,14 +437,14 @@ const VacationPlanView = () => {
             </div>
 
             {/* Sucursal */}
-            <select
-                value={branchFilter}
-                onChange={e => setBranchFilter(e.target.value)}
-                className="bg-white/50 backdrop-blur-md border border-white/70 rounded-[1.5rem] px-3 py-2 text-[11px] font-bold text-slate-600 outline-none shadow-sm hover:bg-white/70 transition-all"
-            >
-                <option value="ALL">Todas las sucursales</option>
-                {(branches || []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
+            <div className="min-w-[180px]">
+                <LiquidSelect
+                    value={branchFilter}
+                    onChange={val => setBranchFilter(val)}
+                    options={branchOptions}
+                    placeholder="Todas las sucursales"
+                />
+            </div>
 
             {/* Estado */}
             <div className="flex items-center bg-white/50 backdrop-blur-md border border-white/70 rounded-[1.5rem] p-1 gap-1 shadow-sm">
@@ -321,58 +487,28 @@ const VacationPlanView = () => {
                                 {/* Empleado */}
                                 <div>
                                     <InputLabel>Empleado</InputLabel>
-                                    <select value={empId} onChange={e => setEmpId(e.target.value)} className={glassInput}>
-                                        <option value="">Seleccionar empleado…</option>
-                                        {eligibleEmployees.map(e => (
-                                            <option key={e.id} value={e.id}>{e.name}</option>
-                                        ))}
-                                    </select>
-                                    <p className="text-[10px] text-slate-400 font-medium mt-1 ml-1">Solo empleados con ≥ 1 año de antigüedad</p>
+                                    <LiquidSelect
+                                        value={empId}
+                                        onChange={val => setEmpId(val)}
+                                        options={employeeOptions}
+                                        placeholder="Seleccionar empleado…"
+                                    />
                                 </div>
 
-                                {/* Eligibility info */}
-                                {selectedEmployee && eligibilityInfo && (
-                                    <div className={`rounded-2xl p-4 border space-y-1.5 ${eligibilityInfo.inWindow ? 'bg-emerald-50/80 border-emerald-200/60' : 'bg-amber-50/80 border-amber-200/60'}`}>
-                                        <p className={`font-black uppercase tracking-widest text-[9px] flex items-center gap-1.5 ${eligibilityInfo.inWindow ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                            {eligibilityInfo.inWindow
-                                                ? <><CheckCircle2 size={10} strokeWidth={2.5} /> Dentro de ventana válida</>
-                                                : <><AlertCircle size={10} strokeWidth={2.5} /> Fuera de ventana óptima</>
-                                            }
-                                        </p>
-                                        <p className={`text-[11px] font-medium ${eligibilityInfo.inWindow ? 'text-emerald-800' : 'text-amber-800'}`}>
-                                            Antigüedad: <strong>{eligibilityInfo.yearsWorked} años</strong>
-                                        </p>
-                                        <p className={`text-[11px] font-medium ${eligibilityInfo.inWindow ? 'text-emerald-800' : 'text-amber-800'}`}>
-                                            Último aniversario: <strong>{fmtDate(eligibilityInfo.lastAnniversary.toISOString().split('T')[0])}</strong>
-                                        </p>
-                                        <p className={`text-[11px] font-medium ${eligibilityInfo.inWindow ? 'text-emerald-800' : 'text-amber-800'}`}>
-                                            Ventana válida hasta: <strong>{fmtDate(eligibilityInfo.windowEnd.toISOString().split('T')[0])}</strong>
-                                        </p>
-                                    </div>
-                                )}
+                                {/* Eligibility banner */}
+                                {selectedEmployee && <EligibilityBanner info={eligibilityInfo} />}
 
-                                {/* Fechas */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <InputLabel>Fecha inicio</InputLabel>
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={e => {
-                                                setStartDate(e.target.value);
-                                                if (!endDate && e.target.value) {
-                                                    const d = new Date(e.target.value + 'T12:00:00');
-                                                    d.setDate(d.getDate() + 14);
-                                                    setEndDate(d.toISOString().split('T')[0]);
-                                                }
-                                            }}
-                                            className={glassInput}
-                                        />
-                                    </div>
-                                    <div>
-                                        <InputLabel>Fecha fin</InputLabel>
-                                        <input type="date" value={endDate} min={startDate} onChange={e => setEndDate(e.target.value)} className={glassInput} />
-                                    </div>
+                                {/* RangeDatePicker */}
+                                <div>
+                                    <InputLabel>Período de vacaciones</InputLabel>
+                                    <RangeDatePicker
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        onRangeChange={handleRangeChange}
+                                        holidays={holidays || []}
+                                        defaultDays={15}
+                                        label="Seleccionar fechas"
+                                    />
                                 </div>
 
                                 {/* Días calculados */}
@@ -445,42 +581,101 @@ const VacationPlanView = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {filtered
-                                                .slice()
-                                                .sort((a, b) => a.start_date.localeCompare(b.start_date))
-                                                .map(p => (
-                                                    <tr key={p.id} className="group/row hover:bg-white/40 transition-colors">
-                                                        <td className="py-3 pr-4">
-                                                            <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
-                                                        </td>
-                                                        <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
-                                                        <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">
-                                                            {fmtShort(p.start_date)} → {fmtShort(p.end_date)}
-                                                        </td>
-                                                        <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
-                                                        <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
-                                                        <td className="py-3">
-                                                            <div className="flex items-center gap-1.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                                                {p.status === 'PLANNED' && (
-                                                                    <button
-                                                                        onClick={() => handleConfirmPlan(p.id)}
-                                                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
-                                                                    >
-                                                                        <Check size={10} strokeWidth={3} /> Confirmar
-                                                                    </button>
-                                                                )}
-                                                                {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
-                                                                    <button
-                                                                        onClick={() => setCancelConfirm({ open: true, planId: p.id })}
-                                                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all active:scale-95"
-                                                                    >
-                                                                        <X size={10} strokeWidth={3} /> Cancelar
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                            {filtered.map(p => {
+                                                const isEditing = editingPlan?.id === p.id;
+                                                return (
+                                                    <React.Fragment key={p.id}>
+                                                        <tr className="group/row hover:bg-white/40 transition-colors">
+                                                            <td className="py-3 pr-4">
+                                                                <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
+                                                            </td>
+                                                            <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
+                                                            <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">
+                                                                {fmtShort(p.start_date)} → {fmtShort(p.end_date)}
+                                                            </td>
+                                                            <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
+                                                            <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
+                                                            <td className="py-3">
+                                                                <div className="flex items-center gap-1.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                                    {p.status === 'PLANNED' && (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' })}
+                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95"
+                                                                            >
+                                                                                <Edit2 size={10} strokeWidth={2.5} /> Editar
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleConfirmPlan(p.id)}
+                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
+                                                                            >
+                                                                                <Check size={10} strokeWidth={3} /> Confirmar
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                    {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
+                                                                        <button
+                                                                            onClick={() => setCancelConfirm({ open: true, planId: p.id })}
+                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                                                                        >
+                                                                            <X size={10} strokeWidth={3} /> Cancelar
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+
+                                                        {/* Inline edit row */}
+                                                        {isEditing && (
+                                                            <tr className="bg-blue-50/60">
+                                                                <td colSpan={6} className="py-4 px-3">
+                                                                    <div className="flex flex-wrap items-end gap-4">
+                                                                        <div className="flex-1 min-w-[220px]">
+                                                                            <InputLabel>Nuevo período</InputLabel>
+                                                                            <RangeDatePicker
+                                                                                startDate={editingPlan.start_date}
+                                                                                endDate={editingPlan.end_date}
+                                                                                onRangeChange={({ startDate: s, endDate: e }) =>
+                                                                                    setEditingPlan(prev => ({ ...prev, start_date: s || prev.start_date, end_date: e || prev.end_date }))
+                                                                                }
+                                                                                holidays={holidays || []}
+                                                                                defaultDays={15}
+                                                                                label="Cambiar fechas"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-[180px]">
+                                                                            <InputLabel>Notas</InputLabel>
+                                                                            <textarea
+                                                                                value={editingPlan.notes}
+                                                                                onChange={e => setEditingPlan(prev => ({ ...prev, notes: e.target.value }))}
+                                                                                rows={2}
+                                                                                placeholder="Observaciones…"
+                                                                                className={`${glassInput} resize-none leading-relaxed text-[11px]`}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 pb-0.5">
+                                                                            <button
+                                                                                onClick={handleSaveEdit}
+                                                                                disabled={isSavingEdit}
+                                                                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#0066CC] transition-all active:scale-95 disabled:opacity-60"
+                                                                            >
+                                                                                {isSavingEdit ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
+                                                                                Guardar
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setEditingPlan(null)}
+                                                                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                                                                            >
+                                                                                <X size={11} strokeWidth={3} /> Cancelar
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

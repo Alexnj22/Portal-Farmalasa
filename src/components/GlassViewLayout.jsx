@@ -5,6 +5,7 @@ const GlassViewLayout = ({
     title,
     liveIndicator = false,
     filtersContent,
+    headerLeft,
     transparentBody = false,
     fixedScrollMode = false,
     children
@@ -35,22 +36,24 @@ const GlassViewLayout = ({
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
 
                         <div className="flex items-center justify-between md:justify-start gap-3 shrink-0">
-                            <div className="flex items-center gap-3">
-                                {Icon && (
-                                    <div className="bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,122,255,0.25)] p-2 md:p-2.5 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer z-10">
-                                        <Icon className="text-white" size={20} strokeWidth={1.5} />
-                                        {liveIndicator && (
-                                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 md:h-3 md:w-3">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white"></span>
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                                <h2 className="font-semibold text-[18px] md:text-[24px] text-slate-900 tracking-tight">
-                                    {title}
-                                </h2>
-                            </div>
+                            {headerLeft ? headerLeft : (
+                                <div className="flex items-center gap-3">
+                                    {Icon && (
+                                        <div className="bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,122,255,0.25)] p-2 md:p-2.5 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer z-10">
+                                            <Icon className="text-white" size={20} strokeWidth={1.5} />
+                                            {liveIndicator && (
+                                                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 md:h-3 md:w-3">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white"></span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                    <h2 className="font-semibold text-[18px] md:text-[24px] text-slate-900 tracking-tight">
+                                        {title}
+                                    </h2>
+                                </div>
+                            )}
                         </div>
 
                         {filtersContent && (

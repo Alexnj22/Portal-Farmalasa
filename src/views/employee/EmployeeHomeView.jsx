@@ -315,85 +315,71 @@ const EmployeeHomeView = () => {
 
     return (
         <GlassViewLayout
-            icon={Home}
-            title="Inicio"
             transparentBody={true}
-            filtersContent={
-                <button onClick={() => navigate('/requests')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white/70 backdrop-blur-xl border border-white/90 text-slate-700 rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
-                    <Plus size={13} strokeWidth={3} /> Nueva Solicitud
-                </button>
-            }
-        >
-        <div className="space-y-4 pb-6">
-
-            {/* ══ SECCIÓN 2: HERO ══ */}
-            <div className="relative overflow-hidden rounded-[2rem] px-5 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.2)]"
-                style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)' }}>
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/40 shadow-md flex-shrink-0">
+            headerLeft={
+                <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-white/60 shadow-md flex-shrink-0">
                         {emp?.photo || emp?.photo_url
                             ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
-                            : <div className="w-full h-full bg-white/20 flex items-center justify-center text-white font-black text-base">{user?.name?.charAt(0)}</div>
+                            : <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-black text-base">{user?.name?.charAt(0)}</div>
                         }
                     </div>
-                    <div className="flex-1 min-w-0">
+                    {/* Nombre + cargo */}
+                    <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <GreetIcon size={11} className="text-white/60 flex-shrink-0" />
-                            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{greeting},</p>
-                            <p className="text-white text-[15px] font-black leading-none truncate">{user?.name?.split(' ')[0]}</p>
+                            <GreetIcon size={11} className="text-slate-400 flex-shrink-0" />
+                            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">{greeting},</span>
+                            <span className="text-[16px] md:text-[18px] font-black text-slate-900 leading-none truncate">{user?.name?.split(' ')[0]}</span>
                         </div>
-                        <p className="text-white/50 text-[10px] mt-0.5 truncate">
-                            {emp?.role || 'Empleado'} · {branch?.name || '—'}
-                        </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                        <p className="text-white text-[18px] font-black leading-none">{timeLabel}</p>
-                        <p className="text-white/40 text-[9px] mt-0.5 capitalize">{todayLabel}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">{emp?.role || 'Empleado'} · {branch?.name || '—'}</p>
                     </div>
                 </div>
-
-                {/* Estado hoy */}
-                <div className="relative z-10 mt-3">
-                    {activeEvent === undefined ? (
-                        <div className="h-10 bg-white/10 rounded-2xl animate-pulse" />
-                    ) : activeEvent ? (
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-[11px] uppercase tracking-widest ${
-                            activeEvent.type === 'VACATION'   ? 'bg-amber-400/30 text-amber-100 border border-amber-300/30' :
-                            activeEvent.type === 'DISABILITY' ? 'bg-red-400/30 text-red-100 border border-red-300/30' :
-                            'bg-purple-400/30 text-purple-100 border border-purple-300/30'
+            }
+            filtersContent={
+                <div className="flex items-center gap-2 md:gap-3">
+                    {/* Hora + fecha */}
+                    <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-[15px] font-black text-slate-800 leading-none">{timeLabel}</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5 capitalize">{todayLabel}</span>
+                    </div>
+                    {/* Turno hoy */}
+                    {activeEvent === undefined ? null : activeEvent ? (
+                        <div className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black text-[10px] uppercase tracking-widest border ${
+                            activeEvent.type === 'VACATION'   ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            activeEvent.type === 'DISABILITY' ? 'bg-red-50 text-red-700 border-red-200' :
+                            'bg-purple-50 text-purple-700 border-purple-200'
                         }`}>
-                            <Sparkles size={12} />
+                            <Sparkles size={10} />
                             {EVENT_BADGES[activeEvent.type]?.badge || activeEvent.type}
-                            {(() => {
-                                const meta = typeof activeEvent.metadata === 'object' && activeEvent.metadata ? activeEvent.metadata : {};
-                                const end  = meta.endDate || activeEvent.date;
-                                return end ? <span className="opacity-70 font-bold">hasta {new Date(end + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</span> : null;
-                            })()}
                         </div>
                     ) : todayShift ? (
-                        <div className="flex items-center gap-4 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5">
-                            <div>
-                                <p className="text-white/50 text-[8px] font-black uppercase tracking-widest">Entrada</p>
-                                <p className="text-white text-[17px] font-black leading-none">{formatTime12h(todayShift.start)}</p>
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/70 backdrop-blur-xl border border-white/90 rounded-2xl shadow-sm">
+                            <div className="text-center">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
+                                <p className="text-[13px] font-black text-slate-700 leading-none">{formatTime12h(todayShift.start)}</p>
                             </div>
-                            <div className="flex-1 h-px bg-white/20 relative">
-                                <Coffee size={11} className="text-orange-300 absolute left-1/2 -top-[5px] -translate-x-1/2" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-white/50 text-[8px] font-black uppercase tracking-widest">Salida</p>
-                                <p className="text-white text-[17px] font-black leading-none">{formatTime12h(todayShift.end)}</p>
+                            <Coffee size={10} className="text-orange-400 flex-shrink-0" />
+                            <div className="text-center">
+                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Salida</p>
+                                <p className="text-[13px] font-black text-slate-700 leading-none">{formatTime12h(todayShift.end)}</p>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5">
-                            <Palmtree size={16} strokeWidth={1.5} className="text-white/60" />
-                            <p className="text-white/80 text-[13px] font-bold">Día libre o descanso</p>
+                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white/70 backdrop-blur-xl border border-white/90 rounded-2xl shadow-sm">
+                            <Palmtree size={13} strokeWidth={1.5} className="text-slate-400" />
+                            <p className="text-[11px] font-bold text-slate-500">Día libre</p>
                         </div>
                     )}
+                    {/* Botón */}
+                    <button onClick={() => navigate('/requests')}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-white/90 text-slate-700 rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
+                        <Plus size={13} strokeWidth={3} /> Nueva Solicitud
+                    </button>
                 </div>
-            </div>
+            }
+        >
+        <div className="space-y-4 pb-6">
 
             {/* ══ SECCIÓN 3: VERTICAL ══ */}
             <div className="space-y-4">

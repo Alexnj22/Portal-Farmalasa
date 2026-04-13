@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     CalendarDays, ClipboardList, Bell, Plus, ChevronLeft, ChevronRight,
-    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon
+    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -277,7 +277,21 @@ const EmployeeHomeView = () => {
         <div className="px-4 lg:px-6 pt-4 pb-6">
         <div className="max-w-5xl mx-auto space-y-4">
 
-            {/* ══ HERO ══ */}
+            {/* ══ SECCIÓN 1: HEADER ══ */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="p-2 bg-white/60 backdrop-blur-xl border border-white/80 rounded-2xl shadow-sm">
+                        <Home size={16} className="text-[#007AFF]" />
+                    </div>
+                    <h1 className="text-[18px] font-black text-slate-800">Inicio</h1>
+                </div>
+                <button onClick={() => navigate('/requests')}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#007AFF] to-[#0055CC] text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,122,255,0.35)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.45)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
+                    <Plus size={13} strokeWidth={3} /> Nueva Solicitud
+                </button>
+            </div>
+
+            {/* ══ SECCIÓN 2: HERO ══ */}
             <div className="relative overflow-hidden rounded-[2rem] px-5 py-4 shadow-[0_8px_30px_rgba(0,122,255,0.3)]"
                 style={{ background: 'linear-gradient(135deg,#007AFF 0%,#0055CC 55%,#3b0fa8 100%)' }}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
@@ -345,16 +359,17 @@ const EmployeeHomeView = () => {
                 </div>
             </div>
 
-            {/* ══ MÉTRICAS ══ */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* ══ SECCIÓN 3: GRID MÉTRICAS + VACACIONES ══ */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
 
-                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                {/* Card Mañana */}
+                <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
                         <CalendarDays size={10} className="text-emerald-500" /> Mañana
                     </p>
                     {tomorrowShift ? (
                         <>
-                            <p className="text-[28px] font-black text-slate-800 leading-none">{formatTime12h(tomorrowShift.start)}</p>
+                            <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-[#007AFF] transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
                         </>
                     ) : (
@@ -365,28 +380,30 @@ const EmployeeHomeView = () => {
                     )}
                 </div>
 
+                {/* Card Solicitudes */}
                 <div onClick={() => navigate('/requests')}
-                    className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all active:scale-[0.98]">
+                    className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
                         <ClipboardList size={10} className="text-purple-500" /> Solicitudes
                     </p>
                     {pendingCount === null
                         ? <Loader2 size={16} className="text-slate-300 animate-spin" />
                         : <>
-                            <p className="text-[28px] font-black text-slate-800 leading-none">{pendingCount}</p>
+                            <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
                             <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
                         </>
                     }
                 </div>
 
-                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                {/* Card Tardanzas */}
+                <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
                         <Timer size={10} className="text-orange-500" /> Tardanzas
                     </p>
                     {tardanzas === null
                         ? <Loader2 size={16} className="text-slate-300 animate-spin" />
                         : <>
-                            <p className={`text-[28px] font-black leading-none ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800'}`}>{tardanzas.count}</p>
+                            <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
                             <p className="text-[10px] text-slate-400 font-medium mt-0.5">
                                 {tardanzas.minutes > 0 ? `${tardanzas.minutes} min · este mes` : 'este mes'}
                             </p>
@@ -394,156 +411,45 @@ const EmployeeHomeView = () => {
                     }
                 </div>
 
+                {/* Card Avisos */}
                 <div onClick={() => navigate('/announcements')}
-                    className={`backdrop-blur-xl rounded-[1.75rem] p-3.5 cursor-pointer hover:-translate-y-0.5 transition-all active:scale-[0.98] ${
+                    className={`group/card backdrop-blur-xl rounded-[1.75rem] p-3.5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
                         hasUrgent
-                            ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]'
-                            : 'bg-white/60 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)]'
+                            ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15),inset_0_1px_0_rgba(255,255,255,0.9)]'
+                            : 'bg-white/60 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]'
                     }`}>
                     <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
                         {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
                     </p>
-                    <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800'}`}>{unreadAnnouncements.length}</p>
+                    <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
                     <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
                         {hasUrgent ? '¡URGENTE!' : 'sin leer'}
                     </p>
                 </div>
 
-            </div>
-
-            {/* ══ GRID PRINCIPAL: HORARIO + VACACIONES ══ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-                {/* Horario semanal — ocupa 2 columnas */}
-                <div className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-blue-50 rounded-xl">
-                                <CalendarDays size={13} className="text-[#007AFF]" strokeWidth={2.5} />
-                            </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Horario Semanal</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <button onClick={() => setWeekOffset(v => v - 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
-                                <ChevronLeft size={14} strokeWidth={2.5} />
-                            </button>
-                            <div className="text-center min-w-[110px]">
-                                <p className="text-[11px] font-black text-slate-700">{weekLabel}</p>
-                                {isCurrentWeek && <p className="text-[8px] font-black text-[#007AFF] uppercase tracking-widest">Semana actual</p>}
-                            </div>
-                            <button onClick={() => setWeekOffset(v => v + 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
-                                <ChevronRight size={14} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {isLoadingWeek ? (
-                        <div className="flex justify-center py-6 text-slate-400 gap-2">
-                            <Loader2 size={16} className="animate-spin" />
-                            <span className="text-[11px]">Cargando…</span>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="space-y-1.5">
-                                {days.map(d => {
-                                    const isPast = !d.isToday && d.date < today;
-                                    return (
-                                        <div key={d.id} className={`relative flex items-center gap-2.5 p-2.5 rounded-[1.25rem] border transition-all overflow-hidden ${
-                                            d.isToday ? 'bg-[#007AFF]/5 border-[#007AFF]/25' : 'bg-white/40 border-white/60'
-                                        } ${isPast ? 'opacity-40' : ''}`}>
-                                            {d.isToday && (
-                                                <div className="absolute inset-0 bg-[#007AFF]/5 animate-pulse rounded-[1.25rem] pointer-events-none" />
-                                            )}
-                                            <div className={`relative z-10 w-9 h-9 rounded-[0.75rem] flex flex-col items-center justify-center flex-shrink-0 ${
-                                                d.isToday ? 'bg-[#007AFF] text-white' : 'bg-slate-100 text-slate-600'
-                                            }`}>
-                                                <span className="text-[6px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
-                                                <span className="text-[13px] font-black leading-tight">{d.date.getDate()}</span>
-                                            </div>
-                                            <div className="relative z-10 flex-1 min-w-0">
-                                                {d.event ? (
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${EVENT_BADGES[d.event.type]?.color || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                                        {EVENT_BADGES[d.event.type]?.label || d.event.type}
-                                                    </span>
-                                                ) : d.shift ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <div>
-                                                            <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Entrada</p>
-                                                            <p className="text-[13px] font-black text-slate-800">{formatTime12h(d.shift.start)}</p>
-                                                        </div>
-                                                        <Coffee size={10} className="text-orange-400 flex-shrink-0" />
-                                                        <div>
-                                                            <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Salida</p>
-                                                            <p className="text-[13px] font-black text-slate-800">{formatTime12h(d.shift.end)}</p>
-                                                        </div>
-                                                        {d.crossesMidnight && (
-                                                            <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 border border-indigo-200 px-1 py-0.5 rounded-md">+1d</span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1 text-slate-400">
-                                                        <Palmtree size={11} strokeWidth={1.5} />
-                                                        <span className="text-[11px] font-bold">Día libre</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {d.isToday && (
-                                                <span className="relative z-10 flex-shrink-0 text-[7px] font-black uppercase tracking-widest bg-[#007AFF] text-white px-1.5 py-0.5 rounded-full">Hoy</span>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            {totalWeekHours > 0 && (
-                                <div className="mt-3">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                                            <Clock size={9} /> Progreso semana
-                                        </p>
-                                        <p className="text-[11px] font-black text-slate-600">{totalWeekHours.toFixed(1)} / 44h</p>
-                                    </div>
-                                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-gradient-to-r from-[#007AFF] to-[#0055CC] rounded-full transition-all"
-                                            style={{ width: `${Math.min((totalWeekHours / 44) * 100, 100)}%` }} />
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {/* Mis Vacaciones — ocupa 1 columna */}
-                <div className="lg:col-span-1 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-                        <Palmtree size={11} className="text-emerald-500" /> Mis Vacaciones
-                    </p>
-                    {myVacationPlans.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-slate-300 gap-2">
-                            <Palmtree size={24} strokeWidth={1.2} />
-                            <p className="text-[11px] font-bold text-center">Sin vacaciones<br/>planificadas</p>
-                        </div>
-                    ) : (
-                        <div className={`grid gap-2 ${myVacationPlans.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-1'}`}>
+                {/* Card Vacaciones — solo si hay planes, full width en mobile/tablet, 2 cols en desktop */}
+                {myVacationPlans.length > 0 && (
+                    <div className="col-span-2 md:col-span-3 lg:col-span-2 bg-gradient-to-br from-emerald-50/80 to-white/80 backdrop-blur-xl border border-emerald-200/60 rounded-[2rem] p-4 shadow-[0_4px_20px_rgba(16,185,129,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(16,185,129,0.15),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-1.5">
+                            <Palmtree size={10} /> Mis Vacaciones
+                        </p>
+                        <div className="flex gap-3 overflow-x-auto pb-1">
                             {myVacationPlans.map(vp => {
                                 const s    = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
                                 const fmt  = d => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
-                                const daysLeft = (() => {
-                                    const start = new Date(vp.start_date + 'T12:00:00');
-                                    const diff  = Math.ceil((start - new Date()) / 86400000);
-                                    return diff;
-                                })();
+                                const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
                                 const isConfirmed = vp.status === 'CONFIRMED';
                                 return (
-                                    <div key={vp.id} className={`p-3 rounded-2xl border transition-all ${
+                                    <div key={vp.id} className={`flex-shrink-0 p-3 rounded-2xl border min-w-[160px] transition-all duration-300 ${
                                         isConfirmed
-                                            ? 'bg-emerald-50/70 border-emerald-300/50 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
-                                            : 'bg-white/50 border-white/80'
+                                            ? 'bg-emerald-50 border-emerald-300/60 shadow-[0_0_16px_rgba(16,185,129,0.18)]'
+                                            : 'bg-white/70 border-white/80'
                                     }`}>
-                                        <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center justify-between mb-1.5">
                                             <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${s.color}`}>
                                                 {s.label}
                                             </span>
-                                            {daysLeft > 0 && daysLeft <= 60 && (
+                                            {daysLeft > 0 && daysLeft <= 90 && (
                                                 <span className="text-[9px] font-black text-slate-400">en {daysLeft}d</span>
                                             )}
                                         </div>
@@ -553,14 +459,117 @@ const EmployeeHomeView = () => {
                                 );
                             })}
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
             </div>
 
-            {/* ══ PRÓXIMOS EVENTOS ══ */}
+            {/* ══ SECCIÓN 4: HORARIO SEMANAL (full width) ══ */}
+            <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-blue-50 rounded-xl">
+                            <CalendarDays size={13} className="text-[#007AFF]" strokeWidth={2.5} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Horario Semanal</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <button onClick={() => setWeekOffset(v => v - 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
+                            <ChevronLeft size={14} strokeWidth={2.5} />
+                        </button>
+                        <div className="text-center min-w-[110px]">
+                            <p className="text-[11px] font-black text-slate-700">{weekLabel}</p>
+                            {isCurrentWeek && <p className="text-[8px] font-black text-[#007AFF] uppercase tracking-widest">Semana actual</p>}
+                        </div>
+                        <button onClick={() => setWeekOffset(v => v + 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
+                            <ChevronRight size={14} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
+
+                {isLoadingWeek ? (
+                    <div className="flex justify-center py-6 text-slate-400 gap-2">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="text-[11px]">Cargando…</span>
+                    </div>
+                ) : (
+                    <>
+                        <div key={weekLabel} className="space-y-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
+                            {days.map(d => {
+                                const isPast = !d.isToday && d.date < today;
+                                return (
+                                    <div key={d.id} className={`relative flex items-center gap-2.5 p-2.5 rounded-[1.25rem] border transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden
+                                        hover:scale-[1.01] hover:-translate-y-0.5
+                                        ${d.isToday
+                                            ? 'bg-[#007AFF]/5 border-[#007AFF]/25 ring-2 ring-[#007AFF]/30 ring-offset-2 ring-offset-transparent'
+                                            : 'bg-white/40 border-white/60 hover:bg-white/70'
+                                        }
+                                        ${isPast ? 'opacity-40 grayscale' : ''}
+                                    `}>
+                                        {d.isToday && (
+                                            <div className="absolute inset-0 bg-[#007AFF]/5 animate-pulse rounded-[1.25rem] pointer-events-none" />
+                                        )}
+                                        <div className={`relative z-10 w-9 h-9 rounded-[0.75rem] flex flex-col items-center justify-center flex-shrink-0 ${
+                                            d.isToday ? 'bg-[#007AFF] text-white' : 'bg-slate-100 text-slate-600'
+                                        }`}>
+                                            <span className="text-[6px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
+                                            <span className="text-[13px] font-black leading-tight">{d.date.getDate()}</span>
+                                        </div>
+                                        <div className="relative z-10 flex-1 min-w-0">
+                                            {d.event ? (
+                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${EVENT_BADGES[d.event.type]?.color || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                                    {EVENT_BADGES[d.event.type]?.label || d.event.type}
+                                                </span>
+                                            ) : d.shift ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div>
+                                                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Entrada</p>
+                                                        <p className="text-[13px] font-black text-slate-800">{formatTime12h(d.shift.start)}</p>
+                                                    </div>
+                                                    <Coffee size={10} className="text-orange-400 flex-shrink-0" />
+                                                    <div>
+                                                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Salida</p>
+                                                        <p className="text-[13px] font-black text-slate-800">{formatTime12h(d.shift.end)}</p>
+                                                    </div>
+                                                    {d.crossesMidnight && (
+                                                        <span className="text-[7px] font-black text-indigo-500 bg-indigo-50 border border-indigo-200 px-1 py-0.5 rounded-md">+1d</span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 text-slate-400">
+                                                    <Palmtree size={11} strokeWidth={1.5} />
+                                                    <span className="text-[11px] font-bold">Día libre</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {d.isToday && (
+                                            <span className="relative z-10 flex-shrink-0 text-[7px] font-black uppercase tracking-widest bg-[#007AFF] text-white px-1.5 py-0.5 rounded-full">Hoy</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {totalWeekHours > 0 && (
+                            <div className="mt-3">
+                                <div className="flex items-center justify-between mb-1">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                                        <Clock size={9} /> Progreso semana
+                                    </p>
+                                    <p className="text-[11px] font-black text-slate-600">{totalWeekHours.toFixed(1)} / 44h</p>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-[#007AFF] to-[#0055CC] rounded-full transition-all duration-500"
+                                        style={{ width: `${Math.min((totalWeekHours / 44) * 100, 100)}%` }} />
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* ══ SECCIÓN 5: PRÓXIMOS EVENTOS ══ */}
             {upcomingEvents.length > 0 && (
-                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
                         <Sparkles size={11} className="text-amber-500" /> Próximos Eventos
                     </p>
@@ -570,7 +579,7 @@ const EmployeeHomeView = () => {
                             const start = meta.startDate || ev.date;
                             const conf  = EVENT_BADGES[ev.type];
                             return (
-                                <div key={ev.id} className="flex items-center gap-1.5 bg-white/70 border border-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                                <div key={ev.id} className="flex items-center gap-1.5 bg-white/70 border border-white/80 rounded-full px-3 py-1.5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
                                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${EVT_DOT[ev.type] || 'bg-slate-400'}`} />
                                     <span className="text-[10px] font-black text-slate-600">{conf?.label || ev.type}</span>
                                     <span className="text-[10px] text-slate-400">
@@ -582,15 +591,6 @@ const EmployeeHomeView = () => {
                     </div>
                 </div>
             )}
-
-            {/* ══ NUEVA SOLICITUD ══ */}
-            <div className="flex justify-center">
-                <button onClick={() => navigate('/requests')}
-                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#007AFF] to-[#0055CC] text-white rounded-full font-black text-[13px] shadow-[0_4px_20px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all active:scale-[0.98]"
-                >
-                    <Plus size={15} strokeWidth={3} /> Nueva Solicitud
-                </button>
-            </div>
 
         </div>
         </div>

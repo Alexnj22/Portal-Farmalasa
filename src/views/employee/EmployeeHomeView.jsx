@@ -9,6 +9,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
+import GlassViewLayout from '../../components/GlassViewLayout';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -313,22 +314,18 @@ const EmployeeHomeView = () => {
     };
 
     return (
-        <div className="px-4 lg:px-6 pt-4 pb-6">
-        <div className="max-w-5xl mx-auto space-y-4">
-
-            {/* ══ SECCIÓN 1: HEADER ══ */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-white/60 backdrop-blur-xl border border-white/80 rounded-2xl shadow-sm">
-                        <Home size={16} className="text-slate-600" />
-                    </div>
-                    <h1 className="text-[18px] font-black text-slate-800">Inicio</h1>
-                </div>
+        <GlassViewLayout
+            icon={Home}
+            title="Inicio"
+            transparentBody={true}
+            filtersContent={
                 <button onClick={() => navigate('/requests')}
                     className="flex items-center gap-2 px-5 py-2.5 bg-white/70 backdrop-blur-xl border border-white/90 text-slate-700 rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
                     <Plus size={13} strokeWidth={3} /> Nueva Solicitud
                 </button>
-            </div>
+            }
+        >
+        <div className="space-y-4 pb-6">
 
             {/* ══ SECCIÓN 2: HERO ══ */}
             <div className="relative overflow-hidden rounded-[2rem] px-5 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.2)]"
@@ -667,7 +664,7 @@ const EmployeeHomeView = () => {
             </div>
 
         </div>
-        </div>
+        </GlassViewLayout>
     );
 };
 

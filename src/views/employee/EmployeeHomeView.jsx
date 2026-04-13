@@ -300,19 +300,19 @@ const EmployeeHomeView = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="p-2 bg-white/60 backdrop-blur-xl border border-white/80 rounded-2xl shadow-sm">
-                        <Home size={16} className="text-[#007AFF]" />
+                        <Home size={16} className="text-slate-600" />
                     </div>
                     <h1 className="text-[18px] font-black text-slate-800">Inicio</h1>
                 </div>
                 <button onClick={() => navigate('/requests')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#007AFF] to-[#0055CC] text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,122,255,0.35)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.45)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white/70 backdrop-blur-xl border border-white/90 text-slate-700 rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
                     <Plus size={13} strokeWidth={3} /> Nueva Solicitud
                 </button>
             </div>
 
             {/* ══ SECCIÓN 2: HERO ══ */}
-            <div className="relative overflow-hidden rounded-[2rem] px-5 py-4 shadow-[0_8px_30px_rgba(0,122,255,0.3)]"
-                style={{ background: 'linear-gradient(135deg,#007AFF 0%,#0055CC 55%,#3b0fa8 100%)' }}>
+            <div className="relative overflow-hidden rounded-[2rem] px-5 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.2)]"
+                style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%)' }}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
                 <div className="relative z-10 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/40 shadow-md flex-shrink-0">
@@ -381,118 +381,122 @@ const EmployeeHomeView = () => {
             {/* ══ SECCIÓN 3: VERTICAL ══ */}
             <div className="space-y-4">
 
-                {/* 1. Grid 2×4 métricas */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* 1+2. Card unificada: métricas + vacaciones */}
+                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
 
-                    {/* Mañana */}
-                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                            <CalendarDays size={10} className="text-emerald-500" /> Mañana
+                    {/* Grid 2×2 métricas */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+
+                        {/* Mañana */}
+                        <div className="group/card bg-white/50 border border-white/80 rounded-2xl p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                                <CalendarDays size={10} className="text-emerald-500" /> Mañana
+                            </p>
+                            {tomorrowShift ? (
+                                <>
+                                    <p className="text-[22px] font-black text-slate-800 leading-none group-hover/card:text-slate-600 transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-1.5 text-slate-400 mt-1.5">
+                                    <Palmtree size={14} strokeWidth={1.5} />
+                                    <p className="text-[11px] font-bold">Libre</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Solicitudes */}
+                        <div onClick={() => navigate('/requests')}
+                            className="group/card bg-white/50 border border-white/80 rounded-2xl p-3 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:-translate-y-1 hover:bg-white/90 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                                <ClipboardList size={10} className="text-purple-500" /> Solicitudes
+                            </p>
+                            {pendingCount === null
+                                ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                                : <>
+                                    <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
+                                </>
+                            }
+                        </div>
+
+                        {/* Tardanzas */}
+                        <div className="group/card bg-white/50 border border-white/80 rounded-2xl p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                                <Timer size={10} className="text-orange-500" /> Tardanzas
+                            </p>
+                            {tardanzas === null
+                                ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                                : <>
+                                    <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                        {tardanzas.minutes > 0 ? `${tardanzas.minutes}m` : 'este mes'}
+                                    </p>
+                                </>
+                            }
+                        </div>
+
+                        {/* Avisos */}
+                        <div onClick={() => navigate('/announcements')}
+                            className={`group/card rounded-2xl p-3 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1 ${
+                                hasUrgent
+                                    ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_12px_30px_rgba(239,68,68,0.15)]'
+                                    : 'bg-white/50 border border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/80'
+                            }`}>
+                            <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
+                                {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
+                            </p>
+                            <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
+                            <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
+                                {hasUrgent ? '¡URGENTE!' : 'sin leer'}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div className="border-t border-white/60 my-1" />
+
+                    {/* Vacaciones */}
+                    <div className="pt-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                            <Palmtree size={9} className="text-emerald-500" /> Mis Vacaciones
                         </p>
-                        {tomorrowShift ? (
-                            <>
-                                <p className="text-[22px] font-black text-slate-800 leading-none group-hover/card:text-[#007AFF] transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
-                            </>
+                        {myVacationPlans.length === 0 ? (
+                            <div className="flex items-center gap-3 px-3 py-3 bg-white/40 rounded-2xl border border-white/60">
+                                <Palmtree size={18} strokeWidth={1} className="text-slate-300" />
+                                <div>
+                                    <p className="text-[11px] font-black text-slate-400">Pendiente de programar</p>
+                                    <p className="text-[9px] text-slate-300 font-medium">RRHH asignará tus vacaciones</p>
+                                </div>
+                            </div>
                         ) : (
-                            <div className="flex items-center gap-1.5 text-slate-400 mt-1.5">
-                                <Palmtree size={14} strokeWidth={1.5} />
-                                <p className="text-[11px] font-bold">Libre</p>
+                            <div className="space-y-2">
+                                {myVacationPlans.map(vp => {
+                                    const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
+                                    const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+                                    const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
+                                    return (
+                                        <div key={vp.id} className={`flex items-center gap-3 p-3 bg-white/50 rounded-2xl border transition-all ${
+                                            vp.status === 'CONFIRMED'
+                                                ? 'border-emerald-200/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]'
+                                                : 'border-white/80'
+                                        }`}>
+                                            <Palmtree size={15} className="text-emerald-500 flex-shrink-0" strokeWidth={1.5} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[11px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                                <p className="text-[9px] text-slate-400 font-medium">
+                                                    {vp.days} días · {vp.year}{daysLeft > 0 && daysLeft <= 90 ? ` · en ${daysLeft}d` : ''}
+                                                </p>
+                                            </div>
+                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border flex-shrink-0 ${s.color}`}>
+                                                {s.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
-
-                    {/* Solicitudes */}
-                    <div onClick={() => navigate('/requests')}
-                        className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                            <ClipboardList size={10} className="text-purple-500" /> Solicitudes
-                        </p>
-                        {pendingCount === null
-                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
-                            : <>
-                                <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
-                            </>
-                        }
-                    </div>
-
-                    {/* Tardanzas */}
-                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                            <Timer size={10} className="text-orange-500" /> Tardanzas
-                        </p>
-                        {tardanzas === null
-                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
-                            : <>
-                                <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                    {tardanzas.minutes > 0 ? `${tardanzas.minutes}m` : 'este mes'}
-                                </p>
-                            </>
-                        }
-                    </div>
-
-                    {/* Avisos */}
-                    <div onClick={() => navigate('/announcements')}
-                        className={`group/card backdrop-blur-xl rounded-[1.75rem] p-3.5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
-                            hasUrgent
-                                ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15),inset_0_1px_0_rgba(255,255,255,0.9)]'
-                                : 'bg-white/60 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]'
-                        }`}>
-                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
-                            {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
-                        </p>
-                        <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
-                        <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
-                            {hasUrgent ? '¡URGENTE!' : 'sin leer'}
-                        </p>
-                    </div>
-
-                </div>
-
-                {/* 2. Card Vacaciones — siempre visible */}
-                <div className={`rounded-[2rem] p-4 backdrop-blur-xl border transition-all duration-300 hover:-translate-y-1 ${
-                    myVacationPlans.length > 0
-                        ? 'bg-gradient-to-br from-emerald-50/80 to-white/80 border-emerald-200/60 shadow-[0_4px_20px_rgba(16,185,129,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)]'
-                        : 'bg-white/60 border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]'
-                }`}>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-1.5">
-                        <Palmtree size={9} /> Mis Vacaciones
-                    </p>
-                    {myVacationPlans.length === 0 ? (
-                        <div className="flex flex-col items-center py-4 gap-2">
-                            <Palmtree size={24} strokeWidth={1} className="text-slate-200" />
-                            <p className="text-[11px] font-bold text-slate-400 text-center">Pendiente de programar</p>
-                            <p className="text-[9px] text-slate-300 text-center">RRHH asignará tus vacaciones</p>
-                        </div>
-                    ) : (
-                        <div className="flex gap-3 overflow-x-auto pb-1">
-                            {myVacationPlans.map(vp => {
-                                const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
-                                const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
-                                const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
-                                return (
-                                    <div key={vp.id} className={`flex items-center gap-3 p-3 bg-white/70 rounded-2xl border flex-shrink-0 transition-all ${
-                                        vp.status === 'CONFIRMED'
-                                            ? 'border-emerald-200/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]'
-                                            : 'border-white/80'
-                                    }`}>
-                                        <Palmtree size={15} className="text-emerald-500 flex-shrink-0" strokeWidth={1.5} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
-                                            <p className="text-[9px] text-slate-400 font-medium">
-                                                {vp.days} días · {vp.year}{daysLeft > 0 && daysLeft <= 90 ? ` · en ${daysLeft}d` : ''}
-                                            </p>
-                                        </div>
-                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border flex-shrink-0 ${s.color}`}>
-                                            {s.label}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
                 </div>
 
                 {/* 3. Próximos eventos pills */}
@@ -523,8 +527,8 @@ const EmployeeHomeView = () => {
                     {/* Header nav semana */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-blue-50 rounded-xl">
-                                <CalendarDays size={13} className="text-[#007AFF]" strokeWidth={2.5} />
+                            <div className="p-1.5 bg-slate-100 rounded-xl">
+                                <CalendarDays size={13} className="text-slate-600" strokeWidth={2.5} />
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Horario de Sucursal</p>
                         </div>
@@ -539,79 +543,83 @@ const EmployeeHomeView = () => {
                         </div>
                     </div>
 
-                    {/* Grid 7 columnas de días */}
+                    {/* 2 filas de 4 días */}
                     {isLoadingWeek ? (
                         <div className="flex justify-center py-8 text-slate-400 gap-2">
                             <Loader2 size={16} className="animate-spin" />
                             <span className="text-[11px]">Cargando…</span>
                         </div>
                     ) : (
-                        <div key={weekLabel} className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                            {days.map(d => {
-                                const isPast = !d.isToday && d.date < today;
-                                const branchEmpsForDay = employees
-                                    .filter(e =>
-                                        String(e.branch_id || e.branchId) === String(user?.branchId) &&
-                                        e.status === 'ACTIVO'
-                                    )
-                                    .map(e => {
-                                        const roster    = branchSchedule.find(r => String(r.employee_id) === String(e.id));
-                                        const schedData = roster?.schedule_data || (String(e.id) === String(user?.id) ? scheduleData : null) || e.weeklySchedule || {};
-                                        const raw       = schedData?.[d.id] ?? schedData?.[String(d.id)];
-                                        const shiftId   = typeof raw === 'object' ? raw?.shiftId : raw;
-                                        const shift     = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
-                                        return { e, shift };
-                                    })
-                                    .sort((a, b) => {
-                                        if (String(a.e.id) === String(user?.id)) return -1;
-                                        if (String(b.e.id) === String(user?.id)) return 1;
-                                        return (a.e.name || '').localeCompare(b.e.name || '');
-                                    });
+                        <div key={weekLabel} className="space-y-3 animate-in fade-in slide-in-from-right-2 duration-300">
+                            {[days.slice(0, 4), days.slice(4, 7)].map((row, ri) => (
+                                <div key={ri} className="grid grid-cols-4 gap-2">
+                                    {row.map(d => {
+                                        const isPast = !d.isToday && d.date < today;
+                                        const branchEmpsForDay = employees
+                                            .filter(e =>
+                                                String(e.branch_id || e.branchId) === String(user?.branchId) &&
+                                                e.status === 'ACTIVO'
+                                            )
+                                            .map(e => {
+                                                const roster    = branchSchedule.find(r => String(r.employee_id) === String(e.id));
+                                                const schedData = roster?.schedule_data || (String(e.id) === String(user?.id) ? scheduleData : null) || e.weeklySchedule || {};
+                                                const raw       = schedData?.[d.id] ?? schedData?.[String(d.id)];
+                                                const shiftId   = typeof raw === 'object' ? raw?.shiftId : raw;
+                                                const shift     = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
+                                                return { e, shift };
+                                            })
+                                            .sort((a, b) => {
+                                                if (String(a.e.id) === String(user?.id)) return -1;
+                                                if (String(b.e.id) === String(user?.id)) return 1;
+                                                return (a.e.name || '').localeCompare(b.e.name || '');
+                                            });
 
-                                return (
-                                    <div key={d.id} className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
-                                        d.isToday
-                                            ? 'border-[#007AFF]/30 shadow-[0_0_0_2px_rgba(0,122,255,0.15)]'
-                                            : 'border-white/60'
-                                    } ${isPast ? 'opacity-40 grayscale' : ''}`}>
+                                        return (
+                                            <div key={d.id} className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+                                                d.isToday
+                                                    ? 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
+                                                    : 'border-white/60'
+                                            } ${isPast ? 'opacity-40 grayscale' : ''}`}>
 
-                                        {/* Header del día */}
-                                        <div className={`px-2 py-2 text-center flex-shrink-0 ${d.isToday ? 'bg-[#007AFF] text-white' : 'bg-slate-50 text-slate-600'}`}>
-                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-70">{d.short}</p>
-                                            <p className="text-[16px] font-black leading-tight">{d.date.getDate()}</p>
-                                            {d.isToday && <p className="text-[7px] font-black uppercase tracking-widest opacity-80">Hoy</p>}
-                                        </div>
-
-                                        {/* Lista empleados */}
-                                        <div className="flex-1 p-1.5 space-y-1 bg-white/40">
-                                            {branchEmpsForDay.length === 0 ? (
-                                                <p className="text-[9px] text-slate-300 text-center py-2">—</p>
-                                            ) : branchEmpsForDay.map(({ e: em, shift }) => (
-                                                <div key={em.id} className={`flex items-center gap-1 px-1.5 py-1 rounded-lg transition-all ${
-                                                    String(em.id) === String(user?.id)
-                                                        ? 'bg-[#007AFF]/10 border border-[#007AFF]/20'
-                                                        : 'bg-white/60'
-                                                }`}>
-                                                    <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 border border-white/60">
-                                                        {em.photo || em.photo_url
-                                                            ? <img src={em.photo || em.photo_url} className="w-full h-full object-cover" alt="" />
-                                                            : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[7px] font-black text-slate-500">{em.name?.charAt(0)}</div>
-                                                        }
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className={`text-[8px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? 'text-[#007AFF]' : 'text-slate-700'}`}>
-                                                            {String(em.id) === String(user?.id) ? 'Tú' : em.name?.split(' ')[0]}
-                                                        </p>
-                                                        <p className="text-[7px] text-slate-400 font-medium truncate leading-tight">
-                                                            {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Libre'}
-                                                        </p>
-                                                    </div>
+                                                {/* Header del día */}
+                                                <div className={`px-2 py-2 text-center flex-shrink-0 ${d.isToday ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-600'}`}>
+                                                    <p className="text-[8px] font-black uppercase tracking-widest opacity-70">{d.short}</p>
+                                                    <p className="text-[16px] font-black leading-tight">{d.date.getDate()}</p>
+                                                    {d.isToday && <p className="text-[7px] font-black uppercase tracking-widest opacity-80">Hoy</p>}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+
+                                                {/* Lista empleados */}
+                                                <div className="flex-1 p-1.5 space-y-1 bg-white/40">
+                                                    {branchEmpsForDay.length === 0 ? (
+                                                        <p className="text-[9px] text-slate-300 text-center py-2">—</p>
+                                                    ) : branchEmpsForDay.map(({ e: em, shift }) => (
+                                                        <div key={em.id} className={`flex items-center gap-1 px-1.5 py-1 rounded-lg transition-all ${
+                                                            String(em.id) === String(user?.id)
+                                                                ? 'bg-slate-100/80 border border-slate-200'
+                                                                : 'bg-white/60'
+                                                        }`}>
+                                                            <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 border border-white/60">
+                                                                {em.photo || em.photo_url
+                                                                    ? <img src={em.photo || em.photo_url} className="w-full h-full object-cover" alt="" />
+                                                                    : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[7px] font-black text-slate-500">{em.name?.charAt(0)}</div>
+                                                                }
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={`text-[8px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? 'text-slate-700' : 'text-slate-600'}`}>
+                                                                    {String(em.id) === String(user?.id) ? 'Tú' : em.name?.split(' ')[0]}
+                                                                </p>
+                                                                <p className="text-[7px] text-slate-400 font-medium truncate leading-tight">
+                                                                    {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Sin definir'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
                         </div>
                     )}
 
@@ -625,7 +633,7 @@ const EmployeeHomeView = () => {
                                 <p className="text-[10px] font-black text-slate-700">{totalWeekHours.toFixed(1)}/44h</p>
                             </div>
                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#007AFF] rounded-full transition-all duration-700"
+                                <div className="h-full bg-slate-700 rounded-full transition-all duration-700"
                                     style={{ width: `${Math.min(100, (totalWeekHours / 44) * 100)}%` }} />
                             </div>
                         </div>

@@ -378,11 +378,147 @@ const EmployeeHomeView = () => {
                 </div>
             </div>
 
-            {/* ══ SECCIÓN 3: GRID PRINCIPAL 2 COLUMNAS ══ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* ══ SECCIÓN 3: VERTICAL ══ */}
+            <div className="space-y-4">
 
-                {/* ── COLUMNA IZQUIERDA: Horario de sucursal ── */}
-                <div className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                {/* 1. Grid 2×4 métricas */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+                    {/* Mañana */}
+                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                            <CalendarDays size={10} className="text-emerald-500" /> Mañana
+                        </p>
+                        {tomorrowShift ? (
+                            <>
+                                <p className="text-[22px] font-black text-slate-800 leading-none group-hover/card:text-[#007AFF] transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
+                            </>
+                        ) : (
+                            <div className="flex items-center gap-1.5 text-slate-400 mt-1.5">
+                                <Palmtree size={14} strokeWidth={1.5} />
+                                <p className="text-[11px] font-bold">Libre</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Solicitudes */}
+                    <div onClick={() => navigate('/requests')}
+                        className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                            <ClipboardList size={10} className="text-purple-500" /> Solicitudes
+                        </p>
+                        {pendingCount === null
+                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                            : <>
+                                <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
+                            </>
+                        }
+                    </div>
+
+                    {/* Tardanzas */}
+                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                            <Timer size={10} className="text-orange-500" /> Tardanzas
+                        </p>
+                        {tardanzas === null
+                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                            : <>
+                                <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                    {tardanzas.minutes > 0 ? `${tardanzas.minutes}m` : 'este mes'}
+                                </p>
+                            </>
+                        }
+                    </div>
+
+                    {/* Avisos */}
+                    <div onClick={() => navigate('/announcements')}
+                        className={`group/card backdrop-blur-xl rounded-[1.75rem] p-3.5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
+                            hasUrgent
+                                ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15),inset_0_1px_0_rgba(255,255,255,0.9)]'
+                                : 'bg-white/60 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]'
+                        }`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
+                            {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
+                        </p>
+                        <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
+                        <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
+                            {hasUrgent ? '¡URGENTE!' : 'sin leer'}
+                        </p>
+                    </div>
+
+                </div>
+
+                {/* 2. Card Vacaciones — siempre visible */}
+                <div className={`rounded-[2rem] p-4 backdrop-blur-xl border transition-all duration-300 hover:-translate-y-1 ${
+                    myVacationPlans.length > 0
+                        ? 'bg-gradient-to-br from-emerald-50/80 to-white/80 border-emerald-200/60 shadow-[0_4px_20px_rgba(16,185,129,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)]'
+                        : 'bg-white/60 border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]'
+                }`}>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-1.5">
+                        <Palmtree size={9} /> Mis Vacaciones
+                    </p>
+                    {myVacationPlans.length === 0 ? (
+                        <div className="flex flex-col items-center py-4 gap-2">
+                            <Palmtree size={24} strokeWidth={1} className="text-slate-200" />
+                            <p className="text-[11px] font-bold text-slate-400 text-center">Pendiente de programar</p>
+                            <p className="text-[9px] text-slate-300 text-center">RRHH asignará tus vacaciones</p>
+                        </div>
+                    ) : (
+                        <div className="flex gap-3 overflow-x-auto pb-1">
+                            {myVacationPlans.map(vp => {
+                                const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
+                                const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+                                const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
+                                return (
+                                    <div key={vp.id} className={`flex items-center gap-3 p-3 bg-white/70 rounded-2xl border flex-shrink-0 transition-all ${
+                                        vp.status === 'CONFIRMED'
+                                            ? 'border-emerald-200/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]'
+                                            : 'border-white/80'
+                                    }`}>
+                                        <Palmtree size={15} className="text-emerald-500 flex-shrink-0" strokeWidth={1.5} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                            <p className="text-[9px] text-slate-400 font-medium">
+                                                {vp.days} días · {vp.year}{daysLeft > 0 && daysLeft <= 90 ? ` · en ${daysLeft}d` : ''}
+                                            </p>
+                                        </div>
+                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border flex-shrink-0 ${s.color}`}>
+                                            {s.label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. Próximos eventos pills */}
+                {upcomingEvents.length > 0 && (
+                    <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                            <Sparkles size={9} className="text-amber-500" /> Próximos Eventos
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {upcomingEvents.map(ev => {
+                                const meta  = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
+                                const start = meta.startDate || ev.date;
+                                const conf  = EVENT_BADGES[ev.type];
+                                return (
+                                    <div key={ev.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/60 border border-white/80 rounded-full text-[10px] font-bold text-slate-600 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200">
+                                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${EVT_DOT[ev.type] || 'bg-slate-400'}`} />
+                                        {conf?.label || ev.type} · {new Date(start + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Horario de sucursal — full width */}
+                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
 
                     {/* Header nav semana */}
                     <div className="flex items-center justify-between mb-4">
@@ -496,146 +632,6 @@ const EmployeeHomeView = () => {
                     )}
                 </div>
 
-                {/* ── COLUMNA DERECHA ── */}
-                <div className="lg:col-span-1 flex flex-col gap-3">
-
-                    {/* Grid 2×2 métricas */}
-                    <div className="grid grid-cols-2 gap-3">
-
-                        {/* Mañana */}
-                        <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                                <CalendarDays size={10} className="text-emerald-500" /> Mañana
-                            </p>
-                            {tomorrowShift ? (
-                                <>
-                                    <p className="text-[22px] font-black text-slate-800 leading-none group-hover/card:text-[#007AFF] transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
-                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
-                                </>
-                            ) : (
-                                <div className="flex items-center gap-1.5 text-slate-400 mt-1.5">
-                                    <Palmtree size={14} strokeWidth={1.5} />
-                                    <p className="text-[11px] font-bold">Libre</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Solicitudes */}
-                        <div onClick={() => navigate('/requests')}
-                            className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                                <ClipboardList size={10} className="text-purple-500" /> Solicitudes
-                            </p>
-                            {pendingCount === null
-                                ? <Loader2 size={14} className="text-slate-300 animate-spin" />
-                                : <>
-                                    <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
-                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
-                                </>
-                            }
-                        </div>
-
-                        {/* Tardanzas */}
-                        <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
-                                <Timer size={10} className="text-orange-500" /> Tardanzas
-                            </p>
-                            {tardanzas === null
-                                ? <Loader2 size={14} className="text-slate-300 animate-spin" />
-                                : <>
-                                    <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
-                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                        {tardanzas.minutes > 0 ? `${tardanzas.minutes}m` : 'este mes'}
-                                    </p>
-                                </>
-                            }
-                        </div>
-
-                        {/* Avisos */}
-                        <div onClick={() => navigate('/announcements')}
-                            className={`group/card backdrop-blur-xl rounded-[1.75rem] p-3.5 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
-                                hasUrgent
-                                    ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15),inset_0_1px_0_rgba(255,255,255,0.9)]'
-                                    : 'bg-white/60 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]'
-                            }`}>
-                            <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
-                                {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
-                            </p>
-                            <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
-                            <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
-                                {hasUrgent ? '¡URGENTE!' : 'sin leer'}
-                            </p>
-                        </div>
-
-                    </div>
-
-                    {/* Card Vacaciones — siempre visible */}
-                    <div className={`rounded-[2rem] p-4 backdrop-blur-xl border transition-all duration-300 hover:-translate-y-1 ${
-                        myVacationPlans.length > 0
-                            ? 'bg-gradient-to-br from-emerald-50/80 to-white/80 border-emerald-200/60 shadow-[0_4px_20px_rgba(16,185,129,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)]'
-                            : 'bg-white/60 border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]'
-                    }`}>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-3 flex items-center gap-1.5">
-                            <Palmtree size={9} /> Mis Vacaciones
-                        </p>
-                        {myVacationPlans.length === 0 ? (
-                            <div className="flex flex-col items-center py-4 gap-2">
-                                <Palmtree size={24} strokeWidth={1} className="text-slate-200" />
-                                <p className="text-[11px] font-bold text-slate-400 text-center">Pendiente de programar</p>
-                                <p className="text-[9px] text-slate-300 text-center">RRHH asignará tus vacaciones</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {myVacationPlans.map(vp => {
-                                    const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
-                                    const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
-                                    const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
-                                    return (
-                                        <div key={vp.id} className={`flex items-center gap-3 p-3 bg-white/70 rounded-2xl border transition-all ${
-                                            vp.status === 'CONFIRMED'
-                                                ? 'border-emerald-200/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]'
-                                                : 'border-white/80'
-                                        }`}>
-                                            <Palmtree size={15} className="text-emerald-500 flex-shrink-0" strokeWidth={1.5} />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[11px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
-                                                <p className="text-[9px] text-slate-400 font-medium">
-                                                    {vp.days} días · {vp.year}{daysLeft > 0 && daysLeft <= 90 ? ` · en ${daysLeft}d` : ''}
-                                                </p>
-                                            </div>
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border flex-shrink-0 ${s.color}`}>
-                                                {s.label}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Próximos eventos pills */}
-                    {upcomingEvents.length > 0 && (
-                        <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
-                                <Sparkles size={9} className="text-amber-500" /> Próximos Eventos
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {upcomingEvents.map(ev => {
-                                    const meta  = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
-                                    const start = meta.startDate || ev.date;
-                                    const conf  = EVENT_BADGES[ev.type];
-                                    return (
-                                        <div key={ev.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/60 border border-white/80 rounded-full text-[10px] font-bold text-slate-600 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200">
-                                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${EVT_DOT[ev.type] || 'bg-slate-400'}`} />
-                                            {conf?.label || ev.type} · {new Date(start + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                </div>
             </div>
 
         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
-    Loader2, Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree
+    Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -119,7 +119,26 @@ const EmployeeProfileView = ({ openModal }) => {
         return [...events, ...synthetic].sort((a, b) => new Date(b.date) - new Date(a.date));
     }, [events, emp?.hire_date, emp?.hireDate, branch]);
 
-    if (!emp) return null;
+    if (!emp) return (
+        <GlassViewLayout icon={User} title="Mi Perfil">
+            <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-300">
+                {/* Left column skeleton */}
+                <div className="w-full lg:w-[360px] shrink-0 space-y-4">
+                    <div className="animate-pulse bg-slate-200/80 rounded-[2.5rem] h-64" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="animate-pulse bg-slate-200/80 rounded-2xl h-11" />
+                        <div className="animate-pulse bg-slate-200/80 rounded-2xl h-11" />
+                    </div>
+                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-40" />
+                </div>
+                {/* Right column skeleton */}
+                <div className="flex-1 min-w-0 space-y-4">
+                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-32" />
+                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-64" />
+                </div>
+            </div>
+        </GlassViewLayout>
+    );
 
     return (
         <GlassViewLayout icon={User} title="Mi Perfil">
@@ -258,9 +277,13 @@ const EmployeeProfileView = ({ openModal }) => {
                         </div>
 
                         {evLoading ? (
-                            <div className="flex justify-center py-12 gap-2 text-slate-400">
-                                <Loader2 size={18} className="animate-spin" />
-                                <span className="text-[12px] font-medium">Cargando historial…</span>
+                            <div className="space-y-3 animate-in fade-in duration-300">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="flex gap-3 pl-7 relative">
+                                        <div className="absolute -left-[10px] top-2 w-4 h-4 rounded-full animate-pulse bg-slate-300/60" />
+                                        <div className="flex-1 animate-pulse bg-slate-200/80 rounded-2xl h-16" />
+                                    </div>
+                                ))}
                             </div>
                         ) : timeline.length === 0 ? (
                             <div className="flex flex-col items-center py-12 gap-3 text-slate-400">

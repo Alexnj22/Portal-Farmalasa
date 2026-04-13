@@ -123,6 +123,7 @@ const EmployeeAnnouncementsView = () => {
     const markAnnouncementAsRead = useStaffStore(s => s.markAnnouncementAsRead);
 
     const [tab, setTab] = useState('ALL');
+    const isStoreLoading = employees.length === 0 && announcements.length === 0;
 
     const readCheck = (ann) => (ann.readBy || []).some(r =>
         String(typeof r === 'object' ? r.employeeId : r) === String(user?.id)
@@ -191,7 +192,28 @@ const EmployeeAnnouncementsView = () => {
     return (
         <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent}>
             <div className="pt-32 md:pt-28 px-4 md:px-6 pb-8">
-                {filtered.length === 0 ? (
+                {isStoreLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="animate-pulse bg-white/60 backdrop-blur-md border border-white/60 rounded-[2.5rem] p-6 space-y-4">
+                                <div className="flex gap-2">
+                                    <div className="bg-slate-200/80 rounded-full h-4 w-4" />
+                                    <div className="bg-slate-200/80 rounded-md h-4 w-20" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="bg-slate-200/80 rounded-full h-5 w-3/4" />
+                                    <div className="bg-slate-200/80 rounded-full h-3 w-full" />
+                                    <div className="bg-slate-200/80 rounded-full h-3 w-2/3" />
+                                </div>
+                                <div className="bg-slate-200/80 rounded-full h-2 w-full" />
+                                <div className="pt-3 border-t border-white/60 flex justify-between">
+                                    <div className="bg-slate-200/80 rounded-full h-3 w-24" />
+                                    <div className="bg-slate-200/80 rounded-full h-3 w-12" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-3">
                         <CheckCircle2 size={48} strokeWidth={1} className="text-emerald-300" />
                         <p className="text-[15px] font-bold text-slate-600">

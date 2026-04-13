@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Coffee, Palmtree, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Coffee, Palmtree } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { supabase } from '../../supabaseClient';
@@ -153,9 +153,18 @@ const EmployeeScheduleView = () => {
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center py-16 text-slate-400 gap-2">
-                    <Loader2 size={20} className="animate-spin" />
-                    <span className="text-[13px]">Cargando horario…</span>
+                <div className="space-y-2 animate-in fade-in duration-300">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                        <div key={i} className="rounded-[1.75rem] border border-white/60 bg-white/60 backdrop-blur-md p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-[1rem] animate-pulse bg-slate-200/80 flex-shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="animate-pulse bg-slate-200/80 rounded-full h-3 w-24" />
+                                    <div className="animate-pulse bg-slate-200/80 rounded-full h-5 w-32" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="space-y-2">

@@ -1,40 +1,21 @@
-import React, { useMemo, useState, memo } from 'react';
-import { Bell, Globe, Building2, User, ChevronDown, ChevronUp, CheckCircle2, Flame, Clock } from 'lucide-react';
+import React, { useMemo, useState, memo, useRef } from 'react';
+import { Bell, Globe, Building2, User, ChevronDown, ChevronUp, CheckCircle2, Flame, Clock, Search, X, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 
 const TABS = [
-    { key: 'ALL',    label: 'Todos'    },
     { key: 'UNREAD', label: 'Sin Leer' },
     { key: 'READ',   label: 'Leídos'   },
     { key: 'URGENT', label: 'Urgentes' },
 ];
 
-const AnnouncementCard = memo(({ ann, userId, onRead, employees }) => {
+const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const [expanded, setExpanded] = useState(false);
 
     const isRead = (ann.readBy || []).some(r =>
         String(typeof r === 'object' ? r.employeeId : r) === String(userId)
     );
-
-    const readIds = (ann.readBy || []).map(r =>
-        String(typeof r === 'object' ? r.employeeId : r)
-    );
-    const totalExpected = (() => {
-        if (ann.targetType === 'GLOBAL')
-            return (employees || []).filter(e => e.status === 'ACTIVO').length;
-        if (ann.targetType === 'BRANCH') {
-            const bids = (ann.targetValue || []).map(String);
-            return (employees || []).filter(e =>
-                e.status === 'ACTIVO' && bids.includes(String(e.branch_id || e.branchId))
-            ).length;
-        }
-        if (ann.targetType === 'EMPLOYEE') return (ann.targetValue || []).length;
-        return 1;
-    })();
-    const readPercentage = totalExpected > 0
-        ? Math.round((readIds.length / totalExpected) * 100) : 0;
 
     const handleClick = () => {
         setExpanded(v => !v);
@@ -81,22 +62,6 @@ const AnnouncementCard = memo(({ ann, userId, onRead, employees }) => {
                 </p>
             </div>
 
-            {/* Read progress bar */}
-            <div className="space-y-1.5">
-                <div className={`flex justify-between text-[10px] font-bold uppercase tracking-widest ${isUrgent ? 'text-red-400' : 'text-slate-400'}`}>
-                    <span>Progreso de lectura</span>
-                    <span className={readPercentage === 100 ? 'text-emerald-500' : isUrgent && readPercentage < 100 ? 'text-red-500' : 'text-[#007AFF]'}>
-                        {readPercentage}%
-                    </span>
-                </div>
-                <div className={`w-full rounded-full h-2 overflow-hidden border ${isUrgent ? 'bg-red-50/50 border-red-200/50' : 'bg-white/50 border-white/60'}`}>
-                    <div
-                        className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${readPercentage === 100 ? 'bg-emerald-500' : isUrgent ? 'bg-red-500' : 'bg-[#007AFF]'}`}
-                        style={{ width: `${readPercentage}%` }}
-                    />
-                </div>
-            </div>
-
             {/* Footer */}
             <div className="flex items-center justify-between pt-3 border-t border-white/60">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -122,7 +87,10 @@ const EmployeeAnnouncementsView = () => {
     const employees     = useStaffStore(s => s.employees);
     const markAnnouncementAsRead = useStaffStore(s => s.markAnnouncementAsRead);
 
-    const [tab, setTab] = useState('ALL');
+    const [tab, setTab]                   = useState('UNREAD');
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [searchQuery, setSearchQuery]   = useState('');
+    const searchInputRef                  = useRef(null);
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
 
     const readCheck = (ann) => (ann.readBy || []).some(r =>
@@ -147,51 +115,84 @@ const EmployeeAnnouncementsView = () => {
     }, [announcements, user]);
 
     const counts = useMemo(() => ({
-        ALL:    myAnnouncements.length,
         UNREAD: myAnnouncements.filter(a => !readCheck(a)).length,
         READ:   myAnnouncements.filter(a => readCheck(a)).length,
         URGENT: myAnnouncements.filter(a => a.priority === 'URGENT').length,
     }), [myAnnouncements, user?.id]);
 
     const filtered = useMemo(() => {
-        if (tab === 'UNREAD') return myAnnouncements.filter(a => !readCheck(a));
-        if (tab === 'READ')   return myAnnouncements.filter(a => readCheck(a));
-        if (tab === 'URGENT') return myAnnouncements.filter(a => a.priority === 'URGENT');
-        return myAnnouncements;
-    }, [myAnnouncements, tab, user?.id]);
+        let list = myAnnouncements;
+        if (tab === 'UNREAD') list = list.filter(a => !readCheck(a));
+        else if (tab === 'READ')   list = list.filter(a => readCheck(a));
+        else if (tab === 'URGENT') list = list.filter(a => a.priority === 'URGENT');
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(a =>
+                a.title?.toLowerCase().includes(q) || a.message?.toLowerCase().includes(q)
+            );
+        }
+        return list;
+    }, [myAnnouncements, tab, user?.id, searchQuery]);
 
     const handleRead = (id) => {
         if (user?.id) markAnnouncementAsRead(id, user.id);
     };
 
     const filtersContent = (
-        <div className="flex items-center bg-white/70 backdrop-blur-md border border-white/80 rounded-[1.5rem] p-1 shadow-sm gap-1">
-            {TABS.map(t => (
-                <button
-                    key={t.key}
-                    onClick={() => setTab(t.key)}
-                    className={`relative px-3 py-1.5 rounded-[1.2rem] text-[12px] font-bold transition-all duration-200 flex items-center gap-1.5 ${
-                        tab === t.key ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
-                    }`}
-                >
-                    {t.label}
-                    {counts[t.key] > 0 && (
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                            tab === t.key ? 'bg-white/30 text-white'
-                            : t.key === 'UNREAD' || t.key === 'URGENT' ? 'bg-red-100 text-red-600'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}>
-                            {counts[t.key]}
-                        </span>
-                    )}
+        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+            {/* Search mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
+                <Search size={16} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar avisos..."
+                    className="bg-transparent border-none outline-none text-[13px] font-bold text-slate-700 w-[200px] sm:w-[280px] placeholder:text-slate-400"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all active:scale-95 shrink-0">
+                        <X size={14} strokeWidth={2.5} />
+                    </button>
+                )}
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#007AFF] ml-1">
+                    <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
-            ))}
+            </div>
+            {/* Tab mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0' : 'max-w-[600px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
+                {TABS.map(t => {
+                    const isActive = tab === t.key;
+                    const count = counts[t.key];
+                    return (
+                        <button key={t.key} onClick={() => setTab(t.key)}
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
+                                isActive ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                            }`}
+                        >
+                            {t.label}
+                            {count > 0 && (
+                                <span className={`w-4 h-4 flex items-center justify-center text-[8px] font-black text-white rounded-full border-2 border-white shadow-sm ${isActive ? 'bg-slate-400' : t.key === 'UNREAD' || t.key === 'URGENT' ? 'bg-red-500' : 'bg-slate-400'}`}>
+                                    {count > 9 ? '9+' : count}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+                <div className="w-px h-6 bg-slate-200/60 mx-1 shrink-0" />
+                <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
+                    className={`relative w-9 h-9 md:w-10 md:h-10 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-95`}>
+                    <Search size={15} strokeWidth={2.5} />
+                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
+            </div>
         </div>
     );
 
     return (
-        <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent}>
-            <div className="pt-32 md:pt-28 px-4 md:px-6 pb-8">
+        <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent} transparentBody={true}>
+            <div className="pb-8">
                 {isStoreLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
                         {Array.from({ length: 6 }).map((_, i) => (
@@ -217,10 +218,10 @@ const EmployeeAnnouncementsView = () => {
                     <div className="flex flex-col items-center justify-center py-24 gap-3">
                         <CheckCircle2 size={48} strokeWidth={1} className="text-emerald-300" />
                         <p className="text-[15px] font-bold text-slate-600">
-                            {tab === 'UNREAD' ? 'Todo al día' : tab === 'URGENT' ? 'Sin avisos urgentes' : 'Sin avisos'}
+                            {searchQuery ? 'Sin resultados' : tab === 'UNREAD' ? 'Todo al día' : tab === 'URGENT' ? 'Sin avisos urgentes' : 'Sin avisos'}
                         </p>
                         <p className="text-[12px] text-slate-400">
-                            {tab === 'UNREAD' ? 'No tienes avisos sin leer.' : 'No hay avisos en esta categoría.'}
+                            {searchQuery ? `No hay avisos que coincidan con "${searchQuery}".` : tab === 'UNREAD' ? 'No tienes avisos sin leer.' : 'No hay avisos en esta categoría.'}
                         </p>
                     </div>
                 ) : (
@@ -231,7 +232,6 @@ const EmployeeAnnouncementsView = () => {
                                 ann={ann}
                                 userId={user?.id}
                                 onRead={handleRead}
-                                employees={employees}
                             />
                         ))}
                     </div>

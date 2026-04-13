@@ -142,7 +142,7 @@ const RequestCard = memo(({ req, onCancel }) => {
 
     const cardBg =
         req.status === 'PENDING'   ? 'border-[#007AFF]/30 shadow-[0_4px_20px_rgba(0,122,255,0.05)] bg-white/80 backdrop-blur-2xl' :
-        req.status === 'APPROVED'  ? 'border-emerald-300/60 shadow-[0_4px_20px_rgba(16,185,129,0.06)] bg-emerald-50/30 backdrop-blur-2xl' :
+        req.status === 'APPROVED'  ? 'border-emerald-300/70 shadow-[0_4px_20px_rgba(16,185,129,0.08)] bg-emerald-50/80 backdrop-blur-2xl' :
         req.status === 'REJECTED'  ? 'border-red-300 shadow-[0_4px_20px_rgba(239,68,68,0.08)] bg-white/90 backdrop-blur-xl' :
         'border-white/60 opacity-75 bg-white/40 backdrop-blur-md hover:opacity-100';
 
@@ -233,6 +233,7 @@ const EmployeeRequestsView = () => {
     const [peerRequests, setPeerRequests] = useState([]);
     const [isLoading, setIsLoading]       = useState(false);
     const [statusFilter, setStatusFilter] = useState('ALL');
+    const [showOldApproved, setShowOldApproved] = useState(false);
     const [formType, setFormType]         = useState('VACATION');
     const [formNote, setFormNote]         = useState('');
     const [payload, setPayload]           = useState({});
@@ -313,7 +314,17 @@ const EmployeeRequestsView = () => {
         CANCELLED: requests.filter(r => r.status === 'CANCELLED').length,
     };
 
-    const filtered = statusFilter === 'ALL' ? requests : requests.filter(r => r.status === statusFilter);
+    const currentYM = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+    const filtered = useMemo(() => {
+        let list = statusFilter === 'ALL' ? requests : requests.filter(r => r.status === statusFilter);
+        if (!showOldApproved) {
+            list = list.filter(r =>
+                r.status !== 'APPROVED' || (r.created_at?.slice(0, 7) === currentYM)
+            );
+        }
+        return list;
+    }, [requests, statusFilter, showOldApproved, currentYM]);
 
     const handleAddPermDate = (dateStr) => {
         if (!dateStr) return;
@@ -655,26 +666,35 @@ const EmployeeRequestsView = () => {
                             </div>
                         )}
 
-                        <div className="col-span-full">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
+                        <div className="col-span-full flex items-center justify-between">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
                                 <ClipboardList size={10} /> Mis Solicitudes
                             </p>
+                            <button
+                                onClick={() => setShowOldApproved(v => !v)}
+                                className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
+                                    showOldApproved
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                        : 'bg-white/60 border-white/60 text-slate-400 hover:text-slate-600 hover:bg-white/80'
+                                }`}
+                            >
+                                {showOldApproved ? 'Solo este mes' : 'Ver anteriores'}
+                            </button>
                         </div>
 
                         {isLoading ? (
-                            <div className="space-y-3 animate-in fade-in duration-300">
+                            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="animate-pulse bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-6 space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 bg-slate-200/80 rounded-[0.875rem] flex-shrink-0" />
-                                            <div className="flex-1 space-y-1.5">
-                                                <div className="bg-slate-200/80 rounded-full h-3 w-32" />
-                                                <div className="bg-slate-200/80 rounded-full h-4 w-48" />
-                                            </div>
-                                            <div className="bg-slate-200/80 rounded-full h-5 w-20" />
+                                    <div key={i} className="animate-pulse bg-white/80 border border-white/60 rounded-[2.5rem] p-6 flex flex-col gap-3">
+                                        <div className="flex items-center gap-2 pr-10">
+                                            <div className="bg-slate-200/80 rounded-md h-6 w-24" />
+                                            <div className="bg-slate-200/80 rounded-md h-6 w-20" />
                                         </div>
-                                        <div className="bg-slate-200/80 rounded-full h-3 w-full" />
-                                        <div className="bg-slate-200/80 rounded-full h-3 w-3/4" />
+                                        <div className="space-y-1.5">
+                                            <div className="bg-slate-200/80 rounded-full h-3.5 w-full" />
+                                            <div className="bg-slate-200/80 rounded-full h-3.5 w-4/5" />
+                                        </div>
+                                        <div className="bg-slate-200/80 rounded-full h-3 w-28 mt-1" />
                                     </div>
                                 ))}
                             </div>

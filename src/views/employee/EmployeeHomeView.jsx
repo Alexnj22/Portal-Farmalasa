@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
+import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -547,7 +548,18 @@ const EmployeeHomeView = () => {
                             <button onClick={() => setWeekOffset(v => v - 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
                                 <ChevronLeft size={15} strokeWidth={2.5} />
                             </button>
-                            <span className="text-[11px] font-black text-slate-700 min-w-[100px] text-center">{weekLabel}</span>
+                            <LiquidWeekPicker
+                                selectedWeekStart={weekStart}
+                                onChange={(monday) => {
+                                    const curMonday = getWeekStart(new Date());
+                                    const diff = Math.round((monday - curMonday) / (7 * 24 * 60 * 60 * 1000));
+                                    setWeekOffset(diff);
+                                }}
+                            >
+                                <span className="text-[11px] font-black text-slate-700 min-w-[100px] text-center px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
+                                    {weekLabel}
+                                </span>
+                            </LiquidWeekPicker>
                             <button onClick={() => setWeekOffset(v => v + 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
                                 <ChevronRight size={15} strokeWidth={2.5} />
                             </button>

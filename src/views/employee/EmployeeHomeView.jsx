@@ -228,6 +228,25 @@ const EmployeeHomeView = () => {
         days.reduce((acc, d) => acc + (d.event ? 0 : calcShiftHours(d.shift)), 0)
     , [days]);
 
+    // 8 días: Lun–Dom + próximo Lunes
+    const calendarDays = useMemo(() => {
+        const nextMon = new Date(weekStart);
+        nextMon.setDate(weekStart.getDate() + 7);
+        const nextMonISO = toISO(nextMon);
+        const isToday    = nextMon.getTime() === today.getTime();
+        const dayDef     = DAYS[0]; // { id:1, name:'Lunes', short:'LUN' }
+        const rawShift   = scheduleData?.[dayDef.id] ?? scheduleData?.[String(dayDef.id)];
+        const shiftId    = typeof rawShift === 'object' ? rawShift?.shiftId : rawShift;
+        const shift      = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
+        const event      = weekEvents.find(ev => {
+            const meta = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
+            const s = meta.startDate || ev.date, e = meta.endDate || ev.date;
+            return nextMonISO >= s && nextMonISO <= e;
+        });
+        const extraDay = { ...dayDef, date: nextMon, dateISO: nextMonISO, isToday, shift, event, crossesMidnight: false, isNextWeek: true };
+        return [...days, extraDay];
+    }, [days, weekStart, today, scheduleData, shifts, weekEvents]);
+
     // Turno de hoy
     const todayShift = useMemo(() => {
         if (!emp?.weeklySchedule) return null;
@@ -543,7 +562,7 @@ const EmployeeHomeView = () => {
                         </div>
                     ) : (
                         <div key={weekLabel} className="space-y-3 animate-in fade-in slide-in-from-right-2 duration-300">
-                            {[days.slice(0, 4), days.slice(4, 7)].map((row, ri) => (
+                            {[calendarDays.slice(0, 4), calendarDays.slice(4, 8)].map((row, ri) => (
                                 <div key={ri} className="grid grid-cols-4 gap-3">
                                     {row.map(d => {
                                         const isPast = !d.isToday && d.date < today;
@@ -574,10 +593,11 @@ const EmployeeHomeView = () => {
                                             } ${isPast ? 'opacity-40 grayscale' : ''}`}>
 
                                                 {/* Header del día */}
-                                                <div className={`px-2 py-3 text-center flex-shrink-0 ${d.isToday ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-600'}`}>
+                                                <div className={`px-2 py-3 text-center flex-shrink-0 ${d.isToday ? 'bg-slate-800 text-white' : d.isNextWeek ? 'bg-slate-100 text-slate-500' : 'bg-slate-50 text-slate-600'}`}>
                                                     <p className="text-[9px] font-black uppercase tracking-widest opacity-70">{d.short}</p>
                                                     <p className="text-[22px] font-black leading-tight">{d.date.getDate()}</p>
                                                     {d.isToday && <p className="text-[8px] font-black uppercase tracking-widest opacity-80">Hoy</p>}
+                                                    {d.isNextWeek && <p className="text-[7px] font-black uppercase tracking-widest opacity-60">Próx.</p>}
                                                 </div>
 
                                                 {/* Lista empleados */}

@@ -90,8 +90,10 @@ const EmployeeAnnouncementsView = () => {
     const [tab, setTab]                   = useState('UNREAD');
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchQuery, setSearchQuery]   = useState('');
+    const [showOldRead, setShowOldRead]   = useState(false);
     const searchInputRef                  = useRef(null);
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
+    const currentYM = new Date().toISOString().slice(0, 7);
 
     const readCheck = (ann) => (ann.readBy || []).some(r =>
         String(typeof r === 'object' ? r.employeeId : r) === String(user?.id)
@@ -117,14 +119,17 @@ const EmployeeAnnouncementsView = () => {
     const counts = useMemo(() => ({
         UNREAD: myAnnouncements.filter(a => !readCheck(a)).length,
         READ:   myAnnouncements.filter(a => readCheck(a)).length,
-        URGENT: myAnnouncements.filter(a => a.priority === 'URGENT').length,
+        URGENT: myAnnouncements.filter(a => a.priority === 'URGENT' && !readCheck(a)).length,
     }), [myAnnouncements, user?.id]);
 
     const filtered = useMemo(() => {
         let list = myAnnouncements;
         if (tab === 'UNREAD') list = list.filter(a => !readCheck(a));
-        else if (tab === 'READ')   list = list.filter(a => readCheck(a));
-        else if (tab === 'URGENT') list = list.filter(a => a.priority === 'URGENT');
+        else if (tab === 'READ') {
+            list = list.filter(a => readCheck(a));
+            if (!showOldRead) list = list.filter(a => (a.date || '').slice(0, 7) === currentYM);
+        }
+        else if (tab === 'URGENT') list = list.filter(a => a.priority === 'URGENT' && !readCheck(a));
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             list = list.filter(a =>
@@ -132,7 +137,11 @@ const EmployeeAnnouncementsView = () => {
             );
         }
         return list;
-    }, [myAnnouncements, tab, user?.id, searchQuery]);
+    }, [myAnnouncements, tab, user?.id, searchQuery, showOldRead, currentYM]);
+
+    const hasOldRead = useMemo(() =>
+        myAnnouncements.some(a => readCheck(a) && (a.date || '').slice(0, 7) !== currentYM)
+    , [myAnnouncements, user?.id, currentYM]);
 
     const handleRead = (id) => {
         if (user?.id) markAnnouncementAsRead(id, user.id);
@@ -215,16 +224,44 @@ const EmployeeAnnouncementsView = () => {
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <CheckCircle2 size={48} strokeWidth={1} className="text-emerald-300" />
-                        <p className="text-[15px] font-bold text-slate-600">
-                            {searchQuery ? 'Sin resultados' : tab === 'UNREAD' ? 'Todo al día' : tab === 'URGENT' ? 'Sin avisos urgentes' : 'Sin avisos'}
-                        </p>
-                        <p className="text-[12px] text-slate-400">
-                            {searchQuery ? `No hay avisos que coincidan con "${searchQuery}".` : tab === 'UNREAD' ? 'No tienes avisos sin leer.' : 'No hay avisos en esta categoría.'}
-                        </p>
+                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="relative group flex flex-col items-center text-center">
+                            <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 ${
+                                tab === 'URGENT' ? 'bg-red-400' : tab === 'READ' ? 'bg-slate-400' : 'bg-emerald-400'
+                            }`} />
+                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${
+                                tab === 'URGENT' ? 'text-red-400' : tab === 'READ' ? 'text-slate-400' : 'text-emerald-500'
+                            }`}>
+                                {searchQuery
+                                    ? <Search size={40} strokeWidth={1.5} />
+                                    : tab === 'URGENT' ? <Flame size={40} strokeWidth={1.5} />
+                                    : <CheckCircle2 size={40} strokeWidth={1.5} />
+                                }
+                            </div>
+                            <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
+                                {searchQuery ? 'Sin resultados' : tab === 'UNREAD' ? 'Todo al día' : tab === 'URGENT' ? 'Sin urgentes pendientes' : 'Sin leídos aún'}
+                            </h3>
+                            <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                {searchQuery
+                                    ? `Ningún aviso coincide con "${searchQuery}".`
+                                    : tab === 'UNREAD' ? 'No tienes avisos sin leer. ¡Estás al día!'
+                                    : tab === 'URGENT' ? 'No hay avisos urgentes pendientes de lectura.'
+                                    : 'Aún no has marcado ningún aviso como leído.'}
+                            </p>
+                        </div>
                     </div>
                 ) : (
+                    <>
+                    {tab === 'READ' && (hasOldRead || showOldRead) && (
+                        <div className="flex justify-end mb-4">
+                            <button
+                                onClick={() => setShowOldRead(v => !v)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-95"
+                            >
+                                {showOldRead ? 'Solo este mes' : 'Ver anteriores'}
+                            </button>
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {filtered.map(ann => (
                             <AnnouncementCard
@@ -235,6 +272,7 @@ const EmployeeAnnouncementsView = () => {
                             />
                         ))}
                     </div>
+                    </>
                 )}
             </div>
         </GlassViewLayout>

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     CalendarDays, ClipboardList, Bell, Plus, ChevronLeft, ChevronRight,
-    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home
+    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home, Utensils, Baby
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -337,11 +337,11 @@ const EmployeeHomeView = () => {
                 </div>
             }
             filtersContent={
-                <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 md:px-4 gap-3 md:gap-4 overflow-hidden">
                     {/* Hora + fecha */}
-                    <div className="hidden sm:flex flex-col items-end">
-                        <span className="text-[15px] font-black text-slate-800 leading-none">{timeLabel}</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5 capitalize">{todayLabel}</span>
+                    <div className="hidden sm:flex flex-col items-end shrink-0">
+                        <span className="text-[15px] font-black text-slate-700 leading-none">{timeLabel}</span>
+                        <span className="text-[9px] font-bold text-slate-400 mt-0.5 capitalize tracking-wider">{todayLabel}</span>
                     </div>
                     {/* Turno hoy */}
                     {activeEvent === undefined ? null : activeEvent ? (
@@ -354,7 +354,7 @@ const EmployeeHomeView = () => {
                             {EVENT_BADGES[activeEvent.type]?.badge || activeEvent.type}
                         </div>
                     ) : todayShift ? (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/70 backdrop-blur-xl border border-white/90 rounded-2xl shadow-sm">
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/50 border border-white/70 rounded-2xl">
                             <div className="text-center">
                                 <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
                                 <p className="text-[13px] font-black text-slate-700 leading-none">{formatTime12h(todayShift.start)}</p>
@@ -366,14 +366,15 @@ const EmployeeHomeView = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white/70 backdrop-blur-xl border border-white/90 rounded-2xl shadow-sm">
+                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white/50 border border-white/70 rounded-2xl">
                             <Palmtree size={13} strokeWidth={1.5} className="text-slate-400" />
                             <p className="text-[11px] font-bold text-slate-500">Día libre</p>
                         </div>
                     )}
+                    <div className="w-px h-6 bg-white/40 shrink-0 hidden sm:block" />
                     {/* Botón */}
                     <button onClick={() => navigate('/requests')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-white/90 text-slate-700 rounded-full font-black text-[11px] uppercase tracking-widest shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95">
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-white/80 text-slate-700 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-95 shrink-0">
                         <Plus size={13} strokeWidth={3} /> Nueva Solicitud
                     </button>
                 </div>
@@ -599,10 +600,12 @@ const EmployeeHomeView = () => {
                                             .map(e => {
                                                 const roster    = branchSchedule.find(r => String(r.employee_id) === String(e.id));
                                                 const schedData = roster?.schedule_data || (String(e.id) === String(user?.id) ? scheduleData : null) || e.weeklySchedule || {};
-                                                const raw       = schedData?.[d.id] ?? schedData?.[String(d.id)];
-                                                const shiftId   = typeof raw === 'object' ? raw?.shiftId : raw;
-                                                const shift     = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
-                                                return { e, shift };
+                                                const raw          = schedData?.[d.id] ?? schedData?.[String(d.id)];
+                                                const shiftId      = typeof raw === 'object' ? raw?.shiftId : raw;
+                                                const shift        = shiftId && shiftId !== 'LIBRE' ? shifts.find(s => String(s.id) === String(shiftId)) : null;
+                                                const lunchTime    = typeof raw === 'object' ? raw?.lunchTime : null;
+                                                const lactationTime = typeof raw === 'object' ? raw?.lactationTime : null;
+                                                return { e, shift, lunchTime, lactationTime };
                                             })
                                             .sort((a, b) => {
                                                 if (String(a.e.id) === String(user?.id)) return -1;
@@ -629,7 +632,7 @@ const EmployeeHomeView = () => {
                                                 <div className="flex-1 p-2 space-y-1.5 bg-white/40">
                                                     {branchEmpsForDay.length === 0 ? (
                                                         <p className="text-[10px] text-slate-300 text-center py-3">—</p>
-                                                    ) : branchEmpsForDay.map(({ e: em, shift }) => (
+                                                    ) : branchEmpsForDay.map(({ e: em, shift, lunchTime, lactationTime }) => (
                                                         <div key={em.id} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${
                                                             String(em.id) === String(user?.id)
                                                                 ? 'bg-slate-100/80 border border-slate-200'
@@ -642,9 +645,13 @@ const EmployeeHomeView = () => {
                                                                 }
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className={`text-[10px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? 'text-slate-700' : 'text-slate-600'}`}>
-                                                                    {String(em.id) === String(user?.id) ? 'Tú' : em.name?.split(' ')[0]}
-                                                                </p>
+                                                                <div className="flex items-center gap-1">
+                                                                    <p className={`text-[10px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? 'text-slate-700' : 'text-slate-600'}`}>
+                                                                        {String(em.id) === String(user?.id) ? 'Tú' : em.name?.split(' ')[0]}
+                                                                    </p>
+                                                                    {lunchTime && <Utensils size={8} className="text-orange-400 flex-shrink-0" strokeWidth={2.5} title={`Almuerzo ${lunchTime}`} />}
+                                                                    {lactationTime && <Baby size={8} className="text-pink-400 flex-shrink-0" strokeWidth={2.5} title={`Lactancia ${lactationTime}`} />}
+                                                                </div>
                                                                 <p className="text-[9px] text-slate-400 font-medium truncate leading-tight">
                                                                     {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Sin definir'}
                                                                 </p>

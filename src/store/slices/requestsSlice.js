@@ -12,6 +12,7 @@ export const REQUEST_TYPES = {
     OVERTIME:     { label: 'Horas Extra',        color: 'bg-orange-100 text-orange-800',  border: 'border-orange-200' },
     ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-emerald-100 text-emerald-800', border: 'border-emerald-200' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-blue-100 text-blue-800',      border: 'border-blue-200' },
+    DISABILITY:   { label: 'Incapacidad',        color: 'bg-red-100 text-red-800',        border: 'border-red-200' },
 };
 
 export const REQUEST_STATUS = {
@@ -226,6 +227,152 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
     }
 };
 
+// ── Helpers de Incapacidad ──────────────────────────────────────────────────
+
+/** Devuelve la fecha de inicio de semana (lunes) en formato YYYY-MM-DD para una fecha dada */
+const getMondayISO = (dateStr) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+};
+
+/**
+ * Marca cada día de [startDate, endDate] como LIBRE/Incapacidad en employee_rosters.
+ * Agrupa por semana para minimizar queries.
+ */
+const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
+    try {
+        const start = new Date(startDate + 'T00:00:00');
+        const end   = new Date(endDate   + 'T00:00:00');
+
+        // Agrupar días por semana → { weekStart: [dayId, ...] }
+        const weekMap = {};
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const weekKey = getMondayISO(d.toISOString().split('T')[0]);
+            const dayId   = d.getDay(); // 0=Dom, 1=Lun … 6=Sab
+            if (!weekMap[weekKey]) weekMap[weekKey] = [];
+            weekMap[weekKey].push(dayId);
+        }
+
+        for (const [weekStart, dayIds] of Object.entries(weekMap)) {
+            const { data: roster } = await supabase
+                .from('employee_rosters')
+                .select('schedule_data')
+                .eq('employee_id', employeeId)
+                .eq('week_start_date', weekStart)
+                .maybeSingle();
+
+            const raw = roster?.schedule_data || {};
+            const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
+
+            for (const dayId of dayIds) {
+                sched[dayId] = { shiftId: 'LIBRE', note: 'Incapacidad' };
+            }
+
+            await supabase.from('employee_rosters').upsert(
+                { employee_id: employeeId, week_start_date: weekStart, schedule_data: sched },
+                { onConflict: 'employee_id, week_start_date' }
+            );
+        }
+        return true;
+    } catch (err) {
+        console.error('Error marcando días de incapacidad en roster:', err);
+        return false;
+    }
+};
+
+/**
+ * Verifica la cobertura de la sucursal en el rango de incapacidad.
+ * Si algún día queda con 0 o 1 empleados, envía alerta a Talento Humano.
+ */
+const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, approverId, employeeName) => {
+    try {
+        if (!branchId) return;
+
+        const { data: branchEmps } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('branch_id', branchId)
+            .eq('status', 'ACTIVO')
+            .neq('id', employeeId);
+
+        const branchEmpIds = (branchEmps || []).map(e => e.id);
+        if (!branchEmpIds.length) {
+            // Nadie más en la sucursal
+            await _sendCoverageAlert(branchId, startDate, endDate, approverId, employeeName, 0);
+            return;
+        }
+
+        const start = new Date(startDate + 'T00:00:00');
+        const end   = new Date(endDate   + 'T00:00:00');
+
+        // Semanas afectadas
+        const weekStarts = new Set();
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            weekStarts.add(getMondayISO(d.toISOString().split('T')[0]));
+        }
+
+        let minCoverage = branchEmpIds.length;
+
+        for (const weekStart of weekStarts) {
+            const { data: rosters } = await supabase
+                .from('employee_rosters')
+                .select('employee_id, schedule_data')
+                .eq('week_start_date', weekStart)
+                .in('employee_id', branchEmpIds);
+
+            const weekStartDate = new Date(weekStart + 'T00:00:00');
+            for (let offset = 0; offset < 7; offset++) {
+                const checkD = new Date(weekStartDate);
+                checkD.setDate(weekStartDate.getDate() + offset);
+                const dateISO = checkD.toISOString().split('T')[0];
+                if (dateISO < startDate || dateISO > endDate) continue;
+
+                const dayId = checkD.getDay();
+                let working = 0;
+                for (const roster of (rosters || [])) {
+                    const s = typeof roster.schedule_data === 'string'
+                        ? JSON.parse(roster.schedule_data || '{}')
+                        : roster.schedule_data || {};
+                    const cell = s[dayId];
+                    const sid  = typeof cell === 'object' ? cell?.shiftId : cell;
+                    if (sid && sid !== 'LIBRE') working++;
+                }
+                minCoverage = Math.min(minCoverage, working);
+            }
+        }
+
+        if (minCoverage < 2) {
+            await _sendCoverageAlert(branchId, startDate, endDate, approverId, employeeName, minCoverage);
+        }
+    } catch (err) {
+        console.error('Error verificando cobertura de incapacidad:', err);
+    }
+};
+
+const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, employeeName, count) => {
+    try {
+        const thId = await resolveNextApprover(3, branchId, null);
+        if (!thId) return;
+
+        const fmtD = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+
+        await supabase.from('announcements').insert([{
+            title: 'Cobertura de Horario Reducida',
+            message: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} colaborador${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
+            target_type: 'EMPLOYEE',
+            target_value: [String(thId)],
+            read_by: [],
+            is_archived: false,
+            created_by: approverId,
+            priority: 'HIGH',
+        }]);
+    } catch (err) {
+        console.error('Error enviando alerta de cobertura:', err);
+    }
+};
+
 // ── Slice ───────────────────────────────────────────────────────────────────
 
 const SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
@@ -368,9 +515,16 @@ export const createRequestsSlice = (set, get) => ({
                 return enrichedPeer;
             }
 
+            // DISABILITY: va directamente a Talento Humano, sin pasar por la jerarquía intermedia
             const approverId = emp
-                ? await resolveApprover(employeeId, emp.branch_id, emp.role_id)
+                ? (type === 'DISABILITY'
+                    ? await resolveNextApprover(3, emp.branch_id, employeeId)
+                    : await resolveApprover(employeeId, emp.branch_id, emp.role_id))
                 : null;
+
+            const finalMetadata = type === 'DISABILITY'
+                ? { ...payload, priority: 'URGENT' }
+                : payload;
 
             const { data, error } = await supabase
                 .from('approval_requests')
@@ -380,7 +534,7 @@ export const createRequestsSlice = (set, get) => ({
                     type,
                     status: 'PENDING',
                     note,
-                    metadata: payload,
+                    metadata: finalMetadata,
                 }])
                 .select(SIMPLE_SELECT)
                 .single();
@@ -531,7 +685,7 @@ export const createRequestsSlice = (set, get) => ({
             }
             // ─────────────────────────────────────────────────────────────────────
 
-            const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
+            const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : req.type === 'DISABILITY' ? 1 : 3;
 
             if (nextLevel <= maxLevels) {
                 // Avanzar al siguiente nivel
@@ -583,6 +737,17 @@ export const createRequestsSlice = (set, get) => ({
                                     fromRequest: req.id,
                                 }).catch(() => {});
                                 await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                            }
+                            if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
+                                await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
+                                await checkAndAlertCoverage(
+                                    req.employee.id,
+                                    req.employee?.branch_id,
+                                    meta.startDate,
+                                    meta.endDate,
+                                    approverId,
+                                    req.employee?.name || 'un empleado'
+                                );
                             }
                         }
                     }
@@ -683,6 +848,19 @@ export const createRequestsSlice = (set, get) => ({
                                 fromRequest: req.id,
                             }).catch(() => {});
                             await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                        }
+
+                        // Para DISABILITY: marcar días en roster y verificar cobertura
+                        if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
+                            await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
+                            await checkAndAlertCoverage(
+                                req.employee.id,
+                                req.employee?.branch_id,
+                                meta.startDate,
+                                meta.endDate,
+                                approverId,
+                                req.employee?.name || 'un empleado'
+                            );
                         }
                     }
                 }

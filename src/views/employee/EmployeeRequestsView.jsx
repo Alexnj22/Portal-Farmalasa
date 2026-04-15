@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
 import {
     ClipboardList, Plus, Loader2, X, Palmtree, FileText, RefreshCw,
-    DollarSign, FileCheck, CheckCircle2, Send, AlertCircle, XCircle, Check
+    DollarSign, FileCheck, CheckCircle2, Send, AlertCircle, XCircle, Check,
+    Stethoscope, Upload, FileImage, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -19,15 +20,16 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 // ─────────────────────────────────────────────────────────────────────────────
 const TYPE_ICONS = {
     VACATION: Palmtree, PERMIT: FileText, SHIFT_CHANGE: RefreshCw,
-    ADVANCE: DollarSign, CERTIFICATE: FileCheck,
+    ADVANCE: DollarSign, CERTIFICATE: FileCheck, DISABILITY: Stethoscope,
 };
 
 const TYPE_OPTIONS = [
-    { key: 'VACATION',     icon: Palmtree,   label: 'Vacaciones'   },
-    { key: 'PERMIT',       icon: FileText,   label: 'Permiso'      },
-    { key: 'SHIFT_CHANGE', icon: RefreshCw,  label: 'Cambio Turno' },
-    { key: 'ADVANCE',      icon: DollarSign, label: 'Anticipo'     },
-    { key: 'CERTIFICATE',  icon: FileCheck,  label: 'Constancia'   },
+    { key: 'VACATION',     icon: Palmtree,     label: 'Vacaciones'   },
+    { key: 'PERMIT',       icon: FileText,     label: 'Permiso'      },
+    { key: 'SHIFT_CHANGE', icon: RefreshCw,    label: 'Cambio Turno' },
+    { key: 'ADVANCE',      icon: DollarSign,   label: 'Anticipo'     },
+    { key: 'CERTIFICATE',  icon: FileCheck,    label: 'Constancia'   },
+    { key: 'DISABILITY',   icon: Stethoscope,  label: 'Incapacidad'  },
 ];
 
 const CERT_TYPES = [
@@ -133,91 +135,194 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // RequestCard — solicitud propia
 // ─────────────────────────────────────────────────────────────────────────────
-const RequestCard = memo(({ req, onCancel }) => {
+const RequestCard = memo(({ req, onCancel, uploadFileToStorage, isExpanded, onToggle }) => {
     const typeConf  = REQUEST_TYPES[req.type]    || { label: req.type,   color: 'bg-slate-100 text-slate-600', border: 'border-slate-200' };
     const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-slate-100 text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
     const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : 3;
-    const meta      = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
+    const [meta, setMeta] = useState(
+        typeof req.metadata === 'object' && req.metadata ? req.metadata : {}
+    );
+    const [uploadingDoc, setUploadingDoc] = useState(false);
 
     const cardBg =
-        req.status === 'PENDING'   ? 'border-[#007AFF]/30 shadow-[0_4px_20px_rgba(0,122,255,0.05)] bg-white/80 backdrop-blur-2xl' :
-        req.status === 'APPROVED'  ? 'border-emerald-300/70 shadow-[0_4px_20px_rgba(16,185,129,0.08)] bg-emerald-50/80 backdrop-blur-2xl' :
-        req.status === 'REJECTED'  ? 'border-red-300 shadow-[0_4px_20px_rgba(239,68,68,0.08)] bg-white/90 backdrop-blur-xl' :
-        'border-white/60 opacity-75 bg-white/40 backdrop-blur-md hover:opacity-100';
+        req.status === 'PENDING'   ? 'border-[#007AFF]/30 bg-white/80 backdrop-blur-2xl' :
+        req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-emerald-50/80 backdrop-blur-2xl' :
+        req.status === 'REJECTED'  ? 'border-red-300 bg-white/90 backdrop-blur-xl' :
+        'border-white/60 bg-white/40 backdrop-blur-md';
+
+    const shadowBg = isExpanded
+        ? 'shadow-[0_16px_48px_rgba(0,0,0,0.10)]'
+        : 'shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:-translate-y-0.5';
 
     return (
-        <div className={`p-6 rounded-[2.5rem] border flex flex-col gap-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] ${cardBg}`}>
-
-            {req.status === 'PENDING' && (
-                <div className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                    <button
-                        onClick={() => onCancel(req.id)}
-                        className="p-2.5 text-red-400 bg-white/80 border border-red-50 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-95"
-                        title="Cancelar solicitud"
-                    >
-                        <X size={14} strokeWidth={2.5} />
-                    </button>
+        <div
+            onClick={onToggle}
+            className={`rounded-[2.5rem] border flex flex-col cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative transform-gpu ${cardBg} ${shadowBg} ${!isExpanded ? 'opacity-90 hover:opacity-100' : ''}`}
+        >
+            {/* ── Resumen siempre visible ── */}
+            <div className="p-5 flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 ${typeConf.color} border ${typeConf.border}`}>
+                    <TypeIcon size={16} strokeWidth={1.8} />
                 </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2 pr-10">
-                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${typeConf.color} ${typeConf.border}`}>
-                    <TypeIcon size={11} strokeWidth={2} /> {typeConf.label}
-                </span>
-                <span className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${statConf.color} ${statConf.border}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} /> {statConf.label}
-                </span>
-                {req.status === 'PENDING' && req.current_level && (
-                    <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest text-[#007AFF] bg-[#007AFF]/10 border border-[#007AFF]/20">
-                        Nivel {req.current_level} / {maxLevels}
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${typeConf.color.split(' ')[1]}`}>
+                            {typeConf.label}
+                        </span>
+                        <span className="text-slate-300">·</span>
+                        <span className={`flex items-center gap-1 text-[10px] font-bold ${statConf.color.split(' ')[1]}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
+                            {statConf.label}
+                        </span>
+                        {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
+                            <span className="text-[9px] font-bold text-[#007AFF]">· Niv. {req.current_level}/{maxLevels}</span>
+                        )}
+                        {req.type === 'DISABILITY' && req.status === 'PENDING' && (
+                            <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">· Urgente</span>
+                        )}
+                    </div>
+                    {req.note && (
+                        <p className="text-[12px] text-slate-500 truncate leading-snug">{req.note}</p>
+                    )}
+                    {!req.note && req.type === 'DISABILITY' && meta.startDate && (
+                        <p className="text-[12px] text-red-500 font-medium truncate">
+                            {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                            {meta.endDate && meta.endDate !== meta.startDate && <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</>}
+                            {meta.days && <span className="text-red-400"> ({meta.days}d)</span>}
+                        </p>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[10px] text-slate-400 font-medium hidden sm:block">
+                        {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                     </span>
-                )}
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-slate-100' : ''}`}>
+                        <ChevronDown size={14} strokeWidth={2.5} />
+                    </div>
+                </div>
             </div>
 
-            {req.note && (
-                <p className="text-slate-700 text-[14px] leading-relaxed font-medium line-clamp-2 whitespace-pre-wrap">
-                    {req.note}
-                </p>
-            )}
-
-            {req.type === 'SHIFT_CHANGE' && (
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno actual</p>
-                        <p className="text-[12px] font-black text-slate-700">
-                            {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
-                        </p>
-                        {(!meta.myShift || meta.myShift === 'No especificado') && (
-                            <p className="text-[9px] text-slate-400 mt-0.5">Sin turno asignado</p>
+            {/* ── Detalle expandido ── */}
+            {isExpanded && (
+                <div
+                    onClick={e => e.stopPropagation()}
+                    className="px-5 pb-5 flex flex-col gap-3 border-t border-slate-100/80 pt-4 animate-in slide-in-from-top-2 duration-200"
+                >
+                    {/* Badges completos */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${typeConf.color} ${typeConf.border}`}>
+                            <TypeIcon size={11} strokeWidth={2} /> {typeConf.label}
+                        </span>
+                        <span className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${statConf.color} ${statConf.border}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} /> {statConf.label}
+                        </span>
+                        {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
+                            <span className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest text-[#007AFF] bg-[#007AFF]/10 border border-[#007AFF]/20">
+                                Nivel {req.current_level} / {maxLevels}
+                            </span>
                         )}
                     </div>
-                    <div className="bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-2xl p-3">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Turno a tomar</p>
-                        <p className="text-[12px] font-black text-slate-700">
-                            {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
+
+                    {req.note && (
+                        <p className="text-slate-700 text-[14px] leading-relaxed font-medium whitespace-pre-wrap">
+                            {req.note}
                         </p>
-                        {(!meta.targetShift || meta.targetShift === 'No especificado') && (
-                            <p className="text-[9px] text-slate-400 mt-0.5">Sin turno asignado</p>
+                    )}
+
+                    {req.type === 'SHIFT_CHANGE' && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno actual</p>
+                                <p className="text-[12px] font-black text-slate-700">
+                                    {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
+                                </p>
+                            </div>
+                            <div className="bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-2xl p-3">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Turno a tomar</p>
+                                <p className="text-[12px] font-black text-slate-700">
+                                    {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {req.type === 'DISABILITY' && (
+                        <div className="space-y-2">
+                            {meta.startDate && (
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50/60 border border-red-200/60">
+                                    <Stethoscope size={13} className="text-red-500 flex-shrink-0" strokeWidth={2} />
+                                    <span className="text-[12px] font-bold text-red-700">
+                                        {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                                        {meta.endDate && meta.endDate !== meta.startDate && (
+                                            <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</>
+                                        )}
+                                        {meta.days && <span className="text-red-400 font-medium ml-1.5">({meta.days} días)</span>}
+                                    </span>
+                                </div>
+                            )}
+                            {meta.docUrl ? (
+                                <a href={meta.docUrl} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 hover:text-[#007AFF] hover:border-[#007AFF]/30 transition-all">
+                                    <FileImage size={13} strokeWidth={2} />
+                                    {meta.docName || 'Ver certificado adjunto'}
+                                </a>
+                            ) : req.status === 'PENDING' && uploadFileToStorage ? (
+                                <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-amber-200 hover:border-amber-400 hover:bg-amber-50/40'}`}>
+                                    {uploadingDoc
+                                        ? <Loader2 size={13} className="text-amber-500 animate-spin flex-shrink-0" />
+                                        : <Upload size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2} />
+                                    }
+                                    <span className="text-[11px] font-bold text-amber-700">
+                                        {uploadingDoc ? 'Subiendo...' : 'Adjuntar certificado / boleta ISSS'}
+                                    </span>
+                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" disabled={uploadingDoc}
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file || !uploadFileToStorage) return;
+                                            setUploadingDoc(true);
+                                            const url = await uploadFileToStorage(file, 'documents', 'disability');
+                                            if (url) {
+                                                const newMeta = { ...meta, docUrl: url, docName: file.name };
+                                                await supabase.from('approval_requests').update({ metadata: newMeta }).eq('id', req.id);
+                                                setMeta(newMeta);
+                                                useToastStore.getState().showToast('Documento adjuntado', 'El certificado fue adjuntado correctamente.', 'success');
+                                            }
+                                            setUploadingDoc(false);
+                                            e.target.value = '';
+                                        }}
+                                    />
+                                </label>
+                            ) : null}
+                        </div>
+                    )}
+
+                    {req.approver_note && (
+                        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
+                            req.status === 'APPROVED' ? 'bg-emerald-50 border-emerald-200/60 text-emerald-700' :
+                            req.status === 'REJECTED' ? 'bg-red-50 border-red-200/60 text-red-600' :
+                            'bg-slate-50 border-slate-200/60 text-slate-600'
+                        }`}>
+                            <AlertCircle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                            <span>{req.approver_note}</span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                        {req.status === 'PENDING' && (
+                            <button
+                                onClick={() => onCancel(req.id)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full border border-transparent hover:border-red-200 transition-all"
+                            >
+                                <X size={11} strokeWidth={2.5} /> Cancelar
+                            </button>
                         )}
                     </div>
                 </div>
             )}
-
-            {req.approver_note && (
-                <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
-                    req.status === 'APPROVED' ? 'bg-emerald-50 border-emerald-200/60 text-emerald-700' :
-                    req.status === 'REJECTED' ? 'bg-red-50 border-red-200/60 text-red-600' :
-                    'bg-slate-50 border-slate-200/60 text-slate-600'
-                }`}>
-                    <AlertCircle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <span>{req.approver_note}</span>
-                </div>
-            )}
-
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
-            </p>
         </div>
     );
 });
@@ -227,7 +332,7 @@ const RequestCard = memo(({ req, onCancel }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const EmployeeRequestsView = () => {
     const { user } = useAuth();
-    const { createRequest, cancelRequest, approvePeerRequest, rejectPeerRequest, holidays, employees } = useStaffStore();
+    const { createRequest, cancelRequest, approvePeerRequest, rejectPeerRequest, holidays, employees, uploadFileToStorage } = useStaffStore();
 
     const [requests, setRequests]         = useState([]);
     const [peerRequests, setPeerRequests] = useState([]);
@@ -241,6 +346,8 @@ const EmployeeRequestsView = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError]               = useState('');
     const [cancelConfirmId, setCancelConfirmId] = useState(null);
+    const [disabilityFile, setDisabilityFile]   = useState(null);
+    const [expandedId, setExpandedId]           = useState(null);
 
     // Compañeros de la misma sucursal (excluyendo al usuario actual)
     const branchEmployees = useMemo(() =>
@@ -374,13 +481,30 @@ const EmployeeRequestsView = () => {
         if (formType === 'CERTIFICATE' && !payload.certificateType) {
             setError('Selecciona el tipo de constancia.'); return;
         }
+        if (formType === 'DISABILITY' && (!payload.startDate || !payload.days || Number(payload.days) < 1)) {
+            setError('Ingresa la fecha de inicio y la cantidad de días.'); return;
+        }
 
         setIsSubmitting(true);
-        const result = await createRequest(user.id, formType, payload, formNote.trim());
+
+        // Para DISABILITY: calcular endDate y subir boleta si la adjuntaron
+        let finalPayload = { ...payload };
+        if (formType === 'DISABILITY') {
+            const start = new Date(payload.startDate + 'T00:00:00');
+            start.setDate(start.getDate() + Number(payload.days) - 1);
+            finalPayload.endDate = start.toISOString().split('T')[0];
+            if (disabilityFile) {
+                const docUrl = await uploadFileToStorage(disabilityFile, 'documents', 'disability');
+                if (docUrl) finalPayload.docUrl = docUrl;
+                finalPayload.docName = disabilityFile.name;
+            }
+        }
+
+        const result = await createRequest(user.id, formType, finalPayload, formNote.trim());
         setIsSubmitting(false);
         if (result) {
             useToastStore.getState().showToast('Enviada', `Solicitud de ${REQUEST_TYPES[formType]?.label} registrada.`, 'success');
-            setFormNote(''); setPayload({}); setPermPickerKey(0); setStatusFilter('PENDING');
+            setFormNote(''); setPayload({}); setPermPickerKey(0); setDisabilityFile(null); setStatusFilter('PENDING');
             load();
         } else {
             setError('No se pudo crear la solicitud. Intenta de nuevo.');
@@ -521,6 +645,104 @@ const EmployeeRequestsView = () => {
             );
         }
 
+        if (formType === 'DISABILITY') {
+            const days = Number(payload.days) || 0;
+            const endDate = payload.startDate && days > 0
+                ? (() => { const d = new Date(payload.startDate + 'T00:00:00'); d.setDate(d.getDate() + days - 1); return d; })()
+                : null;
+            const needsISSS = days > 3;
+
+            return (
+                <div className="space-y-3">
+                    {/* Fecha de inicio */}
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            Primer día de incapacidad
+                        </label>
+                        <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
+                            <LiquidDatePicker
+                                value={payload.startDate || ''}
+                                onChange={v => setPayload(prev => ({ ...prev, startDate: v }))}
+                                holidays={holidays}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Cantidad de días */}
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            Cantidad de días
+                        </label>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="number" min="1" max="365"
+                                value={payload.days || ''}
+                                onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
+                                placeholder="Ej. 3"
+                                className="w-28 py-3 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-red-300 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-2xl text-[14px] font-black outline-none text-slate-700 transition-all duration-300 placeholder-slate-300"
+                            />
+                            {endDate && (
+                                <div className="flex-1 px-3 py-2.5 rounded-2xl bg-red-50/70 border border-red-200/60 flex items-center gap-2">
+                                    <Stethoscope size={13} className="text-red-400 flex-shrink-0" strokeWidth={2} />
+                                    <div>
+                                        <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">Hasta</p>
+                                        <p className="text-[12px] font-black text-red-700 leading-tight">
+                                            {endDate.toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Nota de legislación — solo para más de 3 días */}
+                    {needsISSS && (
+                        <div className="px-4 py-3 rounded-2xl border bg-amber-50/80 border-amber-200/80 text-amber-800 text-[11px] leading-relaxed">
+                            <p className="font-black mb-1">Desde el día 4, aplica cobertura del ISSS</p>
+                            <p className="font-medium">El ISSS cubre el 75% de tu salario a partir del día 4. Es <strong>obligatorio</strong> presentar la <strong>boleta oficial de incapacidad del ISSS</strong> dentro de <strong>3 días hábiles</strong> para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.</p>
+                        </div>
+                    )}
+
+                    {/* Upload documento */}
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            {needsISSS
+                                ? <span>Boleta ISSS <span className="text-red-500">*</span><span className="text-slate-300 ml-1 normal-case font-medium">(obligatoria para cobertura ISSS)</span></span>
+                                : <span>Certificado Médico <span className="text-slate-300 ml-1 normal-case font-medium">(opcional)</span></span>
+                            }
+                        </label>
+                        <label className="flex items-center gap-3 px-4 py-3 bg-white/50 border-2 border-dashed border-red-200 hover:border-red-400 hover:bg-red-50/30 rounded-2xl cursor-pointer transition-all duration-200 group">
+                            <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
+                                {disabilityFile ? <FileImage size={16} className="text-red-600" /> : <Upload size={16} className="text-red-400" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                {disabilityFile
+                                    ? <><p className="text-[12px] font-bold text-slate-700 truncate">{disabilityFile.name}</p>
+                                       <p className="text-[10px] text-slate-400">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
+                                    : <><p className="text-[12px] font-medium text-slate-500">Adjuntar boleta o certificado</p>
+                                       <p className="text-[10px] text-slate-400">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
+                                }
+                            </div>
+                            {disabilityFile && (
+                                <button type="button" onClick={e => { e.preventDefault(); setDisabilityFile(null); }}
+                                    className="p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-100 transition-all">
+                                    <X size={14} strokeWidth={2.5} />
+                                </button>
+                            )}
+                            <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={e => setDisabilityFile(e.target.files?.[0] || null)} />
+                        </label>
+                    </div>
+
+                    <div className="px-4 py-2.5 rounded-2xl bg-red-50/60 border border-red-200/60">
+                        <p className="text-[11px] font-bold text-red-700 leading-relaxed">
+                            Talento Humano recibirá tu solicitud como urgente. Los días se marcarán automáticamente en tu horario al ser aprobada.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
         return null;
     };
 
@@ -534,7 +756,7 @@ const EmployeeRequestsView = () => {
                     return (
                         <button
                             key={tab.key}
-                            onClick={() => setStatusFilter(tab.key)}
+                            onClick={() => { setStatusFilter(tab.key); setExpandedId(null); }}
                             className={`relative px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
                                 isActive
                                     ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
@@ -595,7 +817,7 @@ const EmployeeRequestsView = () => {
                                             <button
                                                 key={key}
                                                 type="button"
-                                                onClick={() => { setFormType(key); setPayload({}); setError(''); setPermPickerKey(0); }}
+                                                onClick={() => { setFormType(key); setPayload({}); setError(''); setPermPickerKey(0); setDisabilityFile(null); }}
                                                 className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                                                     isActive
                                                         ? `bg-white ${conf.color} ${conf.border} shadow-sm scale-[1.02]`
@@ -729,7 +951,14 @@ const EmployeeRequestsView = () => {
                             </div>
                         ) : (
                             filtered.map(req => (
-                                <RequestCard key={req.id} req={req} onCancel={id => setCancelConfirmId(id)} />
+                                <RequestCard
+                                    key={req.id}
+                                    req={req}
+                                    onCancel={id => setCancelConfirmId(id)}
+                                    uploadFileToStorage={uploadFileToStorage}
+                                    isExpanded={expandedId === req.id}
+                                    onToggle={() => setExpandedId(prev => prev === req.id ? null : req.id)}
+                                />
                             ))
                         )}
                     </div>

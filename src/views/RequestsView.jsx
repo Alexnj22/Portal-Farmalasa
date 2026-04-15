@@ -4,7 +4,7 @@ import {
     Inbox, Check, X, ChevronDown, ChevronUp,
     User, Calendar, Loader2,
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
-    CheckCircle2, XCircle,
+    CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,7 @@ const TYPE_ICONS = {
     OVERTIME:     Coffee,
     ADVANCE:      DollarSign,
     CERTIFICATE:  FileCheck,
+    DISABILITY:   Stethoscope,
 };
 
 const formatDate = (iso) => {
@@ -49,7 +50,12 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
                         </span>
-                        {req.current_level && req.status === 'PENDING' && (
+                        {req.type === 'DISABILITY' && req.status === 'PENDING' && (
+                            <span className="flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-100 border border-red-200 px-2 py-0.5 rounded-md animate-pulse">
+                                <AlertTriangle size={10} strokeWidth={2.5} /> URGENTE
+                            </span>
+                        )}
+                        {req.current_level && req.status === 'PENDING' && req.type !== 'DISABILITY' && (
                             <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
                                 Nivel {req.current_level} de {req.type === 'SHIFT_CHANGE' ? 2 : 3}
                             </span>
@@ -113,6 +119,49 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                                             </p>
                                             <p className="text-[11px] font-black text-slate-700">{meta.targetShift || '—'}</p>
                                         </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                    {req.type === 'DISABILITY' && (() => {
+                        const meta = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
+                        return (
+                            <div className="space-y-2">
+                                {meta.startDate && (
+                                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200">
+                                        <Stethoscope size={14} className="text-red-500 flex-shrink-0" strokeWidth={2} />
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-0.5">Período de Incapacidad</p>
+                                            <p className="text-[13px] font-bold text-red-700">
+                                                {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })}
+                                                {meta.endDate && meta.endDate !== meta.startDate && (
+                                                    <> — {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })}</>
+                                                )}
+                                            </p>
+                                            <p className="text-[11px] text-red-500 font-medium mt-0.5">
+                                                {meta.days
+                                                    ? `${meta.days} día${meta.days != 1 ? 's' : ''}`
+                                                    : meta.startDate && meta.endDate
+                                                        ? `${Math.max(1, Math.round((new Date(meta.endDate + 'T00:00:00') - new Date(meta.startDate + 'T00:00:00')) / 86400000) + 1)} días`
+                                                        : null
+                                                }
+                                                {Number(meta.days) > 3 && <span className="ml-1.5 text-amber-600 font-black">— Requiere boleta ISSS</span>}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {meta.docUrl && (
+                                    <a href={meta.docUrl} target="_blank" rel="noreferrer"
+                                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[12px] font-bold text-slate-600 hover:text-[#007AFF] hover:border-[#007AFF]/30 transition-all group">
+                                        <FileImage size={14} className="group-hover:text-[#007AFF] transition-colors" strokeWidth={2} />
+                                        {meta.docName || 'Ver certificado / boleta ISSS adjunta'}
+                                    </a>
+                                )}
+                                {!meta.docUrl && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200">
+                                        <AlertTriangle size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2} />
+                                        <p className="text-[11px] text-amber-700 font-medium">Sin certificado adjunto — el empleado puede adjuntarlo desde su solicitud pendiente o presentarlo físicamente.</p>
                                     </div>
                                 )}
                             </div>

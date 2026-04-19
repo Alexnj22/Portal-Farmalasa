@@ -12,6 +12,7 @@ import ConfirmModal from "../components/common/ConfirmModal";
 import AlertModal from "../components/common/AlertModal";
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
+import { useAuth } from '../context/AuthContext';
 
 import { supabase } from '../supabaseClient';
 
@@ -174,7 +175,8 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 // ============================================================================
 const BranchCard = memo(({
     branch, branchEmployees, count, activeKiosks, currentTime, isMobile,
-    handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction
+    handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
+    canEdit = false
 }) => {
     const [aiMode, setAiMode] = useState(false);
     const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -317,10 +319,10 @@ const BranchCard = memo(({
                     
                     <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
                     <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
-                    
+                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
+
                     {!deleteDisabled && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-400 hover:text-red-500 hover:bg-red-50" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -404,7 +406,7 @@ const BranchCard = memo(({
                         </button>
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-95 ${!scheduleDefined ? 'bg-red-50/80 border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)] hover:bg-red-50 hover:shadow-sm' : 'bg-white/70 border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-red-50/80 border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)] hover:bg-red-50 hover:shadow-sm' : 'bg-white/70 border-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
                             <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-red-500' : 'text-slate-500 group-hover/horario:text-[#007AFF]'}`} strokeWidth={2.5} />
                             <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-red-500' : 'text-slate-500 group-hover/horario:text-slate-700'}`}>
@@ -418,7 +420,7 @@ const BranchCard = memo(({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
                         <div className="flex items-center justify-between w-full">
                             <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-red-500' : completion.legal === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
                             <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Legal</span>
@@ -430,7 +432,7 @@ const BranchCard = memo(({
                         )}
                     </button>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos de inmueble">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos de inmueble">
                         <div className="flex items-center justify-between w-full">
                             <Building2 size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.property === 0 ? 'text-red-500' : completion.property === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
                             <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Local</span>
@@ -442,7 +444,7 @@ const BranchCard = memo(({
                         )}
                     </button>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar servicios básicos">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar servicios básicos">
                         <div className="flex items-center justify-between w-full">
                             <Zap size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.services === 0 ? 'text-red-500' : completion.services === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
                             <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Serv.</span>
@@ -496,7 +498,9 @@ const BranchCard = memo(({
 // 🚀 VISTA PRINCIPAL
 // ============================================================================
 const BranchesView = ({ openModal, setView, setActiveBranch }) => {
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
+    const { rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['branches']?.can_edit;
     const branches = useStaff(state => state.branches);
     const employees = useStaff(state => state.employees);
     const deleteBranch = useStaff(state => state.deleteBranch);
@@ -682,10 +686,10 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                         {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
                     </button>
-                    <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-[#007AFF] font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,122,255,0.15)] border border-white hover:border-[#007AFF]/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
+                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-[#007AFF] font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,122,255,0.15)] border border-white hover:border-[#007AFF]/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
-                    </button>
+                    </button>}
                 </div>
             </div>
         </div>
@@ -732,6 +736,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                                     handleDeleteClick={handleDeleteClick}
                                     handlePhoneAction={handlePhoneAction}
                                     handleWhatsAppAction={handleWhatsAppAction}
+                                    canEdit={canEdit}
                                 />
                             ))}
                         </div>

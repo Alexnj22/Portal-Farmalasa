@@ -26,7 +26,8 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
     const { employees, branches, shifts, holidays } = useStaffStore();
-    const { user, isAdmin } = useAuth();
+    const { user, isAdmin, rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['staff_detail']?.can_edit;
     
     const [_activeTab, _setActiveTab] = useState('history');
     const currentTab = activeTab || _activeTab;
@@ -263,7 +264,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             {isAdmin && <div className="w-px h-6 bg-white/50 mx-1 shrink-0"></div>}
 
             {isAdmin && (
-                <button onClick={handleNewHRAction} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95">
+                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
                 </button>
             )}
@@ -352,7 +353,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="h-full w-full rounded-full overflow-hidden bg-slate-100 relative shadow-inner">
                                             <LiquidAvatar src={emp.photo_url || emp.photo} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                         </div>
-                                        {isAdmin && (
+                                        {isAdmin && canEdit && (
                                             <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
                                                 onClick={handleEditProfile}>
                                                 <Camera size={24} className="text-white"/>
@@ -377,7 +378,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {isAdmin && (
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
                                                 <button onClick={handleEditProfile}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)]">
+                                                    disabled={!canEdit}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                                     <Edit size={12}/> Editar
                                                 </button>
                                                 <button onClick={handleResetPassword}
@@ -547,7 +549,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     ) : (
                                                                         <button
                                                                             onClick={() => openModal('uploadDocument', {}, ev.id)}
-                                                                            className="flex items-center gap-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors"
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Paperclip size={12} strokeWidth={2.5}/> Adjuntar Soporte
                                                                         </button>
@@ -563,14 +566,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 employeeId: emp.id,
                                                                                 _editingEventId: ev.id
                                                                             })}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                                                                             <Edit size={11} strokeWidth={2.5}/> Editar
                                                                         </button>
                                                                     )}
                                                                     {isAdmin && ev.metadata?.status !== 'CANCELLED' && ev.metadata?.status !== 'SUPERSEDED' && (
                                                                         <button
                                                                             onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                                                                             <Ban size={11} strokeWidth={2.5}/> Cancelar
                                                                         </button>
                                                                     )}
@@ -769,7 +774,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </h3>
                                             <button
                                                 onClick={() => setShowReqForm(v => !v)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95"
+                                                disabled={!canEdit}
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <Plus size={13} strokeWidth={3}/> Nueva Solicitud
                                             </button>
@@ -855,7 +861,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        disabled={!reqFormNote.trim() || isCreatingReq}
+                                                        disabled={!canEdit || !reqFormNote.trim() || isCreatingReq}
                                                         onClick={async () => {
                                                             const eid = activeEmployee?.id || user?.id;
                                                             setIsCreatingReq(true);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import ReactDOM from 'react-dom';
 import {
-    Inbox, Check, X, ChevronDown, ChevronUp,
+    Inbox, Check, X,
     User, Calendar, Loader2,
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
@@ -28,8 +28,7 @@ const formatDate = (iso) => {
 };
 
 // ─── Tarjeta ──────────────────────────────────────────────────────────────────
-const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
-    const [expanded, setExpanded] = useState(false);
+const RequestCard = memo(({ req, userId, onApprove, onReject, canApprove = false }) => {
     const typeConf = REQUEST_TYPES[req.type]  || { label: req.type,   color: 'bg-slate-100 text-slate-700', border: 'border-slate-200' };
     const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-slate-100 text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400' };
     const TypeIcon = TYPE_ICONS[req.type] || FileText;
@@ -73,23 +72,9 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                         {formatDate(req.created_at)}
                     </p>
                 </div>
-
-                <button
-                    onClick={() => setExpanded(v => !v)}
-                    className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0"
-                >
-                    {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
             </div>
 
-            {req.note && !expanded && (
-                <div className="px-5 pb-4">
-                    <p className="text-[12px] text-slate-500 line-clamp-2 italic">"{req.note}"</p>
-                </div>
-            )}
-
-            {expanded && (
-                <div className="px-5 pb-4 border-t border-slate-100/80 pt-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <div className="px-5 pb-4 border-t border-slate-100/80 pt-4 space-y-3">
                     {req.type === 'SHIFT_CHANGE' && (() => {
                         const meta = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
                         return (
@@ -206,19 +191,20 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
                         <p className="text-[11px] text-slate-400">Código: <span className="font-mono font-bold text-slate-600">{req.employee.code}</span></p>
                     )}
                 </div>
-            )}
 
             {req.status === 'PENDING' && (
                 <div className="px-5 pb-5 flex items-center gap-2">
                     <button
                         onClick={() => onApprove(req)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm"
+                        disabled={!canApprove}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Check size={14} strokeWidth={2.5} /> Aprobar
                     </button>
                     <button
                         onClick={() => onReject(req)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm"
+                        disabled={!canApprove}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <X size={14} strokeWidth={2.5} /> Rechazar
                     </button>
@@ -230,7 +216,8 @@ const RequestCard = memo(({ req, userId, onApprove, onReject }) => {
 
 // ─── Vista principal (solo admin) ─────────────────────────────────────────────
 const RequestsView = () => {
-    const { user, isJefe, isSupervisor } = useAuth();
+    const { user, isJefe, isSupervisor, rolePerms } = useAuth();
+    const canApprove = rolePerms === 'ALL' || !!rolePerms?.['requests']?.can_approve;
 
     const requests       = useStaff(s => s.requests);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
@@ -351,6 +338,7 @@ const RequestsView = () => {
                                 userId={user?.id}
                                 onApprove={(r) => { setActionModal({ mode: 'approve', req: r }); setActionNote(''); }}
                                 onReject={(r)  => { setActionModal({ mode: 'reject',  req: r }); setActionNote(''); }}
+                                canApprove={canApprove}
                             />
                         ))}
                     </div>
@@ -399,7 +387,7 @@ const RequestsView = () => {
                             </button>
                             <button
                                 onClick={handleConfirmAction}
-                                disabled={isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
+                                disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
                                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-[13px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${actionModal.mode === 'approve' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}
                             >
                                 {isActioning

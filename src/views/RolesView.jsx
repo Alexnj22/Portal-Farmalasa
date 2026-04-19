@@ -12,6 +12,7 @@ import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
+import { useAuth } from '../context/AuthContext';
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por Sucursal' },
@@ -22,6 +23,8 @@ const SCOPE_OPTIONS = [
 // 🚀 VISTA PRINCIPAL ROLES
 // ============================================================================
 const RolesView = ({ openModal }) => {
+    const { rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['roles']?.can_edit;
     const roles = useStaff(state => state.roles);
     const employees = useStaff(state => state.employees);
     const addRole = useStaff(state => state.addRole);
@@ -678,7 +681,8 @@ const RolesView = ({ openModal }) => {
                                     <button
                                         type="button"
                                         onClick={handleSubmit}
-                                        className={`w-full py-4 mt-2 active:scale-95 text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] ${editingRoleId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 hover:shadow-amber-500/40' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}
+                                        disabled={!canEdit}
+                                        className={`w-full py-4 mt-2 active:scale-95 text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 hover:shadow-amber-500/40' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -760,7 +764,8 @@ const RolesView = ({ openModal }) => {
                                                             e.stopPropagation();
                                                             isEditingThis ? handleCancelEdit() : handleEditClick(e, role);
                                                         }}
-                                                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-95 ${isEditingThis
+                                                        disabled={!canEdit}
+                                                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
                                                             ? 'bg-amber-100 text-amber-600 border border-amber-300 hover:bg-amber-500 hover:text-white'
                                                             : 'bg-white border border-white/90 text-amber-500 hover:bg-amber-50 hover:text-amber-600'
                                                             }`}
@@ -770,7 +775,8 @@ const RolesView = ({ openModal }) => {
                                                     </button>
                                                     <button
                                                         onClick={(e) => handleDeleteRoleRequest(e, role)}
-                                                        className="w-8 h-8 bg-white border border-white/90 text-red-400 rounded-full hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center shadow-sm active:scale-95"
+                                                        disabled={!canEdit}
+                                                        className="w-8 h-8 bg-white border border-white/90 text-red-400 rounded-full hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center shadow-sm active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
                                                         title="Eliminar cargo"
                                                     >
                                                         <Trash2 size={14} strokeWidth={2.5} />

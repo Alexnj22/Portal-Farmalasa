@@ -20,7 +20,8 @@ import ModalShell from "../components/common/ModalShell";
 import ConfirmModal from "../components/common/ConfirmModal"; // <-- NUEVO: Importación del Modal
 
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
-  const { user } = useAuth();
+  const { user, rolePerms } = useAuth();
+  const canEdit = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
 
   const {
     employees,
@@ -540,7 +541,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                       <td className="p-5 pr-8 text-right">
                         <button
                           onClick={() => openModal(record)}
-                          className="bg-white text-[#007AFF] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#007AFF] hover:bg-[#007AFF]/5 transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto"
+                          disabled={!canEdit}
+                          className="bg-white text-[#007AFF] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#007AFF] hover:bg-[#007AFF]/5 transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
                           type="button"
                         >
                           Corregir <Edit3 size={14} strokeWidth={2} />
@@ -717,7 +719,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           <div className="flex justify-end gap-4">
             <button
               onClick={handleMarkAbsentClick} // <-- Usamos la nueva función
-              className="px-6 h-12 bg-white border border-slate-200 hover:border-red-200 hover:text-red-600 rounded-[1.25rem] font-bold text-[12px] uppercase tracking-widest transition-all active:scale-[0.98] text-slate-500 shadow-sm hover:shadow-md"
+              disabled={!canEdit}
+              className="px-6 h-12 bg-white border border-slate-200 hover:border-red-200 hover:text-red-600 rounded-[1.25rem] font-bold text-[12px] uppercase tracking-widest transition-all active:scale-[0.98] text-slate-500 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
             >
               Reportar Falta
@@ -725,7 +728,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
             <button
               onClick={handleSaveSelected}
-              disabled={!Object.values(editForms).some((v) => v.active)}
+              disabled={!canEdit || !Object.values(editForms).some((v) => v.active)}
               className="px-8 h-12 bg-[#007AFF] hover:bg-[#0066CC] active:scale-[0.98] text-white rounded-[1.25rem] font-bold text-[13px] uppercase tracking-widest shadow-[0_8px_20px_rgba(0,122,255,0.25)] hover:shadow-[0_12px_24px_rgba(0,122,255,0.35)] transition-all disabled:opacity-30 disabled:grayscale"
               type="button"
             >

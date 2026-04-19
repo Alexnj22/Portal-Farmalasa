@@ -247,7 +247,8 @@ const GanttChart = ({ plans, year }) => {
 
 // ── Vista principal ───────────────────────────────────────────────────────────
 const VacationPlanView = () => {
-    const { user } = useAuth();
+    const { user, rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['vacation_plan']?.can_edit;
     const employees              = useStaffStore(s => s.employees);
     const branches               = useStaffStore(s => s.branches);
     const holidays               = useStaffStore(s => s.holidays);
@@ -614,7 +615,7 @@ const VacationPlanView = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !empId || !startDate || !endDate}
+                                    disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
                                     className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
                                 >
                                     {isSubmitting
@@ -682,13 +683,15 @@ const VacationPlanView = () => {
                                                                         <>
                                                                             <button
                                                                                 onClick={() => setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' })}
-                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95"
+                                                                                disabled={!canEdit}
+                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                             >
                                                                                 <Edit2 size={10} strokeWidth={2.5} /> Editar
                                                                             </button>
                                                                             <button
                                                                                 onClick={() => handleConfirmPlan(p.id)}
-                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95"
+                                                                                disabled={!canEdit}
+                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                             >
                                                                                 <Check size={10} strokeWidth={3} /> Confirmar
                                                                             </button>
@@ -697,7 +700,8 @@ const VacationPlanView = () => {
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <button
                                                                             onClick={() => setCancelConfirm({ open: true, planId: p.id })}
-                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <X size={10} strokeWidth={3} /> Cancelar
                                                                         </button>
@@ -737,7 +741,7 @@ const VacationPlanView = () => {
                                                                         <div className="flex items-center gap-2 pb-0.5">
                                                                             <button
                                                                                 onClick={handleSaveEdit}
-                                                                                disabled={isSavingEdit}
+                                                                                disabled={!canEdit || isSavingEdit}
                                                                                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#0066CC] transition-all active:scale-95 disabled:opacity-60"
                                                                             >
                                                                                 {isSavingEdit ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}

@@ -2,6 +2,15 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      keyframes: {
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-12deg)' },
+          '50%':       { transform: 'rotate(12deg)'  },
+        },
+      },
+      animation: {
+        wiggle: 'wiggle 0.4s ease-in-out infinite',
+      },
       borderRadius: {
         glass: "2rem",
         glassMd: "1.25rem",

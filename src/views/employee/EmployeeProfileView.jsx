@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
     Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree,
-    MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X
+    MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Search, Stethoscope, FileText
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -73,13 +73,15 @@ const EmployeeProfileView = ({ openModal }) => {
     const [filterFrom, setFilterFrom]                 = useState('');
     const [filterTo, setFilterTo]                     = useState('');
     const [filterType, setFilterType]                 = useState('');
+    const [searchQuery, setSearchQuery]               = useState('');
+    const [searchOpen, setSearchOpen]                 = useState(false);
 
     useEffect(() => {
         if (!user?.id) return;
         const load = async () => {
             setEvLoading(true);
             const [{ data: evData }, { count }] = await Promise.all([
-                supabase.from('employee_events').select('id, type, date, note, metadata').eq('employee_id', user.id).order('date', { ascending: false }).limit(30),
+                supabase.from('employee_events').select('id, type, date, note, metadata').eq('employee_id', user.id).order('date', { ascending: false }),
                 supabase.from('approval_requests').select('id', { count: 'exact', head: true }).eq('employee_id', user.id).eq('status', 'PENDING'),
             ]);
             setEvents(evData || []);
@@ -93,6 +95,7 @@ const EmployeeProfileView = ({ openModal }) => {
         if (!user?.id) return;
         supabase.from('vacation_plans').select('id, year, start_date, end_date, days, status').eq('employee_id', user.id).neq('status', 'CANCELLED').order('start_date', { ascending: false }).then(({ data }) => setMyVacPlans(data || []));
     }, [user?.id]);
+
 
     const tenure = useMemo(() => {
         const hd = emp?.hire_date || emp?.hireDate;
@@ -132,15 +135,33 @@ const EmployeeProfileView = ({ openModal }) => {
         [...new Set(timeline.map(ev => ev.type))].filter(Boolean)
     , [timeline]);
 
+    // Devuelve el evento (VACATION/DISABILITY/PERMIT) activo en una fecha dada
+    const getEventForDate = useMemo(() => (dateStr) => {
+        return events.find(ev => {
+            if (!['VACATION', 'DISABILITY', 'PERMIT'].includes(ev.type)) return false;
+            const meta = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
+            const s = meta.startDate || ev.date;
+            const e = meta.endDate   || ev.date;
+            return dateStr >= s && dateStr <= e;
+        }) || null;
+    }, [events]);
+
     const visibleTimeline = useMemo(() => {
         let list = timeline;
         if (filterFrom) list = list.filter(ev => ev.date >= filterFrom);
         if (filterTo)   list = list.filter(ev => ev.date <= filterTo);
         if (filterType) list = list.filter(ev => ev.type === filterType);
-        const hasFilter = filterFrom || filterTo || filterType;
+        if (searchQuery.trim()) {
+            const q = searchQuery.trim().toLowerCase();
+            list = list.filter(ev =>
+                (ev.note || '').toLowerCase().includes(q) ||
+                (EVENT_TYPES[ev.type]?.label || ev.type || '').toLowerCase().includes(q)
+            );
+        }
+        const hasFilter = filterFrom || filterTo || filterType || searchQuery.trim();
         if (!hasFilter && timelineLimit !== null) list = list.slice(0, timelineLimit);
         return list;
-    }, [timeline, filterFrom, filterTo, filterType, timelineLimit]);
+    }, [timeline, filterFrom, filterTo, filterType, searchQuery, timelineLimit]);
 
     const nextVacation = useMemo(() => {
         const today = new Date().toISOString().split('T')[0];
@@ -251,12 +272,11 @@ const EmployeeProfileView = ({ openModal }) => {
                 {/* ── COLUMNA IZQUIERDA — todas las cards informativas ── */}
                 <div className="w-full lg:w-[400px] shrink-0 space-y-4">
 
-                    {/* Stats 3-col */}
-                    <div className="grid grid-cols-3 gap-3">
+                    {/* Stats 2-col */}
+                    <div className="grid grid-cols-2 gap-3">
                         {[
-                            { label: 'Antigüedad',  value: tenure,           icon: Award,      color: 'text-blue-600',   bg: 'bg-blue-50/80'   },
-                            { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,        color: 'text-amber-600',  bg: 'bg-amber-50/80'  },
-                            { label: 'Eventos',     value: timeline.length,  icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50/80' },
+                            { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-blue-600',  bg: 'bg-blue-50/80'  },
+                            { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-amber-600', bg: 'bg-amber-50/80' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-white/80 rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
@@ -356,14 +376,29 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="grid grid-cols-7 gap-1.5">
                                 {weeklySchedule.map(d => {
                                     const todayStr = new Date().toDateString();
-                                    const isToday = d.date?.toDateString() === todayStr;
+                                    const isToday  = d.date?.toDateString() === todayStr;
+                                    const dateStr  = d.date?.toISOString().split('T')[0];
+                                    const ev       = dateStr ? getEventForDate(dateStr) : null;
+                                    const evCfg    = ev ? {
+                                        VACATION:   { label: 'Vac', Icon: Palmtree,    bg: 'bg-emerald-500', light: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+                                        DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, bg: 'bg-red-500',     light: 'bg-red-50 border-red-200',         text: 'text-red-700'     },
+                                        PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-amber-500',   light: 'bg-amber-50 border-amber-200',     text: 'text-amber-700'   },
+                                    }[ev.type] : null;
                                     return (
                                         <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-200 ${
-                                            isToday ? 'bg-slate-800 shadow-md' : d.shift ? 'bg-white/70 border border-white/80' : 'bg-slate-50/80 border border-slate-100'
+                                            isToday   ? 'bg-slate-800 shadow-md'
+                                            : evCfg   ? `${evCfg.light} border`
+                                            : d.shift ? 'bg-white/70 border border-white/80'
+                                                      : 'bg-slate-50/80 border border-slate-100'
                                         }`}>
-                                            <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : 'text-slate-400'}`}>{d.short}</p>
-                                            <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : 'text-slate-600'}`}>{d.date?.getDate()}</p>
-                                            {d.shift ? (
+                                            <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-slate-400'}`}>{d.short}</p>
+                                            <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-slate-600'}`}>{d.date?.getDate()}</p>
+                                            {evCfg ? (
+                                                <>
+                                                    <evCfg.Icon size={10} className={evCfg.text} strokeWidth={2} />
+                                                    <p className={`text-[8px] font-black mt-1 text-center leading-tight ${evCfg.text}`}>{evCfg.label}</p>
+                                                </>
+                                            ) : d.shift ? (
                                                 <>
                                                     <Coffee size={10} className={isToday ? 'text-orange-300' : 'text-orange-400'} strokeWidth={2} />
                                                     <p className={`text-[9px] font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-slate-700'}`}>
@@ -391,6 +426,29 @@ const EmployeeProfileView = ({ openModal }) => {
                                 <span className="text-[10px] font-black text-slate-500 bg-slate-100/80 border border-slate-200/60 px-2.5 py-1 rounded-full">
                                     {visibleTimeline.length}/{timeline.length}
                                 </span>
+                                {/* Buscador expandible */}
+                                <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${searchOpen ? 'bg-white border-slate-200 px-2.5 py-1 w-40' : 'bg-white/60 border-slate-200/60 w-7 h-7 justify-center'}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearchQuery(''); }}
+                                        className="flex-shrink-0 text-slate-500 hover:text-slate-700 transition-colors"
+                                    >
+                                        {searchOpen
+                                            ? <X size={10} strokeWidth={2.5} />
+                                            : <Search size={11} strokeWidth={2.5} />
+                                        }
+                                    </button>
+                                    {searchOpen && (
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                            placeholder="Buscar…"
+                                            className="flex-1 min-w-0 text-[10px] font-medium text-slate-700 placeholder-slate-300 outline-none bg-transparent"
+                                        />
+                                    )}
+                                </div>
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-white/60 text-slate-500 border-slate-200/60 hover:border-slate-300'}`}

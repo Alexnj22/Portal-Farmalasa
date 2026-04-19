@@ -14,12 +14,15 @@ import TabExpenses from './branch-tabs/TabExpenses';
 import TabStaff from './branch-tabs/TabStaff';
 
 import GlassViewLayout from '../components/GlassViewLayout';
+import { useAuth } from '../context/AuthContext';
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
 const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS NAVEGACIÓN
+    const { rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['branches']?.can_edit;
     const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
     
     const [activeTab, setActiveTab] = useState('history');
@@ -297,6 +300,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             </div>
                         </div>
 
+                        {canEdit && (
                         <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${!isEditMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[800px] opacity-100'}`}>
                             <div className="flex items-center gap-1 md:gap-1.5 ml-1 pr-1 w-max">
                                 <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
@@ -307,10 +311,11 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-[#005CE6] hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>
                             </div>
                         </div>
+                        )}
 
                         <div className="w-px h-6 md:h-8 bg-slate-300/30 mx-1.5 shrink-0"></div>
 
-                        <button
+                        {canEdit && <button
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 transform-gpu active:scale-95 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
                                     ? 'bg-red-50 text-red-500 border border-red-200/50 hover:bg-red-500 hover:text-white'
@@ -319,7 +324,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
                         >
                             {isEditMode ? <X size={16} strokeWidth={2.5} /> : <SlidersHorizontal size={16} strokeWidth={2.5} />}
-                        </button>
+                        </button>}
                     </div>
                 )}
             </div>

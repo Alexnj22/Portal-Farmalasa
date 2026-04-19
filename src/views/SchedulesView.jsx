@@ -25,7 +25,8 @@ const dayNamesMap = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4:
 
 const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters, fetchBoot } = useStaff();
-    const { isJefe } = useAuth();
+    const { isJefe, rolePerms } = useAuth();
+    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['schedules']?.can_edit;
     const [isPublishing, setIsPublishing] = useState(false);
 
     useEffect(() => {
@@ -677,14 +678,14 @@ useEffect(() => {
                                             {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-90"><X size={10} strokeWidth={4} /></button>}
                                             <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500"><button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#007AFF] hover:bg-white active:scale-90 transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button></div>
                                         </div>
-                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openModal) openModal("aiSchedulerPreview", { branchId: filterBranch, startDate }); }} disabled={!isBranchSelected || employeesInView.length === 0 || isPastWeek} className={`relative group/saly w-9 h-9 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-0.5 active:scale-95 cursor-pointer'}`}>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openModal) openModal("aiSchedulerPreview", { branchId: filterBranch, startDate }); }} disabled={!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit} className={`relative group/saly w-9 h-9 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-0.5 active:scale-95 cursor-pointer'}`}>
                                             <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-20 group-hover/saly:opacity-100 transition-all duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
                                             <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full border border-white/50"></div>
                                             <HeartPulse size={18} strokeWidth={2.5} className={`text-cyan-500 group-hover/saly:text-indigo-500 relative z-10 transition-colors duration-300 ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek) ? '' : 'animate-pulse'}`} />
                                         </button>
                                         
                                         {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
-                                        {!isJefe && <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,122,255,0.3)] border border-[#007AFF]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                        {!isJefe && canEdit && <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,122,255,0.3)] border border-[#007AFF]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
                                             {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
                                             <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : 'Publicar'}</span>
                                         </button>}

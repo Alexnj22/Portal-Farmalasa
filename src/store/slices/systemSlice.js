@@ -11,6 +11,7 @@ export const createSystemSlice = (set, get) => ({
     bootStatus: 'idle',
     bootPromise: null,
     lastBootAt: null,
+    _announcementsChannel: null,
 
     setShifts: (updater) => set((state) => {
         const next = typeof updater === 'function' ? updater(state.shifts) : updater;
@@ -29,12 +30,17 @@ export const createSystemSlice = (set, get) => ({
         return { holidays: next };
     }),
 
-    resetBootState: () => set({
-        isBootSyncing: false,
-        bootStatus: 'idle',
-        bootPromise: null,
-        lastBootAt: null,
-    }),
+    resetBootState: () => {
+        const ch = get()._announcementsChannel;
+        if (ch) supabase.removeChannel(ch);
+        set({
+            isBootSyncing: false,
+            bootStatus: 'idle',
+            bootPromise: null,
+            lastBootAt: null,
+            _announcementsChannel: null,
+        });
+    },
 
     invalidateBoot: () => set({
         bootStatus: 'idle',
@@ -189,7 +195,8 @@ export const createSystemSlice = (set, get) => ({
                         readBy: a.read_by || [],
                         isArchived: a.is_archived,
                         editedAt: a.edited_at,
-                        scheduledFor: a.scheduled_for
+                        scheduledFor: a.scheduled_for,
+                        metadata: a.metadata || null,
                     }));
                     set({ announcements: mappedAnns });
                     localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
@@ -202,6 +209,48 @@ export const createSystemSlice = (set, get) => ({
                     bootStatus: 'ready',
                     lastBootAt: bootedAt,
                 });
+
+                // ── Real-time: escuchar inserts/updates en announcements ──────────
+                // Solo suscribir una vez — si ya hay canal activo, no crear otro
+                if (!get()._announcementsChannel) {
+                    const mapAnn = (a) => ({
+                        id: a.id,
+                        title: a.title,
+                        message: a.message,
+                        targetType: a.target_type,
+                        targetValue: a.target_value,
+                        priority: a.priority || 'NORMAL',
+                        date: a.created_at,
+                        readBy: a.read_by || [],
+                        isArchived: a.is_archived,
+                        editedAt: a.edited_at,
+                        scheduledFor: a.scheduled_for,
+                        metadata: a.metadata || null,
+                    });
+
+                    const channel = supabase
+                        .channel('announcements-live')
+                        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
+                            const a = payload.new;
+                            if (a.is_archived) return;
+                            if (a.scheduled_for && new Date(a.scheduled_for) > new Date()) return;
+                            set(state => {
+                                if (state.announcements.some(ann => String(ann.id) === String(a.id))) return state;
+                                return { announcements: [mapAnn(a), ...state.announcements] };
+                            });
+                        })
+                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'announcements' }, (payload) => {
+                            const a = payload.new;
+                            set(state => ({
+                                announcements: state.announcements.map(existing =>
+                                    existing.id === a.id ? { ...existing, ...mapAnn(a) } : existing
+                                ),
+                            }));
+                        })
+                        .subscribe();
+
+                    set({ _announcementsChannel: channel });
+                }
 
                 return true;
             } catch (e) {
@@ -1048,7 +1097,8 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
                         priority: a.priority || 'NORMAL',
                         readBy: a.read_by || [],
                         editedAt: a.edited_at,
-                        scheduledFor: a.scheduled_for
+                        scheduledFor: a.scheduled_for,
+                        metadata: a.metadata || null,
                     }));
 
                 const mappedEmployees = (data.employees || []).map(e => ({

@@ -90,7 +90,7 @@ const getBranchWeight = (branchStr) => {
   return 4;
 };
 
-const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) => {
+const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, canEdit = false }) => {
   const statusInfo = getStatusInfo(emp.effectiveStatus || emp.status);
   const shortName = formatShortName(emp.name);
   const isAbsent = ['INACTIVO', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(emp.effectiveStatus || emp.status);
@@ -258,7 +258,8 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee }) =
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => onEditEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+            disabled={!canEdit}
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -305,7 +306,8 @@ const StaffManagementView = ({
 }) => {
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
   const { employees, branches, bootStatus } = useStaff();
-  const { user, isJefe } = useAuth();
+  const { user, isJefe, rolePerms } = useAuth();
+  const canEdit = rolePerms === 'ALL' || !!rolePerms?.['staff_list']?.can_edit;
 
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
@@ -580,7 +582,8 @@ const StaffManagementView = ({
           <button
             type="button"
             onClick={handleOpenNewEmployee}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#007AFF]/50"
+            disabled={!canEdit}
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#007AFF]/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -669,7 +672,7 @@ const StaffManagementView = ({
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((emp) => (
-                    <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} />
+                    <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} canEdit={canEdit} />
                   ))
                 ) : (
                   <tr>

@@ -17,7 +17,7 @@ const makeId = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now
 // ============================================================================
 // 🚀 COMPONENTE DE TARJETA OPTIMIZADO (Liquidglass DNA)
 // ============================================================================
-const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit, isEditingThis }) => {
+const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit, isEditingThis, canEdit = false }) => {
   const renderBadge = () => {
     switch (ann.badgeType) {
       case 'GLOBAL': return <span className="flex items-center gap-1.5 text-[#007AFF] bg-[#007AFF]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#007AFF]/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
@@ -45,7 +45,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         }`}
     >
       <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        {!ann.isCompleted && (
+        {canEdit && !ann.isCompleted && (
           <>
             {ann.readIds.length === 0 && (
               <button
@@ -65,7 +65,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             </button>
           </>
         )}
-        {ann.readIds.length === 0 && (
+        {canEdit && ann.readIds.length === 0 && (
           <button
             onClick={() => onDelete(ann)}
             className="p-2.5 text-red-400 bg-white/80 border border-red-50 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-95"
@@ -171,7 +171,8 @@ const AnnouncementsView = ({ openModal }) => {
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
   const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
-  const { user, isJefe } = useAuth();
+  const { user, isJefe, rolePerms } = useAuth();
+  const canEdit = rolePerms === 'ALL' || !!rolePerms?.['announcements']?.can_edit;
 
   const [editingAnnId, setEditingAnnId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, annId: null });
@@ -698,7 +699,7 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] ${editingAnnId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}>
+                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] ${editingAnnId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}>
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
                 </button>
               </form>
@@ -726,7 +727,7 @@ const AnnouncementsView = ({ openModal }) => {
                 </div>
               ) : (
                 paginatedList.map((ann) => (
-                  <AnnouncementCard key={ann.id} ann={ann} onArchive={handleArchiveCallback} onDelete={handleDeleteCallback} onViewDetail={handleViewDetailCallback} onEdit={() => editingAnnId === ann.id ? handleCancelEdit() : handleEditClick(ann)} isEditingThis={editingAnnId === ann.id} />
+                  <AnnouncementCard key={ann.id} ann={ann} onArchive={handleArchiveCallback} onDelete={handleDeleteCallback} onViewDetail={handleViewDetailCallback} onEdit={() => editingAnnId === ann.id ? handleCancelEdit() : handleEditClick(ann)} isEditingThis={editingAnnId === ann.id} canEdit={canEdit} />
                 ))
               )}
             </div>

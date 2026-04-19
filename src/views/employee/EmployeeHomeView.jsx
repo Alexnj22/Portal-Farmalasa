@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     CalendarDays, ClipboardList, Bell, Plus, ChevronLeft, ChevronRight,
-    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home, Utensils, Baby
+    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home, Utensils, Baby, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -373,7 +373,7 @@ const EmployeeHomeView = () => {
                     )}
                     <div className="w-px h-6 bg-white/40 shrink-0 hidden sm:block" />
                     {/* Botón */}
-                    <button onClick={() => navigate('/requests')}
+                    <button onClick={() => navigate('/my-requests')}
                         className="flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-white/80 text-slate-700 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-95 shrink-0">
                         <Plus size={13} strokeWidth={3} /> Nueva Solicitud
                     </button>
@@ -437,7 +437,7 @@ const EmployeeHomeView = () => {
                     </div>
 
                     {/* Solicitudes */}
-                    <div onClick={() => navigate('/requests')}
+                    <div onClick={() => navigate('/my-requests')}
                         className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-4 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
                             <ClipboardList size={10} className="text-purple-500" /> Solicitudes
@@ -468,7 +468,7 @@ const EmployeeHomeView = () => {
                     </div>
 
                     {/* Avisos */}
-                    <div onClick={() => navigate('/announcements')}
+                    <div onClick={() => navigate('/my-announcements')}
                         className={`group/card rounded-[1.75rem] p-4 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
                             hasUrgent
                                 ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15)]'
@@ -577,6 +577,15 @@ const EmployeeHomeView = () => {
                             <button onClick={() => setWeekOffset(v => v + 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90">
                                 <ChevronRight size={15} strokeWidth={2.5} />
                             </button>
+                            {weekOffset !== 0 && (
+                                <button
+                                    onClick={() => setWeekOffset(0)}
+                                    className="p-1.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 border border-red-200 transition-all active:scale-90 animate-in fade-in zoom-in-95 duration-200"
+                                    title="Volver a esta semana"
+                                >
+                                    <X size={13} strokeWidth={2.5} />
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -652,9 +661,18 @@ const EmployeeHomeView = () => {
                                                                     {lunchTime && <Utensils size={8} className="text-orange-400 flex-shrink-0" strokeWidth={2.5} title={`Almuerzo ${lunchTime}`} />}
                                                                     {lactationTime && <Baby size={8} className="text-pink-400 flex-shrink-0" strokeWidth={2.5} title={`Lactancia ${lactationTime}`} />}
                                                                 </div>
-                                                                <p className="text-[9px] text-slate-400 font-medium truncate leading-tight">
-                                                                    {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Sin definir'}
-                                                                </p>
+                                                                {String(em.id) === String(user?.id) && d.event ? (() => {
+                                                                    const evCfg = {
+                                                                        VACATION:   { label: 'Vacaciones', cls: 'text-emerald-600' },
+                                                                        DISABILITY: { label: 'Incapacidad', cls: 'text-red-500'     },
+                                                                        PERMIT:     { label: 'Permiso',     cls: 'text-amber-500'   },
+                                                                    }[d.event.type] || { label: d.event.type, cls: 'text-slate-400' };
+                                                                    return <p className={`text-[9px] font-black truncate leading-tight ${evCfg.cls}`}>{evCfg.label}</p>;
+                                                                })() : (
+                                                                    <p className="text-[9px] text-slate-400 font-medium truncate leading-tight">
+                                                                        {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Sin definir'}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}

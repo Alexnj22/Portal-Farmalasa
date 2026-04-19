@@ -9,19 +9,19 @@ import { isMobileOrApp } from './utils/helpers';
 import AlertModal from "./components/common/AlertModal";
 
 // Layouts y Vistas
-import AdminLayout from "./components/layout/AdminLayout";
-import UserHeader from "./components/layout/UserHeader";
-import EmployeeLayout from "./components/layout/EmployeeLayout";
+import AppLayout from "./components/layout/AppLayout";
 import EmployeeHomeView from "./views/employee/EmployeeHomeView";
 import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsView";
 import EmployeeRequestsView from "./views/employee/EmployeeRequestsView";
 import EmployeeProfileView from "./views/employee/EmployeeProfileView";
+import EmployeeDocumentsView from "./views/employee/EmployeeDocumentsView";
 import UnifiedModal from "./components/UnifiedModal";
 import AttendanceMonitorView from "./views/AttendanceMonitorView";
 import StaffManagementView from "./views/StaffManagementView";
 import BranchesView from "./views/BranchesView";
 import BranchDetailView from "./views/BranchDetailView";
 import RolesView from "./views/RolesView";
+import PermissionsView from "./views/PermissionsView";
 import SchedulesView from "./views/SchedulesView";
 import EmployeeDetailView from "./views/EmployeeDetailView";
 import TimeClockView from "./views/TimeClockView";
@@ -31,6 +31,9 @@ import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
+import NoAccessView from "./views/NoAccessView";
+import AccessDeniedView from "./views/AccessDeniedView";
+import DashboardView from "./views/DashboardView";
 import LiquidToast from './components/common/LiquidToast';
 import SalyChatOverlay from "./components/SalyChatOverlay";
 
@@ -114,10 +117,19 @@ const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, s
 };
 
 // ============================================================================
+// 🔒 PERMISSION GUARD — Protege rutas individuales
+// ============================================================================
+const PermissionGuard = ({ moduleKey, children }) => {
+    const { hasPermission } = useAuth();
+    if (!hasPermission(moduleKey, 'can_view')) return <AccessDeniedView />;
+    return children;
+};
+
+// ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
 function MainApp() {
-    const { user, logout, isAuthenticated, isAdmin, isJefe, isSupervisor, loading } = useAuth();
+    const { user, logout, isAuthenticated, isAdmin, isJefe, isSupervisor, hasPermission, loading, permsLoading } = useAuth();
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
@@ -148,14 +160,28 @@ function MainApp() {
         return () => { isSubscribed = false; };
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
-    const currentPathSegments = location.pathname.substring(1).split('/');
-    const mainView = currentPathSegments[0] || (isAdmin ? "dashboard" : (isJefe || isSupervisor) ? "requests" : "home");
-
     const setView = (targetView) => {
         if (targetView === "timeclock") navigate("/kiosk");
         else if (targetView === "login") navigate("/login");
         else navigate(`/${targetView}`);
     };
+
+    // First permitted landing page
+    const defaultRedirect = (() => {
+        if (hasPermission('overview',           'can_view')) return '/overview';
+        if (hasPermission('staff_list',        'can_view')) return '/dashboard';
+        if (hasPermission('monitor',           'can_view')) return '/monitor';
+        if (hasPermission('requests',          'can_view')) return '/requests';
+        if (hasPermission('schedules',         'can_view')) return '/schedules';
+        if (hasPermission('announcements',     'can_view')) return '/announcements';
+        if (hasPermission('branches',          'can_view')) return '/branches';
+        if (hasPermission('emp_home',          'can_view')) return '/home';
+        if (hasPermission('emp_requests',      'can_view')) return '/my-requests';
+        if (hasPermission('emp_announcements', 'can_view')) return '/my-announcements';
+        if (hasPermission('emp_documents',     'can_view')) return '/my-documents';
+        if (hasPermission('emp_profile',       'can_view')) return '/profile';
+        return '/no-access';
+    })();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedBranch, setSelectedBranch] = useState("ALL");
@@ -261,7 +287,7 @@ function MainApp() {
         }
     };
 
-    if (loading) {
+    if (loading || (isAuthenticated && permsLoading)) {
         return (
             <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden flex items-center justify-center">
                 <GlobalBackground />
@@ -292,7 +318,12 @@ function MainApp() {
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>
-                ) : <Navigate to={isAdmin ? "/dashboard" : (isJefe || isSupervisor) ? "/requests" : "/home"} replace />
+                ) : <Navigate to={defaultRedirect} replace />
+            } />
+
+            {/* Sin acceso — fuera del layout para no mostrar el menú */}
+            <Route path="/no-access" element={
+                isAuthenticated ? <NoAccessView /> : <Navigate to="/login" replace />
             } />
 
             <Route path="/*" element={
@@ -302,25 +333,27 @@ function MainApp() {
                         <AuthSyncHelper />
 
                         <div className="relative z-10 w-full h-full flex flex-col">
-                            {isAdmin ? (
-                                <AdminLayout
-                                    view={mainView} 
-                                    setView={setView}
-                                    isOverlayActive={modalOpen || isAuditOverlayActive}
-                                    handleLogout={handleLogout}
-                                >
-                                    <Routes>
-                                        <Route path="monitor" element={<AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} />} />
-                                        <Route path="audit" element={<AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} />} />
+                            <AppLayout
+                                isOverlayActive={modalOpen || isAuditOverlayActive}
+                                handleLogout={handleLogout}
+                            >
+                                <Routes>
+                                    {/* ── Self-service ── */}
+                                    <Route path="home" element={<PermissionGuard moduleKey="emp_home"><EmployeeHomeView /></PermissionGuard>} />
+                                    <Route path="my-requests" element={<PermissionGuard moduleKey="emp_requests"><EmployeeRequestsView /></PermissionGuard>} />
+                                    <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
+                                    <Route path="my-documents" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
+                                    <Route path="profile" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
 
-                                        {/* 🚨 DASHBOARD ROUTING LIMPIO */}
-                                        <Route path="dashboard">
-                                            <Route index element={
+                                    {/* ── Gestión de personal ── */}
+                                    <Route path="dashboard">
+                                        <Route index element={
+                                            <PermissionGuard moduleKey="staff_list">
                                                 <StaffManagementView
                                                     setView={setView}
-                                                    setActiveEmployee={(emp) => { 
-                                                        setActiveEmployee(emp); 
-                                                        navigate(`/dashboard/empleado/${emp.id}`); 
+                                                    setActiveEmployee={(emp) => {
+                                                        setActiveEmployee(emp);
+                                                        navigate(`/dashboard/empleado/${emp.id}`);
                                                     }}
                                                     openModal={openModal}
                                                     searchTerm={searchTerm}
@@ -328,88 +361,53 @@ function MainApp() {
                                                     selectedBranch={selectedBranch}
                                                     setSelectedBranch={setSelectedBranch}
                                                 />
-                                            } />
-                                            {/* 🚨 WRAPPER LIMPIO SIN FUNCIONES ANÓNIMAS */}
-                                            <Route path="empleado/:id" element={
+                                            </PermissionGuard>
+                                        } />
+                                        <Route path="empleado/:id" element={
+                                            <PermissionGuard moduleKey="staff_detail">
                                                 <EmployeeProfileWrapper
                                                     activeTab={activeTab}
                                                     setActiveTab={setActiveTab}
                                                     setView={setView}
-                                                    openModal={openModal} 
+                                                    openModal={openModal}
                                                     setActiveEmployeeGlobal={setActiveEmployee}
                                                 />
-                                            } />
-                                        </Route>
+                                            </PermissionGuard>
+                                        } />
+                                    </Route>
 
-                                        <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
-                                        <Route path="auditview" element={<AuditView openModal={openModal} />} />
-                                        <Route path="branches">
-                                            <Route index element={
+                                    {/* ── Operaciones ── */}
+                                    <Route path="overview" element={<PermissionGuard moduleKey="overview"><DashboardView /></PermissionGuard>} />
+                                    <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
+                                    <Route path="audit" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
+                                    <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
+                                    <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView /></PermissionGuard>} />
+                                    <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
+                                    <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
+
+                                    {/* ── Estructura ── */}
+                                    <Route path="branches">
+                                        <Route index element={
+                                            <PermissionGuard moduleKey="branches">
                                                 <BranchesView
                                                     setView={setView}
-                                                    setActiveBranch={(b) => { setActiveBranch(b); navigate(`/dashboard/branches/${b.id}`); }}
+                                                    setActiveBranch={(b) => { setActiveBranch(b); navigate(`/branches/${b.id}`); }}
                                                     openModal={openModal}
                                                 />
-                                            } />
-                                            <Route path=":id" element={
-                                                <BranchProfileWrapper
-                                                    openModal={openModal}
-                                                />
-                                            } />
-                                        </Route>
-                                        <Route path="roles" element={<RolesView openModal={openModal} />} />
-
-                                        <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
-
-                                        <Route path="profile" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
-                                        <Route path="requests" element={<RequestsView />} />
-                                        <Route path="vacation-plan" element={<VacationPlanView />} />
-                                        <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
-
-                                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                                    </Routes>
-                                </AdminLayout>
-                            ) : (isJefe || isSupervisor) ? (
-                                <AdminLayout
-                                    view={mainView}
-                                    setView={setView}
-                                    isOverlayActive={modalOpen || isAuditOverlayActive}
-                                    handleLogout={handleLogout}
-                                >
-                                    <Routes>
-                                        <Route path="requests" element={<RequestsView />} />
-                                        <Route path="vacation-plan" element={<VacationPlanView />} />
-                                        <Route path="schedules" element={<SchedulesView openModal={openModal} setView={setView} />} />
-                                        <Route path="staff" element={
-                                            <StaffManagementView
-                                                setView={setView}
-                                                setActiveEmployee={(emp) => {
-                                                    setActiveEmployee(emp);
-                                                    navigate(`/staff/empleado/${emp.id}`);
-                                                }}
-                                                openModal={openModal}
-                                                searchTerm={searchTerm}
-                                                setSearchTerm={setSearchTerm}
-                                                selectedBranch={selectedBranch}
-                                                setSelectedBranch={setSelectedBranch}
-                                            />
+                                            </PermissionGuard>
                                         } />
-                                        <Route path="announcements" element={<AnnouncementsView openModal={openModal} />} />
-                                        <Route path="employee-detail" element={<EmployeeDetailView activeEmployee={user} setView={setView} activeTab={activeTab} setActiveTab={setActiveTab} openModal={openModal} />} />
-                                        <Route path="*" element={<Navigate to="/requests" replace />} />
-                                    </Routes>
-                                </AdminLayout>
-                            ) : (
-                                <EmployeeLayout user={user} handleLogout={handleLogout} isOverlayActive={modalOpen}>
-                                    <Routes>
-                                        <Route path="home" element={<EmployeeHomeView />} />
-                                        <Route path="requests" element={<EmployeeRequestsView />} />
-                                        <Route path="announcements" element={<EmployeeAnnouncementsView />} />
-                                        <Route path="profile" element={<EmployeeProfileView openModal={openModal} />} />
-                                        <Route path="*" element={<Navigate to="/home" replace />} />
-                                    </Routes>
-                                </EmployeeLayout>
-                            )}
+                                        <Route path=":id" element={<PermissionGuard moduleKey="branches"><BranchProfileWrapper openModal={openModal} /></PermissionGuard>} />
+                                    </Route>
+                                    <Route path="roles" element={<PermissionGuard moduleKey="roles"><RolesView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="permissions" element={<PermissionGuard moduleKey="permissions"><PermissionsView /></PermissionGuard>} />
+                                    <Route path="auditview" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
+
+                                    {/* ── Fallbacks ── */}
+                                    <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
+                                    <Route path="staff" element={<Navigate to="/dashboard" replace />} />
+                                    <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
+                                </Routes>
+                            </AppLayout>
                         </div>
 
                         <SalyChatOverlay />

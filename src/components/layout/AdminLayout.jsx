@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
-    Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2, ChevronLeft, ChevronRight, X, ClipboardList, Palmtree
+    Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2, ChevronLeft, ChevronRight, X, ClipboardList, Palmtree, Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode } from '../../utils/helpers';
@@ -86,6 +86,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
             { id: 'schedules',     label: 'Horarios y Turnos',       icon: Calendar     },
             { id: 'branches',      label: 'Gestión de Sucursales',   icon: Building2    },
             { id: 'roles',         label: 'Cargos / Organigrama',    icon: ShieldCheck  },
+            { id: 'permissions',   label: 'Permisos de Acceso',      icon: Lock         },
             { id: 'announcements', label: 'Avisos',                  icon: Megaphone    },
             { id: 'requests',      label: 'Solicitudes',             icon: ClipboardList},
             { id: 'vacation-plan', label: 'Plan de Vacaciones',      icon: Palmtree     },

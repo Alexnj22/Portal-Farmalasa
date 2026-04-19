@@ -204,15 +204,16 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
  * Crea un anuncio interno dirigido al empleado notificándole el resultado
  * de su solicitud. No lanza error si falla — la notificación es no-bloqueante.
  */
-const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote) => {
+const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote, reqMetadata = {}) => {
     try {
         const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
         const isApproved = status === 'APPROVED';
+        const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
 
         await supabase.from('announcements').insert([{
-            title: isApproved ? 'Solicitud Aprobada' : 'Solicitud Rechazada',
+            title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
             message: isApproved
-                ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota del aprobador: "${approverNote}"` : ''}`
+                ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
                 : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
             target_type: 'EMPLOYEE',
             target_value: [String(employeeId)],
@@ -220,10 +221,28 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
             is_archived: false,
             created_by: approverId,
             priority: isApproved ? 'NORMAL' : 'HIGH',
+            metadata: {
+                requestType,
+                status,
+                approverNote: approverNote || null,
+                // Cambio de turno
+                targetEmployeeName: reqMetadata.targetEmployeeName || null,
+                date: reqMetadata.date || null,
+                myShift: reqMetadata.myShift || null,
+                targetShift: reqMetadata.targetShift || null,
+                // Vacaciones / Permiso / Incapacidad
+                startDate: reqMetadata.startDate || null,
+                endDate: reqMetadata.endDate || null,
+                days: reqMetadata.days || null,
+                permissionDates: reqMetadata.permissionDates || null,
+                // Anticipo
+                amount: reqMetadata.amount || null,
+                // Constancia
+                certificateType: reqMetadata.certificateType || null,
+            },
         }]);
     } catch (err) {
         console.error('Error enviando notificación al empleado:', err);
-        // No-fatal: no interrumpir el flujo principal
     }
 };
 
@@ -616,10 +635,10 @@ export const createRequestsSlice = (set, get) => ({
                     }));
 
                     if (req.employee?.id) {
-                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+                        const meta = parseMeta(req.metadata);
+                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
                         const registerEmployeeEvent = get().registerEmployeeEvent;
                         if (registerEmployeeEvent) {
-                            const meta = parseMeta(req.metadata);
                             await registerEmployeeEvent(req.employee.id, {
                                 type: req.type,
                                 date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
@@ -638,7 +657,12 @@ export const createRequestsSlice = (set, get) => ({
                                     approvedBy: approverId,
                                     fromRequest: req.id,
                                 }).catch(() => {});
-                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
+                                    targetEmployeeName: req.employee?.name,
+                                    date: meta.date,
+                                    myShift: meta.targetShift,
+                                    targetShift: meta.myShift,
+                                });
                             }
                         }
                     }
@@ -714,10 +738,10 @@ export const createRequestsSlice = (set, get) => ({
                     }));
 
                     if (req.employee?.id) {
-                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+                        const meta = parseMeta(req.metadata);
+                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
                         const registerEmployeeEvent = get().registerEmployeeEvent;
                         if (registerEmployeeEvent) {
-                            const meta = parseMeta(req.metadata);
                             await registerEmployeeEvent(req.employee.id, {
                                 type: req.type,
                                 date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
@@ -736,7 +760,12 @@ export const createRequestsSlice = (set, get) => ({
                                     approvedBy: approverId,
                                     fromRequest: req.id,
                                 }).catch(() => {});
-                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
+                                    targetEmployeeName: req.employee?.name,
+                                    date: meta.date,
+                                    myShift: meta.targetShift,
+                                    targetShift: meta.myShift,
+                                });
                             }
                             if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
                                 await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
@@ -822,11 +851,11 @@ export const createRequestsSlice = (set, get) => ({
                 }));
 
                 if (req.employee?.id) {
-                    await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote);
+                    const meta = parseMeta(req.metadata);
+                    await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
 
                     const registerEmployeeEvent = get().registerEmployeeEvent;
                     if (registerEmployeeEvent) {
-                        const meta = parseMeta(req.metadata);
                         await registerEmployeeEvent(req.employee.id, {
                             type: req.type,
                             date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
@@ -847,7 +876,12 @@ export const createRequestsSlice = (set, get) => ({
                                 approvedBy: approverId,
                                 fromRequest: req.id,
                             }).catch(() => {});
-                            await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote);
+                            await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
+                                targetEmployeeName: req.employee?.name,
+                                date: meta.date,
+                                myShift: meta.targetShift,
+                                targetShift: meta.myShift,
+                            });
                         }
 
                         // Para DISABILITY: marcar días en roster y verificar cobertura
@@ -901,7 +935,7 @@ export const createRequestsSlice = (set, get) => ({
 
             // Notificar al empleado via anuncio interno
             if (req?.employee?.id) {
-                await notifyEmployee(req.employee.id, approverId, req.type, 'REJECTED', approverNote);
+                await notifyEmployee(req.employee.id, approverId, req.type, 'REJECTED', approverNote, parseMeta(req.metadata));
             }
 
             return true;

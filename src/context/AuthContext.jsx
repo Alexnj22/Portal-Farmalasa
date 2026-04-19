@@ -37,6 +37,8 @@ const ACTIVITY_THROTTLE_MS = 2000;
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [rolePerms, setRolePerms] = useState(null); // { module_key: { can_view, can_edit, can_approve } }
+  const [permsLoading, setPermsLoading] = useState(false);
 
   const idleIntervalRef = useRef(null);
   const lastWriteRef = useRef(0);
@@ -47,6 +49,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  // Carga permisos del rol cuando el usuario cambia
+  useEffect(() => {
+    if (!user) { setRolePerms(null); setPermsLoading(false); return; }
+    const systemRole = user.systemRole || 'EMPLEADO';
+    // SUPERADMIN tiene acceso total hardcoded — no necesita DB
+    if (systemRole === 'SUPERADMIN') {
+      setRolePerms('ALL');
+      setPermsLoading(false);
+      return;
+    }
+    setRolePerms(null);
+    setPermsLoading(true);
+    // user.roleId: campo explícito del Edge Function (nuevo)
+    // user.role como integer: viene de loginWithUsername
+    // user.role como string (nombre del cargo): versión vieja del Edge Function — no sirve como ID
+    const roleId = user.roleId ?? (Number.isInteger(user.role) ? user.role : null);
+    const query = roleId
+      ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve').eq('role_id', roleId)
+      : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve').eq('system_role', systemRole);
+    query.then(({ data }) => {
+      const map = {};
+      (data || []).forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve }; });
+      setRolePerms(map);
+      setPermsLoading(false);
+    });
+  }, [user?.id, user?.roleId, user?.role, user?.systemRole]);
 
   // -------------------------
   // Helpers de Inactividad
@@ -93,25 +122,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 🚨 LOGOUT FLUIDO (OPTIMISTIC UI)
-  const doLogout = async (reason = "LOGOUT") => {
+  const doLogout = (reason = "LOGOUT") => {
     // 1. Detenemos los relojes de inmediato
     stopIdleWatcher();
-    
+
     // 2. Limpiamos la memoria local
     clearAuthCache();
     clearErpCache();
 
-    // 3. 🚨 ESTO ES LA MAGIA: Vaciamos el usuario. 
-    // React Router detectará esto al instante y te enviará a /login 
-    // sin necesidad de recargar la página bruscamente.
+    // 3. Vaciamos el usuario — React Router redirige a /login al instante
     setUser(null);
-    
-    // 4. Avisamos a Supabase que cierre la sesión en el servidor en segundo plano
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn("SignOut silencioso falló:", e);
-    }
+    setRolePerms(null);
+    setPermsLoading(false);
+
+    // 4. Supabase signOut en background — no bloqueamos la UI
+    supabase.auth.signOut().catch(() => {});
   };
 
   const isExpiredByIdle = (u) => {
@@ -158,6 +183,7 @@ export const AuthProvider = ({ children }) => {
           clearAuthCache();
           clearErpCache();
         } else {
+          setPermsLoading(true);
           setUser(parsed);
           startIdleWatcher(parsed);
         }
@@ -215,6 +241,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        setPermsLoading(true);
         setUser(u);
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
@@ -272,6 +299,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        setPermsLoading(true);
         setUser(u);
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
@@ -316,7 +344,8 @@ export const AuthProvider = ({ children }) => {
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
-      
+
+      setPermsLoading(true);
       setUser(u);
       startIdleWatcher(u);
 
@@ -347,6 +376,7 @@ export const AuthProvider = ({ children }) => {
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
+      setPermsLoading(true);
       setUser(u);
       startIdleWatcher(u);
       return true;
@@ -395,6 +425,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin: emp.is_admin === true,
         userType: emp.is_admin ? 'admin' : 'employee',
         role: emp.role_id,
+        roleId: emp.role_id ?? null,
         systemRole: emp.system_role || 'EMPLEADO',
       };
 
@@ -411,6 +442,7 @@ export const AuthProvider = ({ children }) => {
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
+      setPermsLoading(true);
       setUser(u);
       startIdleWatcher(u);
       return { ok: true };
@@ -424,6 +456,7 @@ export const AuthProvider = ({ children }) => {
     clearErpCache();
     localStorage.setItem(LS_USER, JSON.stringify(u));
     writeLastActivity(true);
+    setPermsLoading(true);
     setUser(u);
     startIdleWatcher(u);
   };
@@ -433,6 +466,7 @@ export const AuthProvider = ({ children }) => {
     clearErpCache();
     localStorage.setItem(LS_USER, JSON.stringify(u));
     writeLastActivity(true);
+    setPermsLoading(true);
     setUser(u);
     startIdleWatcher(u);
   };
@@ -449,6 +483,13 @@ export const AuthProvider = ({ children }) => {
     const isJefe = ['JEFE', 'SUBJEFE'].includes(systemRole);
     const isSupervisor = systemRole === 'SUPERVISOR';
     const canApprove = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR', 'JEFE', 'SUBJEFE'].includes(systemRole);
+    // hasPermission('requests', 'can_approve') → true/false
+    const hasPermission = (moduleKey, action = 'can_view') => {
+      if (rolePerms === 'ALL') return true;
+      if (!rolePerms) return false; // mientras carga, negar todo
+      return !!(rolePerms[moduleKey]?.[action]);
+    };
+
     return {
       user,
       isAuthenticated: !!user,
@@ -457,6 +498,9 @@ export const AuthProvider = ({ children }) => {
       isSupervisor,
       canApprove,
       systemRole,
+      rolePerms,
+      permsLoading,
+      hasPermission,
       loading,
       completeLogin,
       completePasswordChange,
@@ -465,7 +509,7 @@ export const AuthProvider = ({ children }) => {
       loginWithUsername,
       logout,
     };
-  }, [user, loading]);
+  }, [user, loading, rolePerms]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

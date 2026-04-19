@@ -8,9 +8,9 @@ import {
 import {
   Users, UserCheck, ClipboardList, Building2, TrendingUp,
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
-  Settings2, RefreshCw, Activity, Flame,
+  Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
-  BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw
+  BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -21,22 +21,42 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
-// 4-column grid. Each row unit = ROW_H px. Widgets span 1–4 cols and 1–4 rows.
-const ROW_H   = 120; // px per row unit
-const GAP_PX  = 16;  // gap-4
+const ROW_H    = 120; // px per row unit
+const GAP_PX   = 16;  // gap-4
+const GRID_COLS = 4;  // fixed 4-column grid
 
-// Tailwind col-span classes (literal so JIT keeps them)
-// col-span-1 col-span-2 col-span-3 col-span-4
-// md:col-span-2 lg:col-span-2 lg:col-span-3 lg:col-span-4
-// row-span-1 row-span-2 row-span-3 row-span-4
-const getSpanClass = (cols) => {
-  if (cols === 1) return 'col-span-1';
-  if (cols === 2) return 'col-span-1 md:col-span-2 lg:col-span-2';
-  if (cols === 3) return 'col-span-1 md:col-span-2 lg:col-span-3';
-  if (cols === 4) return 'col-span-1 md:col-span-2 lg:col-span-4';
-  return 'col-span-1';
-};
-const getRowSpanClass = (rows) => `row-span-${Math.min(Math.max(rows, 1), 4)}`;
+// Auto-place widgets using CSS Grid auto-placement algorithm.
+// Returns { [id]: { col, row } } (1-indexed).
+function autoPlaceOrder(order, sizes) {
+  const occ = new Set();
+  const result = {};
+  const fits = (col, row, cols, rows) => {
+    if (col + cols - 1 > GRID_COLS) return false;
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++)
+        if (occ.has(`${c},${r}`)) return false;
+    return true;
+  };
+  const stamp = (col, row, cols, rows, id) => {
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++)
+        occ.add(`${c},${r}`);
+    result[id] = { col, row };
+  };
+  for (const id of order) {
+    const def = WIDGET_SIZES[id] || { minCols: 1, minRows: 1 };
+    const cols = Math.max(sizes[id]?.cols ?? def.minCols, 1);
+    const rows = Math.max(sizes[id]?.rows ?? def.minRows, 1);
+    let placed = false;
+    outer: for (let r = 1; r <= 100; r++) {
+      for (let c = 1; c <= GRID_COLS; c++) {
+        if (fits(c, r, cols, rows)) { stamp(c, r, cols, rows, id); placed = true; break outer; }
+      }
+    }
+    if (!placed) result[id] = { col: 1, row: Object.keys(result).length * 4 + 1 };
+  }
+  return result;
+}
 
 // Widget minimum sizes and labels
 // minCols: minimum allowed column span
@@ -58,6 +78,49 @@ const getWidgetSize = (id) => {
 };
 
 const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements'];
+
+// Resolve collisions after a drop: dragged widget wins its target position,
+// displaced widgets find their next free slot (top-left priority, no cascades).
+function resolveCollisions(dragId, targetCol, targetRow, layout, sizes) {
+  const eCols = sizes[dragId]?.cols ?? getWidgetSize(dragId).minCols;
+  const eRows = sizes[dragId]?.rows ?? getWidgetSize(dragId).minRows;
+  const occ = new Set();
+  const stamp = (col, row, cols, rows) => {
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++) occ.add(`${c},${r}`);
+  };
+  const fits = (col, row, cols, rows) => {
+    if (col + cols - 1 > GRID_COLS) return false;
+    for (let c = col; c < col + cols; c++)
+      for (let r = row; r < row + rows; r++) if (occ.has(`${c},${r}`)) return false;
+    return true;
+  };
+  // Dragged widget locks in first
+  stamp(targetCol, targetRow, eCols, eRows);
+  const resolved = { [dragId]: { col: targetCol, row: targetRow } };
+  // Others sorted by original position (top-left first keeps stable order)
+  const others = Object.keys(layout)
+    .filter(id => id !== dragId)
+    .sort((a, b) => { const pa = layout[a], pb = layout[b]; return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col; });
+  for (const id of others) {
+    const wc = sizes[id]?.cols ?? getWidgetSize(id).minCols;
+    const wr = sizes[id]?.rows ?? getWidgetSize(id).minRows;
+    const orig = layout[id];
+    if (fits(orig.col, orig.row, wc, wr)) {
+      stamp(orig.col, orig.row, wc, wr);
+      resolved[id] = { col: orig.col, row: orig.row };
+    } else {
+      let placed = false;
+      outer: for (let r = 1; r <= 100; r++) {
+        for (let c = 1; c <= GRID_COLS; c++) {
+          if (fits(c, r, wc, wr)) { stamp(c, r, wc, wr); resolved[id] = { col: c, row: r }; placed = true; break outer; }
+        }
+      }
+      if (!placed) resolved[id] = orig;
+    }
+  }
+  return resolved;
+}
 
 // ─── Other constants ───────────────────────────────────────────────────────────
 const REQUEST_TYPE_LABELS = {
@@ -98,33 +161,37 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
-  <div onClick={onClick} className={`bg-white rounded-[1.5rem] border border-slate-100 p-5 shadow-[0_2px_16px_rgba(0,0,0,0.05)] flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all' : ''}`}>
-    <div className="flex items-center justify-between">
-      <div className="w-10 h-10 rounded-[0.875rem] flex items-center justify-center" style={{ background: color + '18' }}>
+  <div onClick={onClick} className={`relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-5 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300' : ''}`}>
+    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
+    <div className="relative flex items-center justify-between">
+      <div className="w-10 h-10 rounded-[0.875rem] flex items-center justify-center shadow-sm" style={{ background: color + '18', border: `1px solid ${color}20` }}>
         <Icon size={20} strokeWidth={1.8} style={{ color }} />
       </div>
       {sub && <span className="text-[11px] font-semibold text-slate-400">{sub}</span>}
     </div>
-    <div>
+    <div className="relative">
       <p className="text-[28px] font-black text-slate-900 leading-none">{value}</p>
-      <p className="text-[12px] font-medium text-slate-400 mt-1">{label}</p>
+      <p className="text-[12px] font-medium text-slate-500 mt-1">{label}</p>
     </div>
   </div>
 );
 
-// h-full so it fills its grid cell (which has a defined height via row-span)
+// Liquid-glass widget card — fills grid cell height, content scrolls internally
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => (
-  <div className={`h-full bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
-    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50 shrink-0">
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-[0.75rem] bg-[#007AFF]/8 flex items-center justify-center">
-          <Icon size={15} className="text-[#007AFF]" strokeWidth={2} />
+  <div className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
+    {/* Glass shine */}
+    <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+    {/* Header */}
+    <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-white/50 shrink-0 gap-2 flex-wrap">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-7 h-7 rounded-[0.65rem] bg-[#007AFF]/10 border border-[#007AFF]/15 flex items-center justify-center shrink-0">
+          <Icon size={13} className="text-[#007AFF]" strokeWidth={2.2} />
         </div>
-        <h3 className="text-[13px] font-black text-slate-800 tracking-tight">{title}</h3>
+        <h3 className="text-[12px] font-black text-slate-800 tracking-tight truncate">{title}</h3>
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
-    <div className={`flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
+    <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
   </div>
 );
 
@@ -205,9 +272,16 @@ const DashboardView = () => {
   });
   const [showConfig, setShowConfig] = useState(false);
 
-  const [widgetOrder, setWidgetOrder] = useState(() => {
-    try { const s = localStorage.getItem(`portal_dash_widgets_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
-    return DEFAULT_WIDGET_ORDER;
+  // ── Widget layout: explicit grid positions { [id]: { col, row } } ──────────
+  const [widgetLayout, setWidgetLayout] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`portal_dash_layout_${user?.id||'guest'}`);
+      if (saved) { const p = JSON.parse(saved); if (Object.values(p).every(v => v?.col && v?.row)) return p; }
+    } catch {}
+    // Migrate from old order-based storage
+    const oldOrder = (() => { try { const s = localStorage.getItem(`portal_dash_widgets_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {} return DEFAULT_WIDGET_ORDER; })();
+    const oldSizes = (() => { try { const s = localStorage.getItem(`portal_dash_sizes_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {} return {}; })();
+    return autoPlaceOrder(oldOrder, oldSizes);
   });
 
   // Per-widget size overrides: { [id]: { cols, rows } }
@@ -216,25 +290,102 @@ const DashboardView = () => {
     return {};
   });
 
-  const getEffectiveCols = (id) => { const s = widgetSizes[id]; const def = getWidgetSize(id); return Math.max(s?.cols ?? def.minCols, def.minCols); };
-  const getEffectiveRows = (id) => { const s = widgetSizes[id]; const def = getWidgetSize(id); return Math.max(s?.rows ?? def.minRows, def.minRows); };
+  // Always allow any size 1–4 (no minimums enforced at runtime)
+  const getEffectiveCols = (id) => widgetSizes[id]?.cols ?? getWidgetSize(id).minCols;
+  const getEffectiveRows = (id) => widgetSizes[id]?.rows ?? getWidgetSize(id).minRows;
 
   const updateWidgetSize = useCallback((id, dim, val) => {
-    setWidgetSizes(prev => {
-      const next = { ...prev, [id]: { ...(prev[id]||{}), [dim]: val } };
-      try { localStorage.setItem(`portal_dash_sizes_${user?.id||'guest'}`, JSON.stringify(next)); } catch {}
-      return next;
-    });
+    // Build new sizes first (using ref so we don't need sizes in deps)
+    const newSizes = { ...widgetSizesRef.current, [id]: { ...(widgetSizesRef.current[id]||{}), [dim]: val } };
+    setWidgetSizes(newSizes);
+    try { localStorage.setItem(`portal_dash_sizes_${user?.id||'guest'}`, JSON.stringify(newSizes)); } catch {}
+
+    // Resize can cause overlaps — resolve exactly like a drop: resized widget wins its cell
+    const currentLayout = widgetLayoutRef.current;
+    const pos = currentLayout[id];
+    if (pos) {
+      const newLayout = resolveCollisions(id, pos.col, pos.row, currentLayout, newSizes);
+      const movedIds = Object.keys(newLayout).filter(wid =>
+        newLayout[wid].col !== currentLayout[wid]?.col || newLayout[wid].row !== currentLayout[wid]?.row
+      );
+      setWidgetLayout(newLayout);
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+      if (movedIds.length) {
+        setBouncingIds(new Set(movedIds));
+        setTimeout(() => setBouncingIds(new Set()), 700);
+      }
+    }
   }, [user]);
 
-  // ── Pointer-based DnD ──────────────────────────────────────────────────────
-  // Shows a ghost SLOT at the drop target instead of just highlighting a widget.
-  const dndRef = useRef({ active: null, over: null, isAfter: false, started: false, startX: 0, startY: 0 });
+  // ── Supabase prefs persistence ─────────────────────────────────────────────
+  // prefsReadyRef: true once the initial DB load completes (prevents saving before load)
+  const prefsReadyRef = useRef(false);
+  const saveTimerRef  = useRef(null);
+
+  // On mount: pull saved prefs from DB and override local state/cache
+  useEffect(() => {
+    if (!user?.id) { prefsReadyRef.current = true; return; }
+    supabase.from('user_dashboard_prefs')
+      .select('layout, sizes, widgets')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          if (data.layout && Object.keys(data.layout).length) {
+            setWidgetLayout(data.layout);
+            try { localStorage.setItem(`portal_dash_layout_${user.id}`, JSON.stringify(data.layout)); } catch {}
+          }
+          if (data.sizes && Object.keys(data.sizes).length) {
+            setWidgetSizes(data.sizes);
+            try { localStorage.setItem(`portal_dash_sizes_${user.id}`, JSON.stringify(data.sizes)); } catch {}
+          }
+          if (data.widgets && Array.isArray(data.widgets) && data.widgets.length) {
+            setWidgetConfig(data.widgets);
+            try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
+          }
+        }
+        prefsReadyRef.current = true;
+      });
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced save: fires 1.5 s after any prefs change (after initial load)
+  useEffect(() => {
+    if (!prefsReadyRef.current || !user?.id) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      supabase.from('user_dashboard_prefs').upsert(
+        { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      );
+    }, 1500);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [widgetLayout, widgetSizes, widgetConfig, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Bounce animation tracking ──────────────────────────────────────────────
+  const [bouncingIds, setBouncingIds] = useState(new Set());
+
+  // ── Resize popover ─────────────────────────────────────────────────────────
+  const [resizeOpenId, setResizeOpenId] = useState(null);
+  useEffect(() => {
+    if (!resizeOpenId) return;
+    const close = (e) => { if (!e.target.closest('[data-resize-panel]')) setResizeOpenId(null); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [resizeOpenId]);
+
+  // ── Position-based DnD with snap-to-grid ───────────────────────────────────
+  // Stores active drag state. snap = { col, row, valid } at current mouse position.
+  const dndRef      = useRef({ active: null, snap: null, started: false, startX: 0, startY: 0 });
   const dndListeners = useRef({ move: null, up: null });
-  const [dndActive,  setDndActive]  = useState(null);
-  const [dndOver,    setDndOver]    = useState(null);
-  const [dndIsAfter, setDndIsAfter] = useState(false);
-  const [dndPos,     setDndPos]     = useState({ x: 0, y: 0 });
+  const gridRef      = useRef(null);
+  const widgetLayoutRef = useRef(widgetLayout);
+  const widgetSizesRef  = useRef(widgetSizes);
+  useEffect(() => { widgetLayoutRef.current = widgetLayout; }, [widgetLayout]);
+  useEffect(() => { widgetSizesRef.current  = widgetSizes;  }, [widgetSizes]);
+
+  const [dndActive, setDndActive] = useState(null);
+  const [dndSnap,   setDndSnap]   = useState(null); // { col, row, valid }
+  const [dndPos,    setDndPos]    = useState({ x: 0, y: 0 });
 
   useEffect(() => () => {
     if (dndListeners.current.move) window.removeEventListener('pointermove', dndListeners.current.move);
@@ -244,7 +395,33 @@ const DashboardView = () => {
   const startDrag = useCallback((e, id) => {
     e.preventDefault();
     const ref = dndRef.current;
-    Object.assign(ref, { active: id, over: null, isAfter: false, started: false, startX: e.clientX, startY: e.clientY });
+    Object.assign(ref, { active: id, snap: null, started: false, startX: e.clientX, startY: e.clientY });
+
+    const computeSnap = (mouseX, mouseY) => {
+      if (!gridRef.current) return null;
+      const rect  = gridRef.current.getBoundingClientRect();
+      const cellW = (rect.width + GAP_PX) / GRID_COLS;
+      const cellH = ROW_H + GAP_PX;
+      const relX  = mouseX - rect.left;
+      const relY  = mouseY - rect.top;
+      const eCols = widgetSizesRef.current[id]?.cols ?? getWidgetSize(id).minCols;
+      const eRows = widgetSizesRef.current[id]?.rows ?? getWidgetSize(id).minRows;
+      const col   = Math.max(1, Math.min(GRID_COLS - eCols + 1, Math.floor(relX / cellW) + 1));
+      const row   = Math.max(1, Math.floor(relY / cellH) + 1);
+      // Collision check — skip self
+      const layout = widgetLayoutRef.current;
+      const sizes  = widgetSizesRef.current;
+      let valid = true;
+      for (const [wid, pos] of Object.entries(layout)) {
+        if (wid === id) continue;
+        const wc = sizes[wid]?.cols ?? getWidgetSize(wid).minCols;
+        const wr = sizes[wid]?.rows ?? getWidgetSize(wid).minRows;
+        if (col < pos.col + wc && col + eCols > pos.col && row < pos.row + wr && row + eRows > pos.row) {
+          valid = false; break;
+        }
+      }
+      return { col, row, valid };
+    };
 
     const onMove = (me) => {
       const dx = me.clientX - ref.startX, dy = me.clientY - ref.startY;
@@ -254,39 +431,30 @@ const DashboardView = () => {
         setDndActive(id);
       }
       setDndPos({ x: me.clientX, y: me.clientY });
-
-      // Find hovered widget (skip active which has pointer-events:none)
-      const els = document.elementsFromPoint(me.clientX, me.clientY);
-      let overId = null, overEl = null;
-      for (const el of els) {
-        const wid = el.getAttribute?.('data-widget-id');
-        if (wid && wid !== id) { overId = wid; overEl = el; break; }
-      }
-
-      let isAfter = false;
-      if (overId && overEl) {
-        const rect = overEl.getBoundingClientRect();
-        isAfter = (me.clientX - rect.left) / rect.width > 0.5;
-      }
-
-      if (overId !== ref.over) { ref.over = overId; setDndOver(overId); }
-      if (isAfter !== ref.isAfter) { ref.isAfter = isAfter; setDndIsAfter(isAfter); }
+      const snap = computeSnap(me.clientX, me.clientY);
+      ref.snap = snap;
+      setDndSnap(snap);
     };
 
     const onUp = () => {
-      const { active, over, isAfter, started } = dndRef.current;
-      if (started && active) {
-        setWidgetOrder(prev => {
-          const visible = prev.filter(id => id !== active);
-          let idx = visible.length;
-          if (over) { const oi = visible.indexOf(over); if (oi >= 0) idx = isAfter ? oi + 1 : oi; }
-          const next = [...visible]; next.splice(idx, 0, active);
-          try { localStorage.setItem(`portal_dash_widgets_${user?.id||'guest'}`, JSON.stringify(next)); } catch {}
-          return next;
-        });
+      const { active, snap, started } = dndRef.current;
+      if (started && active && snap) {
+        // Always resolve — red zones push displaced widgets out of the way
+        const newLayout = resolveCollisions(active, snap.col, snap.row, widgetLayoutRef.current, widgetSizesRef.current);
+        const prev = widgetLayoutRef.current;
+        const movedIds = Object.keys(newLayout).filter(id =>
+          newLayout[id].col !== prev[id]?.col || newLayout[id].row !== prev[id]?.row
+        );
+        setWidgetLayout(newLayout);
+        try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+        // Spring-bounce the widgets that moved
+        if (movedIds.length) {
+          setBouncingIds(new Set(movedIds));
+          setTimeout(() => setBouncingIds(new Set()), 700);
+        }
       }
-      Object.assign(dndRef.current, { active: null, over: null, isAfter: false, started: false });
-      setDndActive(null); setDndOver(null);
+      Object.assign(dndRef.current, { active: null, snap: null, started: false });
+      setDndActive(null); setDndSnap(null);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
@@ -324,16 +492,23 @@ const DashboardView = () => {
 
   useEffect(() => {
     if (!salesBranches.length) return;
-    setWidgetOrder(prev => {
+    setWidgetLayout(prev => {
       const ids = salesBranches.map(b => `sales_branch_${b.id}`);
-      const missing = ids.filter(id => !prev.includes(id));
+      const missing = ids.filter(id => !(id in prev));
       if (!missing.length) return prev;
-      const si = prev.indexOf('sales');
-      const next = [...prev];
-      if (si > -1) next.splice(si+1, 0, ...missing); else next.push(...missing);
+      // Find the 'sales' widget position to anchor near it
+      const salesPos = prev['sales'];
+      // Build a temporary order to auto-place the missing ones after existing widgets
+      const existingOrder = Object.keys(prev);
+      const extended = [...existingOrder, ...missing];
+      const newLayout = autoPlaceOrder(extended, widgetSizesRef.current);
+      // Keep existing positions, only add new ones
+      const next = { ...prev };
+      missing.forEach(id => { next[id] = newLayout[id] || { col: 1, row: 999 }; });
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(next)); } catch {}
       return next;
     });
-  }, [salesBranches]);
+  }, [salesBranches, user]);
 
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 
@@ -480,32 +655,43 @@ const DashboardView = () => {
   const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
 
   const resetAll = () => {
-    setWidgetOrder(DEFAULT_WIDGET_ORDER);
+    const defaultLayout = autoPlaceOrder(DEFAULT_WIDGET_ORDER, {});
+    setWidgetLayout(defaultLayout);
     setWidgetSizes({});
     try {
-      localStorage.removeItem(`portal_dash_widgets_${user?.id||'guest'}`);
+      localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(defaultLayout));
       localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}`);
     } catch {}
   };
 
-  // ── wrapWidget: adds grip, resize controls, DnD attrs ─────────────────────
+  // ── wrapWidget: explicit grid position, resize button, drag handle ──────────
   const wrapWidget = (id, content) => {
-    const { minCols, minRows, label } = getWidgetSize(id);
+    const { label } = getWidgetSize(id);
     const eCols = getEffectiveCols(id);
     const eRows = getEffectiveRows(id);
+    const pos   = widgetLayout[id] || { col: 1, row: 1 };
+    const isActive     = dndActive === id;
+    const isBouncing   = bouncingIds.has(id);
+    const isResizeOpen = resizeOpenId === id;
 
     return (
       <div
         key={id}
         data-widget-id={id}
-        className={`relative group/drag ${getSpanClass(eCols)} ${getRowSpanClass(eRows)} transition-all duration-200`}
+        className={`relative group/drag ${isBouncing ? 'animate-widget-settle' : ''}`}
+        style={{
+          gridColumnStart: pos.col,
+          gridRowStart:    pos.row,
+          gridColumnEnd:   `span ${eCols}`,
+          gridRowEnd:      `span ${eRows}`,
+          opacity:    isActive ? 0.2 : 1,
+          transition: isActive ? 'opacity 0.12s' : 'opacity 0.2s',
+        }}
       >
-        {/* Grip handle */}
+        {/* Grip handle — reveals on hover */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 transition-all duration-200 cursor-grab active:cursor-grabbing touch-none select-none
-            ${showConfig ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100'}
-          `}
+          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-all duration-200 cursor-grab active:cursor-grabbing touch-none select-none"
         >
           <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#007AFF] hover:border-[#007AFF] hover:text-white transition-all duration-150 group/grip">
             <GripVertical size={12} className="text-slate-400 group-hover/grip:text-white transition-colors" />
@@ -515,54 +701,45 @@ const DashboardView = () => {
 
         {content}
 
-        {/* Resize controls — visible in config mode */}
-        {showConfig && !dndActive && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 pointer-events-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-full px-2.5 py-1.5 shadow-xl flex items-center gap-1">
-              {/* Width (cols) */}
-              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest px-0.5">W</span>
-              {[1,2,3,4].map(n => {
-                const ok = n >= minCols, active = n === eCols;
-                return (
-                  <button key={n} disabled={!ok}
-                    onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
-                    className={`w-5 h-5 rounded-full text-[9px] font-black transition-all active:scale-90 ${active ? 'bg-[#007AFF] text-white shadow-sm' : !ok ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}>
-                    {n}
-                  </button>
-                );
-              })}
-              <div className="w-px h-3 bg-slate-200 mx-0.5" />
-              {/* Height (rows) */}
-              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest px-0.5">H</span>
-              {[1,2,3,4].map(n => {
-                const ok = n >= minRows, active = n === eRows;
-                return (
-                  <button key={n} disabled={!ok}
-                    onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
-                    className={`w-5 h-5 rounded-full text-[9px] font-black transition-all active:scale-90 ${active ? 'bg-[#007AFF] text-white shadow-sm' : !ok ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}>
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Resize button — hover to reveal, click opens W×H popover */}
+        {!dndActive && (
+          <div
+            data-resize-panel
+            className={`absolute bottom-3 right-3 z-30 transition-all duration-200 ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
+          >
+            <button
+              onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
+              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-all active:scale-90 ${isResizeOpen ? 'bg-[#007AFF] border-[#007AFF] text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-[#007AFF] hover:border-[#007AFF]/50'}`}
+              title="Cambiar tamaño"
+            >
+              <Maximize2 size={11} strokeWidth={2.5} />
+            </button>
+
+            {isResizeOpen && (
+              <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-150">
+                <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl px-3 py-2.5 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-0.5">W</span>
+                  {[1,2,3,4].map(n => (
+                    <button key={n}
+                      onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
+                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-all active:scale-90 ${n === eCols ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                      {n}
+                    </button>
+                  ))}
+                  <div className="w-px h-3 bg-slate-200 mx-0.5" />
+                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-0.5">H</span>
+                  {[1,2,3,4].map(n => (
+                    <button key={n}
+                      onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
+                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-all active:scale-90 ${n === eRows ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
-      </div>
-    );
-  };
-
-  // Ghost slot shown at insert position during drag
-  const GhostSlot = () => {
-    if (!dndActive) return null;
-    const cols = getEffectiveCols(dndActive);
-    const rows = getEffectiveRows(dndActive);
-    return (
-      <div className={`${getSpanClass(cols)} ${getRowSpanClass(rows)} rounded-[1.75rem] border-2 border-dashed border-[#007AFF]/60 bg-[#007AFF]/6 animate-pulse transition-all duration-200`}>
-        <div className="h-full flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full bg-[#007AFF]/15 flex items-center justify-center">
-            <GripVertical size={16} className="text-[#007AFF]/60" />
-          </div>
-        </div>
       </div>
     );
   };
@@ -798,35 +975,39 @@ const DashboardView = () => {
       if (!showWidget('calendar','dash_calendar')) return null;
       return wrapWidget('calendar',
         <WidgetCard title="Calendario" icon={CalendarDays} action={<MonthYearPicker value={calMonth} onChange={setCalMonth}/>}>
-          <div className="px-4 pb-4 pt-1 flex flex-col h-full">
+          <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
+            {/* Day headers — always visible */}
             <div className="grid grid-cols-7 mb-0.5 shrink-0">
-              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[10px] font-black text-slate-300 uppercase py-1.5">{d}</div>)}
+              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[9px] font-black text-slate-300 uppercase py-1">{d}</div>)}
             </div>
-            <div className="grid grid-cols-7 gap-y-0.5 flex-1 content-start">
-              {calendarDays.cells.map((day,i)=>{
-                if (!day) return <div key={`pad-${i}`}/>;
-                const mm=String(calendarDays.month+1).padStart(2,'0'), dd=String(day).padStart(2,'0');
-                const ds=`${calendarDays.year}-${mm}-${dd}`, isToday=ds===localDateStr();
-                const ev=calendarEvents[ds], hasH=ev?.holidays?.length>0, hasB=ev?.birthdays?.length>0;
-                const tip=[...(ev?.holidays||[]),...(ev?.birthdays||[]).map(n=>`🎂 ${n}`)].join('\n');
-                return (
-                  <div key={day}
-                    onMouseEnter={e=>{if(!tip)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({text:tip,x:r.left+r.width/2,y:r.top});}}
-                    onMouseLeave={()=>setCalTooltip(null)}
-                    className={`flex flex-col items-center justify-start pt-1.5 pb-2 rounded-[0.6rem] relative cursor-default transition-colors ${isToday?'bg-[#007AFF]':hasH&&hasB?'bg-gradient-to-br from-red-50 to-purple-50':hasH?'bg-red-50 hover:bg-red-100':hasB?'bg-purple-50 hover:bg-purple-100':'hover:bg-slate-50'}`}>
-                    <span className={`text-[13px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':hasB?'text-purple-600':'text-slate-700'}`}>{day}</span>
-                    {(hasH||hasB)&&!isToday&&<div className="flex gap-0.5 mt-0.5">{hasH&&<span className="w-1.5 h-1.5 rounded-full bg-red-400"/>}{hasB&&<span className="w-1.5 h-1.5 rounded-full bg-purple-400"/>}</div>}
-                  </div>
-                );
-              })}
+            {/* Day grid — scrolls internally if widget is too small */}
+            <div className="overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
+              <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(28px,1fr)' }}>
+                {calendarDays.cells.map((day,i)=>{
+                  if (!day) return <div key={`pad-${i}`}/>;
+                  const mm=String(calendarDays.month+1).padStart(2,'0'), dd=String(day).padStart(2,'0');
+                  const ds=`${calendarDays.year}-${mm}-${dd}`, isToday=ds===localDateStr();
+                  const ev=calendarEvents[ds], hasH=ev?.holidays?.length>0, hasB=ev?.birthdays?.length>0;
+                  const tip=[...(ev?.holidays||[]),...(ev?.birthdays||[]).map(n=>`🎂 ${n}`)].join('\n');
+                  return (
+                    <div key={day}
+                      onMouseEnter={e=>{if(!tip)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({text:tip,x:r.left+r.width/2,y:r.top});}}
+                      onMouseLeave={()=>setCalTooltip(null)}
+                      className={`flex flex-col items-center justify-center rounded-[0.5rem] relative cursor-default transition-colors ${isToday?'bg-[#007AFF]':hasH&&hasB?'bg-gradient-to-br from-red-50 to-purple-50':hasH?'bg-red-50 hover:bg-red-100':hasB?'bg-purple-50 hover:bg-purple-100':'hover:bg-slate-50/60'}`}>
+                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':hasB?'text-purple-600':'text-slate-700'}`}>{day}</span>
+                      {(hasH||hasB)&&!isToday&&<div className="flex gap-0.5 mt-0.5">{hasH&&<span className="w-1 h-1 rounded-full bg-red-400"/>}{hasB&&<span className="w-1 h-1 rounded-full bg-purple-400"/>}</div>}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+            {/* Upcoming birthdays */}
             {upcomingBirthdays.length>0&&(
-              <div className="mt-3 pt-2.5 border-t border-slate-50 flex flex-wrap gap-1.5 shrink-0">
-                {upcomingBirthdays.slice(0,8).map((item,idx)=>(
-                  <div key={idx} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-default ${item.isToday?'bg-purple-100 text-purple-700':'bg-slate-50 text-slate-400'}`}>
-                    <Gift size={9} className={item.isToday?'text-purple-500':'text-slate-300'}/>
+              <div className="mt-2 pt-2 border-t border-white/50 flex flex-wrap gap-1 shrink-0">
+                {upcomingBirthdays.slice(0,6).map((item,idx)=>(
+                  <div key={idx} className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold cursor-default ${item.isToday?'bg-purple-100 text-purple-700':'bg-slate-50/80 text-slate-400'}`}>
+                    <Gift size={8} className={item.isToday?'text-purple-500':'text-slate-300'}/>
                     <span>{item.employees[0]?.name?.split(' ')[0]}{item.isToday?' 🎂':''}</span>
-                    {!item.isToday&&<span className="ml-0.5 opacity-60">{item.date.toLocaleDateString('es',{day:'numeric',month:'short'})}</span>}
                   </div>
                 ))}
               </div>
@@ -862,26 +1043,13 @@ const DashboardView = () => {
     return null;
   };
 
-  // ── Build widget list with ghost slot during drag ──────────────────────────
-  const buildWidgetList = () => {
-    if (!dndActive) return widgetOrder.map(renderWidget);
-
-    const visible = widgetOrder.filter(id => id !== dndActive);
-    const overIdx = dndOver ? visible.indexOf(dndOver) : -1;
-    const insertIdx = overIdx >= 0 ? (dndIsAfter ? overIdx + 1 : overIdx) : visible.length;
-
-    return [
-      ...visible.slice(0, insertIdx).map(renderWidget),
-      <GhostSlot key="ghost" />,
-      ...visible.slice(insertIdx).map(renderWidget),
-    ];
-  };
+  // ── Build widget list from explicit positions ──────────────────────────────
+  const buildWidgetList = () => Object.keys(widgetLayout).map(renderWidget);
 
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
-      <button onClick={() => window.location.reload()} className="w-9 h-9 rounded-[0.875rem] bg-white/70 border border-white/90 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors shadow-sm backdrop-blur-sm" title="Actualizar"><RefreshCw size={15}/></button>
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
+<button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
         <Settings2 size={14}/> Personalizar
       </button>
     </div>
@@ -921,7 +1089,7 @@ const DashboardView = () => {
 
         {/* KPI row */}
         {showWidget('kpi','dash_kpi') && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
             <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" onClick={canManage('dash_kpi')?()=>navigate('/employees'):undefined}/>
             <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
             <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
@@ -929,12 +1097,28 @@ const DashboardView = () => {
           </div>
         )}
 
-        {/* Main widget grid — grid-auto-rows creates the row unit system */}
+        {/* Main widget grid — explicit positions, fixed 4 cols */}
         <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          ref={gridRef}
+          className="grid grid-cols-4 gap-4 relative"
           style={{ gridAutoRows: `${ROW_H}px` }}
         >
           {buildWidgetList()}
+
+          {/* Drop preview — shown while dragging, snaps to grid cell */}
+          {dndActive && dndSnap && (
+            <div
+              style={{
+                gridColumnStart: dndSnap.col,
+                gridRowStart:    dndSnap.row,
+                gridColumnEnd:   `span ${getEffectiveCols(dndActive)}`,
+                gridRowEnd:      `span ${getEffectiveRows(dndActive)}`,
+                pointerEvents:   'none',
+                zIndex: 25,
+              }}
+              className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-[#007AFF]/50 bg-[#007AFF]/5' : 'border-amber-400/60 bg-amber-50/40'}`}
+            />
+          )}
         </div>
 
       </div>

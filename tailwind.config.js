@@ -7,9 +7,16 @@ export default {
           '0%, 100%': { transform: 'rotate(-12deg)' },
           '50%':       { transform: 'rotate(12deg)'  },
         },
+        'widget-settle': {
+          '0%':   { transform: 'scale(1.04) translateY(-7px)' },
+          '40%':  { transform: 'scale(0.97) translateY(4px)'  },
+          '70%':  { transform: 'scale(1.02) translateY(-2px)' },
+          '100%': { transform: 'scale(1)    translateY(0)'    },
+        },
       },
       animation: {
-        wiggle: 'wiggle 0.4s ease-in-out infinite',
+        wiggle:          'wiggle 0.4s ease-in-out infinite',
+        'widget-settle': 'widget-settle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
       },
       borderRadius: {
         glass: "2rem",

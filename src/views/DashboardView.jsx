@@ -318,13 +318,14 @@ const DashboardView = () => {
   }, [user]);
 
   // ── Supabase prefs persistence ─────────────────────────────────────────────
-  // prefsReadyRef: true once the initial DB load completes (prevents saving before load)
-  const prefsReadyRef = useRef(false);
-  const saveTimerRef  = useRef(null);
+  // prefsReady: becomes true once the initial DB load finishes — stored as STATE
+  // so that the save effect re-fires when it flips, syncing existing prefs on first load.
+  const [prefsReady, setPrefsReady] = useState(false);
+  const saveTimerRef = useRef(null);
 
   // On mount: pull saved prefs from DB and override local state/cache
   useEffect(() => {
-    if (!user?.id) { prefsReadyRef.current = true; return; }
+    if (!user?.id) { setPrefsReady(true); return; }
     supabase.from('user_dashboard_prefs')
       .select('layout, sizes, widgets')
       .eq('user_id', user.id)
@@ -344,13 +345,14 @@ const DashboardView = () => {
             try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
           }
         }
-        prefsReadyRef.current = true;
+        // Setting state (not ref) causes the save effect to re-run and persist current prefs
+        setPrefsReady(true);
       });
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced save: fires 1.5 s after any prefs change (after initial load)
+  // Debounced save: fires 1.5 s after any prefs change (including the first time prefsReady flips)
   useEffect(() => {
-    if (!prefsReadyRef.current || !user?.id) return;
+    if (!prefsReady || !user?.id) return;
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       supabase.from('user_dashboard_prefs').upsert(
@@ -359,7 +361,7 @@ const DashboardView = () => {
       );
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
-  }, [widgetLayout, widgetSizes, widgetConfig, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bounce animation tracking ──────────────────────────────────────────────
   const [bouncingIds, setBouncingIds] = useState(new Set());

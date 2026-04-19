@@ -193,6 +193,7 @@ export const createSystemSlice = (set, get) => ({
                         priority: a.priority || 'NORMAL',
                         date: a.created_at,
                         readBy: a.read_by || [],
+                        prevReadBy: a.prev_read_by || [],
                         isArchived: a.is_archived,
                         editedAt: a.edited_at,
                         scheduledFor: a.scheduled_for,
@@ -222,6 +223,7 @@ export const createSystemSlice = (set, get) => ({
                         priority: a.priority || 'NORMAL',
                         date: a.created_at,
                         readBy: a.read_by || [],
+                        prevReadBy: a.prev_read_by || [],
                         isArchived: a.is_archived,
                         editedAt: a.edited_at,
                         scheduledFor: a.scheduled_for,
@@ -705,6 +707,10 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
         const { title, message, targetType, targetValue, priority, scheduledFor } = updateData;
 
         try {
+            // Capture current readers before resetting — stored in prev_read_by for transparency
+            const currentAnn = get().announcements.find(a => a.id === id);
+            const previousReaders = currentAnn?.readBy || [];
+
             const { data, error } = await supabase
                 .from('announcements')
                 .update({
@@ -714,7 +720,9 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
                     target_value: targetValue,
                     priority,
                     scheduled_for: scheduledFor || null,
-                    edited_at: new Date().toISOString()
+                    edited_at: new Date().toISOString(),
+                    prev_read_by: previousReaders,
+                    read_by: [],
                 })
                 .eq('id', id)
                 .select()
@@ -742,6 +750,7 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
                             priority: data.priority,
                             scheduledFor: data.scheduled_for,
                             readBy: [],
+                            prevReadBy: previousReaders,
                             editedAt: data.edited_at
                         }
                         : ann
@@ -1096,6 +1105,7 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
                         targetValue: a.target_value,
                         priority: a.priority || 'NORMAL',
                         readBy: a.read_by || [],
+                        prevReadBy: a.prev_read_by || [],
                         editedAt: a.edited_at,
                         scheduledFor: a.scheduled_for,
                         metadata: a.metadata || null,

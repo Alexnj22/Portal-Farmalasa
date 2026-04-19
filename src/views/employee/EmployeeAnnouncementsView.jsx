@@ -1,5 +1,5 @@
 import React, { useMemo, useState, memo, useRef, useCallback, useEffect } from 'react';
-import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight } from 'lucide-react';
+import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -18,6 +18,10 @@ const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE',
 
 const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const isRead = (ann.readBy || []).some(r =>
+        String(typeof r === 'object' ? r.employeeId : r) === String(userId)
+    );
+    // True if this user read a previous version before the last edit
+    const wasReadBefore = !!ann.editedAt && (ann.prevReadBy || []).some(r =>
         String(typeof r === 'object' ? r.employeeId : r) === String(userId)
     );
 
@@ -49,6 +53,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                 {isUrgent && (
                     <span className={`flex items-center gap-1 text-white bg-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
                         <Flame size={11} strokeWidth={2.5} /> Urgente
+                    </span>
+                )}
+                {wasReadBefore && (
+                    <span className="flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
+                        <Pencil size={10} strokeWidth={2.5} /> Actualización
                     </span>
                 )}
                 {badgeEl}
@@ -158,6 +167,12 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
                     {new Date(ann.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {ann.editedAt && (
+                        <span className="text-amber-500 flex items-center gap-1">
+                            · <Pencil size={9} strokeWidth={2.5} />
+                            editado {new Date(ann.editedAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                        </span>
+                    )}
                 </p>
                 {isRead && (
                     <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">

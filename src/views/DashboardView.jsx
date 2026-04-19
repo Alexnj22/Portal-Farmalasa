@@ -318,19 +318,21 @@ const DashboardView = () => {
   }, [user]);
 
   // ── Supabase prefs persistence ─────────────────────────────────────────────
-  // prefsReady: becomes true once the initial DB load finishes — stored as STATE
-  // so that the save effect re-fires when it flips, syncing existing prefs on first load.
   const [prefsReady, setPrefsReady] = useState(false);
   const saveTimerRef = useRef(null);
 
-  // On mount: pull saved prefs from DB and override local state/cache
+  // On mount (and when user changes): pull prefs from DB, override local cache.
+  // We do NOT setPrefsReady when user is null — we wait for a valid UUID so the
+  // save effect always has a real user_id when it first fires.
   useEffect(() => {
-    if (!user?.id) { setPrefsReady(true); return; }
+    if (!user?.id) return;
+    setPrefsReady(false); // reset while loading so save effect won't fire mid-fetch
     supabase.from('user_dashboard_prefs')
       .select('layout, sizes, widgets')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('[dash prefs load]', error);
         if (data) {
           if (data.layout && Object.keys(data.layout).length) {
             setWidgetLayout(data.layout);
@@ -345,12 +347,11 @@ const DashboardView = () => {
             try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
           }
         }
-        // Setting state (not ref) causes the save effect to re-run and persist current prefs
-        setPrefsReady(true);
+        setPrefsReady(true); // flip → triggers save effect below to persist current state
       });
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced save: fires 1.5 s after any prefs change (including the first time prefsReady flips)
+  // Debounced save: fires 1.5 s after any prefs change (including the initial prefsReady flip)
   useEffect(() => {
     if (!prefsReady || !user?.id) return;
     clearTimeout(saveTimerRef.current);
@@ -358,7 +359,9 @@ const DashboardView = () => {
       supabase.from('user_dashboard_prefs').upsert(
         { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig, updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
-      );
+      ).then(({ error }) => {
+        if (error) console.error('[dash prefs save]', error);
+      });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
   }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps

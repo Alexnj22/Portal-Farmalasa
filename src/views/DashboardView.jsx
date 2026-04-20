@@ -254,7 +254,7 @@ const getBranchIssue = (b) => {
 };
 
 // ─── Main component ────────────────────────────────────────────────────────────
-const DashboardView = () => {
+const DashboardView = ({ openModal }) => {
   const { user, hasPermission } = useAuth();
   const navigate = useNavigate();
 
@@ -570,7 +570,7 @@ const DashboardView = () => {
       const max = Math.max(...arr.map(o => o.avg), 1);
       return arr.map(item => {
         const txPerHr = item.avg / scale;
-        let color = '#e2e8f0';                     // ≤4  muerta   — 1 persona ociosa
+        let color = '#94a3b8';                     // ≤4  muerta   — 1 persona ociosa
         if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
         else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
         else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas
@@ -599,12 +599,15 @@ const DashboardView = () => {
           dM[d]+=c; hM[h]=(hM[h]||0)+c; shM[d][h]=(shM[d][h]||0)+c; ud.add(r.sale_date); udD[d].add(r.sale_date);
         });
         const tot=ud.size||1;
-        // Days: color = peak hourly avg for that DOW (not daily total ÷ hours)
+        // Days: color/height = P75 of hourly avgs for that DOW (robust to single-hour outliers)
+        // dailyAvg = simple daily average shown in tooltip
         const fD=[1,2,3,4,5,6,0].map(d=>{
           const dc=udD[d].size||1;
-          let peakHr=0;
-          for(let h=openH;h<=closeH;h++){const ha=Math.round((shM[d][h]||0)/dc);if(ha>peakHr)peakHr=ha;}
-          return {day:d,avg:peakHr,label:DAY_NAMES[d]};
+          const hrs=[]; for(let h=openH;h<=closeH;h++) hrs.push(Math.round((shM[d][h]||0)/dc));
+          hrs.sort((a,b)=>a-b);
+          const p75=hrs[Math.floor(hrs.length*0.75)]||0;
+          const dailyAvg=Math.round((dM[d]||0)/dc/(closeH-openH+1));
+          return {day:d,avg:p75,dailyAvg,label:DAY_NAMES[d]};
         });
         const fH=[]; for(let h=openH;h<=closeH;h++) fH.push({hour:h,avg:Math.round((hM[h]||0)/tot),label:formatHourAMPM(h)});
         const fS={}; [1,2,3,4,5,6,0].forEach(d=>{fS[d]=[]; const dc=udD[d].size||1; for(let h=openH;h<=closeH;h++) fS[d].push({hour:h,avg:Math.round((shM[d][h]||0)/dc),label:formatHourAMPM(h)});});
@@ -822,6 +825,7 @@ const DashboardView = () => {
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
+              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#007AFF] hover:text-white transition-all active:scale-90 shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
               <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-all active:scale-95"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
@@ -845,7 +849,14 @@ const DashboardView = () => {
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
                         <p className="font-black text-[8px] uppercase tracking-widest text-slate-400 mb-1 border-b border-white/10 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
-                        <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / Promedio</p>
+                        {salesView==='DAYS'?(
+                          <>
+                            <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
+                          </>
+                        ):(
+                          <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
+                        )}
                         {salesView==='DAYS'&&<p className="text-[7px] text-[#007AFF] font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
@@ -856,7 +867,7 @@ const DashboardView = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-6 shrink-0">
-              {[['#e2e8f0','Muerta'],['#007AFF','Normal'],['#FF9500','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
+              {[['#94a3b8','Muerta'],['#007AFF','Normal'],['#FF9500','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
                 <div key={l} className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>

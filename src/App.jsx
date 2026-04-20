@@ -377,7 +377,7 @@ function MainApp() {
                                     </Route>
 
                                     {/* ── Operaciones ── */}
-                                    <Route path="overview" element={<PermissionGuard moduleKey="overview"><DashboardView /></PermissionGuard>} />
+                                    <Route path="overview" element={<PermissionGuard moduleKey="overview"><DashboardView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="monitor" element={<PermissionGuard moduleKey="monitor"><AttendanceMonitorView setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="audit" element={<PermissionGuard moduleKey="time_audit"><AttendanceAuditView setOverlayActive={setIsAuditOverlayActive} setView={setView} setActiveEmployee={setActiveEmployee} /></PermissionGuard>} />
                                     <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />

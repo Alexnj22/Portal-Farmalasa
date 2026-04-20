@@ -256,56 +256,35 @@ useEffect(() => {
                     }
                 });
 
-                const applyColorsStatistical = (arr) => {
-                    const activeAvgs = arr.map(o => o.avg).filter(v => v > 0);
-                    
-                    if (activeAvgs.length === 0) {
-                        return arr.map(item => ({ ...item, color: '#e2e8f0', height: '0%' })); 
-                    }
-
-                    activeAvgs.sort((a, b) => a - b);
-                    
-                    const q1Index = Math.floor(activeAvgs.length * 0.25);
-                    const q3Index = Math.floor(activeAvgs.length * 0.75);
-                    const q90Index = Math.floor(activeAvgs.length * 0.90); 
-
-                    const q1 = activeAvgs[q1Index];           
-                    const q3 = activeAvgs[q3Index];           
-                    const q90 = activeAvgs[q90Index];         
-                    
-                    const maxVal = activeAvgs[activeAvgs.length - 1];
-
+                // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
+                // scale=1 for hourly views, scale=numOpenHours for daily totals
+                const applyColors = (arr, scale = 1) => {
+                    const max = Math.max(...arr.map(o => o.avg), 1);
                     return arr.map(item => {
-                        let color = '#e2e8f0'; 
-                        
-                        if (item.avg === 0) {
-                            color = '#e2e8f0'; 
-                        } else if (item.avg >= q90 && q90 > q3) {
-                            color = '#FF2D55'; 
-                        } else if (item.avg >= q3) {
-                            color = '#FF9500'; 
-                        } else if (item.avg >= q1) {
-                            color = '#007AFF'; 
-                        }
-
-                        const heightIntensity = maxVal > 0 ? item.avg / maxVal : 0;
-                        item.height = heightIntensity > 0 ? `${Math.max(heightIntensity * 100, 15)}%` : '0%';
+                        const txPerHr = item.avg / scale;
+                        let color = '#e2e8f0';                     // ≤4  muerta   — 1 persona ociosa
+                        if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
+                        else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
+                        else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas
+                        const hi = item.avg / max;
+                        item.height = hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%';
                         item.color = color;
                         return item;
                     });
                 };
 
+                const numHours = closeH - openH + 1;
                 setSalesStats({
-                    days: applyColorsStatistical(finalDays),
-                    generalHours: applyColorsStatistical(finalGeneralHours),
+                    days: applyColors(finalDays, numHours),
+                    generalHours: applyColors(finalGeneralHours),
                     specificHours: {
-                        1: applyColorsStatistical(finalSpecificHours[1]),
-                        2: applyColorsStatistical(finalSpecificHours[2]),
-                        3: applyColorsStatistical(finalSpecificHours[3]),
-                        4: applyColorsStatistical(finalSpecificHours[4]),
-                        5: applyColorsStatistical(finalSpecificHours[5]),
-                        6: applyColorsStatistical(finalSpecificHours[6]),
-                        0: applyColorsStatistical(finalSpecificHours[0]),
+                        1: applyColors(finalSpecificHours[1]),
+                        2: applyColors(finalSpecificHours[2]),
+                        3: applyColors(finalSpecificHours[3]),
+                        4: applyColors(finalSpecificHours[4]),
+                        5: applyColors(finalSpecificHours[5]),
+                        6: applyColors(finalSpecificHours[6]),
+                        0: applyColors(finalSpecificHours[0]),
                     }
                 });
 

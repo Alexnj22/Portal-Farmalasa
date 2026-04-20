@@ -564,14 +564,18 @@ const DashboardView = () => {
     if (!salesBranch) { setSalesStats({ days:[], generalHours:[], specificHours:{} }); return; }
     setSalesLoading(true); setSalesView('DAYS');
     const since = new Date(); since.setDate(since.getDate()-90);
-    const applyColors = (arr) => {
-      const actives = arr.map(o => o.avg).filter(v => v>0).sort((a,b)=>a-b);
-      if (!actives.length) return arr.map(i=>({...i,color:'#e2e8f0',height:'0%'}));
-      const q1 = actives[Math.floor(actives.length*0.25)], q3 = actives[Math.floor(actives.length*0.75)], q90 = actives[Math.floor(actives.length*0.9)], max = actives[actives.length-1];
+    // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
+    // scale=1 for hourly views, scale=numOpenHours for daily totals
+    const applyColors = (arr, scale = 1) => {
+      const max = Math.max(...arr.map(o => o.avg), 1);
       return arr.map(item => {
-        let color='#e2e8f0'; if (item.avg>0) { if (item.avg>=q90&&q90>q3) color='#FF2D55'; else if (item.avg>=q3) color='#FF9500'; else if (item.avg>=q1) color='#007AFF'; }
-        const hi = max>0 ? item.avg/max : 0;
-        return { ...item, color, height: hi>0?`${Math.max(hi*100,15)}%`:'0%' };
+        const txPerHr = item.avg / scale;
+        let color = '#e2e8f0';                     // ≤4  muerta   — 1 persona ociosa
+        if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
+        else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
+        else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas
+        const hi = item.avg / max;
+        return { ...item, color, height: hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%' };
       });
     };
     supabase.from('branch_hourly_sales').select('sale_hour, transaction_count, sale_date').eq('branch_id',salesBranch).gte('sale_date',localDateStr(since))
@@ -598,7 +602,8 @@ const DashboardView = () => {
         const fD=[1,2,3,4,5,6,0].map(d=>({day:d,avg:Math.round((dM[d]||0)/(udD[d].size||1)),label:DAY_NAMES[d]}));
         const fH=[]; for(let h=openH;h<=closeH;h++) fH.push({hour:h,avg:Math.round((hM[h]||0)/tot),label:formatHourAMPM(h)});
         const fS={}; [1,2,3,4,5,6,0].forEach(d=>{fS[d]=[]; const dc=udD[d].size||1; for(let h=openH;h<=closeH;h++) fS[d].push({hour:h,avg:Math.round((shM[d][h]||0)/dc),label:formatHourAMPM(h)});});
-        setSalesStats({ days:applyColors(fD), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
+        const numHours = closeH - openH + 1;
+        setSalesStats({ days:applyColors(fD, numHours), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
         setSalesLoading(false);
       });
   }, [salesBranch, branches]);

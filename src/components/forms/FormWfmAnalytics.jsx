@@ -130,37 +130,15 @@ const FormWfmAnalytics = ({ branches }) => {
 
         const todayStr = new Date().toISOString().split('T')[0];
 
-        // Función para aplicar colores basados en Percentiles
+        // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
+        // Days view uses peak hourly avg → consistent with hours view
         const applyColorsStatistical = (arr) => {
-            const activeAvgs = arr.map(o => o.avgTransactions).filter(v => v > 0);
-            
-            if (activeAvgs.length === 0) {
-                return arr.map(item => ({ ...item, fill: '#e2e8f0' })); 
-            }
-
-            activeAvgs.sort((a, b) => a - b);
-            
-            const q1Index = Math.floor(activeAvgs.length * 0.25);
-            const q3Index = Math.floor(activeAvgs.length * 0.75);
-            const q90Index = Math.floor(activeAvgs.length * 0.90); 
-
-            const q1 = activeAvgs[q1Index];           
-            const q3 = activeAvgs[q3Index];           
-            const q90 = activeAvgs[q90Index];         
-
             return arr.map(item => {
-                let fill = '#e2e8f0'; // Default: Muerta (Gris)
-                
-                if (item.avgTransactions === 0) {
-                    fill = '#e2e8f0'; 
-                } else if (item.avgTransactions >= q90 && q90 > q3) {
-                    fill = '#FF2D55'; // Crítica (Rojo)
-                } else if (item.avgTransactions >= q3) {
-                    fill = '#FF9500'; // Pico (Naranja)
-                } else if (item.avgTransactions >= q1) {
-                    fill = '#007AFF'; // Normal (Azul)
-                }
-                
+                const v = item.avgTransactions;
+                let fill = '#e2e8f0';                // ≤4  muerta   — 1 persona ociosa
+                if      (v > 18) fill = '#FF2D55';  // >18 crítica  — 3+ personas
+                else if (v > 12) fill = '#FF9500';  // >12 pico     — 2-3 personas
+                else if (v >  4) fill = '#007AFF';  // >4  normal   — 1-2 personas
                 return { ...item, fill };
             });
         };
@@ -169,29 +147,36 @@ const FormWfmAnalytics = ({ branches }) => {
         // VISTA: DÍAS DE LA SEMANA 
         // ====================================================================
         if (activeView === 'DAYS') {
-            const dayMap = {};
+            const hourlyByDow = {};
             const uniqueDatesMap = {};
+            const salesByDow = {};
 
             DAYS_ORDER.forEach(d => {
-                dayMap[d] = { totalTrans: 0, totalSales: 0 };
+                hourlyByDow[d] = {};
                 uniqueDatesMap[d] = new Set();
+                salesByDow[d] = 0;
             });
 
             validSalesData.forEach(row => {
                 const d = new Date(row.sale_date + 'T00:00:00').getDay();
-                if (dayMap[d]) {
-                    dayMap[d].totalTrans += Number(row.transaction_count || 0);
-                    dayMap[d].totalSales += Number(row.total_sales || 0);
+                const h = Number(row.sale_hour);
+                if (hourlyByDow[d] !== undefined) {
+                    hourlyByDow[d][h] = (hourlyByDow[d][h] || 0) + Number(row.transaction_count || 0);
+                    salesByDow[d] += Number(row.total_sales || 0);
                     uniqueDatesMap[d].add(row.sale_date);
                 }
             });
 
+            // Days: color = peak hourly avg for that DOW (consistent with hours view)
             const finalDays = DAYS_ORDER.map(d => {
-                const dateCount = uniqueDatesMap[d].size || 1;
-                const avgTrans = Math.round(dayMap[d].totalTrans / dateCount);
-                const avgSales = dayMap[d].totalSales / dateCount;
-
-                return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: avgTrans, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
+                const dc = uniqueDatesMap[d].size || 1;
+                let peakHr = 0;
+                for (let h = openH; h <= closeH; h++) {
+                    const ha = Math.round((hourlyByDow[d][h] || 0) / dc);
+                    if (ha > peakHr) peakHr = ha;
+                }
+                const avgSales = salesByDow[d] / dc;
+                return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: peakHr, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
             });
 
             return applyColorsStatistical(finalDays);

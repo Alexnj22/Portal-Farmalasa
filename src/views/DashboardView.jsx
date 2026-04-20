@@ -599,11 +599,16 @@ const DashboardView = () => {
           dM[d]+=c; hM[h]=(hM[h]||0)+c; shM[d][h]=(shM[d][h]||0)+c; ud.add(r.sale_date); udD[d].add(r.sale_date);
         });
         const tot=ud.size||1;
-        const fD=[1,2,3,4,5,6,0].map(d=>({day:d,avg:Math.round((dM[d]||0)/(udD[d].size||1)),label:DAY_NAMES[d]}));
+        // Days: color = peak hourly avg for that DOW (not daily total ÷ hours)
+        const fD=[1,2,3,4,5,6,0].map(d=>{
+          const dc=udD[d].size||1;
+          let peakHr=0;
+          for(let h=openH;h<=closeH;h++){const ha=Math.round((shM[d][h]||0)/dc);if(ha>peakHr)peakHr=ha;}
+          return {day:d,avg:peakHr,label:DAY_NAMES[d]};
+        });
         const fH=[]; for(let h=openH;h<=closeH;h++) fH.push({hour:h,avg:Math.round((hM[h]||0)/tot),label:formatHourAMPM(h)});
         const fS={}; [1,2,3,4,5,6,0].forEach(d=>{fS[d]=[]; const dc=udD[d].size||1; for(let h=openH;h<=closeH;h++) fS[d].push({hour:h,avg:Math.round((shM[d][h]||0)/dc),label:formatHourAMPM(h)});});
-        const numHours = closeH - openH + 1;
-        setSalesStats({ days:applyColors(fD, numHours), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
+        setSalesStats({ days:applyColors(fD), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
         setSalesLoading(false);
       });
   }, [salesBranch, branches]);

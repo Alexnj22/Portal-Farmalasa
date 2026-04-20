@@ -233,10 +233,15 @@ useEffect(() => {
                     uniqueDatesByDay[dNum].add(dStr);
                 });
 
+                // Days: color = peak hourly avg for that DOW (not daily total ÷ hours)
                 const finalDays = [1, 2, 3, 4, 5, 6, 0].map(d => {
-                    const dCount = uniqueDatesByDay[d].size || 1; 
-                    const avg = dCount > 0 ? Math.round((daysMap[d] || 0) / dCount) : 0;
-                    return { day: d, avg, label: DAY_NAMES[d] };
+                    const dc = uniqueDatesByDay[d].size || 1;
+                    let peakHr = 0;
+                    for (let h = openH; h <= closeH; h++) {
+                        const ha = Math.round((specificHourlyMap[d][h] || 0) / dc);
+                        if (ha > peakHr) peakHr = ha;
+                    }
+                    return { day: d, avg: peakHr, label: DAY_NAMES[d] };
                 });
 
                 const totalDays = uniqueDates.size || 1;
@@ -273,9 +278,8 @@ useEffect(() => {
                     });
                 };
 
-                const numHours = closeH - openH + 1;
                 setSalesStats({
-                    days: applyColors(finalDays, numHours),
+                    days: applyColors(finalDays),
                     generalHours: applyColors(finalGeneralHours),
                     specificHours: {
                         1: applyColors(finalSpecificHours[1]),

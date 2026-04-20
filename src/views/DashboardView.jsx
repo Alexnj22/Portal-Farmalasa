@@ -570,7 +570,7 @@ const DashboardView = ({ openModal }) => {
       const max = Math.max(...arr.map(o => o.avg), 1);
       return arr.map(item => {
         const txPerHr = item.avg / scale;
-        let color = '#94a3b8';                     // ≤4  muerta   — 1 persona ociosa
+        let color = '#64748b';                     // ≤4  muerta   — 1 persona ociosa
         if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
         else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
         else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas
@@ -781,9 +781,9 @@ const DashboardView = ({ openModal }) => {
               <AreaChart data={trendData} margin={{top:5,right:5,left:-20,bottom:0}}>
                 <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#007AFF" stopOpacity={0.25}/><stop offset="95%" stopColor="#007AFF" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                <XAxis dataKey="day" tick={{fontSize:11,fill:'#94a3b8',fontWeight:600}} axisLine={false} tickLine={false}/>
+                <XAxis dataKey="day" tick={{fontSize:11,fill:'#64748b',fontWeight:600}} axisLine={false} tickLine={false}/>
                 <YAxis hide/>
-                <Tooltip contentStyle={{background:'#1e293b',border:'none',borderRadius:'0.75rem',fontSize:12,color:'#f8fafc'}} labelStyle={{color:'#94a3b8',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
+                <Tooltip contentStyle={{background:'#1e293b',border:'none',borderRadius:'0.75rem',fontSize:12,color:'#f8fafc'}} labelStyle={{color:'#64748b',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
                 <Area type="monotone" dataKey="total" stroke="#007AFF" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:'#007AFF',strokeWidth:0,r:3}} activeDot={{r:5,fill:'#007AFF'}}/>
               </AreaChart>
             </ResponsiveContainer>
@@ -867,7 +867,7 @@ const DashboardView = ({ openModal }) => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-6 shrink-0">
-              {[['#94a3b8','Muerta'],['#007AFF','Normal'],['#FF9500','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
+              {[['#64748b','Muerta'],['#007AFF','Normal'],['#FF9500','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
                 <div key={l} className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>
@@ -894,7 +894,7 @@ const DashboardView = ({ openModal }) => {
       const bC=v=>{if(!v)return'#e8edf2'; if(v>=q90v&&q90v>q3v)return'#FF2D55'; if(v>=q3v)return'#FF9500'; return'#007AFF';};
       const fS=v=>v>0?`$${v.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`:null;
       return wrapWidget(wid,
-        <div className="h-full bg-white rounded-[1.75rem] border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] p-3.5 flex flex-col gap-2">
+        <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-1">
             <p className="text-[12px] font-black text-slate-700 leading-tight truncate">{b.name}</p>
             <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-slate-800':'text-slate-300'}`}>{fS(totalS)??'—'}</span>

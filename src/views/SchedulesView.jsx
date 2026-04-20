@@ -266,7 +266,7 @@ useEffect(() => {
                     const max = Math.max(...arr.map(o => o.avg), 1);
                     return arr.map(item => {
                         const txPerHr = item.avg / scale;
-                        let color = '#94a3b8';                     // ≤4  muerta   — 1 persona ociosa
+                        let color = '#64748b';                     // ≤4  muerta   — 1 persona ociosa
                         if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
                         else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
                         else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas

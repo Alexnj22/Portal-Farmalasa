@@ -135,7 +135,7 @@ const FormWfmAnalytics = ({ branches }) => {
         const applyColorsStatistical = (arr) => {
             return arr.map(item => {
                 const v = item.avgTransactions;
-                let fill = '#94a3b8';                // ≤4  muerta   — 1 persona ociosa
+                let fill = '#64748b';                // ≤4  muerta   — 1 persona ociosa
                 if      (v > 18) fill = '#FF2D55';  // >18 crítica  — 3+ personas
                 else if (v > 12) fill = '#FF9500';  // >12 pico     — 2-3 personas
                 else if (v >  4) fill = '#007AFF';  // >4  normal   — 1-2 personas
@@ -410,7 +410,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-white/70 backdrop-blur-xl rounded-full py-3.5 px-6 border border-white/80 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
-                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#94a3b8] shadow-sm"></div> Valle / Muerta</div>
+                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#007AFF] shadow-sm"></div> Tráfico Normal</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF9500] shadow-sm"></div> Hora Pico (Aviso)</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF2D55] shadow-sm"></div> Hora Crítica</div>

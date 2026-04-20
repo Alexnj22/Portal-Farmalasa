@@ -798,7 +798,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock}
           action={activeBranches.length>1&&(<select value={currentShiftBranch} onChange={e=>setShiftBranch(e.target.value)} className="text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer">{activeBranches.map(b=><option key={b.id} value={String(b.id)}>{b.name}</option>)}</select>)}>
-          <div className="overflow-y-auto h-full divide-y divide-slate-50">
+          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {shiftStatusData.length===0?(
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
             ):(
@@ -924,7 +924,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX}
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto h-full">
+          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=><div key={i} className="px-5 py-3 animate-pulse"><div className="h-3 bg-slate-100 rounded w-3/4 mb-1.5"/><div className="h-2.5 bg-slate-50 rounded w-1/2"/></div>)
               :absences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
               :absences.map(r=>{
@@ -949,7 +949,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList}
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto h-full">
+          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=><div key={i} className="px-5 py-3 animate-pulse"><div className="h-3 bg-slate-100 rounded w-3/4 mb-1.5"/><div className="h-2.5 bg-slate-50 rounded w-1/2"/></div>)
               :pendingReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
               :pendingReqs.map(r=>(
@@ -971,7 +971,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2}
           action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
-          <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto">
+          <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {branchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
@@ -1007,7 +1007,7 @@ const DashboardView = ({ openModal }) => {
               {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[9px] font-black text-slate-300 uppercase py-1">{d}</div>)}
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
-            <div className="overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
+            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
               <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(28px,1fr)' }}>
                 {calendarDays.cells.map((day,i)=>{
                   if (!day) return <div key={`pad-${i}`}/>;
@@ -1049,7 +1049,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone}
           action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver todos <ChevronRight size={11}/></button>}>
-          <div className="divide-y divide-slate-50 overflow-y-auto h-full">
+          <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}

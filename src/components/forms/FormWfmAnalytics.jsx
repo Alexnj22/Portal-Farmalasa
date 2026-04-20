@@ -167,16 +167,15 @@ const FormWfmAnalytics = ({ branches }) => {
                 }
             });
 
-            // Days: color = peak hourly avg for that DOW (consistent with hours view)
+            // Days: color = P75 of hourly averages for that DOW (robust to single-hour outliers)
             const finalDays = DAYS_ORDER.map(d => {
                 const dc = uniqueDatesMap[d].size || 1;
-                let peakHr = 0;
-                for (let h = openH; h <= closeH; h++) {
-                    const ha = Math.round((hourlyByDow[d][h] || 0) / dc);
-                    if (ha > peakHr) peakHr = ha;
-                }
+                const hrs = [];
+                for (let h = openH; h <= closeH; h++) hrs.push(Math.round((hourlyByDow[d][h] || 0) / dc));
+                hrs.sort((a, b) => a - b);
+                const p75 = hrs[Math.floor(hrs.length * 0.75)] || 0;
                 const avgSales = salesByDow[d] / dc;
-                return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: peakHr, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
+                return { dayOfWeek: d, displayLabel: DAYS_MAP[d], avgTransactions: p75, avgSales, uniqueDates: Array.from(uniqueDatesMap[d]) };
             });
 
             return applyColorsStatistical(finalDays);

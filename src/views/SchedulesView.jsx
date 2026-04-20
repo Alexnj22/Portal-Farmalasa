@@ -233,15 +233,14 @@ useEffect(() => {
                     uniqueDatesByDay[dNum].add(dStr);
                 });
 
-                // Days: color = peak hourly avg for that DOW (not daily total ÷ hours)
+                // Days: color = P75 of hourly averages for that DOW (robust to single-hour outliers)
                 const finalDays = [1, 2, 3, 4, 5, 6, 0].map(d => {
                     const dc = uniqueDatesByDay[d].size || 1;
-                    let peakHr = 0;
-                    for (let h = openH; h <= closeH; h++) {
-                        const ha = Math.round((specificHourlyMap[d][h] || 0) / dc);
-                        if (ha > peakHr) peakHr = ha;
-                    }
-                    return { day: d, avg: peakHr, label: DAY_NAMES[d] };
+                    const hrs = [];
+                    for (let h = openH; h <= closeH; h++) hrs.push(Math.round((specificHourlyMap[d][h] || 0) / dc));
+                    hrs.sort((a, b) => a - b);
+                    const p75 = hrs[Math.floor(hrs.length * 0.75)] || 0;
+                    return { day: d, avg: p75, label: DAY_NAMES[d] };
                 });
 
                 const totalDays = uniqueDates.size || 1;

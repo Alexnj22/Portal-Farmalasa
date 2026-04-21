@@ -489,10 +489,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             >
                 {/* ── Ambient glow layers ── */}
                 <div className="absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                    <div className="absolute -inset-3 rounded-[2.8rem] bg-[#1D7AFC]/12 blur-2xl" />
-                    <div className="absolute -inset-6 rounded-[3.4rem] bg-[#0A2A5E]/40 blur-3xl opacity-80" />
-                    <div className="absolute -inset-10 rounded-[4rem] bg-[#041636]/50 blur-[60px] opacity-60" />
-                    <div className="absolute -inset-14 rounded-[5rem] bg-black/30 blur-[80px] opacity-40" />
+                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#1D7AFC]/12 blur-2xl" />
+                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#0A2A5E]/35 blur-3xl opacity-70" />
+                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#041636]/40 blur-[45px] opacity-50" />
+                    <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
                 </div>
 
                 {/* ── Glass container ── */}

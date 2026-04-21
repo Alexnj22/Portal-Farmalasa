@@ -148,7 +148,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         <div className={`rounded-[2.5rem] border flex flex-col transition-all duration-300 relative transform-gpu shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 ${typeConf.color} border ${typeConf.border}`}>
+                <div className={`w-9 h-9 rounded-[0.875rem] flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
                     <TypeIcon size={16} strokeWidth={1.8} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1201,7 +1201,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'APPROVED' ? 'bg-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'
                                     }`} />
-                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${
+                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-[#007AFF]' :
                                         statusFilter === 'APPROVED' ? 'text-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'

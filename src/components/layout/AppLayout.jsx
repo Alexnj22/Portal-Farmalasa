@@ -601,7 +601,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
                                             </div>
                                         </button>
-                                        {['SUPERADMIN', 'ADMIN'].includes(String(systemRole || '').toUpperCase()) && (
+                                        {hasPermission('su_pin', 'can_view') && (
                                             <>
                                                 <div className="h-3.5 w-px bg-white/10" />
                                                 <div className="flex items-center gap-1" title="Código SU (solo visible a admin)">

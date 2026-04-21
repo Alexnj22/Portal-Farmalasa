@@ -54,6 +54,7 @@ const TimeClockView = ({ setView }) => {
     closeFeedback,
     handleAnnouncementRead,
     handleEarlyExtraRequest,
+    handleSkipPin,
   } = useTimeClockEngine();
 
   const handleLogout = useCallback(async () => {
@@ -154,7 +155,7 @@ const TimeClockView = ({ setView }) => {
                 {earlyExitData ? (
                 <EarlyExitForm earlyExitData={earlyExitData} exitReason={exitReason} exitNotes={exitNotes} onChangeReason={setExitReason} onChangeNotes={setExitNotes} onSubmit={submitEarlyExit} onCancel={cancelAuth} isProcessing={isProcessing} />
                 ) : authPrompt ? (
-                <AuthPromptPanel authPrompt={authPrompt} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelHandler={cancelAuth} forceNormalOutHandler={handleForceNormalOut} clearHandler={() => setScanCode('')} />
+                <AuthPromptPanel authPrompt={authPrompt} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelHandler={cancelAuth} forceNormalOutHandler={handleForceNormalOut} clearHandler={() => setScanCode('')} skipPinHandler={handleSkipPin} />
                 ) : (
                 <IdleScanPanel specialMode={specialMode} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelSpecialModeHandler={cancelAuth} specialOutHandler={requestSpecialOut} clearHandler={() => setScanCode('')} />
                 )}

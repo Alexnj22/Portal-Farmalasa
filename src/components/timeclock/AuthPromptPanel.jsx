@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import { ShieldAlert, XCircle } from 'lucide-react';
+import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
+
+const SU_ROLES = ['JEFE', 'SUBJEFE'];
 
 const formatTime = (dateObj) => {
   if (!dateObj) return '--:--';
@@ -15,7 +17,8 @@ const AuthPromptPanel = ({
   inputChangeHandler,
   cancelHandler,
   forceNormalOutHandler,
-  clearHandler
+  clearHandler,
+  skipPinHandler,
 }) => {
   
   // 🚨 SEGURIDAD: Limpiamos el input sin exponerlo al DOM
@@ -31,6 +34,8 @@ const AuthPromptPanel = ({
   const employeeName = authPrompt.employee?.name || 'Empleado';
   const shiftEnd = authPrompt.customConfig?.shiftEndD;
   const expectedIn = authPrompt.customConfig?.expectedIn;
+  const empRole = String(authPrompt.employee?.role || '').toUpperCase();
+  const requiresSuPin = SU_ROLES.includes(empRole);
 
   const hasValue = scanCode && scanCode.length > 0;
 
@@ -53,6 +58,12 @@ const AuthPromptPanel = ({
           <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
             {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
+          {requiresSuPin && (
+            <div className="mt-2.5 flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-500/10 border border-purple-500/25">
+              <ShieldAlert size={11} className="text-purple-400 shrink-0" />
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-purple-400">Requiere código SU (6 dígitos)</span>
+            </div>
+          )}
         </div>
 
         {/* MIDDLE */}
@@ -103,6 +114,11 @@ const AuthPromptPanel = ({
             {promptType === 'OUT_LATE' && (
               <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-300 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-95">
                 No, guardar según horario
+              </button>
+            )}
+            {skipPinHandler && (
+              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-amber-500/10 px-5 py-3.5 rounded-full border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-95">
+                <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
             <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-red-500/10 px-5 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-95">

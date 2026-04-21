@@ -271,10 +271,17 @@ export const calculateTotalWeeklyHours = (weeklySchedule, shifts) => {
 
 export const getHourlyCode = () => {
     const d = new Date();
-    // Semilla basada en fecha/hora para que todos los clientes tengan el mismo PIN a la misma hora
     const seed = (d.getFullYear() * 365) + (d.getDate() * 31) + (d.getMonth() * 12) + (d.getHours() * 60);
     const rawNumber = Math.floor(Math.abs(Math.sin(seed) * 10000));
     return rawNumber.toString().padStart(4, '0').substring(0, 4);
+};
+
+// Sufijo de 2 dígitos para el SU PIN — algoritmo independiente, no derivable del PIN normal
+export const getSuPinSuffix = () => {
+    const d = new Date();
+    const seed = (d.getFullYear() * 613) + (d.getMonth() * 127) + (d.getDate() * 89) + (d.getHours() * 43);
+    const raw = Math.floor(Math.abs(Math.sin(seed + 1337) * 100));
+    return raw.toString().padStart(2, '0');
 };
 
 // ============================================================================

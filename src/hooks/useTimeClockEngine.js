@@ -19,7 +19,7 @@ import {
     getApplicableAnnouncement,
 } from '../utils/timeClock.audit';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
-import { getHourlyCode, getTodayScheduleConfig, toLocalISO } from '../utils/helpers';
+import { getHourlyCode, getSuPinSuffix, getTodayScheduleConfig, toLocalISO } from '../utils/helpers';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 
@@ -232,12 +232,16 @@ export function useTimeClockEngine(props = {}) {
             console.error('❌ Kiosko: error al guardar marcaje en DB:', err);
         });
 
+        const skipWarning = extendedMetadata.pinOmitido
+            ? 'Esta acción no fue autorizada. Se notificará a Talento Humano.'
+            : (presentation.warning || '');
+
         const normalizedFeedback = buildFeedbackState({
             employee,
             theme: presentation,
             announcement: applicableAnnouncement,
             now: nowDate,
-            warning: presentation.warning,
+            warning: skipWarning,
             shiftName: presentation.shiftName
         });
 
@@ -333,6 +337,37 @@ export function useTimeClockEngine(props = {}) {
             inputRef.current?.focus();
         });
     }, [authPrompt, earlyPendingData, registerAttendance, resetOperationalState]);
+
+    const SU_ROLES = ['JEFE', 'SUBJEFE'];
+
+    const handleSkipPin = useCallback(() => {
+        if (!authPrompt) return;
+        const { employee, type, customConfig, kioskData } = authPrompt;
+        const skipMetadata = { pinOmitido: true, pendingHRReview: true, skipReason: 'PIN omitido en kiosko', accionOriginal: type };
+
+        appendAuditLog?.('MARCAJE_SIN_PIN', employee?.id || 'KIOSCO', {
+            empleado: employee?.name,
+            codigo_empleado: employee?.code,
+            accion_intentada: type,
+            severity: 'WARN',
+            pendingHRReview: true,
+            source: 'KIOSK',
+            branch_id: kioskData?.branchId,
+            branch_name: kioskData?.branchName,
+            device_name: kioskData?.deviceName,
+        });
+
+        if (type === 'SPECIAL_OUT_REQUEST') {
+            setEarlyExitData({ employee, customConfig, kioskData, skipMetadata });
+            setAuthPrompt(null);
+            setScanCode('');
+            setIsProcessing(false);
+        } else {
+            finalizePunch(employee, type, customConfig, skipMetadata, kioskData, time);
+            setAuthPrompt(null);
+            setScanCode('');
+        }
+    }, [authPrompt, appendAuditLog, finalizePunch, time]);
 
     const handleEarlyExtraRequest = useCallback(() => {
         if (!earlyPendingData) return;
@@ -476,12 +511,16 @@ const submitEarlyExit = useCallback((e) => {
             }
         }
 
-        const metadata = buildEarlyExitMetadata({
+        const baseMetadata = buildEarlyExitMetadata({
             reason: exitReason,
             notes: exitNotes,
             adjustedTimestamp: adjustedTime,
             actualPunchTime: nowTime.toISOString()
         });
+
+        const metadata = earlyExitData.skipMetadata
+            ? { ...baseMetadata, ...earlyExitData.skipMetadata }
+            : baseMetadata;
 
         finalizePunch(
             earlyExitData.employee,
@@ -567,7 +606,12 @@ const submitEarlyExit = useCallback((e) => {
         kioskConfig.inputMethod = inputMethod;
 
         if (authPrompt) {
-            if (codeToFind === String(hourlyPin || '').toUpperCase()) {
+            const empRole = String(authPrompt.employee?.role || '').toUpperCase();
+            const requiresSuPin = SU_ROLES.includes(empRole);
+            const suSuffix = requiresSuPin ? getSuPinSuffix() : '';
+            const expectedPin = `${hourlyPin || ''}${suSuffix}`.toUpperCase();
+
+            if (codeToFind === expectedPin) {
                 if (authPrompt.type === 'SPECIAL_OUT_REQUEST') {
                     setEarlyExitData({
                         employee: authPrompt.employee,
@@ -624,6 +668,7 @@ const submitEarlyExit = useCallback((e) => {
                         pin_ingresado: codeToFind,
                         accion_intentada: authPrompt.type,
                         metodo_ingreso: inputMethod,
+                        requiere_su_pin: requiresSuPin,
                         alerta: 'Posible intento de manipulación del sistema / evasión de seguridad',
                         source: 'KIOSK',
                         severity: 'WARNING',
@@ -929,6 +974,7 @@ const submitEarlyExit = useCallback((e) => {
         handleForceNormalOut,
         handleAnnouncementRead,
         handleEarlyExtraRequest,
+        handleSkipPin,
 
         keyDownHandler: handleKeyDown,
         inputChangeHandler: handleInputChange,

@@ -7,7 +7,7 @@ import {
     Home, Bell, FolderOpen, BellRing, LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getHourlyCode } from '../../utils/helpers';
+import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -64,6 +64,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [openGroups, setOpenGroups] = useState({});  // groupKey → bool
 
     const [authPin, setAuthPin] = useState(getHourlyCode());
+    const [suSuffix, setSuSuffix] = useState(getSuPinSuffix());
     const [isCopied, setIsCopied] = useState(false);
 
     // Flyout tooltip (desktop compact mode)
@@ -103,7 +104,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, []);
 
     useEffect(() => {
-        const timer = setInterval(() => setAuthPin(getHourlyCode()), 10000);
+        const timer = setInterval(() => {
+            setAuthPin(getHourlyCode());
+            setSuSuffix(getSuPinSuffix());
+        }, 10000);
         return () => clearInterval(timer);
     }, []);
 
@@ -597,6 +601,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
                                             </div>
                                         </button>
+                                        {['SUPERADMIN', 'ADMIN'].includes(String(systemRole || '').toUpperCase()) && (
+                                            <>
+                                                <div className="h-3.5 w-px bg-white/10" />
+                                                <div className="flex items-center gap-1" title="Código SU (solo visible a admin)">
+                                                    <span className="text-[9px] font-bold text-purple-400/70 uppercase tracking-widest">SU</span>
+                                                    <span className="text-[12px] font-black text-purple-300 tracking-widest font-mono">{authPin}{suSuffix}</span>
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>

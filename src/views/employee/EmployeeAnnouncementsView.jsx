@@ -633,13 +633,16 @@ const EmployeeAnnouncementsView = () => {
         } else if (tab === 'READ') {
             list = list.filter(a => readCheck(a));
             if (!showOldRead) list = list.filter(a => (a.date || '').slice(0, 7) === currentYM);
-            // Leídos: más recientes primero; dentro del mismo día, urgentes antes
+            // Leídos: día más reciente primero; dentro del mismo día urgentes antes; mismo día+urgencia → hora más reciente
             list = [...list].sort((a, b) => {
-                const dateDiff = new Date(b.date) - new Date(a.date);
-                if (dateDiff !== 0) return dateDiff;
+                const aDay = (a.date || '').slice(0, 10);
+                const bDay = (b.date || '').slice(0, 10);
+                if (bDay > aDay) return 1;
+                if (bDay < aDay) return -1;
                 const aUrgent = a.priority === 'URGENT' ? 0 : 1;
                 const bUrgent = b.priority === 'URGENT' ? 0 : 1;
-                return aUrgent - bUrgent;
+                if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+                return new Date(b.date) - new Date(a.date);
             });
         }
         return list;

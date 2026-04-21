@@ -618,21 +618,28 @@ const EmployeeAnnouncementsView = () => {
                 (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)))
             );
         }).sort((a, b) => {
-            // 1. Urgentes siempre primero
+            // Urgentes primero, luego más antiguos (orden cronológico para el stack sin leer)
             const aUrgent = a.priority === 'URGENT' ? 0 : 1;
             const bUrgent = b.priority === 'URGENT' ? 0 : 1;
             if (aUrgent !== bUrgent) return aUrgent - bUrgent;
-            // 2. Más recientes primero (fecha descendente)
-            return new Date(b.date) - new Date(a.date);
+            return new Date(a.date) - new Date(b.date);
         });
     }, [announcements, user]);
 
     const byTab = useMemo(() => {
         let list = myAnnouncements;
-        if (tab === 'UNREAD') list = list.filter(a => !readCheck(a));
-        else if (tab === 'READ') {
+        if (tab === 'UNREAD') {
+            list = list.filter(a => !readCheck(a));
+        } else if (tab === 'READ') {
             list = list.filter(a => readCheck(a));
             if (!showOldRead) list = list.filter(a => (a.date || '').slice(0, 7) === currentYM);
+            // Leídos: urgentes primero, luego más recientes
+            list = [...list].sort((a, b) => {
+                const aUrgent = a.priority === 'URGENT' ? 0 : 1;
+                const bUrgent = b.priority === 'URGENT' ? 0 : 1;
+                if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+                return new Date(b.date) - new Date(a.date);
+            });
         }
         return list;
     }, [myAnnouncements, tab, user?.id, showOldRead, currentYM]);

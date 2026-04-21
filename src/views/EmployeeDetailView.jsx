@@ -7,7 +7,7 @@ import {
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
-    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope
+    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -97,6 +97,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [ausenciasSearchOpen, setAusenciasSearchOpen] = useState(false);
     const [ausenciasDateFrom, setAusenciasDateFrom]     = useState('');
     const [ausenciasDateTo, setAusenciasDateTo]         = useState('');
+    const [ausenciasCalMonth, setAusenciasCalMonth]     = useState(() => new Date());
 
     const timeline = useMemo(() => {
         const rawHistory = Array.isArray(emp.history) ? emp.history : [];
@@ -138,6 +139,37 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         }
         return list;
     }, [timeline, ausenciasDateFrom, ausenciasDateTo, ausenciasSearch]);
+
+    // Calendar: expand date ranges for all ausencias (unfiltered) to map days → types
+    const ausenciasCalEvents = useMemo(() => {
+        const map = {};
+        const addDay = (d, type) => { if (!map[d]) map[d] = new Set(); map[d].add(type); };
+        timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY').forEach(ev => {
+            const meta = ev.metadata || {};
+            if (ev.type === 'PERMIT' && meta.permissionDates?.length > 0) {
+                meta.permissionDates.forEach(d => addDay(d, 'PERMIT'));
+            } else {
+                const start = new Date((ev.date || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+                const end   = new Date((meta.endDate || ev.date || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+                const cur   = new Date(start);
+                while (cur <= end) {
+                    addDay(cur.toISOString().split('T')[0], ev.type);
+                    cur.setDate(cur.getDate() + 1);
+                }
+            }
+        });
+        return map;
+    }, [timeline]);
+
+    const ausenciasCalDays = useMemo(() => {
+        const y = ausenciasCalMonth.getFullYear(), m = ausenciasCalMonth.getMonth();
+        const firstDow = new Date(y, m, 1).getDay();
+        const dim = new Date(y, m + 1, 0).getDate();
+        const cells = [];
+        for (let i = 0; i < firstDow; i++) cells.push(null);
+        for (let d = 1; d <= dim; d++) cells.push(d);
+        return { cells, year: y, month: m };
+    }, [ausenciasCalMonth]);
 
     const fallbackInitials = emp.name ? emp.name.charAt(0).toUpperCase() : '👤';
 
@@ -644,16 +676,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 )}
 
                                 {/* PESTAÑA 3: AUSENCIAS (Permisos + Incapacidades) */}
-                                {currentTab === 'permissions' && (
-                                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                        {/* Header */}
-                                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                                {currentTab === 'permissions' && (() => {
+                                    const todayStr = new Date().toISOString().split('T')[0];
+                                    return (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
+
+                                        {/* ── Cabecera ── */}
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
                                                 <Stethoscope size={18} className="text-amber-500"/> Ausencias
                                                 <span className="text-[11px] font-bold text-slate-400 normal-case tracking-normal">Permisos e Incapacidades</span>
                                             </h3>
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                {/* Rango de fechas */}
                                                 <div className="flex items-center gap-1.5">
                                                     <div className="bg-white border border-slate-200 rounded-xl h-9 overflow-hidden w-[120px]">
                                                         <LiquidDatePicker value={ausenciasDateFrom} onChange={setAusenciasDateFrom} />
@@ -669,7 +703,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         </button>
                                                     )}
                                                 </div>
-                                                {/* Buscador expandible */}
                                                 <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-slate-200 px-2.5 py-1 w-40' : 'bg-white/60 border-slate-200/60 w-8 h-8 justify-center'}`}>
                                                     <button type="button"
                                                         onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
@@ -686,25 +719,95 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         </div>
 
-                                        {/* Listado */}
+                                        {/* ── Calendario ── */}
+                                        <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.5rem] p-4 shadow-sm">
+                                            {/* Navegación de mes */}
+                                            <div className="flex items-center justify-between mb-3">
+                                                <button onClick={() => setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-all active:scale-90">
+                                                    <ChevronLeft size={14} strokeWidth={2.5}/>
+                                                </button>
+                                                <span className="text-[13px] font-black text-slate-700 capitalize">
+                                                    {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
+                                                </span>
+                                                <button onClick={() => setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-all active:scale-90">
+                                                    <ChevronRight size={14} strokeWidth={2.5}/>
+                                                </button>
+                                            </div>
+                                            {/* Encabezados días */}
+                                            <div className="grid grid-cols-7 mb-1">
+                                                {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
+                                                    <div key={d} className="text-center text-[9px] font-black text-slate-300 uppercase py-1">{d}</div>
+                                                ))}
+                                            </div>
+                                            {/* Celdas */}
+                                            <div className="grid grid-cols-7" style={{ gridAutoRows: 'minmax(32px,1fr)' }}>
+                                                {ausenciasCalDays.cells.map((day, i) => {
+                                                    if (!day) return <div key={`pad-${i}`}/>;
+                                                    const mm = String(ausenciasCalDays.month + 1).padStart(2,'0');
+                                                    const dd = String(day).padStart(2,'0');
+                                                    const ds = `${ausenciasCalDays.year}-${mm}-${dd}`;
+                                                    const isToday = ds === todayStr;
+                                                    const types = ausenciasCalEvents[ds];
+                                                    const hasPermit = types?.has('PERMIT');
+                                                    const hasDisab  = types?.has('DISABILITY');
+                                                    const cellBg = isToday
+                                                        ? 'bg-[#007AFF]'
+                                                        : hasPermit && hasDisab
+                                                        ? 'bg-gradient-to-br from-amber-100 to-red-100 border border-amber-200'
+                                                        : hasPermit  ? 'bg-amber-100 border border-amber-200'
+                                                        : hasDisab   ? 'bg-red-100 border border-red-200'
+                                                        : 'hover:bg-slate-50/60';
+                                                    return (
+                                                        <div key={ds} className={`flex flex-col items-center justify-center rounded-lg transition-colors cursor-default ${cellBg}`}>
+                                                            <span className={`text-[12px] font-bold leading-none ${isToday ? 'text-white' : hasPermit || hasDisab ? 'text-slate-700' : 'text-slate-500'}`}>
+                                                                {day}
+                                                            </span>
+                                                            {(hasPermit || hasDisab) && !isToday && (
+                                                                <div className="flex gap-0.5 mt-0.5">
+                                                                    {hasPermit  && <span className="w-1 h-1 rounded-full bg-amber-500"/>}
+                                                                    {hasDisab   && <span className="w-1 h-1 rounded-full bg-red-500"/>}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {/* Leyenda */}
+                                            <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200 flex-shrink-0"/>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Permiso</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 flex-shrink-0"/>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Incapacidad</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ── Cards 2 columnas ── */}
                                         {ausenciasData.length > 0 ? (
-                                            <div className="grid grid-cols-1 gap-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 {ausenciasData.map((ev, idx) => {
                                                     const isDisability = ev.type === 'DISABILITY';
                                                     const meta = ev.metadata || {};
                                                     const cfg = isDisability
-                                                        ? { bg: 'bg-red-50/60', border: 'border-red-200/60', text: 'text-red-700', badge: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500', Icon: Stethoscope, label: 'Incapacidad' }
-                                                        : { bg: 'bg-amber-50/60', border: 'border-amber-200/60', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500', Icon: FileText, label: 'Permiso' };
+                                                        ? { bg: 'bg-red-50/60', border: 'border-red-200/60', text: 'text-red-700', badge: 'bg-red-100 text-red-700 border-red-200', leftBorder: 'border-red-300', Icon: Stethoscope, label: 'Incapacidad' }
+                                                        : { bg: 'bg-amber-50/60', border: 'border-amber-200/60', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700 border-amber-200', leftBorder: 'border-amber-300', Icon: FileText, label: 'Permiso' };
                                                     return (
                                                         <div key={ev.id || idx} className={`${cfg.bg} border ${cfg.border} rounded-[1.5rem] p-4 flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] transition-all duration-300 shadow-sm`}>
-                                                            <div className="flex items-start justify-between gap-3 flex-wrap">
+                                                            <div className="flex items-start justify-between gap-3">
                                                                 <div className="flex items-center gap-2.5">
                                                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border`}>
-                                                                        <cfg.Icon size={14} strokeWidth={2} />
+                                                                        <cfg.Icon size={14} strokeWidth={2}/>
                                                                     </div>
                                                                     <div>
                                                                         <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.text}`}>{cfg.label}</span>
-                                                                        <p className="text-[10px] text-slate-400 font-bold">{formatDate(ev.date)}{meta.endDate && meta.endDate !== ev.date && ` → ${formatDate(meta.endDate)}`}</p>
+                                                                        <p className="text-[10px] text-slate-400 font-bold">
+                                                                            {formatDate(ev.date)}{meta.endDate && meta.endDate !== ev.date && ` → ${formatDate(meta.endDate)}`}
+                                                                        </p>
                                                                     </div>
                                                                 </div>
                                                                 {meta.days && (
@@ -714,7 +817,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 )}
                                                             </div>
                                                             {ev.note && (
-                                                                <p className={`text-[12px] font-medium text-slate-600 border-l-[3px] pl-3 py-0.5 ${isDisability ? 'border-red-300' : 'border-amber-300'}`}>
+                                                                <p className={`text-[12px] font-medium text-slate-600 border-l-[3px] pl-3 py-0.5 ${cfg.leftBorder}`}>
                                                                     {ev.note}
                                                                 </p>
                                                             )}
@@ -730,15 +833,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 })}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center py-20 opacity-50 px-4">
-                                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200">
-                                                    <Stethoscope size={28} className="text-slate-400" strokeWidth={1.5}/>
+                                            <div className="flex flex-col items-center justify-center py-16 opacity-50">
+                                                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3 border border-slate-200">
+                                                    <Stethoscope size={24} className="text-slate-400" strokeWidth={1.5}/>
                                                 </div>
-                                                <p className="font-black uppercase tracking-widest text-[11px] text-slate-600">Sin Ausencias Registradas</p>
+                                                <p className="font-black uppercase tracking-widest text-[11px] text-slate-500">Sin Ausencias Registradas</p>
                                             </div>
                                         )}
                                     </div>
-                                )}
+                                    );
+                                })()}
 
                                 {/* PESTAÑA 4: HORARIOS */}
                                 {currentTab === 'payroll' && (

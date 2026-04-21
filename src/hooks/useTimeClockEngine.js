@@ -3,6 +3,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import {
     buildDateFromTime,
+    findLastPunchOfTypes,
     format12hNoSeconds,
     formatDuration,
     getKioskInputMethod,
@@ -56,6 +57,8 @@ export function useTimeClockEngine(props = {}) {
     const [earlyExitData, setEarlyExitData] = useState(null);
     const [exitReason, setExitReason] = useState('');
     const [exitNotes, setExitNotes] = useState('');
+
+    const [earlyPendingData, setEarlyPendingData] = useState(null);
 
     const [alertConfig, setAlertConfig] = useState(null);
 
@@ -151,12 +154,20 @@ export function useTimeClockEngine(props = {}) {
             clearTimeout(closeTimerRef.current);
             closeTimerRef.current = null;
         }
+        if (earlyPendingData) {
+            registerAttendance(
+                earlyPendingData.employee.id,
+                'IN',
+                { adjustedTimestamp: earlyPendingData.adjustedTimestamp, actualPunchTime: earlyPendingData.actualTime.toISOString() }
+            ).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
+            setEarlyPendingData(null);
+        }
         setFeedback(null);
         setIsProcessing(false);
         setScanCode('');
         keystrokesRef.current = [];
         ensureInputFocus();
-    }, [ensureInputFocus]);
+    }, [earlyPendingData, ensureInputFocus, registerAttendance]);
 
     const scheduleFeedbackClose = useCallback((delayMs = 4000) => {
         if (closeTimerRef.current) {
@@ -181,6 +192,7 @@ export function useTimeClockEngine(props = {}) {
         setEarlyExitData(null);
         setExitReason('');
         setExitNotes('');
+        setEarlyPendingData(null);
         setScanCode('');
         setIsProcessing(false);
         setIsConfiguring(false);
@@ -216,7 +228,9 @@ export function useTimeClockEngine(props = {}) {
             employee.id,
             presentation.finalType,
             Object.keys(extendedMetadata).length > 0 ? extendedMetadata : null
-        );
+        ).catch((err) => {
+            console.error('❌ Kiosko: error al guardar marcaje en DB:', err);
+        });
 
         const normalizedFeedback = buildFeedbackState({
             employee,
@@ -247,7 +261,7 @@ export function useTimeClockEngine(props = {}) {
 
         const { employee, customConfig, kioskData } = authPrompt;
         const metadata = buildLateOutAdjustedMetadata({
-            shiftEndD: customConfig?.shiftEndD,
+            shiftEndDate: customConfig?.shiftEndD,
             now: time,
         });
 
@@ -305,13 +319,37 @@ export function useTimeClockEngine(props = {}) {
     }, []);
 
     const cancelAuth = useCallback(() => {
+        if (authPrompt?.type === 'IN_EARLY_EXTRA' && earlyPendingData) {
+            registerAttendance(
+                earlyPendingData.employee.id,
+                'IN',
+                { adjustedTimestamp: earlyPendingData.adjustedTimestamp, actualPunchTime: earlyPendingData.actualTime.toISOString() }
+            ).catch((err) => console.error('❌ Kiosko: error al guardar entrada temprana:', err));
+        }
         resetOperationalState();
         setIsRevokeModalOpen(false);
 
         requestAnimationFrame(() => {
             inputRef.current?.focus();
         });
-    }, [resetOperationalState]);
+    }, [authPrompt, earlyPendingData, registerAttendance, resetOperationalState]);
+
+    const handleEarlyExtraRequest = useCallback(() => {
+        if (!earlyPendingData) return;
+        if (closeTimerRef.current) {
+            clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
+        setFeedback(null);
+        setAuthPrompt(buildAuthPromptState({
+            employee: earlyPendingData.employee,
+            type: 'IN_EARLY_EXTRA',
+            customConfig: earlyPendingData.customConfig,
+            kioskData: earlyPendingData.kioskData,
+        }));
+        setScanCode('');
+        requestAnimationFrame(() => { inputRef.current?.focus(); });
+    }, [earlyPendingData]);
 
     const executeRevokeConfig = useCallback(async () => {
         setIsProcessing(true);
@@ -478,6 +516,8 @@ const submitEarlyExit = useCallback((e) => {
             return;
         }
 
+        try {
+
         const inputMethod = getKioskInputMethod(keystrokesRef.current);
         keystrokesRef.current = [];
 
@@ -537,6 +577,33 @@ const submitEarlyExit = useCallback((e) => {
                     setAuthPrompt(null);
                     setScanCode('');
                     setIsProcessing(false);
+                } else if (authPrompt.type === 'IN_EARLY_EXTRA') {
+                    const metadata = {
+                        earlyMins: earlyPendingData?.earlyMins,
+                        extraTimeAuthorized: true,
+                        actualPunchTime: earlyPendingData?.actualTime?.toISOString() || time.toISOString(),
+                    };
+                    registerAttendance(
+                        authPrompt.employee.id,
+                        'IN',
+                        metadata
+                    ).catch((err) => console.error('❌ Kiosko: error al guardar tiempo extra:', err));
+                    setFeedback({
+                        status: 'success',
+                        employee: authPrompt.employee,
+                        message: 'Tiempo extra registrado',
+                        subtext: `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
+                        color: 'purple',
+                        icon: ShieldAlert,
+                        time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                        shiftName: authPrompt.customConfig?.config?.shift?.name || 'General',
+                        announcement: null,
+                        warning: '',
+                    });
+                    setEarlyPendingData(null);
+                    setAuthPrompt(null);
+                    setScanCode('');
+                    scheduleFeedbackClose(4000);
                 } else {
                     finalizePunch(
                         authPrompt.employee,
@@ -719,6 +786,41 @@ const submitEarlyExit = useCallback((e) => {
         }
         // ─────────────────────────────────────────────────────────────
 
+        if (flow.kind === 'IN_EARLY_AUTO') {
+            const adjustedTime = new Date(flow.adjustedTimestamp);
+            const yesterday = new Date(time);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const OPEN_TYPES = ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN'];
+            const yesterdayOpen = findLastPunchOfTypes(employee, OPEN_TYPES, yesterday);
+
+            setEarlyPendingData({
+                employee,
+                customConfig,
+                kioskData: kioskConfig,
+                earlyMins: flow.earlyMins,
+                actualTime: time,
+                adjustedTimestamp: flow.adjustedTimestamp,
+            });
+
+            setFeedback({
+                status: 'success',
+                employee,
+                message: 'Entrada registrada',
+                subtext: `Tu hora de entrada es a las ${format12hNoSeconds(adjustedTime)}`,
+                color: 'blue',
+                icon: ShieldAlert,
+                time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                shiftName: customConfig?.config?.shift?.name || 'General',
+                announcement: null,
+                warning: yesterdayOpen ? '⚠️ Nota: parece que faltó registrar una salida el día anterior.' : '',
+                earlyExtra: true,
+            });
+            setScanCode('');
+            setIsProcessing(false);
+            scheduleFeedbackClose(5000);
+            return;
+        }
+
         const shouldForceAuth = ['IN_EXTRA', 'IN_EARLY', 'IN_AFTER_SHIFT', 'OUT_LATE'].includes(flow?.type);
 
         if (flow.kind === 'AUTH' || shouldForceAuth) {
@@ -746,7 +848,25 @@ const submitEarlyExit = useCallback((e) => {
             return;
         }
 
-        finalizePunch(employee, flow.type, customConfig, null, kioskConfig, time);
+        const flowMetadata = flow.adjustedTimestamp
+            ? { adjustedTimestamp: flow.adjustedTimestamp, actualPunchTime: flow.actualPunchTime, note: flow.note }
+            : null;
+
+        finalizePunch(employee, flow.type, customConfig, flowMetadata, kioskConfig, time);
+
+        } catch (err) {
+            console.error('❌ Kiosko: error inesperado en handleScan:', err);
+            setFeedback({
+                status: 'error',
+                message: 'ERROR DE CONEXIÓN',
+                subtext: 'No se pudo procesar. Intente de nuevo.',
+                color: 'red',
+                icon: ShieldAlert,
+            });
+            setScanCode('');
+            setIsProcessing(false);
+            scheduleFeedbackClose(4000);
+        }
     }, [
         appendAuditLog,
         authPrompt,
@@ -787,6 +907,8 @@ const submitEarlyExit = useCallback((e) => {
         setExitReason,
         exitNotes,
         setExitNotes,
+        earlyPendingData,
+        handleEarlyExtraRequest,
         inputRef,
         ensureInputFocus,
         time,
@@ -806,6 +928,7 @@ const submitEarlyExit = useCallback((e) => {
         closeFeedback,
         handleForceNormalOut,
         handleAnnouncementRead,
+        handleEarlyExtraRequest,
 
         keyDownHandler: handleKeyDown,
         inputChangeHandler: handleInputChange,

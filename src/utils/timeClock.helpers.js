@@ -216,8 +216,19 @@ export const resolveAttendanceFlow = ({
 
   if (type === 'IN' && expectedIn) {
     const diffMins = Math.floor((currentTime - expectedIn) / 60000);
-    if (diffMins < -5) {
+    if (diffMins < -30) {
       return { type: 'IN', requiresAuth: true, authType: 'IN_EARLY', lastPunch };
+    }
+    if (diffMins < 0) {
+      return {
+        type: 'IN',
+        kind: 'IN_EARLY_AUTO',
+        requiresAuth: false,
+        adjustedTimestamp: expectedIn.toISOString(),
+        actualPunchTime: currentTime.toISOString(),
+        earlyMins: Math.abs(diffMins),
+        lastPunch,
+      };
     }
   }
 

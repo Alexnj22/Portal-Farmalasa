@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
 const THEME_MAP = {
@@ -16,6 +16,7 @@ export default function FeedbackOverlay({
   feedback,
   onClose,
   onAnnouncementRead,
+  onEarlyExtra,
 }) {
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -24,7 +25,7 @@ export default function FeedbackOverlay({
   const {
     status,
     color,
-    icon: Icon, 
+    icon: Icon,
     employee,
     message,
     subtext,
@@ -32,6 +33,7 @@ export default function FeedbackOverlay({
     time,
     announcement,
     isLactationAction,
+    earlyExtra,
   } = feedback;
 
   const theme = THEME_MAP[color] || THEME_MAP.slate;
@@ -122,6 +124,17 @@ export default function FeedbackOverlay({
                     <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">{warning}</span>
                   </div>
+                )}
+
+                {earlyExtra && onEarlyExtra && (
+                  <button
+                    type="button"
+                    onClick={onEarlyExtra}
+                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-purple-500/10 backdrop-blur-xl border border-purple-500/30 text-purple-300 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] w-full transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-200 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
+                  >
+                    <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
+                    <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
+                  </button>
                 )}
 
                 {/* Reloj (Mismo ancho automático y misma curvatura de borde que el subtexto) */}

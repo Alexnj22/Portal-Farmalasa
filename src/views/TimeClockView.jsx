@@ -53,6 +53,7 @@ const TimeClockView = ({ setView }) => {
     handleForceNormalOut,
     closeFeedback,
     handleAnnouncementRead,
+    handleEarlyExtraRequest,
   } = useTimeClockEngine();
 
   const handleLogout = useCallback(async () => {
@@ -130,7 +131,7 @@ const TimeClockView = ({ setView }) => {
 
       {isConfiguring && <KioskConfigModal isOpen={isConfiguring} kioskConfig={typeof window !== 'undefined' ? localStorage.getItem('kiosk_config') : null} branches={branches} selectedBranchId={selectedBranchId} deviceNameInput={deviceNameInput} isProcessing={isProcessing} onChangeBranch={setSelectedBranchId} onChangeDeviceName={setDeviceNameInput} onSave={handleSaveConfig} onRevoke={handleRevokeConfig} onClose={cancelAuth} />}
       
-      {feedback && <FeedbackOverlay feedback={feedback} onClose={closeFeedback} onAnnouncementRead={handleAnnouncementRead} />}
+      {feedback && <FeedbackOverlay feedback={feedback} onClose={closeFeedback} onAnnouncementRead={handleAnnouncementRead} onEarlyExtra={handleEarlyExtraRequest} />}
 
       {/* 🚨 2. CONTENEDOR FLEXIBLE: Eliminado justify-center estricto, usamos py para dar margen y centramos el contenido interno. */}
       <main className="relative z-10 flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24">

@@ -45,13 +45,13 @@ const AuthPromptPanel = ({
             <ShieldAlert size={42} className="text-orange-400 drop-shadow-[0_2px_10px_rgba(249,115,22,0.8)] sm:w-12 sm:h-12" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
-            {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : 'Autorización Requerida'}
+            {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : promptType === 'IN_EARLY_EXTRA' ? 'Registrar Tiempo Extra' : 'Autorización Requerida'}
           </h1>
           <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-orange-400/80 transition-colors px-2">
-            {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : `Turno Extra: ${employeeName}`}
+            {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : promptType === 'IN_EARLY_EXTRA' ? `Tiempo extra: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
           <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
-            {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : 'Solicite a su supervisor autorizar el movimiento.'}
+            {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
         </div>
 

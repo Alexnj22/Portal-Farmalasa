@@ -114,6 +114,11 @@ export const buildFinalPunchPresentation = ({
     presentation.metadata.authorizedEarly = true;
   }
 
+  if (rawType === 'IN_EARLY_EXTRA') {
+    presentation.finalType = 'IN';
+    presentation.metadata.extraTimeAuthorized = true;
+  }
+
   if (rawType === 'OUT_LATE') {
     presentation.finalType = 'OUT';
     presentation.metadata.authorizedLate = true;
@@ -142,6 +147,11 @@ export const buildFinalPunchPresentation = ({
         presentation.subtext = 'Registro fuera de horario';
         presentation.color = 'purple';
         presentation.iconKey = 'shield';
+      } else if (rawType === 'IN_EARLY_EXTRA') {
+        presentation.message = 'Tiempo extra registrado';
+        presentation.subtext = `Entrada con hora real autorizada`;
+        presentation.color = 'purple';
+        presentation.iconKey = 'plus';
       } else {
         presentation.lateStatus = checkLateness(expectedIn, now);
         presentation.message = rawType === 'IN_EARLY' ? 'Entrada temprana autorizada' : 'Bienvenido';

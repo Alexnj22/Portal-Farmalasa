@@ -66,6 +66,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [authPin, setAuthPin] = useState(getHourlyCode());
     const [suSuffix, setSuSuffix] = useState(getSuPinSuffix());
     const [isCopied, setIsCopied] = useState(false);
+    const [isSuCopied, setIsSuCopied] = useState(false);
 
     // Flyout tooltip (desktop compact mode)
     const [flyout, setFlyout] = useState(null); // { type:'item'|'group', label, items?, x, y }
@@ -205,6 +206,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         navigator.clipboard.writeText(authPin);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    const handleCopySuPin = () => {
+        navigator.clipboard.writeText(`${authPin}${suSuffix}`);
+        setIsSuCopied(true);
+        setTimeout(() => setIsSuCopied(false), 2000);
     };
 
     // Bell: show for users who can receive announcements
@@ -604,10 +611,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {hasPermission('su_pin', 'can_view') && (
                                             <>
                                                 <div className="h-3.5 w-px bg-white/10" />
-                                                <div className="flex items-center gap-1" title="Código SU (solo visible a admin)">
-                                                    <span className="text-[9px] font-bold text-purple-400/70 uppercase tracking-widest">SU</span>
-                                                    <span className="text-[12px] font-black text-purple-300 tracking-widest font-mono">{authPin}{suSuffix}</span>
-                                                </div>
+                                                <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
+                                                    <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
+                                                    <div className="relative w-14 flex items-center justify-center">
+                                                        <span className={`absolute text-[12px] font-black text-purple-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
+                                                        <Copy size={13} className={`absolute text-purple-300/80 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
+                                                        <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                                                    </div>
+                                                </button>
                                             </>
                                         )}
                                     </>

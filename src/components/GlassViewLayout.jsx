@@ -29,7 +29,7 @@ const GlassViewLayout = ({
 
             {/* HEADER COMPACTO Y DE UNA SOLA LÍNEA */}
             <div className="absolute top-4 md:top-6 left-0 right-0 z-40 px-2 md:px-6 pointer-events-none">
-                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2rem] md:rounded-[2.5rem] py-4 px-4 md:py-6 md:px-10 relative overflow-visible pointer-events-auto transition-all duration-500 ease-out`}>
+                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2rem] md:rounded-[2.5rem] py-4 px-4 md:py-6 md:px-10 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out`}>
 
                     <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none"></div>
 

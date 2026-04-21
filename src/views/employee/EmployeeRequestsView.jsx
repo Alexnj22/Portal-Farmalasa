@@ -1194,14 +1194,14 @@ const EmployeeRequestsView = () => {
                                 ))}
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] col-span-full">
+                            <div key={statusFilter} className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] col-span-full">
                                 <div className="relative group flex flex-col items-center text-center">
-                                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${
+                                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 pointer-events-none ${
                                         statusFilter === 'PENDING' ? 'bg-[#007AFF]' :
                                         statusFilter === 'APPROVED' ? 'bg-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'
                                     }`} />
-                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-[#007AFF]' :
                                         statusFilter === 'APPROVED' ? 'text-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'

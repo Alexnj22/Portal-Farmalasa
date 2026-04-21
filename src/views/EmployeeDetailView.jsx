@@ -183,6 +183,24 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         return map;
     }, [timeline]);
 
+    // Shift hours per Spanish day name, for tooltip "horas de turno"
+    const shiftHoursMap = useMemo(() => {
+        const map = {};
+        const scheduleMap = emp.weeklySchedule || {};
+        WEEK_DAYS.forEach(wd => {
+            const shiftId = scheduleMap[wd.id];
+            if (!shiftId || shiftId === 'LIBRE') return;
+            const shift = shifts.find(s => String(s.id) === String(shiftId));
+            if (!shift?.start || !shift?.end) return;
+            const [sh, sm] = shift.start.split(':').map(Number);
+            const [eh, em] = shift.end.split(':').map(Number);
+            let mins = (eh * 60 + em) - (sh * 60 + sm);
+            if (mins < 0) mins += 24 * 60;
+            map[wd.name] = Math.round(mins / 6) / 10;
+        });
+        return map;
+    }, [emp.weeklySchedule, shifts]);
+
     const ausenciasCalDays = useMemo(() => {
         const y = ausenciasCalMonth.getFullYear(), m = ausenciasCalMonth.getMonth();
         const firstDow = new Date(y, m, 1).getDay();
@@ -769,17 +787,21 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     const isInsurance  = cell?.isInsuranceDay;
                                                     const hasEvents    = hasPermit || hasDisab;
 
+                                                    const _dow     = new Date(ds + 'T12:00:00').getDay();
+                                                    const _dayName = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][_dow];
+                                                    const shiftHrs = shiftHoursMap[_dayName];
                                                     const tooltipLines = (cell?.events || []).map(ev => {
-                                                        const meta  = ev.metadata || {};
-                                                        const label = ev.type === 'DISABILITY' ? 'Incapacidad' : (meta.hours || meta.hoursOnly) ? 'Permiso Horas' : 'Permiso';
-                                                        const hrs   = meta.hours ? ` · ${meta.hours}h` : meta.hoursOnly ? ` · ${meta.hoursOnly}h` : '';
-                                                        const note  = ev.note ? ` — ${ev.note.slice(0, 38)}${ev.note.length > 38 ? '…' : ''}` : '';
-                                                        return `${label}${hrs}${note}`;
+                                                        const meta      = ev.metadata || {};
+                                                        const isHours   = !!(meta.hours || meta.hoursOnly);
+                                                        const label     = ev.type === 'DISABILITY' ? 'Incapacidad' : isHours ? 'Permiso por Horas' : 'Permiso';
+                                                        const hoursStr  = isHours ? `${meta.hours || meta.hoursOnly}h ausente` : shiftHrs ? `${shiftHrs}h de turno` : null;
+                                                        const note      = ev.note ? ev.note.slice(0, 45) + (ev.note.length > 45 ? '…' : '') : null;
+                                                        return { label, hoursStr, note };
                                                     });
 
                                                     let cellBg;
                                                     if (isSelected) {
-                                                        cellBg = 'bg-[#007AFF] shadow-[0_2px_8px_rgba(0,122,255,0.4)] ring-2 ring-[#007AFF]/30';
+                                                        cellBg = 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/40';
                                                     } else if (isToday) {
                                                         cellBg = 'bg-[#007AFF]';
                                                     } else if (isInsurance && hasPermit) {
@@ -812,10 +834,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             )}
                                                             {/* Tooltip */}
                                                             {hasEvents && tooltipLines.length > 0 && (
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-[999] min-w-[160px] max-w-[220px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left whitespace-nowrap">
-                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{ds}</p>
-                                                                    {tooltipLines.map((line, li) => (
-                                                                        <p key={li} className="text-[11px] font-medium leading-snug whitespace-normal">{line}</p>
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-[999] min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left">
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">{ds}</p>
+                                                                    {tooltipLines.map((item, li) => (
+                                                                        <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-slate-700' : ''}>
+                                                                            <div className="flex items-center justify-between gap-3">
+                                                                                <span className="text-[11px] font-black">{item.label}</span>
+                                                                                {item.hoursStr && <span className="text-[10px] font-bold text-amber-300 whitespace-nowrap">{item.hoursStr}</span>}
+                                                                            </div>
+                                                                            {item.note && <p className="text-[10px] text-slate-300 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
+                                                                        </div>
                                                                     ))}
                                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-4 border-transparent border-t-slate-800/95"/>
                                                                 </div>
@@ -840,8 +868,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 </div>
                                                 {ausenciasSelectedDay && (
                                                     <div className="flex items-center gap-1.5 ml-auto">
-                                                        <span className="w-3 h-3 rounded-sm bg-[#007AFF] flex-shrink-0"/>
-                                                        <span className="text-[9px] font-black text-[#007AFF] uppercase tracking-widest">Seleccionado</span>
+                                                        <span className="w-3 h-3 rounded-sm bg-emerald-500 flex-shrink-0"/>
+                                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Seleccionado</span>
                                                     </div>
                                                 )}
                                             </div>

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
-    Inbox, Check, X,
+    Inbox, Check, X, ChevronRight,
     User, Calendar, Loader2,
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
-    Search, Filter,
+    Search,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -24,13 +24,13 @@ const TYPE_ICONS = {
 };
 
 const TYPE_COLORS = {
-    VACATION:     { icon: 'text-emerald-600 bg-emerald-50 border-emerald-200/50', badge: 'text-emerald-600 bg-emerald-50 border-emerald-200/50', glow: 'hover:shadow-[0_12px_40px_rgba(16,185,129,0.12)]' },
-    PERMIT:       { icon: 'text-blue-600 bg-blue-50 border-blue-200/50',     badge: 'text-blue-600 bg-blue-50 border-blue-200/50',     glow: 'hover:shadow-[0_12px_40px_rgba(59,130,246,0.12)]' },
-    SHIFT_CHANGE: { icon: 'text-cyan-600 bg-cyan-50 border-cyan-200/50',     badge: 'text-cyan-600 bg-cyan-50 border-cyan-200/50',     glow: 'hover:shadow-[0_12px_40px_rgba(6,182,212,0.12)]' },
-    OVERTIME:     { icon: 'text-amber-600 bg-amber-50 border-amber-200/50',  badge: 'text-amber-600 bg-amber-50 border-amber-200/50',  glow: 'hover:shadow-[0_12px_40px_rgba(245,158,11,0.12)]' },
-    ADVANCE:      { icon: 'text-violet-600 bg-violet-50 border-violet-200/50', badge: 'text-violet-600 bg-violet-50 border-violet-200/50', glow: 'hover:shadow-[0_12px_40px_rgba(139,92,246,0.12)]' },
-    CERTIFICATE:  { icon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50', badge: 'text-indigo-600 bg-indigo-50 border-indigo-200/50', glow: 'hover:shadow-[0_12px_40px_rgba(99,102,241,0.12)]' },
-    DISABILITY:   { icon: 'text-red-600 bg-red-50 border-red-200/50',       badge: 'text-red-600 bg-red-50 border-red-200/50',       glow: 'hover:shadow-[0_12px_40px_rgba(239,68,68,0.14)]' },
+    VACATION:     { icon: 'text-emerald-600 bg-emerald-50 border-emerald-200/50', glow: 'hover:shadow-[0_12px_40px_rgba(16,185,129,0.12)]', section: 'text-emerald-700' },
+    PERMIT:       { icon: 'text-blue-600 bg-blue-50 border-blue-200/50',         glow: 'hover:shadow-[0_12px_40px_rgba(59,130,246,0.12)]',  section: 'text-blue-700' },
+    SHIFT_CHANGE: { icon: 'text-cyan-600 bg-cyan-50 border-cyan-200/50',         glow: 'hover:shadow-[0_12px_40px_rgba(6,182,212,0.12)]',   section: 'text-cyan-700' },
+    OVERTIME:     { icon: 'text-amber-600 bg-amber-50 border-amber-200/50',      glow: 'hover:shadow-[0_12px_40px_rgba(245,158,11,0.12)]',  section: 'text-amber-700' },
+    ADVANCE:      { icon: 'text-violet-600 bg-violet-50 border-violet-200/50',   glow: 'hover:shadow-[0_12px_40px_rgba(139,92,246,0.12)]',  section: 'text-violet-700' },
+    CERTIFICATE:  { icon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50',   glow: 'hover:shadow-[0_12px_40px_rgba(99,102,241,0.12)]',  section: 'text-indigo-700' },
+    DISABILITY:   { icon: 'text-red-600 bg-red-50 border-red-200/50',           glow: 'hover:shadow-[0_12px_40px_rgba(239,68,68,0.14)]',   section: 'text-red-700' },
 };
 
 const formatDate = (iso) => {
@@ -39,11 +39,11 @@ const formatDate = (iso) => {
 };
 
 // ─── Tarjeta ──────────────────────────────────────────────────────────────────
-const RequestCard = memo(({ req, userId, onApprove, onReject, canApprove = false }) => {
+const RequestCard = memo(({ req, onApprove, onReject, canApprove = false }) => {
     const typeConf  = REQUEST_TYPES[req.type]   || { label: req.type,   color: 'bg-slate-100 text-slate-700', border: 'border-slate-200' };
     const statConf  = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-slate-100 text-slate-500', border: 'border-slate-200', dot: 'bg-slate-400' };
     const TypeIcon  = TYPE_ICONS[req.type] || FileText;
-    const typeColor = TYPE_COLORS[req.type] || { icon: 'text-slate-600 bg-slate-50 border-slate-200', badge: 'text-slate-600 bg-slate-50 border-slate-200', glow: '' };
+    const typeColor = TYPE_COLORS[req.type] || { icon: 'text-slate-600 bg-slate-50 border-slate-200', glow: '' };
     const isDisabilityUrgent = req.type === 'DISABILITY' && req.status === 'PENDING';
 
     return (
@@ -55,13 +55,8 @@ const RequestCard = memo(({ req, userId, onApprove, onReject, canApprove = false
                 <div className={`w-11 h-11 rounded-[1.4rem] flex items-center justify-center flex-shrink-0 border ${typeColor.icon}`}>
                     <TypeIcon size={20} strokeWidth={1.8} />
                 </div>
-
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border ${typeColor.badge}`}>
-                            <TypeIcon size={10} strokeWidth={2.5} />
-                            {typeConf.label}
-                        </span>
                         <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-xl border ${statConf.color} ${statConf.border}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
@@ -77,7 +72,6 @@ const RequestCard = memo(({ req, userId, onApprove, onReject, canApprove = false
                             </span>
                         )}
                     </div>
-
                     {req.employee && (
                         <p className="text-[14px] font-semibold text-slate-800 flex items-center gap-1.5 leading-tight">
                             <User size={12} className="text-slate-400 flex-shrink-0" />
@@ -193,9 +187,7 @@ const RequestCard = memo(({ req, userId, onApprove, onReject, canApprove = false
                                     <CheckCircle2 size={13} className="text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div>
                                         <p className="text-[10px] font-black text-emerald-700">Nivel {ap.level} aprobado</p>
-                                        {ap.approverNote && (
-                                            <p className="text-[11px] text-slate-600 mt-0.5">"{ap.approverNote}"</p>
-                                        )}
+                                        {ap.approverNote && <p className="text-[11px] text-slate-600 mt-0.5">"{ap.approverNote}"</p>}
                                         <p className="text-[10px] text-slate-400 mt-0.5">
                                             {new Date(ap.approvedAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -244,12 +236,13 @@ const RequestsView = () => {
     const approveRequest = useStaff(s => s.approveRequest);
     const rejectRequest  = useStaff(s => s.rejectRequest);
 
-    const [statusFilter, setStatusFilter] = useState('PENDING');
-    const [typeFilter,   setTypeFilter]   = useState('ALL');
-    const [searchQuery,  setSearchQuery]  = useState('');
-    const [actionModal,  setActionModal]  = useState(null);
-    const [actionNote,   setActionNote]   = useState('');
-    const [isActioning,  setIsActioning]  = useState(false);
+    const [statusFilter,  setStatusFilter]  = useState('PENDING');
+    const [isSearchMode,  setIsSearchMode]  = useState(false);
+    const [rawSearch,     setRawSearch]     = useState('');
+    const [actionModal,   setActionModal]   = useState(null);
+    const [actionNote,    setActionNote]    = useState('');
+    const [isActioning,   setIsActioning]   = useState(false);
+    const searchInputRef = useRef(null);
 
     useEffect(() => {
         const apId = (isJefe || isSupervisor) ? user?.id : null;
@@ -267,7 +260,20 @@ const RequestsView = () => {
         return () => window.removeEventListener('requests-updated', handler);
     }, []);
 
-    const filtered = requests.filter(r => {
+    useEffect(() => {
+        if (isSearchMode && searchInputRef.current) {
+            setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+    }, [isSearchMode]);
+
+    const pendingCount = requests.filter(r => {
+        const myId = String(user?.id);
+        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
+        return r.status === 'PENDING' && (!r.approver || String(r.approver?.id) === myId);
+    }).length;
+
+    // Base filter by status + search
+    const baseFiltered = requests.filter(r => {
         const myId = String(user?.id);
         if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
         const assignedToMe  = !r.approver || String(r.approver?.id) === myId;
@@ -276,19 +282,23 @@ const RequestsView = () => {
         if (statusFilter === 'PENDING'  && !(r.status === 'PENDING'  && assignedToMe))  return false;
         if (statusFilter === 'APPROVED' && !(r.status === 'APPROVED' && processedByMe)) return false;
         if (statusFilter === 'REJECTED' && !(r.status === 'REJECTED' && processedByMe)) return false;
-        if (typeFilter !== 'ALL' && r.type !== typeFilter) return false;
-        if (searchQuery.trim()) {
-            const q = searchQuery.trim().toLowerCase();
+
+        if (rawSearch.trim()) {
+            const q = rawSearch.trim().toLowerCase();
             if (!(r.employee?.name || '').toLowerCase().includes(q)) return false;
         }
         return true;
     });
 
-    const pendingCount = requests.filter(r => {
-        const myId = String(user?.id);
-        if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
-        return r.status === 'PENDING' && (!r.approver || String(r.approver?.id) === myId);
-    }).length;
+    // Group by type
+    const groupedByType = Object.entries(
+        baseFiltered.reduce((acc, r) => {
+            const t = r.type || 'OTHER';
+            if (!acc[t]) acc[t] = [];
+            acc[t].push(r);
+            return acc;
+        }, {})
+    );
 
     const handleConfirmAction = async () => {
         if (!actionModal) return;
@@ -313,89 +323,84 @@ const RequestsView = () => {
         { key: 'ALL',      label: 'Todas'       },
     ];
 
-    const TYPE_FILTER_OPTS = [
-        { key: 'ALL', label: 'Todos los tipos' },
-        ...Object.entries(REQUEST_TYPES).map(([k, v]) => ({ key: k, label: v.label })),
-    ];
-
     const filtersContent = (
-        <div className="flex flex-col gap-3 w-full">
-            {/* Status tabs + Search row */}
-            <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center bg-white/70 backdrop-blur-md border border-white/80 rounded-[1.5rem] p-1 shadow-sm gap-1 flex-shrink-0">
-                    {STATUS_TABS.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setStatusFilter(tab.key)}
-                            className={`relative px-3 py-1.5 rounded-[1.2rem] text-[12px] font-bold transition-all duration-200 ${
-                                statusFilter === tab.key ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
-                            }`}
-                        >
-                            {tab.label}
-                            {tab.key === 'PENDING' && pendingCount > 0 && (
-                                <span className={`ml-1.5 text-[10px] font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-white/30 text-white' : 'bg-red-100 text-red-600'}`}>
-                                    {pendingCount}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </div>
+        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
-                {/* Search */}
-                <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md border border-white/80 rounded-[1.5rem] px-3 py-1.5 shadow-sm flex-1 min-w-[160px]">
-                    <Search size={13} className="text-slate-400 flex-shrink-0" strokeWidth={2} />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Buscar empleado…"
-                        className="bg-transparent text-[12px] text-slate-700 placeholder-slate-400 outline-none w-full font-medium"
-                    />
-                    {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-600 transition-colors">
-                            <X size={12} strokeWidth={2.5} />
-                        </button>
-                    )}
-                </div>
+            {/* Search mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
+                ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar empleado..."
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-slate-400 focus:ring-0"
+                    value={rawSearch}
+                    onChange={e => setRawSearch(e.target.value)}
+                />
+                {rawSearch && (
+                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 shrink-0">
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                )}
+                <button
+                    onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2"
+                >
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
             </div>
 
-            {/* Type filter pills */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-                {TYPE_FILTER_OPTS.map(opt => {
-                    const Icon = TYPE_ICONS[opt.key];
-                    const col  = TYPE_COLORS[opt.key];
-                    return (
-                        <button
-                            key={opt.key}
-                            onClick={() => setTypeFilter(opt.key)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[1.2rem] text-[11px] font-bold border transition-all duration-200 ${
-                                typeFilter === opt.key
-                                    ? opt.key === 'ALL'
-                                        ? 'bg-slate-700 text-white border-slate-700 shadow-sm'
-                                        : `${col?.badge || ''} shadow-sm scale-[1.03]`
-                                    : 'bg-white/60 text-slate-500 border-white/80 hover:bg-white/80 hover:text-slate-700'
-                            }`}
-                        >
-                            {Icon && <Icon size={11} strokeWidth={2.5} />}
-                            {opt.label}
-                        </button>
-                    );
-                })}
+            {/* Normal mode: tabs + search button */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
+                ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
+                {STATUS_TABS.map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setStatusFilter(tab.key)}
+                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
+                            statusFilter === tab.key
+                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                        }`}
+                    >
+                        {tab.label}
+                        {tab.key === 'PENDING' && pendingCount > 0 && (
+                            <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-slate-200 text-slate-700' : 'bg-red-100 text-red-600'}`}>
+                                {pendingCount}
+                            </span>
+                        )}
+                    </button>
+                ))}
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+
+                {/* Search button */}
+                <button
+                    onClick={() => setIsSearchMode(true)}
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                >
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {rawSearch && (
+                        <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />
+                    )}
+                </button>
             </div>
         </div>
     );
 
     return (
         <GlassViewLayout icon={Inbox} title="Bandeja de Aprobaciones" filtersContent={filtersContent}>
-            <div className="pt-48 md:pt-44 px-4 md:px-6 pb-8 space-y-4">
+            <div className="pt-32 md:pt-28 px-4 md:px-6 pb-8 space-y-8">
 
                 {isLoadingReqs ? (
                     <div className="flex flex-col items-center justify-center py-28 gap-3 text-slate-400">
                         <Loader2 size={28} className="animate-spin text-[#007AFF]/60" strokeWidth={1.5} />
                         <span className="text-[13px] font-medium">Cargando solicitudes…</span>
                     </div>
-                ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-28 gap-3 text-slate-400">
+                ) : baseFiltered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-28 gap-3">
                         <div className="w-16 h-16 rounded-[2rem] bg-white/60 backdrop-blur-xl border border-white/80 shadow-sm flex items-center justify-center mb-1">
                             <CheckCircle2 size={32} strokeWidth={1} className="text-emerald-400" />
                         </div>
@@ -405,18 +410,41 @@ const RequestsView = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filtered.map(req => (
-                            <RequestCard
-                                key={req.id}
-                                req={req}
-                                userId={user?.id}
-                                onApprove={(r) => { setActionModal({ mode: 'approve', req: r }); setActionNote(''); }}
-                                onReject={(r)  => { setActionModal({ mode: 'reject',  req: r }); setActionNote(''); }}
-                                canApprove={canApprove}
-                            />
-                        ))}
-                    </div>
+                    groupedByType.map(([type, cards]) => {
+                        const TypeIcon  = TYPE_ICONS[type] || FileText;
+                        const typeConf  = REQUEST_TYPES[type] || { label: type };
+                        const typeColor = TYPE_COLORS[type] || { icon: 'text-slate-600 bg-slate-50 border-slate-200', section: 'text-slate-700' };
+                        return (
+                            <section key={type}>
+                                {/* Section label */}
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${typeColor.icon}`}>
+                                        <TypeIcon size={14} strokeWidth={2} />
+                                    </div>
+                                    <h3 className={`text-[11px] font-black uppercase tracking-widest ${typeColor.section}`}>
+                                        {typeConf.label}
+                                    </h3>
+                                    <span className="text-[11px] font-bold text-slate-400">
+                                        {cards.length} solicitud{cards.length !== 1 ? 'es' : ''}
+                                    </span>
+                                    <div className="flex-1 h-px bg-slate-200/60 ml-1" />
+                                </div>
+
+                                {/* Cards grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {cards.map(req => (
+                                        <RequestCard
+                                            key={req.id}
+                                            req={req}
+                                            onApprove={(r) => { setActionModal({ mode: 'approve', req: r }); setActionNote(''); }}
+                                            onReject={(r)  => { setActionModal({ mode: 'reject',  req: r }); setActionNote(''); }}
+                                            canApprove={canApprove}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        );
+                    })
                 )}
             </div>
 

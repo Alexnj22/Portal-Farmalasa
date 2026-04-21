@@ -622,8 +622,8 @@ const EmployeeAnnouncementsView = () => {
             const aUrgent = a.priority === 'URGENT' ? 0 : 1;
             const bUrgent = b.priority === 'URGENT' ? 0 : 1;
             if (aUrgent !== bUrgent) return aUrgent - bUrgent;
-            // 2. Más antiguos primero (fecha ascendente)
-            return new Date(a.date) - new Date(b.date);
+            // 2. Más recientes primero (fecha descendente)
+            return new Date(b.date) - new Date(a.date);
         });
     }, [announcements, user]);
 
@@ -790,44 +790,52 @@ const EmployeeAnnouncementsView = () => {
                         <UnreadStack list={filtered} userId={user?.id} onRead={handleRead} />
                     )
 
-                ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                        <div className="relative group flex flex-col items-center text-center">
-                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-slate-400" />
-                            <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-slate-400">
-                                {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
-                            </div>
-                            <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
-                                {searchQuery ? 'Sin resultados' : 'Sin leídos aún'}
-                            </h3>
-                            <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
-                                {searchQuery ? `Ningún aviso coincide con "${searchQuery}".` : 'Aún no has marcado ningún aviso como leído.'}
-                            </p>
-                        </div>
-                    </div>
                 ) : (
                     <>
-
-                    {tab === 'READ' && (hasOldRead || showOldRead) && (
+                    {/* Botón "Ver anteriores" — siempre visible en tab READ cuando hay avisos de otros meses */}
+                    {(hasOldRead || showOldRead) && (
                         <div className="flex justify-end mb-4">
                             <button
                                 onClick={() => setShowOldRead(v => !v)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-95"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
                             >
+                                <Clock size={12} strokeWidth={2.5} />
                                 {showOldRead ? 'Solo este mes' : 'Ver anteriores'}
                             </button>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                        {filtered.map(ann => (
-                            <AnnouncementCard
-                                key={ann.id}
-                                ann={ann}
-                                userId={user?.id}
-                                onRead={handleRead}
-                            />
-                        ))}
-                    </div>
+
+                    {filtered.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                            <div className="relative group flex flex-col items-center text-center">
+                                <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-slate-400" />
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-slate-400 transform-gpu overflow-hidden">
+                                    {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
+                                </div>
+                                <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
+                                    {searchQuery ? 'Sin resultados' : 'Sin leídos este mes'}
+                                </h3>
+                                <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                    {searchQuery
+                                        ? `Ningún aviso coincide con "${searchQuery}".`
+                                        : hasOldRead
+                                        ? 'No has leído avisos este mes. Pulsa "Ver anteriores" para ver los de meses previos.'
+                                        : 'Aún no has marcado ningún aviso como leído.'}
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {filtered.map(ann => (
+                                <AnnouncementCard
+                                    key={ann.id}
+                                    ann={ann}
+                                    userId={user?.id}
+                                    onRead={handleRead}
+                                />
+                            ))}
+                        </div>
+                    )}
                     </>
                 )}
             </div>

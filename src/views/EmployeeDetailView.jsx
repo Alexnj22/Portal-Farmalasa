@@ -7,7 +7,7 @@ import {
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
-    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X
+    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -93,11 +93,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
 
-    const permissions = useMemo(() => {
-        return (emp.attendance || [])
-            .filter(a => a.type === 'OUT_EARLY' || a.type === 'PERMISSION')
-            .reverse();
-    }, [emp.attendance]);
+    const [ausenciasSearch, setAusenciasSearch]         = useState('');
+    const [ausenciasSearchOpen, setAusenciasSearchOpen] = useState(false);
+    const [ausenciasDateFrom, setAusenciasDateFrom]     = useState('');
+    const [ausenciasDateTo, setAusenciasDateTo]         = useState('');
 
     const timeline = useMemo(() => {
         const rawHistory = Array.isArray(emp.history) ? emp.history : [];
@@ -128,6 +127,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
         return [...mappedHistory, ...syntheticEvents].sort((a, b) => new Date(b.date) - new Date(a.date));
     }, [emp.history, emp.hireDate, emp.hire_date, branch]);
+
+    const ausenciasData = useMemo(() => {
+        let list = timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY');
+        if (ausenciasDateFrom) list = list.filter(ev => ev.date >= ausenciasDateFrom);
+        if (ausenciasDateTo)   list = list.filter(ev => ev.date <= ausenciasDateTo);
+        if (ausenciasSearch.trim()) {
+            const q = ausenciasSearch.toLowerCase();
+            list = list.filter(ev => (ev.note || '').toLowerCase().includes(q) || (ev.type || '').toLowerCase().includes(q));
+        }
+        return list;
+    }, [timeline, ausenciasDateFrom, ausenciasDateTo, ausenciasSearch]);
 
     const fallbackInitials = emp.name ? emp.name.charAt(0).toUpperCase() : '👤';
 
@@ -251,7 +261,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     <FileText size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Archivo</span>
                 </button>
                 <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <Activity size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Permisos</span>
+                    <Stethoscope size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Ausencias</span>
                 </button>
                 <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <Wallet size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Horarios</span>
@@ -633,48 +643,100 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </div>
                                 )}
 
-                                {/* PESTAÑA 3: PERMISOS */}
+                                {/* PESTAÑA 3: AUSENCIAS (Permisos + Incapacidades) */}
                                 {currentTab === 'permissions' && (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                        <div className="flex justify-between items-center mb-6">
+                                        {/* Header */}
+                                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <Activity size={18} className="text-[#007AFF]"/> Constancias y Permisos
+                                                <Stethoscope size={18} className="text-amber-500"/> Ausencias
+                                                <span className="text-[11px] font-bold text-slate-400 normal-case tracking-normal">Permisos e Incapacidades</span>
                                             </h3>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {/* Rango de fechas */}
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="bg-white border border-slate-200 rounded-xl h-9 overflow-hidden w-[120px]">
+                                                        <LiquidDatePicker value={ausenciasDateFrom} onChange={setAusenciasDateFrom} />
+                                                    </div>
+                                                    <span className="text-slate-300 text-[11px] font-bold shrink-0">→</span>
+                                                    <div className="bg-white border border-slate-200 rounded-xl h-9 overflow-hidden w-[120px]">
+                                                        <LiquidDatePicker value={ausenciasDateTo} onChange={setAusenciasDateTo} />
+                                                    </div>
+                                                    {(ausenciasDateFrom || ausenciasDateTo) && (
+                                                        <button onClick={() => { setAusenciasDateFrom(''); setAusenciasDateTo(''); }}
+                                                            className="w-8 h-8 rounded-full border border-slate-200 bg-white text-slate-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center transition-all active:scale-95 shrink-0">
+                                                            <X size={12} strokeWidth={2.5} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {/* Buscador expandible */}
+                                                <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-white border-slate-200 px-2.5 py-1 w-40' : 'bg-white/60 border-slate-200/60 w-8 h-8 justify-center'}`}>
+                                                    <button type="button"
+                                                        onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}
+                                                        className="flex-shrink-0 text-slate-500 hover:text-slate-700 transition-colors">
+                                                        {ausenciasSearchOpen ? <X size={11} strokeWidth={2.5}/> : <Search size={12} strokeWidth={2.5}/>}
+                                                    </button>
+                                                    {ausenciasSearchOpen && (
+                                                        <input autoFocus type="text" value={ausenciasSearch}
+                                                            onChange={e => setAusenciasSearch(e.target.value)}
+                                                            placeholder="Buscar..."
+                                                            className="flex-1 min-w-0 text-[11px] font-medium text-slate-700 placeholder-slate-300 outline-none bg-transparent" />
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {permissions.length > 0 ? permissions.map((perm, idx) => (
-                                                <div key={idx} className="bg-white/60 hover:bg-white/90 border border-white/80 rounded-[1.5rem] p-5 flex flex-col md:flex-row gap-5 justify-between items-start md:items-center transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
-                                                    <div className="space-y-3 flex-1 w-full min-w-0">
-                                                        <div className="flex items-center gap-2.5 flex-wrap">
-                                                            <span className="px-2.5 py-1 bg-orange-50 border border-orange-100 text-orange-600 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm shrink-0">{perm.details?.reason || 'Sin Razón Especificada'}</span>
-                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/50 px-2 py-1 rounded-md shrink-0">{formatDate(perm.timestamp)}</span>
+
+                                        {/* Listado */}
+                                        {ausenciasData.length > 0 ? (
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {ausenciasData.map((ev, idx) => {
+                                                    const isDisability = ev.type === 'DISABILITY';
+                                                    const meta = ev.metadata || {};
+                                                    const cfg = isDisability
+                                                        ? { bg: 'bg-red-50/60', border: 'border-red-200/60', text: 'text-red-700', badge: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500', Icon: Stethoscope, label: 'Incapacidad' }
+                                                        : { bg: 'bg-amber-50/60', border: 'border-amber-200/60', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500', Icon: FileText, label: 'Permiso' };
+                                                    return (
+                                                        <div key={ev.id || idx} className={`${cfg.bg} border ${cfg.border} rounded-[1.5rem] p-4 flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] transition-all duration-300 shadow-sm`}>
+                                                            <div className="flex items-start justify-between gap-3 flex-wrap">
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border`}>
+                                                                        <cfg.Icon size={14} strokeWidth={2} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.text}`}>{cfg.label}</span>
+                                                                        <p className="text-[10px] text-slate-400 font-bold">{formatDate(ev.date)}{meta.endDate && meta.endDate !== ev.date && ` → ${formatDate(meta.endDate)}`}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {meta.days && (
+                                                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${cfg.badge} flex-shrink-0`}>
+                                                                        {meta.days} día{meta.days !== 1 ? 's' : ''}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {ev.note && (
+                                                                <p className={`text-[12px] font-medium text-slate-600 border-l-[3px] pl-3 py-0.5 ${isDisability ? 'border-red-300' : 'border-amber-300'}`}>
+                                                                    {ev.note}
+                                                                </p>
+                                                            )}
+                                                            {meta.permissionDates?.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {meta.permissionDates.map((d, i) => (
+                                                                        <span key={i} className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}>{formatDate(d)}</span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <p className="text-[12px] font-semibold text-slate-600 border-l-[3px] border-orange-300 pl-3 py-0.5">{perm.details?.notes || 'Ausencia o permiso registrado en el sistema.'}</p>
-                                                    </div>
-                                                    <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
-                                                        {perm.details?.requiresAttachment ? (
-                                                            perm.details?.attachmentUrl ? (
-                                                                <button className="w-full md:w-auto flex justify-center items-center gap-1.5 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-xl font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm"><CheckCircle size={14} strokeWidth={2.5}/> Ver Constancia Médica</button>
-                                                            ) : (
-                                                                <button 
-                                                                    onClick={(e) => handleUploadConstancia(e, perm.timestamp)} 
-                                                                    className="w-full md:w-auto flex justify-center items-center gap-1.5 px-4 py-2.5 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-sm transition-colors animate-pulse"
-                                                                >
-                                                                    <UploadCloud size={14} strokeWidth={2.5}/> Subir Soporte
-                                                                </button>
-                                                            )
-                                                        ) : (
-                                                            <span className="flex justify-center items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-2 rounded-xl border border-slate-100"><ShieldAlert size={14} strokeWidth={2.5}/> Sin soporte requerido</span>
-                                                        )}
-                                                    </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-20 opacity-50 px-4">
+                                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200">
+                                                    <Stethoscope size={28} className="text-slate-400" strokeWidth={1.5}/>
                                                 </div>
-                                            )) : (
-                                                <div className="flex flex-col items-center justify-center py-20 opacity-50 px-4">
-                                                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200"><Activity size={28} className="text-slate-400" strokeWidth={2}/></div>
-                                                    <p className="font-black uppercase tracking-widest text-[11px] text-slate-600">Historial Limpio</p>
-                                                </div>
-                                            )}
-                                        </div>
+                                                <p className="font-black uppercase tracking-widest text-[11px] text-slate-600">Sin Ausencias Registradas</p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

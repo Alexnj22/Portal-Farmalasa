@@ -1,5 +1,5 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS } from '../utils';
+import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees } from '../utils';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -184,23 +184,7 @@ export const createSystemSlice = (set, get) => ({
                     });
 
                     set({ employees: mappedEmployees });
-
-                    try {
-                        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                        const lightCache = mappedEmployees.map(emp => {
-                            const safeEmp = { ...emp };
-                            SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
-                            return {
-                                ...safeEmp,
-                                history: [],
-                                documents: [],
-                                attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
-                            };
-                        });
-                        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
-                    } catch (cacheError) {
-                        console.warn("⚠️ Advertencia de Caché:", cacheError);
-                    }
+                    persistEmployees(mappedEmployees);
                 }
 
                 const bootedAt = new Date().toISOString();
@@ -408,20 +392,7 @@ export const createSystemSlice = (set, get) => ({
                     history: [...(emp.history || []), newEvent],
                     documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
                 });
-                
-                try {
-                    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                    const lightCache = next.map(emp => ({
-                        ...emp,
-                        history: [],
-                        documents: [],
-                        attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
-                    }));
-                    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
-                } catch (e) {
-                    console.warn("⚠️ Advertencia de Caché:", e);
-                }
-
+                persistEmployees(next);
                 return { employees: next };
             });
             
@@ -1133,22 +1104,7 @@ export const createSystemSlice = (set, get) => ({
                     ...emp,
                     documents: [...(emp.documents || []), newDoc]
                 });
-                
-                try {
-                    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                    const lightCache = next.map(e => {
-                        const safeEmp = { ...e };
-                        SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
-                        return {
-                            ...safeEmp,
-                            history: [],
-                            documents: [],
-                            attendance: (e.attendance || []).filter(a => a.timestamp >= yesterday)
-                        };
-                    });
-                    localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightCache));
-                } catch(e) {}
-
+                persistEmployees(next);
                 return { employees: next };
             });
         } catch (e) {

@@ -18,6 +18,22 @@ export const CACHE_KEYS = {
     AT: "sb_cache_staff_at_v1"
 };
 
+// Persiste empleados en localStorage filtrando campos sensibles e histórico pesado
+export const persistEmployees = (employees) => {
+    try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const light = employees.map(emp => {
+            const safe = { ...emp };
+            SENSITIVE_FIELDS.forEach(f => delete safe[f]);
+            return { ...safe, history: [], documents: [], attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday) };
+        });
+        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(light));
+    } catch (e) {
+        console.warn('⚠️ Alerta de Memoria LocalStorage:', e);
+    }
+    return employees;
+};
+
 export const safeJsonParse = (s, fallback = null) => {
     try { return JSON.parse(s); } catch { return fallback; }
 };

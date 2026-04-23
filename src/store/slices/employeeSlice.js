@@ -1,5 +1,5 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS } from '../utils';
+import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
 
 // 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
 const compressImage = (file, maxWidth = 400) => {
@@ -37,27 +37,6 @@ const compressImage = (file, maxWidth = 400) => {
             };
         };
     });
-};
-
-const persistEmployees = (employees) => {
-    try {
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-        const lightEmployees = employees.map(emp => {
-            const safeEmp = { ...emp };
-            SENSITIVE_FIELDS.forEach(f => delete safeEmp[f]);
-            return {
-                ...safeEmp,
-                history: [],
-                documents: [],
-                attendance: (emp.attendance || []).filter(a => a.timestamp >= yesterday)
-            };
-        });
-        localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(lightEmployees));
-    } catch (error) {
-        console.warn("⚠️ Alerta de Memoria LocalStorage:", error);
-    }
-    return employees;
 };
 
 export const createEmployeeSlice = (set, get) => ({
@@ -419,80 +398,6 @@ export const createEmployeeSlice = (set, get) => ({
         } catch (err) {
             console.error("Error al procesar la baja del empleado:", err);
             return false;
-        }
-    },
-
-    registerEmployeeEvent: async (employeeId, eventData, file = null) => {
-        try {
-            const dbPayload = { employee_id: employeeId, type: eventData.type, date: eventData.date || new Date().toISOString().split('T')[0], note: eventData.note || '', metadata: eventData };
-            const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
-            if (error) throw error;
-            
-            const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
-            await get().appendAuditLog('ACCION_RRHH', employeeId, {
-                timeline_title: `Evento RRHH: ${eventData.type.replace(/_/g, ' ')}`,
-                dimension: 'HR',
-                branch_id: empEvento?.branchId,
-                new_value: eventData.note || 'Evento registrado'
-            });
-
-            let docObject = null;
-            if (file) {
-                const url = await get().uploadEmployeeFile(file, employeeId, 'documentos/rrhh');
-                if (url) {
-                    const { data: newDoc } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: newEvent.id, name: file.name, type: 'DOCUMENT', url: url }]).select().single();
-                    docObject = newDoc;
-                }
-            }
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
-                    ...emp,
-                    history: [...(emp.history || []), newEvent],
-                    documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
-                });
-                persistEmployees(next);
-                return { employees: next };
-            });
-            return newEvent.id;
-        } catch (err) {
-            console.error("Error registrando evento de empleado:", err);
-            return null;
-        }
-    },
-
-    addDocumentToEvent: async (employeeId, eventId, file) => {
-        if (!file) return;
-        try {
-            const url = await get().uploadEmployeeFile(file, employeeId, 'documentos/rrhh');
-            if (!url) throw new Error("Fallo al subir el archivo al storage");
-
-            const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
-            if (error) throw error;
-
-            const empDoc = get().employees.find(e => String(e.id) === String(employeeId));
-            await get().appendAuditLog('DOCUMENTO_HISTORICO', employeeId, {
-                timeline_title: `Documento RRHH Subido: ${empDoc?.name || ''}`,
-                dimension: 'HR',
-                branch_id: empDoc?.branchId,
-                new_value: file.name,
-                file_url: url 
-            });
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
-                    ...emp,
-                    documents: [...(emp.documents || []), newDoc]
-                });
-                persistEmployees(next);
-                return { employees: next };
-            });
-        } catch (e) {
-            console.error("Error subiendo documento al evento:", e);
         }
     },
 

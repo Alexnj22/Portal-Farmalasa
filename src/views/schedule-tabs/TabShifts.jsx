@@ -193,7 +193,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
 // ============================================================================
 // 🚀 VISTA PRINCIPAL (TAB SHIFTS) - MODO GLOBAL
 // ============================================================================
-const TabShifts = ({ branches, shiftTab, shiftSearch }) => {
+const TabShifts = ({ branches, shiftTab, shiftSearch = '' }) => {
     const { shifts, addShift, updateShift, archiveShift, unarchiveShift } = useStaffStore();
     const { showToast } = useToastStore();
 

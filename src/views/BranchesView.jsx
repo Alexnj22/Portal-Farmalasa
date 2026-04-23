@@ -678,18 +678,20 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                     </div>
                 </div>
 
-                <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-slate-200/60 ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-3 md:ml-4 pl-3 md:pl-4 gap-2 md:gap-4"}`}>
+                <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-slate-200/60 ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-2 pl-2 gap-2"}`}>
                     {filterStatus !== "ALL" && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
-                    <button onClick={() => setIsSearchActive(true)} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar sucursal">
-                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
-                    </button>
                     {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-[#007AFF] font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,122,255,0.15)] border border-white hover:border-[#007AFF]/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
                     </button>}
+                </div>
+                <div className={`flex items-center shrink-0 border-l border-white/30 transform-gpu transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none ml-0 pl-0 border-transparent" : "pl-2 ml-1"}`}>
+                    <button onClick={() => setIsSearchActive(true)} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar sucursal">
+                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                        {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
+                    </button>
                 </div>
             </div>
         </div>

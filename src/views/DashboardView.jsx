@@ -1043,8 +1043,9 @@ const DashboardView = ({ openModal }) => {
                     <div key={day}
                       onMouseEnter={e=>{if(!hasH&&!hasB)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],birthdays:ev?.birthdays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
-                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-all duration-150 ${isToday?'bg-[#007AFF]':hasH&&hasB?'bg-gradient-to-br from-red-50 to-purple-50 hover:from-red-100 hover:to-purple-100':hasH?'bg-red-50 hover:bg-red-100':hasB?'bg-purple-50 hover:bg-purple-100':'hover:bg-slate-100/80'}`}>
+                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-all duration-150 ${isToday&&hasB?'bg-gradient-to-br from-[#007AFF] to-purple-500 ring-2 ring-purple-400/50':isToday?'bg-[#007AFF]':hasH&&hasB?'bg-gradient-to-br from-red-50 to-purple-50 hover:from-red-100 hover:to-purple-100':hasH?'bg-red-50 hover:bg-red-100':hasB?'bg-purple-50 hover:bg-purple-100':'hover:bg-slate-100/80'}`}>
                       <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':hasB?'text-purple-600':'text-slate-700'}`}>{day}</span>
+                      {isToday&&hasB&&<span className="text-[8px] leading-none mt-0.5">🎂</span>}
                       {(hasH||hasB)&&!isToday&&<div className="flex gap-0.5 mt-0.5">{hasH&&<span className="w-1 h-1 rounded-full bg-red-400"/>}{hasB&&<span className="w-1 h-1 rounded-full bg-purple-400"/>}</div>}
                     </div>
                   );

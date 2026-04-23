@@ -494,6 +494,7 @@ const DashboardView = ({ openModal }) => {
   const [pendingReqs,    setPendingReqs]    = useState([]);
   const [reqLoading,     setReqLoading]     = useState(true);
   const [calMonth,       setCalMonth]       = useState(new Date());
+  const [bdMonth,        setBdMonth]        = useState(new Date());
   const [calTooltip,     setCalTooltip]     = useState(null);
   const [trendOffset,    setTrendOffset]    = useState(0);
   const [salesBranch,    setSalesBranch]    = useState('');
@@ -695,7 +696,10 @@ const DashboardView = ({ openModal }) => {
   const recentAnnouncements = useMemo(()=>announcements.filter(a=>!a.isArchived&&(!a.scheduledFor||new Date(a.scheduledFor)<=new Date())).slice(0,5),[announcements]);
 
   const birthdaysOfMonth = useMemo(()=>{
-    const y=calMonth.getFullYear(), m=calMonth.getMonth(), todayStr=localDateStr();
+    const y=bdMonth.getFullYear(), m=bdMonth.getMonth(), todayStr=localDateStr();
+    const today=new Date(todayStr+'T12:00:00');
+    const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
+    const tomorrowStr=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
     return activeEmployees
       .filter(e=>{if(!e.birthDate)return false; const bd=new Date(e.birthDate+'T12:00:00'); return bd.getMonth()===m;})
       .map(e=>{
@@ -703,10 +707,11 @@ const DashboardView = ({ openModal }) => {
         const age=y-bd.getFullYear();
         const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
         const branch=branches.find(b=>String(b.id)===String(e.branchId||e.branch_id));
-        return {...e, age, day:bd.getDate(), dateStr:ds, isToday:ds===todayStr, branchName:branch?.name||'Sin sucursal'};
+        const isToday=ds===todayStr, isTomorrow=ds===tomorrowStr, isPast=new Date(ds+'T12:00:00')<today&&!isToday;
+        return {...e, age, day:bd.getDate(), dateStr:ds, isToday, isTomorrow, isPast, branchName:branch?.name||'Sin sucursal'};
       })
       .sort((a,b)=>a.day-b.day);
-  },[activeEmployees,calMonth,branches]);
+  },[activeEmployees,bdMonth,branches]);
   const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
 
   const resetAll = () => {
@@ -1144,9 +1149,11 @@ const DashboardView = ({ openModal }) => {
                 <h3 className="text-[12px] font-black text-slate-800 tracking-tight">Cumpleaños</h3>
                 <span className="text-[13px] leading-none">🎉</span>
               </div>
-              <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest">
-                {MONTH_ES[calMonth.getMonth()]}
-              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-all active:scale-90"><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-all active:scale-90"><ChevronRight size={11} strokeWidth={2.5}/></button>
+              </div>
             </div>
           </div>
           {/* Content */}
@@ -1160,26 +1167,39 @@ const DashboardView = ({ openModal }) => {
               <div className="space-y-1.5">
                 {birthdaysOfMonth.map((e,i)=>{
                   const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-                  const dayLabel=`${e.day} ${new Date(calMonth.getFullYear(),calMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
+                  const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
+                  const cardCls = e.isToday
+                    ? 'bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 border-violet-200/70 shadow-[0_4px_16px_rgba(168,85,247,0.12)]'
+                    : e.isTomorrow
+                    ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200/70 shadow-[0_4px_12px_rgba(251,146,60,0.12)]'
+                    : e.isPast
+                    ? 'bg-white/30 border-white/40 opacity-40'
+                    : 'bg-white/50 border-white/60 hover:bg-white/80 hover:border-slate-200/60 hover:shadow-sm';
                   return (
-                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 group ${e.isToday?'bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 border-violet-200/70 shadow-[0_4px_16px_rgba(168,85,247,0.12)]':'bg-white/50 border-white/60 hover:bg-white/80 hover:border-slate-200/60 hover:shadow-sm'}`}>
+                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 ${cardCls}`}>
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
-                          ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-violet-300':'border-white'}`}/>
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-gradient-to-br from-violet-500 to-pink-500 text-white border-violet-300':'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500 border-white'}`}>{initials}</div>
+                          ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-violet-300':e.isTomorrow?'border-orange-300':'border-white'}`}/>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-gradient-to-br from-violet-500 to-pink-500 text-white border-violet-300':e.isTomorrow?'bg-gradient-to-br from-orange-400 to-amber-400 text-white border-orange-300':'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500 border-white'}`}>{initials}</div>
                         }
                         {e.isToday&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">🎂</span>}
+                        {e.isTomorrow&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">⏰</span>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-violet-700':'text-slate-800'}`}>{e.name}</p>
+                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-violet-700':e.isTomorrow?'text-orange-700':'text-slate-800'}`}>{e.name}</p>
                         <p className="text-[9px] text-slate-400 font-medium truncate">{e.branchName}</p>
                       </div>
-                      {/* Date + Age badge */}
-                      <div className={`flex flex-col items-end gap-0.5 flex-shrink-0`}>
-                        <span className={`text-[10px] font-black ${e.isToday?'text-violet-600':'text-slate-600'}`}>{dayLabel}</span>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isToday?'bg-pink-100 text-pink-600':'bg-slate-100 text-slate-400'}`}>{e.age} años</span>
+                      {/* Badges */}
+                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className={`text-[10px] font-black ${e.isToday?'text-violet-600':e.isTomorrow?'text-orange-600':'text-slate-600'}`}>{dayLabel}</span>
+                        {e.isToday
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">🎉 Hoy</span>
+                          :e.isTomorrow
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 animate-pulse">¡Mañana!</span>
+                          :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-slate-100 text-slate-300':'bg-slate-100 text-slate-400'}`}>{e.age} años</span>
+                        }
                       </div>
                     </div>
                   );

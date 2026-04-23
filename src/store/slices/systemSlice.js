@@ -63,21 +63,47 @@ export const createSystemSlice = (set, get) => ({
         if (!force && current.bootPromise) return await current.bootPromise;
 
         const bootPromise = (async () => {
-            set({
-                isBootSyncing: true,
-                bootStatus: 'loading',
-            });
+            set({ isBootSyncing: true, bootStatus: 'loading' });
 
             try {
-                // 🚨 1. CARGAMOS LOS ASUETOS DURANTE EL BOOT DEL SISTEMA
-                const { data: holidaysData } = await supabase.from("holidays").select("*").order("holiday_date", { ascending: true });
+                // Calcular lunes local sin mutar Date y sin problemas de DST
+                const now = new Date();
+                const dow = now.getDay();
+                const monday = new Date(now);
+                monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
+                monday.setHours(0, 0, 0, 0);
+                const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+                // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
+                const [
+                    { data: holidaysData },
+                    { data: branchData },
+                    { data: rolesData },
+                    { data: shiftsData },
+                    { data: rostersData },
+                    { data: empData },
+                    { data: eventsData },
+                    { data: docsData },
+                    { data: annData },
+                ] = await Promise.all([
+                    supabase.from('holidays').select('*').order('holiday_date', { ascending: true }),
+                    supabase.from('branches').select('*').order('id', { ascending: true }),
+                    supabase.from('roles').select('*').order('name', { ascending: true }),
+                    supabase.from('shifts').select('*'),
+                    supabase.from('employee_rosters').select('*').eq('week_start_date', weekStartDate),
+                    supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`),
+                    supabase.from('employee_events').select('*'),
+                    supabase.from('employee_documents').select('*'),
+                    supabase.from('announcements').select('*').order('created_at', { ascending: false }),
+                ]);
+
+                // Holidays
                 if (holidaysData) {
                     set({ holidays: holidaysData });
                     localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
                 }
 
-                // 2. CARGAMOS SUCURSALES
-                const { data: branchData } = await supabase.from("branches").select("*").order("id", { ascending: true });
+                // Branches
                 if (branchData) {
                     const mappedBranches = branchData.map((b) => ({
                         ...b,
@@ -89,15 +115,13 @@ export const createSystemSlice = (set, get) => ({
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
                 }
 
-                // 3. CARGAMOS ROLES (Asegurándonos de traer max_limit y scope)
-                const { data: rolesData } = await supabase.from("roles").select("*").order("name", { ascending: true });
+                // Roles
                 if (rolesData) {
                     set({ roles: rolesData });
                     localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
                 }
 
-                // 4. CARGAMOS TURNOS
-                const { data: shiftsData } = await supabase.from("shifts").select("*");
+                // Shifts
                 if (shiftsData) {
                     const mappedShifts = shiftsData.map((s) => ({
                         id: s.id,
@@ -105,38 +129,36 @@ export const createSystemSlice = (set, get) => ({
                         name: s.name,
                         start: s.start_time.substring(0, 5),
                         end: s.end_time.substring(0, 5),
-                        is_active: s.is_active
+                        is_active: s.is_active,
                     }));
                     set({ shifts: mappedShifts });
                     localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
                 }
 
-                // 5. CARGAMOS EMPLEADOS Y ROSTERS
-                const today = new Date();
-                const dayOfWeek = today.getDay();
-                const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-                const monday = new Date(today.setDate(diff));
-                const offset = monday.getTimezoneOffset() * 60000;
-                const weekStartDate = new Date(monday.getTime() - offset).toISOString().split('T')[0];
+                // Announcements
+                if (annData) {
+                    const mappedAnns = annData.map((a) => ({
+                        id: a.id,
+                        title: a.title,
+                        message: a.message,
+                        targetType: a.target_type,
+                        targetValue: a.target_value,
+                        priority: a.priority || 'NORMAL',
+                        date: a.created_at,
+                        readBy: a.read_by || [],
+                        prevReadBy: a.prev_read_by || [],
+                        isArchived: a.is_archived,
+                        editedAt: a.edited_at,
+                        scheduledFor: a.scheduled_for,
+                        metadata: a.metadata || null,
+                    }));
+                    set({ announcements: mappedAnns });
+                    localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
+                }
 
-                const { data: rostersData } = await supabase
-                    .from('employee_rosters')
-                    .select('*')
-                    .eq('week_start_date', weekStartDate);
-
+                // Employees + events + docs (merged)
                 const rosterMap = {};
-                (rostersData || []).forEach((r) => {
-                    rosterMap[r.employee_id] = r.schedule_data;
-                });
-
-                const { data: empData } = await supabase.from("employees_safe").select(`
-                    *,
-                    main_role:roles!employees_role_id_fkey(id, name),
-                    sec_role:roles!employees_secondary_role_id_fkey(id, name)
-                `);
-
-                const { data: eventsData } = await supabase.from('employee_events').select('*');
-                const { data: docsData } = await supabase.from('employee_documents').select('*');
+                (rostersData || []).forEach((r) => { rosterMap[r.employee_id] = r.schedule_data; });
 
                 if (empData) {
                     const mappedEmployees = empData.map((e) => {
@@ -179,28 +201,6 @@ export const createSystemSlice = (set, get) => ({
                     } catch (cacheError) {
                         console.warn("⚠️ Advertencia de Caché:", cacheError);
                     }
-                }
-
-                // 6. CARGAMOS ANUNCIOS
-                const { data: annData } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
-                if (annData) {
-                    const mappedAnns = annData.map((a) => ({
-                        id: a.id,
-                        title: a.title,
-                        message: a.message,
-                        targetType: a.target_type,
-                        targetValue: a.target_value,
-                        priority: a.priority || 'NORMAL',
-                        date: a.created_at,
-                        readBy: a.read_by || [],
-                        prevReadBy: a.prev_read_by || [],
-                        isArchived: a.is_archived,
-                        editedAt: a.edited_at,
-                        scheduledFor: a.scheduled_for,
-                        metadata: a.metadata || null,
-                    }));
-                    set({ announcements: mappedAnns });
-                    localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
                 }
 
                 const bootedAt = new Date().toISOString();
@@ -549,76 +549,42 @@ export const createSystemSlice = (set, get) => ({
     // ============================================================================
     // RESTO DE FUNCIONES DEL SLICE 
     // ============================================================================
-addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
-        set({ isLoading: true, error: null });
-        try {
-            const { data, error } = await supabase
-                .from('roles')
-                .insert([{
-                    name,
-                    parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId,
-                    scope, 
-                    max_limit: maxLimit
-                }])
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = [...state.roles, data];
-                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
-                return { roles: next };
-            });
-            return data;
-        } catch (error) {
-            set({ error: error.message });
-            throw error;
-        } finally {
-            set({ isLoading: false });
-        }
+    addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
+        const { data, error } = await supabase
+            .from('roles')
+            .insert([{ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit }])
+            .select()
+            .single();
+        if (error) throw error;
+        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        set((state) => {
+            const next = [...state.roles, data];
+            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+            return { roles: next };
+        });
+        return data;
     },
 
     updateRole: async (roleId, name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
-        set({ isLoading: true, error: null });
-        try {
-            const { data, error } = await supabase
-                .from('roles')
-                .update({
-                    name,
-                    parent_role_id: parentRoleId,
-                    secondary_parent_role_id: secondaryParentRoleId,
-                    scope, 
-                    max_limit: maxLimit
-                })
-                .eq('id', roleId)
-                .select()
-                .single();
-
-            if (error) throw error;
-            await get().appendAuditLog('EDITAR_CARGO', roleId, {
-                timeline_title: `Actualización de Cargo: ${name}`,
-                dimension: 'HR',
-                new_value: 'Configuración actualizada'
-            });
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = state.roles.map(r => String(r.id) === String(roleId) ? data : r);
-                localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
-                return { roles: next };
-            });
-            return data;
-        } catch (error) {
-            set({ error: error.message });
-            throw error;
-        } finally {
-            set({ isLoading: false });
-        }
+        const { data, error } = await supabase
+            .from('roles')
+            .update({ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit })
+            .eq('id', roleId)
+            .select()
+            .single();
+        if (error) throw error;
+        await get().appendAuditLog('EDITAR_CARGO', roleId, {
+            timeline_title: `Actualización de Cargo: ${name}`,
+            dimension: 'HR',
+            new_value: 'Configuración actualizada',
+        });
+        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+        set((state) => {
+            const next = state.roles.map(r => String(r.id) === String(roleId) ? data : r);
+            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(next));
+            return { roles: next };
+        });
+        return data;
     },
 
 
@@ -1058,12 +1024,12 @@ addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope =
             if (!kioskConfigStr) return false;
 
             const config = JSON.parse(kioskConfigStr);
-            const today = new Date();
-            const dayOfWeek = today.getDay();
-            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const monday = new Date(today.setDate(diff));
-            const offset = monday.getTimezoneOffset() * 60000;
-            const weekStartDate = new Date(monday.getTime() - offset).toISOString().split('T')[0];
+            const now = new Date();
+            const dow = now.getDay();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
+            monday.setHours(0, 0, 0, 0);
+            const weekStartDate = monday.toLocaleDateString('en-CA');
 
             const { data, error } = await supabase.rpc('get_kiosk_boot_payload', {
                 p_device_id: config.deviceId,

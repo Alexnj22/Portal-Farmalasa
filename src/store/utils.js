@@ -1,6 +1,9 @@
 // src/store/utils.js
 
-export const makeId = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()));
+export const makeId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+};
 
 export const SENSITIVE_FIELDS = ['kiosk_pin', 'dui', 'isss_number', 'afp_number', 'base_salary', 'account_number', 'bank_name'];
 

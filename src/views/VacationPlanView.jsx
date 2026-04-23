@@ -571,12 +571,15 @@ const VacationPlanView = () => {
                 </div>
 
                 {/* Search button */}
-                <button
-                    onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="flex items-center gap-2 px-4 h-[3rem] rounded-[1.8rem] bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest shadow-[0_2px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] transition-colors whitespace-nowrap">
-                    <Search size={14} strokeWidth={2.5} />
-                    Buscar
-                </button>
+                <div className="border-l border-white/30 pl-2 ml-1 shrink-0">
+                    <button
+                        onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                        className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                        title="Buscar">
+                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                        {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
+                    </button>
+                </div>
             </div>
         </div>
     );

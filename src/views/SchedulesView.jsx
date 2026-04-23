@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
-    HeartPulse, ChevronRight, Search, X, Sparkles, Save, Loader2, ArrowLeft
+    HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -49,17 +49,13 @@ const SchedulesView = ({ openModal, setView }) => {
     const [filterBranch, setFilterBranch] = useState('');
     
     const [shiftTab, setShiftTab] = useState('ACTIVE');
-    const [shiftSearch, setShiftSearch] = useState('');
-    
+
     const [statusFilter, setStatusFilter] = useState('ACTIVE');
-    const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
     const [isLoading, setIsLoading] = useState(true);
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
     const [editingCell, setEditingCell] = useState(null);
-    const searchInputRef = useRef(null);
 
     const [chartView, setChartView] = useState('DAYS');
     const [salesStats, setSalesStats] = useState({ generalHours: [], days: [], specificHours: {}, maxAvgDays: 0, maxAvgGeneralHours: 0 });
@@ -81,7 +77,6 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const handleResetFilters = useCallback(() => {
         setStartDate(getLocalMonday());
-        setSearchTerm('');
     }, []);
 
     const changeWeek = useCallback((daysToAdd) => {
@@ -95,18 +90,13 @@ const SchedulesView = ({ openModal, setView }) => {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
-                if (isSearchExpanded) { 
-                    setIsSearchExpanded(false); 
-                    setSearchTerm(''); 
-                    setShiftSearch(''); 
-                }
                 if (editingCell) setEditingCell(null);
                 if (publishState.isOpen) setPublishState(prev => ({ ...prev, isOpen: false })); // Cerrar modal con ESC
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isSearchExpanded, editingCell, publishState.isOpen]);
+    }, [editingCell, publishState.isOpen]);
 
     useEffect(() => {
         if (window.innerWidth >= 1024) {
@@ -312,13 +302,7 @@ useEffect(() => {
 
         return employees
             .filter(e => {
-                const matchesBranch = String(e.branchId || e.branch_id) === String(filterBranch);
-                if (!matchesBranch) return false;
-                if (!searchTerm) return true;
-                // 🚨 PREVENCIÓN DE ERROR: Si e.name es undefined, usar string vacío
-                const safeName = e.name || '';
-                const safeRole = e.role || '';
-                return safeName.toLowerCase().includes(searchTerm.toLowerCase()) || safeRole.toLowerCase().includes(searchTerm.toLowerCase());
+                return String(e.branchId || e.branch_id) === String(filterBranch);
             })
             .sort((a, b) => {
                 const weightA = roleWeight(a.role);
@@ -329,7 +313,7 @@ useEffect(() => {
                 const safeNameB = b.name || 'Sin Nombre';
                 return safeNameA.localeCompare(safeNameB);
             });
-    }, [employees, filterBranch, searchTerm]);
+    }, [employees, filterBranch]);
 
     const aiCopilotAlerts = useMemo(() => {
         const alerts = [];
@@ -609,31 +593,9 @@ useEffect(() => {
             return `${d1} - ${d2} ${m1} '${y2}`;
         };
 
-        const activeSearchValue = viewMode === 'calendar' ? searchTerm : shiftSearch;
-        const setActiveSearchValue = (val) => viewMode === 'calendar' ? setSearchTerm(val) : setShiftSearch(val);
-
-        const handleClearSearch = () => {
-            if (viewMode === 'calendar') setSearchTerm("");
-            else setShiftSearch("");
-        };
-
-        const handleCloseSearch = () => {
-            setIsSearchExpanded(false);
-            handleClearSearch();
-        };
-
         return (
-            <div className="relative flex items-center overflow-visible">
-                <div className={`flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full`}>
-                    {isSearchExpanded ? (
-                        <div className="flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
-                            <input ref={searchInputRef} type="text" placeholder={viewMode === 'calendar' ? "Buscar colaborador o cargo..." : "Buscar turnos por nombre..."} className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={activeSearchValue} onChange={(e) => setActiveSearchValue(e.target.value)} />
-                            {activeSearchValue && <button onClick={handleClearSearch} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-95 transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                            <button onClick={handleCloseSearch} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda"><ChevronRight size={18} strokeWidth={2.5} /></button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+                        <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3">
                             <div className="flex items-center min-w-0 gap-1 md:gap-2 h-full">
                                 <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
                                     <button onClick={() => setViewMode('calendar')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'calendar' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Vista Calendario"><CalendarDays size={16} strokeWidth={2.5} /></button>
@@ -685,15 +647,7 @@ useEffect(() => {
                                 )}
                             </div>
 
-                            <div className="flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-white/30">
-                                <button onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar">
-                                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                                    {activeSearchValue && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
-                                </button>
-                            </div>
                         </div>
-                    )}
-                </div>
             </div>
         );
     };
@@ -724,7 +678,6 @@ useEffect(() => {
                         branches={branches}
                         filterBranch={filterBranch}
                         shiftTab={shiftTab}
-                        shiftSearch={shiftSearch}
                     />
                 </div>
             ) : (

@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus
 } from 'lucide-react';
@@ -54,12 +54,19 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isFormValid, setIsFormValid] = useState(true);
+    const scrollRef = useRef(null);
 
     useEffect(() => {
         setValidationError(null);
         setIsSaving(false);
-        setIsFormValid(true); 
+        setIsFormValid(true);
     }, [type, isOpen]);
+
+    useEffect(() => {
+        if (validationError && scrollRef.current) {
+            scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [validationError]);
 
     const getModalSize = () => {
         switch (type) {
@@ -617,6 +624,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 )}
 
                 <div
+                    ref={scrollRef}
                     className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full`}
                     style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
                 >

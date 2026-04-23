@@ -235,6 +235,16 @@ function MainApp() {
                 branchId: data?.id ?? data?.branchId ?? null,
                 branchName: data?.name ?? data?.branchName ?? "",
             });
+        } else if (type === "editEmployee") {
+            // Pre-populate first_names/last_names from composite name for legacy employees
+            const ed = { ...data };
+            if (!ed.first_names?.trim() && ed.name?.trim()) {
+                const parts = ed.name.trim().split(' ');
+                const mid = Math.max(1, Math.ceil(parts.length / 2));
+                ed.first_names = parts.slice(0, mid).join(' ');
+                ed.last_names = parts.slice(mid).join(' ');
+            }
+            setFormData(ed);
         } else {
             setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
         }

@@ -370,6 +370,66 @@ export const getApplicableAnnouncement = ({ announcements, employee }) => {
   });
 };
 
+// Returns a birthday announcement object if applicable for this punch, else null.
+// Logic:
+//   - Birthday TODAY: show on any punch (IN or OUT)
+//   - Birthday TOMORROW + tomorrow is day-off: show on OUT today (advance notice)
+//   - Birthday TOMORROW + has shift tomorrow: let it trigger naturally on the birthday day
+export const getBirthdayAnnouncement = ({ employee, rawType, nowDate }) => {
+  const bd = employee?.birthDate || employee?.birth_date;
+  if (!bd) return null;
+
+  const today = nowDate || new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const todayMD = `${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const bdMD = bd.slice(5, 10); // "MM-DD"
+  const isBirthdayToday = todayMD === bdMD;
+
+  const tomorrowDate = new Date(today);
+  tomorrowDate.setDate(today.getDate() + 1);
+  const tomorrowMD = `${pad(tomorrowDate.getMonth() + 1)}-${pad(tomorrowDate.getDate())}`;
+  const isBirthdayTomorrow = tomorrowMD === bdMD;
+
+  const firstName = (employee.name || '').split(' ')[0];
+
+  if (isBirthdayToday) {
+    const year = today.getFullYear();
+    const birthYear = Number(bd.slice(0, 4));
+    const age = year - birthYear;
+    return {
+      id: `birthday_${employee.id}`,
+      title: `¡Feliz Cumpleaños, ${firstName}! 🎂`,
+      message: `Hoy cumples ${age} años. ¡Todo el equipo de Farmalasa te desea un día increíble lleno de alegría y celebración! 🎉🥳`,
+      priority: 'BIRTHDAY',
+      isBirthday: true,
+    };
+  }
+
+  if (isBirthdayTomorrow && String(rawType || '').startsWith('OUT')) {
+    // Check if tomorrow is a day off
+    const jsDay = tomorrowDate.getDay();
+    const dbDay = jsDay === 0 ? 7 : jsDay;
+    const schedule = employee.weeklySchedule || employee.weekly_schedule || employee.weekly_roster || {};
+    const tomorrowConfig = schedule[dbDay] || schedule[String(dbDay)];
+    const tomorrowIsOff = !tomorrowConfig || tomorrowConfig.isOffDay || (!tomorrowConfig.shiftId && !tomorrowConfig.shift_id);
+
+    if (tomorrowIsOff) {
+      const year = tomorrowDate.getFullYear();
+      const birthYear = Number(bd.slice(0, 4));
+      const age = year - birthYear;
+      return {
+        id: `birthday_tomorrow_${employee.id}`,
+        title: `¡Mañana es tu Cumpleaños! 🎂`,
+        message: `${firstName}, mañana cumples ${age} años y tienes el día libre. ¡Que lo disfrutes muchísimo! Todo el equipo te manda un abrazo. 🎉`,
+        priority: 'BIRTHDAY',
+        isBirthday: true,
+      };
+    }
+  }
+
+  return null;
+};
+
 export const buildAuthPromptState = ({
   employee,
   type,

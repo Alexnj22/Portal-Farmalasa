@@ -17,6 +17,7 @@ import {
     buildKioskAuditInfo,
     buildLateOutAdjustedMetadata,
     getApplicableAnnouncement,
+    getBirthdayAnnouncement,
 } from '../utils/timeClock.audit';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
 import { getHourlyCode, getSuPinSuffix, getTodayScheduleConfig, toLocalISO } from '../utils/helpers';
@@ -219,7 +220,8 @@ export function useTimeClockEngine(props = {}) {
             shifts,
         });
 
-        const applicableAnnouncement = getApplicableAnnouncement({
+        const birthdayAnnouncement = getBirthdayAnnouncement({ employee, rawType, nowDate });
+        const applicableAnnouncement = birthdayAnnouncement || getApplicableAnnouncement({
             announcements,
             employee,
         });

@@ -38,6 +38,7 @@ export default function FeedbackOverlay({
 
   const theme = THEME_MAP[color] || THEME_MAP.slate;
   const isUrgent = announcement?.priority === 'URGENT';
+  const isBirthday = announcement?.isBirthday === true;
 
   const handleAnnouncementClose = () => {
     setIsSuccess(true);
@@ -149,28 +150,34 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-[2rem] overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 hover:bg-white/[0.04] hover:border-white/20`}>
-                <div className={`p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isUrgent ? 'bg-red-500/10 border-red-500/20' : 'bg-white/[0.02] border-white/5'}`}>
-                  <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border border-white/10 shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 ${isUrgent ? 'text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'text-blue-400'}`}>
-                    {isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-[2rem] overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-violet-900/40 to-pink-900/30 border border-violet-400/30 hover:border-violet-400/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+                {isBirthday && (
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
+                    <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>
+                    <div className="absolute -bottom-4 -left-4 text-[80px] opacity-[0.07] select-none">🎉</div>
+                  </div>
+                )}
+                <div className={`relative p-6 flex items-center gap-4 border-b transition-colors duration-500 ${isBirthday ? 'bg-gradient-to-r from-violet-500/15 to-pink-500/10 border-violet-400/20' : isUrgent ? 'bg-red-500/10 border-red-500/20' : 'bg-white/[0.02] border-white/5'}`}>
+                  <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center backdrop-blur-md shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] border shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 text-4xl ${isBirthday ? 'bg-violet-500/20 border-violet-400/30' : isUrgent ? 'bg-white/5 border-white/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-blue-400'}`}>
+                    {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5 ${isUrgent ? 'text-red-400' : 'text-white/40'}`}>
-                      {isUrgent ? '🚨 Aviso Urgente' : 'Mensaje Administrativo'}
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5 ${isBirthday ? 'text-violet-300' : isUrgent ? 'text-red-400' : 'text-white/40'}`}>
+                      {isBirthday ? '🎉 ¡Celebración!' : isUrgent ? '🚨 Aviso Urgente' : 'Mensaje Administrativo'}
                     </span>
-                    <h3 className="font-semibold text-[20px] text-white/90 leading-tight tracking-tight">
+                    <h3 className={`font-semibold text-[20px] leading-tight tracking-tight ${isBirthday ? 'text-white' : 'text-white/90'}`}>
                       {announcement.title}
                     </h3>
                   </div>
                 </div>
 
-                <div className="p-8 flex flex-col justify-between h-full min-h-[300px] relative bg-transparent">
+                <div className="relative p-8 flex flex-col justify-between h-full min-h-[300px] bg-transparent">
                   <div className="flex-1 overflow-y-auto max-h-[200px] scrollbar-hide">
-                    <p className="text-white/60 text-[15px] md:text-[16px] font-medium leading-relaxed whitespace-pre-wrap px-1">{announcement.message}</p>
+                    <p className={`text-[15px] md:text-[16px] font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-violet-100/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${isSuccess ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isUrgent ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
-                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${isSuccess ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-violet-500/20 text-violet-300 border border-violet-400/40 hover:bg-violet-500/30 hover:border-violet-400/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]' : isUrgent ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-base">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
               </div>

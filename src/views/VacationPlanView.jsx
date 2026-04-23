@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-    Palmtree, Plus, Check, X, User, Calendar, AlertCircle,
+    Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
@@ -279,6 +279,9 @@ const VacationPlanView = () => {
     const [notes, setNotes]         = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [cancelConfirm, setCancelConfirm] = useState({ open: false, planId: null });
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const searchInputRef = useRef(null);
 
     // Inline edit state
     const [editingPlan, setEditingPlan] = useState(null); // { id, start_date, end_date, notes }
@@ -490,8 +493,10 @@ const VacationPlanView = () => {
 
     // Sort filtered plans by branch → role → start_date
     const filtered = useMemo(() => {
+        const q = searchTerm.trim().toLowerCase();
         return vacationPlans
             .filter(p => statusFilter === 'ALL' || p.status === statusFilter)
+            .filter(p => !q || (p.employee?.name || '').toLowerCase().includes(q) || (p.branch?.name || '').toLowerCase().includes(q))
             .slice()
             .sort((a, b) => {
                 const brA = a.branch?.name || '';
@@ -502,40 +507,76 @@ const VacationPlanView = () => {
                 if (roA !== roB) return roA.localeCompare(roB);
                 return a.start_date.localeCompare(b.start_date);
             });
-    }, [vacationPlans, statusFilter]);
+    }, [vacationPlans, statusFilter, searchTerm]);
 
     const filtersContent = (
-        <div className="flex flex-wrap items-center gap-2">
-            {/* Selector año */}
-            <div className="flex items-center bg-white/50 backdrop-blur-md border border-white/70 rounded-[1.5rem] overflow-hidden shadow-sm">
-                <button onClick={() => setYear(y => y - 1)} className="px-3 py-2 hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors">
-                    <ChevronLeft size={14} strokeWidth={2.5} />
-                </button>
-                <span className="text-[12px] font-black text-slate-700 px-1 min-w-[44px] text-center">{year}</span>
-                <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="px-3 py-2 hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-30">
-                    <ChevronRight size={14} strokeWidth={2.5} />
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/30 rounded-[2.5rem] h-[4rem] md:h-[4.5rem] flex items-center px-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden">
+            {/* Search mode */}
+            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0'}`}>
+                <div className="flex items-center bg-white/60 rounded-[1.8rem] px-4 h-[3rem] gap-2 min-w-[260px]">
+                    <Search size={15} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Buscar empleado o sucursal…"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="bg-transparent outline-none text-[13px] font-semibold text-slate-700 placeholder-slate-400 w-full"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
+                            <X size={14} strokeWidth={2.5} />
+                        </button>
+                    )}
+                </div>
+                <button
+                    onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
+                    className="px-4 h-[3rem] rounded-[1.8rem] bg-white/60 text-slate-500 hover:text-slate-800 text-[12px] font-black uppercase tracking-widest whitespace-nowrap transition-colors">
+                    Cancelar
                 </button>
             </div>
 
-            {/* Sucursal */}
-            <div className="min-w-[180px]">
-                <LiquidSelect
-                    value={branchFilter}
-                    onChange={val => setBranchFilter(val)}
-                    options={branchOptions}
-                    placeholder="Todas las sucursales"
-                    clearable={false}
-                />
-            </div>
-
-            {/* Estado */}
-            <div className="flex items-center bg-white/50 backdrop-blur-md border border-white/70 rounded-[1.5rem] p-1 gap-1 shadow-sm">
-                {[['ALL', 'Todos'], ['PLANNED', 'Planificados'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
-                    <button key={key} onClick={() => setStatusFilter(key)}
-                        className={`px-3 py-1.5 rounded-[1.1rem] text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${statusFilter === key ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}>
-                        {lbl}
+            {/* Normal mode */}
+            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${isSearchMode ? 'max-w-0 opacity-0' : 'max-w-[1200px] opacity-100'}`}>
+                {/* Year selector */}
+                <div className="flex items-center bg-white/50 rounded-[1.8rem] overflow-hidden h-[3rem]">
+                    <button onClick={() => setYear(y => y - 1)} className="px-3 h-full hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors">
+                        <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
-                ))}
+                    <span className="text-[12px] font-black text-slate-700 px-1 min-w-[44px] text-center">{year}</span>
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="px-3 h-full hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-30">
+                        <ChevronRight size={14} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                {/* Branch */}
+                <div className="min-w-[180px]">
+                    <LiquidSelect
+                        value={branchFilter}
+                        onChange={val => setBranchFilter(val)}
+                        options={branchOptions}
+                        placeholder="Todas las sucursales"
+                        clearable={false}
+                    />
+                </div>
+
+                {/* Status tabs */}
+                <div className="flex items-center bg-white/50 rounded-[1.8rem] p-1 gap-1 h-[3rem]">
+                    {[['ALL', 'Todos'], ['PLANNED', 'Planificados'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
+                        <button key={key} onClick={() => setStatusFilter(key)}
+                            className={`px-3 py-1.5 rounded-[1.3rem] text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap ${statusFilter === key ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}>
+                            {lbl}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Search button */}
+                <button
+                    onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                    className="flex items-center gap-2 px-4 h-[3rem] rounded-[1.8rem] bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest shadow-[0_2px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] transition-colors whitespace-nowrap">
+                    <Search size={14} strokeWidth={2.5} />
+                    Buscar
+                </button>
             </div>
         </div>
     );

@@ -563,7 +563,7 @@ const StaffManagementView = ({
         <div className="flex items-center gap-2 md:gap-3 shrink-0 border-l border-white/40 pl-2 md:pl-3 ml-1 md:ml-2 overflow-visible">
           <button
             onClick={() => setIsSearchActive(true)}
-            className="relative w-10 h-10 md:w-11 md:h-11 bg-white/60 hover:bg-white text-[#007AFF] rounded-full flex items-center justify-center shrink-0 shadow-sm hover:shadow-md transition-all duration-300 active:scale-95 transform-gpu border border-white/80 hover:-translate-y-0.5"
+            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
             title="Buscar colaborador"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

@@ -496,6 +496,7 @@ const DashboardView = ({ openModal }) => {
   const [calMonth,       setCalMonth]       = useState(new Date());
   const [bdMonth,        setBdMonth]        = useState(new Date());
   const [calTooltip,     setCalTooltip]     = useState(null);
+  const [salesBarTip,    setSalesBarTip]    = useState(null); // {x,y,label,amount,txCount}
   const [trendOffset,    setTrendOffset]    = useState(0);
   const [salesBranch,    setSalesBranch]    = useState('');
   const [salesStats,     setSalesStats]     = useState({ days: [], generalHours: [], specificHours: {} });
@@ -951,15 +952,10 @@ const DashboardView = ({ openModal }) => {
                 {allH.map(h=>{
                   const v=hourMap[h]||0, bH=v>0?Math.max(Math.round((v/maxV)*100),4):2;
                   const isNow=h===nowH&&h>=openH&&h<=closeH;
-                  const tipAmt=fS(hourSalesMap[h]||0);
-                  const txCount=v;
                   return (
-                    <div key={h} className="flex-1 flex flex-col justify-end group relative h-full">
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-[300] transition-opacity shadow-lg flex flex-col items-center gap-0.5">
-                        <span className="text-slate-300 font-semibold">{formatHourAMPM(h)}</span>
-                        {tipAmt&&<span className="text-emerald-400">{tipAmt}</span>}
-                        {txCount>0&&<span className="text-slate-400">{txCount} tx</span>}
-                      </div>
+                    <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
+                      onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
+                      onMouseLeave={()=>setSalesBarTip(null)}>
                       {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
                       <div className="w-full rounded-t-[2px] transition-all" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                     </div>
@@ -1294,6 +1290,18 @@ const DashboardView = ({ openModal }) => {
         </div>
 
       </div>
+
+      {/* Sales bar tooltip */}
+      {salesBarTip && createPortal(
+        <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
+          className="bg-slate-900 text-white rounded-xl shadow-xl px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
+          <span className="text-[9px] text-slate-400 font-semibold">{salesBarTip.label}</span>
+          {salesBarTip.amount&&<span className="text-[10px] text-emerald-400 font-black">{salesBarTip.amount}</span>}
+          {salesBarTip.txCount>0&&<span className="text-[9px] text-slate-300 font-semibold">{salesBarTip.txCount} tx</span>}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900"/>
+        </div>,
+        document.body
+      )}
 
       {/* Calendar tooltip */}
       {calTooltip && createPortal(

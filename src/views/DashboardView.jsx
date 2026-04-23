@@ -348,8 +348,16 @@ const DashboardView = ({ openModal }) => {
         if (error) console.error('[dash prefs load]', error);
         if (data) {
           if (data.layout && Object.keys(data.layout).length) {
-            setWidgetLayout(data.layout);
-            try { localStorage.setItem(`portal_dash_layout_${user.id}`, JSON.stringify(data.layout)); } catch {}
+            const missing = DEFAULT_WIDGET_ORDER.filter(id => !(id in data.layout));
+            let layout = data.layout;
+            if (missing.length) {
+              const extended = [...Object.keys(data.layout), ...missing];
+              const newLayout = autoPlaceOrder(extended, data.sizes || {});
+              layout = { ...data.layout };
+              missing.forEach(id => { layout[id] = newLayout[id] || { col: 1, row: 999 }; });
+            }
+            setWidgetLayout(layout);
+            try { localStorage.setItem(`portal_dash_layout_${user.id}`, JSON.stringify(layout)); } catch {}
           }
           if (data.sizes && Object.keys(data.sizes).length) {
             setWidgetSizes(data.sizes);

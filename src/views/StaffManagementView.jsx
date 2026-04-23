@@ -562,15 +562,6 @@ const StaffManagementView = ({
 
         <div className="flex items-center gap-2 md:gap-3 shrink-0 border-l border-white/40 pl-2 md:pl-3 ml-1 md:ml-2 overflow-visible">
           <button
-            onClick={() => setIsSearchActive(true)}
-            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
-            title="Buscar colaborador"
-          >
-            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-            {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
-          </button>
-
-          <button
             type="button"
             onClick={handleExportCSV}
             className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-white/80 hover:border-emerald-200"
@@ -587,6 +578,17 @@ const StaffManagementView = ({
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
+          </button>
+        </div>
+
+        <div className="flex items-center shrink-0 border-l border-white/40 pl-2 md:pl-3 ml-1 md:ml-2">
+          <button
+            onClick={() => setIsSearchActive(true)}
+            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+            title="Buscar colaborador"
+          >
+            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+            {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
           </button>
         </div>
       </div>

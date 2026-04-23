@@ -421,9 +421,6 @@ export const createBranchSlice = (set, get) => ({
         return !(error || !data);
     },
 
-    addBranchDocument: () => makeId(),
-    registerBranchEvent: () => makeId(),
-
     getBranchHistory: async (branchId) => {
         try {
             const { data: docs } = await supabase.from('branch_documents').select('*').eq('branch_id', branchId).order('created_at', { ascending: false });

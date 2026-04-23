@@ -278,7 +278,18 @@ const DashboardView = ({ openModal }) => {
   const [widgetLayout, setWidgetLayout] = useState(() => {
     try {
       const saved = localStorage.getItem(`portal_dash_layout_${user?.id||'guest'}`);
-      if (saved) { const p = JSON.parse(saved); if (Object.values(p).every(v => v?.col && v?.row)) return p; }
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (Object.values(p).every(v => v?.col && v?.row)) {
+          const missing = DEFAULT_WIDGET_ORDER.filter(id => !(id in p));
+          if (!missing.length) return p;
+          const extended = [...Object.keys(p), ...missing];
+          const newLayout = autoPlaceOrder(extended, {});
+          const next = { ...p };
+          missing.forEach(id => { next[id] = newLayout[id] || { col: 1, row: 999 }; });
+          return next;
+        }
+      }
     } catch {}
     // Migrate from old order-based storage
     const oldOrder = (() => { try { const s = localStorage.getItem(`portal_dash_widgets_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {} return DEFAULT_WIDGET_ORDER; })();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
@@ -264,6 +264,8 @@ const PermissionsView = () => {
     const [confirmActivate, setConfirmActivate] = useState(false);
     const [confirmCopy, setConfirmCopy] = useState(null); // roleId a copiar
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const searchInputRef = useRef(null);
 
     // ── Carga roles organizacionales + permisos desde DB ─────────────────────
     useEffect(() => {
@@ -495,51 +497,49 @@ const PermissionsView = () => {
     );
 
     const filtersContent = (
-        <div className="flex items-center gap-2 flex-wrap">
-            {/* Buscador */}
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-[1.2rem] bg-white/70 border border-white/80 backdrop-blur-sm">
-                <Search size={12} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+        <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+            {/* MODO BÚSQUEDA */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
+                    placeholder="Buscar cargo..."
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Buscar cargo..."
-                    className="bg-transparent text-[12px] font-medium text-slate-700 placeholder:text-slate-400 outline-none w-28"
+                    ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-slate-300 hover:text-slate-500 transition-colors">
-                        <X size={11} strokeWidth={2.5} />
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0">
+                        <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
             </div>
-
-            {selectedRoleId && canEdit && (
-                <>
-                    {/* Activar todo */}
-                    <button
-                        onClick={() => setConfirmActivate(true)}
-                        disabled={activatingAll || copyingFrom}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-[1.2rem] bg-amber-50 border border-amber-200 text-amber-700 text-[12px] font-bold hover:bg-amber-100 transition-all disabled:opacity-50"
-                    >
-                        {activatingAll ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} strokeWidth={2.5} />}
-                        Activar todo
-                    </button>
-
-                    {/* Copiar de otro cargo */}
-                    <div className="w-48">
-                        <LiquidSelect
-                            value=""
-                            onChange={val => { if (val) setConfirmCopy(Number(val)); }}
-                            options={copyOptions}
-                            placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'}
-                            icon={Copy}
-                            clearable={false}
-                            compact={true}
-                            disabled={activatingAll || copyingFrom}
-                        />
-                    </div>
-                </>
-            )}
+            {/* MODO NORMAL */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3'}`}>
+                {selectedRoleId && canEdit && (
+                    <>
+                        <button onClick={() => setConfirmActivate(true)} disabled={activatingAll || copyingFrom}
+                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-amber-600 border-amber-200/60 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
+                            {activatingAll ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} strokeWidth={2.5} />}
+                            Activar todo
+                        </button>
+                        <div className="w-44 shrink-0">
+                            <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }} options={copyOptions} placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'} icon={Copy} clearable={false} compact={true} disabled={activatingAll || copyingFrom} />
+                        </div>
+                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                    </>
+                )}
+                <button onClick={() => setIsSearchMode(true)}
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    title="Buscar cargo">
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
+            </div>
         </div>
     );
 

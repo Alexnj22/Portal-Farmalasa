@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
-    FileText, Palmtree, RefreshCw, Filter, Calendar, ChevronDown,
+    FileText, Palmtree, RefreshCw, Filter, Calendar, ChevronDown, ChevronRight,
     Download, Eye, AlertCircle, CheckCircle2, Clock, XCircle, Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -185,6 +185,7 @@ const EmployeeDocumentsView = () => {
     const [tab, setTab]               = useState('ALL');
     const [search, setSearch]         = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
+    const searchInputRef              = useRef(null);
     const [filterOpen, setFilterOpen] = useState(false);
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');
@@ -239,63 +240,53 @@ const EmployeeDocumentsView = () => {
 
     // ── Filter bar ────────────────────────────────────────────────────────
     const renderFilters = () => (
-        <div className="flex items-center gap-2">
-            {/* Search expandible */}
-            <div className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] bg-white/20 backdrop-blur-xl ${searchOpen ? 'border-white/70 px-3 py-2 w-44' : 'border-white/50 w-9 h-9 justify-center'}`}>
-                <button
-                    type="button"
-                    onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearch(''); }}
-                    className="flex-shrink-0 text-slate-600 hover:text-slate-800 transition-colors"
-                >
-                    {searchOpen ? <X size={12} strokeWidth={2.5} /> : <Search size={13} strokeWidth={2.5} />}
-                </button>
-                {searchOpen && (
-                    <input
-                        autoFocus
-                        type="text"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Buscar…"
-                        className="flex-1 min-w-0 text-[11px] font-medium text-slate-700 placeholder-slate-400 outline-none bg-transparent"
-                    />
-                )}
-            </div>
-
-            {/* Filtros avanzados */}
-            <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
-                <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
-                    {TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL').map(t => {
-                        const isActive = tab === t.key;
-                        return (
-                            <button
-                                key={t.key}
-                                onClick={() => setTab(t.key)}
-                                className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
-                                    isActive
-                                        ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                        : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
-                                }`}
-                            >
-                                {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
-                            </button>
-                        );
-                    })}
-                    {/* Separador */}
-                    <div className="w-px h-5 bg-slate-200/60 mx-1 shrink-0" />
-                    {/* Botón filtros */}
-                    <button
-                        onClick={() => setFilterOpen(v => !v)}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
-                            filterOpen || hasFilters
-                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
-                        }`}
-                    >
-                        <Filter size={10} strokeWidth={2.5} />
-                        Filtrar
-                        {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-[#007AFF] flex-shrink-0" />}
+        <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
+            {/* MODO BÚSQUEDA */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${searchOpen ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar documento..."
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    ref={(input) => { if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
+                />
+                {search && (
+                    <button onClick={() => setSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0">
+                        <X size={16} strokeWidth={2.5} />
                     </button>
-                </div>
+                )}
+                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2" title="Cerrar">
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
+            </div>
+            {/* MODO NORMAL */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${searchOpen ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
+                {TABS.filter(t => counts[t.key] > 0 || t.key === 'ALL').map(t => {
+                    const isActive = tab === t.key;
+                    return (
+                        <button key={t.key} onClick={() => setTab(t.key)}
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'}`}>
+                            {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
+                        </button>
+                    );
+                })}
+                <div className="w-px h-5 bg-slate-200/60 mx-1 shrink-0" />
+                <button onClick={() => setFilterOpen(v => !v)}
+                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'}`}>
+                    <Filter size={10} strokeWidth={2.5} />
+                    Filtrar
+                    {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-[#007AFF] flex-shrink-0" />}
+                </button>
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <button onClick={() => setSearchOpen(true)}
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    title="Buscar documentos">
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
             </div>
         </div>
     );

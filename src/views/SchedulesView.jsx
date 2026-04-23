@@ -686,7 +686,7 @@ useEffect(() => {
                             </div>
 
                             <div className="flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-white/30">
-                                <button onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-white/80 border border-white text-[#007AFF] rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,0,0,0.05)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:bg-white hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar">
+                                <button onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                     {activeSearchValue && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
                                 </button>

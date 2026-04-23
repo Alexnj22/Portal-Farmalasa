@@ -681,10 +681,9 @@ const DashboardView = ({ openModal }) => {
 
   const calendarEvents = useMemo(()=>{
     const map={},y=calMonth.getFullYear();
-    holidays.forEach(h=>{if(!h.holiday_date)return; const k=h.is_recurring?`${y}-${h.holiday_date.slice(5)}`:h.holiday_date.slice(0,10); if(!map[k])map[k]={holidays:[],birthdays:[]}; map[k].holidays.push(h.name);});
-    activeEmployees.forEach(e=>{if(!e.birthDate)return; const bd=new Date(e.birthDate+'T12:00:00'); const k=`${y}-${String(bd.getMonth()+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`; if(!map[k])map[k]={holidays:[],birthdays:[]}; map[k].birthdays.push({name:e.name,age:y-bd.getFullYear(),photo:e.photo_url||e.photo||null});});
+    holidays.forEach(h=>{if(!h.holiday_date)return; const k=h.is_recurring?`${y}-${h.holiday_date.slice(5)}`:h.holiday_date.slice(0,10); if(!map[k])map[k]={holidays:[]}; map[k].holidays.push(h.name);});
     return map;
-  },[holidays,activeEmployees,calMonth]);
+  },[holidays,calMonth]);
 
   const calendarDays = useMemo(()=>{
     const y=calMonth.getFullYear(),m=calMonth.getMonth();
@@ -937,7 +936,7 @@ const DashboardView = ({ openModal }) => {
       const fS=v=>v>0?`$${v.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`:null;
       const hourSalesMap=bd?.hourSales||{};
       const nowH=new Date().getHours();
-      const fHr=h=>h===12?'12':h>12?String(h-12):String(h);
+      const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
         <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-1">
@@ -948,15 +947,18 @@ const DashboardView = ({ openModal }) => {
             <div className="w-full bg-slate-100 rounded-lg animate-pulse flex-1"/>
           ):(
             <div className="flex flex-col flex-1 min-h-0">
-              <div className="flex items-end gap-[2px] w-full flex-1">
+              <div className="flex items-end gap-[1px] w-full flex-1">
                 {allH.map(h=>{
                   const v=hourMap[h]||0, bH=v>0?Math.max(Math.round((v/maxV)*100),4):2;
                   const isNow=h===nowH&&h>=openH&&h<=closeH;
                   const tipAmt=fS(hourSalesMap[h]||0);
+                  const txCount=v;
                   return (
                     <div key={h} className="flex-1 flex flex-col justify-end group relative h-full">
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-[300] transition-opacity shadow-lg">
-                        {formatHourAMPM(h)}{tipAmt?`: ${tipAmt}`:v>0?`: ${v} tx`:''}
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-[300] transition-opacity shadow-lg flex flex-col items-center gap-0.5">
+                        <span className="text-slate-300 font-semibold">{formatHourAMPM(h)}</span>
+                        {tipAmt&&<span className="text-emerald-400">{tipAmt}</span>}
+                        {txCount>0&&<span className="text-slate-400">{txCount} tx</span>}
                       </div>
                       {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
                       <div className="w-full rounded-t-[2px] transition-all" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
@@ -964,10 +966,10 @@ const DashboardView = ({ openModal }) => {
                   );
                 })}
               </div>
-              <div className="flex gap-[2px] w-full mt-0.5">
-                {allH.map((h,idx)=>(
+              <div className="flex gap-[1px] w-full mt-0.5">
+                {allH.map((h)=>(
                   <div key={h} className="flex-1 text-center overflow-hidden">
-                    {idx%2===0&&<span className={`text-[7px] font-bold leading-none ${h===nowH?'text-emerald-500':'text-slate-300'}`}>{fHr(h)}</span>}
+                    <span className={`text-[6px] font-bold leading-none ${h===nowH?'text-emerald-500':'text-slate-300'}`}>{fHr(h)}</span>
                   </div>
                 ))}
               </div>
@@ -1078,22 +1080,21 @@ const DashboardView = ({ openModal }) => {
                   if (!day) return <div key={`pad-${i}`}/>;
                   const mm=String(calendarDays.month+1).padStart(2,'0'), dd=String(day).padStart(2,'0');
                   const ds=`${calendarDays.year}-${mm}-${dd}`, isToday=ds===localDateStr();
-                  const ev=calendarEvents[ds], hasH=ev?.holidays?.length>0, hasB=ev?.birthdays?.length>0;
+                  const ev=calendarEvents[ds], hasH=ev?.holidays?.length>0;
                   return (
                     <div key={day}
-                      onMouseEnter={e=>{if(!hasH&&!hasB)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],birthdays:ev?.birthdays||[],x:r.left+r.width/2,y:r.top});}}
+                      onMouseEnter={e=>{if(!hasH)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
-                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-all duration-150 ${isToday&&hasB?'bg-gradient-to-br from-[#007AFF] to-purple-500 ring-2 ring-purple-400/50':isToday?'bg-[#007AFF]':hasH&&hasB?'bg-gradient-to-br from-red-50 to-purple-50 hover:from-red-100 hover:to-purple-100':hasH?'bg-red-50 hover:bg-red-100':hasB?'bg-purple-50 hover:bg-purple-100':'hover:bg-slate-100/80'}`}>
-                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':hasB?'text-purple-600':'text-slate-700'}`}>{day}</span>
-                      {isToday&&hasB&&<span className="text-[8px] leading-none mt-0.5">🎂</span>}
-                      {(hasH||hasB)&&!isToday&&<div className="flex gap-0.5 mt-0.5">{hasH&&<span className="w-1 h-1 rounded-full bg-red-400"/>}{hasB&&<span className="w-1 h-1 rounded-full bg-purple-400"/>}</div>}
+                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-all duration-150 ${isToday?'bg-[#007AFF]':hasH?'bg-red-50 hover:bg-red-100':'hover:bg-slate-100/80'}`}>
+                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':'text-slate-700'}`}>{day}</span>
+                      {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-red-400"/></div>}
                     </div>
                   );
                 })}
               </div>
             </div>
-            {/* Upcoming birthdays */}
-            {upcomingBirthdays.length>0&&(
+            {/* Upcoming birthdays — moved to dedicated birthday widget */}
+            {false&&upcomingBirthdays.length>0&&(
               <div className="mt-2 pt-2 border-t border-white/50 flex flex-wrap gap-1 shrink-0">
                 {upcomingBirthdays.slice(0,6).map((item,idx)=>(
                   <div key={idx} className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold cursor-default ${item.isToday?'bg-purple-100 text-purple-700':'bg-slate-50/80 text-slate-400'}`}>
@@ -1303,22 +1304,6 @@ const DashboardView = ({ openModal }) => {
               {calTooltip.holidays.map((h,i)=>(
                 <div key={i} className="flex items-center gap-1.5 text-[11px] font-medium text-red-300">
                   <span>📅</span><span>{h}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {calTooltip.birthdays?.length>0&&(
-            <div className="px-3 py-2.5 flex flex-col gap-2.5">
-              {calTooltip.birthdays.map((b,i)=>(
-                <div key={i} className="flex items-center gap-2.5">
-                  {b.photo
-                    ?<img src={b.photo} alt={b.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0 border-2 border-purple-400/50 shadow-sm"/>
-                    :<div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-white font-black text-[13px] flex-shrink-0 border-2 border-purple-400/30">{b.name?.[0]||'?'}</div>
-                  }
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-black leading-none truncate">{b.name.split(' ').slice(0,2).join(' ')}</p>
-                    <p className="text-[10px] text-purple-300 mt-0.5">🎂 Cumple {b.age} años</p>
-                  </div>
                 </div>
               ))}
             </div>

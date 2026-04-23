@@ -5,7 +5,7 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock
+    BarChart2, UserX, Clock, Gift
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -81,7 +81,8 @@ const MODULE_GROUPS = [
             { key: 'dash_announcements',label: 'Widget: Avisos recientes',    desc: 'Últimos avisos publicados en el dashboard',                               icon: Megaphone,    hasApprove: false },
             { key: 'dash_shifts',       label: 'Widget: Estado de turnos',    desc: 'Ver quién está en labores, almuerzo o lactancia por sucursal en tiempo real', icon: Clock,     hasApprove: false },
             { key: 'dash_absences',     label: 'Widget: Ausencias activas',   desc: 'Empleados con vacaciones, incapacidad o permiso activos hoy',              icon: UserX,       hasApprove: false },
-            { key: 'dash_sales',        label: 'Widget: Ventas por hora',     desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,   hasApprove: false },
+            { key: 'dash_sales',       label: 'Widget: Ventas por hora',     desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,   hasApprove: false },
+            { key: 'dash_birthdays',   label: 'Widget: Cumpleaños del mes',  desc: 'Cumpleañeros del mes con foto, sucursal y edad',                            icon: Gift,        hasApprove: false },
         ],
     },
     {

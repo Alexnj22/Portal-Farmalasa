@@ -70,6 +70,7 @@ const WIDGET_SIZES = {
   branches:      { minCols: 1, minRows: 1, label: 'Sucursales'   },
   calendar:      { minCols: 2, minRows: 3, label: 'Calendario'   },
   announcements: { minCols: 1, minRows: 2, label: 'Avisos'       },
+  birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
 };
 
 const getWidgetSize = (id) => {
@@ -77,7 +78,7 @@ const getWidgetSize = (id) => {
   return WIDGET_SIZES[id] || { minCols: 1, minRows: 1, label: id };
 };
 
-const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements'];
+const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements', 'birthdays'];
 
 // Resolve collisions after a drop: dragged widget wins its target position,
 // displaced widgets find their next free slot (top-left priority, no cascades).
@@ -154,6 +155,7 @@ const WIDGET_DEFS = [
   { id: 'branches',      label: 'Alertas de sucursales',   permission: 'dash_branches',      icon: Building2     },
   { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays  },
   { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone     },
+  { id: 'birthdays',    label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift          },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -672,6 +674,20 @@ const DashboardView = ({ openModal }) => {
   },[calMonth]);
 
   const recentAnnouncements = useMemo(()=>announcements.filter(a=>!a.isArchived&&(!a.scheduledFor||new Date(a.scheduledFor)<=new Date())).slice(0,5),[announcements]);
+
+  const birthdaysOfMonth = useMemo(()=>{
+    const y=calMonth.getFullYear(), m=calMonth.getMonth(), todayStr=localDateStr();
+    return activeEmployees
+      .filter(e=>{if(!e.birthDate)return false; const bd=new Date(e.birthDate+'T12:00:00'); return bd.getMonth()===m;})
+      .map(e=>{
+        const bd=new Date(e.birthDate+'T12:00:00');
+        const age=y-bd.getFullYear();
+        const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
+        const branch=branches.find(b=>String(b.id)===String(e.branchId||e.branch_id));
+        return {...e, age, day:bd.getDate(), dateStr:ds, isToday:ds===todayStr, branchName:branch?.name||'Sin sucursal'};
+      })
+      .sort((a,b)=>a.day-b.day);
+  },[activeEmployees,calMonth,branches]);
   const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
 
   const resetAll = () => {
@@ -1088,6 +1104,71 @@ const DashboardView = ({ openModal }) => {
               ))}
           </div>
         </WidgetCard>
+      );
+    }
+
+    /* ── BIRTHDAYS ── */
+    if (wid === 'birthdays') {
+      if (!showWidget('birthdays','dash_birthdays')) return null;
+      const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      return wrapWidget('birthdays',
+        <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
+          {/* Festive header */}
+          <div className="relative px-4 py-3 border-b border-white/50 shrink-0 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-400/10 via-pink-400/8 to-amber-400/10"/>
+            <div className="absolute -top-4 -right-4 text-[60px] opacity-[0.06] select-none pointer-events-none">🎂</div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-[0.6rem] bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-[0_4px_10px_rgba(168,85,247,0.35)]">
+                  <Gift size={13} className="text-white" strokeWidth={2.5}/>
+                </div>
+                <h3 className="text-[12px] font-black text-slate-800 tracking-tight">Cumpleaños</h3>
+                <span className="text-[13px] leading-none">🎉</span>
+              </div>
+              <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest">
+                {MONTH_ES[calMonth.getMonth()]}
+              </span>
+            </div>
+          </div>
+          {/* Content */}
+          <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 pb-3 pt-2">
+            {birthdaysOfMonth.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full py-8 text-slate-300">
+                <Gift size={32} strokeWidth={1}/>
+                <p className="text-[12px] font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {birthdaysOfMonth.map((e,i)=>{
+                  const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+                  const dayLabel=`${e.day} ${new Date(calMonth.getFullYear(),calMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
+                  return (
+                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 group ${e.isToday?'bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 border-violet-200/70 shadow-[0_4px_16px_rgba(168,85,247,0.12)]':'bg-white/50 border-white/60 hover:bg-white/80 hover:border-slate-200/60 hover:shadow-sm'}`}>
+                      {/* Avatar */}
+                      <div className="relative flex-shrink-0">
+                        {e.photo_url||e.photo
+                          ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-violet-300':'border-white'}`}/>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-gradient-to-br from-violet-500 to-pink-500 text-white border-violet-300':'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500 border-white'}`}>{initials}</div>
+                        }
+                        {e.isToday&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">🎂</span>}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-violet-700':'text-slate-800'}`}>{e.name}</p>
+                        <p className="text-[9px] text-slate-400 font-medium truncate">{e.branchName}</p>
+                      </div>
+                      {/* Date + Age badge */}
+                      <div className={`flex flex-col items-end gap-0.5 flex-shrink-0`}>
+                        <span className={`text-[10px] font-black ${e.isToday?'text-violet-600':'text-slate-600'}`}>{dayLabel}</span>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isToday?'bg-pink-100 text-pink-600':'bg-slate-100 text-slate-400'}`}>{e.age} años</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       );
     }
 

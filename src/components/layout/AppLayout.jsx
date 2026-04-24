@@ -83,6 +83,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const activePath = location.pathname;
     const activeId = activePath.split('/')[1] || '';
 
+    const cargoLabel = (() => {
+        if (typeof user?.role === 'string' && isNaN(Number(user.role))) return user.role;
+        const map = { SUPERADMIN: 'Super Admin', ADMIN: 'Administrador', EMPLEADO: 'Colaborador' };
+        return map[systemRole] || systemRole || '';
+    })();
+
     useEffect(() => {
         const check = () => {
             setIsMobile(window.innerWidth < 1024);
@@ -683,6 +689,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </button>
                                 )}
                                 <button onClick={() => navigate('/profile')} type="button"
+                                    onMouseEnter={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
+                                        openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
+                                    }}
+                                    onMouseLeave={closeFlyout}
                                     className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center
                                         bg-white/10 border border-white/14
                                         shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.25)]
@@ -844,14 +856,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 type="button"
                             >
                                 <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0
-                                    ${flyout.isActive ? 'bg-[#1D7AFC]/25' : 'bg-white/8 group-hover/fi:bg-[#1D7AFC]/20'}`}>
+                                    ${flyout.isActive ? 'bg-[#1D7AFC]/30' : 'bg-[#1D7AFC]/15 group-hover/fi:bg-[#1D7AFC]/25'}`}>
                                     <flyout.icon
                                         size={16}
                                         strokeWidth={flyout.isActive ? 2 : 1.5}
-                                        className={flyout.isActive ? 'text-[#5BA8FF]' : 'text-white/55 group-hover/fi:text-[#5BA8FF]'}
+                                        className="text-[#5BA8FF]"
                                     />
                                 </div>
-                                <span className="text-[13px] font-semibold whitespace-nowrap text-white leading-none pr-1">{flyout.label}</span>
+                                <span className="text-[13px] font-semibold whitespace-nowrap text-[#5BA8FF] leading-none pr-1">{flyout.label}</span>
                                 {flyout.badge > 0 && (
                                     <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                         {flyout.badge > 9 ? '9+' : flyout.badge}
@@ -866,7 +878,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#1D7AFC] shadow-[0_0_6px_rgba(29,122,252,0.8)] flex-shrink-0" />}
                             </button>
                         </div>
-                    ) : (
+                    ) : flyout.type === 'group' ? (
                         /* ── Group flyout panel ── */
                         <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
                             <div className="relative rounded-[1.4rem] overflow-hidden
@@ -890,20 +902,20 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 onClick={() => { navigate(m.path); setFlyout(null); }}
                                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.85rem] transition-all duration-150 text-left group/fi active:scale-[0.97]
                                                     ${m.isActive
-                                                        ? 'bg-[#1A3560] text-white border border-[#2D5499]/50'
-                                                        : 'text-white/60 hover:text-white hover:bg-[#1A3560]/60'}`}
+                                                        ? 'bg-[#1D7AFC]/15 border border-[#1D7AFC]/30'
+                                                        : 'hover:bg-[#1D7AFC]/10'}`}
                                             >
                                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
                                                     ${m.isActive
-                                                        ? 'bg-[#1D7AFC]/25 shadow-[0_2px_8px_rgba(29,122,252,0.25)]'
-                                                        : 'bg-white/6 group-hover/fi:bg-white/12'}`}>
+                                                        ? 'bg-[#1D7AFC]/30 shadow-[0_2px_8px_rgba(29,122,252,0.25)]'
+                                                        : 'bg-[#1D7AFC]/15 group-hover/fi:bg-[#1D7AFC]/25'}`}>
                                                     <MIcon
                                                         size={14}
                                                         strokeWidth={m.isActive ? 2 : 1.5}
-                                                        className={m.isActive ? 'text-[#5BA8FF]' : 'text-white/45 group-hover/fi:text-white'}
+                                                        className="text-[#5BA8FF]"
                                                     />
                                                 </div>
-                                                <span className="text-[13px] font-medium whitespace-nowrap flex-1">{m.label}</span>
+                                                <span className={`text-[13px] font-medium whitespace-nowrap flex-1 ${m.isActive ? 'text-[#5BA8FF] font-semibold' : 'text-[#5BA8FF]/80 group-hover/fi:text-[#5BA8FF]'}`}>{m.label}</span>
                                                 {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#1D7AFC] shadow-[0_0_6px_rgba(29,122,252,0.8)] flex-shrink-0" />}
                                                 {m.badge > 0 && (
                                                     <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
@@ -922,7 +934,27 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : flyout.type === 'user' ? (
+                        /* ── User card flyout ── */
+                        <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
+                            <button
+                                onClick={() => { navigate('/profile'); setFlyout(null); }}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-[1rem]
+                                    bg-white/8 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/20
+                                    shadow-[0_8px_28px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.18)]
+                                    hover:bg-white/15 hover:border-white/35 transition-all duration-150 active:scale-[0.97]"
+                                type="button"
+                            >
+                                <div className="w-9 h-9 rounded-[0.75rem] overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
+                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#5BA8FF]" />}
+                                </div>
+                                <div className="flex flex-col items-start pr-1">
+                                    <span className="text-[13px] font-semibold text-[#5BA8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
+                                    <span className="text-[11px] text-[#5BA8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
+                                </div>
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
             )}
         </div>

@@ -547,7 +547,7 @@ const VacationPlanView = () => {
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
                 {/* Branch filter */}
-                <div className="w-max overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect
                         value={branchFilter}
                         onChange={val => setBranchFilter(val)}
@@ -562,7 +562,7 @@ const VacationPlanView = () => {
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
                 {/* Status filter */}
-                <div className="w-max overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                <div className="w-[170px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect
                         value={statusFilter}
                         onChange={val => setStatusFilter(val || 'ALL')}

@@ -836,11 +836,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <button
                                 onClick={() => { navigate(flyout.path); setFlyout(null); }}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-[1rem]
-                                    backdrop-blur-2xl backdrop-saturate-150 border shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]
+                                    backdrop-blur-2xl backdrop-saturate-[200%] border shadow-[0_8px_28px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.18)]
                                     transition-all duration-150 active:scale-[0.97] group/fi
                                     ${flyout.isActive
-                                        ? 'bg-[#1A3560]/85 border-[#2D5499]/60'
-                                        : 'bg-[#0D2040]/80 border-[#1E3A6E]/60 hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60'}`}
+                                        ? 'bg-white/15 border-white/35'
+                                        : 'bg-white/8 border-white/20 hover:bg-white/15 hover:border-white/35'}`}
                                 type="button"
                             >
                                 <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0
@@ -870,9 +870,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         /* ── Group flyout panel ── */
                         <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
                             <div className="relative rounded-[1.4rem] overflow-hidden
-                                bg-[#0A1628]/80 backdrop-blur-2xl backdrop-saturate-150
-                                border border-white/12
-                                shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                                bg-white/8 backdrop-blur-2xl backdrop-saturate-[200%]
+                                border border-white/20
+                                shadow-[0_16px_48px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.18)]">
 
                                 {/* Group label header */}
                                 <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">

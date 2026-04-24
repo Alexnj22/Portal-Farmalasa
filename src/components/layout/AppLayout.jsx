@@ -4,7 +4,8 @@ import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, BellRing, LayoutDashboard
+    Home, Bell, FolderOpen, BellRing, LayoutDashboard,
+    TrendingUp, Tag, Gift, Users, Package
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
@@ -29,6 +30,12 @@ const MODULE_MAP = {
     announcements:     { path: '/announcements',   label: 'Gestionar Avisos',         icon: Megaphone     },
     permissions:       { path: '/permissions',     label: 'Permisos de Acceso',       icon: Lock          },
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
+    // ── Próximamente ──
+    ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp,   comingSoon: true },
+    promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
+    bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
+    entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
+    productos:         { path: '/productos',        label: 'Productos',                icon: Package,      comingSoon: true },
 };
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
@@ -46,6 +53,9 @@ const MENU_GROUPS = [
     { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan']                       },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'promociones', 'bonificaciones'] },
+    { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas']                          },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos']                            },
 ];
 
 // Self-service module keys (for bottom tabs logic)
@@ -122,7 +132,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const visibleGroups = useMemo(() => {
         return MENU_GROUPS.map(g => {
             const visibleModules = g.modules
-                .filter(key => hasPermission(key, 'can_view'))
+                .filter(key => MODULE_MAP[key]?.comingSoon || hasPermission(key, 'can_view'))
                 .map(key => ({ key, ...MODULE_MAP[key] }));
             return { ...g, visibleModules };
         }).filter(g => g.visibleModules.length > 0);
@@ -299,7 +309,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     // Bottom tabs: only for users who have ONLY self-service modules
     const allModuleKeys = useMemo(() =>
-        visibleGroups.flatMap(g => g.visibleModules.map(m => m.key)),
+        visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon).map(m => m.key)),
     [visibleGroups]);
     const hasSelfOnly = allModuleKeys.length > 0 && allModuleKeys.every(k => SELF_KEYS.includes(k));
     const selfItems = useMemo(() =>
@@ -308,17 +318,40 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     // ── Render a single nav item button ──
     const renderNavItem = (module, indent = false) => {
-        const { key, path, label, icon: Icon } = module;
+        const { key, path, label, icon: Icon, comingSoon } = module;
         const pathSeg = path.replace(/^\//, '').split('/')[0];
-        const isActive = activeId === pathSeg || activePath.startsWith(path + '/');
+        const isActive = !comingSoon && (activeId === pathSeg || activePath.startsWith(path + '/'));
         const badge = getBadge(key);
         const alert = getAlert(key);
 
-        const handleMouseEnter = (!isMobile && !isExpanded) ? (e) => {
+        const handleMouseEnter = (!isMobile && !isExpanded && !comingSoon) ? (e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
+
+        if (comingSoon) {
+            return (
+                <div
+                    key={key}
+                    className={`w-full flex items-center gap-2.5 rounded-[1rem] relative
+                        ${indent ? 'px-2.5 py-2 ml-2' : 'px-3 py-3'}
+                        opacity-50 cursor-default select-none`}
+                >
+                    <div className="relative z-10 flex-shrink-0">
+                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/40" />
+                    </div>
+                    {isExpanded && (
+                        <>
+                            <span className="text-[12px] font-medium text-white/40 flex-1 whitespace-nowrap">{label}</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                Próximamente
+                            </span>
+                        </>
+                    )}
+                </div>
+            );
+        }
 
         return (
             <button

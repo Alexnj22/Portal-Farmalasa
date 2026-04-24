@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
-    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2,
+    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2, Edit3,
     Building2, ListFilter
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
@@ -295,10 +295,10 @@ const VacationPlanView = () => {
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const searchInputRef = useRef(null);
+    const panelRef = useRef(null);
 
-    // Inline edit state
-    const [editingPlan, setEditingPlan] = useState(null); // { id, start_date, end_date, notes }
-    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    // Panel edit state — when set, left panel is in edit mode
+    const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
     const [confirmingEdit, setConfirmingEdit] = useState(false);
 
     useEffect(() => {
@@ -436,6 +436,22 @@ const VacationPlanView = () => {
         setEndDate(end || '');
     };
 
+    const handleStartEdit = (plan) => {
+        setEditingPlan(plan);
+        setEmpId(String(plan.employee_id));
+        setStartDate(plan.start_date);
+        setEndDate(plan.end_date);
+        setNotes(plan.notes || '');
+        setConfirmingEdit(false);
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingPlan(null);
+        setConfirmingEdit(false);
+        setEmpId(''); setStartDate(''); setEndDate(''); setNotes('');
+    };
+
     const handleSubmit = async (ev) => {
         ev.preventDefault();
         if (!empId || !startDate || !endDate) {
@@ -446,6 +462,29 @@ const VacationPlanView = () => {
             useToastStore.getState().showToast('Error', 'La fecha de fin debe ser posterior al inicio.', 'error');
             return;
         }
+
+        // Edit mode — require confirmation step first
+        if (editingPlan) {
+            if (!confirmingEdit) { setConfirmingEdit(true); return; }
+            setIsSubmitting(true);
+            setConfirmingEdit(false);
+            const ok = await updateVacationPlan(editingPlan.id, {
+                start_date: startDate,
+                end_date:   endDate,
+                days:       computedDays,
+                notes:      notes.trim() || null,
+            });
+            setIsSubmitting(false);
+            if (ok) {
+                useToastStore.getState().showToast('Guardado', 'Plan actualizado.', 'success');
+                handleCancelEdit();
+            } else {
+                useToastStore.getState().showToast('Error', 'No se pudo actualizar.', 'error');
+            }
+            return;
+        }
+
+        // Create mode
         setIsSubmitting(true);
         try {
             const emp = employees.find(e => String(e.id) === String(empId));
@@ -478,29 +517,6 @@ const VacationPlanView = () => {
     const handleConfirmPlan = async (planId) => {
         await updateVacationPlanStatus(planId, 'CONFIRMED');
         useToastStore.getState().showToast('Confirmado', 'Vacaciones confirmadas.', 'success');
-    };
-
-
-    const handleSaveEdit = async () => {
-        if (!editingPlan) return;
-        setIsSavingEdit(true);
-        setConfirmingEdit(false);
-        const days = editingPlan.start_date && editingPlan.end_date
-            ? daysBetween(editingPlan.start_date, editingPlan.end_date)
-            : 0;
-        const ok = await updateVacationPlan(editingPlan.id, {
-            start_date: editingPlan.start_date,
-            end_date:   editingPlan.end_date,
-            days,
-            notes:      editingPlan.notes,
-        });
-        setIsSavingEdit(false);
-        if (ok) {
-            useToastStore.getState().showToast('Guardado', 'Plan actualizado.', 'success');
-            setEditingPlan(null);
-        } else {
-            useToastStore.getState().showToast('Error', 'No se pudo actualizar.', 'error');
-        }
     };
 
     // Sort filtered plans by branch → role → start_date
@@ -617,14 +633,33 @@ const VacationPlanView = () => {
             <GlassViewLayout icon={Palmtree} title="Plan Anual de Vacaciones" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
                 <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
-                    {/* ── Panel izquierdo: Formulario ── */}
-                    <div className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
-                        <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-500">
-                            <div className="flex items-center gap-2.5 mb-6">
-                                <div className="w-8 h-8 rounded-lg bg-[#007AFF] flex items-center justify-center shadow-sm shrink-0">
-                                    <Plus size={16} className="text-white" strokeWidth={2.5} />
+                    {/* ── Panel izquierdo: Formulario (crear / editar) ── */}
+                    <div ref={panelRef} className="w-full lg:w-[400px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
+                        <div className={`backdrop-blur-[30px] rounded-[2.5rem] p-6 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative ${
+                            editingPlan
+                                ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.10),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                        }`}>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                                        {editingPlan
+                                            ? <Edit3 size={16} className="text-white" strokeWidth={2.5} />
+                                            : <Plus size={16} className="text-white" strokeWidth={2.5} />
+                                        }
+                                    </div>
+                                    <h3 className="font-black text-slate-800 text-[15px] uppercase tracking-tight">
+                                        {editingPlan ? 'Editar Asignación' : 'Nueva Asignación'}
+                                    </h3>
                                 </div>
-                                <h3 className="font-black text-slate-800 text-[15px] uppercase tracking-tight">Nueva Asignación</h3>
+                                {editingPlan && (
+                                    <button
+                                        onClick={handleCancelEdit}
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group"
+                                    >
+                                        <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
+                                    </button>
+                                )}
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
@@ -633,14 +668,18 @@ const VacationPlanView = () => {
                                     <InputLabel>Empleado</InputLabel>
                                     <LiquidSelect
                                         value={empId}
-                                        onChange={val => setEmpId(val)}
-                                        options={groupedOptions}
+                                        onChange={val => { if (!editingPlan) setEmpId(val); }}
+                                        options={editingPlan
+                                            ? [{ value: String(editingPlan.employee_id), label: editingPlan.employee?.name || '—', avatar: editingPlan.employee?.photo || null }]
+                                            : groupedOptions
+                                        }
                                         placeholder="Seleccionar empleado…"
+                                        disabled={!!editingPlan}
                                     />
                                 </div>
 
-                                {/* Eligibility banner */}
-                                {selectedEmployee && <EligibilityBanner info={eligibilityInfo} />}
+                                {/* Eligibility banner — only on create */}
+                                {!editingPlan && selectedEmployee && <EligibilityBanner info={eligibilityInfo} />}
 
                                 {/* RangeDatePicker */}
                                 <div>
@@ -657,9 +696,9 @@ const VacationPlanView = () => {
 
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
-                                    <div className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF]/8 border border-[#007AFF]/15 rounded-2xl">
-                                        <Calendar size={13} className="text-[#007AFF]" strokeWidth={2.5} />
-                                        <span className="text-[12px] font-black text-[#007AFF]">{computedDays} días calendario</span>
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-[#007AFF]/8 border-[#007AFF]/15'}`}>
+                                        <Calendar size={13} className={editingPlan ? 'text-amber-600' : 'text-[#007AFF]'} strokeWidth={2.5} />
+                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-[#007AFF]'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -675,14 +714,33 @@ const VacationPlanView = () => {
                                     />
                                 </div>
 
+                                {/* Confirmación inline al guardar edición */}
+                                {confirmingEdit && (
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-amber-50/80 border border-amber-200/60 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <AlertCircle size={14} className="text-amber-600 shrink-0" strokeWidth={2.5} />
+                                        <span className="text-[11px] font-black text-amber-800 flex-1">¿Confirmar cambios?</span>
+                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-slate-500 hover:text-slate-700 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-white/60 transition-all">No</button>
+                                    </div>
+                                )}
+
                                 <button
                                     type="submit"
                                     disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
-                                    className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                                    className={`w-full h-[48px] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
+                                        confirmingEdit
+                                            ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
+                                            : editingPlan
+                                                ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
+                                                : 'bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)]'
+                                    }`}
                                 >
                                     {isSubmitting
                                         ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
-                                        : <><Palmtree size={15} strokeWidth={2} /> Asignar Vacaciones</>
+                                        : confirmingEdit
+                                            ? <><Check size={15} strokeWidth={3} /> Sí, guardar cambios</>
+                                            : editingPlan
+                                                ? <><Edit3 size={15} strokeWidth={2} /> Guardar Cambios</>
+                                                : <><Palmtree size={15} strokeWidth={2} /> Asignar Vacaciones</>
                                     }
                                 </button>
                             </form>
@@ -729,7 +787,7 @@ const VacationPlanView = () => {
                                                 const isEditing = editingPlan?.id === p.id;
                                                 return (
                                                     <React.Fragment key={p.id}>
-                                                        <tr className="group/row hover:bg-white/40 transition-colors">
+                                                        <tr className={`group/row hover:bg-white/40 transition-colors ${isEditing ? 'bg-amber-50/60' : ''}`}>
                                                             <td className="py-3 pr-4">
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
@@ -767,9 +825,9 @@ const VacationPlanView = () => {
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <button
                                                                             title="Editar"
-                                                                            onClick={() => { setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' }); setConfirmingEdit(false); }}
+                                                                            onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-amber-100 border-amber-300 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
                                                                         >
                                                                             <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -788,75 +846,6 @@ const VacationPlanView = () => {
                                                             </td>
                                                         </tr>
 
-                                                        {/* Inline edit row */}
-                                                        {isEditing && (
-                                                            <tr className="bg-blue-50/60">
-                                                                <td colSpan={6} className="py-4 px-3">
-                                                                    <div className="flex flex-wrap items-end gap-4">
-                                                                        <div className="flex-1 min-w-[220px]">
-                                                                            <InputLabel>Nuevo período</InputLabel>
-                                                                            <RangeDatePicker
-                                                                                startDate={editingPlan.start_date}
-                                                                                endDate={editingPlan.end_date}
-                                                                                onRangeChange={(s, e) =>
-                                                                                    setEditingPlan(prev => ({ ...prev, start_date: s || prev.start_date, end_date: e || prev.end_date }))
-                                                                                }
-                                                                                holidays={holidays || []}
-                                                                                defaultDays={15}
-                                                                                label="Cambiar fechas"
-                                                                            />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-[180px]">
-                                                                            <InputLabel>Notas</InputLabel>
-                                                                            <textarea
-                                                                                value={editingPlan.notes}
-                                                                                onChange={e => setEditingPlan(prev => ({ ...prev, notes: e.target.value }))}
-                                                                                rows={2}
-                                                                                placeholder="Observaciones…"
-                                                                                className={`${glassInput} resize-none leading-relaxed text-[11px]`}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 pb-0.5">
-                                                                            {confirmingEdit ? (
-                                                                                <>
-                                                                                    <span className="text-[10px] font-black text-slate-600 whitespace-nowrap">¿Confirmar cambios?</span>
-                                                                                    <button
-                                                                                        onClick={handleSaveEdit}
-                                                                                        disabled={!canEdit || isSavingEdit}
-                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
-                                                                                    >
-                                                                                        {isSavingEdit ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
-                                                                                        Sí, guardar
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => setConfirmingEdit(false)}
-                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 whitespace-nowrap"
-                                                                                    >
-                                                                                        <X size={11} strokeWidth={3} /> No
-                                                                                    </button>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <button
-                                                                                        onClick={() => setConfirmingEdit(true)}
-                                                                                        disabled={!canEdit}
-                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#0066CC] transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
-                                                                                    >
-                                                                                        <Check size={11} strokeWidth={3} /> Guardar
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => { setEditingPlan(null); setConfirmingEdit(false); }}
-                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 whitespace-nowrap"
-                                                                                    >
-                                                                                        <X size={11} strokeWidth={3} /> Cancelar
-                                                                                    </button>
-                                                                                </>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        )}
                                                     </React.Fragment>
                                                 );
                                             })}

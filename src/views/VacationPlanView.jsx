@@ -534,12 +534,12 @@ const VacationPlanView = () => {
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
 
                 {/* Year selector */}
-                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-[calc(100%-8px)] shrink-0 overflow-hidden">
-                    <button onClick={() => setYear(y => y - 1)} className="px-3 h-full hover:bg-white/60 text-slate-500 hover:text-[#007AFF] transition-colors">
+                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-white/70 h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-90">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="px-3 h-full hover:bg-white/60 text-slate-500 hover:text-[#007AFF] transition-colors disabled:opacity-30">
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>

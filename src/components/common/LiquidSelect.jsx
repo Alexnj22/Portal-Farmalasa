@@ -261,8 +261,8 @@ const LiquidSelect = ({
                 ? 'bg-black/50 border border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] text-white'
                 : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
             : isOpen
-                ? 'bg-white border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] border text-slate-700'
-                : 'bg-white/50 backdrop-blur-[10px] backdrop-saturate-[80%] border border-white/60 group-hover:bg-white/80 group-hover:border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.5)] text-slate-700'
+                ? 'bg-white border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.12)] border text-slate-700'
+                : 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/80 group-hover:bg-white/80 group-hover:border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_8px_rgba(255,255,255,0.7)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.07),inset_0_1px_8px_rgba(255,255,255,0.8)] text-slate-700'
     }`;
 
     return (

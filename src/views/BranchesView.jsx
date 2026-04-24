@@ -201,6 +201,9 @@ const BranchCard = memo(({
     const [isGeneratingAi, setIsGeneratingAi] = useState(false);
     const [aiSummaryData, setAiSummaryData] = useState(null);
 
+    const branchType = branch.type || 'FARMACIA';
+    const isFarmacia = branchType === 'FARMACIA';
+
     const pct = Math.min(Math.round((count / 20) * 100), 100);
     const deleteDisabled = count > 0;
     const isInactive = count === 0 && activeKiosks === 0;
@@ -313,30 +316,33 @@ const BranchCard = memo(({
             <div className="absolute top-5 right-5 flex items-center gap-1.5 z-30">
                 <div className="flex items-center gap-0.5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-white/90 backdrop-blur-md p-1 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] border border-white hover:scale-105">
                     
-                    <button 
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
-                            if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } 
-                            else { generateBranchAiSummary(e); }
-                        }}
-                        className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:-translate-y-0.5"
-                        title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
-                    >
-                        {aiMode ? (
-                            <div className="absolute inset-[1px] bg-indigo-50 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-indigo-200">
-                                <X size={14} strokeWidth={3} className="text-indigo-400 group-hover/ai-btn:text-indigo-600 transition-colors" />
-                            </div>
-                        ) : (
-                            <>
-                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-white/95 transition-colors duration-300"></div>
-                                <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
-                                <Sparkles size={14} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
-                            </>
-                        )}
-                    </button>
-                    
-                    <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+                    {isFarmacia && (
+                        <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
+                                else { generateBranchAiSummary(e); }
+                            }}
+                            className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_10px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:-translate-y-0.5"
+                            title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
+                        >
+                            {aiMode ? (
+                                <div className="absolute inset-[1px] bg-indigo-50 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-indigo-200">
+                                    <X size={14} strokeWidth={3} className="text-indigo-400 group-hover/ai-btn:text-indigo-600 transition-colors" />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
+                                    <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-white/95 transition-colors duration-300"></div>
+                                    <div className="absolute inset-0 border border-purple-200/50 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
+                                    <Sparkles size={14} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
+                                </>
+                            )}
+                        </button>
+                        <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+                        </>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
                     <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
 

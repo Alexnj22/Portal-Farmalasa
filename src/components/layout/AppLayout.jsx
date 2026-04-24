@@ -585,31 +585,58 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                         {isExpanded ? (
                             /* User row expanded */
-                            <div className="flex items-center gap-2 group/user">
-                                <button onClick={() => navigate('/profile')}
-                                    className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left
-                                        hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]
-                                        transition-all duration-200 active:scale-[0.98]"
-                                    type="button">
-                                    <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0
-                                        border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)]
-                                        bg-white/10 flex items-center justify-center text-white/70
-                                        group-hover/user:border-[#1D7AFC]/40 transition-all">
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
+                            <>
+                                {/* PIN row — expanded */}
+                                {hasPermission('kiosk_pin', 'can_view') && (
+                                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-white/5 border border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12 transition-all">
+                                        <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
+                                            <CheckCircle2 size={13} className="text-[#1D7AFC]" strokeWidth={2} />
+                                            <div className="relative w-12 flex items-center justify-center">
+                                                <span className={`absolute text-[12px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <Copy size={13} className={`absolute text-white/80 transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
+                                                <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                                            </div>
+                                        </button>
+                                        {hasPermission('su_pin', 'can_view') && (
+                                            <>
+                                                <div className="h-3.5 w-px bg-white/10" />
+                                                <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
+                                                    <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
+                                                    <div className="relative w-14 flex items-center justify-center">
+                                                        <span className={`absolute text-[12px] font-black text-purple-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
+                                                        <Copy size={13} className={`absolute text-purple-300/80 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
+                                                        <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                                                    </div>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <p className="text-[13px] font-semibold text-white/90 truncate group-hover/user:text-white transition-colors leading-tight">{user?.name || 'Usuario'}</p>
-                                        <p className="text-[10px] text-white/45 uppercase font-bold tracking-wider truncate mt-0.5">{user?.role || systemRole || 'Sistema'}</p>
-                                    </div>
-                                </button>
-                                <button onClick={handleLogout}
-                                    className="p-2 rounded-[0.85rem] text-white/40 hover:text-red-300 hover:bg-red-500/15
-                                        border border-transparent hover:border-red-500/20
-                                        transition-all flex-shrink-0 hover:scale-105 active:scale-95"
-                                    type="button">
-                                    <LogOut size={16} strokeWidth={1.8} />
-                                </button>
-                            </div>
+                                )}
+                                <div className="flex items-center gap-2 group/user">
+                                    <button onClick={() => navigate('/profile')}
+                                        className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left
+                                            hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]
+                                            transition-all duration-200 active:scale-[0.98]"
+                                        type="button">
+                                        <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0
+                                            border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)]
+                                            bg-white/10 flex items-center justify-center text-white/70
+                                            group-hover/user:border-[#1D7AFC]/40 transition-all">
+                                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="text-[13px] font-semibold text-white/90 truncate group-hover/user:text-white transition-colors leading-tight">{user?.name || 'Usuario'}</p>
+                                        </div>
+                                    </button>
+                                    <button onClick={handleLogout}
+                                        className="p-2 rounded-[0.85rem] text-white/40 hover:text-red-300 hover:bg-red-500/15
+                                            border border-transparent hover:border-red-500/20
+                                            transition-all flex-shrink-0 hover:scale-105 active:scale-95"
+                                        type="button">
+                                        <LogOut size={16} strokeWidth={1.8} />
+                                    </button>
+                                </div>
+                            </>
                         ) : (
                             /* Icon column compact */
                             <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-500">
@@ -642,6 +669,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
                                             </span>
+                                        )}
+                                    </button>
+                                )}
+                                {hasPermission('su_pin', 'can_view') && (
+                                    <button onClick={handleCopySuPin}
+                                        className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
+                                            bg-white/6 border border-white/12
+                                            text-purple-400 hover:bg-white/12 hover:border-white/20
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(168,85,247,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
+                                            hover:scale-105 active:scale-95 transition-all"
+                                        title="PIN SU">
+                                        {isSuCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
+                                            <>
+                                                <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
+                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-purple-200">{authPin}{suSuffix}</span>
+                                            </>
                                         )}
                                     </button>
                                 )}

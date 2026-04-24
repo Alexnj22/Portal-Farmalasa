@@ -46,6 +46,15 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         return branches.find(b => String(b.id) === String(branch?.id)) || branch;
     }, [branches, branch]);
 
+    const branchType = liveBranch?.type || 'FARMACIA';
+    const isFarmacia = branchType === 'FARMACIA';
+    const isBodega   = branchType === 'BODEGA';
+    const isAdmin    = branchType === 'ADMINISTRATIVA';
+    const hasKiosk   = isFarmacia || isBodega;
+    const hasLegal   = isFarmacia;
+    const hasServices = isFarmacia;
+    const hasPhone   = isFarmacia || isBodega;
+
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => setShowSideNav(!entry.isIntersecting),
@@ -106,20 +115,19 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const getTabAlert = (tabId) => {
         const legalData = liveBranch?.settings?.legal || {};
 
-        if (tabId === 'staff') {
+        if (tabId === 'staff' && isFarmacia) {
             const hasJefe = currentStaff.some(e => String(e.role || '').toUpperCase().includes('JEFE') && !String(e.role || '').toUpperCase().includes('SUB'));
             const hasSubjefe = currentStaff.some(e => String(e.role || '').toUpperCase().includes('SUB'));
             const hasRegente = !!legalData.regentEmployeeId;
             const hasReferente = !!legalData.pharmacovigilanceEmployeeId;
             const hasInjections = legalData.injections === true;
             const hasNurse = (legalData.nurses || []).length > 0;
-
             if (!hasJefe || !hasRegente || !hasReferente || (hasInjections && !hasNurse)) return 'critical';
             if (!hasSubjefe) return 'warning';
             return null;
         }
 
-        if (tabId === 'dossier') {
+        if (tabId === 'dossier' && isFarmacia) {
             const getExpStatus = (dateStr) => {
                 if (!dateStr) return 'critical';
                 const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
@@ -127,7 +135,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 if (diff <= 45) return 'warning';
                 return 'ok';
             };
-
             const checks = [
                 !legalData.srsPermitUrl ? 'critical' : getExpStatus(legalData.srsExpiration),
                 !legalData.regentCredentialUrl ? 'critical' : getExpStatus(legalData.regentCredentialExp),
@@ -138,13 +145,14 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
             return null;
         }
 
-        if (tabId === 'expenses') {
+        if (tabId === 'expenses' && (isFarmacia || isBodega)) {
             const rentData = liveBranch?.settings?.rent || {};
             const svcData = liveBranch?.settings?.services || {};
             if (liveBranch?.propertyType === 'RENTED' && !rentData.contract?.documentUrl) return 'warning';
-            if (!svcData.light?.provider || !svcData.water?.provider) return 'warning';
+            if (isFarmacia && (!svcData.light?.provider || !svcData.water?.provider)) return 'warning';
             return null;
         }
+
         return null;
     };
 
@@ -192,11 +200,11 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     }, [groupedSchedule]);
 
     const TABS = [
-        { id: 'history', label: 'Historial', icon: Clock },
-        { id: 'staff', label: 'Personal', icon: Users },
-        { id: 'dossier', label: 'Expediente', icon: FolderOpen },
-        { id: 'expenses', label: 'Gastos', icon: Briefcase },
-    ];
+        { id: 'history',  label: 'Historial',   icon: Clock,      show: true },
+        { id: 'staff',    label: 'Personal',     icon: Users,      show: true },
+        { id: 'dossier',  label: 'Expediente',   icon: FolderOpen, show: hasLegal },
+        { id: 'expenses', label: 'Gastos',        icon: Briefcase,  show: isFarmacia || isBodega },
+    ].filter(t => t.show);
 
     const tabsRef = useRef(null);
     const tabBtnRefs = useRef(new Map());
@@ -240,14 +248,18 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             </div>
                         </div>
                         <div className="w-px h-6 bg-slate-200/50 shrink-0"></div>
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0"><Phone size={14} strokeWidth={2.5} /></div>
-                            <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Contacto</span>
-                                <span className="text-[11px] font-bold text-slate-700 truncate max-w-[100px]">{liveBranch.phone || liveBranch.cell || "N/A"}</span>
-                            </div>
-                        </div>
-                        <div className="w-px h-6 bg-slate-200/50 shrink-0"></div>
+                        {hasPhone && (
+                            <>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0"><Phone size={14} strokeWidth={2.5} /></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Contacto</span>
+                                        <span className="text-[11px] font-bold text-slate-700 truncate max-w-[100px]">{liveBranch.phone || liveBranch.cell || "N/A"}</span>
+                                    </div>
+                                </div>
+                                <div className="w-px h-6 bg-slate-200/50 shrink-0"></div>
+                            </>
+                        )}
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0"><CalendarClock size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
@@ -306,9 +318,9 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <button onClick={() => openModal && openModal('editBranch', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Edit3 size={13} /> General</button>
                                 <button onClick={() => openModal && openModal('editBranchHorarios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-amber-600 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><CalendarClock size={13} /> Horarios</button>
                                 <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-orange-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
-                                <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-emerald-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>
-                                <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-purple-600 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>
-                                <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-[#005CE6] hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>
+                                {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-emerald-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
+                                {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-purple-600 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
+                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-[#005CE6] hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
                             </div>
                         </div>
                         )}
@@ -392,7 +404,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             <TabExpediente liveBranch={liveBranch} openModal={openModal} />
                         )}
                         {activeTab === 'expenses' && (
-                            <TabExpenses liveBranch={liveBranch} openModal={openModal} />
+                            <TabExpenses liveBranch={liveBranch} openModal={openModal} branchType={branchType} />
                         )}
 
                     </div>

@@ -137,7 +137,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ============================================================================
 // COMPONENTE PRINCIPAL DE LA PESTAÑA
 // ============================================================================
-const TabExpenses = ({ liveBranch, openModal }) => {
+const TabExpenses = ({ liveBranch, openModal, branchType }) => {
+    const hasServices = !branchType || branchType === 'FARMACIA';
     const rentData = liveBranch?.settings?.rent || {};
     const svcData = liveBranch?.settings?.services || {};
 
@@ -217,9 +218,9 @@ const TabExpenses = ({ liveBranch, openModal }) => {
         const isRented = liveBranch?.settings?.propertyType === 'RENTED' || liveBranch?.propertyType === 'RENTED' || liveBranch?.propertyType === 'ALQUILADO';
 
         if (isRented && rentData.amount) total += Number(rentData.amount) || 0;
-        if (svcData.light?.amount) total += Number(svcData.light.amount) || 0;
-        if (svcData.water?.amount) total += Number(svcData.water.amount) || 0;
-        if (svcData.internet?.amount) total += Number(svcData.internet.amount) || 0;
+        if (hasServices && svcData.light?.amount) total += Number(svcData.light.amount) || 0;
+        if (hasServices && svcData.water?.amount) total += Number(svcData.water.amount) || 0;
+        if (hasServices && svcData.internet?.amount) total += Number(svcData.internet.amount) || 0;
         if (svcData.phone?.amount) total += Number(svcData.phone.amount) || 0;
         if (svcData.taxes?.amount) total += Number(svcData.taxes.amount) || 0;
 
@@ -436,7 +437,7 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                         onUploadReceipt={() => handleUploadReceiptAction('rent')}
                     />
                 )}
-                <ServiceExpenseCard
+                {hasServices && <ServiceExpenseCard
                     title="Energía Eléctrica"
                     provider={svcData.light?.provider}
                     amount={svcData.light?.amount}
@@ -448,8 +449,8 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                     delay={50}
                     onAction={() => handleExpenseAction('light', svcData.light?.dueDay && svcData.light?.paidThrough)}
                     onUploadReceipt={() => handleUploadReceiptAction('light')}
-                />
-                <ServiceExpenseCard
+                />}
+                {hasServices && <ServiceExpenseCard
                     title="Agua Potable"
                     provider={svcData.water?.provider}
                     amount={svcData.water?.amount}
@@ -461,8 +462,8 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                     delay={100}
                     onAction={() => handleExpenseAction('water', svcData.water?.dueDay && svcData.water?.paidThrough)}
                     onUploadReceipt={() => handleUploadReceiptAction('water')}
-                />
-                <ServiceExpenseCard
+                />}
+                {hasServices && <ServiceExpenseCard
                     title="Internet Fijo"
                     provider={svcData.internet?.provider}
                     amount={svcData.internet?.amount}
@@ -474,7 +475,7 @@ const TabExpenses = ({ liveBranch, openModal }) => {
                     delay={150}
                     onAction={() => handleExpenseAction('internet', svcData.internet?.dueDay && svcData.internet?.paidThrough)}
                     onUploadReceipt={() => handleUploadReceiptAction('internet')}
-                />
+                />}
                 <ServiceExpenseCard
                     title="Plan Celular"
                     provider={svcData.phone?.provider}

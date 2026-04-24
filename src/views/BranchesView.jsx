@@ -82,11 +82,15 @@ const getProfileCompletion = (branch) => {
     const rent = settings.rent || { contract: {} };
     const services = settings.services || {};
     const pType = branch.propertyType || settings.propertyType || null;
+    const bType = branch.type || 'FARMACIA';
+    const isFarmacia = bType === 'FARMACIA';
 
-    let legalScore = 0;
-    if (legal.regentEmployeeId) legalScore += 40;
-    if (legal.pharmacovigilanceEmployeeId) legalScore += 20;
-    if (legal.srsPermit) legalScore += 40;
+    let legalScore = isFarmacia ? 0 : 100;
+    if (isFarmacia) {
+        if (legal.regentEmployeeId) legalScore += 40;
+        if (legal.pharmacovigilanceEmployeeId) legalScore += 20;
+        if (legal.srsPermit) legalScore += 40;
+    }
 
     let propertyScore = 0;
     if (pType === 'OWNED') propertyScore = 100;
@@ -97,9 +101,11 @@ const getProfileCompletion = (branch) => {
         if (rent.contract?.endDate) propertyScore += 25;
     }
 
-    let serviceScore = 0;
-    if (services.light?.provider || services.light?.account) serviceScore += 50;
-    if (services.water?.provider || services.water?.account) serviceScore += 50;
+    let serviceScore = isFarmacia ? 0 : 100;
+    if (isFarmacia) {
+        if (services.light?.provider || services.light?.account) serviceScore += 50;
+        if (services.water?.provider || services.water?.account) serviceScore += 50;
+    }
 
     return { legal: Math.round(legalScore), property: Math.round(propertyScore), services: Math.round(serviceScore) };
 };
@@ -140,19 +146,21 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icon: Info });
     else if (pType === 'RENTED') {
         if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta Contrato', icon: Info });
-        else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60); 
+        else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60);
     }
 
-    if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta Permiso SRS', icon: Info });
-    evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
-    evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
-    evaluateDocExpiration(legalData.pharmacovigilanceExp, "Credencial Referente", 45);
-
-    if (legalData.controlledBooks) {
-        evaluateDocExpiration(legalData.controlledBooksExp, "Libros Controlados", 30);
+    if (isFarmacia) {
+        if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta Permiso SRS', icon: Info });
+        evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
+        evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
+        evaluateDocExpiration(legalData.pharmacovigilanceExp, "Credencial Referente", 45);
+        if (legalData.controlledBooks) {
+            evaluateDocExpiration(legalData.controlledBooksExp, "Libros Controlados", 30);
+        }
     }
 
-    if (!branch.address || (!branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos Incompletos', icon: Info });
+    const needsPhone = isFarmacia || branch.type === 'BODEGA';
+    if (!branch.address || (needsPhone && !branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos Incompletos', icon: Info });
 
     if (isFarmacia) {
         if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin Horarios', icon: Clock });
@@ -609,6 +617,8 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
 
     const filteredBranches = useMemo(() => {
         return branches.filter(b => {
+            if ((b.type || 'FARMACIA') === 'EXTERNA') return false;
+
             const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) || (b.address && b.address.toLowerCase().includes(searchTerm.toLowerCase()));
             if (!matchesSearch) return false;
 

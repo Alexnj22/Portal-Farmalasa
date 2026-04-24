@@ -311,6 +311,7 @@ const VacationPlanView = () => {
                     value: String(e.id),
                     label: e.name,
                     sublabel: `✓ Vacaciones asignadas ${year} · ${branch?.name || '—'}`,
+                    avatar: e.photo || e.photo_url || null,
                     disabled: true,
                 };
             }
@@ -319,6 +320,7 @@ const VacationPlanView = () => {
                     value: String(e.id),
                     label: e.name,
                     sublabel: '⚠ Sin fecha de ingreso — Actualizar datos',
+                    avatar: e.photo || e.photo_url || null,
                     disabled: true,
                 };
             }
@@ -332,6 +334,7 @@ const VacationPlanView = () => {
                 sublabel: isEligible
                     ? `${e.role || e.position || 'Empleado'} · ${branch?.name || '—'}`
                     : `⏳ ${monthsWorked} mes${monthsWorked !== 1 ? 'es' : ''} · Falta ${12 - monthsWorked} mes(es) · ${branch?.name || '—'}`,
+                avatar: e.photo || e.photo_url || null,
                 disabled: !isEligible,
             };
         });

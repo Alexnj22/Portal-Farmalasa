@@ -220,7 +220,7 @@ const LiquidSelect = ({
                                 key={opt.value}
                                 type="button"
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
-                                className={`w-full text-left px-4 py-3 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border ${
+                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border flex items-center gap-2.5 ${
                                     opt.disabled
                                         ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
                                         : String(value) === String(opt.value)
@@ -230,14 +230,24 @@ const LiquidSelect = ({
                                                 : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
                                 }`}
                             >
-                                <span className="block leading-tight">{opt.label}</span>
-                                {opt.sublabel && (
-                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
-                                        String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
-                                    }`}>
-                                        {opt.sublabel}
-                                    </span>
+                                {opt.avatar !== undefined && (
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
+                                        {opt.avatar
+                                            ? <img src={opt.avatar} alt={opt.label} className="w-full h-full object-cover" />
+                                            : (opt.label || '?').charAt(0).toUpperCase()
+                                        }
+                                    </div>
                                 )}
+                                <span className="flex-1 min-w-0">
+                                    <span className="block leading-tight">{opt.label}</span>
+                                    {opt.sublabel && (
+                                        <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
+                                            String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
+                                        }`}>
+                                            {opt.sublabel}
+                                        </span>
+                                    )}
+                                </span>
                             </button>
                         )
                     ))
@@ -295,15 +305,25 @@ const LiquidSelect = ({
                         placeholder="Buscar..."
                     />
                 ) : (
-                    <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
+                    <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight flex items-center gap-2 ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
                         {selectedOption ? (
                             <>
-                                <span className="block leading-tight">{selectedOption.label}</span>
-                                {selectedOption.sublabel && (
-                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
-                                        {selectedOption.sublabel}
-                                    </span>
+                                {selectedOption.avatar !== undefined && (
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
+                                        {selectedOption.avatar
+                                            ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
+                                            : (selectedOption.label || '?').charAt(0).toUpperCase()
+                                        }
+                                    </div>
                                 )}
+                                <span className="flex-1 min-w-0">
+                                    <span className="block leading-tight truncate">{selectedOption.label}</span>
+                                    {selectedOption.sublabel && (
+                                        <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
+                                            {selectedOption.sublabel}
+                                        </span>
+                                    )}
+                                </span>
                             </>
                         ) : placeholder}
                     </div>

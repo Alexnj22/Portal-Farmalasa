@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
-    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2
+    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2,
+    Building2
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -510,76 +511,84 @@ const VacationPlanView = () => {
     }, [vacationPlans, statusFilter, searchTerm]);
 
     const filtersContent = (
-        <div className="bg-white/10 backdrop-blur-2xl border border-white/30 rounded-[2.5rem] h-[4rem] md:h-[4.5rem] flex items-center px-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+
             {/* Search mode */}
-            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0'}`}>
-                <div className="flex items-center bg-white/60 rounded-[1.8rem] px-4 h-[3rem] gap-2 min-w-[260px]">
-                    <Search size={15} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                <div className="flex items-center bg-white/60 backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[260px] border border-white/80 shadow-sm">
+                    <Search size={14} className="text-slate-400 shrink-0" strokeWidth={2.5} />
                     <input
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[13px] font-semibold text-slate-700 placeholder-slate-400 w-full"
+                        className="bg-transparent outline-none text-[12px] font-semibold text-slate-700 placeholder-slate-400 w-full"
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
-                            <X size={14} strokeWidth={2.5} />
+                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors">
+                            <X size={13} strokeWidth={2.5} />
                         </button>
                     )}
                 </div>
                 <button
                     onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-[3rem] rounded-[1.8rem] bg-white/60 text-slate-500 hover:text-slate-800 text-[12px] font-black uppercase tracking-widest whitespace-nowrap transition-colors">
+                    className="px-4 h-10 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-95">
                     Cancelar
                 </button>
             </div>
 
             {/* Normal mode */}
-            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${isSearchMode ? 'max-w-0 opacity-0' : 'max-w-[1200px] opacity-100'}`}>
+            <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
+
                 {/* Year selector */}
-                <div className="flex items-center bg-white/50 rounded-[1.8rem] overflow-hidden h-[3rem]">
-                    <button onClick={() => setYear(y => y - 1)} className="px-3 h-full hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors">
+                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-[calc(100%-8px)] shrink-0 overflow-hidden">
+                    <button onClick={() => setYear(y => y - 1)} className="px-3 h-full hover:bg-white/60 text-slate-500 hover:text-[#007AFF] transition-colors">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
-                    <span className="text-[12px] font-black text-slate-700 px-1 min-w-[44px] text-center">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="px-3 h-full hover:bg-white/50 text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-30">
+                    <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="px-3 h-full hover:bg-white/60 text-slate-500 hover:text-[#007AFF] transition-colors disabled:opacity-30">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
 
-                {/* Branch */}
-                <div className="min-w-[180px]">
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+
+                {/* Branch filter */}
+                <div className="w-max overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect
                         value={branchFilter}
                         onChange={val => setBranchFilter(val)}
                         options={branchOptions}
                         placeholder="Todas las sucursales"
+                        compact
                         clearable={false}
+                        icon={Building2}
                     />
                 </div>
 
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+
                 {/* Status tabs */}
-                <div className="flex items-center bg-white/50 rounded-[1.8rem] p-1 gap-1 h-[3rem]">
-                    {[['ALL', 'Todos'], ['PLANNED', 'Planificados'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
+                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-[calc(100%-8px)] shrink-0">
+                    {[['ALL', 'Todos'], ['PLANNED', 'Planif.'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
                         <button key={key} onClick={() => setStatusFilter(key)}
-                            className={`px-3 py-1.5 rounded-[1.3rem] text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap ${statusFilter === key ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}>
+                            className={`px-3 h-full rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${statusFilter === key ? 'bg-white text-[#007AFF] shadow-sm border border-white scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 hover:-translate-y-0.5'}`}>
                             {lbl}
                         </button>
                     ))}
                 </div>
 
-                {/* Search button */}
-                <div className="border-l border-white/30 pl-2 ml-1 shrink-0">
-                    <button
-                        onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                        className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
-                        title="Buscar">
-                        <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                        {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
-                    </button>
-                </div>
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+
+                {/* Search button — blue pill standard */}
+                <button
+                    onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    title="Buscar">
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
             </div>
         </div>
     );

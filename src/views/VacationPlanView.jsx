@@ -712,7 +712,13 @@ const VacationPlanView = () => {
                                                     <React.Fragment key={p.id}>
                                                         <tr className="group/row hover:bg-white/40 transition-colors">
                                                             <td className="py-3 pr-4">
-                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                <div className="flex items-center gap-2.5 flex-wrap">
+                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
+                                                                        {p.employee?.photo
+                                                                            ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
+                                                                            : (p.employee?.name || '?').charAt(0).toUpperCase()
+                                                                        }
+                                                                    </div>
                                                                     <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 cursor-default">

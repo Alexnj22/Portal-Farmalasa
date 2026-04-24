@@ -753,8 +753,9 @@ const VacationPlanView = () => {
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
-                                                            <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">
-                                                                {fmtShort(p.start_date)} → {fmtShort(p.end_date)}
+                                                            <td className="py-3 pr-4">
+                                                                <span className="text-slate-600 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
+                                                                {p.notes && <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-tight">{p.notes}</p>}
                                                             </td>
                                                             <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>

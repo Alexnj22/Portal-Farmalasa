@@ -170,7 +170,7 @@ const GanttChart = ({ plans, year }) => {
         <div className="overflow-x-auto">
             <div className="min-w-[560px]">
                 {/* Month headers */}
-                <div className="flex mb-2 ml-[130px]">
+                <div className="flex mb-2 ml-[160px]">
                     {months.map(m => (
                         <div
                             key={m.idx}
@@ -193,17 +193,23 @@ const GanttChart = ({ plans, year }) => {
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>
                                 {showHeader && branchName && (
                                     <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-[130px] text-right pr-3 shrink-0">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
                                         <div className="flex-1 h-px bg-slate-100" />
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2 group/row">
-                                    <div className="w-[130px] shrink-0 truncate text-[11px] font-bold text-slate-600 text-right pr-3 group-hover/row:text-[#007AFF] transition-colors">
-                                        {emp?.name || 'Empleado'}
+                                    <div className="w-[160px] shrink-0 flex items-center justify-end gap-1.5 pr-3 group-hover/row:text-[#007AFF] transition-colors">
+                                        <span className="text-[11px] font-bold text-slate-600 truncate group-hover/row:text-[#007AFF] transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-200 border border-white shadow-sm shrink-0 flex items-center justify-center text-[8px] font-black text-slate-400">
+                                            {(emp?.photo || emp?.photo_url)
+                                                ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
+                                                : (emp?.name || '?').charAt(0).toUpperCase()
+                                            }
+                                        </div>
                                     </div>
-                                    <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-hidden">
+                                    <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
                                         {months.map(m => (
                                             <div
@@ -218,10 +224,18 @@ const GanttChart = ({ plans, year }) => {
                                             return (
                                                 <div
                                                     key={p.id}
-                                                    title={`${emp?.name} • ${fmtShort(p.start_date)} → ${fmtShort(p.end_date)} • ${p.days}d • ${meta.label}`}
-                                                    className={`absolute top-1 bottom-1 rounded-lg ${meta.bar} opacity-75 hover:opacity-100 transition-opacity cursor-default`}
+                                                    className={`absolute top-1 bottom-1 rounded-lg ${meta.bar} opacity-75 hover:opacity-100 transition-opacity cursor-default group/bar`}
                                                     style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
-                                                />
+                                                >
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
+                                                        <div className="bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
+                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-slate-400 mb-0.5">{meta.label}</span>
+                                                            <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
+                                                            <span className="ml-2 text-slate-400">· {p.days}d</span>
+                                                        </div>
+                                                        <div className="w-2 h-2 bg-slate-900/90 rotate-45 -mt-1" />
+                                                    </div>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -232,7 +246,7 @@ const GanttChart = ({ plans, year }) => {
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-4 mt-4 ml-[130px]">
+                <div className="flex items-center gap-4 mt-4 ml-[160px]">
                     {Object.entries(STATUS_META).filter(([k]) => k !== 'CANCELLED').map(([k, m]) => (
                         <div key={k} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 rounded-sm ${m.bar}`} />
@@ -285,6 +299,7 @@ const VacationPlanView = () => {
     // Inline edit state
     const [editingPlan, setEditingPlan] = useState(null); // { id, start_date, end_date, notes }
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [confirmingEdit, setConfirmingEdit] = useState(false);
 
     useEffect(() => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
@@ -469,6 +484,7 @@ const VacationPlanView = () => {
     const handleSaveEdit = async () => {
         if (!editingPlan) return;
         setIsSavingEdit(true);
+        setConfirmingEdit(false);
         const days = editingPlan.start_date && editingPlan.end_date
             ? daysBetween(editingPlan.start_date, editingPlan.end_date)
             : 0;
@@ -746,9 +762,9 @@ const VacationPlanView = () => {
                                                                 <div className="flex items-center gap-1.5">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <button
-                                                                            onClick={() => setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' })}
+                                                                            onClick={() => { setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' }); setConfirmingEdit(false); }}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                                                         >
                                                                             <Edit2 size={10} strokeWidth={2.5} /> Editar
                                                                         </button>
@@ -795,20 +811,41 @@ const VacationPlanView = () => {
                                                                             />
                                                                         </div>
                                                                         <div className="flex items-center gap-2 pb-0.5">
-                                                                            <button
-                                                                                onClick={handleSaveEdit}
-                                                                                disabled={!canEdit || isSavingEdit}
-                                                                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#0066CC] transition-all active:scale-95 disabled:opacity-60"
-                                                                            >
-                                                                                {isSavingEdit ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
-                                                                                Guardar
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => setEditingPlan(null)}
-                                                                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
-                                                                            >
-                                                                                <X size={11} strokeWidth={3} /> Cancelar
-                                                                            </button>
+                                                                            {confirmingEdit ? (
+                                                                                <>
+                                                                                    <span className="text-[10px] font-black text-slate-600 whitespace-nowrap">¿Confirmar cambios?</span>
+                                                                                    <button
+                                                                                        onClick={handleSaveEdit}
+                                                                                        disabled={!canEdit || isSavingEdit}
+                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
+                                                                                    >
+                                                                                        {isSavingEdit ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
+                                                                                        Sí, guardar
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setConfirmingEdit(false)}
+                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 whitespace-nowrap"
+                                                                                    >
+                                                                                        <X size={11} strokeWidth={3} /> No
+                                                                                    </button>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <button
+                                                                                        onClick={() => setConfirmingEdit(true)}
+                                                                                        disabled={!canEdit}
+                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#007AFF] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#0066CC] transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
+                                                                                    >
+                                                                                        <Check size={11} strokeWidth={3} /> Guardar
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => { setEditingPlan(null); setConfirmingEdit(false); }}
+                                                                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 whitespace-nowrap"
+                                                                                    >
+                                                                                        <X size={11} strokeWidth={3} /> Cancelar
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </td>

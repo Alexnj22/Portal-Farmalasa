@@ -2,13 +2,12 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2,
-    Building2
+    Building2, ListFilter
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
-import ConfirmModal from '../components/common/ConfirmModal';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 
@@ -279,7 +278,6 @@ const VacationPlanView = () => {
     const [endDate, setEndDate]     = useState('');
     const [notes, setNotes]         = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [cancelConfirm, setCancelConfirm] = useState({ open: false, planId: null });
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const searchInputRef = useRef(null);
@@ -464,12 +462,6 @@ const VacationPlanView = () => {
         useToastStore.getState().showToast('Confirmado', 'Vacaciones confirmadas.', 'success');
     };
 
-    const handleCancelPlan = async () => {
-        if (!cancelConfirm.planId) return;
-        await updateVacationPlanStatus(cancelConfirm.planId, 'CANCELLED');
-        setCancelConfirm({ open: false, planId: null });
-        useToastStore.getState().showToast('Cancelado', 'Plan cancelado.', 'success');
-    };
 
     const handleSaveEdit = async () => {
         if (!editingPlan) return;
@@ -569,14 +561,21 @@ const VacationPlanView = () => {
 
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
-                {/* Status tabs */}
-                <div className="flex items-center bg-white/50 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-full shrink-0">
-                    {[['ALL', 'Todos'], ['PLANNED', 'Planif.'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
-                        <button key={key} onClick={() => setStatusFilter(key)}
-                            className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${statusFilter === key ? 'bg-white text-slate-800 border border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
-                            {lbl}
-                        </button>
-                    ))}
+                {/* Status filter */}
+                <div className="w-max overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                    <LiquidSelect
+                        value={statusFilter}
+                        onChange={val => setStatusFilter(val || 'ALL')}
+                        options={[
+                            { value: 'ALL',       label: 'Todos los estados' },
+                            { value: 'PLANNED',   label: 'Planificados'      },
+                            { value: 'CONFIRMED', label: 'Confirmados'       },
+                            { value: 'TAKEN',     label: 'Tomados'           },
+                        ]}
+                        compact
+                        clearable={false}
+                        icon={ListFilter}
+                    />
                 </div>
 
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
@@ -595,15 +594,6 @@ const VacationPlanView = () => {
 
     return (
         <>
-            <ConfirmModal
-                isOpen={cancelConfirm.open}
-                onClose={() => setCancelConfirm({ open: false, planId: null })}
-                onConfirm={handleCancelPlan}
-                title="¿Cancelar este plan?"
-                message="El plan quedará marcado como Cancelado. Esta acción no se puede deshacer."
-                confirmText="Sí, Cancelar"
-                isDestructive
-            />
 
             <GlassViewLayout icon={Palmtree} title="Plan Anual de Vacaciones" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
                 <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
@@ -710,7 +700,7 @@ const VacationPlanView = () => {
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
                                             <tr className="border-b border-slate-100">
-                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Estado', 'Acciones'].map(h => (
+                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Estado', ''].map(h => (
                                                     <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
@@ -722,7 +712,20 @@ const VacationPlanView = () => {
                                                     <React.Fragment key={p.id}>
                                                         <tr className="group/row hover:bg-white/40 transition-colors">
                                                             <td className="py-3 pr-4">
-                                                                <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
+                                                                    {p.metadata?.original_start_date && (
+                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 cursor-default">
+                                                                            <Edit2 size={7} strokeWidth={3} /> Editado
+                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                                                                                <span className="text-slate-400 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
+                                                                                <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
+                                                                                <span className="text-slate-400 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
+                                                                            </span>
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
                                                             <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">
@@ -749,15 +752,6 @@ const VacationPlanView = () => {
                                                                                 <Check size={10} strokeWidth={3} /> Confirmar
                                                                             </button>
                                                                         </>
-                                                                    )}
-                                                                    {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
-                                                                        <button
-                                                                            onClick={() => setCancelConfirm({ open: true, planId: p.id })}
-                                                                            disabled={!canEdit}
-                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        >
-                                                                            <X size={10} strokeWidth={3} /> Cancelar
-                                                                        </button>
                                                                     )}
                                                                 </div>
                                                             </td>

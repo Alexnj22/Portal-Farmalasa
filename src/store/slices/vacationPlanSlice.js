@@ -118,6 +118,20 @@ export const createVacationPlanSlice = (set, get) => ({
 
     updateVacationPlan: async (planId, updates) => {
         try {
+            const currentPlan = get().vacationPlans.find(vp => vp.id === planId);
+            const existingMeta = currentPlan?.metadata || {};
+
+            // First edit: snapshot original dates into metadata
+            const metadata = existingMeta.original_start_date
+                ? existingMeta
+                : {
+                    ...existingMeta,
+                    original_start_date: currentPlan?.start_date,
+                    original_end_date:   currentPlan?.end_date,
+                    original_days:       currentPlan?.days,
+                    edited_at:           new Date().toISOString(),
+                  };
+
             const { data, error } = await supabase
                 .from('vacation_plans')
                 .update({
@@ -125,6 +139,7 @@ export const createVacationPlanSlice = (set, get) => ({
                     end_date:    updates.end_date,
                     days:        updates.days,
                     notes:       updates.notes ?? null,
+                    metadata,
                     updated_at:  new Date().toISOString(),
                 })
                 .eq('id', planId)

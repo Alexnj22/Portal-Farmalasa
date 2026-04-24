@@ -719,7 +719,7 @@ const VacationPlanView = () => {
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
                                             <tr className="border-b border-slate-100">
-                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Estado', ''].map(h => (
+                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
                                                     <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
@@ -753,30 +753,35 @@ const VacationPlanView = () => {
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
-                                                            <td className="py-3 pr-4">
-                                                                <span className="text-slate-600 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
-                                                                {p.notes && <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-tight">{p.notes}</p>}
-                                                            </td>
+                                                            <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
+                                                            <td className="py-3 pr-4 max-w-[160px]">
+                                                                {p.notes
+                                                                    ? <p className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2">{p.notes}</p>
+                                                                    : <span className="text-[10px] text-slate-300">—</span>
+                                                                }
+                                                            </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
                                                             <td className="py-3">
-                                                                <div className="flex items-center gap-1.5">
+                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
                                                                         <button
+                                                                            title="Editar"
                                                                             onClick={() => { setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' }); setConfirmingEdit(false); }}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
-                                                                            <Edit2 size={10} strokeWidth={2.5} /> Editar
+                                                                            <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
                                                                     )}
                                                                     {p.status === 'PLANNED' && (
                                                                         <button
+                                                                            title="Confirmar"
                                                                             onClick={() => handleConfirmPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
-                                                                            <Check size={10} strokeWidth={3} /> Confirmar
+                                                                            <Check size={11} strokeWidth={3} />
                                                                         </button>
                                                                     )}
                                                                 </div>

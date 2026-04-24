@@ -331,14 +331,23 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         fetchHistoricalSales();
     }, [liveBranch?.id]);
 
-    const jefeEmp = currentStaff.find(e => String(e.role || '').toLowerCase().includes('jefe') && !String(e.role || '').toLowerCase().includes('subjefe'));
-    const subjefeEmp = currentStaff.find(e => String(e.role || '').toLowerCase().includes('subjefe'));
+    const branchType = liveBranch?.type || 'FARMACIA';
+    const isFarmacia = branchType === 'FARMACIA';
+    const isAdmin    = branchType === 'ADMINISTRATIVA';
+
+    // Leadership detection — role labels differ by branch type
+    const jefeEmp = isAdmin
+        ? currentStaff.find(e => String(e.role || '').toLowerCase().includes('gerente'))
+        : currentStaff.find(e => String(e.role || '').toLowerCase().includes('jefe') && !String(e.role || '').toLowerCase().includes('subjefe'));
+    const subjefeEmp = isAdmin
+        ? currentStaff.find(e => String(e.role || '').toLowerCase().includes('administrador') || String(e.role || '').toLowerCase().includes('admin'))
+        : currentStaff.find(e => String(e.role || '').toLowerCase().includes('subjefe'));
 
     const legalData = liveBranch?.settings?.legal || {};
     const regentEmp = employees.find(e => String(e.id) === String(legalData.regentEmployeeId));
     const referentEmp = employees.find(e => String(e.id) === String(legalData.farmacovigilanciaId));
     const nursingRegents = legalData.nursingRegents || [];
-    const hasInjections = legalData.injections === true;
+    const hasInjections = isFarmacia && legalData.injections === true;
 
     const generalStaff = currentStaff.filter(e => {
         const isJefe = e.id === jefeEmp?.id || e.id === subjefeEmp?.id;
@@ -357,38 +366,40 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         else complianceIssues.push({ isDoc, text });
     };
 
-    checkItem(!!jefeEmp, 'Jefe de Sucursal');
-    checkItem(!!subjefeEmp, 'Subjefe de Sucursal');
-    checkItem(!!regentEmp, 'Regente Farmacéutico');
     const regentMissingDocs = [];
-    if (regentEmp) {
-        if (!legalData.regentCredentialUrl) { regentMissingDocs.push('Credencial'); checkItem(false, 'Regente: Faltan Credenciales', true); } else { checkItem(true, 'Credencial Regente'); }
-        if (!legalData.regentInscriptionUrl) { regentMissingDocs.push('Inscripción'); checkItem(false, 'Regente: Falta Inscripción', true); } else { checkItem(true, 'Inscripción Regente'); }
-    } else {
-        checkItem(false, 'Regente: Faltan Credenciales', true);
-        checkItem(false, 'Regente: Falta Inscripción', true);
-    }
-    checkItem(!!referentEmp, 'Farmacovigilancia');
     const referentMissingDocs = [];
-    if (referentEmp) {
-        if (!legalData.farmacovigilanciaAuthUrl) { referentMissingDocs.push('Autorización'); checkItem(false, 'Farmaco.: Falta Autorización', true); } else { checkItem(true, 'Auth Farmacovigilancia'); }
-    } else {
-        checkItem(false, 'Farmaco.: Falta Autorización', true);
-    }
 
-    if (hasInjections) {
-        checkItem(nursingRegents.length > 0, 'Regente Enfermería');
-        checkItem(!!legalData.nursingServicePermitUrl, 'Permiso CSSP Inyecciones', true);
-        let hasAnyCarne = false, hasAnyLicencia = false;
-        if (nursingRegents.length > 0) {
-            hasAnyCarne = nursingRegents.some(n => n.carneUrl || n.carneFile);
-            hasAnyLicencia = nursingRegents.some(n => n.licenciaUrl || n.licenciaFile);
+    if (isFarmacia) {
+        checkItem(!!jefeEmp, 'Jefe de Sucursal');
+        checkItem(!!subjefeEmp, 'Subjefe de Sucursal');
+        checkItem(!!regentEmp, 'Regente Farmacéutico');
+        if (regentEmp) {
+            if (!legalData.regentCredentialUrl) { regentMissingDocs.push('Credencial'); checkItem(false, 'Regente: Faltan Credenciales', true); } else { checkItem(true, 'Credencial Regente'); }
+            if (!legalData.regentInscriptionUrl) { regentMissingDocs.push('Inscripción'); checkItem(false, 'Regente: Falta Inscripción', true); } else { checkItem(true, 'Inscripción Regente'); }
+        } else {
+            checkItem(false, 'Regente: Faltan Credenciales', true);
+            checkItem(false, 'Regente: Falta Inscripción', true);
         }
-        checkItem(hasAnyCarne, 'Enfermero: Falta Carné', true);
-        checkItem(hasAnyLicencia, 'Enfermero: Falta Licencia', true);
+        checkItem(!!referentEmp, 'Farmacovigilancia');
+        if (referentEmp) {
+            if (!legalData.farmacovigilanciaAuthUrl) { referentMissingDocs.push('Autorización'); checkItem(false, 'Farmaco.: Falta Autorización', true); } else { checkItem(true, 'Auth Farmacovigilancia'); }
+        } else {
+            checkItem(false, 'Farmaco.: Falta Autorización', true);
+        }
+        if (hasInjections) {
+            checkItem(nursingRegents.length > 0, 'Regente Enfermería');
+            checkItem(!!legalData.nursingServicePermitUrl, 'Permiso CSSP Inyecciones', true);
+            let hasAnyCarne = false, hasAnyLicencia = false;
+            if (nursingRegents.length > 0) {
+                hasAnyCarne = nursingRegents.some(n => n.carneUrl || n.carneFile);
+                hasAnyLicencia = nursingRegents.some(n => n.licenciaUrl || n.licenciaFile);
+            }
+            checkItem(hasAnyCarne, 'Enfermero: Falta Carné', true);
+            checkItem(hasAnyLicencia, 'Enfermero: Falta Licencia', true);
+        }
     }
 
-    const complianceScore = Math.round((metCount / reqCount) * 100);
+    const complianceScore = reqCount > 0 ? Math.round((metCount / reqCount) * 100) : 100;
     const scoreTheme = complianceScore === 100 ? 'bg-emerald-500' : complianceScore >= 70 ? 'bg-amber-500' : 'bg-red-500';
     const textTheme = complianceScore === 100 ? 'text-emerald-600' : complianceScore >= 70 ? 'text-amber-600' : 'text-red-600';
 
@@ -453,7 +464,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             {/* HEADER CON BOTONES Y PÍLDORAS */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-white/60 pb-4 relative z-50">
                 <div>
-                    <h3 className="font-black text-slate-800 uppercase tracking-tight text-xl">Organigrama de Sucursal</h3>
+                    <h3 className="font-black text-slate-800 uppercase tracking-tight text-xl">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
                     </div>
@@ -461,8 +472,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
 
-                    {/* 🚨 PÍLDORA WFM / DÉFICIT (Aparece incluso si el cálculo es tradicional sin datos de ventas) */}
-                    {isStaffDeficit && (
+                    {/* 🚨 PÍLDORA WFM / DÉFICIT — solo farmacias */}
+                    {isFarmacia && isStaffDeficit && (
                         <div className="relative group/wfm flex items-center gap-2.5 bg-amber-50/50 backdrop-blur-md border border-amber-200/80 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
                             <Calculator size={14} className="text-amber-500 shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
@@ -514,8 +525,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         </div>
                     )}
 
-                    {/* 🚨 PÍLDORA DE SALUD LEGAL */}
-                    <div className="relative group/health flex items-center gap-2.5 bg-white/50 backdrop-blur-md border border-white/80 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
+                    {/* 🚨 PÍLDORA DE SALUD LEGAL — solo farmacias */}
+                    {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-white/50 backdrop-blur-md border border-white/80 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-white hover:shadow-md transition-all animate-in slide-in-from-right-4">
                         <ShieldAlert size={14} className={complianceScore === 100 ? 'text-emerald-500' : 'text-slate-400'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">
@@ -543,10 +554,10 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 </p>
                             )}
                         </div>
-                    </div>
+                    </div>}
 
-                    {/* 🤖 BOTÓN MAESTRO DE IA (ESTANDARIZADO: SOLO ÍCONO A LA DERECHA) */}
-                    <button
+                    {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
+                    {isFarmacia && <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
                         className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-50 animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
@@ -563,7 +574,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <Sparkles size={18} strokeWidth={2.5} className="text-purple-600 group-hover/ai-btn:animate-pulse z-20 relative" />
                             </>
                         )}
-                    </button>
+                    </button>}
                 </div>
             </div>
 
@@ -673,8 +684,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         </div>
                     ) : (
                         <div className="pt-2">
-                            {/* 🚨 DASHBOARD WFM EN VIVO (DESAPARECE TOTALMENTE SI NO HAY DATOS) */}
-                            {(wfmApplied || isNewBranch) && (
+                            {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
+                            {isFarmacia && (wfmApplied || isNewBranch) && (
                                 <div className="bg-gradient-to-br from-[#007AFF]/5 to-indigo-500/5 border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-blue-100 text-[#007AFF] flex items-center justify-center shadow-sm">
@@ -723,11 +734,17 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {/* SECCIÓN 1: LIDERAZGO */}
                             <div className="space-y-3">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
-                                    <Star size={12} className="text-amber-500" strokeWidth={3} /> Dirección de Sucursal
+                                    <Star size={12} className="text-amber-500" strokeWidth={3} /> {isAdmin ? 'Dirección Administrativa' : 'Dirección de Sucursal'}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {jefeEmp ? <ProfileCard employee={jefeEmp} roleLabel="Jefe/a de Sala" colorTheme="amber" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: jefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Asignar en RRHH" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })} />}
-                                    {subjefeEmp ? <ProfileCard employee={subjefeEmp} roleLabel="Subjefe/a de Sala" colorTheme="blue" onClick={goToProfile} onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: subjefeEmp?.id })} /> : <ProfileCard isMissing missingText="Sin Subjefe/a" missingSub="Toca para asignar" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: null })} />}
+                                    {jefeEmp
+                                        ? <ProfileCard employee={jefeEmp} roleLabel={isAdmin ? 'Gerente General' : 'Jefe/a de Sala'} colorTheme="amber" onClick={goToProfile} onEditRole={handleEditHROperative} />
+                                        : !isAdmin && <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Asignar en RRHH" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })} />
+                                    }
+                                    {subjefeEmp
+                                        ? <ProfileCard employee={subjefeEmp} roleLabel={isAdmin ? 'Administrador/a' : 'Subjefe/a de Sala'} colorTheme="blue" onClick={goToProfile} onEditRole={handleEditHROperative} />
+                                        : !isAdmin && <ProfileCard isMissing missingText="Sin Subjefe/a" missingSub="Toca para asignar" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Subjefe/a de Sala', currentAssignee: null })} />
+                                    }
                                 </div>
                             </div>
 
@@ -769,8 +786,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 </div>
                             </div>
 
-                            {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO */}
-                            <div className="space-y-3 pt-2 border-t border-white/60 mt-6 pt-6">
+                            {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO — solo farmacias */}
+                            {isFarmacia && <div className="space-y-3 pt-2 border-t border-white/60 mt-6 pt-6">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
                                     <ShieldCheck size={12} className="text-emerald-500" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
                                 </h4>
@@ -778,10 +795,10 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     {regentEmp ? <ProfileCard employee={regentEmp} roleLabel="Regente Farmacéutico" colorTheme="emerald" missingDocs={regentMissingDocs} onClick={goToProfile} onEditRole={() => openModal('editPharmacyRegent', liveBranch)} /> : <ProfileCard isMissing missingText="Falta Regente" missingSub="Requerido (SRS)" onEditRole={() => openModal('editPharmacyRegent', liveBranch)} />}
                                     {referentEmp ? <ProfileCard employee={referentEmp} roleLabel="Farmacovigilancia" colorTheme="emerald" missingDocs={referentMissingDocs} onClick={goToProfile} onEditRole={() => openModal('editPharmacovigilance', liveBranch)} /> : <ProfileCard isMissing missingText="Falta Referente" missingSub="Requerido (SRS)" onEditRole={() => openModal('editPharmacovigilance', liveBranch)} />}
                                 </div>
-                            </div>
+                            </div>}
 
                             {/* 🔴 INYECTAMOS EL BOTÓN SECRETO AQUÍ */}
-                            <HistoricalSyncButton liveBranch={liveBranch} onSyncComplete={fetchHistoricalSales} />
+                            {isFarmacia && <HistoricalSyncButton liveBranch={liveBranch} onSyncComplete={fetchHistoricalSales} />}
                         </div>
                     )}
                 </div>

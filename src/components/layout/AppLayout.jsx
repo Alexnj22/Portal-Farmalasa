@@ -903,7 +903,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.85rem] transition-all duration-150 text-left group/fi active:scale-[0.97]
                                                     ${m.isActive
                                                         ? 'bg-[#1A3560] text-white border border-[#2D5499]/50'
-                                                        : 'text-white hover:bg-[#1A3560]/60'}`}
+                                                        : 'text-white hover:bg-[#1A3560]'}`}
                                             >
                                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
                                                     ${m.isActive

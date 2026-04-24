@@ -539,16 +539,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
 
                             {isExpanded && (
-                                <div className="animate-in fade-in zoom-in-95 duration-300 origin-left overflow-hidden">
-                                    <h1 className="text-white font-black text-[15px] leading-tight tracking-tight whitespace-nowrap drop-shadow-sm">Portal</h1>
-                                    <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.18em] whitespace-nowrap mt-0.5">La Salud & La Popular</p>
+                                <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
+                                    <h1 className="text-white font-black text-[15px] leading-tight tracking-tight drop-shadow-sm">Portal</h1>
+                                    <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug">La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
 
                         {isExpanded && (
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center
+                                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
                                     bg-white/6 hover:bg-white/15
                                     border border-white/10 hover:border-white/22
                                     text-white/50 hover:text-white
@@ -582,49 +582,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     {/* ── Footer ── */}
                     <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/8 flex flex-col gap-2.5">
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
-
-                        {isExpanded && (
-                            /* Status + PIN row */
-                            <div className="flex items-center justify-between
-                                rounded-xl px-3 py-2
-                                bg-white/5 border border-white/8
-                                shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]
-                                hover:bg-white/8 hover:border-white/12 transition-all">
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                                    </span>
-                                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">En Línea</span>
-                                </div>
-                                {hasPermission('kiosk_pin', 'can_view') && (
-                                    <>
-                                        <div className="h-3.5 w-px bg-white/10" />
-                                        <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
-                                            <CheckCircle2 size={13} className="text-[#1D7AFC]" strokeWidth={2} />
-                                            <div className="relative w-12 flex items-center justify-center">
-                                                <span className={`absolute text-[12px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                <Copy size={13} className={`absolute text-white/80 transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
-                                                <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
-                                            </div>
-                                        </button>
-                                        {hasPermission('su_pin', 'can_view') && (
-                                            <>
-                                                <div className="h-3.5 w-px bg-white/10" />
-                                                <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
-                                                    <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
-                                                    <div className="relative w-14 flex items-center justify-center">
-                                                        <span className={`absolute text-[12px] font-black text-purple-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
-                                                        <Copy size={13} className={`absolute text-purple-300/80 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
-                                                        <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
-                                                    </div>
-                                                </button>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        )}
 
                         {isExpanded ? (
                             /* User row expanded */

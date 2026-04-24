@@ -24,6 +24,14 @@ const FILTER_OPTIONS = [
     { value: "OWNED", label: "Propias" },
 ];
 
+const BRANCH_TYPE_META = {
+    FARMACIA:      { label: 'Farmacia',       color: 'bg-blue-50 text-blue-600 border-blue-200',         sectionLabel: 'Farmacias' },
+    BODEGA:        { label: 'Bodega',          color: 'bg-amber-50 text-amber-600 border-amber-200',       sectionLabel: 'Bodega' },
+    ADMINISTRATIVA:{ label: 'Administración',  color: 'bg-violet-50 text-violet-600 border-violet-200',    sectionLabel: 'Administración' },
+    EXTERNA:       { label: 'Externos',        color: 'bg-teal-50 text-teal-600 border-teal-200',          sectionLabel: 'Personal Externo' },
+};
+const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
+
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
     try { return JSON.parse(obj) || {}; } catch { return {}; }
@@ -97,6 +105,8 @@ const getProfileCompletion = (branch) => {
 };
 
 const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
+    // Áreas no-farmacia no tienen la misma lógica de alertas operativas
+    const isFarmacia = !branch.type || branch.type === 'FARMACIA';
     const alerts = [];
     const settings = safeParse(branch.settings);
     const legalData = settings.legal || {};
@@ -143,17 +153,18 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     }
 
     if (!branch.address || (!branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos Incompletos', icon: Info });
-    if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin Horarios', icon: Clock });
 
-    const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
-    if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta Jefe de Sucursal', icon: Users });
-    if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta Regente', icon: Briefcase });
-    if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta Referente', icon: Shield });
-    if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta Enfermero/a', icon: Stethoscope });
-
-    evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
-    evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
-    evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
+    if (isFarmacia) {
+        if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin Horarios', icon: Clock });
+        const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
+        if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta Jefe de Sucursal', icon: Users });
+        if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta Regente', icon: Briefcase });
+        if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta Referente', icon: Shield });
+        if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta Enfermero/a', icon: Stethoscope });
+        evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
+        evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
+        evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
+    }
 
     const baseCardStyles = 'bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.7)]';
 
@@ -365,11 +376,18 @@ const BranchCard = memo(({
                                 </div>
                             </div>
 
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1">
-                                {branch.openingDate || branch.opening_date
-                                    ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
-                                    : 'Pendiente de apertura'}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                                {branch.type && branch.type !== 'FARMACIA' && (
+                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                                        {BRANCH_TYPE_META[branch.type]?.label}
+                                    </span>
+                                )}
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                    {branch.openingDate || branch.opening_date
+                                        ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
+                                        : 'Pendiente de apertura'}
+                                </p>
+                            </div>
                         </div>
                     </button>
                 </div>
@@ -462,7 +480,7 @@ const BranchCard = memo(({
                 <button
                     type="button"
                     onClick={() => openModal && openModal("viewBranchEmployees", branch)}
-                    className="flex flex-col gap-1.5 w-1/2 items-start group/personal hover:bg-white/60 p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left"
+                    className={`flex flex-col gap-1.5 items-start group/personal hover:bg-white/60 p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
                     title="Ver Listado de Personal"
                 >
                     <div className="flex items-center gap-2 text-slate-400 transition-colors duration-300 group-hover/personal:text-slate-600">
@@ -477,18 +495,21 @@ const BranchCard = memo(({
                     </div>
                 </button>
 
-                <div className="w-px h-8 bg-slate-200/60 mx-2"></div>
-
-                <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-white/60 p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
-                    <div className="flex items-center gap-2 text-slate-400 transition-colors duration-300 group-hover/kiosk:text-slate-600">
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Kioscos</span>
-                        <Monitor size={14} className="transition-transform duration-300 group-hover/kiosk:scale-110 group-hover/kiosk:text-indigo-500" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>{activeKiosks} <span className="text-[10px] font-bold text-slate-400">/ 3</span></span>
-                        <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-white shadow-inner border-slate-200'}`} />
-                    </div>
-                </button>
+                {!['ADMINISTRATIVA','EXTERNA'].includes(branch.type) && (
+                    <>
+                        <div className="w-px h-8 bg-slate-200/60 mx-2"></div>
+                        <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-white/60 p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
+                            <div className="flex items-center gap-2 text-slate-400 transition-colors duration-300 group-hover/kiosk:text-slate-600">
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Kioscos</span>
+                                <Monitor size={14} className="transition-transform duration-300 group-hover/kiosk:scale-110 group-hover/kiosk:text-indigo-500" strokeWidth={2.5} />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>{activeKiosks} <span className="text-[10px] font-bold text-slate-400">/ 3</span></span>
+                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-white shadow-inner border-slate-200'}`} />
+                            </div>
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -722,27 +743,49 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
                                     : 'No encontramos sucursales que coincidan con tu búsqueda.'}
                             </p>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max pt-4 px-2">
-                            {filteredBranches.map((branch) => (
-                                <BranchCard
-                                    key={branch.id}
-                                    branch={branch}
-                                    branchEmployees={employeesMap.get(String(branch.id)) || []}
-                                    count={employeesMap.get(String(branch.id))?.length || 0}
-                                    activeKiosks={kiosksCount[branch.id] || 0}
-                                    currentTime={currentTime}
-                                    isMobile={isMobile}
-                                    handleViewProfile={handleViewProfile}
-                                    openModal={openModal}
-                                    handleDeleteClick={handleDeleteClick}
-                                    handlePhoneAction={handlePhoneAction}
-                                    handleWhatsAppAction={handleWhatsAppAction}
-                                    canEdit={canEdit}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    ) : (() => {
+                        const grouped = TYPE_ORDER.reduce((acc, t) => {
+                            const group = filteredBranches.filter(b => (b.type || 'FARMACIA') === t);
+                            if (group.length) acc.push({ type: t, branches: group });
+                            return acc;
+                        }, []);
+                        return (
+                            <div className="space-y-8 pt-4 px-2 pb-12">
+                                {grouped.map(({ type, branches: groupBranches }) => (
+                                    <div key={type}>
+                                        {grouped.length > 1 && (
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${BRANCH_TYPE_META[type]?.color}`}>
+                                                    {BRANCH_TYPE_META[type]?.sectionLabel}
+                                                </span>
+                                                <div className="flex-1 h-px bg-slate-200/60" />
+                                                <span className="text-[10px] font-bold text-slate-400">{groupBranches.length}</span>
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">
+                                            {groupBranches.map((branch) => (
+                                                <BranchCard
+                                                    key={branch.id}
+                                                    branch={branch}
+                                                    branchEmployees={employeesMap.get(String(branch.id)) || []}
+                                                    count={employeesMap.get(String(branch.id))?.length || 0}
+                                                    activeKiosks={kiosksCount[branch.id] || 0}
+                                                    currentTime={currentTime}
+                                                    isMobile={isMobile}
+                                                    handleViewProfile={handleViewProfile}
+                                                    openModal={openModal}
+                                                    handleDeleteClick={handleDeleteClick}
+                                                    handlePhoneAction={handlePhoneAction}
+                                                    handleWhatsAppAction={handleWhatsAppAction}
+                                                    canEdit={canEdit}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()}
                 </div>
             </GlassViewLayout>
         </>

@@ -136,7 +136,8 @@ export const createEmployeeSlice = (set, get) => ({
                 kiosk_pin: formData.kiosk_pin || null,
                 is_admin: formData.is_admin || false,
                 status: 'ACTIVO',
-                photo_url: null, 
+                photo_url: null,
+                assigned_branch_ids: Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number) : [],
             };
 
             // Validar headcount del cargo seleccionado
@@ -270,23 +271,29 @@ export const createEmployeeSlice = (set, get) => ({
                 dbPayload.contract_end_date = null;
             }
 
-            delete dbPayload.id; 
+            delete dbPayload.id;
             delete dbPayload.branchId;
             delete dbPayload.photo;
-            delete dbPayload.file; 
+            delete dbPayload.file;
             delete dbPayload.history;
             delete dbPayload.documents;
             delete dbPayload.attendance;
             delete dbPayload.role;
-            delete dbPayload.main_role; 
+            delete dbPayload.main_role;
             delete dbPayload.secondary_role;
-            delete dbPayload.sec_role; 
-            delete dbPayload.effectiveStatus; 
-            delete dbPayload.created_at; 
+            delete dbPayload.sec_role;
+            delete dbPayload.effectiveStatus;
+            delete dbPayload.created_at;
             delete dbPayload.photoPreview;
-            delete dbPayload.birthDate; 
-            delete dbPayload.hireDate; 
-            delete dbPayload.weeklySchedule; 
+            delete dbPayload.birthDate;
+            delete dbPayload.hireDate;
+            delete dbPayload.weeklySchedule;
+
+            if (dbPayload.assigned_branch_ids !== undefined) {
+                dbPayload.assigned_branch_ids = Array.isArray(dbPayload.assigned_branch_ids)
+                    ? dbPayload.assigned_branch_ids.map(Number)
+                    : [];
+            }
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;

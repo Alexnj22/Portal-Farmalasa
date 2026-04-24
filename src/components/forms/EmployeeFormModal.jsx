@@ -290,7 +290,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
         });
     }, [formData?.first_names, formData?.last_names, formData?.id, employees]);
 
-    const branchOpts = branches?.map(b => ({ value: String(b.id), label: b.name })) || [];
+    const AREA_TYPE_LABEL = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
+    const TYPE_ORDER_EMP = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
+    const branchOpts = TYPE_ORDER_EMP.flatMap(type => {
+        const group = (branches || []).filter(b => (b.type || 'FARMACIA') === type);
+        if (!group.length) return [];
+        return [
+            { value: `__header_${type}`, label: `── ${AREA_TYPE_LABEL[type]} ──`, isDisabled: true },
+            ...group.map(b => ({ value: String(b.id), label: b.name })),
+        ];
+    });
+
+    // Farmacias disponibles para asignar a externos
+    const farmaciasOpts = (branches || [])
+        .filter(b => (b.type || 'FARMACIA') === 'FARMACIA')
+        .map(b => ({ value: String(b.id), label: b.name }));
+
+    const selectedBranch = (branches || []).find(b => String(b.id) === String(formData.branch_id));
+    const isExterna = selectedBranch?.type === 'EXTERNA';
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
     const islandClass = "bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
@@ -458,12 +475,41 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="relative z-30">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Sucursal Base <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
+                                <div className={`relative z-30 ${isExterna ? 'md:col-span-2' : ''}`}>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                        <LiquidSelect value={formData.branch_id} onChange={(val) => handleSelectChange('branch_id', val)} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                     </div>
                                 </div>
+
+                                {isExterna && (
+                                    <div className="relative z-20 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 ml-1 mb-1.5 block">Farmacias Asignadas</label>
+                                        <div className="flex flex-wrap gap-2 p-3 bg-teal-50/50 border border-teal-200/60 rounded-[1rem] min-h-[44px]">
+                                            {farmaciasOpts.map(opt => {
+                                                const assigned = (formData.assigned_branch_ids || []).map(String);
+                                                const isActive = assigned.includes(opt.value);
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => setFormData(p => {
+                                                            const cur = (p.assigned_branch_ids || []).map(String);
+                                                            const next = isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value];
+                                                            return { ...p, assigned_branch_ids: next };
+                                                        })}
+                                                        className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-teal-500 text-white border-teal-400 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300 hover:text-teal-600'}`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {(formData.assigned_branch_ids || []).length === 0 && (
+                                            <p className="text-[9px] text-teal-500 font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Contratación</label>
                                     <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>

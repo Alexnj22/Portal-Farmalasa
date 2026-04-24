@@ -110,6 +110,7 @@ export const createSystemSlice = (set, get) => ({
                         weeklyHours: b.weekly_hours,
                         propertyType: b.settings?.propertyType || 'OWNED',
                         rent: b.settings?.rent || null,
+                        type: b.type || 'FARMACIA',
                     }));
                     set({ branches: mappedBranches });
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));

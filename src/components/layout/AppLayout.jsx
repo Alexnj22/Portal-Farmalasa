@@ -323,8 +323,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                 type="button"
-                className={`w-full flex items-center gap-3 rounded-[1rem] transition-all duration-300 group relative text-left
-                    ${indent ? 'px-3 py-2.5 ml-2' : 'px-4 py-3.5'}
+                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
+                    ${indent ? 'px-2.5 py-2 ml-2' : 'px-3 py-3'}
                     ${isActive ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
                     active:scale-[0.99]`}
             >
@@ -354,7 +354,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {isExpanded && (
                     <>
-                        <span className={`text-[13px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`text-[12px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
                             {label}
                         </span>
                         {alert && (
@@ -417,7 +417,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     } : undefined}
                     onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                     type="button"
-                    className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-[1rem] transition-all duration-300 group text-left
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
                         active:scale-[0.99]`}
                 >
@@ -428,7 +428,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     />
                     {isExpanded && (
                         <>
-                            <span className={`text-[14px] flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
+                            <span className={`text-[12px] flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
@@ -482,8 +482,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 ref={asideRef}
                 className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto
                     ${isMobile
-                        ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[320px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[320px] left-2 shadow-none')
-                        : (isSidebarOpen ? 'w-[19rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[5.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
+                        ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[280px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[280px] left-2 shadow-none')
+                        : (isSidebarOpen ? 'w-[15rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
                     transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
@@ -514,7 +514,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* ── Logo header ── */}
                     <div className={`relative z-10 border-b border-white/10 flex items-center
-                        ${isExpanded ? 'px-5 py-4 justify-between' : 'px-3 py-4 justify-center'}`}>
+                        ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
                         {/* Subtle header glow */}
                         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
@@ -561,7 +561,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
 
                     {/* ── Nav ── */}
-                    <nav ref={navRef} className="relative z-10 flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-hide">
+                    <nav ref={navRef} className="relative z-10 flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
                         {/* Active pill */}
                         <div
                             className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
@@ -580,7 +580,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className="relative z-10 px-4 pb-4 pt-3 border-t border-white/8 flex flex-col gap-2.5">
+                    <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/8 flex flex-col gap-2.5">
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
 
                         {isExpanded && (

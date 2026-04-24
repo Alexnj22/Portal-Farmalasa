@@ -443,7 +443,8 @@ const VacationPlanView = () => {
         setEndDate(plan.end_date);
         setNotes(plan.notes || '');
         setConfirmingEdit(false);
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Only scroll on mobile (panel is always visible on desktop)
+        if (window.innerWidth < 1024) panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const handleCancelEdit = () => {

@@ -570,10 +570,10 @@ const VacationPlanView = () => {
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
                 {/* Status tabs */}
-                <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-[calc(100%-8px)] shrink-0">
+                <div className="flex items-center bg-white/50 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-full shrink-0">
                     {[['ALL', 'Todos'], ['PLANNED', 'Planif.'], ['CONFIRMED', 'Confirmados'], ['TAKEN', 'Tomados']].map(([key, lbl]) => (
                         <button key={key} onClick={() => setStatusFilter(key)}
-                            className={`px-3 h-full rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${statusFilter === key ? 'bg-white text-[#007AFF] shadow-sm border border-white scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 hover:-translate-y-0.5'}`}>
+                            className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${statusFilter === key ? 'bg-white text-slate-800 border border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             {lbl}
                         </button>
                     ))}

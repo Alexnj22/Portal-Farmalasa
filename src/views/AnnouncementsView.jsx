@@ -171,8 +171,11 @@ const AnnouncementsView = ({ openModal }) => {
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
   const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
-  const { user, isJefe, rolePerms } = useAuth();
+  const { user, rolePerms } = useAuth();
   const canEdit = rolePerms === 'ALL' || !!rolePerms?.['announcements']?.can_edit;
+  // BRANCH scope: el usuario solo puede dirigir avisos a su propia sucursal
+  const annScope = rolePerms === 'ALL' ? 'ALL' : (rolePerms?.['announcements']?.scope || 'ALL');
+  const isBranchScoped = annScope === 'BRANCH';
 
   const [editingAnnId, setEditingAnnId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, annId: null });
@@ -181,8 +184,8 @@ const AnnouncementsView = ({ openModal }) => {
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [targetType, setTargetType] = useState(() => isJefe ? 'BRANCH' : 'GLOBAL');
-  const [targetValue, setTargetValue] = useState(() => isJefe ? String(user?.branchId || '') : '');
+  const [targetType, setTargetType] = useState(() => isBranchScoped ? 'BRANCH' : 'GLOBAL');
+  const [targetValue, setTargetValue] = useState(() => isBranchScoped ? String(user?.branchId || '') : '');
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [empSearch, setEmpSearch] = useState('');
   const [priority, setPriority] = useState('NORMAL');
@@ -308,13 +311,13 @@ const AnnouncementsView = ({ openModal }) => {
     setEditingAnnId(null);
     setTitle('');
     setMessage('');
-    setTargetType(isJefe ? 'BRANCH' : 'GLOBAL');
-    setTargetValue(isJefe ? String(user?.branchId || '') : '');
+    setTargetType(isBranchScoped ? 'BRANCH' : 'GLOBAL');
+    setTargetValue(isBranchScoped ? String(user?.branchId || '') : '');
     setSelectedEmployees([]);
     setPriority('NORMAL');
     setPublishImmediately(true);
     setScheduledDate('');
-  }, [isJefe, user?.branchId]);
+  }, [isBranchScoped, user?.branchId]);
 
   const handlePublish = async (e) => {
     e.preventDefault();
@@ -351,8 +354,8 @@ const AnnouncementsView = ({ openModal }) => {
       }
     }
 
-    const effectiveTargetType  = isJefe ? 'BRANCH' : targetType;
-    const effectiveTargetValue = isJefe ? String(user?.branchId) : (targetType === 'EMPLOYEE' ? selectedEmployees.map(String) : String(targetValue));
+    const effectiveTargetType  = isBranchScoped ? 'BRANCH' : targetType;
+    const effectiveTargetValue = isBranchScoped ? String(user?.branchId) : (targetType === 'EMPLOYEE' ? selectedEmployees.map(String) : String(targetValue));
     
     let finalScheduledFor = null;
     if (!publishImmediately && scheduledDate) {
@@ -499,7 +502,7 @@ const AnnouncementsView = ({ openModal }) => {
         return !a.isCompleted && !isScheduled;
     });
 
-    const branchFiltered = isJefe && user?.branchId
+    const branchFiltered = isBranchScoped && user?.branchId
         ? baseList.filter(a =>
               a.targetType === 'GLOBAL' ||
               (a.targetType === 'BRANCH' && String(a.targetValue) === String(user.branchId))
@@ -515,7 +518,7 @@ const AnnouncementsView = ({ openModal }) => {
       if (Array.isArray(a.audience)) return a.audience.some(emp => emp.name && emp.name.toLowerCase().includes(query));
       return false;
     });
-  }, [processedAnnouncements, listTab, debouncedSearchTerm, isJefe, user?.branchId]);
+  }, [processedAnnouncements, listTab, debouncedSearchTerm, isBranchScoped, user?.branchId]);
 
   const totalItems = currentList.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -624,7 +627,7 @@ const AnnouncementsView = ({ openModal }) => {
                 </div>
 
                 <div className="pt-3 border-t border-white/50">
-                  {isJefe ? (
+                  {isBranchScoped ? (
                     <div className="flex items-center gap-2 px-1 py-2 mb-1">
                       <Building2 size={14} className="text-emerald-600 shrink-0" />
                       <span className="text-[11px] font-bold text-slate-600">Dirigido a tu sucursal</span>

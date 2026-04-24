@@ -64,25 +64,25 @@ const MODULE_GROUPS = [
         group: 'Comunicación',
         color: 'text-rose-600',
         modules: [
-            { key: 'announcements',label: 'Avisos',                 desc: 'Publicación y gestión de comunicados internos',             icon: Megaphone,     hasApprove: false },
+            { key: 'announcements',label: 'Avisos',                 desc: 'Publicación y gestión de comunicados internos',             icon: Megaphone,     hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'Dashboard',
         color: 'text-violet-600',
         modules: [
-            { key: 'overview',          label: 'Dashboard',                  desc: 'Acceso a la vista general del portal con widgets configurables',           icon: LayoutDashboard, hasApprove: false },
-            { key: 'dash_kpi',          label: 'Widget: Estadísticas clave', desc: 'Ver métricas generales: empleados, asistencia, solicitudes y sucursales',  icon: TrendingUp,      hasApprove: false },
-            { key: 'dash_trend',        label: 'Widget: Tendencia asistencia',desc: 'Gráfica de asistencia de los últimos 7 días por día',                      icon: Activity,        hasApprove: false },
-            { key: 'dash_requests',     label: 'Widget: Solicitudes',         desc: 'Solicitudes pendientes de aprobación en el dashboard',                     icon: ClipboardList,   hasApprove: false },
-            { key: 'dash_branches',     label: 'Widget: Sucursales',          desc: 'Estado y alertas de sucursales en el dashboard',                           icon: Building2,       hasApprove: false },
+            { key: 'overview',          label: 'Dashboard',                  desc: 'Acceso a la vista general del portal con widgets configurables',           icon: LayoutDashboard, hasApprove: false, hasScope: true },
+            { key: 'dash_kpi',          label: 'Widget: Estadísticas clave', desc: 'Ver métricas generales: empleados, asistencia, solicitudes y sucursales',  icon: TrendingUp,      hasApprove: false, hasScope: true },
+            { key: 'dash_trend',        label: 'Widget: Tendencia asistencia',desc: 'Gráfica de asistencia de los últimos 7 días por día',                      icon: Activity,        hasApprove: false, hasScope: true },
+            { key: 'dash_requests',     label: 'Widget: Solicitudes',         desc: 'Solicitudes pendientes de aprobación en el dashboard',                     icon: ClipboardList,   hasApprove: false, hasScope: true },
+            { key: 'dash_branches',     label: 'Widget: Sucursales',          desc: 'Estado y alertas de sucursales en el dashboard',                           icon: Building2,       hasApprove: false, hasScope: true },
             { key: 'dash_calendar',     label: 'Widget: Calendario',          desc: 'Calendario mensual con feriados y eventos',                               icon: CalendarDays,    hasApprove: false },
-            { key: 'dash_distribution', label: 'Widget: Distribución cargos', desc: 'Gráfica de distribución de personal por cargo',                           icon: PieChart,    hasApprove: false },
-            { key: 'dash_announcements',label: 'Widget: Avisos recientes',    desc: 'Últimos avisos publicados en el dashboard',                               icon: Megaphone,    hasApprove: false },
-            { key: 'dash_shifts',       label: 'Widget: Estado de turnos',    desc: 'Ver quién está en labores, almuerzo o lactancia por sucursal en tiempo real', icon: Clock,     hasApprove: false },
-            { key: 'dash_absences',     label: 'Widget: Ausencias activas',   desc: 'Empleados con vacaciones, incapacidad o permiso activos hoy',              icon: UserX,       hasApprove: false },
-            { key: 'dash_sales',       label: 'Widget: Ventas por hora',     desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,   hasApprove: false },
-            { key: 'dash_birthdays',   label: 'Widget: Cumpleaños del mes',  desc: 'Cumpleañeros del mes con foto, sucursal y edad',                            icon: Gift,        hasApprove: false },
+            { key: 'dash_distribution', label: 'Widget: Distribución cargos', desc: 'Gráfica de distribución de personal por cargo',                           icon: PieChart,        hasApprove: false, hasScope: true },
+            { key: 'dash_announcements',label: 'Widget: Avisos recientes',    desc: 'Últimos avisos publicados en el dashboard',                               icon: Megaphone,       hasApprove: false, hasScope: true },
+            { key: 'dash_shifts',       label: 'Widget: Estado de turnos',    desc: 'Ver quién está en labores, almuerzo o lactancia por sucursal en tiempo real', icon: Clock,       hasApprove: false, hasScope: true },
+            { key: 'dash_absences',     label: 'Widget: Ausencias activas',   desc: 'Empleados con vacaciones, incapacidad o permiso activos hoy',              icon: UserX,           hasApprove: false, hasScope: true },
+            { key: 'dash_sales',        label: 'Widget: Ventas por hora',     desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,       hasApprove: false, hasScope: true },
+            { key: 'dash_birthdays',    label: 'Widget: Cumpleaños del mes',  desc: 'Cumpleañeros del mes con foto, sucursal y edad',                           icon: Gift,            hasApprove: false, hasScope: true },
         ],
     },
     {
@@ -168,6 +168,11 @@ const PERMISSION_TYPES = [
     { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-emerald-500' },
 ];
 
+const SCOPE_OPTIONS = [
+    { value: 'ALL',    label: 'Todos',        color: 'bg-indigo-500 text-white', ring: 'ring-indigo-200' },
+    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-teal-500 text-white',   ring: 'ring-teal-200'   },
+];
+
 // Tooltip descriptivo por tipo de permiso
 const PERM_DESC = {
     can_view:    'Puede ver y consultar este módulo',
@@ -193,6 +198,7 @@ const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false }) =>
 const ModuleCard = ({ module, perms, onChange, locked, saving }) => {
     const ModIcon = module.icon;
     const hasAnyPerm = perms.can_view || perms.can_edit || perms.can_approve;
+    const currentScope = perms.scope || 'ALL';
 
     return (
         <div className={`rounded-[1.5rem] border transition-all duration-300 ${
@@ -223,7 +229,6 @@ const ModuleCard = ({ module, perms, onChange, locked, saving }) => {
                         if (pt.key === 'can_approve' && !module.hasApprove) return null;
                         const PtIcon = pt.icon;
                         const val = !!perms[pt.key];
-                        // can_edit and can_approve require can_view
                         const needsView = (pt.key === 'can_edit' || pt.key === 'can_approve') && !perms.can_view;
                         return (
                             <div key={pt.key} title={PERM_DESC[pt.key]} className={`flex items-center justify-between gap-3 transition-opacity ${needsView ? 'opacity-30 pointer-events-none' : ''}`}>
@@ -243,6 +248,30 @@ const ModuleCard = ({ module, perms, onChange, locked, saving }) => {
                         );
                     })}
                 </div>
+
+                {/* Scope selector — solo visible cuando can_view está activo y el módulo lo soporta */}
+                {module.hasScope && perms.can_view && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Alcance de datos</p>
+                        <div className="flex gap-1.5">
+                            {SCOPE_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    disabled={locked}
+                                    onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
+                                    className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
+                                        currentScope === opt.value
+                                            ? `${opt.color} shadow-sm ring-2 ${opt.ring}`
+                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                    } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -272,7 +301,7 @@ const PermissionsView = () => {
         setLoading(true);
         Promise.all([
             supabase.from('roles').select('id, name, parent_role_id').order('id'),
-            supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve').not('role_id', 'is', null),
+            supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve, scope').not('role_id', 'is', null),
         ]).then(([{ data: rolesData }, { data: permsData }]) => {
             // Ordenar jerárquicamente: raíz → hijos → nietos...
             const rawRoles = rolesData || [];
@@ -300,12 +329,13 @@ const PermissionsView = () => {
                     can_view: p.can_view,
                     can_edit: p.can_edit,
                     can_approve: p.can_approve,
+                    scope: p.scope || 'ALL',
                 };
             });
             // Inicializar vacíos
             loadedRoles.forEach(r => MODULES.forEach(m => {
                 const k = `${r.id}:${m.key}`;
-                if (!map[k]) map[k] = { can_view: false, can_edit: false, can_approve: false };
+                if (!map[k]) map[k] = { can_view: false, can_edit: false, can_approve: false, scope: 'ALL' };
             }));
             setPermissions(map);
             setLoading(false);
@@ -340,6 +370,7 @@ const PermissionsView = () => {
                 can_view: next.can_view ?? false,
                 can_edit: next.can_edit ?? false,
                 can_approve: next.can_approve ?? false,
+                scope: next.scope || 'ALL',
                 updated_at: new Date().toISOString(),
             }, { onConflict: 'role_id,module_key', ignoreDuplicates: false });
 
@@ -361,6 +392,7 @@ const PermissionsView = () => {
             can_view: true,
             can_edit: true,
             can_approve: m.hasApprove ? true : false,
+            scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
         const { error } = await supabase
@@ -374,6 +406,7 @@ const PermissionsView = () => {
                         can_view: true,
                         can_edit: true,
                         can_approve: m.hasApprove ? true : false,
+                        scope: prev[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
                     };
                 });
                 return next;
@@ -395,6 +428,7 @@ const PermissionsView = () => {
                 can_view: src.can_view ?? false,
                 can_edit: src.can_edit ?? false,
                 can_approve: src.can_approve ?? false,
+                scope: src.scope || 'ALL',
                 updated_at: new Date().toISOString(),
             };
         });
@@ -410,6 +444,7 @@ const PermissionsView = () => {
                         can_view: src.can_view ?? false,
                         can_edit: src.can_edit ?? false,
                         can_approve: src.can_approve ?? false,
+                        scope: src.scope || 'ALL',
                     };
                 });
                 return next;
@@ -441,6 +476,7 @@ const PermissionsView = () => {
             can_view: activate,
             can_edit: activate,
             can_approve: activate && !!m.hasApprove,
+            scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
         await supabase

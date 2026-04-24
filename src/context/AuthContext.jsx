@@ -67,11 +67,11 @@ export const AuthProvider = ({ children }) => {
     // user.role como string (nombre del cargo): versión vieja del Edge Function — no sirve como ID
     const roleId = user.roleId ?? (Number.isInteger(user.role) ? user.role : null);
     const query = roleId
-      ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve').eq('role_id', roleId)
-      : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve').eq('system_role', systemRole);
+      ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
+      : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('system_role', systemRole);
     query.then(({ data }) => {
       const map = {};
-      (data || []).forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve }; });
+      (data || []).forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' }; });
       setRolePerms(map);
       setPermsLoading(false);
     });

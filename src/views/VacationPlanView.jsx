@@ -200,14 +200,14 @@ const GanttChart = ({ plans, year }) => {
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2 group/row">
-                                    <div className="w-[160px] shrink-0 flex items-center justify-end gap-1.5 pr-3 group-hover/row:text-[#007AFF] transition-colors">
-                                        <span className="text-[11px] font-bold text-slate-600 truncate group-hover/row:text-[#007AFF] transition-colors">{emp?.name || 'Empleado'}</span>
-                                        <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-200 border border-white shadow-sm shrink-0 flex items-center justify-center text-[8px] font-black text-slate-400">
+                                    <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
                                             {(emp?.photo || emp?.photo_url)
                                                 ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                             }
                                         </div>
+                                        <span className="text-[11px] font-bold text-slate-700 truncate group-hover/row:text-[#007AFF] transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}

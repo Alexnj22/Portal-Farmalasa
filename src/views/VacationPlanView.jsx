@@ -734,24 +734,24 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
                                                             <td className="py-3">
-                                                                <div className="flex items-center gap-1.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
+                                                                        <button
+                                                                            onClick={() => setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' })}
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <Edit2 size={10} strokeWidth={2.5} /> Editar
+                                                                        </button>
+                                                                    )}
                                                                     {p.status === 'PLANNED' && (
-                                                                        <>
-                                                                            <button
-                                                                                onClick={() => setEditingPlan({ id: p.id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '' })}
-                                                                                disabled={!canEdit}
-                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase tracking-widest hover:bg-slate-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                            >
-                                                                                <Edit2 size={10} strokeWidth={2.5} /> Editar
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => handleConfirmPlan(p.id)}
-                                                                                disabled={!canEdit}
-                                                                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                            >
-                                                                                <Check size={10} strokeWidth={3} /> Confirmar
-                                                                            </button>
-                                                                        </>
+                                                                        <button
+                                                                            onClick={() => handleConfirmPlan(p.id)}
+                                                                            disabled={!canEdit}
+                                                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <Check size={10} strokeWidth={3} /> Confirmar
+                                                                        </button>
                                                                     )}
                                                                 </div>
                                                             </td>

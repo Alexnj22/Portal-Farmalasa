@@ -73,6 +73,14 @@ const isPendingData = (emp) => {
   return !emp.dui || !emp.birth_date || (!emp.isss_number && !emp.afp_number);
 };
 
+const getPendingTooltip = (emp) => {
+  const missing = [];
+  if (!emp.dui) missing.push('DUI');
+  if (!emp.birth_date) missing.push('Fecha de nacimiento');
+  if (!emp.isss_number && !emp.afp_number) missing.push('ISSS / AFP');
+  return `Pendiente: ${missing.join(' • ')}`;
+};
+
 const getRoleWeight = (roleStr) => {
   const r = (roleStr || '').toUpperCase();
   if (r.includes('GERENTE') || r.includes('DIRECCI')) return 1;
@@ -198,7 +206,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, can
                 {shortName}
               </p>
               {isPendingData(emp) && (
-                <div className="flex items-center gap-0.5 shrink-0" title="Datos incompletos: DUI, fecha de nacimiento o nómina pendiente">
+                <div className="flex items-center gap-0.5 shrink-0" title={getPendingTooltip(emp)}>
                   <AlertCircle size={11} strokeWidth={2.5} className="text-amber-500" />
                   <span className="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded">PENDIENTE</span>
                 </div>

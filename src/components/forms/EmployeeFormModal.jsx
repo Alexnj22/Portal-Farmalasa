@@ -227,6 +227,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setHasDraft(false);
     };
 
+    const pendingItems = useMemo(() => {
+        if (!isEditMode) return [];
+        const items = [];
+        if (!formData?.dui) items.push('DUI');
+        if (!formData?.birth_date) items.push('Fecha de Nacimiento');
+        if (!formData?.isss_number && !formData?.afp_number) items.push('ISSS o AFP');
+        return items;
+    }, [isEditMode, formData?.dui, formData?.birth_date, formData?.isss_number, formData?.afp_number]);
+
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
@@ -358,6 +367,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <div className="flex items-center gap-2">
                         <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
                         <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#007AFF] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md">Restaurar</button>
+                    </div>
+                </div>
+            )}
+
+            {/* DATOS PENDIENTES EN MODO EDICIÓN */}
+            {isEditMode && pendingItems.length > 0 && (
+                <div className="mb-3 bg-red-50/90 border border-red-200/80 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
+                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-0.5">Información Pendiente</p>
+                        <p className="text-[11px] text-red-600 font-medium leading-tight">
+                            Completa los siguientes campos: <span className="font-black">{pendingItems.join(' • ')}</span>
+                        </p>
                     </div>
                 </div>
             )}

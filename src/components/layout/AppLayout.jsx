@@ -929,6 +929,19 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="p-1.5 space-y-0.5">
                                     {flyout.items.map(m => {
                                         const MIcon = m.icon;
+                                        if (m.comingSoon) return (
+                                            <div key={m.key}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[0.85rem] opacity-50 cursor-default select-none"
+                                            >
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/6">
+                                                    <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
+                                                </div>
+                                                <span className="text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
+                                                <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    Próximamente
+                                                </span>
+                                            </div>
+                                        );
                                         return (
                                             <button
                                                 key={m.key}

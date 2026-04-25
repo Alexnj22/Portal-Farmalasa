@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -724,22 +724,66 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     </div>
                 </div>
 
-                {!hidesFooter && (
-                    <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
-                        <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-50">
-                            Cancelar
-                        </button>
-                        
-                        <button 
-                            type="submit" 
-                            form="unified-modal-form" 
-                            disabled={isSaving || !isFormValid} 
-                            className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95'}`}
-                        >
-                            {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
-                        </button>
-                    </div>
-                )}
+                {!hidesFooter && (() => {
+                    const isEmpForm = type === 'newEmployee' || type === 'editEmployee';
+                    const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina'];
+                    const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina' };
+                    const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
+                    const prevStep = isEmpForm && empIdx > 0 ? EMP_STEP_KEYS[empIdx - 1] : null;
+                    const nextStep = isEmpForm && empIdx < EMP_STEP_KEYS.length - 1 ? EMP_STEP_KEYS[empIdx + 1] : null;
+                    const isLastStep = isEmpForm && empIdx === EMP_STEP_KEYS.length - 1;
+
+                    if (isEmpForm) {
+                        return (
+                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
+                                {/* LEFT: Anterior */}
+                                {prevStep ? (
+                                    <button type="button" onClick={() => setEmpActiveTab(prevStep)} disabled={isSaving}
+                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-all disabled:opacity-50 active:scale-95">
+                                        <ChevronLeft size={15} strokeWidth={2.5} />
+                                        {EMP_STEP_LABELS[prevStep]}
+                                    </button>
+                                ) : <div />}
+
+                                {/* CENTER: Cancelar */}
+                                <button type="button" onClick={onClose} disabled={isSaving}
+                                    className="px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-400 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 active:scale-95">
+                                    Cancelar
+                                </button>
+
+                                {/* RIGHT: Siguiente o Guardar */}
+                                {nextStep ? (
+                                    <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
+                                        className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#007AFF] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_8px_22px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95">
+                                        {EMP_STEP_LABELS[nextStep]}
+                                        <ChevronRight size={15} strokeWidth={2.5} />
+                                    </button>
+                                ) : (
+                                    <button type="submit" form="unified-modal-form" disabled={isSaving || !isFormValid}
+                                        className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.35)] hover:bg-emerald-600 hover:shadow-[0_8px_22px_rgba(16,185,129,0.45)] hover:-translate-y-0.5 active:scale-95'}`}>
+                                        {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
+                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-50">
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                form="unified-modal-form"
+                                disabled={isSaving || !isFormValid}
+                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95'}`}
+                            >
+                                {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
+                            </button>
+                        </div>
+                    );
+                })()}
             </div>
         </ModalShell>
     );

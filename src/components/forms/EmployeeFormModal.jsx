@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; 
 import LiquidDatePicker from '../common/LiquidDatePicker'; 
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
@@ -636,32 +636,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 )}
             </div>
 
-            {/* STEP NAVIGATION */}
-            {(() => {
-                const STEP_KEYS = ['personal', 'laboral', 'nomina'];
-                const STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina' };
-                const currentIdx = STEP_KEYS.indexOf(activeTab);
-                const prevKey = currentIdx > 0 ? STEP_KEYS[currentIdx - 1] : null;
-                const nextKey = currentIdx < STEP_KEYS.length - 1 ? STEP_KEYS[currentIdx + 1] : null;
-                return (
-                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100/80">
-                        {prevKey ? (
-                            <button type="button" onClick={() => setActiveTab(prevKey)}
-                                className="flex items-center gap-2 px-5 h-10 rounded-full bg-white/70 border border-slate-200/80 text-slate-600 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 hover:shadow-md transition-all duration-200 active:scale-95">
-                                <ChevronLeft size={15} strokeWidth={2.5} />
-                                {STEP_LABELS[prevKey]}
-                            </button>
-                        ) : <div />}
-                        {nextKey && (
-                            <button type="button" onClick={() => setActiveTab(nextKey)}
-                                className="flex items-center gap-2 px-5 h-10 rounded-full bg-[#007AFF] text-white font-bold text-[11px] uppercase tracking-widest hover:bg-[#0066CC] shadow-[0_4px_14px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_18px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95">
-                                {STEP_LABELS[nextKey]}
-                                <ChevronRight size={15} strokeWidth={2.5} />
-                            </button>
-                        )}
-                    </div>
-                );
-            })()}
         </div>
     );
 };

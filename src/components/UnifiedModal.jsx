@@ -78,8 +78,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewRoleEmployees":
             case "viewBranchEmployees": return "max-w-2xl";
             case "viewDocument": return "max-w-5xl";
-            case "newEmployee": return "max-w-4xl"; 
-            case "editEmployee": return "max-w-3xl"; 
+            case "newEmployee":
+            case "editEmployee": return "max-w-4xl";
             case "newBranch":
             case "editBranch":
             case "editBranchLegal":
@@ -142,7 +142,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "manageKiosks") return formData?.name;
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
         if (type === "newEmployee") return "FICHA DE PERSONAL WFM NIVEL ENTERPRISE"; 
-        if (type === "editEmployee") return "EDICIÓN RÁPIDA DE CONTACTO Y NÓMINA"; 
+        if (type === "editEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "COLABORADOR";
@@ -642,7 +642,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
                                 {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} />}
-                                {type === "editEmployee" && <FormEditEmployeeBasic formData={formData || {}} setFormData={setFormData} />}
+                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} />}
                                 
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}

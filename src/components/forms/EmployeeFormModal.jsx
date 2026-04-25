@@ -122,15 +122,32 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
-const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
-    
-    const employees = useStaffStore(state => state.employees); 
-    const [activeTab, setActiveTab] = useState('personal'); 
+// Locked field shown for HR-action-only fields in edit mode
+const LockedField = ({ label, value, colSpan = 1 }) => (
+    <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
+        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-1.5 flex items-center justify-between">
+            <span>{label}</span>
+            <span className="text-[8px] font-black text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                <Lock size={8} strokeWidth={3} /> Acción RRHH
+            </span>
+        </label>
+        <div className="flex items-center gap-2 w-full h-[40px] px-3 bg-slate-50/60 border border-slate-200/50 rounded-[1rem] cursor-not-allowed opacity-70">
+            <Lock size={12} className="text-slate-300 shrink-0" />
+            <span className="text-[13px] font-bold text-slate-500 truncate">{value || '—'}</span>
+        </div>
+    </div>
+);
+
+const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false }) => {
+
+    const employees = useStaffStore(state => state.employees);
+    const [activeTab, setActiveTab] = useState('personal');
     const [hasDraft, setHasDraft] = useState(false);
 
-    // 🚨 EFECTO 1: VERIFICACIÓN INTELIGENTE DEL BORRADOR VS BASE DE DATOS REAL
+    // Skip draft logic in edit mode
     useEffect(() => {
         const checkDraft = () => {
+            if (isEditMode) return;
             const draftStr = localStorage.getItem('wfm_employee_draft');
             if (draftStr && !formData?.id) {
                 try {
@@ -161,7 +178,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
         };
 
         checkDraft();
-    }, [employees, formData?.id]);
+    }, [employees, formData?.id, isEditMode]);
 
     useEffect(() => {
         if (!formData?.code) { 
@@ -183,6 +200,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
     }, []);
 
     useEffect(() => {
+        if (isEditMode) return;
         if (!formData?.id && (formData?.first_names || formData?.last_names || formData?.dui)) {
             const dataToSave = { ...formData };
             delete dataToSave.file; 
@@ -338,8 +356,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
     return (
         <div className="flex flex-col w-full h-full relative z-10" onKeyDown={handleKeyDown}>
 
-            {/* ALERTA DE BORRADOR */}
-            {hasDraft && (
+            {/* ALERTA DE BORRADOR (solo en creación) */}
+            {!isEditMode && hasDraft && (
                 <div className="mx-auto mb-4 bg-[#007AFF]/10 border border-[#007AFF]/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
                     <div className="flex items-center gap-2 text-[#007AFF]">
                         <RotateCcw size={16} strokeWidth={2.5} />
@@ -349,6 +367,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
                         <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
                         <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#007AFF] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md">Restaurar</button>
                     </div>
+                </div>
+            )}
+
+            {/* AVISO EN MODO EDICIÓN */}
+            {isEditMode && (
+                <div className="mb-4 bg-amber-50/80 border border-amber-200/80 p-3 rounded-2xl flex items-start gap-3 shadow-sm">
+                    <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                        Los campos marcados con <span className="font-black">Acción RRHH</span> (sucursal, cargo, salario, contrato) solo se pueden modificar mediante una acción de personal desde el perfil del empleado.
+                    </p>
                 </div>
             )}
 
@@ -509,85 +537,91 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className={`relative z-30 ${isExterna ? 'md:col-span-2' : ''}`}>
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                        <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
-                                    </div>
-                                </div>
-
-                                {isExterna && (
-                                    <div className="relative z-20 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 ml-1 mb-1.5 block">Farmacias Asignadas</label>
-                                        <div className="flex flex-wrap gap-2 p-3 bg-teal-50/50 border border-teal-200/60 rounded-[1rem] min-h-[44px]">
-                                            {farmaciasOpts.map(opt => {
-                                                const assigned = (formData.assigned_branch_ids || []).map(String);
-                                                const isActive = assigned.includes(opt.value);
-                                                return (
-                                                    <button
-                                                        key={opt.value}
-                                                        type="button"
-                                                        onClick={() => setFormData(p => {
-                                                            const cur = (p.assigned_branch_ids || []).map(String);
-                                                            const next = isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value];
-                                                            return { ...p, assigned_branch_ids: next };
-                                                        })}
-                                                        className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-teal-500 text-white border-teal-400 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300 hover:text-teal-600'}`}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                );
-                                            })}
+                                {isEditMode ? (
+                                    <>
+                                        <LockedField label="Área de Trabajo" value={selectedBranch?.name || formData.branch_id} />
+                                        <LockedField label="Cargo Principal" value={roles?.find(r => String(r.id) === String(formData.role_id))?.name || formData.role} />
+                                        <LockedField label="Cargo Secundario" value={roles?.find(r => String(r.id) === String(formData.secondary_role_id))?.name || formData.secondary_role || 'Sin cargo secundario'} />
+                                        <LockedField label="Fecha de Contratación" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={`relative z-30 ${isExterna ? 'md:col-span-2' : ''}`}>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                                <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
+                                            </div>
                                         </div>
-                                        {(formData.assigned_branch_ids || []).length === 0 && (
-                                            <p className="text-[9px] text-teal-500 font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>
+                                        {isExterna && (
+                                            <div className="relative z-20 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-teal-600 ml-1 mb-1.5 block">Farmacias Asignadas</label>
+                                                <div className="flex flex-wrap gap-2 p-3 bg-teal-50/50 border border-teal-200/60 rounded-[1rem] min-h-[44px]">
+                                                    {farmaciasOpts.map(opt => {
+                                                        const assigned = (formData.assigned_branch_ids || []).map(String);
+                                                        const isActive = assigned.includes(opt.value);
+                                                        return (
+                                                            <button key={opt.value} type="button"
+                                                                onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}
+                                                                className={`px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-teal-500 text-white border-teal-400 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300 hover:text-teal-600'}`}
+                                                            >{opt.label}</button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-[9px] text-teal-500 font-bold mt-1.5 ml-1">Sin farmacias asignadas — el personal externo cubre todas por defecto.</p>}
+                                            </div>
                                         )}
-                                    </div>
+                                        <div className="relative z-30">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Contratación</label>
+                                            <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} placeholder="Seleccionar fecha" />
+                                            </div>
+                                        </div>
+                                        <div className="relative z-20">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                                <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
+                                            </div>
+                                        </div>
+                                        <div className="relative z-10">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={true} icon={ShieldCheck} {...portalSelectProps} />
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
-                                <div className="relative z-30">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Contratación</label>
-                                    <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
-                                        <LiquidDatePicker value={formData.hire_date} onChange={(date) => handleDateChange('hire_date', date)} placeholder="Seleccionar fecha" />
-                                    </div>
-                                </div>
-                                
-                                <div className="relative z-20">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span></label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                        <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
-                                    </div>
-                                </div>
-                                <div className="relative z-10">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={true} icon={ShieldCheck} {...portalSelectProps} />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="relative z-30">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Contrato</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
+                                {isEditMode ? (
+                                    <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
+                                ) : (
+                                    <div className="relative z-30">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Contrato</label>
+                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                            <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {formData.contract_type === 'TEMPORAL' ? (
                                     <div className="relative z-30 animate-in fade-in zoom-in-95">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
                                             Fecha Fin de Contrato <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>
                                         </label>
-                                        <div className={`bg-amber-50/30 rounded-[1rem] border border-amber-200 shadow-sm flex items-center h-[40px] px-1.5 focus-within:ring-4 focus-within:ring-amber-500/10`}>
+                                        <div className={`bg-amber-50/30 rounded-[1rem] border border-amber-200 shadow-sm flex items-center h-[40px] px-1.5`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales" />
                                         </div>
                                     </div>
-                                ) : <div className="hidden md:block"></div>}
+                                ) : <div className="hidden md:block" />}
 
                                 <PortalInput label="Horas Semanales (WFM)" name="weekly_contracted_hours" value={formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="44" />
-                                <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" />
+                                {isEditMode
+                                    ? <LockedField label="Salario Base" value={formData.base_salary ? `$${Number(formData.base_salary).toFixed(2)}` : '—'} />
+                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" />
+                                }
                             </div>
                         </div>
                     </>

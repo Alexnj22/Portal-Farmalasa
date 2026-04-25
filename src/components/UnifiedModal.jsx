@@ -1,6 +1,7 @@
-import React, { Suspense, useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import {
-    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus
+    X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
+    User, Briefcase, CreditCard, CheckCircle2
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -54,13 +55,26 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isFormValid, setIsFormValid] = useState(true);
+    const [empActiveTab, setEmpActiveTab] = useState('personal');
     const scrollRef = useRef(null);
 
     useEffect(() => {
         setValidationError(null);
         setIsSaving(false);
         setIsFormValid(true);
+        setEmpActiveTab('personal');
     }, [type, isOpen]);
+
+    const EMP_STEPS = [
+        { key: 'personal', label: 'Personal', icon: User },
+        { key: 'laboral',  label: 'Contrato', icon: Briefcase },
+        { key: 'nomina',   label: 'Nómina',   icon: CreditCard },
+    ];
+    const empStepCompletion = useMemo(() => ({
+        personal: !!(formData?.first_names?.trim() && formData?.last_names?.trim()),
+        laboral:  !!(formData?.branch_id && formData?.role_id),
+        nomina:   !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
+    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name]);
 
     useEffect(() => {
         if (validationError && scrollRef.current) {
@@ -141,7 +155,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
-        if (type === "newEmployee") return "FICHA DE PERSONAL WFM NIVEL ENTERPRISE"; 
+        if (type === "newEmployee") return "Nueva ficha de colaborador";
         if (type === "editEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
@@ -591,35 +605,66 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 />
 
                 {!hidesHeader && (
-                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex justify-between items-center relative z-10 shrink-0">
-                        <div className="flex items-center gap-4">
+                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex flex-col gap-4 relative z-10 shrink-0">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4">
 
-                            {(() => {
-                                if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                                if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
-                                if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                                if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#007AFF]`}><UserPlus size={22} strokeWidth={2.5} /></div>; 
-                                if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
-                                if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
-                                if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
-                                if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
-                                if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
-                                if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>; 
+                                {(() => {
+                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                                    if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#007AFF]`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>;
 
-                                return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
-                            })()}
+                                    return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
+                                })()}
 
-                            <div>
-                                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
-                                    {getModalTitle()}
-                                </h3>
-                                <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                <div>
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
+                                        {getModalTitle()}
+                                    </h3>
+                                    <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                </div>
                             </div>
+                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
+                                <X size={18} strokeWidth={2.5} />
+                            </button>
                         </div>
-                        <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-95 shrink-0 hover:scale-105">
-                            <X size={18} strokeWidth={2.5} />
-                        </button>
+
+                        {(type === 'newEmployee' || type === 'editEmployee') && (
+                            <div className="flex items-center justify-center">
+                                {EMP_STEPS.map((step, idx) => {
+                                    const isComplete = empStepCompletion[step.key];
+                                    const isActive = empActiveTab === step.key;
+                                    const StepIcon = step.icon;
+                                    return (
+                                        <React.Fragment key={step.key}>
+                                            {idx > 0 && (
+                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setEmpActiveTab(step.key)}
+                                                className="flex flex-col items-center gap-1.5 group"
+                                            >
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#007AFF] border-[#007AFF] text-white scale-110 shadow-[0_4px_14px_rgba(0,122,255,0.35)]' : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#007AFF]/40 group-hover:text-[#007AFF]'}`}>
+                                                    {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
+                                                </div>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#007AFF]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                                                    {step.label}
+                                                </span>
+                                            </button>
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -641,8 +686,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
-                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} />}
-                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} />}
+                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} />}
+                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} />}
                                 
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}

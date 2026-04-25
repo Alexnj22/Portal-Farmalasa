@@ -8,7 +8,7 @@ import { useStaffStore } from '../../store/staffStore';
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
 // ============================================================================
-const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }, { value: 'OTRO', label: 'Otro' }];
+const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
@@ -138,10 +138,12 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     </div>
 );
 
-const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false }) => {
+const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, setActiveTab: setActiveTabProp }) => {
 
     const employees = useStaffStore(state => state.employees);
-    const [activeTab, setActiveTab] = useState('personal');
+    const [localActiveTab, setLocalActiveTab] = useState('personal');
+    const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
+    const setActiveTab = setActiveTabProp || setLocalActiveTab;
     const [hasDraft, setHasDraft] = useState(false);
 
     // Skip draft logic in edit mode
@@ -225,18 +227,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setHasDraft(false);
     };
 
-    const stepCompletion = useMemo(() => ({
-        personal: !!(formData?.first_names?.trim() && formData?.last_names?.trim()),
-        laboral:  !!(formData?.branch_id && formData?.role_id),
-        nomina:   !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
-    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name]);
-
-    const STEPS = [
-        { key: 'personal', label: 'Personal',  icon: User },
-        { key: 'laboral',  label: 'Contrato',  icon: Briefcase },
-        { key: 'nomina',   label: 'Nómina',    icon: CreditCard },
-    ];
-
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
@@ -273,6 +263,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             const newData = { ...prev, [name]: value };
             if (name === 'department') newData.municipality = '';
             if (name === 'contract_type' && value !== 'TEMPORAL') newData.contract_end_date = '';
+            if (name === 'contract_type' && value === 'MEDIO_TIEMPO') newData.weekly_contracted_hours = '22';
+            if (name === 'contract_type' && value !== 'MEDIO_TIEMPO' && prev.weekly_contracted_hours === '22') newData.weekly_contracted_hours = '44';
             return newData;
         });
     };
@@ -326,7 +318,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const group = (branches || []).filter(b => (b.type || 'FARMACIA') === type);
         if (!group.length) return [];
         return [
-            { value: `__header_${type}`, label: `── ${AREA_TYPE_LABEL[type]} ──`, isDisabled: true },
+            { value: `__header_${type}`, label: AREA_TYPE_LABEL[type], isSeparator: true },
             ...group.map(b => ({ value: String(b.id), label: b.name })),
         ];
     });
@@ -379,43 +371,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </p>
                 </div>
             )}
-
-            {/* STEP WIZARD */}
-            <div className="flex items-center justify-center mb-6 relative z-20">
-                {STEPS.map((step, idx) => {
-                    const isComplete = stepCompletion[step.key];
-                    const isActive   = activeTab === step.key;
-                    const StepIcon   = step.icon;
-                    return (
-                        <React.Fragment key={step.key}>
-                            {idx > 0 && (
-                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${stepCompletion[STEPS[idx - 1].key] ? 'bg-emerald-400' : 'bg-slate-200'}`} />
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab(step.key)}
-                                className="flex flex-col items-center gap-1.5 group"
-                            >
-                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm
-                                    ${isComplete
-                                        ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200'
-                                        : isActive
-                                            ? 'bg-[#007AFF] border-[#007AFF] text-white scale-110 shadow-[0_4px_14px_rgba(0,122,255,0.35)]'
-                                            : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#007AFF]/40 group-hover:text-[#007AFF]'}`}
-                                >
-                                    {isComplete
-                                        ? <CheckCircle2 size={18} strokeWidth={2.5} />
-                                        : <StepIcon size={15} strokeWidth={2} />}
-                                </div>
-                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap
-                                    ${isActive ? 'text-[#007AFF]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                                    {step.label}
-                                </span>
-                            </button>
-                        </React.Fragment>
-                    );
-                })}
-            </div>
 
             {/* CONTENEDOR ANIMADO */}
             <div key={activeTab} className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] fill-mode-both">

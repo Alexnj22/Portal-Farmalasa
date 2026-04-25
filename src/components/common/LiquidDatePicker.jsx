@@ -201,8 +201,16 @@ const LiquidDatePicker = ({
         setCurrentMode('months'); mRef.current?.focus(); 
     };
 
-    const handlePrev = () => setViewDate(new Date(currentYear, currentMonth - 1, 1));
-    const handleNext = () => setViewDate(new Date(currentYear, currentMonth + 1, 1));
+    const handlePrev = () => {
+        if (currentMode === 'days') setViewDate(new Date(currentYear, currentMonth - 1, 1));
+        else if (currentMode === 'months') setViewDate(new Date(currentYear - 1, currentMonth, 1));
+        else setViewDate(new Date(currentYear - 10, currentMonth, 1));
+    };
+    const handleNext = () => {
+        if (currentMode === 'days') setViewDate(new Date(currentYear, currentMonth + 1, 1));
+        else if (currentMode === 'months') setViewDate(new Date(currentYear + 1, currentMonth, 1));
+        else setViewDate(new Date(currentYear + 10, currentMonth, 1));
+    };
 
     // 🧠 MOTORES DE SOMBREADO Y ASUETOS
     let anchorObj = null;  

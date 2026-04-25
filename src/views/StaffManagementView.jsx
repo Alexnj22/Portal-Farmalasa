@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
   Users,
@@ -79,6 +80,36 @@ const getPendingTooltip = (emp) => {
   if (!emp.birth_date) missing.push('Fecha de nacimiento');
   if (!emp.isss_number && !emp.afp_number) missing.push('ISSS / AFP');
   return `Pendiente: ${missing.join(' • ')}`;
+};
+
+const PendingBadge = ({ emp }) => {
+  const [pos, setPos] = useState(null);
+  const ref = useRef(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({ top: r.top + window.scrollY - 8, left: r.left + window.scrollX + r.width / 2 });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <div ref={ref} onMouseEnter={show} onMouseLeave={hide}
+      className="flex items-center gap-0.5 shrink-0 cursor-default">
+      <AlertCircle size={11} strokeWidth={2.5} className="text-amber-500" />
+      <span className="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded">PENDIENTE</span>
+      {pos && createPortal(
+        <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
+          className="animate-in fade-in duration-150">
+          <div className="bg-slate-800/95 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
+            {getPendingTooltip(emp)}
+          </div>
+          <div className="w-2 h-2 bg-slate-800/95 rotate-45 mx-auto -mt-1 border-r border-b border-white/10" />
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 
 const getRoleWeight = (roleStr) => {
@@ -205,12 +236,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, can
               <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#007AFF] tracking-tight" title={emp.name}>
                 {shortName}
               </p>
-              {isPendingData(emp) && (
-                <div className="flex items-center gap-0.5 shrink-0" title={getPendingTooltip(emp)}>
-                  <AlertCircle size={11} strokeWidth={2.5} className="text-amber-500" />
-                  <span className="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded">PENDIENTE</span>
-                </div>
-              )}
+              {isPendingData(emp) && <PendingBadge emp={emp} />}
 
               {birthdayInfo?.isThisMonth && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-bounce' : ''}`} title={birthdayInfo.isToday ? `¡HOY cumple años! Día ${birthdayInfo.day}` : `Cumpleaños: Día ${birthdayInfo.day} de este mes`}>

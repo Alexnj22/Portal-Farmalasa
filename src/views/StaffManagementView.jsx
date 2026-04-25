@@ -137,9 +137,10 @@ const getBranchWeight = (branchStr) => {
 };
 
 const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false }) => {
-  const statusInfo = getStatusInfo(emp.effectiveStatus || emp.status);
+  const computedStatus = getEffectiveStatus(emp);
+  const statusInfo = getStatusInfo(computedStatus);
   const shortName = formatShortName(emp.name);
-  const isAbsent = ['INACTIVO', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(emp.effectiveStatus || emp.status);
+  const isAbsent = ['INACTIVO', 'Inactivo', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(computedStatus);
 
   // CEREBRO DE CUMPLEAÑOS PRO
   const birthdayInfo = useMemo(() => {
@@ -215,7 +216,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
                 <LiquidAvatar src={emp.photo_url || emp.photo} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
-            {(emp.effectiveStatus === 'Activo' || emp.effectiveStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
+            {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm z-10" title="Disponible"></span>
             )}
             {isAbsent && emp.status !== 'INACTIVO' && (

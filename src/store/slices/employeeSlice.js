@@ -120,6 +120,7 @@ export const createEmployeeSlice = (set, get) => ({
                 education_level: formData.education_level || null,
                 profession: formData.profession || null,
 
+                email: formData.email || null,
                 emergency_contact_name: formData.emergency_contact_name || null,
                 emergency_contact_phone: formData.emergency_contact_phone || null,
                 

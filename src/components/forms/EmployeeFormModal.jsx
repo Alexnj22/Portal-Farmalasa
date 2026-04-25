@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; 
 import LiquidDatePicker from '../common/LiquidDatePicker'; 
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
@@ -185,7 +185,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) { 
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', address: '', dui: '', birth_date: '',
+                first_names: '', last_names: '', username: '', phone: '', email: '', address: '', dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 department: '', municipality: '', education_level: '', profession: '',
                 code: `EMP${Math.floor(1000 + Math.random() * 9000)}`, 
@@ -424,6 +424,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
                                 <PortalInput label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="0000-0000" maskType="PHONE" />
+                                <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" />
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Género</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
@@ -582,7 +583,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </>
                 )}
 
-                {/* TAB 3: NÓMINA & ACCESOS */}
+                {/* TAB 3: NÓMINA Y ACCESOS */}
                 {activeTab === 'nomina' && (
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
@@ -634,6 +635,33 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </>
                 )}
             </div>
+
+            {/* STEP NAVIGATION */}
+            {(() => {
+                const STEP_KEYS = ['personal', 'laboral', 'nomina'];
+                const STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina' };
+                const currentIdx = STEP_KEYS.indexOf(activeTab);
+                const prevKey = currentIdx > 0 ? STEP_KEYS[currentIdx - 1] : null;
+                const nextKey = currentIdx < STEP_KEYS.length - 1 ? STEP_KEYS[currentIdx + 1] : null;
+                return (
+                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100/80">
+                        {prevKey ? (
+                            <button type="button" onClick={() => setActiveTab(prevKey)}
+                                className="flex items-center gap-2 px-5 h-10 rounded-full bg-white/70 border border-slate-200/80 text-slate-600 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 hover:shadow-md transition-all duration-200 active:scale-95">
+                                <ChevronLeft size={15} strokeWidth={2.5} />
+                                {STEP_LABELS[prevKey]}
+                            </button>
+                        ) : <div />}
+                        {nextKey && (
+                            <button type="button" onClick={() => setActiveTab(nextKey)}
+                                className="flex items-center gap-2 px-5 h-10 rounded-full bg-[#007AFF] text-white font-bold text-[11px] uppercase tracking-widest hover:bg-[#0066CC] shadow-[0_4px_14px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_18px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95">
+                                {STEP_LABELS[nextKey]}
+                                <ChevronRight size={15} strokeWidth={2.5} />
+                            </button>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 };

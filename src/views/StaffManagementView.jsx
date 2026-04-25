@@ -33,7 +33,8 @@ import {
   Phone,
   Cake,
   Medal,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -135,7 +136,7 @@ const getBranchWeight = (branchStr) => {
   return 4;
 };
 
-const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, canEdit = false }) => {
+const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false }) => {
   const statusInfo = getStatusInfo(emp.effectiveStatus || emp.status);
   const shortName = formatShortName(emp.name);
   const isAbsent = ['INACTIVO', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(emp.effectiveStatus || emp.status);
@@ -302,9 +303,19 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, can
 
       <td className="px-4 md:px-8 py-3.5 text-right border-b border-white/40">
         <div className="flex items-center justify-end gap-2">
+          {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
+            <button
+              onClick={() => onRehireEmployee(emp)}
+              className="flex items-center gap-1.5 h-8 md:h-9 px-3 bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 rounded-full font-black text-[9px] uppercase tracking-widest shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+              title="Recontratar"
+            >
+              <RefreshCw size={12} strokeWidth={2.5} />
+              <span className="hidden md:inline">Recontratar</span>
+            </button>
+          )}
           <button
             onClick={() => onEditEmployee(emp)}
-            disabled={!canEdit}
+            disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
             className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
@@ -499,6 +510,11 @@ const StaffManagementView = ({
   const handleOpenEditEmployee = useCallback((emp) => {
     setIsSearchActive(false);
     openModal?.('editEmployee', emp);
+  }, [openModal]);
+
+  const handleOpenRehireEmployee = useCallback((emp) => {
+    setIsSearchActive(false);
+    openModal?.('rehireEmployee', emp);
   }, [openModal]);
 
   // 🚨 3. AQUÍ HACEMOS QUE AL CLICKEAR "VER PERFIL", CAMBIE LA URL EN VEZ DEL ESTADO LOCAL
@@ -720,7 +736,7 @@ const StaffManagementView = ({
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((emp) => (
-                    <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} canEdit={canEdit} />
+                    <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
                   ))
                 ) : (
                   <tr>

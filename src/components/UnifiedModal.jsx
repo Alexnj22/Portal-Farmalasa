@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ModalShell from "./common/ModalShell";
@@ -19,7 +19,8 @@ const FormSucursal = React.lazy(() => import('./forms/FormSucursal'));
 
 // 🚨 FORMULARIOS DE EMPLEADO
 const FormEmpleadoNuevo = React.lazy(() => import('./forms/EmployeeFormModal'));
-const FormEditEmployeeBasic = React.lazy(() => import('./forms/EditEmployeeBasicModal')); 
+const FormEditEmployeeBasic = React.lazy(() => import('./forms/EditEmployeeBasicModal'));
+const FormRehireEmployee = React.lazy(() => import('./forms/FormRehireEmployee'));
 
 const FormPlanificador = React.lazy(() => import('./forms/FormPlanificador'));
 const FormTurnos = React.lazy(() => import('./forms/FormTurnos'));
@@ -94,6 +95,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewDocument": return "max-w-5xl";
             case "newEmployee":
             case "editEmployee": return "max-w-4xl";
+            case "rehireEmployee": return "max-w-2xl";
             case "newBranch":
             case "editBranch":
             case "editBranchLegal":
@@ -125,7 +127,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "planSchedule": return "Planificación Semanal";
             case "manageShifts": return "Catálogo de Turnos";
             case "newEmployee": return "Nuevo Colaborador";
-            case "editEmployee": return "Actualizar Información"; 
+            case "editEmployee": return "Actualizar Información";
+            case "rehireEmployee": return "Recontratación";
             case "newBranch": return "Nueva Sucursal";
             case "editBranch": return "Configuración General";
             case "editBranchHorarios": return "Horarios de Atención";
@@ -157,6 +160,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
         if (type === "newEmployee") return "Nueva ficha de colaborador";
         if (type === "editEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
+        if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
         if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "COLABORADOR";
@@ -540,6 +544,35 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             return;
         }
 
+        if (type === "rehireEmployee") {
+            if (!formData.rehire_hire_date || !formData.rehire_branch_id || !formData.rehire_role_id) {
+                setValidationError("Fecha de ingreso, sucursal y cargo son obligatorios.");
+                return;
+            }
+            setIsSaving(true);
+            try {
+                const { rehireEmployee } = useStaff.getState();
+                await rehireEmployee(formData.id, {
+                    hire_date:              formData.rehire_hire_date,
+                    branch_id:              formData.rehire_branch_id,
+                    role_id:                formData.rehire_role_id,
+                    secondary_role_id:      formData.rehire_secondary_role_id || null,
+                    contract_type:          formData.rehire_contract_type || 'INDEFINIDO',
+                    weekly_contracted_hours: formData.rehire_weekly_hours || 44,
+                    base_salary:            formData.rehire_base_salary || null,
+                    notes:                  formData.rehire_notes || '',
+                });
+                const { showToast } = useToastStore.getState();
+                if (showToast) showToast("Recontratación Registrada", `${formData.name} ha sido recontratado/a exitosamente.`, "success");
+                onClose();
+            } catch (err) {
+                setValidationError(err?.message || "Error al procesar la recontratación.");
+            } finally {
+                setIsSaving(false);
+            }
+            return;
+        }
+
         if (type === "planSchedule") {
             const { employee, weekStartDate, schedule } = formData;
 
@@ -615,6 +648,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#007AFF]`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "rehireEmployee") return <div className={`${squircleClass} text-emerald-600`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
@@ -719,6 +753,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "setEmployeePassword" && <FormSetPassword formData={formData} onClose={onClose} />}
                                 {type === "changeOwnPassword" && <FormChangeOwnPassword onClose={onClose} />}
                                 {type === "editContact" && <FormEditContact formData={formData} onClose={onClose} />}
+                                {type === "rehireEmployee" && <FormRehireEmployee formData={formData} setFormData={setFormData} branches={branches} roles={roles} />}
                             </Suspense>
                         </form>
                     </div>

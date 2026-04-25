@@ -254,6 +254,13 @@ function MainApp() {
                 weekly_contracted_hours: '44',
                 ...(data || {}),
             });
+        } else if (type === "rehireEmployee") {
+            setFormData({
+                ...(data || {}),
+                rehire_hire_date: new Date().toISOString().split("T")[0],
+                rehire_contract_type: 'INDEFINIDO',
+                rehire_weekly_hours: '44',
+            });
         } else {
             setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
         }

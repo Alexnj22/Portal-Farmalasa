@@ -338,6 +338,66 @@ export const createEmployeeSlice = (set, get) => ({
         }
     },
 
+    rehireEmployee: async (id, rehireData) => {
+        const emp = get().employees.find(e => String(e.id) === String(id));
+        if (!emp) throw new Error("Empleado no encontrado");
+
+        // Regenerar PIN desde su código
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(emp.code));
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+        const newPin = base64.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 8);
+
+        const dbPayload = {
+            status: 'ACTIVO',
+            branch_id: parseInt(rehireData.branch_id, 10),
+            role_id: parseInt(rehireData.role_id, 10),
+            secondary_role_id: rehireData.secondary_role_id ? parseInt(rehireData.secondary_role_id, 10) : null,
+            hire_date: rehireData.hire_date,
+            contract_type: rehireData.contract_type || 'INDEFINIDO',
+            weekly_contracted_hours: parseInt(rehireData.weekly_contracted_hours, 10) || 44,
+            base_salary: rehireData.base_salary ? parseFloat(rehireData.base_salary) : null,
+            contract_end_date: null,
+            kiosk_pin: newPin,
+        };
+
+        const { error } = await supabase.from('employees').update(dbPayload).eq('id', id);
+        if (error) throw error;
+
+        const roles = get().roles;
+        const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
+
+        await supabase.from('employee_history').insert([{
+            employee_id: id,
+            type: 'REHIRE',
+            date: rehireData.hire_date,
+            target_branch_id: dbPayload.branch_id,
+            new_role: mainRoleName,
+            details: { note: rehireData.notes || 'Recontratación' }
+        }]);
+
+        await get().appendAuditLog('RECONTRATACION', id, {
+            timeline_title: `Recontratación: ${emp.name}`,
+            dimension: 'HR',
+            branch_id: dbPayload.branch_id,
+            new_value: 'Recontratado',
+            notas: rehireData.notes || ''
+        });
+
+        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+        set((state) => {
+            const next = state.employees.map(e => {
+                if (String(e.id) !== String(id)) return e;
+                return { ...e, ...dbPayload, branchId: dbPayload.branch_id, hireDate: rehireData.hire_date, role: mainRoleName };
+            });
+            persistEmployees(next);
+            return { employees: next };
+        });
+
+        return true;
+    },
+
     // 🚨 SOFT DELETE: Desactivación Segura (No borra el registro de BD)
     deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
         try {

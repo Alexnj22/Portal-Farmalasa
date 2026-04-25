@@ -354,7 +354,20 @@ export const createSystemSlice = (set, get) => ({
 
             const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
             if (error) throw error;
-            
+
+            // If termination, update employee status to INACTIVO in DB
+            if (eventData.type === 'TERMINATION') {
+                await supabase.from('employees').update({
+                    status: 'INACTIVO',
+                    branch_id: null,
+                    role_id: null,
+                    secondary_role_id: null,
+                    shift_id: null,
+                    kiosk_pin: null,
+                    contract_end_date: primaryDate
+                }).eq('id', employeeId);
+            }
+
             const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
             
             // 3. Auditoría Global
@@ -387,9 +400,21 @@ export const createSystemSlice = (set, get) => ({
             }
 
             // 5. Actualizamos el estado en Zustand (Memoria RAM)
+            const isTermination = eventData.type === 'TERMINATION';
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
                     ...emp,
+                    ...(isTermination ? {
+                        status: 'INACTIVO',
+                        effectiveStatus: 'Inactivo',
+                        branchId: null,
+                        branch_id: null,
+                        role_id: null,
+                        secondary_role_id: null,
+                        shift_id: null,
+                        kiosk_pin: null,
+                        contract_end_date: primaryDate
+                    } : {}),
                     history: [...(emp.history || []), newEvent],
                     documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
                 });

@@ -579,6 +579,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     if (ev.type.includes('PROMOTION')) evTheme = { ...evTheme, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' };
                                                     if (ev.type.includes('SALARY')) evTheme = { ...evTheme, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
                                                     if (ev.type.includes('TERMINATION')) evTheme = { ...evTheme, bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
+                                                    if (ev.type === 'REHIRE') evTheme = { label: 'Recontratación', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
                                                 }
 
                                                 return (

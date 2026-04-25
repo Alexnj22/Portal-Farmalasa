@@ -1,6 +1,6 @@
 import {
   FileText, IdCard, User, HeartPulse, AlertCircle, Paperclip, Calendar,
-  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign
+  TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw
 } from 'lucide-react';
 
 export const DOCUMENT_TYPES = {
@@ -24,6 +24,7 @@ export const EVENT_TYPES = {
   INDUCTION: { label: 'Inducción', color: 'bg-teal-100 text-teal-800', icon: GraduationCap, requiresDuration: true, defaultDocType: 'OTHER' },
   SHIFT_CHANGE: { label: 'Cambio de Turno', color: 'bg-cyan-100 text-cyan-800', icon: Watch, requiresDuration: false, defaultDocType: 'MEMO' },
   TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-gray-800 text-white', icon: LogOut, requiresDuration: false, defaultDocType: 'CONTRACT' },
+  REHIRE: { label: 'Recontratación', color: 'bg-emerald-100 text-emerald-800', icon: RefreshCw, requiresDuration: false, defaultDocType: 'CONTRACT' },
 };
 
 

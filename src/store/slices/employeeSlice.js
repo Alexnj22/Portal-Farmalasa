@@ -367,13 +367,16 @@ export const createEmployeeSlice = (set, get) => ({
         const roles = get().roles;
         const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
 
-        await supabase.from('employee_history').insert([{
+        await supabase.from('employee_events').insert([{
             employee_id: id,
             type: 'REHIRE',
             date: rehireData.hire_date,
-            target_branch_id: dbPayload.branch_id,
-            new_role: mainRoleName,
-            details: { note: rehireData.notes || 'Recontratación' }
+            note: rehireData.notes || 'Recontratación',
+            metadata: {
+                previous_status: 'INACTIVO',
+                new_role: mainRoleName,
+                target_branch_id: dbPayload.branch_id,
+            }
         }]);
 
         await get().appendAuditLog('RECONTRATACION', id, {

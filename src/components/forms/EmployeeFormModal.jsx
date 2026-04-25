@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle } from 'lucide-react';
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; 
 import LiquidDatePicker from '../common/LiquidDatePicker'; 
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
@@ -207,6 +207,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
         setHasDraft(false);
     };
 
+    const stepCompletion = useMemo(() => ({
+        personal: !!(formData?.first_names?.trim() && formData?.last_names?.trim()),
+        laboral:  !!(formData?.branch_id && formData?.role_id),
+        nomina:   !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
+    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name]);
+
+    const STEPS = [
+        { key: 'personal', label: 'Personal',  icon: User },
+        { key: 'laboral',  label: 'Contrato',  icon: Briefcase },
+        { key: 'nomina',   label: 'Nómina',    icon: CreditCard },
+    ];
+
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
@@ -321,11 +333,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
         styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) }
     };
 
-    if (!formData || !formData.code) return null; 
+    if (!formData) return null;
 
     return (
         <div className="flex flex-col w-full h-full relative z-10" onKeyDown={handleKeyDown}>
-            
+
             {/* ALERTA DE BORRADOR */}
             {hasDraft && (
                 <div className="mx-auto mb-4 bg-[#007AFF]/10 border border-[#007AFF]/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
@@ -340,19 +352,41 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles }) => {
                 </div>
             )}
 
-            {/* TABS DE NAVEGACIÓN */}
-            <div className="flex justify-center mb-6">
-                <div className="flex p-1 bg-white/60 rounded-full shadow-sm border border-slate-200/60 w-max max-w-full relative z-20">
-                    <button type="button" onClick={() => setActiveTab('personal')} className={`px-6 h-9 rounded-full flex items-center justify-center gap-2 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'personal' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}>
-                        <User size={14} strokeWidth={2.5} /> Personal
-                    </button>
-                    <button type="button" onClick={() => setActiveTab('laboral')} className={`px-6 h-9 rounded-full flex items-center justify-center gap-2 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'laboral' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}>
-                        <Briefcase size={14} strokeWidth={2.5} /> Contrato
-                    </button>
-                    <button type="button" onClick={() => setActiveTab('nomina')} className={`px-6 h-9 rounded-full flex items-center justify-center gap-2 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'nomina' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`}>
-                        <CreditCard size={14} strokeWidth={2.5} /> Nómina
-                    </button>
-                </div>
+            {/* STEP WIZARD */}
+            <div className="flex items-center justify-center mb-6 relative z-20">
+                {STEPS.map((step, idx) => {
+                    const isComplete = stepCompletion[step.key];
+                    const isActive   = activeTab === step.key;
+                    const StepIcon   = step.icon;
+                    return (
+                        <React.Fragment key={step.key}>
+                            {idx > 0 && (
+                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${stepCompletion[STEPS[idx - 1].key] ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab(step.key)}
+                                className="flex flex-col items-center gap-1.5 group"
+                            >
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm
+                                    ${isComplete
+                                        ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200'
+                                        : isActive
+                                            ? 'bg-[#007AFF] border-[#007AFF] text-white scale-110 shadow-[0_4px_14px_rgba(0,122,255,0.35)]'
+                                            : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#007AFF]/40 group-hover:text-[#007AFF]'}`}
+                                >
+                                    {isComplete
+                                        ? <CheckCircle2 size={18} strokeWidth={2.5} />
+                                        : <StepIcon size={15} strokeWidth={2} />}
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap
+                                    ${isActive ? 'text-[#007AFF]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                                    {step.label}
+                                </span>
+                            </button>
+                        </React.Fragment>
+                    );
+                })}
             </div>
 
             {/* CONTENEDOR ANIMADO */}

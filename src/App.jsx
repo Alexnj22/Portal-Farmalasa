@@ -245,6 +245,15 @@ function MainApp() {
                 ed.last_names = parts.slice(mid).join(' ');
             }
             setFormData(ed);
+        } else if (type === "newEmployee") {
+            setFormData({
+                branchId: 1,
+                hireDate: new Date().toISOString().split("T")[0],
+                code: `EMP${Math.floor(1000 + Math.random() * 9000)}`,
+                contract_type: 'INDEFINIDO',
+                weekly_contracted_hours: '44',
+                ...(data || {}),
+            });
         } else {
             setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
         }

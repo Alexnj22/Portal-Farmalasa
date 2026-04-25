@@ -31,7 +31,8 @@ import {
   MessageCircle,
   Phone,
   Cake,
-  Medal
+  Medal,
+  AlertCircle
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -65,6 +66,11 @@ const getStatusInfo = (rawStatus) => {
   if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-slate-500 bg-slate-100/80 border-slate-300' };
 
   return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-slate-600 bg-slate-50/80 border-slate-200' };
+};
+
+const isPendingData = (emp) => {
+  if (emp.status === 'INACTIVO' || emp.status === 'Liquidado') return false;
+  return !emp.dui || !emp.birth_date || (!emp.isss_number && !emp.afp_number);
 };
 
 const getRoleWeight = (roleStr) => {
@@ -191,7 +197,13 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, can
               <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#007AFF] tracking-tight" title={emp.name}>
                 {shortName}
               </p>
-              
+              {isPendingData(emp) && (
+                <div className="flex items-center gap-0.5 shrink-0" title="Datos incompletos: DUI, fecha de nacimiento o nómina pendiente">
+                  <AlertCircle size={11} strokeWidth={2.5} className="text-amber-500" />
+                  <span className="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded">PENDIENTE</span>
+                </div>
+              )}
+
               {birthdayInfo?.isThisMonth && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-bounce' : ''}`} title={birthdayInfo.isToday ? `¡HOY cumple años! Día ${birthdayInfo.day}` : `Cumpleaños: Día ${birthdayInfo.day} de este mes`}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-pink-600 scale-125' : 'text-pink-500'} shrink-0`} />

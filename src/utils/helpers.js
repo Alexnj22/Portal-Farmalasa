@@ -90,7 +90,7 @@ export const getEffectiveBranchId = (emp) => {
     return s ? parseInt(s.targetBranchId, 10) : emp?.branchId;
 };
 
-const TEMPORAL_TYPES = ['VACATION', 'DISABILITY', 'SUPPORT'];
+const TEMPORAL_TYPES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION'];
 
 export const getEffectiveStatus = (emp) => {
     const t = toLocalISO(new Date());
@@ -102,13 +102,13 @@ export const getEffectiveStatus = (emp) => {
         h.date <= t &&
         ((h.metadata?.endDate ?? h.endDate) >= t || !(h.metadata?.endDate ?? h.endDate))
     );
-    
+
     if (ev) {
         if (ev.type === 'DISABILITY') return 'Incapacitado';
         if (ev.type === 'VACATION') return 'En Vacaciones';
         if (ev.type === 'SUPPORT') return 'En Apoyo';
         if (ev.type === 'INDUCTION') return 'En Inducción';
-        if (ev.type === 'PERMISSION') return 'Con Permiso';
+        if (ev.type === 'PERMIT') return 'Con Permiso';
     }
     return 'Activo';
 };

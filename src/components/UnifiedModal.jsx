@@ -19,7 +19,6 @@ const FormSucursal = React.lazy(() => import('./forms/FormSucursal'));
 
 // 🚨 FORMULARIOS DE EMPLEADO
 const FormEmpleadoNuevo = React.lazy(() => import('./forms/EmployeeFormModal'));
-const FormEditEmployeeBasic = React.lazy(() => import('./forms/EditEmployeeBasicModal'));
 const FormRehireEmployee = React.lazy(() => import('./forms/FormRehireEmployee'));
 
 const FormPlanificador = React.lazy(() => import('./forms/FormPlanificador'));

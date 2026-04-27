@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
-import { formatDate, formatTime12h } from '../utils/helpers';
+import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -270,6 +270,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (typeof openModal === 'function') openModal('newEvent', { type: 'TRANSFER', employeeId: emp.id });
     }, [openModal, emp.id]);
 
+    const handleVacationRecall = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof openModal === 'function') openModal('vacationRecall', { employee: emp });
+    }, [openModal, emp]);
+
     const handleUploadConstancia = useCallback((e, punchTimestamp) => {
         e.preventDefault();
         e.stopPropagation();
@@ -345,6 +351,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
             {isAdmin && <div className="w-px h-6 bg-white/50 mx-1 shrink-0"></div>}
 
+            {isAdmin && getEffectiveStatus(emp) === 'En Vacaciones' && (
+                <button onClick={handleVacationRecall} disabled={!canEdit}
+                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
+                </button>
+            )}
             {isAdmin && (
                 <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
@@ -580,6 +592,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     if (ev.type.includes('SALARY')) evTheme = { ...evTheme, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
                                                     if (ev.type.includes('TERMINATION')) evTheme = { ...evTheme, bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
                                                     if (ev.type === 'REHIRE') evTheme = { label: 'Recontratación', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+                                                    if (ev.type === 'VACATION_RECALL') evTheme = { label: 'Ingreso en Vacaciones', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
                                                 }
 
                                                 return (

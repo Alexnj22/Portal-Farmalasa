@@ -301,6 +301,38 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
     }
 };
 
+const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
+    try {
+        const start = new Date(startDate + 'T00:00:00');
+        const end   = new Date(endDate   + 'T00:00:00');
+        const weekMap = {};
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const weekKey = getMondayISO(d.toISOString().split('T')[0]);
+            const dayId   = d.getDay();
+            if (!weekMap[weekKey]) weekMap[weekKey] = [];
+            weekMap[weekKey].push(dayId);
+        }
+        for (const [weekStart, dayIds] of Object.entries(weekMap)) {
+            const { data: roster } = await supabase
+                .from('employee_rosters').select('schedule_data')
+                .eq('employee_id', employeeId).eq('week_start_date', weekStart).maybeSingle();
+            const raw = roster?.schedule_data || {};
+            const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
+            for (const dayId of dayIds) {
+                sched[dayId] = { shiftId: 'LIBRE', note: 'Vacaciones' };
+            }
+            await supabase.from('employee_rosters').upsert(
+                { employee_id: employeeId, week_start_date: weekStart, schedule_data: sched },
+                { onConflict: 'employee_id, week_start_date' }
+            );
+        }
+        return true;
+    } catch (err) {
+        console.error('Error marcando días de vacaciones en roster:', err);
+        return false;
+    }
+};
+
 /**
  * Verifica la cobertura de la sucursal en el rango de incapacidad.
  * Si algún día queda con 0 o 1 empleados, envía alerta a Talento Humano.
@@ -778,6 +810,9 @@ export const createRequestsSlice = (set, get) => ({
                                     req.employee?.name || 'un empleado'
                                 );
                             }
+                            if (req.type === 'VACATION' && meta.startDate && meta.endDate) {
+                                await markVacationDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
+                            }
                         }
                     }
 
@@ -895,6 +930,9 @@ export const createRequestsSlice = (set, get) => ({
                                 approverId,
                                 req.employee?.name || 'un empleado'
                             );
+                        }
+                        if (req.type === 'VACATION' && meta.startDate && meta.endDate) {
+                            await markVacationDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
                         }
                     }
                 }

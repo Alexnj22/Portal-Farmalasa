@@ -261,6 +261,8 @@ function MainApp() {
                 rehire_contract_type: 'INDEFINIDO',
                 rehire_weekly_hours: '44',
             });
+        } else if (type === "vacationRecall") {
+            setFormData({ employee: data?.employee || data || {} });
         } else {
             setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
         }

@@ -401,6 +401,86 @@ export const createEmployeeSlice = (set, get) => ({
         return true;
     },
 
+    vacationRecallEmployee: async (id, recallData) => {
+        const emp = get().employees.find(e => String(e.id) === String(id));
+        if (!emp) throw new Error("Empleado no encontrado");
+
+        const { date, shift_id, reason, approved_by } = recallData;
+
+        // 1. Reactivar ese día en employee_rosters (quitar LIBRE, asignar turno)
+        const getMondayISO = (dateStr) => {
+            const d = new Date(dateStr + 'T00:00:00');
+            const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+            d.setDate(d.getDate() + diff);
+            return d.toISOString().split('T')[0];
+        };
+        const weekStart = getMondayISO(date);
+        const dayId = new Date(date + 'T00:00:00').getDay();
+
+        const { data: roster } = await supabase
+            .from('employee_rosters').select('schedule_data')
+            .eq('employee_id', id).eq('week_start_date', weekStart).maybeSingle();
+        const raw = roster?.schedule_data || {};
+        const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
+        sched[dayId] = { shiftId: shift_id, note: 'Ingreso en vacaciones' };
+        await supabase.from('employee_rosters').upsert(
+            { employee_id: id, week_start_date: weekStart, schedule_data: sched },
+            { onConflict: 'employee_id, week_start_date' }
+        );
+
+        // 2. Calcular horas del turno para sumar a hours_owed
+        const shifts = get().shifts || [];
+        const shift = shifts.find(s => String(s.id) === String(shift_id));
+        let hoursWorked = 0;
+        if (shift?.start && shift?.end) {
+            const [sh, sm] = shift.start.split(':').map(Number);
+            const [eh, em] = shift.end.split(':').map(Number);
+            let mins = (eh * 60 + em) - (sh * 60 + sm);
+            if (mins < 0) mins += 24 * 60;
+            hoursWorked = Math.round((mins / 60) * 10) / 10;
+        }
+
+        // 3. Incrementar hours_owed en employees
+        const currentOwed = parseFloat(emp.hours_owed || 0);
+        const newOwed = currentOwed + hoursWorked;
+        await supabase.from('employees').update({ hours_owed: newOwed }).eq('id', id);
+
+        // 4. Registrar en employee_events
+        await supabase.from('employee_events').insert([{
+            employee_id: id,
+            type: 'VACATION_RECALL',
+            date,
+            note: reason || 'Ingreso durante período de vacaciones',
+            metadata: {
+                shift_id,
+                hours_worked: hoursWorked,
+                hours_owed_total: newOwed,
+                approved_by,
+                reason,
+            }
+        }]);
+
+        await get().appendAuditLog('INGRESO_EN_VACACIONES', id, {
+            timeline_title: `Ingreso en Vacaciones: ${emp.name}`,
+            dimension: 'HR',
+            branch_id: emp.branchId,
+            new_value: `${hoursWorked}h — Horas debidas acumuladas: ${newOwed}h`,
+            notas: reason
+        });
+
+        window.dispatchEvent(new CustomEvent('force-history-refresh'));
+
+        set((state) => {
+            const next = state.employees.map(e =>
+                String(e.id) !== String(id) ? e : { ...e, hours_owed: newOwed }
+            );
+            persistEmployees(next);
+            return { employees: next };
+        });
+
+        return { hoursWorked, newOwed };
+    },
+
     // 🚨 SOFT DELETE: Desactivación Segura (No borra el registro de BD)
     deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
         try {

@@ -19,13 +19,32 @@ import {
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
+import { useToastStore } from "../store/toastStore";
 import BranchChips from "../components/common/BranchChips";
 import ModalShell from "../components/common/ModalShell";
-import ConfirmModal from "../components/common/ConfirmModal"; // <-- NUEVO: Importación del Modal
+import ConfirmModal from "../components/common/ConfirmModal";
+
+const PUNCH_TYPE_LABELS = {
+  IN: 'Entrada',
+  IN_EARLY: 'Entrada Anticipada',
+  IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
+  IN_EXTRA: 'Entrada Extra',
+  IN_RETURN: 'Regreso',
+  IN_LUNCH: 'Regreso Almuerzo',
+  IN_LACTATION: 'Regreso Lactancia',
+  OUT: 'Salida',
+  OUT_LATE: 'Salida con Overtime',
+  OUT_EARLY: 'Salida Anticipada',
+  OUT_LUNCH: 'Salida Almuerzo',
+  OUT_LACTATION: 'Salida Lactancia',
+  OUT_BUSINESS: 'Gestión Externa',
+  OUT_EXTRA: 'Salida Extra',
+};
 
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
   const { user, rolePerms } = useAuth();
   const canEdit = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
+  const showToast = useToastStore(s => s.showToast);
 
   const {
     employees,
@@ -35,6 +54,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     appendAuditLog,
     loadAttendanceLastDays,
     confirmAttendancePunch,
+    insertAttendancePunchAt,
   } = useStaff();
 
   const [filterBranch, setFilterBranch] = useState("ALL");
@@ -292,23 +312,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     return results.sort((a, b) => new Date(b.punch.timestamp) - new Date(a.punch.timestamp));
   }, [employees, filterBranch]);
 
-  const PUNCH_TYPE_LABELS = {
-    IN: 'Entrada',
-    IN_EARLY: 'Entrada Anticipada',
-    IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
-    IN_EXTRA: 'Entrada Extra',
-    IN_RETURN: 'Regreso',
-    IN_LUNCH: 'Regreso Almuerzo',
-    IN_LACTATION: 'Regreso Lactancia',
-    OUT: 'Salida',
-    OUT_LATE: 'Salida con Overtime',
-    OUT_EARLY: 'Salida Anticipada',
-    OUT_LUNCH: 'Salida Almuerzo',
-    OUT_LACTATION: 'Salida Lactancia',
-    OUT_BUSINESS: 'Gestión Externa',
-    OUT_EXTRA: 'Salida Extra',
-  };
-
   const openPendingReview = useCallback((punch, emp) => {
     const ts = new Date(punch.timestamp);
     const h = String(ts.getHours()).padStart(2, '0');
@@ -345,10 +348,11 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       closePendingReview();
     } catch (err) {
       console.error('Error al procesar revisión:', err);
+      showToast('Error', 'No se pudo procesar la acción. Intenta de nuevo.', 'error');
     } finally {
       setIsConfirmingAction(false);
     }
-  }, [pendingReviewTarget, adjustTime, confirmAttendancePunch, user, closePendingReview]);
+  }, [pendingReviewTarget, adjustTime, confirmAttendancePunch, user, closePendingReview, showToast]);
 
   // ---------- Modal handlers ----------
   const openModal = useCallback((record) => {
@@ -374,7 +378,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     }));
   };
 
-  const handleSaveSelected = () => {
+  const handleSaveSelected = async () => {
     if (!selectedAudit) return;
 
     const shiftStartUTC = buildUTCDate(selectedAudit.date, selectedAudit.shift.start);
@@ -398,39 +402,46 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         return {
           timestamp: finalTimestamp.toISOString(),
           type: inc.missingPunch,
-          details: { note: `Ajuste Manual en Auditoría: ${inc.label}` },
+          details: {
+            note: `Ajuste Manual en Auditoría: ${inc.label}`,
+            manualAudit: true,
+            auditedBy: user?.id || null,
+            auditedByName: user?.name || null,
+          },
         };
       });
 
     if (punchesToAdd.length > 0) {
-      setEmployees((prev) =>
-        (prev || []).map((e) => {
-          if (String(e.id) === String(selectedAudit.employeeId)) {
-            const updatedAttendance = [...(e.attendance || []), ...punchesToAdd].sort(
-              (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-            );
-            return { ...e, attendance: updatedAttendance };
-          }
-          return e;
-        })
-      );
+      try {
+        await Promise.all(
+          punchesToAdd.map(p =>
+            insertAttendancePunchAt(selectedAudit.employeeId, p.timestamp, p.type, p.details)
+          )
+        );
 
-      appendAuditLog?.(
-        "ATTENDANCE_PUNCH_MANUAL_ADDED",
-        {
-          employeeId: selectedAudit.employeeId,
-          date: selectedAudit.date,
-          punchesAdded: punchesToAdd,
-          shiftId: selectedAudit.shift?.id ?? null,
-          shiftName: selectedAudit.shift?.name ?? null,
-        },
-        {
-          actorId: user?.id ?? null,
-          actorName: user?.name ?? null,
-          actorRole: user?.userType ?? null,
-          source: "AttendanceAuditView.handleSaveSelected",
-        }
-      );
+        appendAuditLog?.(
+          "ATTENDANCE_PUNCH_MANUAL_ADDED",
+          {
+            employeeId: selectedAudit.employeeId,
+            date: selectedAudit.date,
+            punchesAdded: punchesToAdd,
+            shiftId: selectedAudit.shift?.id ?? null,
+            shiftName: selectedAudit.shift?.name ?? null,
+          },
+          {
+            actorId: user?.id ?? null,
+            actorName: user?.name ?? null,
+            actorRole: user?.userType ?? null,
+            source: "AttendanceAuditView.handleSaveSelected",
+          }
+        );
+
+        showToast('Guardado', `${punchesToAdd.length} marcaje(s) registrado(s) correctamente.`, 'success');
+      } catch (err) {
+        console.error('Error al guardar correcciones:', err);
+        showToast('Error', 'No se pudieron guardar los marcajes. Intenta de nuevo.', 'error');
+        return;
+      }
     }
 
     setSelectedAudit(null);

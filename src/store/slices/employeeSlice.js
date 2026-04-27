@@ -665,6 +665,28 @@ export const createEmployeeSlice = (set, get) => ({
         }
     },
 
+    insertAttendancePunchAt: async (employeeId, timestamp, type, details = {}) => {
+        const { data: newPunch, error } = await supabase
+            .from('attendance')
+            .insert([{ employee_id: employeeId, timestamp, type, details }])
+            .select()
+            .single();
+        if (error) throw error;
+
+        set(state => ({
+            employees: state.employees.map(emp => {
+                if (String(emp.id) !== String(employeeId)) return emp;
+                const exists = (emp.attendance || []).some(p => String(p.id) === String(newPunch.id));
+                if (exists) return emp;
+                const updated = [...(emp.attendance || []), newPunch]
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                return { ...emp, attendance: updated };
+            })
+        }));
+
+        return newPunch;
+    },
+
     // action: 'CONFIRM' | 'REJECT' | 'ADJUST'
     // options: { confirmedBy, confirmedByName, adjustedTimestamp }
     confirmAttendancePunch: async (punchId, employeeId, action, options = {}) => {

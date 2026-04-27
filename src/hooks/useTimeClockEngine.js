@@ -364,6 +364,9 @@ export function useTimeClockEngine(props = {}) {
             setScanCode('');
             setIsProcessing(false);
         } else {
+            // Clear earlyPendingData BEFORE finalizePunch to prevent double-punch
+            // when closeFeedback timer fires after this punch is registered.
+            setEarlyPendingData(null);
             finalizePunch(employee, type, customConfig, skipMetadata, kioskData, time);
             setAuthPrompt(null);
             setScanCode('');

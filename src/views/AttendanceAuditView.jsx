@@ -12,6 +12,10 @@ import {
   X,
   Building2,
   Edit3,
+  ShieldAlert,
+  CheckCircle2,
+  Trash2,
+  Clock,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -30,11 +34,17 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     shifts,
     appendAuditLog,
     loadAttendanceLastDays,
+    confirmAttendancePunch,
   } = useStaff();
 
   const [filterBranch, setFilterBranch] = useState("ALL");
   const [selectedAudit, setSelectedAudit] = useState(null);
   const [editForms, setEditForms] = useState({});
+
+  // Pending review state
+  const [pendingReviewTarget, setPendingReviewTarget] = useState(null); // { punch, emp }
+  const [adjustTime, setAdjustTime] = useState('');
+  const [isConfirmingAction, setIsConfirmingAction] = useState(false);
 
   // --- ESTADO PARA EL MODAL DE CONFIRMACIÓN DE INASISTENCIA ---
   const [isAbsentModalOpen, setIsAbsentModalOpen] = useState(false);
@@ -51,9 +61,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   useEffect(() => {
     if (!setOverlayActive) return;
-    setOverlayActive(!!selectedAudit || isAbsentModalOpen);
+    setOverlayActive(!!selectedAudit || isAbsentModalOpen || !!pendingReviewTarget);
     return () => setOverlayActive(false);
-  }, [selectedAudit, isAbsentModalOpen, setOverlayActive]);
+  }, [selectedAudit, isAbsentModalOpen, pendingReviewTarget, setOverlayActive]);
 
   const now = new Date();
 
@@ -268,6 +278,78 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     });
   }, [audits, filterBranch, employeeById]);
 
+  // Punches marcados sin PIN de supervisor — pendientes de revisión de TH
+  const pendingReviewPunches = useMemo(() => {
+    const results = [];
+    (employees || []).forEach(emp => {
+      if (filterBranch !== 'ALL' && String(emp.branchId) !== String(filterBranch)) return;
+      (emp.attendance || []).forEach(punch => {
+        if (punch.details?.pendingHRReview === true) {
+          results.push({ punch, emp });
+        }
+      });
+    });
+    return results.sort((a, b) => new Date(b.punch.timestamp) - new Date(a.punch.timestamp));
+  }, [employees, filterBranch]);
+
+  const PUNCH_TYPE_LABELS = {
+    IN: 'Entrada',
+    IN_EARLY: 'Entrada Anticipada',
+    IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
+    IN_EXTRA: 'Entrada Extra',
+    IN_RETURN: 'Regreso',
+    IN_LUNCH: 'Regreso Almuerzo',
+    IN_LACTATION: 'Regreso Lactancia',
+    OUT: 'Salida',
+    OUT_LATE: 'Salida con Overtime',
+    OUT_EARLY: 'Salida Anticipada',
+    OUT_LUNCH: 'Salida Almuerzo',
+    OUT_LACTATION: 'Salida Lactancia',
+    OUT_BUSINESS: 'Gestión Externa',
+    OUT_EXTRA: 'Salida Extra',
+  };
+
+  const openPendingReview = useCallback((punch, emp) => {
+    const ts = new Date(punch.timestamp);
+    const h = String(ts.getHours()).padStart(2, '0');
+    const m = String(ts.getMinutes()).padStart(2, '0');
+    setPendingReviewTarget({ punch, emp });
+    setAdjustTime(`${h}:${m}`);
+  }, []);
+
+  const closePendingReview = useCallback(() => {
+    setPendingReviewTarget(null);
+    setAdjustTime('');
+    setIsConfirmingAction(false);
+  }, []);
+
+  const handlePendingAction = useCallback(async (action) => {
+    if (!pendingReviewTarget) return;
+    setIsConfirmingAction(true);
+    const { punch, emp } = pendingReviewTarget;
+
+    try {
+      let adjustedTimestamp = undefined;
+      if (action === 'ADJUST' && adjustTime) {
+        const base = new Date(punch.timestamp);
+        const [h, m] = adjustTime.split(':').map(Number);
+        base.setHours(h, m, 0, 0);
+        adjustedTimestamp = base.toISOString();
+      }
+
+      await confirmAttendancePunch(punch.id, emp.id, action, {
+        confirmedBy: user?.id,
+        confirmedByName: user?.name || user?.email,
+        adjustedTimestamp,
+      });
+      closePendingReview();
+    } catch (err) {
+      console.error('Error al procesar revisión:', err);
+    } finally {
+      setIsConfirmingAction(false);
+    }
+  }, [pendingReviewTarget, adjustTime, confirmAttendancePunch, user, closePendingReview]);
+
   // ---------- Modal handlers ----------
   const openModal = useCallback((record) => {
     const initialEdits = {};
@@ -434,6 +516,72 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         <BranchChips branches={branches} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
       </header>
 
+      {/* SECCIÓN: MARCAJES PENDIENTES DE REVISIÓN TH */}
+      {pendingReviewPunches.length > 0 && (
+        <div className="bg-amber-50/80 backdrop-blur-xl rounded-[2rem] border border-amber-200/70 shadow-[0_8px_32px_rgba(245,158,11,0.08)] overflow-hidden">
+          <div className="px-8 py-5 border-b border-amber-200/50 flex items-center gap-3">
+            <div className="p-2 bg-amber-400/20 rounded-xl">
+              <ShieldAlert size={18} className="text-amber-600" strokeWidth={2} />
+            </div>
+            <div>
+              <p className="text-[13px] font-black text-amber-800 uppercase tracking-widest">Pendientes de Revisión — Talento Humano</p>
+              <p className="text-[11px] text-amber-700/70 mt-0.5">Marcajes registrados sin autorización de supervisor. Confirma, ajusta o rechaza cada uno.</p>
+            </div>
+            <span className="ml-auto bg-amber-500 text-white text-[11px] font-black px-3 py-1 rounded-full">{pendingReviewPunches.length}</span>
+          </div>
+
+          <div className="divide-y divide-amber-200/40">
+            {pendingReviewPunches.map(({ punch, emp }) => {
+              const bName = branchNameById.get(String(emp?.branchId)) || 'Sucursal';
+              const punchDate = new Date(punch.timestamp);
+              const label = PUNCH_TYPE_LABELS[punch.details?.accionOriginal || punch.type] || punch.type;
+              const timeStr = punchDate.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+              const dateStr = punchDate.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' });
+
+              return (
+                <div key={punch.id} className="px-8 py-5 flex items-center gap-5 hover:bg-amber-100/40 transition-colors">
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden shrink-0">
+                    {emp?.photo ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0) || '?'}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-slate-900">{emp?.name || 'Empleado'}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{bName}</p>
+                  </div>
+
+                  {/* Tipo + fecha */}
+                  <div className="text-center shrink-0">
+                    <p className="text-[12px] font-black text-amber-700">{label}</p>
+                    <p className="text-[10px] text-slate-500 font-bold mt-0.5">{dateStr} · {timeStr}</p>
+                  </div>
+
+                  {/* Razón */}
+                  <div className="hidden lg:block shrink-0 max-w-[160px]">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sin PIN supervisor</p>
+                    {punch.details?.skipReason && (
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{punch.details.skipReason}</p>
+                    )}
+                  </div>
+
+                  {/* Acción */}
+                  <button
+                    type="button"
+                    onClick={() => openPendingReview(punch, emp)}
+                    disabled={!canEdit}
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-amber-400 hover:bg-amber-50 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    Revisar <Edit3 size={13} strokeWidth={2.5} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TABLA DE INCONSISTENCIAS (MARCAJES FALTANTES) */}
       <div className="bg-white/50 backdrop-blur-2xl backdrop-saturate-[150%] rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -557,6 +705,113 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         </div>
       </div>
 
+      {/* MODAL: REVISIÓN DE MARCAJE SIN PIN */}
+      <ModalShell
+        open={!!pendingReviewTarget}
+        onClose={closePendingReview}
+        maxWidthClass="max-w-lg"
+        zClass="z-[110]"
+      >
+        {pendingReviewTarget && (() => {
+          const { punch, emp } = pendingReviewTarget;
+          const label = PUNCH_TYPE_LABELS[punch.details?.accionOriginal || punch.type] || punch.type;
+          const punchDate = new Date(punch.timestamp);
+          const originalTime = punchDate.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+
+          return (
+            <>
+              <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-xl">
+                      <ShieldAlert size={18} className="text-amber-600" strokeWidth={2} />
+                    </div>
+                    <h3 className="font-black text-slate-900 text-[16px] tracking-tight">Revisar Marcaje Sin PIN</h3>
+                  </div>
+                  <button onClick={closePendingReview} className="p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors" type="button">
+                    <X size={18} strokeWidth={2} />
+                  </button>
+                </div>
+
+                {/* Employee card */}
+                <div className="bg-amber-50 border border-amber-200/60 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-slate-500 text-[15px] overflow-hidden shrink-0">
+                    {emp?.photo ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0) || '?'}
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-black text-slate-900">{emp?.name}</p>
+                    <p className="text-[11px] text-amber-700 font-bold mt-0.5">
+                      {label} · {punchDate.toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })} · {originalTime}
+                    </p>
+                    {punch.details?.skipReason && (
+                      <p className="text-[10px] text-slate-500 mt-1">{punch.details.skipReason}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-5 bg-white/40 backdrop-blur-md">
+                {/* Adjust time */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">
+                    Hora del Marcaje (ajustar si es necesario)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-[12px] font-bold text-slate-400">
+                      <Clock size={14} /> Original: {originalTime}
+                    </div>
+                    <input
+                      type="time"
+                      value={adjustTime}
+                      onChange={e => setAdjustTime(e.target.value)}
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-mono text-[15px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF] transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePendingAction('REJECT')}
+                    disabled={isConfirmingAction || !canEdit}
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-red-100 hover:border-red-300 transition-all active:scale-95 disabled:opacity-40"
+                  >
+                    <Trash2 size={18} strokeWidth={2} />
+                    Rechazar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePendingAction('ADJUST')}
+                    disabled={isConfirmingAction || !canEdit}
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-blue-50 border border-blue-200 text-[#007AFF] rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-95 disabled:opacity-40"
+                  >
+                    <Clock size={18} strokeWidth={2} />
+                    Ajustar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePendingAction('CONFIRM')}
+                    disabled={isConfirmingAction || !canEdit}
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-100 hover:border-emerald-300 transition-all active:scale-95 disabled:opacity-40"
+                  >
+                    <CheckCircle2 size={18} strokeWidth={2} />
+                    Confirmar
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                  <b>Rechazar</b> elimina el marcaje. <b>Ajustar</b> cambia la hora y confirma. <b>Confirmar</b> acepta el marcaje tal como está.
+                </p>
+              </div>
+            </>
+          );
+        })()}
+      </ModalShell>
+
+      {/* MODAL: CORRECCIÓN DE INCONSISTENCIAS (MARCAJES FALTANTES) */}
       <ModalShell
         open={!!selectedAudit}
         onClose={() => setSelectedAudit(null)}

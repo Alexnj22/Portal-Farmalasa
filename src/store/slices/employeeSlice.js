@@ -664,4 +664,74 @@ export const createEmployeeSlice = (set, get) => ({
             throw new Error(err.message || "Fallo al registrar asistencia en la base de datos");
         }
     },
+
+    // action: 'CONFIRM' | 'REJECT' | 'ADJUST'
+    // options: { confirmedBy, confirmedByName, adjustedTimestamp }
+    confirmAttendancePunch: async (punchId, employeeId, action, options = {}) => {
+        const { confirmedBy, confirmedByName, adjustedTimestamp } = options;
+
+        try {
+            if (action === 'REJECT') {
+                const { error } = await supabase.from('attendance').delete().eq('id', punchId);
+                if (error) throw error;
+
+                set(state => ({
+                    employees: state.employees.map(emp => {
+                        if (String(emp.id) !== String(employeeId)) return emp;
+                        return { ...emp, attendance: (emp.attendance || []).filter(p => String(p.id) !== String(punchId)) };
+                    })
+                }));
+
+            } else {
+                // CONFIRM or ADJUST — read current details first
+                const { data: row, error: fetchErr } = await supabase
+                    .from('attendance').select('details').eq('id', punchId).single();
+                if (fetchErr) throw fetchErr;
+
+                const newDetails = {
+                    ...(row?.details || {}),
+                    pendingHRReview: false,
+                    confirmedBy: confirmedBy || null,
+                    confirmedByName: confirmedByName || null,
+                    confirmedAt: new Date().toISOString(),
+                };
+
+                const updatePayload = { details: newDetails };
+                if (action === 'ADJUST' && adjustedTimestamp) {
+                    updatePayload.timestamp = adjustedTimestamp;
+                }
+
+                const { error: updateErr } = await supabase
+                    .from('attendance').update(updatePayload).eq('id', punchId);
+                if (updateErr) throw updateErr;
+
+                set(state => ({
+                    employees: state.employees.map(emp => {
+                        if (String(emp.id) !== String(employeeId)) return emp;
+                        return {
+                            ...emp,
+                            attendance: (emp.attendance || []).map(p => {
+                                if (String(p.id) !== String(punchId)) return p;
+                                return {
+                                    ...p,
+                                    details: newDetails,
+                                    ...(action === 'ADJUST' && adjustedTimestamp ? { timestamp: adjustedTimestamp } : {}),
+                                };
+                            })
+                        };
+                    })
+                }));
+            }
+
+            get().appendAuditLog(
+                action === 'REJECT' ? 'ATTENDANCE_PUNCH_REJECTED' : action === 'ADJUST' ? 'ATTENDANCE_PUNCH_ADJUSTED' : 'ATTENDANCE_PUNCH_CONFIRMED',
+                employeeId,
+                { punchId, action, confirmedBy, confirmedByName, adjustedTimestamp: adjustedTimestamp || null }
+            ).catch(console.error);
+
+        } catch (err) {
+            console.error('❌ Error al confirmar marcaje:', err);
+            throw err;
+        }
+    },
 });

@@ -23,6 +23,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
+import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
 
 const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
@@ -61,7 +62,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     }
   }, [searchOpen]);
 
-  const todayStr = useMemo(() => currentTime.toISOString().split("T")[0], [currentTime]);
+  const todayStr = useMemo(() => toLocalISODate(currentTime), [currentTime]);
 
   const branchNameById = useMemo(() => {
     const m = new Map();
@@ -91,7 +92,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   // --- EVALUACIÓN DE ESTADO ---
   const evaluateEmployeeStatus = (emp) => {
     const punches = (emp.attendance || []).filter((a) =>
-      String(a.timestamp || "").startsWith(todayStr)
+      a.timestamp && toLocalISODate(new Date(a.timestamp)) === todayStr
     );
 
     const config = getTodayScheduleConfig(emp, shifts);
@@ -104,7 +105,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     const checkLateness = (punchDateObj, expectedDateObj) => {
       if (!expectedDateObj || !punchDateObj) return false;
       const diffMins = Math.floor((punchDateObj - expectedDateObj) / 60000);
-      if (diffMins > 0) {
+      if (diffMins > 5) {
         const h = Math.floor(diffMins / 60);
         const m = diffMins % 60;
         lateText = h > 0 ? `${h}h ${m}m tarde` : `${m} min tarde`;
@@ -168,6 +169,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       else if (lastType === "OUT_LACTATION") status = "LACTATION";
       else if (lastType === "OUT" || lastType === "OUT_EXTRA") status = "FINISHED";
       else if (lastType === "OUT_EARLY") status = "EARLY_EXIT";
+      else if (lastType === "OUT_BUSINESS") status = "BUSINESS_OUT";
       else if (lastType === "IN_EXTRA") status = "EXTRA_WORKING";
     }
 
@@ -220,7 +222,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
         st.total++;
         if (data.status === "WORKING") st.working++;
-        if (data.status === "LUNCH" || data.status === "LACTATION") st.pause++;
+        if (data.status === "LUNCH" || data.status === "LACTATION" || data.status === "BUSINESS_OUT") st.pause++;
         if (data.status === "PENDING") st.pending++;
         if (data.status === "EXTRA_WORKING") st.extra++;
         if (data.status === "FINISHED") st.finished++;
@@ -236,7 +238,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       if (statusTab === "LATE") return row.isLate && row.status !== "FINISHED";
       if (statusTab === "PENDING") return row.status === "PENDING";
       if (statusTab === "WORKING") return row.status === "WORKING";
-      if (statusTab === "PAUSE") return row.status === "LUNCH" || row.status === "LACTATION";
+      if (statusTab === "PAUSE") return row.status === "LUNCH" || row.status === "LACTATION" || row.status === "BUSINESS_OUT";
       if (statusTab === "EXTRA") return row.status === "EXTRA_WORKING";
       if (statusTab === "FINISHED") return row.status === "FINISHED";
       return true;
@@ -250,6 +252,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       LACTATION: 3,
       EXTRA_WORKING: 4,
       EARLY_EXIT: 5,
+      BUSINESS_OUT: 5,
       FINISHED: 6,
       OFF_DAY: 7,
     };
@@ -289,6 +292,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         return "border-black/[0.08] bg-white/40 opacity-70 hover:opacity-100 transition-opacity";
       case "EARLY_EXIT":
         return "border-[#007AFF]/20 bg-white/60 shadow-[0_10px_30px_rgba(0,122,255,0.08)]";
+      case "BUSINESS_OUT":
+        return "border-sky-200 bg-white/60 shadow-[0_10px_30px_rgba(14,165,233,0.08)]";
       case "OFF_DAY":
         return "border-black/[0.08] bg-white/35 border-dashed opacity-60";
       default:
@@ -339,6 +344,12 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         return (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-[#007AFF]/10 text-[#007AFF] rounded-xl text-[10px] font-bold uppercase tracking-widest border border-[#007AFF]/20">
             <DoorOpen size={14} /> Permiso / Retiro
+          </div>
+        );
+      case "BUSINESS_OUT":
+        return (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-500/10 text-sky-700 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-sky-500/20">
+            <MapPin size={14} /> Gestión Externa
           </div>
         );
       case "OFF_DAY":

@@ -24,11 +24,12 @@ import { getHourlyCode, getSuPinSuffix, getTodayScheduleConfig, toLocalISO } fro
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 
+const SU_ROLES = ['JEFE', 'SUBJEFE'];
+
 export function useTimeClockEngine(props = {}) {
     const storeEmployees = useStaff((s) => s.employees) || [];
     const storeShifts = useStaff((s) => s.shifts) || [];
     const storeAnnouncements = useStaff((s) => s.announcements) || [];
-    const storeBranches = useStaff((s) => s.branches) || [];
     const branches = useStaff((s) => s.branches) || [];
 
     const registerAttendance = props.registerAttendance ?? useStaff((s) => s.registerAttendance);
@@ -339,8 +340,6 @@ export function useTimeClockEngine(props = {}) {
             inputRef.current?.focus();
         });
     }, [authPrompt, earlyPendingData, registerAttendance, resetOperationalState]);
-
-    const SU_ROLES = ['JEFE', 'SUBJEFE'];
 
     const handleSkipPin = useCallback(() => {
         if (!authPrompt) return;
@@ -868,9 +867,7 @@ const submitEarlyExit = useCallback((e) => {
             return;
         }
 
-        const shouldForceAuth = ['IN_EXTRA', 'IN_EARLY', 'IN_AFTER_SHIFT', 'OUT_LATE'].includes(flow?.type);
-
-        if (flow.kind === 'AUTH' || shouldForceAuth) {
+        if (flow.requiresAuth) {
             const nextAuthPrompt = buildAuthPromptState({
                 employee,
                 type: flow.authType || flow.type,
@@ -887,11 +884,6 @@ const submitEarlyExit = useCallback((e) => {
             requestAnimationFrame(() => {
                 inputRef.current?.focus();
             });
-            return;
-        }
-
-        if (flow.kind === 'FINALIZE_WITH_METADATA') {
-            finalizePunch(employee, flow.type, customConfig, flow.metadata, kioskConfig, time);
             return;
         }
 
@@ -975,7 +967,6 @@ const submitEarlyExit = useCallback((e) => {
         closeFeedback,
         handleForceNormalOut,
         handleAnnouncementRead,
-        handleEarlyExtraRequest,
         handleSkipPin,
 
         keyDownHandler: handleKeyDown,

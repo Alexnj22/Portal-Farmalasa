@@ -10,6 +10,7 @@ import { calcPayrollEntry } from '../store/slices/payrollSlice';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import LiquidAvatar from '../components/common/LiquidAvatar';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -462,6 +463,128 @@ function ConfirmModal({ confirming, activePeriod, onConfirm, onClose }) {
     );
 }
 
+// ─── Branch-grouped table ─────────────────────────────────────────────────────
+function BranchGroupedTable({ entries, branches, isPaid, activePeriod, onPrint, onEdit }) {
+    const grouped = useMemo(() => {
+        const map = new Map();
+        for (const e of entries) {
+            const emp      = e.employee || {};
+            const branchId = String(emp.branchId || emp.branch_id || '');
+            const branch   = branches.find(b => String(b.id) === branchId);
+            const key      = branchId || '__none__';
+            if (!map.has(key)) map.set(key, { branch, entries: [] });
+            map.get(key).entries.push(e);
+        }
+        return [...map.values()].sort((a, b) => {
+            const na = a.branch?.name || 'ZZZ';
+            const nb = b.branch?.name || 'ZZZ';
+            return na.localeCompare(nb);
+        });
+    }, [entries, branches]);
+
+    const COLS = ['Empleado', 'Días', 'Sal. Ord.', 'Extras', 'ISSS', 'AFP', 'Renta', 'Desc. Total', 'Líquido', ''];
+
+    let rowIdx = 0;
+
+    return (
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {grouped.map(({ branch, entries: groupEntries }, gi) => {
+                const branchNet = groupEntries.reduce((s, e) => s + round2(e.net_pay), 0);
+                return (
+                    <div key={branch?.id || '__none__'} className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        style={{ animationDelay: `${gi * 80}ms` }}>
+
+                        {/* Branch header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/60 bg-white/20">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,122,255,0.3)]">
+                                    <Building2 size={14} className="text-white" strokeWidth={2} />
+                                </div>
+                                <div>
+                                    <p className="text-[13px] font-black text-slate-800 tracking-tight">{branch?.name || 'Sin sucursal'}</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{groupEntries.length} empleado{groupEntries.length !== 1 ? 's' : ''}</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total a pagar</p>
+                                <p className="text-[16px] font-black text-emerald-700">{fmt(branchNet)}</p>
+                            </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-[10px]">
+                                <thead>
+                                    <tr className="border-b border-white/40">
+                                        {COLS.map(h => (
+                                            <th key={h} className="px-4 py-3 text-left font-black uppercase tracking-widest text-slate-400 whitespace-nowrap first:pl-6 last:pr-6">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/30">
+                                    {groupEntries.map((e, i) => {
+                                        const emp    = e.employee || {};
+                                        const edited = e.status === 'EDITED';
+                                        const delay  = rowIdx++ * 25;
+                                        return (
+                                            <tr key={e.id}
+                                                className={`group hover:bg-white/50 transition-colors animate-in fade-in duration-300 ${edited ? 'bg-amber-50/20' : ''}`}
+                                                style={{ animationDelay: `${delay}ms` }}>
+
+                                                {/* Employee cell with photo */}
+                                                <td className="px-4 py-3 pl-6 whitespace-nowrap">
+                                                    <div className="flex items-center gap-3">
+                                                        <LiquidAvatar
+                                                            src={emp.photo || emp.photo_url}
+                                                            alt={emp.name}
+                                                            fallbackText={emp.name}
+                                                            className="w-8 h-8 rounded-xl shrink-0"
+                                                        />
+                                                        <div>
+                                                            <p className="font-black text-slate-800 text-[11px] leading-tight">
+                                                                {emp.name || '—'}
+                                                            </p>
+                                                            {emp.role && <p className="text-[9px] text-slate-400 font-medium leading-tight">{emp.role}</p>}
+                                                            {edited && <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">editado</span>}
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{round2(e.days_worked)}</td>
+                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{fmt(e.ordinary_salary)}</td>
+                                                <td className="px-4 py-3 font-bold text-blue-600 text-right">{fmt(e.subtotal_b)}</td>
+                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.isss_deduction)}</td>
+                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.afp_deduction)}</td>
+                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.renta_deduction)}</td>
+                                                <td className="px-4 py-3 font-bold text-red-600 text-right">{fmt(e.total_deductions)}</td>
+                                                <td className="px-4 py-3 font-black text-emerald-700 text-right whitespace-nowrap text-[11px]">{fmt(e.net_pay)}</td>
+                                                <td className="px-4 py-3 pr-6">
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => onPrint(e)} title="Imprimir boleta"
+                                                            className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
+                                                            <Printer size={12} strokeWidth={2.5} />
+                                                        </button>
+                                                        {!isPaid && (
+                                                            <button onClick={() => onEdit(e)} title="Editar"
+                                                                className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
+                                                                <Edit2 size={12} strokeWidth={2.5} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 // ─── Main view ────────────────────────────────────────────────────────────────
 const PayrollView = () => {
     const branches               = useStaffStore(s => s.branches);
@@ -778,7 +901,7 @@ const PayrollView = () => {
                                     )}
                                 </div>
 
-                                {/* Table */}
+                                {/* Table grouped by branch */}
                                 {isLoadingPayroll ? (
                                     <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px]">
                                         Cargando planilla...
@@ -790,61 +913,14 @@ const PayrollView = () => {
                                             : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-[10px]">
-                                                <thead>
-                                                    <tr className="border-b border-white/60">
-                                                        {['Empleado','Sucursal','Días','Sal. Ord.','Extras','ISSS','AFP','Renta','Desc. Total','Líquido',''].map(h => (
-                                                            <th key={h} className="px-4 py-3.5 text-left font-black uppercase tracking-widest text-slate-400 whitespace-nowrap first:pl-6 last:pr-6">{h}</th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-white/40">
-                                                    {filteredEntries.map((e, i) => {
-                                                        const emp    = e.employee || {};
-                                                        const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
-                                                        const edited = e.status === 'EDITED';
-                                                        return (
-                                                            <tr key={e.id}
-                                                                className={`group hover:bg-white/40 transition-colors animate-in fade-in duration-300 ${edited ? 'bg-amber-50/30' : ''}`}
-                                                                style={{ animationDelay: `${i * 30}ms` }}>
-                                                                <td className="px-4 py-3 pl-6 font-black text-slate-800 whitespace-nowrap">
-                                                                    {emp.name || '—'}
-                                                                    {edited && <span className="ml-1 text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">editado</span>}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{branch?.name || '—'}</td>
-                                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{round2(e.days_worked)}</td>
-                                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{fmt(e.ordinary_salary)}</td>
-                                                                <td className="px-4 py-3 font-bold text-blue-600 text-right">{fmt(e.subtotal_b)}</td>
-                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.isss_deduction)}</td>
-                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.afp_deduction)}</td>
-                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.renta_deduction)}</td>
-                                                                <td className="px-4 py-3 font-bold text-red-600 text-right">{fmt(e.total_deductions)}</td>
-                                                                <td className="px-4 py-3 font-black text-emerald-700 text-right whitespace-nowrap">{fmt(e.net_pay)}</td>
-                                                                <td className="px-4 py-3 pr-6">
-                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button onClick={() => printBoleta(e, activePeriod, branches)}
-                                                                            title="Imprimir boleta"
-                                                                            className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
-                                                                            <Printer size={12} strokeWidth={2.5} />
-                                                                        </button>
-                                                                        {!isPaid && (
-                                                                            <button onClick={() => setEditEntry(e)}
-                                                                                title="Editar"
-                                                                                className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
-                                                                                <Edit2 size={12} strokeWidth={2.5} />
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
+                                    <BranchGroupedTable
+                                        entries={filteredEntries}
+                                        branches={branches}
+                                        isPaid={isPaid}
+                                        activePeriod={activePeriod}
+                                        onPrint={(e) => printBoleta(e, activePeriod, branches)}
+                                        onEdit={(e) => setEditEntry(e)}
+                                    />
                                 )}
                             </>
                         )}

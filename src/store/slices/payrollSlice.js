@@ -186,7 +186,7 @@ export const createPayrollSlice = (set, get) => ({
             // Load timesheets for the period to get actual days worked
             const { data: sheets } = await supabase
                 .from('timesheets')
-                .select('employee_id, days_worked, regular_hours, is_absent, work_date')
+                .select('employee_id, regular_hours, is_absent, work_date')
                 .gte('work_date', period.start_date)
                 .lte('work_date', period.end_date);
 
@@ -201,7 +201,7 @@ export const createPayrollSlice = (set, get) => ({
             // Check for existing advances (salary_advance requests)
             const { data: advances } = await supabase
                 .from('approval_requests')
-                .select('requester_id, metadata')
+                .select('employee_id, metadata')
                 .eq('type', 'ADELANTO')
                 .eq('status', 'APPROVED')
                 .gte('created_at', period.start_date)
@@ -209,7 +209,7 @@ export const createPayrollSlice = (set, get) => ({
 
             const advanceMap = new Map();
             for (const adv of advances || []) {
-                const key = String(adv.requester_id);
+                const key = String(adv.employee_id);
                 const amt = parseFloat(adv.metadata?.amount || 0);
                 advanceMap.set(key, (advanceMap.get(key) || 0) + amt);
             }

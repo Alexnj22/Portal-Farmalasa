@@ -44,6 +44,22 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
+    // Fetch admin recipients once
+    const { data: adminEmps, error: adminErr } = await supabase
+      .from('employees')
+      .select('id')
+      .in('system_role', ['ADMIN', 'SUPERADMIN', 'SUPERVISOR'])
+      .neq('status', 'INACTIVO');
+
+    if (adminErr) throw adminErr;
+
+    const adminIds = (adminEmps || []).map(e => String(e.id));
+    if (adminIds.length === 0) {
+      return new Response(JSON.stringify({ ok: true, created: 0, note: 'No admin employees found' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: branches, error: branchErr } = await supabase
       .from('branches')
       .select('id, name, settings');
@@ -84,8 +100,8 @@ Deno.serve(async (req) => {
             await supabase.from('announcements').insert([{
               title:        `🚨 Documento Vencido`,
               message:      `${doc.label} de la sucursal "${branch.name}" venció el ${exp.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}. Renuévalo cuanto antes.`,
-              target_type:  'BRANCH',
-              target_value: [String(branch.id)],
+              target_type:  'EMPLOYEE',
+              target_value: adminIds,
               read_by:      [],
               is_archived:  false,
               priority:     'URGENT',
@@ -111,8 +127,8 @@ Deno.serve(async (req) => {
             await supabase.from('announcements').insert([{
               title:        `${threshold.emoji} Documento por vencer`,
               message:      `${doc.label} de la sucursal "${branch.name}" vence el ${exp.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })} (en ${diffDays} días).`,
-              target_type:  'BRANCH',
-              target_value: [String(branch.id)],
+              target_type:  'EMPLOYEE',
+              target_value: adminIds,
               read_by:      [],
               is_archived:  false,
               priority:     threshold.priority,

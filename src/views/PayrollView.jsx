@@ -1,20 +1,29 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
-    DollarSign, Plus, ChevronDown, Printer, CheckCircle2, Banknote,
-    Building2, Search, Edit2, AlertTriangle, Clock, Users,
-    FileText, Download, X, Save, ChevronRight, Eye, RotateCcw,
+    DollarSign, Plus, ChevronLeft, ChevronRight, Printer, CheckCircle2, Banknote,
+    Building2, Search, Edit2, AlertTriangle, RotateCcw,
+    FileText, Download, X, Save, ListFilter,
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { calcPayrollEntry } from '../store/slices/payrollSlice';
+import GlassViewLayout from '../components/GlassViewLayout';
+import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
+const InputLabel = ({ children }) => (
+    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
+);
+
+const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+
 function numberToWords(n) {
-    const ones  = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve'];
-    const tens  = ['','','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+    const ones = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve'];
+    const tens = ['','','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
     const hundreds = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
     if (n === 0) return 'cero';
     if (n < 0) return 'menos ' + numberToWords(-n);
@@ -22,7 +31,7 @@ function numberToWords(n) {
     if (n >= 1000) { s += numberToWords(Math.floor(n / 1000)) + ' mil '; n %= 1000; }
     if (n >= 100)  { s += hundreds[Math.floor(n / 100)] + ' '; n %= 100; }
     if (n >= 20)   { s += tens[Math.floor(n / 10)] + (n % 10 ? ' y ' + ones[n % 10] : '') + ' '; n = 0; }
-    else if (n > 0){ s += ones[n] + ' '; n = 0; }
+    else if (n > 0){ s += ones[n] + ' '; }
     return s.trim();
 }
 
@@ -30,17 +39,17 @@ function amountInWords(amount) {
     const total   = Math.round(amount * 100);
     const dollars = Math.floor(total / 100);
     const cents   = total % 100;
-    const words   = numberToWords(dollars).toUpperCase();
-    return `${words} CON ${cents.toString().padStart(2,'0')}/100`;
+    return `${numberToWords(dollars).toUpperCase()} CON ${cents.toString().padStart(2,'0')}/100`;
 }
 
 function periodLabel(start, end) {
     const s = new Date(start + 'T12:00:00');
-    const e = new Date(end   + 'T12:00:00');
-    const day1 = s.getDate();
     const monthName = s.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
-    if (day1 === 1) return `Primera Quincena de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`;
-    if (day1 === 16) return `Segunda Quincena de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`;
+    const cap = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const day1 = s.getDate();
+    if (day1 === 1)  return `Primera Quincena de ${cap}`;
+    if (day1 === 16) return `Segunda Quincena de ${cap}`;
+    const e = new Date(end + 'T12:00:00');
     return `${s.toLocaleDateString('es-SV')} — ${e.toLocaleDateString('es-SV')}`;
 }
 
@@ -52,12 +61,11 @@ const STATUS_META = {
 
 // ─── Print helpers ────────────────────────────────────────────────────────────
 function printBoleta(entry, period, branches) {
-    const emp     = entry.employee || {};
-    const branch  = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
-    const daily   = round2((emp.base_salary || 0) / 30);
-    const hourly  = round2(daily / 8);
+    const emp    = entry.employee || {};
+    const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
+    const daily  = round2((emp.base_salary || 0) / 30);
+    const hourly = round2(daily / 8);
     const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase() : '—';
-    const hireD   = emp.hire_date || emp.hireDate;
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
@@ -88,7 +96,7 @@ function printBoleta(entry, period, branches) {
   <div><span class="label">CARGO:</span> ${emp.role || '—'}</div>
   <div><span class="label">DEPARTAMENTO:</span> ${emp.department || '—'}</div>
   <div><span class="label">SUCURSAL:</span> ${branch?.name || '—'}</div>
-  <div><span class="label">FECHA DE INGRESO:</span> ${hireD ? new Date(hireD + 'T12:00:00').toLocaleDateString('es-SV', {day:'2-digit',month:'long',year:'numeric'}).toUpperCase() : '—'}</div>
+  <div><span class="label">FECHA DE INGRESO:</span> ${emp.hire_date || emp.hireDate ? fmtDate(emp.hire_date || emp.hireDate) : '—'}</div>
   <div><span class="label">PERÍODO:</span> ${periodLabel(period.start_date, period.end_date).toUpperCase()}</div>
   <div><span class="label">SUELDO DIARIO:</span> $${daily.toFixed(2)}</div>
   <div><span class="label">FECHA DE PAGO:</span> ${period.pay_date ? fmtDate(period.pay_date) : '—'}</div>
@@ -177,7 +185,6 @@ function printGlobalPlanilla(entries, period, branches) {
           <td class="right"><b>$${round2(e.net_pay).toFixed(2)}</b></td>
         </tr>`;
     }).join('');
-
     const totalNet = entries.reduce((s, e) => s + round2(e.net_pay), 0);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
@@ -218,8 +225,8 @@ function printGlobalPlanilla(entries, period, branches) {
 
 // ─── Edit entry modal ─────────────────────────────────────────────────────────
 function EditEntryModal({ entry, onSave, onClose, user }) {
-    const emp     = entry.employee || {};
-    const daily   = round2((emp.base_salary || 0) / 30);
+    const emp   = entry.employee || {};
+    const daily = round2((emp.base_salary || 0) / 30);
     const [form, setForm] = useState({
         days_worked:           entry.days_worked,
         night_hours_ordinary:  entry.night_hours_ordinary,
@@ -240,14 +247,14 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
 
     const preview = useMemo(() => calcPayrollEntry(emp, form.days_worked, form), [emp, form]);
 
-    const field = (key, label, step = '0.01') => (
+    const field = (key, label) => (
         <div key={key}>
-            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5 block">{label}</label>
+            <InputLabel>{label}</InputLabel>
             <input
-                type="number" step={step} min="0"
+                type="number" step="0.01" min="0"
                 value={form[key]}
                 onChange={e => setForm(f => ({ ...f, [key]: parseFloat(e.target.value) || 0 }))}
-                className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30"
+                className={glassInput}
             />
         </div>
     );
@@ -265,10 +272,10 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-6 border-b border-white/60">
                     <div>
-                        <h3 className="text-[14px] font-black text-slate-800">Editar Entrada</h3>
+                        <h3 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">Editar Entrada</h3>
                         <p className="text-[11px] text-slate-500 mt-0.5">{emp.name} — Salario diario: ${daily.toFixed(2)}</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors"><X size={16} /></button>
@@ -276,63 +283,69 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
 
                 <div className="p-6 grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5 block">Días Trabajados</label>
+                        <InputLabel>Días Trabajados</InputLabel>
                         <input type="number" step="0.5" min="0" max="16"
                             value={form.days_worked}
                             onChange={e => setForm(f => ({ ...f, days_worked: parseFloat(e.target.value) || 0 }))}
-                            className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-[13px] font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30"
+                            className={glassInput}
                         />
                     </div>
 
-                    <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">Horas adicionales</div>
+                    <div className="col-span-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2 mb-1">Horas adicionales</p>
+                    </div>
                     {field('night_hours_ordinary',  'Hrs. Nocturnas Ord. (25%)')}
                     {field('night_hours_extra',     'Hrs. Noct. Extra (50%)')}
                     {field('extra_hours_diurnal',   'Hrs. Extra Diurnas')}
                     {field('extra_hours_nocturnal', 'Hrs. Extra Nocturnas')}
 
-                    <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">Otros ingresos</div>
+                    <div className="col-span-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2 mb-1">Otros ingresos</p>
+                    </div>
                     {field('holiday_surcharge', 'Recargo de Asuetos ($)')}
                     {field('bonifications',     'Bonificaciones ($)')}
                     {field('vacation_bonus',    'Bono Vacacional ($)')}
                     {field('viaticos',          'Viáticos ($)')}
                     <div className="col-span-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5 block">Detalle de Viáticos</label>
+                        <InputLabel>Detalle de Viáticos</InputLabel>
                         <input type="text" value={form.viaticos_detail}
                             onChange={e => setForm(f => ({ ...f, viaticos_detail: e.target.value }))}
                             placeholder="Ej: Por 1 visita de supervisión $10.00"
-                            className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30"
+                            className={glassInput}
                         />
                     </div>
 
-                    <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">Descuentos adicionales</div>
+                    <div className="col-span-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2 mb-1">Descuentos adicionales</p>
+                    </div>
                     {field('order_discount',  'Orden de Descuento ($)')}
                     {field('other_discounts', 'Otros Descuentos ($)')}
                     {field('salary_advance',  'Adelanto Salarial ($)')}
 
                     {/* Preview */}
-                    <div className="col-span-2 bg-slate-50 rounded-2xl p-4 border border-slate-100 mt-2">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Vista previa</p>
+                    <div className="col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/80 mt-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Vista previa</p>
                         <div className="grid grid-cols-3 gap-2 text-center">
-                            <div><p className="text-[9px] text-slate-500">Subtotal A</p><p className="text-[13px] font-black text-slate-800">{fmt(preview.subtotal_a)}</p></div>
-                            <div><p className="text-[9px] text-slate-500">Desc. total</p><p className="text-[13px] font-black text-red-600">{fmt(preview.total_deductions)}</p></div>
-                            <div><p className="text-[9px] text-slate-500">Líquido</p><p className="text-[15px] font-black text-emerald-700">{fmt(preview.net_pay)}</p></div>
+                            <div><p className="text-[9px] text-slate-400">Subtotal A</p><p className="text-[14px] font-black text-slate-800">{fmt(preview.subtotal_a)}</p></div>
+                            <div><p className="text-[9px] text-slate-400">Desc. total</p><p className="text-[14px] font-black text-red-600">{fmt(preview.total_deductions)}</p></div>
+                            <div><p className="text-[9px] text-slate-400">Líquido</p><p className="text-[16px] font-black text-emerald-700">{fmt(preview.net_pay)}</p></div>
                         </div>
                     </div>
 
                     {/* Edit reason */}
                     <div className="col-span-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5 block">Motivo de edición <span className="text-red-500">*</span></label>
+                        <InputLabel>Motivo de edición <span className="text-red-400">*</span></InputLabel>
                         <input type="text" value={reason} onChange={e => setReason(e.target.value)}
                             placeholder="Ej: Corrección de días por permiso autorizado"
-                            className="w-full border border-amber-300 rounded-xl px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
+                            className="w-full px-4 py-3 bg-amber-50/80 border border-amber-300/60 focus:bg-white focus:border-amber-400 focus:shadow-[0_0_0_4px_rgba(245,158,11,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal"
                         />
                     </div>
                 </div>
 
                 <div className="flex gap-3 p-6 pt-0">
-                    <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50 transition-colors">Cancelar</button>
+                    <button onClick={onClose} className="flex-1 h-[48px] rounded-[1.25rem] border border-white/60 bg-white/40 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
                     <button onClick={handleSave} disabled={saving}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#007AFF] text-white text-[11px] font-black hover:bg-[#0062CC] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                        className="flex-1 h-[48px] rounded-[1.25rem] bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50">
                         <Save size={13} strokeWidth={2.5} />
                         {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
@@ -343,11 +356,11 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
 }
 
 // ─── New period modal ─────────────────────────────────────────────────────────
-function NewPeriodModal({ branches, onSave, onClose }) {
-    const today   = new Date();
-    const day     = today.getDate();
-    const year    = today.getFullYear();
-    const month   = today.getMonth();
+function NewPeriodModal({ onSave, onClose }) {
+    const today = new Date();
+    const day   = today.getDate();
+    const year  = today.getFullYear();
+    const month = today.getMonth();
     const defaultStart = day <= 15
         ? `${year}-${String(month + 1).padStart(2,'0')}-01`
         : `${year}-${String(month + 1).padStart(2,'0')}-16`;
@@ -355,7 +368,7 @@ function NewPeriodModal({ branches, onSave, onClose }) {
         ? `${year}-${String(month + 1).padStart(2,'0')}-15`
         : new Date(year, month + 1, 0).toISOString().split('T')[0];
 
-    const [form, setForm]   = useState({ start_date: defaultStart, end_date: defaultEnd, pay_date: '', branch_id: '' });
+    const [form, setForm]   = useState({ start_date: defaultStart, end_date: defaultEnd, pay_date: '' });
     const [saving, setSaving] = useState(false);
 
     const name = useMemo(() => {
@@ -373,35 +386,54 @@ function NewPeriodModal({ branches, onSave, onClose }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md">
-                <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                    <h3 className="text-[14px] font-black text-slate-800">Nueva Quincena</h3>
-                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100"><X size={16} /></button>
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="flex items-center justify-between p-6 border-b border-white/60">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#007AFF] flex items-center justify-center shadow-sm">
+                            <Plus size={16} className="text-white" strokeWidth={2.5} />
+                        </div>
+                        <h3 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">Nueva Quincena</h3>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors"><X size={16} /></button>
                 </div>
-                <div className="p-6 grid gap-4">
-                    {name && <div className="bg-blue-50 rounded-2xl px-4 py-2 text-[11px] font-black text-blue-700 border border-blue-200">{name}</div>}
+
+                <div className="p-6 space-y-5">
+                    {name && (
+                        <div className="bg-[#007AFF]/8 border border-[#007AFF]/15 rounded-2xl px-4 py-2.5">
+                            <p className="text-[11px] font-black text-[#007AFF]">{name}</p>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Inicio del período</label>
-                            <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30" />
+                            <InputLabel>Inicio del período</InputLabel>
+                            <LiquidDatePicker
+                                value={form.start_date}
+                                onChange={val => setForm(f => ({ ...f, start_date: val }))}
+                            />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Fin del período</label>
-                            <input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30" />
+                            <InputLabel>Fin del período</InputLabel>
+                            <LiquidDatePicker
+                                value={form.end_date}
+                                onChange={val => setForm(f => ({ ...f, end_date: val }))}
+                            />
                         </div>
                     </div>
+
                     <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Fecha de pago</label>
-                        <input type="date" value={form.pay_date} onChange={e => setForm(f => ({ ...f, pay_date: e.target.value }))}
-                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30" />
+                        <InputLabel>Fecha de pago</InputLabel>
+                        <LiquidDatePicker
+                            value={form.pay_date}
+                            onChange={val => setForm(f => ({ ...f, pay_date: val }))}
+                        />
                     </div>
                 </div>
+
                 <div className="flex gap-3 p-6 pt-0">
-                    <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50">Cancelar</button>
-                    <button onClick={handleSave} disabled={saving}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#007AFF] text-white text-[11px] font-black hover:bg-[#0062CC] flex items-center justify-center gap-2 disabled:opacity-50">
+                    <button onClick={onClose} className="flex-1 h-[48px] rounded-[1.25rem] border border-white/60 bg-white/40 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
+                    <button onClick={handleSave} disabled={saving || !form.start_date || !form.end_date}
+                        className="flex-1 h-[48px] rounded-[1.25rem] bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50">
                         <Plus size={13} strokeWidth={2.5} />
                         {saving ? 'Creando...' : 'Crear Período'}
                     </button>
@@ -411,9 +443,27 @@ function NewPeriodModal({ branches, onSave, onClose }) {
     );
 }
 
+// ─── Confirm modal ────────────────────────────────────────────────────────────
+function ConfirmModal({ confirming, activePeriod, onConfirm, onClose }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-sm p-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle size={22} className="text-amber-600" strokeWidth={2} />
+                </div>
+                <h3 className="text-[15px] font-black text-slate-800 mb-1 uppercase tracking-tight">¿Confirmar acción?</h3>
+                <p className="text-[11px] text-slate-500 mb-6">Vas a <b>{confirming.label}</b> la planilla <b>{activePeriod?.name}</b>. Esta acción queda registrada.</p>
+                <div className="flex gap-3">
+                    <button onClick={onClose} className="flex-1 h-[48px] rounded-[1.25rem] border border-white/60 bg-white/40 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
+                    <button onClick={onConfirm} className="flex-1 h-[48px] rounded-[1.25rem] bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-white text-[11px] font-black uppercase tracking-widest transition-all">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main view ────────────────────────────────────────────────────────────────
 const PayrollView = () => {
-    const employees              = useStaffStore(s => s.employees);
     const branches               = useStaffStore(s => s.branches);
     const user                   = useStaffStore(s => s.user);
     const payrollPeriods         = useStaffStore(s => s.payrollPeriods);
@@ -428,30 +478,49 @@ const PayrollView = () => {
 
     const [activePeriod,  setActivePeriod]  = useState(null);
     const [filterBranch,  setFilterBranch]  = useState('');
-    const [search,        setSearch]        = useState('');
+    const [filterStatus,  setFilterStatus]  = useState('ALL');
+    const [isSearchMode,  setIsSearchMode]  = useState(false);
+    const [searchTerm,    setSearchTerm]    = useState('');
     const [showNewPeriod, setShowNewPeriod] = useState(false);
     const [editEntry,     setEditEntry]     = useState(null);
     const [generating,    setGenerating]    = useState(false);
-    const [confirming,    setConfirming]    = useState(null); // { action, label }
+    const [confirming,    setConfirming]    = useState(null);
+    const searchInputRef = useRef(null);
 
     const { showToast } = useToastStore();
 
-    // Load periods on mount
     React.useEffect(() => { fetchPayrollPeriods(); }, []);
-
-    // Load entries when period changes
     React.useEffect(() => {
         if (activePeriod) fetchPayrollEntries(activePeriod.id);
     }, [activePeriod?.id]);
+
+    const branchOptions = useMemo(() => [
+        { value: '', label: 'Todas las sucursales' },
+        ...branches.map(b => ({ value: String(b.id), label: b.name })),
+    ], [branches]);
+
+    const statusOptions = [
+        { value: 'ALL',      label: 'Todos los estados' },
+        { value: 'DRAFT',    label: 'Borrador' },
+        { value: 'APPROVED', label: 'Aprobada' },
+        { value: 'PAID',     label: 'Pagada' },
+    ];
+
+    const filteredPeriods = useMemo(() => {
+        return payrollPeriods.filter(p => {
+            if (filterStatus !== 'ALL' && (p.status || 'DRAFT') !== filterStatus) return false;
+            return true;
+        });
+    }, [payrollPeriods, filterStatus]);
 
     const filteredEntries = useMemo(() => {
         return payrollEntries.filter(e => {
             const emp = e.employee || {};
             if (filterBranch && String(emp.branchId || emp.branch_id) !== filterBranch) return false;
-            if (search && !(emp.name || '').toLowerCase().includes(search.toLowerCase())) return false;
+            if (searchTerm && !(emp.name || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
             return true;
         });
-    }, [payrollEntries, filterBranch, search]);
+    }, [payrollEntries, filterBranch, searchTerm]);
 
     const totals = useMemo(() => ({
         grossA:  filteredEntries.reduce((s, e) => s + round2(e.subtotal_a), 0),
@@ -491,245 +560,316 @@ const PayrollView = () => {
         else    showToast('Error', 'No se pudo guardar.', 'error');
     };
 
+    const downloadCSV = () => {
+        const rows = filteredEntries.map(e => {
+            const emp = e.employee || {};
+            return `${emp.name || ''},${emp.bank_name || ''},${emp.account_number || ''},${emp.account_type || ''},${round2(e.net_pay).toFixed(2)}`;
+        }).join('\n');
+        const blob = new Blob([`Nombre,Banco,Cuenta,Tipo,Monto\n${rows}`], { type: 'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `planilla-banco-${activePeriod.name}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const isPaid     = activePeriod?.status === 'PAID';
     const isApproved = activePeriod?.status === 'APPROVED';
-    const isDraft    = activePeriod?.status === 'DRAFT' || !activePeriod?.status;
+    const isDraft    = !activePeriod?.status || activePeriod?.status === 'DRAFT';
+
+    const filtersContent = (
+        <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+
+            {/* Search mode */}
+            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                <div className="flex items-center bg-white/60 backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-white/80 shadow-sm">
+                    <Search size={14} className="text-slate-400 shrink-0" strokeWidth={2.5} />
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Buscar empleado…"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="bg-transparent outline-none text-[12px] font-semibold text-slate-700 placeholder-slate-400 w-full"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors">
+                            <X size={13} strokeWidth={2.5} />
+                        </button>
+                    )}
+                </div>
+                <button
+                    onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
+                    className="px-4 h-10 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-95">
+                    Cancelar
+                </button>
+            </div>
+
+            {/* Normal mode */}
+            <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
+
+                {/* Branch filter */}
+                <div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                    <LiquidSelect
+                        value={filterBranch}
+                        onChange={val => setFilterBranch(val || '')}
+                        options={branchOptions}
+                        placeholder="Todas las sucursales"
+                        compact
+                        clearable={false}
+                        icon={Building2}
+                    />
+                </div>
+
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+
+                {/* Status filter */}
+                <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                    <LiquidSelect
+                        value={filterStatus}
+                        onChange={val => setFilterStatus(val || 'ALL')}
+                        options={statusOptions}
+                        compact
+                        clearable={false}
+                        icon={ListFilter}
+                    />
+                </div>
+
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+
+                {/* Search button */}
+                <button
+                    onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    title="Buscar">
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-emerald-500 rounded-[1.2rem] shadow-lg shadow-emerald-500/30">
-                            <DollarSign size={20} strokeWidth={2.5} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-[15px] font-black text-slate-800 tracking-tight">Nómina</h1>
-                            <p className="text-[10px] text-slate-500 font-medium">Planillas quincenales</p>
-                        </div>
-                    </div>
+        <>
+            <GlassViewLayout icon={DollarSign} title="Nómina" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
+                <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
-                    <div className="flex items-center gap-2">
-                        {activePeriod && payrollEntries.length > 0 && (
-                            <>
-                                <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-slate-200 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
-                                    <Printer size={13} strokeWidth={2.5} /> Planilla Global
+                    {/* ── Panel izquierdo: Períodos ── */}
+                    <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
+                        <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+
+                            {/* Sidebar header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Períodos</p>
+                                <button
+                                    onClick={() => setShowNewPeriod(true)}
+                                    className="w-8 h-8 bg-[#007AFF] text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-95"
+                                    title="Nueva quincena">
+                                    <Plus size={14} strokeWidth={2.5} />
                                 </button>
-                                <button onClick={() => {
-                                    const rows = filteredEntries.map(e => {
-                                        const emp = e.employee || {};
-                                        return `${emp.name || ''},${emp.bank_name || ''},${emp.account_number || ''},${emp.account_type || ''},${round2(e.net_pay).toFixed(2)}`;
-                                    }).join('\n');
-                                    const blob = new Blob([`Nombre,Banco,Cuenta,Tipo,Monto\n${rows}`], { type: 'text/csv' });
-                                    const url  = URL.createObjectURL(blob);
-                                    const a    = document.createElement('a');
-                                    a.href     = url;
-                                    a.download = `planilla-banco-${activePeriod.name}.csv`;
-                                    a.click();
-                                }} className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-slate-200 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
-                                    <Download size={13} strokeWidth={2.5} /> Lista Banco
-                                </button>
-                            </>
-                        )}
-                        {activePeriod && isDraft && payrollEntries.length > 0 && (
-                            <button onClick={() => setConfirming({ action: 'APPROVED', label: 'aprobar' })}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500 text-white text-[10px] font-black hover:bg-emerald-600 transition-colors">
-                                <CheckCircle2 size={13} strokeWidth={2.5} /> Aprobar Planilla
-                            </button>
-                        )}
-                        {activePeriod && isApproved && (
-                            <button onClick={() => setConfirming({ action: 'PAID', label: 'marcar como pagada' })}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-blue-500 text-white text-[10px] font-black hover:bg-blue-600 transition-colors">
-                                <Banknote size={13} strokeWidth={2.5} /> Marcar Pagada
-                            </button>
-                        )}
-                        <button onClick={() => setShowNewPeriod(true)}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#007AFF] text-white text-[10px] font-black hover:bg-[#0062CC] transition-colors">
-                            <Plus size={13} strokeWidth={2.5} /> Nueva Quincena
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-6 py-6 flex gap-6">
-                {/* Sidebar: period list */}
-                <div className="w-72 shrink-0 space-y-2">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1 mb-3">Períodos</p>
-                    {payrollPeriods.length === 0 && (
-                        <div className="text-center py-8 text-slate-400 text-[11px]">Sin períodos aún</div>
-                    )}
-                    {payrollPeriods.map(p => {
-                        const meta = STATUS_META[p.status] || STATUS_META.DRAFT;
-                        const active = activePeriod?.id === p.id;
-                        return (
-                            <button key={p.id} onClick={() => setActivePeriod(p)}
-                                className={`w-full text-left p-4 rounded-2xl border transition-all ${active ? 'bg-[#007AFF]/5 border-[#007AFF]/30 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-sm'}`}>
-                                <p className={`text-[11px] font-black leading-tight ${active ? 'text-[#007AFF]' : 'text-slate-800'}`}>{p.name}</p>
-                                <div className="flex items-center justify-between mt-1.5">
-                                    <p className="text-[9px] text-slate-400">{p.pay_date ? `Pago: ${new Date(p.pay_date + 'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
-                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Main content */}
-                <div className="flex-1 min-w-0">
-                    {!activePeriod ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                            <DollarSign size={40} className="mb-3 opacity-30" />
-                            <p className="text-[13px] font-bold">Selecciona o crea un período</p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Period header */}
-                            <div className="bg-white rounded-3xl border border-slate-100 p-5 mb-4 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-[15px] font-black text-slate-800">{activePeriod.name}</h2>
-                                        <p className="text-[10px] text-slate-500 mt-0.5">
-                                            {activePeriod.start_date} → {activePeriod.end_date}
-                                            {activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {(STATUS_META[activePeriod.status] || STATUS_META.DRAFT) && (
-                                            <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl border ${(STATUS_META[activePeriod.status] || STATUS_META.DRAFT).color}`}>
-                                                {(STATUS_META[activePeriod.status] || STATUS_META.DRAFT).label}
-                                            </span>
-                                        )}
-                                        {(isDraft || isApproved) && (
-                                            <button onClick={handleGenerate} disabled={generating}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
-                                                <RotateCcw size={12} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
-                                                {generating ? 'Generando...' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Totals strip */}
-                                {payrollEntries.length > 0 && (
-                                    <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
-                                        {[
-                                            { label: 'Sal. Ordinario', value: totals.grossA,  color: 'text-slate-800' },
-                                            { label: 'Extras / Otros', value: totals.extrasB,  color: 'text-blue-700' },
-                                            { label: 'Deducciones',    value: totals.deducts,  color: 'text-red-600' },
-                                            { label: 'Total a Pagar',  value: totals.net,      color: 'text-emerald-700' },
-                                        ].map(t => (
-                                            <div key={t.label} className="text-center">
-                                                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black">{t.label}</p>
-                                                <p className={`text-[15px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
-                            {/* Filters */}
-                            <div className="flex gap-3 mb-4">
-                                <div className="relative flex-1 max-w-xs">
-                                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={2.5} />
-                                    <input value={search} onChange={e => setSearch(e.target.value)}
-                                        placeholder="Buscar empleado..."
-                                        className="w-full pl-8 pr-4 py-2 rounded-2xl border border-slate-200 bg-white text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30" />
-                                </div>
-                                <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)}
-                                    className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30">
-                                    <option value="">Todas las sucursales</option>
-                                    {branches.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
-                                </select>
-                            </div>
-
-                            {/* Table */}
-                            {isLoadingPayroll ? (
-                                <div className="text-center py-12 text-slate-400 text-[12px]">Cargando...</div>
-                            ) : filteredEntries.length === 0 ? (
-                                <div className="text-center py-12 text-slate-400 text-[12px]">
-                                    {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados.'}
-                                </div>
+                            {filteredPeriods.length === 0 ? (
+                                <div className="text-center py-10 text-slate-400 text-[11px] font-medium">Sin períodos aún</div>
                             ) : (
-                                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-[10px]">
-                                            <thead>
-                                                <tr className="bg-slate-50 border-b border-slate-100">
-                                                    {['Empleado','Sucursal','Días','Sal. Ord.','Extras','ISSS','AFP','Renta','Desc. Total','Líquido',''].map(h => (
-                                                        <th key={h} className="px-3 py-3 text-left font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {filteredEntries.map(e => {
-                                                    const emp    = e.employee || {};
-                                                    const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
-                                                    const edited = e.status === 'EDITED';
-                                                    return (
-                                                        <tr key={e.id} className={`group hover:bg-slate-50/50 transition-colors ${edited ? 'bg-amber-50/30' : ''}`}>
-                                                            <td className="px-3 py-3 font-black text-slate-800 whitespace-nowrap">
-                                                                {emp.name || '—'}
-                                                                {edited && <span className="ml-1 text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">editado</span>}
-                                                            </td>
-                                                            <td className="px-3 py-3 text-slate-500 whitespace-nowrap">{branch?.name || '—'}</td>
-                                                            <td className="px-3 py-3 font-bold text-slate-700 text-right">{round2(e.days_worked)}</td>
-                                                            <td className="px-3 py-3 font-bold text-slate-700 text-right">{fmt(e.ordinary_salary)}</td>
-                                                            <td className="px-3 py-3 font-bold text-blue-600 text-right">{fmt(e.subtotal_b)}</td>
-                                                            <td className="px-3 py-3 text-slate-500 text-right">{fmt(e.isss_deduction)}</td>
-                                                            <td className="px-3 py-3 text-slate-500 text-right">{fmt(e.afp_deduction)}</td>
-                                                            <td className="px-3 py-3 text-slate-500 text-right">{fmt(e.renta_deduction)}</td>
-                                                            <td className="px-3 py-3 font-bold text-red-600 text-right">{fmt(e.total_deductions)}</td>
-                                                            <td className="px-3 py-3 font-black text-emerald-700 text-right whitespace-nowrap">{fmt(e.net_pay)}</td>
-                                                            <td className="px-3 py-3">
-                                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <button onClick={() => printBoleta(e, activePeriod, branches)}
-                                                                        title="Imprimir boleta"
-                                                                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
-                                                                        <Printer size={12} strokeWidth={2.5} />
-                                                                    </button>
-                                                                    {!isPaid && (
-                                                                        <button onClick={() => setEditEntry(e)}
-                                                                            title="Editar"
-                                                                            className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
-                                                                            <Edit2 size={12} strokeWidth={2.5} />
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div className="space-y-2">
+                                    {filteredPeriods.map((p, i) => {
+                                        const meta   = STATUS_META[p.status] || STATUS_META.DRAFT;
+                                        const active = activePeriod?.id === p.id;
+                                        return (
+                                            <button key={p.id} onClick={() => setActivePeriod(p)}
+                                                className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+                                                style={{
+                                                    animationDelay: `${i * 40}ms`,
+                                                    background: active ? 'rgba(0,122,255,0.08)' : 'rgba(255,255,255,0.5)',
+                                                    borderColor: active ? 'rgba(0,122,255,0.25)' : 'rgba(255,255,255,0.7)',
+                                                    boxShadow: active ? '0 4px 16px rgba(0,122,255,0.12)' : 'none',
+                                                }}>
+                                                <p className={`text-[11px] font-black leading-tight ${active ? 'text-[#007AFF]' : 'text-slate-800'}`}>{p.name}</p>
+                                                <div className="flex items-center justify-between mt-1.5">
+                                                    <p className="text-[9px] text-slate-400">{p.pay_date ? `Pago: ${new Date(p.pay_date + 'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
+                                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Confirm modal */}
-            {confirming && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-6 text-center">
-                        <AlertTriangle size={32} className="mx-auto mb-3 text-amber-500" strokeWidth={2} />
-                        <h3 className="text-[14px] font-black text-slate-800 mb-1">¿Confirmar acción?</h3>
-                        <p className="text-[11px] text-slate-500 mb-6">Vas a <b>{confirming.label}</b> la planilla <b>{activePeriod?.name}</b>. Esta acción queda registrada.</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setConfirming(null)} className="flex-1 py-2.5 rounded-2xl border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50">Cancelar</button>
-                            <button onClick={() => handleStatusChange(confirming.action)}
-                                className="flex-1 py-2.5 rounded-2xl bg-[#007AFF] text-white text-[11px] font-black hover:bg-[#0062CC]">Confirmar</button>
                         </div>
                     </div>
-                </div>
-            )}
 
-            {showNewPeriod && <NewPeriodModal branches={branches} onSave={async (data) => { await createPayrollPeriod(data); setShowNewPeriod(false); }} onClose={() => setShowNewPeriod(false)} />}
-            {editEntry && <EditEntryModal entry={editEntry} user={user} onSave={handleEditSave} onClose={() => setEditEntry(null)} />}
-        </div>
+                    {/* ── Panel derecho: Contenido ── */}
+                    <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
+
+                        {!activePeriod ? (
+                            <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,122,255,0.3)] mb-4">
+                                    <DollarSign size={28} className="text-white" strokeWidth={1.5} />
+                                </div>
+                                <p className="text-[15px] font-black text-slate-700 uppercase tracking-tight">Selecciona un período</p>
+                                <p className="text-[12px] text-slate-400 mt-1">O crea una nueva quincena con el botón +</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Period summary card */}
+                                <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex flex-wrap items-start justify-between gap-4">
+                                        <div>
+                                            <h2 className="text-[16px] font-black text-slate-800 tracking-tight">{activePeriod.name}</h2>
+                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                                {activePeriod.start_date} → {activePeriod.end_date}
+                                                {activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className={`text-[9px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status] || STATUS_META.DRAFT).color}`}>
+                                                {(STATUS_META[activePeriod.status] || STATUS_META.DRAFT).label}
+                                            </span>
+                                            {(isDraft || isApproved) && (
+                                                <button onClick={handleGenerate} disabled={generating}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all disabled:opacity-50 shadow-sm">
+                                                    <RotateCcw size={12} strokeWidth={2.5} className={generating ? 'animate-spin' : ''} />
+                                                    {generating ? 'Generando...' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
+                                                </button>
+                                            )}
+                                            {activePeriod && payrollEntries.length > 0 && (
+                                                <>
+                                                    <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        <Printer size={12} strokeWidth={2.5} /> Planilla
+                                                    </button>
+                                                    <button onClick={downloadCSV}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        <Download size={12} strokeWidth={2.5} /> CSV Banco
+                                                    </button>
+                                                </>
+                                            )}
+                                            {isDraft && payrollEntries.length > 0 && (
+                                                <button onClick={() => setConfirming({ action: 'APPROVED', label: 'aprobar' })}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
+                                                    <CheckCircle2 size={12} strokeWidth={2.5} /> Aprobar
+                                                </button>
+                                            )}
+                                            {isApproved && (
+                                                <button onClick={() => setConfirming({ action: 'PAID', label: 'marcar como pagada' })}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066CC] text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,122,255,0.35)]">
+                                                    <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Totals strip */}
+                                    {payrollEntries.length > 0 && (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-5 border-t border-white/60">
+                                            {[
+                                                { label: 'Sal. Ordinario', value: totals.grossA,  color: 'text-slate-800' },
+                                                { label: 'Extras / Otros', value: totals.extrasB,  color: 'text-blue-700' },
+                                                { label: 'Deducciones',    value: totals.deducts,  color: 'text-red-600' },
+                                                { label: 'Total a Pagar',  value: totals.net,      color: 'text-emerald-700' },
+                                            ].map(t => (
+                                                <div key={t.label} className="text-center bg-white/40 rounded-2xl py-3 px-2 border border-white/60">
+                                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest font-black">{t.label}</p>
+                                                    <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Table */}
+                                {isLoadingPayroll ? (
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px]">
+                                        Cargando planilla...
+                                    </div>
+                                ) : filteredEntries.length === 0 ? (
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px] animate-in fade-in duration-500">
+                                        {payrollEntries.length === 0
+                                            ? 'Genera la planilla para ver los datos.'
+                                            : 'Sin resultados para los filtros actuales.'}
+                                    </div>
+                                ) : (
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-[10px]">
+                                                <thead>
+                                                    <tr className="border-b border-white/60">
+                                                        {['Empleado','Sucursal','Días','Sal. Ord.','Extras','ISSS','AFP','Renta','Desc. Total','Líquido',''].map(h => (
+                                                            <th key={h} className="px-4 py-3.5 text-left font-black uppercase tracking-widest text-slate-400 whitespace-nowrap first:pl-6 last:pr-6">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/40">
+                                                    {filteredEntries.map((e, i) => {
+                                                        const emp    = e.employee || {};
+                                                        const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
+                                                        const edited = e.status === 'EDITED';
+                                                        return (
+                                                            <tr key={e.id}
+                                                                className={`group hover:bg-white/40 transition-colors animate-in fade-in duration-300 ${edited ? 'bg-amber-50/30' : ''}`}
+                                                                style={{ animationDelay: `${i * 30}ms` }}>
+                                                                <td className="px-4 py-3 pl-6 font-black text-slate-800 whitespace-nowrap">
+                                                                    {emp.name || '—'}
+                                                                    {edited && <span className="ml-1 text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">editado</span>}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{branch?.name || '—'}</td>
+                                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{round2(e.days_worked)}</td>
+                                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{fmt(e.ordinary_salary)}</td>
+                                                                <td className="px-4 py-3 font-bold text-blue-600 text-right">{fmt(e.subtotal_b)}</td>
+                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.isss_deduction)}</td>
+                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.afp_deduction)}</td>
+                                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.renta_deduction)}</td>
+                                                                <td className="px-4 py-3 font-bold text-red-600 text-right">{fmt(e.total_deductions)}</td>
+                                                                <td className="px-4 py-3 font-black text-emerald-700 text-right whitespace-nowrap">{fmt(e.net_pay)}</td>
+                                                                <td className="px-4 py-3 pr-6">
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <button onClick={() => printBoleta(e, activePeriod, branches)}
+                                                                            title="Imprimir boleta"
+                                                                            className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
+                                                                            <Printer size={12} strokeWidth={2.5} />
+                                                                        </button>
+                                                                        {!isPaid && (
+                                                                            <button onClick={() => setEditEntry(e)}
+                                                                                title="Editar"
+                                                                                className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
+                                                                                <Edit2 size={12} strokeWidth={2.5} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            </GlassViewLayout>
+
+            {confirming && (
+                <ConfirmModal
+                    confirming={confirming}
+                    activePeriod={activePeriod}
+                    onConfirm={() => handleStatusChange(confirming.action)}
+                    onClose={() => setConfirming(null)}
+                />
+            )}
+            {showNewPeriod && (
+                <NewPeriodModal
+                    onSave={async (data) => { await createPayrollPeriod(data); setShowNewPeriod(false); }}
+                    onClose={() => setShowNewPeriod(false)}
+                />
+            )}
+            {editEntry && (
+                <EditEntryModal entry={editEntry} user={user} onSave={handleEditSave} onClose={() => setEditEntry(null)} />
+            )}
+        </>
     );
 };
 

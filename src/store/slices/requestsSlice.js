@@ -650,7 +650,7 @@ export const createRequestsSlice = (set, get) => ({
                     approvedBy: approverId,
                     fromRequest: req.id,
                     ...meta,
-                }).catch(() => {});
+                }).catch(console.error);
 
                 if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
                     const today = new Date().toISOString().split('T')[0];

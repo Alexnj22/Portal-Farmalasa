@@ -44,11 +44,11 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    // Fetch admin recipients once
+    // Fetch recipients: everyone active in the Administracion branch (id = 32)
     const { data: adminEmps, error: adminErr } = await supabase
       .from('employees')
       .select('id')
-      .in('system_role', ['ADMIN', 'SUPERADMIN', 'SUPERVISOR'])
+      .eq('branch_id', 32)
       .neq('status', 'INACTIVO');
 
     if (adminErr) throw adminErr;

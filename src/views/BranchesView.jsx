@@ -614,6 +614,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
     const employeesMap = useMemo(() => {
         const m = new Map();
         (employees || []).forEach((e) => {
+            if ((e.status || '').toUpperCase() === 'INACTIVO') return;
             const k = String(e.branchId || e.branch_id);
             if (!m.has(k)) m.set(k, []);
             m.get(k).push(e);

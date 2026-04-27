@@ -101,7 +101,10 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     }, [liveBranch?.id, refreshKey, getBranchHistory]); 
 
     const currentStaff = useMemo(() => {
-        return (employees || []).filter(e => String(e.branchId) === String(liveBranch?.id) || String(e.branch_id) === String(liveBranch?.id));
+        return (employees || []).filter(e =>
+            (String(e.branchId) === String(liveBranch?.id) || String(e.branch_id) === String(liveBranch?.id)) &&
+            (e.status || '').toUpperCase() !== 'INACTIVO'
+        );
     }, [employees, liveBranch?.id]);
 
     // 🚨 3. RE-ENRUTAMOS AL PERFIL DEL EMPLEADO MEDIANTE URL
@@ -187,7 +190,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
             else label = `${g.days[0]} a ${g.days[g.days.length - 1]}`;
 
             const jsDay = new Date().getDay();
-            const todayIdx = jsDay === 0 ? 0 : jsDay;
+            // WEEK_DAYS: Mon=0, Tue=1, ..., Sat=5, Sun=6 (JS: Sun=0, Mon=1, ..., Sat=6)
+            const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
             const isToday = todayIdx >= g.startIndex && todayIdx <= g.endIndex;
 
             return { label, timeStr: g.timeStr, isOpen: g.isOpen, isToday };

@@ -5,7 +5,7 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock, Gift
+    BarChart2, UserX, Clock, Gift, DollarSign
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -50,6 +50,7 @@ const MODULE_GROUPS = [
             { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false },
             { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true },
             { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false },
+            { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true  },
         ],
     },
     {

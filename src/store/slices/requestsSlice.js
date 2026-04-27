@@ -154,7 +154,12 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
             return null;
         };
 
-        const findByRoleId = async (roleIds, sameBranch = false) => {
+        // Resuelve role IDs por nombre (ilike) para evitar IDs hardcodeados
+        const findByRoleName = async (namePattern, sameBranch = false) => {
+            const { data: matchedRoles } = await supabase
+                .from('roles').select('id').ilike('name', `%${namePattern}%`);
+            const roleIds = (matchedRoles || []).map(r => r.id);
+            if (!roleIds.length) return null;
             for (const roleId of roleIds) {
                 let q = supabase.from('employees')
                     .select('id')
@@ -171,21 +176,21 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
         };
 
         if (level === 'JEFE_SUCURSAL') {
-            // Jefe o Subjefe activo en la misma sucursal, excluyendo al peer
             return await findBySystemRole(['JEFE', 'SUBJEFE'], true)
                 || await findBySystemRole(['ADMIN'], false);
         }
 
         if (level === 2) {
-            // Supervisor de Ventas (role_id=13) o system_role=SUPERVISOR
+            // Supervisor por system_role o por nombre de cargo
             return await findBySystemRole(['SUPERVISOR'])
-                || await findByRoleId([13])
+                || await findByRoleName('Supervisor')
                 || await findBySystemRole(['ADMIN', 'SUPERADMIN']);
         }
 
         if (level === 3) {
-            // Talento Humano (role_id=11) o system_role=ADMIN
-            return await findByRoleId([11])
+            // Talento Humano por nombre de cargo, luego fallback a admins
+            return await findByRoleName('Talento Humano')
+                || await findByRoleName('RRHH')
                 || await findBySystemRole(['ADMIN'])
                 || await findBySystemRole(['SUPERADMIN'])
                 || (await supabase.from('employees')

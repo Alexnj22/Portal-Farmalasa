@@ -82,13 +82,6 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
         subtotal_b:            subtotalB,
         total_deductions:      totalDeductions,
         net_pay:               netPay,
-        // Derived display helpers
-        _dailyRate:            dailyRate,
-        _hourlyRate:           hourlyRate,
-        _nightOrdinaryAmt:     nightOrdinaryAmt,
-        _nightExtraAmt:        nightExtraAmt,
-        _extraDiurnalAmt:      extraDiurnalAmt,
-        _extraNocturnalAmt:    extraNocturnalAmt,
     };
 }
 
@@ -244,12 +237,6 @@ export const createPayrollSlice = (set, get) => ({
                     branch_id:   emp.branchId || emp.branch_id || null,
                     status:      'PENDING',
                     ...calc,
-                    _dailyRate:      undefined,
-                    _hourlyRate:     undefined,
-                    _nightOrdinaryAmt:  undefined,
-                    _nightExtraAmt:     undefined,
-                    _extraDiurnalAmt:   undefined,
-                    _extraNocturnalAmt: undefined,
                 };
             });
 
@@ -291,13 +278,6 @@ export const createPayrollSlice = (set, get) => ({
             status:       'EDITED',
             edit_history: editHistory,
             updated_at:   new Date().toISOString(),
-            // strip display helpers
-            _dailyRate:          undefined,
-            _hourlyRate:         undefined,
-            _nightOrdinaryAmt:   undefined,
-            _nightExtraAmt:      undefined,
-            _extraDiurnalAmt:    undefined,
-            _extraNocturnalAmt:  undefined,
         };
 
         const { error } = await supabase

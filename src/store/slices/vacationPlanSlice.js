@@ -148,7 +148,7 @@ export const createVacationPlanSlice = (set, get) => ({
             if (error) throw error;
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
-                    vp.id === planId ? { ...vp, ...data } : vp
+                    vp.id === planId ? { ...vp, ...data, employee: vp.employee, branch: vp.branch } : vp
                 ),
             }));
             return true;

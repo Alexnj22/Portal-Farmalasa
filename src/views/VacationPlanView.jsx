@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2, Edit3,
-    Building2, ListFilter
+    Building2, ListFilter, Trash2
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -12,8 +12,8 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' }) : '—';
+const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }) : '—';
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 const STATUS_META = {
@@ -120,7 +120,7 @@ const EligibilityBanner = ({ info }) => {
 const GanttChart = ({ plans, year }) => {
     const months = Array.from({ length: 12 }, (_, i) => ({
         idx:   i,
-        label: new Date(year, i, 1).toLocaleDateString('es-VE', { month: 'short' }),
+        label: new Date(year, i, 1).toLocaleDateString('es-SV', { month: 'short' }),
         days:  new Date(year, i + 1, 0).getDate(),
     }));
 
@@ -272,6 +272,7 @@ const VacationPlanView = () => {
     const createVacationPlan     = useStaffStore(s => s.createVacationPlan);
     const updateVacationPlan     = useStaffStore(s => s.updateVacationPlan);
     const updateVacationPlanStatus = useStaffStore(s => s.updateVacationPlanStatus);
+    const deleteVacationPlan       = useStaffStore(s => s.deleteVacationPlan);
 
     const uniqueBranches = useMemo(() => {
         const seen = new Set();
@@ -518,6 +519,12 @@ const VacationPlanView = () => {
     const handleConfirmPlan = async (planId) => {
         await updateVacationPlanStatus(planId, 'CONFIRMED');
         useToastStore.getState().showToast('Confirmado', 'Vacaciones confirmadas.', 'success');
+    };
+
+    const handleCancelPlan = async (planId) => {
+        const ok = await deleteVacationPlan(planId);
+        if (ok) useToastStore.getState().showToast('Cancelado', 'Plan de vacaciones cancelado.', 'success');
+        else    useToastStore.getState().showToast('Error', 'No se pudo cancelar el plan.', 'error');
     };
 
     // Sort filtered plans by branch → role → start_date
@@ -841,6 +848,16 @@ const VacationPlanView = () => {
                                                                             className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Check size={11} strokeWidth={3} />
+                                                                        </button>
+                                                                    )}
+                                                                    {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
+                                                                        <button
+                                                                            title="Cancelar"
+                                                                            onClick={() => handleCancelPlan(p.id)}
+                                                                            disabled={!canEdit}
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <Trash2 size={11} strokeWidth={2.5} />
                                                                         </button>
                                                                     )}
                                                                 </div>

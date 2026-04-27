@@ -31,6 +31,7 @@ import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
+import PayrollView from "./views/PayrollView";
 import NoAccessView from "./views/NoAccessView";
 import AccessDeniedView from "./views/AccessDeniedView";
 import DashboardView from "./views/DashboardView";
@@ -411,6 +412,7 @@ function MainApp() {
                                     <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
                                     <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView /></PermissionGuard>} />
                                     <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
+                                    <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView /></PermissionGuard>} />
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}

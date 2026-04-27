@@ -131,8 +131,10 @@ export const createEmployeeSlice = (set, get) => ({
                 hire_date: formData.hire_date || null,
                 afp_number: formData.afp_number || null,
                 isss_number: formData.isss_number || null,
+                afp_institution: formData.afp_institution || null,
                 bank_name: formData.bank_name || null,
                 account_number: formData.account_number || null,
+                account_type: formData.account_type || 'AHORRO',
                 
                 kiosk_pin: formData.kiosk_pin || null,
                 is_admin: formData.is_admin || false,
@@ -267,6 +269,8 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
             if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
             if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
+            if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
+            if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';
             
             if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL') {
                 dbPayload.contract_end_date = null;

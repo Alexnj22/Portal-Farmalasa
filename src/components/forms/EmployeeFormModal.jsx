@@ -14,6 +14,16 @@ const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { valu
 const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
 const EDUCATION_OPTIONS = [{ value: 'BACHILLERATO', label: 'Bachillerato' }, { value: 'TECNICO', label: 'Técnico Superior' }, { value: 'UNIVERSITARIO_E', label: 'Universitario (Estudiante)' }, { value: 'UNIVERSITARIO_G', label: 'Universitario (Graduado)' }, { value: 'MAESTRIA', label: 'Maestría / Postgrado' }];
 
+const AFP_OPTIONS = [
+    { value: 'CRECER', label: 'AFP Crecer' },
+    { value: 'CONFIA', label: 'AFP Confía' },
+];
+const ACCOUNT_TYPE_OPTIONS = [
+    { value: 'AHORRO',     label: 'Cuenta de Ahorro' },
+    { value: 'CORRIENTE',  label: 'Cuenta Corriente' },
+    { value: 'ELECTRONICA',label: 'Cuenta Electrónica' },
+];
+
 const BANKS_OPTIONS = [
     { value: 'Banco Agrícola', label: 'Banco Agrícola' },
     { value: 'Banco Cuscatlán', label: 'Banco Cuscatlán' },
@@ -194,7 +204,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 hire_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0], 
                 kiosk_pin: '', photoPreview: null, file: null,
                 contract_type: 'INDEFINIDO', contract_end_date: '', weekly_contracted_hours: '44', base_salary: '',
-                afp_number: '', isss_number: '', bank_name: '', account_number: '',
+                afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
                 ...prev 
             }));
         }
@@ -618,11 +628,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" />
                                 <PortalInput label="NUP (AFP)" name="afp_number" value={formData.afp_number} onChange={handleChange} icon={Hash} placeholder="12 dígitos" maskType="AFP" />
-                                
+
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Institución AFP</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} {...portalSelectProps} />
+                                    </div>
+                                </div>
+
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Banco (Planilla)</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                                         <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} {...portalSelectProps} />
+                                    </div>
+                                </div>
+
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Cuenta</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} {...portalSelectProps} />
                                     </div>
                                 </div>
 

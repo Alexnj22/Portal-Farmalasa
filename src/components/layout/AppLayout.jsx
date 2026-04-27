@@ -5,7 +5,7 @@ import {
     Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
-    TrendingUp, Tag, Gift, Users, Package
+    TrendingUp, Tag, Gift, Users, Package, DollarSign
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
@@ -25,6 +25,7 @@ const MODULE_MAP = {
     schedules:         { path: '/schedules',       label: 'Horarios y Turnos',        icon: Calendar      },
     requests:          { path: '/requests',        label: 'Gestión de Solicitudes',   icon: ClipboardList },
     vacation_plan:     { path: '/vacation-plan',   label: 'Plan de Vacaciones',       icon: Palmtree      },
+    payroll:           { path: '/payroll',          label: 'Nómina',                   icon: DollarSign    },
     branches:          { path: '/branches',        label: 'Sucursales',               icon: Building2     },
     roles:             { path: '/roles',           label: 'Cargos / Organigrama',     icon: ShieldCheck   },
     announcements:     { path: '/announcements',   label: 'Gestionar Avisos',         icon: Megaphone     },
@@ -50,7 +51,7 @@ const MENU_GROUPS = [
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
     { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
-    { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan']                       },
+    { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan', 'payroll']            },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'promociones', 'bonificaciones'] },

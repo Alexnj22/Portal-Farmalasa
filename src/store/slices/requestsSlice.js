@@ -620,6 +620,72 @@ export const createRequestsSlice = (set, get) => ({
     },
 
     // ── Approve ────────────────────────────────────────────────────────────
+
+    // Helper interno: ejecuta todos los efectos de una aprobación final en un solo lugar.
+    // Cualquier lógica nueva por tipo (OVERTIME, ADVANCE, etc.) se agrega aquí.
+    _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
+        const { error } = await supabase
+            .from('approval_requests')
+            .update({ status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+
+        set(state => ({
+            requests: state.requests.map(r =>
+                r.id === requestId ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals } : r
+            ),
+        }));
+
+        if (req.employee?.id) {
+            const meta = parseMeta(req.metadata);
+            await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
+
+            const registerEmployeeEvent = get().registerEmployeeEvent;
+            if (registerEmployeeEvent) {
+                await registerEmployeeEvent(req.employee.id, {
+                    type: req.type,
+                    date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
+                    endDate: meta.endDate,
+                    note: req.note,
+                    approvedBy: approverId,
+                    fromRequest: req.id,
+                    ...meta,
+                }).catch(() => {});
+
+                if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
+                    const today = new Date().toISOString().split('T')[0];
+                    await registerEmployeeEvent(meta.targetEmployeeId, {
+                        type: 'SHIFT_CHANGE',
+                        date: meta.date || today,
+                        note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
+                        approvedBy: approverId,
+                        fromRequest: req.id,
+                    }).catch(() => {});
+                    await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
+                        targetEmployeeName: req.employee?.name,
+                        date: meta.date,
+                        myShift: meta.targetShift,
+                        targetShift: meta.myShift,
+                    });
+                }
+
+                if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
+                    await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
+                    await checkAndAlertCoverage(req.employee.id, req.employee?.branch_id, meta.startDate, meta.endDate, approverId, req.employee?.name || 'un empleado');
+                }
+
+                if (req.type === 'VACATION' && meta.startDate && meta.endDate) {
+                    await markVacationDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
+                }
+            }
+        }
+
+        if (toastMsg) useToastStore.getState().showToast('Aprobado', toastMsg, 'success');
+        else useToastStore.getState().showToast('Solicitud Aprobada', `${REQUEST_TYPES[req.type]?.label || req.type} aprobada correctamente.`, 'success');
+        window.dispatchEvent(new CustomEvent('requests-updated'));
+        return true;
+    },
+
     approveRequest: async (requestId, approverId, approverNote = '', _reqOverride = null) => {
         try {
             const req = _reqOverride || get().requests.find(r => r.id === requestId);
@@ -627,324 +693,82 @@ export const createRequestsSlice = (set, get) => ({
 
             const currentLevel = req.current_level || 1;
             const nextLevel = currentLevel + 1;
-
-            const existingApprovals = Array.isArray(req.approvals) ? req.approvals : [];
-            const newApprovals = [...existingApprovals, {
-                level: currentLevel,
-                approverId,
-                approverNote,
-                approvedAt: new Date().toISOString(),
+            const newApprovals = [...(Array.isArray(req.approvals) ? req.approvals : []), {
+                level: currentLevel, approverId, approverNote, approvedAt: new Date().toISOString(),
             }];
 
-            // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ──────────────────
+            // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ─────────────────
             if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
-                const { data: peerEmp } = await supabase
-                    .from('employees')
-                    .select('system_role')
-                    .eq('id', approverId)
-                    .single();
+                const { data: peerEmp } = await supabase.from('employees').select('system_role').eq('id', approverId).single();
                 const peerIsJefe = ['JEFE', 'SUBJEFE'].includes(peerEmp?.system_role);
-
-                const nextApprover = peerIsJefe
-                    ? null
-                    : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
+                const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
 
                 if (!nextApprover) {
-                    // Peer es jefe, o no hay jefe disponible → aprobación final directa
-                    const { error: fe } = await supabase
-                        .from('approval_requests')
-                        .update({
-                            status: 'APPROVED',
-                            approver_id: approverId,
-                            approver_note: approverNote,
-                            approvals: newApprovals,
-                            updated_at: new Date().toISOString(),
-                        })
-                        .eq('id', requestId);
-                    if (fe) throw fe;
-
-                    set(state => ({
-                        requests: state.requests.map(r =>
-                            r.id === requestId
-                                ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
-                                : r
-                        ),
-                    }));
-
-                    if (req.employee?.id) {
-                        const meta = parseMeta(req.metadata);
-                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
-                        const registerEmployeeEvent = get().registerEmployeeEvent;
-                        if (registerEmployeeEvent) {
-                            await registerEmployeeEvent(req.employee.id, {
-                                type: req.type,
-                                date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
-                                endDate: meta.endDate,
-                                note: req.note,
-                                approvedBy: approverId,
-                                fromRequest: req.id,
-                                ...meta,
-                            }).catch(() => {});
-                            if (meta.targetEmployeeId) {
-                                const today = new Date().toISOString().split('T')[0];
-                                await registerEmployeeEvent(meta.targetEmployeeId, {
-                                    type: 'SHIFT_CHANGE',
-                                    date: meta.date || today,
-                                    note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
-                                    approvedBy: approverId,
-                                    fromRequest: req.id,
-                                }).catch(() => {});
-                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
-                                    targetEmployeeName: req.employee?.name,
-                                    date: meta.date,
-                                    myShift: meta.targetShift,
-                                    targetShift: meta.myShift,
-                                });
-                            }
-                        }
-                    }
-
-                    useToastStore.getState().showToast('Aprobado', peerIsJefe ? 'Cambio de turno aprobado.' : 'Aprobado (sin jefe disponible en sucursal).', 'success');
-                    window.dispatchEvent(new CustomEvent('requests-updated'));
-                    return true;
+                    return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals,
+                        peerIsJefe ? 'Cambio de turno aprobado.' : 'Aprobado (sin jefe disponible en sucursal).');
                 }
 
                 // Avanzar a nivel 2 → jefe de sucursal
-                const { error: adv } = await supabase
-                    .from('approval_requests')
-                    .update({
-                        current_level: 2,
-                        approver_id: nextApprover,
-                        approvals: newApprovals,
-                        updated_at: new Date().toISOString(),
-                    })
+                const { error: adv } = await supabase.from('approval_requests')
+                    .update({ current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() })
                     .eq('id', requestId);
                 if (adv) throw adv;
 
                 set(state => ({
                     requests: state.requests.map(r =>
-                        r.id === requestId
-                            ? { ...r, current_level: 2, approver_id: nextApprover, approvals: newApprovals }
-                            : r
+                        r.id === requestId ? { ...r, current_level: 2, approver_id: nextApprover, approvals: newApprovals } : r
                     ),
                 }));
-
                 await supabase.from('announcements').insert([{
                     title: 'Nueva Solicitud Pendiente',
                     message: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final`,
-                    target_type: 'EMPLOYEE',
-                    target_value: [String(nextApprover)],
-                    read_by: [],
-                    is_archived: false,
-                    created_by: approverId,
-                    priority: 'HIGH',
+                    target_type: 'EMPLOYEE', target_value: [String(nextApprover)],
+                    read_by: [], is_archived: false, created_by: approverId, priority: 'HIGH',
                 }]);
-
                 useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
                 window.dispatchEvent(new CustomEvent('requests-updated'));
                 return true;
             }
-            // ─────────────────────────────────────────────────────────────────────
 
             const maxLevels = req.type === 'SHIFT_CHANGE' ? 2 : req.type === 'DISABILITY' ? 1 : 3;
 
             if (nextLevel <= maxLevels) {
-                // Avanzar al siguiente nivel
                 const nextApprover = await resolveNextApprover(nextLevel, req.employee?.branch_id, approverId);
 
                 if (!nextApprover) {
-                    // No hay siguiente aprobador disponible → aprobación final directa
-                    const { error: finalErr } = await supabase
-                        .from('approval_requests')
-                        .update({
-                            status: 'APPROVED',
-                            approver_id: approverId,
-                            approver_note: approverNote,
-                            approvals: newApprovals,
-                            updated_at: new Date().toISOString(),
-                        })
-                        .eq('id', requestId);
-                    if (finalErr) throw finalErr;
-
-                    set(state => ({
-                        requests: state.requests.map(r =>
-                            r.id === requestId
-                                ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
-                                : r
-                        ),
-                    }));
-
-                    if (req.employee?.id) {
-                        const meta = parseMeta(req.metadata);
-                        await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
-                        const registerEmployeeEvent = get().registerEmployeeEvent;
-                        if (registerEmployeeEvent) {
-                            await registerEmployeeEvent(req.employee.id, {
-                                type: req.type,
-                                date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
-                                endDate: meta.endDate,
-                                note: req.note,
-                                approvedBy: approverId,
-                                fromRequest: req.id,
-                                ...meta,
-                            }).catch(() => {});
-                            if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
-                                const today = new Date().toISOString().split('T')[0];
-                                await registerEmployeeEvent(meta.targetEmployeeId, {
-                                    type: 'SHIFT_CHANGE',
-                                    date: meta.date || today,
-                                    note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
-                                    approvedBy: approverId,
-                                    fromRequest: req.id,
-                                }).catch(() => {});
-                                await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
-                                    targetEmployeeName: req.employee?.name,
-                                    date: meta.date,
-                                    myShift: meta.targetShift,
-                                    targetShift: meta.myShift,
-                                });
-                            }
-                            if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
-                                await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
-                                await checkAndAlertCoverage(
-                                    req.employee.id,
-                                    req.employee?.branch_id,
-                                    meta.startDate,
-                                    meta.endDate,
-                                    approverId,
-                                    req.employee?.name || 'un empleado'
-                                );
-                            }
-                            if (req.type === 'VACATION' && meta.startDate && meta.endDate) {
-                                await markVacationDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
-                            }
-                        }
-                    }
-
-                    useToastStore.getState().showToast('Aprobado', 'Solicitud aprobada (sin aprobador disponible en nivel siguiente).', 'success');
-                    window.dispatchEvent(new CustomEvent('requests-updated'));
-                    return true;
+                    // Sin siguiente aprobador → aprobación final directa
+                    return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals,
+                        'Solicitud aprobada (sin aprobador disponible en nivel siguiente).');
                 }
 
-                const { error } = await supabase
-                    .from('approval_requests')
-                    .update({
-                        current_level: nextLevel,
-                        approver_id: nextApprover,
-                        approvals: newApprovals,
-                        updated_at: new Date().toISOString(),
-                    })
+                const { error } = await supabase.from('approval_requests')
+                    .update({ current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() })
                     .eq('id', requestId);
-
                 if (error) throw error;
 
                 set(state => ({
                     requests: state.requests.map(r =>
-                        r.id === requestId
-                            ? { ...r, current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals }
-                            : r
+                        r.id === requestId ? { ...r, current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals } : r
                     ),
                 }));
-
-                if (nextApprover) {
-                    await supabase.from('announcements').insert([{
-                        title: 'Nueva Solicitud Pendiente',
-                        message: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}`,
-                        target_type: 'EMPLOYEE',
-                        target_value: [String(nextApprover)],
-                        read_by: [],
-                        is_archived: false,
-                        created_by: approverId,
-                        priority: 'HIGH',
-                    }]);
-                }
-
+                await supabase.from('announcements').insert([{
+                    title: 'Nueva Solicitud Pendiente',
+                    message: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}`,
+                    target_type: 'EMPLOYEE', target_value: [String(nextApprover)],
+                    read_by: [], is_archived: false, created_by: approverId, priority: 'HIGH',
+                }]);
                 useToastStore.getState().showToast(
-                    'Aprobado — Nivel ' + currentLevel,
-                    `Solicitud avanzada al nivel ${nextLevel}. ${nextApprover ? 'Notificado el siguiente aprobador.' : 'Sin aprobador disponible en el siguiente nivel.'}`,
+                    `Aprobado — Nivel ${currentLevel}`,
+                    `Solicitud avanzada al nivel ${nextLevel}. Notificado el siguiente aprobador.`,
                     'success'
                 );
-
-                window.dispatchEvent(new CustomEvent('requests-updated'));
-                return true;
-            } else {
-                // APROBACIÓN FINAL
-                const { error } = await supabase
-                    .from('approval_requests')
-                    .update({
-                        status: 'APPROVED',
-                        approver_id: approverId,
-                        approver_note: approverNote,
-                        approvals: newApprovals,
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('id', requestId);
-
-                if (error) throw error;
-
-                set(state => ({
-                    requests: state.requests.map(r =>
-                        r.id === requestId
-                            ? { ...r, status: 'APPROVED', approver_note: approverNote, approvals: newApprovals }
-                            : r
-                    ),
-                }));
-
-                if (req.employee?.id) {
-                    const meta = parseMeta(req.metadata);
-                    await notifyEmployee(req.employee.id, approverId, req.type, 'APPROVED', approverNote, meta);
-
-                    const registerEmployeeEvent = get().registerEmployeeEvent;
-                    if (registerEmployeeEvent) {
-                        await registerEmployeeEvent(req.employee.id, {
-                            type: req.type,
-                            date: meta.startDate || meta.date || new Date().toISOString().split('T')[0],
-                            endDate: meta.endDate,
-                            note: req.note,
-                            approvedBy: approverId,
-                            fromRequest: req.id,
-                            ...meta,
-                        }).catch(() => {});
-
-                        // Para SHIFT_CHANGE: registrar evento y notificar también al compañero
-                        if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeId) {
-                            const today = new Date().toISOString().split('T')[0];
-                            await registerEmployeeEvent(meta.targetEmployeeId, {
-                                type: 'SHIFT_CHANGE',
-                                date: meta.date || today,
-                                note: `Cambio de turno aprobado con ${req.employee?.name || ''}`,
-                                approvedBy: approverId,
-                                fromRequest: req.id,
-                            }).catch(() => {});
-                            await notifyEmployee(meta.targetEmployeeId, approverId, 'SHIFT_CHANGE', 'APPROVED', approverNote, {
-                                targetEmployeeName: req.employee?.name,
-                                date: meta.date,
-                                myShift: meta.targetShift,
-                                targetShift: meta.myShift,
-                            });
-                        }
-
-                        // Para DISABILITY: marcar días en roster y verificar cobertura
-                        if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {
-                            await markDisabilityDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
-                            await checkAndAlertCoverage(
-                                req.employee.id,
-                                req.employee?.branch_id,
-                                meta.startDate,
-                                meta.endDate,
-                                approverId,
-                                req.employee?.name || 'un empleado'
-                            );
-                        }
-                        if (req.type === 'VACATION' && meta.startDate && meta.endDate) {
-                            await markVacationDaysInRoster(req.employee.id, meta.startDate, meta.endDate);
-                        }
-                    }
-                }
-
                 window.dispatchEvent(new CustomEvent('requests-updated'));
                 return true;
             }
+
+            // Aprobación final (último nivel completado)
+            return await get()._runFinalApproval(requestId, req, approverId, approverNote, newApprovals);
+
         } catch (err) {
             console.error('Error aprobando solicitud:', err);
             return false;

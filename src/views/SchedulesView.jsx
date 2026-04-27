@@ -7,6 +7,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -27,6 +28,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters, fetchBoot } = useStaff();
     const { isJefe, rolePerms } = useAuth();
     const canEdit = rolePerms === 'ALL' || !!rolePerms?.['schedules']?.can_edit;
+    const showToast = useToastStore(s => s.showToast);
     const [isPublishing, setIsPublishing] = useState(false);
 
     useEffect(() => {
@@ -50,7 +52,6 @@ const SchedulesView = ({ openModal, setView }) => {
     
     const [shiftTab, setShiftTab] = useState('ACTIVE');
 
-    const [statusFilter, setStatusFilter] = useState('ACTIVE');
     const [startDate, setStartDate] = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -302,7 +303,8 @@ useEffect(() => {
 
         return employees
             .filter(e => {
-                return String(e.branchId || e.branch_id) === String(filterBranch);
+                return String(e.branchId || e.branch_id) === String(filterBranch) &&
+                    (e.status || '').toUpperCase() !== 'INACTIVO';
             })
             .sort((a, b) => {
                 const weightA = roleWeight(a.role);
@@ -410,26 +412,27 @@ useEffect(() => {
     }, [weeklyRosters, employeesInView, shifts, calendarDates, filterBranch, branches]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
-        let scheduleToSave = null;
-
         setWeeklyRosters(prev => {
             const currentRoster = prev[empId] || {};
             const schedule = (typeof currentRoster === 'string') ? JSON.parse(currentRoster || '{}') : { ...currentRoster };
             schedule[dayId] = newCellData;
-            
-            scheduleToSave = schedule; 
             return { ...prev, [empId]: schedule };
         });
 
+        // Read current roster from latest state snapshot to build the full schedule for upsert
+        const latestRoster = weeklyRosters[empId] || {};
+        const scheduleToSave = (typeof latestRoster === 'string') ? JSON.parse(latestRoster || '{}') : { ...latestRoster };
+        scheduleToSave[dayId] = newCellData;
+
         try {
             const { error } = await supabase
-                .from('employee_rosters') 
+                .from('employee_rosters')
                 .upsert({
                     employee_id: empId,
-                    week_start_date: startDate, 
-                    schedule_data: scheduleToSave, 
+                    week_start_date: startDate,
+                    schedule_data: scheduleToSave,
                     status: 'DRAFT'
-                }, { onConflict: 'employee_id, week_start_date' }); 
+                }, { onConflict: 'employee_id, week_start_date' });
 
             if (error) {
                 console.error("Error guardando borrador en Supabase:", error);
@@ -437,7 +440,7 @@ useEffect(() => {
         } catch (error) {
             console.error("Error de red guardando borrador:", error);
         }
-    }, [startDate]);
+    }, [startDate, weeklyRosters]);
 
     const handleEditCell = useCallback((empId, dayId, dateStr, currentData, rect) => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });
@@ -528,7 +531,7 @@ useEffect(() => {
             
         } catch (error) {
             console.error("Error crítico publicando horarios:", error);
-            alert('❌ Hubo un error de conexión al publicar. Revisa la consola.'); // Este fallback alert está bien para errores técnicos puros
+            showToast('Error al publicar', 'Hubo un error de conexión. Intenta de nuevo.', 'error');
         } finally {
             setIsPublishing(false);
         }

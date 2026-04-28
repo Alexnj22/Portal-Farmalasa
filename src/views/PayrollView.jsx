@@ -278,7 +278,7 @@ function EditEntryForm({ entry, user, onSave, onClose }) {
     return (
         <>
             {/* Header */}
-            <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
+            <div className="bg-transparent px-8 py-6 border-b border-white/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-amber-100 rounded-xl">
@@ -294,7 +294,7 @@ function EditEntryForm({ entry, user, onSave, onClose }) {
             </div>
 
             {/* Body */}
-            <div className="bg-white/40 backdrop-blur-md p-6 max-h-[65vh] overflow-y-auto">
+            <div className="bg-transparent p-6 max-h-[65vh] overflow-y-auto">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <InputLabel>Días Trabajados</InputLabel>
@@ -354,8 +354,8 @@ function EditEntryForm({ entry, user, onSave, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="bg-white/60 backdrop-blur-xl px-8 py-5 border-t border-black/[0.04] flex gap-3">
-                <button onClick={onClose} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+            <div className="bg-transparent px-8 py-5 border-t border-white/40 flex gap-3">
+                <button onClick={onClose} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
                 <button onClick={handleSave} disabled={saving}
                     className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.25)] text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-40">
                     <Save size={14} strokeWidth={2.5} />
@@ -393,7 +393,7 @@ function NewPeriodForm({ onSave, onClose }) {
     return (
         <>
             {/* Header */}
-            <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
+            <div className="bg-transparent px-8 py-6 border-b border-white/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-[#007AFF]/10 rounded-xl">
@@ -406,7 +406,7 @@ function NewPeriodForm({ onSave, onClose }) {
             </div>
 
             {/* Body */}
-            <div className="bg-white/40 backdrop-blur-md p-6 space-y-5">
+            <div className="bg-transparent p-6 space-y-5">
                 {name && (
                     <div className="bg-[#007AFF]/8 border border-[#007AFF]/15 rounded-2xl px-4 py-2.5">
                         <p className="text-[11px] font-black text-[#007AFF]">{name}</p>
@@ -429,8 +429,8 @@ function NewPeriodForm({ onSave, onClose }) {
             </div>
 
             {/* Footer */}
-            <div className="bg-white/60 backdrop-blur-xl px-8 py-5 border-t border-black/[0.04] flex gap-3">
-                <button onClick={onClose} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+            <div className="bg-transparent px-8 py-5 border-t border-white/40 flex gap-3">
+                <button onClick={onClose} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
                 <button onClick={handleSave} disabled={saving || !form.start_date || !form.end_date}
                     className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.25)] text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-40">
                     <Plus size={14} strokeWidth={2.5} />
@@ -856,51 +856,60 @@ const PayrollView = () => {
 
             {/* ── Modal: Nueva quincena ── */}
             <ModalShell open={showNewPeriod} onClose={() => setShowNewPeriod(false)} maxWidthClass="max-w-md" zClass="z-[110]">
-                <NewPeriodForm
-                    onSave={async (data) => { await createPayrollPeriod(data); setShowNewPeriod(false); }}
-                    onClose={() => setShowNewPeriod(false)}
-                />
+                <div className="flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] max-h-[90vh] h-fit">
+                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none" />
+                    <NewPeriodForm
+                        onSave={async (data) => { await createPayrollPeriod(data); setShowNewPeriod(false); }}
+                        onClose={() => setShowNewPeriod(false)}
+                    />
+                </div>
             </ModalShell>
 
             {/* ── Modal: Editar entrada ── */}
             <ModalShell open={!!editEntry} onClose={() => setEditEntry(null)} maxWidthClass="max-w-2xl" zClass="z-[110]">
-                {editEntry && (
-                    <EditEntryForm
-                        entry={editEntry}
-                        user={user}
-                        onSave={handleEditSave}
-                        onClose={() => setEditEntry(null)}
-                    />
-                )}
+                <div className="flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] max-h-[90vh] h-fit">
+                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none" />
+                    {editEntry && (
+                        <EditEntryForm
+                            entry={editEntry}
+                            user={user}
+                            onSave={handleEditSave}
+                            onClose={() => setEditEntry(null)}
+                        />
+                    )}
+                </div>
             </ModalShell>
 
             {/* ── Modal: Confirmar estado ── */}
             <ModalShell open={!!confirming} onClose={() => setConfirming(null)} maxWidthClass="max-w-sm" zClass="z-[110]">
-                {confirming && (
-                    <>
-                        <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-amber-100 rounded-xl">
-                                        <AlertTriangle size={18} className="text-amber-600" strokeWidth={2} />
+                <div className="flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] max-h-[90vh] h-fit">
+                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none" />
+                    {confirming && (
+                        <>
+                            <div className="bg-transparent px-8 py-6 border-b border-white/40">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-amber-100 rounded-xl">
+                                            <AlertTriangle size={18} className="text-amber-600" strokeWidth={2} />
+                                        </div>
+                                        <h3 className="font-black text-slate-900 text-[16px] tracking-tight">¿Confirmar acción?</h3>
                                     </div>
-                                    <h3 className="font-black text-slate-900 text-[16px] tracking-tight">¿Confirmar acción?</h3>
+                                    <button onClick={() => setConfirming(null)} className="p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors"><X size={18} strokeWidth={2} /></button>
                                 </div>
-                                <button onClick={() => setConfirming(null)} className="p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors"><X size={18} strokeWidth={2} /></button>
                             </div>
-                        </div>
-                        <div className="bg-white/40 backdrop-blur-md px-8 py-6">
-                            <p className="text-[13px] text-slate-600 mb-6">Vas a <b>{confirming.label}</b> la planilla <b>{activePeriod?.name}</b>. Esta acción queda registrada.</p>
-                            <div className="flex gap-3">
-                                <button onClick={() => setConfirming(null)} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
-                                <button onClick={() => handleStatusChange(confirming.action)}
-                                    className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.25)] text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest transition-all">
-                                    Confirmar
-                                </button>
+                            <div className="bg-transparent px-8 py-6">
+                                <p className="text-[13px] text-slate-600 mb-6">Vas a <b>{confirming.label}</b> la planilla <b>{activePeriod?.name}</b>. Esta acción queda registrada.</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setConfirming(null)} className="flex-1 h-12 rounded-[1.25rem] border border-slate-200 text-[11px] font-black text-slate-600 hover:bg-white/60 transition-all">Cancelar</button>
+                                    <button onClick={() => handleStatusChange(confirming.action)}
+                                        className="flex-1 h-12 bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.25)] text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest transition-all">
+                                        Confirmar
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </ModalShell>
         </>
     );

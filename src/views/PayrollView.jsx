@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
-    DollarSign, Plus, ChevronLeft, ChevronRight, Printer, CheckCircle2, Banknote,
+    DollarSign, Plus, Printer, CheckCircle2, Banknote,
     Building2, Search, Edit2, AlertTriangle, RotateCcw,
-    FileText, Download, X, Save, ListFilter,
+    Download, X, Save, ListFilter,
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
@@ -11,6 +11,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidAvatar from '../components/common/LiquidAvatar';
+import ModalShell from '../components/common/ModalShell';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -58,6 +59,14 @@ const STATUS_META = {
     DRAFT:    { label: 'Borrador',  color: 'bg-slate-100 text-slate-600 border-slate-200' },
     APPROVED: { label: 'Aprobada', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     PAID:     { label: 'Pagada',   color: 'bg-blue-50 text-blue-700 border-blue-200' },
+};
+
+// Role hierarchy by DB id (lower index = more senior)
+const ROLE_HIERARCHY = [2,3,11,12,13,22,19,20,8,23,24,9,14,16,17,18,15,26,30,27];
+const roleOrder = (emp) => {
+    const rid = emp?.role_id ?? emp?.roleId;
+    const idx = ROLE_HIERARCHY.indexOf(Number(rid));
+    return idx === -1 ? 999 : idx;
 };
 
 // ─── Print helpers ────────────────────────────────────────────────────────────
@@ -169,13 +178,25 @@ ${(entry.edit_history||[]).length > 0 ? `<div style="font-size:9px;color:#555;ma
     setTimeout(() => w.print(), 400);
 }
 
-function printGlobalPlanilla(entries, period, branches) {
+const PLANILLA_STYLE = `
+  body { font-family:Arial,sans-serif; font-size:9px; margin:20px; }
+  h2,h3,h4 { text-align:center; margin:2px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th { background:#000; color:#fff; padding:3px 4px; font-size:8px; }
+  td { border:1px solid #ccc; padding:2px 4px; }
+  .right { text-align:right; }
+  .total { font-weight:bold; background:#eee; }
+  .page-break { page-break-after: always; }
+  @media print { body { margin:8px; } }
+`;
+
+function buildPlanillaTable(entries, branches) {
     const rows = entries.map(e => {
         const emp    = e.employee || {};
         const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
         return `<tr>
           <td>${emp.name || '—'}</td>
-          <td>${branch?.name || '—'}</td>
+          <td>${branch?.name || 'Otras áreas'}</td>
           <td class="right">${round2(e.days_worked)}</td>
           <td class="right">$${round2(e.ordinary_salary).toFixed(2)}</td>
           <td class="right">$${round2(e.subtotal_b).toFixed(2)}</td>
@@ -187,36 +208,77 @@ function printGlobalPlanilla(entries, period, branches) {
         </tr>`;
     }).join('');
     const totalNet = entries.reduce((s, e) => s + round2(e.net_pay), 0);
+    return { rows, totalNet };
+}
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-<style>
-  body { font-family:Arial,sans-serif; font-size:9px; margin:20px; }
-  h2,h3 { text-align:center; margin:2px; }
-  table { width:100%; border-collapse:collapse; margin-top:10px; }
-  th { background:#000; color:#fff; padding:3px 4px; font-size:8px; }
-  td { border:1px solid #ccc; padding:2px 4px; }
-  .right { text-align:right; }
-  .total { font-weight:bold; background:#eee; }
-  @media print { body { margin:8px; } }
-</style></head><body>
+function printGlobalPlanilla(entries, period, branches) {
+    const { rows, totalNet } = buildPlanillaTable(entries, branches);
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PLANILLA_STYLE}</style></head><body>
 <h2>PLANILLA DE PAGO — FARMACIA LA SALUD</h2>
 <h3>${periodLabel(period.start_date, period.end_date).toUpperCase()}</h3>
 <table>
-  <thead><tr>
-    <th>Empleado</th><th>Sucursal</th><th>Días</th>
-    <th>Sal. Ordinario</th><th>Extras/Otros</th>
-    <th>ISSS</th><th>AFP</th><th>Renta</th>
-    <th>Total Desc.</th><th>Líquido</th>
-  </tr></thead>
+  <thead><tr><th>Empleado</th><th>Sucursal</th><th>Días</th><th>Sal. Ordinario</th><th>Extras/Otros</th><th>ISSS</th><th>AFP</th><th>Renta</th><th>Total Desc.</th><th>Líquido</th></tr></thead>
   <tbody>${rows}</tbody>
-  <tfoot><tr class="total">
-    <td colspan="9" class="right">TOTAL A PAGAR:</td>
-    <td class="right">$${totalNet.toFixed(2)}</td>
-  </tr></tfoot>
+  <tfoot><tr class="total"><td colspan="9" class="right">TOTAL A PAGAR:</td><td class="right">$${totalNet.toFixed(2)}</td></tr></tfoot>
 </table>
 <br/><div style="font-size:10px;">Total en letras: ${amountInWords(totalNet)}</div>
 </body></html>`;
+    const w = window.open('', '_blank', 'width=1100,height=700');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 400);
+}
 
+function printByBranch(entries, period, branches) {
+    // Group by branch, preserving hierarchy order within each
+    const map = new Map();
+    for (const e of entries) {
+        const emp = e.employee || {};
+        const bid = String(emp.branchId || emp.branch_id || '__none__');
+        if (!map.has(bid)) map.set(bid, []);
+        map.get(bid).push(e);
+    }
+    const groups = [...map.entries()]
+        .map(([bid, grpEntries]) => ({
+            branch: branches.find(b => String(b.id) === bid),
+            entries: [...grpEntries].sort((a, b) => roleOrder(a.employee) - roleOrder(b.employee)),
+        }))
+        .sort((a, b) => (a.branch?.name || 'ZZZ').localeCompare(b.branch?.name || 'ZZZ'));
+
+    const periodTitle = periodLabel(period.start_date, period.end_date).toUpperCase();
+    const sections = groups.map(({ branch, entries: grp }, i) => {
+        const { rows, totalNet } = buildPlanillaTable(grp, branches);
+        const isLast = i === groups.length - 1;
+        return `
+<div class="${isLast ? '' : 'page-break'}">
+<h2>PLANILLA DE PAGO — FARMACIA LA SALUD</h2>
+<h3>${periodTitle}</h3>
+<h4>${(branch?.name || 'Otras áreas').toUpperCase()}</h4>
+<table>
+  <thead><tr><th>Empleado</th><th>Cargo</th><th>Días</th><th>Sal. Ordinario</th><th>Extras/Otros</th><th>ISSS</th><th>AFP</th><th>Renta</th><th>Total Desc.</th><th>Líquido</th></tr></thead>
+  <tbody>${grp.map(e => {
+      const emp = e.employee || {};
+      return `<tr>
+        <td>${emp.name || '—'}</td>
+        <td>${emp.role || '—'}</td>
+        <td class="right">${round2(e.days_worked)}</td>
+        <td class="right">$${round2(e.ordinary_salary).toFixed(2)}</td>
+        <td class="right">$${round2(e.subtotal_b).toFixed(2)}</td>
+        <td class="right">$${round2(e.isss_deduction).toFixed(2)}</td>
+        <td class="right">$${round2(e.afp_deduction).toFixed(2)}</td>
+        <td class="right">$${round2(e.renta_deduction).toFixed(2)}</td>
+        <td class="right">$${round2(e.total_deductions).toFixed(2)}</td>
+        <td class="right"><b>$${round2(e.net_pay).toFixed(2)}</b></td>
+      </tr>`;
+  }).join('')}</tbody>
+  <tfoot><tr class="total"><td colspan="9" class="right">TOTAL ${(branch?.name || 'Otras áreas').toUpperCase()}:</td><td class="right">$${totalNet.toFixed(2)}</td></tr></tfoot>
+</table>
+<br/><div style="font-size:10px;">Total en letras: ${amountInWords(totalNet)}</div>
+</div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${PLANILLA_STYLE}</style></head><body>${sections}</body></html>`;
     const w = window.open('', '_blank', 'width=1100,height=700');
     w.document.write(html);
     w.document.close();
@@ -272,8 +334,8 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-2xl" zClass="z-[200]">
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-6 border-b border-white/60">
                     <div>
                         <h3 className="text-[15px] font-black text-slate-800 uppercase tracking-tight">Editar Entrada</h3>
@@ -323,7 +385,6 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
                     {field('other_discounts', 'Otros Descuentos ($)')}
                     {field('salary_advance',  'Adelanto Salarial ($)')}
 
-                    {/* Preview */}
                     <div className="col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/80 mt-2">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Vista previa</p>
                         <div className="grid grid-cols-3 gap-2 text-center">
@@ -333,7 +394,6 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
                         </div>
                     </div>
 
-                    {/* Edit reason */}
                     <div className="col-span-2">
                         <InputLabel>Motivo de edición <span className="text-red-400">*</span></InputLabel>
                         <input type="text" value={reason} onChange={e => setReason(e.target.value)}
@@ -352,7 +412,7 @@ function EditEntryModal({ entry, onSave, onClose, user }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
 }
 
@@ -386,8 +446,8 @@ function NewPeriodModal({ onSave, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-md" zClass="z-[200]">
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem]">
                 <div className="flex items-center justify-between p-6 border-b border-white/60">
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-[#007AFF] flex items-center justify-center shadow-sm">
@@ -404,30 +464,19 @@ function NewPeriodModal({ onSave, onClose }) {
                             <p className="text-[11px] font-black text-[#007AFF]">{name}</p>
                         </div>
                     )}
-
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <InputLabel>Inicio del período</InputLabel>
-                            <LiquidDatePicker
-                                value={form.start_date}
-                                onChange={val => setForm(f => ({ ...f, start_date: val }))}
-                            />
+                            <LiquidDatePicker value={form.start_date} onChange={val => setForm(f => ({ ...f, start_date: val }))} />
                         </div>
                         <div>
                             <InputLabel>Fin del período</InputLabel>
-                            <LiquidDatePicker
-                                value={form.end_date}
-                                onChange={val => setForm(f => ({ ...f, end_date: val }))}
-                            />
+                            <LiquidDatePicker value={form.end_date} onChange={val => setForm(f => ({ ...f, end_date: val }))} />
                         </div>
                     </div>
-
                     <div>
                         <InputLabel>Fecha de pago</InputLabel>
-                        <LiquidDatePicker
-                            value={form.pay_date}
-                            onChange={val => setForm(f => ({ ...f, pay_date: val }))}
-                        />
+                        <LiquidDatePicker value={form.pay_date} onChange={val => setForm(f => ({ ...f, pay_date: val }))} />
                     </div>
                 </div>
 
@@ -440,15 +489,15 @@ function NewPeriodModal({ onSave, onClose }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
 }
 
 // ─── Confirm modal ────────────────────────────────────────────────────────────
 function ConfirmModal({ confirming, activePeriod, onConfirm, onClose }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] w-full max-w-sm p-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[200]">
+            <div className="backdrop-blur-[30px] bg-white/80 border border-white/80 shadow-[0_32px_80px_rgba(0,0,0,0.18)] rounded-[2.5rem] p-6 text-center">
                 <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle size={22} className="text-amber-600" strokeWidth={2} />
                 </div>
@@ -459,7 +508,7 @@ function ConfirmModal({ confirming, activePeriod, onConfirm, onClose }) {
                     <button onClick={onConfirm} className="flex-1 h-[48px] rounded-[1.25rem] bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-white text-[11px] font-black uppercase tracking-widest transition-all">Confirmar</button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
 }
 
@@ -475,11 +524,17 @@ function BranchGroupedTable({ entries, branches, isPaid, activePeriod, onPrint, 
             if (!map.has(key)) map.set(key, { branch, entries: [] });
             map.get(key).entries.push(e);
         }
-        return [...map.values()].sort((a, b) => {
-            const na = a.branch?.name || 'ZZZ';
-            const nb = b.branch?.name || 'ZZZ';
-            return na.localeCompare(nb);
-        });
+        return [...map.values()]
+            .sort((a, b) => {
+                // "Otras áreas" always last
+                if (!a.branch) return 1;
+                if (!b.branch) return -1;
+                return a.branch.name.localeCompare(b.branch.name);
+            })
+            .map(g => ({
+                ...g,
+                entries: [...g.entries].sort((a, b) => roleOrder(a.employee) - roleOrder(b.employee)),
+            }));
     }, [entries, branches]);
 
     const COLS = ['Empleado', 'Días', 'Sal. Ord.', 'Extras', 'ISSS', 'AFP', 'Renta', 'Desc. Total', 'Líquido', ''];
@@ -501,7 +556,7 @@ function BranchGroupedTable({ entries, branches, isPaid, activePeriod, onPrint, 
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
-                                    <p className="text-[13px] font-black text-slate-800 tracking-tight">{branch?.name || 'Sin sucursal'}</p>
+                                    <p className="text-[13px] font-black text-slate-800 tracking-tight">{branch?.name || 'Otras áreas'}</p>
                                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{groupEntries.length} empleado{groupEntries.length !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
@@ -858,9 +913,13 @@ const PayrollView = () => {
                                             )}
                                             {activePeriod && payrollEntries.length > 0 && (
                                                 <>
+                                                    <button onClick={() => printByBranch(filteredEntries, activePeriod, branches)}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
+                                                        <Printer size={12} strokeWidth={2.5} /> Por Sucursal
+                                                    </button>
                                                     <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">
-                                                        <Printer size={12} strokeWidth={2.5} /> Planilla
+                                                        <Printer size={12} strokeWidth={2.5} /> Planilla Total
                                                     </button>
                                                     <button onClick={downloadCSV}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/60 border border-white/80 text-[10px] font-black text-slate-600 hover:bg-white transition-all shadow-sm">

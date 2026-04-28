@@ -5,6 +5,7 @@ import { Loader2, Settings, Monitor } from "lucide-react";
 // Contextos
 import { useAuth } from "./context/AuthContext";
 import { useStaffStore as useStaff } from "./store/staffStore";
+import { useToastStore } from "./store/toastStore";
 import { isMobileOrApp } from './utils/helpers';
 import AlertModal from "./components/common/AlertModal";
 
@@ -142,6 +143,8 @@ function MainApp() {
     const updateBranch = useStaff((state) => state.updateBranch);
     const fetchBoot = useStaff((state) => state.fetchBoot);
     const fetchKioskBoot = useStaff((state) => state.fetchKioskBoot);
+    const createPayrollPeriod = useStaff((state) => state.createPayrollPeriod);
+    const updatePayrollEntry = useStaff((state) => state.updatePayrollEntry);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -264,6 +267,35 @@ function MainApp() {
             });
         } else if (type === "vacationRecall") {
             setFormData({ employee: data?.employee || data || {} });
+        } else if (type === "newPayrollPeriod") {
+            const today = new Date();
+            const day = today.getDate(), year = today.getFullYear(), month = today.getMonth();
+            const start_date = day <= 15
+                ? `${year}-${String(month+1).padStart(2,'0')}-01`
+                : `${year}-${String(month+1).padStart(2,'0')}-16`;
+            const end_date = day <= 15
+                ? `${year}-${String(month+1).padStart(2,'0')}-15`
+                : new Date(year, month+1, 0).toISOString().split('T')[0];
+            setFormData({ start_date, end_date, pay_date: '', ...(data || {}) });
+        } else if (type === "editPayrollEntry") {
+            const entry = data || {};
+            setFormData({
+                _entry: entry,
+                days_worked:           entry.days_worked,
+                night_hours_ordinary:  entry.night_hours_ordinary,
+                night_hours_extra:     entry.night_hours_extra,
+                extra_hours_diurnal:   entry.extra_hours_diurnal,
+                extra_hours_nocturnal: entry.extra_hours_nocturnal,
+                holiday_surcharge:     entry.holiday_surcharge,
+                bonifications:         entry.bonifications,
+                vacation_bonus:        entry.vacation_bonus,
+                viaticos:              entry.viaticos,
+                viaticos_detail:       entry.viaticos_detail || '',
+                order_discount:        entry.order_discount,
+                other_discounts:       entry.other_discounts,
+                salary_advance:        entry.salary_advance,
+                _reason:               '',
+            });
         } else {
             setFormData(data || { branchId: 1, hireDate: new Date().toISOString().split("T")[0] });
         }
@@ -303,6 +335,25 @@ function MainApp() {
                         showAlert("¡Documento Subido!", "Constancia médica adjuntada con éxito.", "success");
                     }
                     break;
+                case "newPayrollPeriod": {
+                    const { showToast } = useToastStore.getState();
+                    await createPayrollPeriod({ ...dataToSave, period_type: 'QUINCENA' });
+                    showToast('Período creado', 'La nueva quincena fue creada.', 'success');
+                    break;
+                }
+                case "editPayrollEntry": {
+                    const { showToast } = useToastStore.getState();
+                    if (!dataToSave._reason?.trim()) {
+                        showToast('Error', 'Escribe el motivo de la edición.', 'error');
+                        return;
+                    }
+                    const entryId = dataToSave._entry?.id;
+                    const by = user?.name || user?.email || 'Admin';
+                    const ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
+                    if (ok) showToast('Guardado', 'Entrada actualizada.', 'success');
+                    else showToast('Error', 'No se pudo guardar.', 'error');
+                    break;
+                }
             }
             setModalOpen(false);
             setFormData({});
@@ -412,7 +463,7 @@ function MainApp() {
                                     <Route path="schedules" element={<PermissionGuard moduleKey="schedules"><SchedulesView openModal={openModal} setView={setView} /></PermissionGuard>} />
                                     <Route path="requests" element={<PermissionGuard moduleKey="requests"><RequestsView /></PermissionGuard>} />
                                     <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
-                                    <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView /></PermissionGuard>} />
+                                    <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}

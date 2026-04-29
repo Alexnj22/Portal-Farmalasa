@@ -298,18 +298,29 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
 
-    const filteredRows = useMemo(() => {
-        if (!searchTerm) return rows;
+    const { knownRows, unknownByBranch } = useMemo(() => {
         const s = searchTerm.toLowerCase();
-        return rows.filter(r => {
+        const known = [];
+        const unknownMap = new Map(); // branch_id → rows[]
+        for (const r of rows) {
             const emp = empMap.get(`${r.branch_id}::${r.cod_vendedor}`);
-            const name = emp ? `${emp.first_names} ${emp.last_names}`.toLowerCase() : '';
-            return name.includes(s) || r.cod_vendedor?.toLowerCase().includes(s);
-        });
+            if (emp) {
+                if (!s || `${emp.first_names} ${emp.last_names}`.toLowerCase().includes(s) || r.cod_vendedor?.toLowerCase().includes(s)) {
+                    known.push({ ...r, emp });
+                }
+            } else {
+                if (!s || r.cod_vendedor?.toLowerCase().includes(s) || getBranchName(r.branch_id).toLowerCase().includes(s)) {
+                    const list = unknownMap.get(r.branch_id) || [];
+                    list.push(r);
+                    unknownMap.set(r.branch_id, list);
+                }
+            }
+        }
+        return { knownRows: known, unknownByBranch: unknownMap };
     }, [rows, searchTerm, empMap]);
 
-    const totalVentas = filteredRows.reduce((s, r) => s + r.total, 0);
-    const totalFacturas = filteredRows.reduce((s, r) => s + r.count, 0);
+    const totalVentas = rows.reduce((s, r) => s + r.total, 0);
+    const totalFacturas = rows.reduce((s, r) => s + r.count, 0);
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -330,7 +341,10 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
             <div className="grid grid-cols-3 gap-3">
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                     <p className="text-xs text-blue-500 font-medium mb-1">Vendedores activos</p>
-                    <p className="text-2xl font-bold text-blue-700">{rows.length}</p>
+                    <p className="text-2xl font-bold text-blue-700">{knownRows.length}</p>
+                    {unknownByBranch.size > 0 && (
+                        <p className="text-[10px] text-orange-500 font-semibold mt-0.5">{[...unknownByBranch.values()].reduce((s, a) => s + a.length, 0)} cód. incorrecto</p>
+                    )}
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                     <p className="text-xs text-emerald-500 font-medium mb-1">Total ventas</p>
@@ -359,9 +373,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredRows.map((r, i) => {
+                            {knownRows.map((r, i) => {
                                 const key = `${r.branch_id}::${r.cod_vendedor}`;
-                                const emp = empMap.get(key);
                                 const isOpen = expanded === key;
                                 const ticket = r.count > 0 ? r.total / r.count : 0;
                                 const pct = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
@@ -380,17 +393,9 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2.5">
-                                                    {emp ? (
-                                                        <LiquidAvatar employee={emp} size={32} />
-                                                    ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                                                            <Users size={14} className="text-slate-400" />
-                                                        </div>
-                                                    )}
+                                                    <LiquidAvatar employee={r.emp} size={32} />
                                                     <div>
-                                                        <p className="font-medium text-slate-800 text-sm">
-                                                            {emp ? `${emp.first_names} ${emp.last_names}` : `Vendedor ${r.cod_vendedor}`}
-                                                        </p>
+                                                        <p className="font-medium text-slate-800 text-sm">{r.emp.first_names} {r.emp.last_names}</p>
                                                         <p className="text-xs text-slate-400">Cód. {r.cod_vendedor}</p>
                                                     </div>
                                                 </div>
@@ -435,6 +440,83 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                     </React.Fragment>
                                 );
                             })}
+
+                            {/* Unknown / incorrect codes — grouped by branch */}
+                            {unknownByBranch.size > 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-2 bg-orange-50 border-t-2 border-orange-200">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Cód. Incorrecto — no encontrado en empleados</span>
+                                    </td>
+                                </tr>
+                            )}
+                            {[...unknownByBranch.entries()].map(([branchId, bRows]) => (
+                                <React.Fragment key={`unknown-${branchId}`}>
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-1.5 bg-orange-50/60 border-t border-orange-100">
+                                            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">{getBranchName(branchId)}</span>
+                                        </td>
+                                    </tr>
+                                    {bRows.map(r => {
+                                        const key = `${r.branch_id}::${r.cod_vendedor}`;
+                                        const isOpen = expanded === key;
+                                        const ticket = r.count > 0 ? r.total / r.count : 0;
+                                        return (
+                                            <React.Fragment key={key}>
+                                                <tr
+                                                    className="border-t border-orange-100 hover:bg-orange-50/40 transition-colors cursor-pointer"
+                                                    onClick={() => toggleExpand(key, r.branch_id, r.cod_vendedor)}
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <span className="text-[10px] font-bold text-orange-300">—</span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                                                <Users size={14} className="text-orange-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-medium text-orange-700 text-sm">Cód. Incorrecto</p>
+                                                                <p className="text-xs text-orange-400">Cód. {r.cod_vendedor}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">—</td>
+                                                    <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(r.count)}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="font-bold text-slate-600">{fmt(r.total)}</span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticket)}</td>
+                                                    <td className="px-4 py-3">
+                                                        {isOpen ? <ChevronUp size={14} className="text-slate-300" /> : <ChevronDown size={14} className="text-slate-300" />}
+                                                    </td>
+                                                </tr>
+                                                {isOpen && (
+                                                    <tr className="border-t border-orange-100">
+                                                        <td colSpan={7} className="px-4 py-3 bg-orange-50/40">
+                                                            {loadingExpand ? (
+                                                                <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
+                                                            ) : (
+                                                                <div>
+                                                                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Ventas diarias</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {expandedData.map(d => (
+                                                                            <div key={d.fecha} className="bg-white border border-orange-200 rounded-xl px-3 py-2 text-xs">
+                                                                                <p className="text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                                                                <p className="font-bold text-slate-800">{fmt(d.total)}</p>
+                                                                                <p className="text-slate-400">{d.count} fact.</p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </React.Fragment>
+                            ))}
                         </tbody>
                     </table>
                 </div>

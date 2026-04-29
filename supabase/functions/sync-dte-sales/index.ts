@@ -189,9 +189,9 @@ Deno.serve(async (req) => {
           }
         }
 
-        // 4. Upsert product catalog
+        // 4. Insert new products only — don't overwrite catalog data from sync-products
         if (productMap.size > 0) {
-          await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id' });
+          await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: true });
         }
 
         // 4b. Upsert customers via RPC and build name→id map

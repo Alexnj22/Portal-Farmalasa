@@ -105,6 +105,12 @@ function TabAnulaciones({ branches, filterBranch, searchTerm, currentUser }) {
         }).select('id, invoice_id, comment, resolved_by, resolved_at, sales_invoices(correlativo, branch_id, tipo_documento, cliente, fecha, total, erp_invoice_id)');
         setResolvedIds(prev => new Set([...prev, invoiceId]));
         if (data?.[0]) setResolved(prev => [data[0], ...prev]);
+        const inv = data?.[0]?.sales_invoices;
+        useStaff.getState().appendAuditLog('SOLVENTAR_ANULACION', String(invoiceId), {
+            correlativo: inv?.correlativo,
+            branch_id: inv?.branch_id,
+            comment: comment.trim() || null,
+        });
         setSolvingId(null);
         setComment('');
         setSaving(false);

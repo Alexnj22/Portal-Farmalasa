@@ -17,9 +17,10 @@ const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFract
 const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 
 function timeAgo(fecha, hora) {
-    const dt = new Date(`${fecha}T${hora}`);
-    const now = new Date(Date.now() - 6 * 3600_000); // CST
-    const mins = Math.floor((now - dt) / 60000);
+    const horaStr = hora?.length === 5 ? `${hora}:00` : hora;
+    const dt = new Date(`${fecha}T${horaStr}-06:00`); // hora almacenada en CST
+    const mins = Math.floor((Date.now() - dt.getTime()) / 60000);
+    if (mins < 0) return '—';
     if (mins < 60) return `${mins}m`;
     if (mins < 1440) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
     return `${Math.floor(mins / 1440)}d`;

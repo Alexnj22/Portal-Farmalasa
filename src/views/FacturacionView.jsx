@@ -13,7 +13,8 @@ import LiquidSelect from '../components/common/LiquidSelect';
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
-const TIPO_PAGO_ORDER = ['tarjeta', 'credito', 'transferencia', 'cheque', 'bitcoin'];
+const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
+const CREDIT_TIPOS    = ['credito'];
 const PAGE_SIZE = 10;
 
 const TIPO_PAGO_COLORS = {
@@ -1036,7 +1037,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
-                    {TIPO_PAGO_ORDER.filter(t => byTipo[t]?.length > 0).map(tipo => {
+                    {/* ── Pagos inmediatos ── */}
+                    {IMMEDIATE_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
                         const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
                         const tipoRows = byTipo[tipo] || [];
                         const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
@@ -1130,6 +1132,105 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                             </div>
                         );
                     })}
+
+                    {/* ── Ventas a Crédito ── */}
+                    {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).length > 0 && (
+                        <>
+                            <div className="flex items-center gap-3 pt-2">
+                                <div className="flex-1 h-px bg-black/[0.07]" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Ventas a crédito</span>
+                                <div className="flex-1 h-px bg-black/[0.07]" />
+                            </div>
+                            {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
+                                const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
+                                const tipoRows = byTipo[tipo] || [];
+                                const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
+                                const tipoPg = getPendingPage(tipo);
+                                const tipoTotalPages = Math.ceil(tipoRows.length / PAGE_SIZE);
+                                const tipoPageRows = tipoRows.slice((tipoPg - 1) * PAGE_SIZE, tipoPg * PAGE_SIZE);
+                                return (
+                                    <div key={tipo} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${theme.card}`}>
+                                        <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
+                                            <div className="flex items-center gap-3">
+                                                <CreditCard size={20} className="text-white/80 shrink-0" />
+                                                <h3 className="text-white font-black text-[15px] uppercase tracking-widest">
+                                                    {TIPO_PAGO_LABELS[tipo] || tipo}
+                                                </h3>
+                                                <span className="bg-white/25 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                                    {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest">Total pendiente</div>
+                                                <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
+                                            </div>
+                                        </div>
+                                        <table className="w-full text-left border-collapse">
+                                            <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
+                                            <tbody className="divide-y divide-black/[0.03]">
+                                                {tipoPageRows.map(r => {
+                                                    const isConfirming = confirmingId === r.id;
+                                                    return (
+                                                        <React.Fragment key={r.id}>
+                                                            <tr className={`transition-colors duration-200 group border-l-4 border-transparent ${theme.rowHover}`}>
+                                                                <td className="p-5 pl-6">
+                                                                    <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
+                                                                    <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
+                                                                </td>
+                                                                <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
+                                                                <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[160px] truncate">{r.cliente || '—'}</td>
+                                                                <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{r.fecha}</td>
+                                                                <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
+                                                                <td className="p-5 pr-6 text-right">
+                                                                    <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                                        className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                        <Check size={13} strokeWidth={2.5} /> Confirmar
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                            {isConfirming && (
+                                                                <tr>
+                                                                    <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
+                                                                        <div className="flex items-start gap-3 max-w-3xl">
+                                                                            <div className="flex-1 space-y-2">
+                                                                                <textarea
+                                                                                    className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                    rows={2} autoFocus
+                                                                                    placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
+                                                                                    value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
+                                                                                />
+                                                                                <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+                                                                                    <Paperclip size={14} />
+                                                                                    {confirmFile ? <span className="text-slate-700 font-bold">{confirmFile.name}</span> : <span>Adjuntar documento de crédito</span>}
+                                                                                    <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+                                                                                        onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
+                                                                                </label>
+                                                                            </div>
+                                                                            <div className="flex flex-col gap-2 shrink-0">
+                                                                                <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
+                                                                                    className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
+                                                                                    {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                                                                                </button>
+                                                                                <button onClick={() => setConfirmingId(null)}
+                                                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-all hover:-translate-y-0.5">
+                                                                                    <X size={12} /> Cancelar
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                        <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
+                                    </div>
+                                );
+                            })}
+                        </>
+                    )}
                 </div>
             )}
 

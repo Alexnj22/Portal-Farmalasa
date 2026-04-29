@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -14,6 +14,7 @@ const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
 const TIPO_PAGO_ORDER = ['tarjeta', 'credito', 'transferencia', 'cheque', 'bitcoin'];
+const PAGE_SIZE = 10;
 
 const TIPO_PAGO_COLORS = {
     tarjeta:       'bg-blue-50 text-blue-700 border-blue-200',
@@ -31,6 +32,9 @@ const TIPO_PAGO_HOVER = {
     cheque:        'hover:border-l-teal-400/50',
 };
 
+// SV time
+function svNow() { return new Date(Date.now() - 6 * 3600_000); }
+
 function timeAgo(fecha, hora) {
     const horaStr = hora?.length === 5 ? `${hora}:00` : hora;
     const dt = new Date(`${fecha}T${horaStr}-06:00`);
@@ -43,7 +47,7 @@ function timeAgo(fecha, hora) {
 
 function monthOptions() {
     const opts = [];
-    const now = new Date(Date.now() - 6 * 3600_000);
+    const now = svNow();
     for (let i = 0; i < 12; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const y = d.getFullYear(); const m = d.getMonth() + 1;
@@ -53,6 +57,28 @@ function monthOptions() {
         opts.push({ value: `${y}-${pad(m)}-01|${y}-${pad(m)}-${pad(last)}`, label: label.charAt(0).toUpperCase() + label.slice(1) });
     }
     return opts;
+}
+
+// ─── Sort hook ────────────────────────────────────────────────────────────────
+function useSortable(defaultKey, defaultDir = 'asc') {
+    const [sortKey, setSortKey] = useState(defaultKey);
+    const [sortDir, setSortDir] = useState(defaultDir);
+    const toggle = (key) => {
+        if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortKey(key); setSortDir('asc'); }
+    };
+    const sortFn = (arr, accessors) => {
+        const fn = accessors[sortKey];
+        if (!fn) return arr;
+        return [...arr].sort((a, b) => {
+            const av = fn(a), bv = fn(b);
+            if (av == null && bv == null) return 0;
+            if (av == null) return 1; if (bv == null) return -1;
+            const cmp = typeof av === 'string' ? av.localeCompare(bv, 'es') : av - bv;
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+    };
+    return { sortKey, sortDir, toggle, sortFn };
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
@@ -71,7 +97,7 @@ function EmptyState({ icon: Icon, iconClass, glowClass, title, subtitle }) {
     );
 }
 
-// ─── Solve Row (shared expand pattern) ───────────────────────────────────────
+// ─── Solve Row ────────────────────────────────────────────────────────────────
 function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, placeholder }) {
     return (
         <tr>
@@ -100,18 +126,68 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
     );
 }
 
-// ─── Audit Table Wrappers ─────────────────────────────────────────────────────
-function AuditThead({ cols, firstPl = 'pl-8', lastPr = 'pr-8' }) {
+// ─── Sortable Table Header ────────────────────────────────────────────────────
+// cols: array of string (no sort) or { label, key } (sortable)
+function AuditThead({ cols, sortKey, sortDir, onSort, firstPl = 'pl-8', lastPr = 'pr-8' }) {
     return (
         <thead>
             <tr className="bg-black/[0.02] border-b border-black/[0.04]">
-                {cols.map((c, i) => (
-                    <th key={c} className={`p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap ${i === 0 ? firstPl : ''} ${i === cols.length - 1 ? lastPr : ''}`}>
-                        {c}
-                    </th>
-                ))}
+                {cols.map((col, i) => {
+                    const label = typeof col === 'string' ? col : col.label;
+                    const key   = typeof col === 'string' ? null : col.key;
+                    const active = key && sortKey === key;
+                    return (
+                        <th key={label}
+                            onClick={key ? () => onSort?.(key) : undefined}
+                            className={`p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap
+                                ${i === 0 ? firstPl : ''} ${i === cols.length - 1 ? lastPr : ''}
+                                ${key ? 'cursor-pointer hover:text-slate-700 select-none' : ''}`}>
+                            <span className="inline-flex items-center gap-1">
+                                {label}
+                                {key && (active
+                                    ? (sortDir === 'asc'
+                                        ? <ChevronUp size={10} className="text-[#007AFF]" />
+                                        : <ChevronDown size={10} className="text-[#007AFF]" />)
+                                    : <ChevronUp size={10} className="opacity-20" />
+                                )}
+                            </span>
+                        </th>
+                    );
+                })}
             </tr>
         </thead>
+    );
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+function Pagination({ page, total, onChange }) {
+    if (total <= 1) return null;
+    const pages = [];
+    let start = Math.max(1, page - 2);
+    let end   = Math.min(total, start + 4);
+    if (end - start < 4) start = Math.max(1, end - 4);
+    for (let p = start; p <= end; p++) pages.push(p);
+    return (
+        <div className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-black/[0.04]">
+            <button onClick={() => onChange(page - 1)} disabled={page === 1}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/[0.05] disabled:opacity-30 transition-all">
+                <ChevronLeft size={15} />
+            </button>
+            {pages.map(p => (
+                <button key={p} onClick={() => onChange(p)}
+                    className={`w-8 h-8 rounded-full text-[12px] font-bold transition-all ${
+                        page === p
+                            ? 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.4)]'
+                            : 'text-slate-500 hover:bg-black/[0.05]'
+                    }`}>
+                    {p}
+                </button>
+            ))}
+            <button onClick={() => onChange(page + 1)} disabled={page === total}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/[0.05] disabled:opacity-30 transition-all">
+                <ChevronRight size={15} />
+            </button>
+        </div>
     );
 }
 
@@ -126,6 +202,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
     const [showHistorial, setShowHistorial] = useState(false);
+    const [page, setPage] = useState(1);
+    const [historialPage, setHistorialPage] = useState(1);
+    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -187,28 +266,55 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
+    const SORT_ACCESSORS = {
+        tipo:      r => r.tipo_documento,
+        correlativo: r => r.correlativo,
+        sucursal:  r => getBranch(r.branch_id),
+        cliente:   r => r.cliente,
+        fecha:     r => r.fecha + (r.hora || ''),
+        total:     r => parseFloat(r.total || 0),
+    };
+
     const filtered = useMemo(() => {
         const active = rows.filter(r => !resolvedIds.has(r.id));
-        if (!searchTerm) return active;
-        const s = searchTerm.toLowerCase();
-        return active.filter(r =>
-            r.correlativo?.toLowerCase().includes(s) ||
-            r.cliente?.toLowerCase().includes(s) ||
-            r.codigo_generacion?.toLowerCase().includes(s)
-        );
-    }, [rows, resolvedIds, searchTerm]);
+        let list = !searchTerm ? active : active.filter(r => {
+            const s = searchTerm.toLowerCase();
+            return r.correlativo?.toLowerCase().includes(s) ||
+                r.cliente?.toLowerCase().includes(s) ||
+                r.codigo_generacion?.toLowerCase().includes(s);
+        });
+        const ccf = list.filter(r => r.tipo_documento === 'CCF');
+        const rest = list.filter(r => r.tipo_documento !== 'CCF');
+        return [...sortFn(ccf, SORT_ACCESSORS), ...sortFn(rest, SORT_ACCESSORS)];
+    }, [rows, resolvedIds, searchTerm, sortKey, sortDir]);
 
-    const ccf = filtered.filter(r => r.tipo_documento === 'CCF');
-    const cof = filtered.filter(r => r.tipo_documento !== 'CCF');
+    useEffect(() => { setPage(1); }, [filtered.length, searchTerm]);
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const historialTotalPages = Math.ceil(resolved.length / PAGE_SIZE);
+    const historialPageRows = resolved.slice((historialPage - 1) * PAGE_SIZE, historialPage * PAGE_SIZE);
+
+    const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
+
+    const COLS = [
+        { label: 'Tipo / Correlativo', key: 'tipo' },
+        { label: 'Sucursal', key: 'sucursal' },
+        { label: 'Cliente', key: 'cliente' },
+        { label: 'Fecha', key: 'fecha' },
+        { label: 'Total', key: 'total' },
+        'Tiempo',
+        '',
+    ];
 
     return (
         <div>
             <div className="px-5 pl-8 py-4 bg-white/40 border-b border-black/[0.04] flex items-center justify-between">
                 <div className="flex items-center gap-4 text-[11px] font-bold uppercase text-slate-500 tracking-widest">
                     <span>{filtered.length} pendientes</span>
-                    {ccf.length > 0 && (
+                    {ccfCount > 0 && (
                         <span className="flex items-center gap-1.5 text-red-600">
-                            <AlertTriangle size={11} />{ccf.length} CCF urgente{ccf.length > 1 ? 's' : ''}
+                            <AlertTriangle size={11} />{ccfCount} CCF urgente{ccfCount > 1 ? 's' : ''}
                         </span>
                     )}
                 </div>
@@ -225,9 +331,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <AuditThead cols={['Tipo / Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', 'Tiempo', '']} />
+                        <AuditThead cols={COLS} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                         <tbody className="divide-y divide-black/[0.03]">
-                            {[...ccf, ...cof].map(r => {
+                            {pageRows.map(r => {
                                 const isUrgent = r.tipo_documento === 'CCF';
                                 const isSolving = solvingId === r.id;
                                 return (
@@ -265,6 +371,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                             })}
                         </tbody>
                     </table>
+                    <Pagination page={page} total={totalPages} onChange={setPage} />
                 </div>
             )}
 
@@ -280,7 +387,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                             <table className="w-full text-left border-collapse">
                                 <AuditThead cols={['Tipo / Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', 'Solventado por', 'Cuándo', 'Comentario']} />
                                 <tbody className="divide-y divide-black/[0.03]">
-                                    {resolved.map(r => {
+                                    {historialPageRows.map(r => {
                                         const inv = r.invoice;
                                         const dt = r.resolved_at ? new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
                                         return (
@@ -301,6 +408,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                     })}
                                 </tbody>
                             </table>
+                            <Pagination page={historialPage} total={historialTotalPages} onChange={setHistorialPage} />
                         </div>
                     )}
                 </div>
@@ -310,10 +418,22 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 }
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
-function TabPendienteMH({ branches, filterBranch, searchTerm }) {
+function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
+    const [solvingId, setSolvingId] = useState(null);
+    const [comment, setComment] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [page, setPage] = useState(1);
+    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
+
+    // Month-end alert
+    const now = svNow();
+    const todayStr = now.toISOString().slice(0, 10);
+    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+    const monthEndWarning = daysLeft <= 5;
+    const monthEndCritical = daysLeft <= 2;
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -337,18 +457,86 @@ function TabPendienteMH({ branches, filterBranch, searchTerm }) {
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
+    const handleSolve = async (invoiceId) => {
+        setSaving(true);
+        const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
+        await supabase.from('sales_invoices').update({ recibido_mh: true }).eq('id', invoiceId);
+        useStaff.getState().appendAuditLog('SOLVENTAR_PENDIENTE_MH', String(invoiceId), {
+            correlativo: rows.find(r => r.id === invoiceId)?.correlativo,
+            comment: comment.trim() || null,
+            resolved_by: resolvedBy,
+        });
+        setRows(prev => prev.filter(r => r.id !== invoiceId));
+        setSolvingId(null); setComment(''); setSaving(false);
+    };
+
+    const SORT_ACCESSORS = {
+        tipo:       r => r.tipo_documento,
+        correlativo: r => r.correlativo,
+        sucursal:   r => getBranch(r.branch_id),
+        cliente:    r => r.cliente,
+        fecha:      r => r.fecha + (r.hora || ''),
+        total:      r => parseFloat(r.total || 0),
+    };
+
     const filtered = useMemo(() => {
-        if (!searchTerm) return rows;
-        const s = searchTerm.toLowerCase();
-        return rows.filter(r =>
-            r.correlativo?.toLowerCase().includes(s) ||
-            r.cliente?.toLowerCase().includes(s) ||
-            r.erp_invoice_id?.toString().includes(s)
-        );
-    }, [rows, searchTerm]);
+        let list = rows;
+        if (searchTerm) {
+            const s = searchTerm.toLowerCase();
+            list = list.filter(r =>
+                r.correlativo?.toLowerCase().includes(s) ||
+                r.cliente?.toLowerCase().includes(s) ||
+                r.erp_invoice_id?.toString().includes(s)
+            );
+        }
+        return sortFn(list, SORT_ACCESSORS);
+    }, [rows, searchTerm, sortKey, sortDir]);
+
+    useEffect(() => { setPage(1); }, [filtered.length, searchTerm]);
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
+
+    const COLS = [
+        { label: 'Tipo / Correlativo', key: 'tipo' },
+        { label: 'Sucursal', key: 'sucursal' },
+        { label: 'Cliente', key: 'cliente' },
+        { label: 'Fecha', key: 'fecha' },
+        { label: 'Total', key: 'total' },
+        'Tiempo en espera',
+        '',
+    ];
 
     return (
         <div>
+            {/* Month-end alert banner */}
+            {monthEndWarning && (
+                <div className={`px-5 pl-8 py-3 flex items-center gap-3 border-b ${
+                    monthEndCritical
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-amber-50 border-amber-200'
+                }`}>
+                    <AlertTriangle size={15} className={monthEndCritical ? 'text-red-500 shrink-0' : 'text-amber-500 shrink-0'} />
+                    <span className={`text-[12px] font-bold ${monthEndCritical ? 'text-red-700' : 'text-amber-700'}`}>
+                        {monthEndCritical
+                            ? `Quedan solo ${daysLeft} día${daysLeft !== 1 ? 's' : ''} del mes — los documentos pendientes deben enviarse a MH antes de que termine el mes.`
+                            : `Quedan ${daysLeft} días del mes — recuerda enviar todos los documentos a MH antes que acabe el mes.`
+                        }
+                    </span>
+                </div>
+            )}
+
+            {/* CCF alert banner */}
+            {ccfCount > 0 && (
+                <div className="px-5 pl-8 py-3 flex items-center gap-3 border-b bg-red-50 border-red-200">
+                    <AlertTriangle size={15} className="text-red-500 shrink-0" />
+                    <span className="text-[12px] font-bold text-red-700">
+                        {ccfCount} CCF pendiente{ccfCount > 1 ? 's' : ''} — los CCF deben enviarse a MH el mismo día de emisión.
+                    </span>
+                </div>
+            )}
+
             <div className="px-5 pl-8 py-4 bg-white/40 border-b border-black/[0.04] flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase text-violet-600 tracking-widest">{filtered.length} pendientes MH</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -364,31 +552,52 @@ function TabPendienteMH({ branches, filterBranch, searchTerm }) {
             ) : (
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <AuditThead cols={['Tipo / Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', 'Tiempo en espera']} />
+                        <AuditThead cols={COLS} sortKey={sortKey} sortDir={sortDir} onSort={toggle} />
                         <tbody className="divide-y divide-black/[0.03]">
-                            {filtered.map(r => {
-                                const isUrgent = r.tipo_documento === 'CCF';
+                            {pageRows.map(r => {
+                                const isCCF = r.tipo_documento === 'CCF';
+                                const isLate = isCCF && r.fecha !== todayStr;
+                                const isSolving = solvingId === r.id;
                                 return (
-                                    <tr key={r.id} className="hover:bg-white/70 transition-colors duration-200 group border-l-4 border-transparent hover:border-l-violet-400/50">
-                                        <td className="p-5 pl-8">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isUrgent ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                                <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pendiente MH</span>
-                                            </div>
-                                            <div className="font-mono text-[12px] text-slate-700 mt-1 group-hover:text-violet-600 transition-colors">{r.correlativo}</div>
-                                        </td>
-                                        <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
-                                        <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[180px] truncate">{r.cliente || '—'}</td>
-                                        <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{r.fecha}</td>
-                                        <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
-                                        <td className="p-5">
-                                            <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-bold bg-violet-50 text-violet-600">{timeAgo(r.fecha, r.hora)}</span>
-                                        </td>
-                                    </tr>
+                                    <React.Fragment key={r.id}>
+                                        <tr className={`hover:bg-white/70 transition-colors duration-200 group border-l-4 border-transparent ${isCCF ? 'hover:border-l-red-400/50' : 'hover:border-l-violet-400/50'}`}>
+                                            <td className="p-5 pl-8">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
+                                                    {isCCF && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 text-red-700 border border-red-300">
+                                                            <AlertTriangle size={9} /> {isLate ? 'Vencido' : 'Mismo día'}
+                                                        </span>
+                                                    )}
+                                                    <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pendiente MH</span>
+                                                </div>
+                                                <div className={`font-mono text-[12px] mt-1 transition-colors ${isCCF ? 'text-red-700 group-hover:text-red-500' : 'text-slate-700 group-hover:text-violet-600'}`}>{r.correlativo}</div>
+                                            </td>
+                                            <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
+                                            <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[180px] truncate">{r.cliente || '—'}</td>
+                                            <td className={`p-5 text-[13px] whitespace-nowrap ${isLate ? 'text-red-600 font-bold' : 'text-slate-500'}`}>{r.fecha}</td>
+                                            <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
+                                            <td className="p-5">
+                                                <span className={`inline-flex px-2 py-1 rounded-lg text-[11px] font-bold ${isCCF ? 'bg-red-50 text-red-600' : 'bg-violet-50 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
+                                            </td>
+                                            <td className="p-5 pr-8 text-right">
+                                                <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
+                                                    className="bg-white text-emerald-600 border border-slate-200 px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-emerald-400 hover:bg-emerald-50 transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto">
+                                                    <Check size={13} strokeWidth={2.5} /> Solventar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {isSolving && (
+                                            <SolveRow colSpan={7} comment={comment} setComment={setComment}
+                                                onConfirm={() => handleSolve(r.id)} onCancel={() => setSolvingId(null)}
+                                                saving={saving} placeholder="Comentario opcional — ej: enviado manualmente al MH, referencia…" />
+                                        )}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>
                     </table>
+                    <Pagination page={page} total={totalPages} onChange={setPage} />
                 </div>
             )}
         </div>
@@ -433,12 +642,13 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
     );
 
     const pendingGaps = useMemo(() => gaps.filter(g => !resolvedGapKeys.has(gapKey(g))), [gaps, resolvedGapKeys]);
-    const resolvedGaps = useMemo(() => {
-        return gapResolutions.map(r => ({
+    const resolvedGaps = useMemo(() =>
+        gapResolutions.map(r => ({
             ...r,
             gap: gaps.find(g => g.branch_id === r.branch_id && g.tipo_documento === r.tipo_documento && g.gap_from === r.gap_from && g.gap_to === r.gap_to) || null,
-        }));
-    }, [gapResolutions, gaps]);
+        })),
+        [gapResolutions, gaps]
+    );
 
     const handleSolveGap = async (gap) => {
         setSaving(true);
@@ -457,7 +667,6 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
     return (
         <div className="p-5 md:p-6 space-y-6">
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
                 <div className={`border rounded-2xl p-4 ${pendingGaps.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
                     <p className={`text-xs font-medium mb-1 ${pendingGaps.length > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>Saltos pendientes</p>
@@ -469,7 +678,6 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                 </div>
             </div>
 
-            {/* Saltos pendientes */}
             <div>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Saltos en correlativos</p>
                 {pendingGaps.length === 0 ? (
@@ -542,7 +750,6 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                 )}
             </div>
 
-            {/* Campos nulos */}
             <div>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Campos indefinidos / nulos</p>
                 {nulls.length === 0 ? (
@@ -569,7 +776,6 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                 )}
             </div>
 
-            {/* Historial de saltos solventados */}
             {resolvedGaps.length > 0 && (
                 <div className="border border-black/[0.06] rounded-2xl overflow-hidden">
                     <button onClick={() => setShowHistorial(v => !v)}
@@ -589,7 +795,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         <td className="p-5 font-mono text-[12px] text-slate-600">{String(r.gap_to).padStart(7, '0')}</td>
                                         <td className="p-5 text-[13px] font-semibold text-emerald-700">{r.resolved_by || '—'}</td>
                                         <td className="p-5 text-[12px] text-slate-400 whitespace-nowrap">{r.resolved_at ? new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                                        <td className="p5 pr-8 text-[12px] text-slate-500">{r.comment || <span className="italic text-slate-300">Sin comentario</span>}</td>
+                                        <td className="p-5 pr-8 text-[12px] text-slate-500">{r.comment || <span className="italic text-slate-300">Sin comentario</span>}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -608,7 +814,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const [confirmed, setConfirmed] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState(() => {
-        const now = new Date(Date.now() - 6 * 3600_000);
+        const now = svNow();
         const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0');
         const last = new Date(y, now.getMonth() + 1, 0).getDate();
         return `${y}-${m}-01|${y}-${m}-${last}`;
@@ -619,10 +825,19 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const [confirmSaving, setConfirmSaving] = useState(false);
     const fileInputRef = useRef(null);
 
-    // Confirmed table filters
+    // Pending pagination: { [tipo]: page }
+    const [pendingPages, setPendingPages] = useState({});
+    const getPendingPage = (tipo) => pendingPages[tipo] || 1;
+    const setPendingPage = (tipo, p) => setPendingPages(prev => ({ ...prev, [tipo]: p }));
+
+    // Confirmed section
     const [filterConfirmedTipo, setFilterConfirmedTipo] = useState('');
     const [filterConfirmedBranch, setFilterConfirmedBranch] = useState('');
     const [showConfirmed, setShowConfirmed] = useState(false);
+    const [confirmedPage, setConfirmedPage] = useState(1);
+
+    // Confirmed sort
+    const { sortKey: cSortKey, sortDir: cSortDir, toggle: cToggle, sortFn: cSortFn } = useSortable('confirmed_at', 'desc');
 
     const monthOpts = useMemo(() => monthOptions(), []);
 
@@ -688,12 +903,31 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         return groups;
     }, [pendingFiltered]);
 
+    // Reset pending pages when data changes
+    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]);
+
+    const CONFIRMED_SORT_ACCESSORS = {
+        correlativo:   r => r.invoice?.correlativo,
+        sucursal:      r => getBranch(r.branch_id),
+        cliente:       r => r.invoice?.cliente,
+        fecha:         r => r.invoice?.fecha,
+        total:         r => parseFloat(r.invoice?.total || 0),
+        confirmed_by:  r => r.confirmed_by,
+        confirmed_at:  r => r.confirmed_at,
+        tipo_pago:     r => r.tipo_pago,
+    };
+
     const confirmedFiltered = useMemo(() => {
         let list = confirmed;
         if (filterConfirmedTipo) list = list.filter(r => r.tipo_pago?.toLowerCase() === filterConfirmedTipo);
         if (filterConfirmedBranch) list = list.filter(r => String(r.branch_id) === filterConfirmedBranch);
-        return list;
-    }, [confirmed, filterConfirmedTipo, filterConfirmedBranch]);
+        return cSortFn(list, CONFIRMED_SORT_ACCESSORS);
+    }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortKey, cSortDir]);
+
+    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]);
+
+    const confirmedTotalPages = Math.ceil(confirmedFiltered.length / PAGE_SIZE);
+    const confirmedPageRows = confirmedFiltered.slice((confirmedPage - 1) * PAGE_SIZE, confirmedPage * PAGE_SIZE);
 
     const handleConfirm = async (invoiceId) => {
         setConfirmSaving(true);
@@ -748,6 +982,19 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         ...NON_CASH_TYPES.map(t => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) })),
     ], []);
 
+    const CONFIRMED_COLS = [
+        { label: 'Tipo Pago', key: 'tipo_pago' },
+        { label: 'Correlativo', key: 'correlativo' },
+        { label: 'Sucursal', key: 'sucursal' },
+        { label: 'Cliente', key: 'cliente' },
+        { label: 'Fecha', key: 'fecha' },
+        { label: 'Total', key: 'total' },
+        { label: 'Confirmado por', key: 'confirmed_by' },
+        { label: 'Fecha conf.', key: 'confirmed_at' },
+        'Comprobante',
+        'Notas',
+    ];
+
     return (
         <div>
             {/* Top bar */}
@@ -772,17 +1019,20 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                 <EmptyState icon={CheckCircle2} iconClass="text-blue-500" glowClass="bg-blue-500"
                     title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />
             ) : (
-                <div className="space-y-0">
+                <div className="divide-y divide-black/[0.04]">
                     {TIPO_PAGO_ORDER.filter(t => byTipo[t]?.length > 0).map(tipo => {
-                        const rows = byTipo[tipo] || [];
-                        const tipoTotal = rows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
+                        const tipoRows = byTipo[tipo] || [];
+                        const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
+                        const tipoPg = getPendingPage(tipo);
+                        const tipoTotalPages = Math.ceil(tipoRows.length / PAGE_SIZE);
+                        const tipoPageRows = tipoRows.slice((tipoPg - 1) * PAGE_SIZE, tipoPg * PAGE_SIZE);
                         return (
-                            <div key={tipo}>
-                                {/* Group header */}
-                                <div className="px-5 pl-8 py-3 bg-black/[0.015] border-y border-black/[0.04] flex items-center justify-between">
+                            <div key={tipo} className="border-b border-black/[0.04] last:border-b-0">
+                                {/* Section header */}
+                                <div className="px-5 pl-8 py-3 bg-black/[0.015] border-b border-black/[0.04] flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${TIPO_PAGO_COLORS[tipo] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{tipo}</span>
-                                        <span className="text-[12px] font-semibold text-slate-600">{rows.length} transacciones</span>
+                                        <span className="text-[12px] font-semibold text-slate-600">{tipoRows.length} transacciones</span>
                                     </div>
                                     <span className="text-[13px] font-bold text-slate-700">{fmt(tipoTotal)}</span>
                                 </div>
@@ -790,7 +1040,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                 <table className="w-full text-left border-collapse">
                                     <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
                                     <tbody className="divide-y divide-black/[0.03]">
-                                        {rows.map(r => {
+                                        {tipoPageRows.map(r => {
                                             const isConfirming = confirmingId === r.id;
                                             return (
                                                 <React.Fragment key={r.id}>
@@ -851,6 +1101,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         })}
                                     </tbody>
                                 </table>
+                                <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
                             </div>
                         );
                     })}
@@ -867,7 +1118,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                     {showConfirmed && (
                         <div>
-                            {/* Filters for confirmed table */}
                             <div className="px-5 pl-8 py-3 border-b border-black/[0.04] flex items-center gap-3 bg-black/[0.01]">
                                 <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest shrink-0">Filtrar:</span>
                                 <div className="w-[160px]">
@@ -886,9 +1136,9 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                             </div>
                             <div className="w-full overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
-                                    <AuditThead cols={['Tipo / Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', 'Confirmado por', 'Fecha conf.', 'Comprobante', 'Notas']} />
+                                    <AuditThead cols={CONFIRMED_COLS} sortKey={cSortKey} sortDir={cSortDir} onSort={cToggle} />
                                     <tbody className="divide-y divide-black/[0.03]">
-                                        {confirmedFiltered.map(r => {
+                                        {confirmedPageRows.map(r => {
                                             const inv = r.invoice;
                                             const tipoPago = r.tipo_pago?.toLowerCase() || '';
                                             const dt = r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
@@ -896,7 +1146,9 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <tr key={r.id} className="hover:bg-white/70 transition-colors border-l-4 border-transparent hover:border-l-blue-400/50">
                                                     <td className="p-5 pl-8">
                                                         <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_pago}</span>
-                                                        <div className="font-mono text-[12px] text-slate-600 mt-1">{inv?.correlativo || '—'}</div>
+                                                    </td>
+                                                    <td className="p-5">
+                                                        <div className="font-mono text-[12px] text-slate-600">{inv?.correlativo || '—'}</div>
                                                     </td>
                                                     <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
                                                     <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[140px] truncate">{inv?.cliente || '—'}</td>
@@ -929,6 +1181,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         })}
                                     </tbody>
                                 </table>
+                                <Pagination page={confirmedPage} total={confirmedTotalPages} onChange={setConfirmedPage} />
                             </div>
                         </div>
                     )}
@@ -1038,7 +1291,7 @@ export default function FacturacionView() {
                 <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
             </div>
             <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} />
+                <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
             </div>
             <div className={activeTab === 'saltos' ? '' : 'hidden'}>
                 <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />

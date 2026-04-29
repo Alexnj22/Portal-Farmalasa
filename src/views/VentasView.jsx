@@ -64,7 +64,7 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
         let q = supabase
             .from('sales_invoices')
             .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, cod_vendedor, codigo_generacion')
-            .eq('estado', 'NULA')
+            .or('estado.eq.NULA,estado.is.null')
             .order('tipo_documento', { ascending: false }) // CCF antes que COF
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });
@@ -174,10 +174,13 @@ function AnulacionTable({ rows, getBranch, urgent }) {
                             <td className="px-4 py-3 hidden lg:table-cell text-slate-600 text-xs truncate max-w-[180px]">{r.cliente || '—'}</td>
                             <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">{r.fecha}</td>
                             <td className="px-4 py-3 text-right font-semibold text-slate-800">{fmt(r.total)}</td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-3 text-right space-y-1">
                                 <span className={`text-xs font-bold px-2 py-1 rounded-lg ${urgent ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
                                     {timeAgo(r.fecha, r.hora)}
                                 </span>
+                                {r.estado === null && (
+                                    <span className="block text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md text-center">SIN ESTADO</span>
+                                )}
                             </td>
                         </tr>
                     ))}

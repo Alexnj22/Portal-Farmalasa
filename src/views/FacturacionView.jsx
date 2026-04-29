@@ -32,6 +32,22 @@ const TIPO_PAGO_HOVER = {
     cheque:        'hover:border-l-teal-400/50',
 };
 
+const TIPO_PAGO_LABELS = {
+    tarjeta:       'Tarjeta',
+    credito:       'Crédito',
+    transferencia: 'Transferencia',
+    cheque:        'Cheque',
+    bitcoin:       'Bitcoin',
+};
+
+const TIPO_PAGO_THEME = {
+    tarjeta:       { card: 'border-blue-200',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-blue-50/40 hover:border-l-blue-500',   expand: 'bg-blue-50/60 border-blue-100',   input: 'border-blue-200 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
+    credito:       { card: 'border-purple-200',  header: 'from-purple-600 to-purple-500', rowHover: 'hover:bg-purple-50/40 hover:border-l-purple-500', expand: 'bg-purple-50/60 border-purple-100', input: 'border-purple-200 focus:ring-purple-300', btn: 'bg-purple-600 hover:bg-purple-700' },
+    transferencia: { card: 'border-cyan-200',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-cyan-50/40 hover:border-l-cyan-500',    expand: 'bg-cyan-50/60 border-cyan-100',    input: 'border-cyan-200 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
+    cheque:        { card: 'border-teal-200',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-teal-50/40 hover:border-l-teal-500',    expand: 'bg-teal-50/60 border-teal-100',    input: 'border-teal-200 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
+    bitcoin:       { card: 'border-orange-200',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-orange-50/40 hover:border-l-orange-500', expand: 'bg-orange-50/60 border-orange-100', input: 'border-orange-200 focus:ring-orange-300', btn: 'bg-orange-500 hover:bg-orange-600' },
+};
+
 // SV time
 function svNow() { return new Date(Date.now() - 6 * 3600_000); }
 
@@ -1019,22 +1035,31 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                 <EmptyState icon={CheckCircle2} iconClass="text-blue-500" glowClass="bg-blue-500"
                     title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />
             ) : (
-                <div className="divide-y divide-black/[0.04]">
+                <div className="p-4 md:p-6 space-y-5">
                     {TIPO_PAGO_ORDER.filter(t => byTipo[t]?.length > 0).map(tipo => {
+                        const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
                         const tipoRows = byTipo[tipo] || [];
                         const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
                         const tipoPg = getPendingPage(tipo);
                         const tipoTotalPages = Math.ceil(tipoRows.length / PAGE_SIZE);
                         const tipoPageRows = tipoRows.slice((tipoPg - 1) * PAGE_SIZE, tipoPg * PAGE_SIZE);
                         return (
-                            <div key={tipo} className="border-b border-black/[0.04] last:border-b-0">
-                                {/* Section header */}
-                                <div className="px-5 pl-8 py-3 bg-black/[0.015] border-b border-black/[0.04] flex items-center justify-between">
+                            <div key={tipo} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${theme.card}`}>
+                                {/* Bold colored header */}
+                                <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
                                     <div className="flex items-center gap-3">
-                                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${TIPO_PAGO_COLORS[tipo] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{tipo}</span>
-                                        <span className="text-[12px] font-semibold text-slate-600">{tipoRows.length} transacciones</span>
+                                        <CreditCard size={20} className="text-white/80 shrink-0" />
+                                        <h3 className="text-white font-black text-[15px] uppercase tracking-widest">
+                                            {TIPO_PAGO_LABELS[tipo] || tipo}
+                                        </h3>
+                                        <span className="bg-white/25 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                            {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
+                                        </span>
                                     </div>
-                                    <span className="text-[13px] font-bold text-slate-700">{fmt(tipoTotal)}</span>
+                                    <div className="text-right">
+                                        <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest">Total pendiente</div>
+                                        <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
+                                    </div>
                                 </div>
                                 {/* Table */}
                                 <table className="w-full text-left border-collapse">
@@ -1044,37 +1069,37 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             const isConfirming = confirmingId === r.id;
                                             return (
                                                 <React.Fragment key={r.id}>
-                                                    <tr className={`hover:bg-white/70 transition-colors duration-200 group border-l-4 border-transparent ${TIPO_PAGO_HOVER[tipo] || 'hover:border-l-[#007AFF]/50'}`}>
-                                                        <td className="p-5 pl-8">
+                                                    <tr className={`transition-colors duration-200 group border-l-4 border-transparent ${theme.rowHover}`}>
+                                                        <td className="p-5 pl-6">
                                                             <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
-                                                            <div className="font-mono text-[12px] text-slate-700 mt-1 group-hover:text-blue-600 transition-colors">{r.correlativo}</div>
+                                                            <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
                                                         </td>
                                                         <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
                                                         <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[160px] truncate">{r.cliente || '—'}</td>
                                                         <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{r.fecha}</td>
                                                         <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
-                                                        <td className="p-5 pr-8 text-right">
+                                                        <td className="p-5 pr-6 text-right">
                                                             <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                className="bg-white text-blue-600 border border-slate-200 px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-blue-400 hover:bg-blue-50 transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto">
+                                                                className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                                 <Check size={13} strokeWidth={2.5} /> Confirmar
                                                             </button>
                                                         </td>
                                                     </tr>
                                                     {isConfirming && (
                                                         <tr>
-                                                            <td colSpan={6} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                                                            <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
                                                                 <div className="flex items-start gap-3 max-w-3xl">
                                                                     <div className="flex-1 space-y-2">
                                                                         <textarea
-                                                                            className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+                                                                            className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                             rows={2} autoFocus
-                                                                            placeholder="Notas del pago — ej: referencia de transferencia, últimos 4 dígitos tarjeta, etc."
+                                                                            placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                             value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
                                                                         />
-                                                                        <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-blue-600 transition-colors">
+                                                                        <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
                                                                             <Paperclip size={14} />
                                                                             {confirmFile ? (
-                                                                                <span className="text-blue-600">{confirmFile.name}</span>
+                                                                                <span className="text-slate-700 font-bold">{confirmFile.name}</span>
                                                                             ) : (
                                                                                 <span>Adjuntar comprobante (imagen o PDF)</span>
                                                                             )}
@@ -1084,7 +1109,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     </div>
                                                                     <div className="flex flex-col gap-2 shrink-0">
                                                                         <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                                                                            className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                             {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                         </button>
                                                                         <button onClick={() => setConfirmingId(null)}

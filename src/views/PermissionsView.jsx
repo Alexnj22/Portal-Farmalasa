@@ -54,6 +54,13 @@ const MODULE_GROUPS = [
         ],
     },
     {
+        group: 'Comercial',
+        color: 'text-emerald-600',
+        modules: [
+            { key: 'ventas', label: 'Ventas', desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false },
+        ],
+    },
+    {
         group: 'Estructura',
         color: 'text-teal-600',
         modules: [

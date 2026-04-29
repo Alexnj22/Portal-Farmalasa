@@ -262,26 +262,17 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 
     const fetchVendedores = useCallback(async () => {
         setLoading(true);
-        let q = supabase
-            .from('sales_invoices')
-            .select('branch_id, cod_vendedor, total, id')
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-            .gte('fecha', fini)
-            .lte('fecha', ffin);
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-        const { data } = await q;
-
-        const agg = new Map();
-        for (const row of (data || [])) {
-            const key = `${row.branch_id}::${row.cod_vendedor}`;
-            const cur = agg.get(key) || { branch_id: row.branch_id, cod_vendedor: row.cod_vendedor, total: 0, count: 0 };
-            cur.total += parseFloat(row.total || 0);
-            cur.count += 1;
-            agg.set(key, cur);
-        }
-
-        const sorted = [...agg.values()].sort((a, b) => b.total - a.total);
-        setRows(sorted);
+        const { data } = await supabase.rpc('get_vendedores_resumen', {
+            p_fini: fini,
+            p_ffin: ffin,
+            p_branch_id: filterBranch ? Number(filterBranch) : null,
+        });
+        setRows((data || []).map(r => ({
+            branch_id: r.branch_id,
+            cod_vendedor: r.cod_vendedor,
+            total: parseFloat(r.total_ventas || 0),
+            count: parseInt(r.total_facturas || 0),
+        })));
         setLoading(false);
     }, [fini, ffin, filterBranch]);
 
@@ -291,24 +282,17 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
         if (expanded === key) { setExpanded(null); return; }
         setExpanded(key);
         setLoadingExpand(true);
-        const { data } = await supabase
-            .from('sales_invoices')
-            .select('fecha, total, tipo_documento, estado')
-            .eq('branch_id', branchId)
-            .eq('cod_vendedor', cod)
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-            .gte('fecha', fini)
-            .lte('fecha', ffin)
-            .order('fecha');
-        // Group by day
-        const byDay = new Map();
-        for (const row of (data || [])) {
-            const cur = byDay.get(row.fecha) || { fecha: row.fecha, total: 0, count: 0 };
-            cur.total += parseFloat(row.total || 0);
-            cur.count += 1;
-            byDay.set(row.fecha, cur);
-        }
-        setExpandedData([...byDay.values()]);
+        const { data } = await supabase.rpc('get_vendedor_diario', {
+            p_branch_id: branchId,
+            p_cod_vendedor: cod,
+            p_fini: fini,
+            p_ffin: ffin,
+        });
+        setExpandedData((data || []).map(d => ({
+            fecha: d.fecha,
+            total: parseFloat(d.total_ventas || 0),
+            count: parseInt(d.total_facturas || 0),
+        })));
         setLoadingExpand(false);
     };
 

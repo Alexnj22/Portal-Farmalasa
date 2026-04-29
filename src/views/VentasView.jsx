@@ -54,14 +54,16 @@ function monthOptions() {
 }
 
 // ─── Tab: Anulaciones ─────────────────────────────────────────────────────────
-function TabAnulaciones({ branches, filterBranch, searchTerm }) {
+function TabAnulaciones({ branches, filterBranch, searchTerm, currentUser }) {
     const [rows, setRows] = useState([]);
+    const [resolved, setResolved] = useState([]);
     const [resolvedIds, setResolvedIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
     const [solvingId, setSolvingId] = useState(null);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
+    const [showHistorial, setShowHistorial] = useState(false);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -75,10 +77,15 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
         const [invoicesRes, resolvedRes] = await Promise.all([
             q,
-            supabase.from('sales_invoice_resolutions').select('invoice_id'),
+            supabase
+                .from('sales_invoice_resolutions')
+                .select('id, invoice_id, comment, resolved_by, resolved_at, sales_invoices(correlativo, branch_id, tipo_documento, cliente, fecha, total, erp_invoice_id)')
+                .order('resolved_at', { ascending: false }),
         ]);
         setRows(invoicesRes.data || []);
-        setResolvedIds(new Set((resolvedRes.data || []).map(r => r.invoice_id)));
+        const resolvedData = resolvedRes.data || [];
+        setResolved(resolvedData);
+        setResolvedIds(new Set(resolvedData.map(r => r.invoice_id)));
         setLastRefresh(new Date());
         setLoading(false);
     }, [filterBranch]);
@@ -91,11 +98,13 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
 
     const handleSolve = async (invoiceId) => {
         setSaving(true);
-        await supabase.from('sales_invoice_resolutions').insert({
+        const { data } = await supabase.from('sales_invoice_resolutions').insert({
             invoice_id: invoiceId,
             comment: comment.trim() || null,
-        });
+            resolved_by: currentUser?.name || currentUser?.email || 'Desconocido',
+        }).select('id, invoice_id, comment, resolved_by, resolved_at, sales_invoices(correlativo, branch_id, tipo_documento, cliente, fecha, total, erp_invoice_id)');
         setResolvedIds(prev => new Set([...prev, invoiceId]));
+        if (data?.[0]) setResolved(prev => [data[0], ...prev]);
         setSolvingId(null);
         setComment('');
         setSaving(false);
@@ -240,6 +249,58 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Historial de solventadas */}
+            {!loading && resolved.length > 0 && (
+                <div className="border-t border-white/60">
+                    <button
+                        onClick={() => setShowHistorial(v => !v)}
+                        className="w-full flex items-center justify-between px-4 md:px-8 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-white/30 transition-colors"
+                    >
+                        <span className="flex items-center gap-2">
+                            <Check size={12} className="text-emerald-500" strokeWidth={3} />
+                            {resolved.length} solventada{resolved.length !== 1 ? 's' : ''}
+                        </span>
+                        {showHistorial ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                    {showHistorial && (
+                        <div className="w-full overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-emerald-50/60">
+                                    <tr>
+                                        {['Tipo / Correlativo', 'Sucursal', 'Cliente', 'Fecha fact.', 'Total', 'Solventado por', 'Fecha', 'Comentario'].map(h => (
+                                            <th key={h} className="px-4 md:px-6 py-3 text-[9px] font-black uppercase text-emerald-700 tracking-widest whitespace-nowrap border-b border-emerald-100">
+                                                {h}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-emerald-50">
+                                    {resolved.map(r => {
+                                        const inv = r.sales_invoices;
+                                        const dt = r.resolved_at ? new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                                        return (
+                                            <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
+                                                <td className="px-4 md:px-6 py-3">
+                                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200">{inv?.tipo_documento}</span>
+                                                    <div className="font-mono text-[11px] text-slate-500 mt-1">{inv?.correlativo}</div>
+                                                </td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] text-slate-500 hidden md:table-cell">{getBranch(inv?.branch_id)}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] text-slate-500 hidden lg:table-cell max-w-[160px] truncate">{inv?.cliente || '—'}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] text-slate-400 whitespace-nowrap">{inv?.fecha}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[12px] font-bold text-slate-600 whitespace-nowrap">{fmt(inv?.total)}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] font-semibold text-emerald-700 whitespace-nowrap">{r.resolved_by || '—'}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] text-slate-400 whitespace-nowrap">{dt}</td>
+                                                <td className="px-4 md:px-6 py-3 text-[11px] text-slate-500 max-w-[220px]">{r.comment || <span className="italic text-slate-300">Sin comentario</span>}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -898,6 +959,7 @@ const TABS = [
 
 export default function VentasView() {
     const { branches, employees } = useStaff();
+    const { user: currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('anulaciones');
     const [filterBranch, setFilterBranch] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
@@ -1016,6 +1078,7 @@ export default function VentasView() {
                     branches={salesBranches}
                     filterBranch={filterBranch}
                     searchTerm={rawSearch}
+                    currentUser={currentUser}
                 />
             </div>
             <div className={activeTab === 'vendedores' ? '' : 'hidden'}>

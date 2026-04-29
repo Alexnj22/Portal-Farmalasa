@@ -62,7 +62,7 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
         setLoading(true);
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, cliente, fecha, hora, total, estado, cod_vendedor, codigo_generacion')
+            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, cod_vendedor, codigo_generacion')
             .eq('estado', 'NULA')
             .order('tipo_documento', { ascending: false }) // CCF antes que COF
             .order('fecha', { ascending: true })
@@ -156,6 +156,7 @@ function AnulacionTable({ rows, getBranch, urgent }) {
                 <thead>
                     <tr className={`text-xs font-semibold uppercase tracking-wide ${urgent ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-600'}`}>
                         <th className="text-left px-4 py-3">Correlativo</th>
+                        <th className="text-left px-4 py-3 hidden sm:table-cell">ID Venta</th>
                         <th className="text-left px-4 py-3 hidden md:table-cell">Sucursal</th>
                         <th className="text-left px-4 py-3 hidden lg:table-cell">Cliente</th>
                         <th className="text-left px-4 py-3">Fecha</th>
@@ -167,6 +168,7 @@ function AnulacionTable({ rows, getBranch, urgent }) {
                     {rows.map((r, i) => (
                         <tr key={r.id} className={`border-t ${urgent ? 'border-red-100 hover:bg-red-50/50' : 'border-slate-100 hover:bg-slate-50/50'} transition-colors`}>
                             <td className="px-4 py-3 font-mono text-xs">{r.correlativo}</td>
+                            <td className="px-4 py-3 hidden sm:table-cell font-mono text-xs text-slate-500">{r.erp_invoice_id || '—'}</td>
                             <td className="px-4 py-3 hidden md:table-cell text-slate-600 text-xs">{getBranch(r.branch_id)}</td>
                             <td className="px-4 py-3 hidden lg:table-cell text-slate-600 text-xs truncate max-w-[180px]">{r.cliente || '—'}</td>
                             <td className="px-4 py-3 text-slate-600 text-xs whitespace-nowrap">{r.fecha}</td>

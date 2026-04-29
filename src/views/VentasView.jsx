@@ -267,16 +267,12 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
             p_ffin: ffin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
         });
-        // Consolidate across branches — cod_vendedor is unique company-wide
-        const consolidated = new Map();
-        for (const r of (data || [])) {
-            const cur = consolidated.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0, branchIds: [] };
-            cur.total += parseFloat(r.total_ventas || 0);
-            cur.count += parseInt(r.total_facturas || 0);
-            cur.branchIds.push(r.branch_id);
-            consolidated.set(r.cod_vendedor, cur);
-        }
-        setRows([...consolidated.values()].sort((a, b) => b.total - a.total));
+        setRows((data || []).map(r => ({
+            branch_id: r.branch_id,
+            cod_vendedor: r.cod_vendedor,
+            total: parseFloat(r.total_ventas || 0),
+            count: parseInt(r.total_facturas || 0),
+        })));
         setLoading(false);
     }, [fini, ffin, filterBranch]);
 
@@ -306,23 +302,44 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
 
-    const { knownRows, unknownRows } = useMemo(() => {
+    const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
+
+    const { knownRows, unknownByBranch } = useMemo(() => {
         const s = searchTerm.toLowerCase();
-        const known = [];
-        const unknown = [];
+        // Consolidate known (employee + special) rows by cod_vendedor
+        const consolidatedMap = new Map();
+        const unknownMap = new Map(); // branchId → { branch_id, total, count }
+
         for (const r of rows) {
             const emp = empMap.get(r.cod_vendedor);
-            if (emp) {
-                if (!s || `${emp.first_names} ${emp.last_names}`.toLowerCase().includes(s) || r.cod_vendedor?.toLowerCase().includes(s)) {
-                    known.push({ ...r, emp });
-                }
+            const specialName = SPECIAL_CODES[r.cod_vendedor];
+
+            if (emp || specialName) {
+                const cur = consolidatedMap.get(r.cod_vendedor) || {
+                    cod_vendedor: r.cod_vendedor, total: 0, count: 0, branchIds: [],
+                    emp: emp || null, specialName: specialName || null,
+                };
+                cur.total += r.total;
+                cur.count += r.count;
+                if (!cur.branchIds.includes(r.branch_id)) cur.branchIds.push(r.branch_id);
+                consolidatedMap.set(r.cod_vendedor, cur);
             } else {
-                if (!s || r.cod_vendedor?.toLowerCase().includes(s)) {
-                    unknown.push(r);
-                }
+                const cur = unknownMap.get(r.branch_id) || { branch_id: r.branch_id, total: 0, count: 0 };
+                cur.total += r.total;
+                cur.count += r.count;
+                unknownMap.set(r.branch_id, cur);
             }
         }
-        return { knownRows: known, unknownRows: unknown };
+
+        const known = [...consolidatedMap.values()]
+            .sort((a, b) => b.total - a.total)
+            .filter(r => {
+                if (!s) return true;
+                const name = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : '');
+                return name.toLowerCase().includes(s) || r.cod_vendedor?.toLowerCase().includes(s);
+            });
+
+        return { knownRows: known, unknownByBranch: unknownMap };
     }, [rows, searchTerm, empMap]);
 
     const totalVentas = rows.reduce((s, r) => s + r.total, 0);
@@ -348,8 +365,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                     <p className="text-xs text-blue-500 font-medium mb-1">Vendedores activos</p>
                     <p className="text-2xl font-bold text-blue-700">{knownRows.length}</p>
-                    {unknownRows.length > 0 && (
-                        <p className="text-[10px] text-orange-500 font-semibold mt-0.5">{unknownRows.length} cód. incorrecto</p>
+                    {unknownByBranch.size > 0 && (
+                        <p className="text-[10px] text-orange-500 font-semibold mt-0.5">{unknownByBranch.size} suc. con cód. incorrecto</p>
                     )}
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
@@ -383,7 +400,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                 const isOpen = expanded === r.cod_vendedor;
                                 const ticket = r.count > 0 ? r.total / r.count : 0;
                                 const pct = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
-                                const baseBranchId = r.emp.branch_id;
+                                const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
+                                const displayName = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
 
                                 return (
                                     <React.Fragment key={r.cod_vendedor}>
@@ -399,13 +417,19 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2.5">
-                                                    <LiquidAvatar
-                                                        src={r.emp.photo_url || r.emp.photo}
-                                                        fallbackText={r.emp.first_names}
-                                                        className="w-8 h-8 rounded-full shrink-0"
-                                                    />
+                                                    {r.emp ? (
+                                                        <LiquidAvatar
+                                                            src={r.emp.photo_url || r.emp.photo}
+                                                            fallbackText={r.emp.first_names}
+                                                            className="w-8 h-8 rounded-full shrink-0"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                                            <Users size={14} className="text-slate-400" />
+                                                        </div>
+                                                    )}
                                                     <div>
-                                                        <p className="font-medium text-slate-800 text-sm">{r.emp.first_names} {r.emp.last_names}</p>
+                                                        <p className="font-medium text-slate-800 text-sm">{displayName}</p>
                                                         <p className="text-xs text-slate-400">Cód. {r.cod_vendedor}</p>
                                                     </div>
                                                 </div>
@@ -462,12 +486,11 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                 );
                             })}
 
-                            {/* Unknown / incorrect codes — one row per unknown code */}
-                            {unknownRows.map(r => {
-                                const ticket = r.count > 0 ? r.total / r.count : 0;
-                                const branchLabel = r.branchIds.map(id => getBranchName(id)).join(', ');
+                            {/* Unknown / incorrect codes — one aggregated row per branch */}
+                            {[...unknownByBranch.values()].map(u => {
+                                const ticket = u.count > 0 ? u.total / u.count : 0;
                                 return (
-                                    <tr key={`unknown-${r.cod_vendedor}`} className="border-t border-orange-100 bg-orange-50/30">
+                                    <tr key={`unknown-${u.branch_id}`} className="border-t border-orange-100 bg-orange-50/30">
                                         <td className="px-4 py-3">
                                             <span className="text-[10px] font-bold text-orange-300">—</span>
                                         </td>
@@ -476,15 +499,12 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                                 <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
                                                     <Users size={14} className="text-orange-400" />
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium text-orange-600 text-sm">Cód. Incorrecto</p>
-                                                    <p className="text-xs text-orange-400">Cód. {r.cod_vendedor}</p>
-                                                </div>
+                                                <p className="font-medium text-orange-600 text-sm">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 hidden md:table-cell text-orange-400 text-xs">{branchLabel}</td>
-                                        <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(r.count)}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-slate-600">{fmt(r.total)}</td>
+                                        <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">—</td>
+                                        <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(u.count)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-slate-600">{fmt(u.total)}</td>
                                         <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticket)}</td>
                                         <td className="px-4 py-3" />
                                     </tr>

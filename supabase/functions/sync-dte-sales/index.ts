@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
 
         const { data: existingRaw } = await supabase
           .from('sales_invoices')
-          .select('id, codigo_generacion, estado, tipo_pago')
+          .select('id, codigo_generacion, estado, tipo_pago, recibido_mh')
           .in('codigo_generacion', codigos);
 
         const existingMap = new Map(
@@ -140,6 +140,18 @@ Deno.serve(async (req) => {
                 valor_nuevo:       venta.tipo_pago,
               });
             }
+            // Detect recibido_mh change (null → value means MH confirmed)
+            if (!existing.recibido_mh && venta.recibido_mh) {
+              changelogs.push({
+                invoice_id:        existing.id,
+                codigo_generacion:  venta.codigo_generacion,
+                branch_id:         branchId,
+                tipo_documento:    tipoDoc,
+                campo:             'recibido_mh',
+                valor_anterior:    null,
+                valor_nuevo:       venta.recibido_mh,
+              });
+            }
           } else {
             newCodigos.add(codigoLower);
           }
@@ -159,6 +171,7 @@ Deno.serve(async (req) => {
             cod_vendedor:      venta.cod_vendedor,
             tipo_pago:         venta.tipo_pago,
             estado:            venta.estado,
+            recibido_mh:       venta.recibido_mh ?? null,
             subtotal:          venta.totales?.subtotal ?? 0,
             iva:               venta.totales?.iva ?? 0,
             total:             venta.totales?.total ?? 0,

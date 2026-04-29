@@ -67,7 +67,7 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
         setLoading(true);
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion')
+            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion, recibido_mh')
             .or('estado.eq.NULA,estado.is.null,estado.eq.undefined')
             .order('tipo_documento', { ascending: false })
             .order('fecha', { ascending: true })
@@ -159,6 +159,7 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
                             {[...ccf, ...cof].map(r => {
                                 const isUrgent = r.tipo_documento === 'CCF';
                                 const isUndefined = r.estado === null || r.estado === 'undefined';
+                                const isPendingMH = !r.recibido_mh;
                                 const isSolving = solvingId === r.id;
                                 return (
                                     <React.Fragment key={r.id}>
@@ -171,6 +172,11 @@ function TabAnulaciones({ branches, filterBranch, searchTerm }) {
                                                     {isUndefined && (
                                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100">
                                                             UNDEFINED
+                                                        </span>
+                                                    )}
+                                                    {isPendingMH && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-violet-50 text-violet-600 border border-violet-100">
+                                                            Pendiente MH
                                                         </span>
                                                     )}
                                                 </div>

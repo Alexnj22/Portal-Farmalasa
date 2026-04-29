@@ -34,6 +34,7 @@ import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
 import PayrollView from "./views/PayrollView";
 import VentasView from "./views/VentasView";
+import FacturacionView from "./views/FacturacionView";
 import NoAccessView from "./views/NoAccessView";
 import AccessDeniedView from "./views/AccessDeniedView";
 import DashboardView from "./views/DashboardView";
@@ -468,6 +469,7 @@ function MainApp() {
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
+                                    <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}
                                     <Route path="branches">

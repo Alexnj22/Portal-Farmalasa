@@ -5,7 +5,7 @@ import {
     Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
-    TrendingUp, Tag, Gift, Users, Package, DollarSign
+    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
@@ -33,6 +33,7 @@ const MODULE_MAP = {
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
+    facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
@@ -54,7 +55,7 @@ const MENU_GROUPS = [
     { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan']                       },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'promociones', 'bonificaciones'] },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas']                          },
     { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos']                            },
 ];

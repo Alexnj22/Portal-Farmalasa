@@ -393,7 +393,11 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2.5">
-                                                    <LiquidAvatar employee={r.emp} size={32} />
+                                                    <LiquidAvatar
+                                                        src={r.emp.photo_url || r.emp.photo}
+                                                        fallbackText={r.emp.first_names}
+                                                        className="w-8 h-8 rounded-full shrink-0"
+                                                    />
                                                     <div>
                                                         <p className="font-medium text-slate-800 text-sm">{r.emp.first_names} {r.emp.last_names}</p>
                                                         <p className="text-xs text-slate-400">Cód. {r.cod_vendedor}</p>

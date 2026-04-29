@@ -441,82 +441,32 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                 );
                             })}
 
-                            {/* Unknown / incorrect codes — grouped by branch */}
-                            {unknownByBranch.size > 0 && (
-                                <tr>
-                                    <td colSpan={7} className="px-4 py-2 bg-orange-50 border-t-2 border-orange-200">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Cód. Incorrecto — no encontrado en empleados</span>
-                                    </td>
-                                </tr>
-                            )}
-                            {[...unknownByBranch.entries()].map(([branchId, bRows]) => (
-                                <React.Fragment key={`unknown-${branchId}`}>
-                                    <tr>
-                                        <td colSpan={7} className="px-4 py-1.5 bg-orange-50/60 border-t border-orange-100">
-                                            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">{getBranchName(branchId)}</span>
+                            {/* Unknown / incorrect codes — one aggregated row per branch */}
+                            {[...unknownByBranch.entries()].map(([branchId, bRows]) => {
+                                const totalU = bRows.reduce((s, r) => s + r.total, 0);
+                                const countU = bRows.reduce((s, r) => s + r.count, 0);
+                                const ticketU = countU > 0 ? totalU / countU : 0;
+                                return (
+                                    <tr key={`unknown-${branchId}`} className="border-t border-orange-100 bg-orange-50/30">
+                                        <td className="px-4 py-3">
+                                            <span className="text-[10px] font-bold text-orange-300">—</span>
                                         </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                                    <Users size={14} className="text-orange-400" />
+                                                </div>
+                                                <p className="font-medium text-orange-600 text-sm">Cód. Incorrecto — {getBranchName(branchId)}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">—</td>
+                                        <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(countU)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-slate-600">{fmt(totalU)}</td>
+                                        <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticketU)}</td>
+                                        <td className="px-4 py-3" />
                                     </tr>
-                                    {bRows.map(r => {
-                                        const key = `${r.branch_id}::${r.cod_vendedor}`;
-                                        const isOpen = expanded === key;
-                                        const ticket = r.count > 0 ? r.total / r.count : 0;
-                                        return (
-                                            <React.Fragment key={key}>
-                                                <tr
-                                                    className="border-t border-orange-100 hover:bg-orange-50/40 transition-colors cursor-pointer"
-                                                    onClick={() => toggleExpand(key, r.branch_id, r.cod_vendedor)}
-                                                >
-                                                    <td className="px-4 py-3">
-                                                        <span className="text-[10px] font-bold text-orange-300">—</span>
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                                                                <Users size={14} className="text-orange-400" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-medium text-orange-700 text-sm">Cód. Incorrecto</p>
-                                                                <p className="text-xs text-orange-400">Cód. {r.cod_vendedor}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">—</td>
-                                                    <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(r.count)}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <span className="font-bold text-slate-600">{fmt(r.total)}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticket)}</td>
-                                                    <td className="px-4 py-3">
-                                                        {isOpen ? <ChevronUp size={14} className="text-slate-300" /> : <ChevronDown size={14} className="text-slate-300" />}
-                                                    </td>
-                                                </tr>
-                                                {isOpen && (
-                                                    <tr className="border-t border-orange-100">
-                                                        <td colSpan={7} className="px-4 py-3 bg-orange-50/40">
-                                                            {loadingExpand ? (
-                                                                <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
-                                                            ) : (
-                                                                <div>
-                                                                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Ventas diarias</p>
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        {expandedData.map(d => (
-                                                                            <div key={d.fecha} className="bg-white border border-orange-200 rounded-xl px-3 py-2 text-xs">
-                                                                                <p className="text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                                <p className="font-bold text-slate-800">{fmt(d.total)}</p>
-                                                                                <p className="text-slate-400">{d.count} fact.</p>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </React.Fragment>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

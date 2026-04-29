@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     TrendingUp, AlertTriangle, Users, Package,
-    RefreshCw, Clock, Building2, Loader2, ChevronDown,
-    ChevronUp, BarChart2, ShoppingCart, DollarSign,
-    FileX, BadgeAlert, Search, X, Trophy, Star
+    Clock, Building2, Loader2, ChevronDown,
+    ChevronUp, BadgeAlert, Search, X, Trophy, Star, ChevronRight
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -54,11 +53,10 @@ function monthOptions() {
 }
 
 // ─── Tab: Anulaciones ─────────────────────────────────────────────────────────
-function TabAnulaciones({ branches, filterBranch }) {
+function TabAnulaciones({ branches, filterBranch, searchTerm }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
-    const [search, setSearch] = useState('');
 
     const fetch = useCallback(async () => {
         setLoading(true);
@@ -83,14 +81,14 @@ function TabAnulaciones({ branches, filterBranch }) {
     }, [fetch]);
 
     const filtered = useMemo(() => {
-        if (!search) return rows;
-        const s = search.toLowerCase();
+        if (!searchTerm) return rows;
+        const s = searchTerm.toLowerCase();
         return rows.filter(r =>
             r.correlativo?.toLowerCase().includes(s) ||
             r.cliente?.toLowerCase().includes(s) ||
             r.codigo_generacion?.toLowerCase().includes(s)
         );
-    }, [rows, search]);
+    }, [rows, searchTerm]);
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
 
@@ -115,18 +113,6 @@ function TabAnulaciones({ branches, filterBranch }) {
                         {lastRefresh ? lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—'}
                     </p>
                 </div>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Buscar correlativo, cliente o código..."
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:border-blue-400"
-                />
-                {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X size={14} /></button>}
             </div>
 
             {loading ? (
@@ -199,7 +185,7 @@ function AnulacionTable({ rows, getBranch, urgent }) {
 }
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
-function TabVendedores({ branches, filterBranch, employees }) {
+function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState(null);
@@ -272,8 +258,18 @@ function TabVendedores({ branches, filterBranch, employees }) {
 
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
 
-    const totalVentas = rows.reduce((s, r) => s + r.total, 0);
-    const totalFacturas = rows.reduce((s, r) => s + r.count, 0);
+    const filteredRows = useMemo(() => {
+        if (!searchTerm) return rows;
+        const s = searchTerm.toLowerCase();
+        return rows.filter(r => {
+            const emp = empMap.get(`${r.branch_id}::${r.cod_vendedor}`);
+            const name = emp ? `${emp.first_names} ${emp.last_names}`.toLowerCase() : '';
+            return name.includes(s) || r.cod_vendedor?.toLowerCase().includes(s);
+        });
+    }, [rows, searchTerm, empMap]);
+
+    const totalVentas = filteredRows.reduce((s, r) => s + r.total, 0);
+    const totalFacturas = filteredRows.reduce((s, r) => s + r.count, 0);
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -323,7 +319,7 @@ function TabVendedores({ branches, filterBranch, employees }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((r, i) => {
+                            {filteredRows.map((r, i) => {
                                 const key = `${r.branch_id}::${r.cod_vendedor}`;
                                 const emp = empMap.get(key);
                                 const isOpen = expanded === key;
@@ -408,10 +404,9 @@ function TabVendedores({ branches, filterBranch, employees }) {
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
-function TabProductos({ filterBranch }) {
+function TabProductos({ filterBranch, searchTerm }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
     const [monthRange, setMonthRange] = useState(() => {
         const r = currentMonthRange();
         return `${r.fini}|${r.ffin}`;
@@ -472,16 +467,16 @@ function TabProductos({ filterBranch }) {
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 
     const filtered = useMemo(() => {
-        if (!search) return rows;
-        const s = search.toLowerCase();
+        if (!searchTerm) return rows;
+        const s = searchTerm.toLowerCase();
         return rows.filter(r => r.descripcion?.toLowerCase().includes(s) || r.presentacion?.toLowerCase().includes(s));
-    }, [rows, search]);
+    }, [rows, searchTerm]);
 
     const maxTotal = filtered[0]?.total || 1;
 
     return (
         <div className="p-4 md:p-6 space-y-4">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
                 <LiquidSelect
                     value={monthRange}
                     onChange={setMonthRange}
@@ -491,16 +486,6 @@ function TabProductos({ filterBranch }) {
                     clearable={false}
                     compact
                 />
-                <div className="relative flex-1 min-w-[200px]">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Buscar producto..."
-                        className="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:border-blue-400"
-                    />
-                    {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X size={13} /></button>}
-                </div>
             </div>
 
             {loading ? (
@@ -563,6 +548,9 @@ export default function VentasView() {
     const { branches, employees } = useStaff();
     const [activeTab, setActiveTab] = useState('anulaciones');
     const [filterBranch, setFilterBranch] = useState('');
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [rawSearch, setRawSearch] = useState('');
+    const searchInputRef = useRef(null);
 
     const salesBranches = useMemo(() =>
         (branches || []).filter(b => SALES_BRANCH_IDS.includes(b.id)),
@@ -574,44 +562,90 @@ export default function VentasView() {
         [salesBranches]
     );
 
-    const filtersContent = (
-        <div className="flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-visible">
+    const openSearch = () => {
+        setIsSearchMode(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+    };
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1 px-1 md:px-2 h-full">
-                {TABS.map(t => {
-                    const Icon = t.icon;
-                    const active = activeTab === t.key;
+    const closeSearch = () => {
+        setIsSearchMode(false);
+        setRawSearch('');
+    };
+
+    const filtersContent = (
+        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+
+            {/* Search mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
+                ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={
+                        activeTab === 'anulaciones' ? 'Buscar correlativo o cliente...' :
+                        activeTab === 'vendedores'  ? 'Buscar vendedor...' :
+                        'Buscar producto...'
+                    }
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
+                    value={rawSearch}
+                    onChange={e => setRawSearch(e.target.value)}
+                />
+                {rawSearch && (
+                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0">
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                )}
+                <button onClick={closeSearch}
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2">
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
+            </div>
+
+            {/* Normal mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
+                ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
+
+                {/* Tab pills */}
+                {TABS.map(tab => {
+                    const Icon = tab.icon;
                     return (
-                        <button
-                            key={t.key}
-                            onClick={() => setActiveTab(t.key)}
-                            className={`flex items-center gap-1.5 h-10 md:h-11 px-3 md:px-4 rounded-full text-[11px] md:text-[12px] font-black uppercase tracking-widest transition-all duration-300 shrink-0 ${
-                                active
-                                    ? 'bg-[#007AFF] text-white shadow-[0_3px_8px_rgba(0,122,255,0.4)] hover:shadow-[0_6px_16px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95'
-                                    : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-700 border border-white shadow-sm hover:-translate-y-0.5'
-                            }`}
-                        >
-                            <Icon size={13} strokeWidth={2.5} />
-                            <span className="hidden sm:inline">{t.label}</span>
+                        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
+                                activeTab === tab.key
+                                    ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                            }`}>
+                            <Icon size={12} strokeWidth={2.5} />
+                            <span className="hidden sm:inline">{tab.label}</span>
                         </button>
                     );
                 })}
-            </div>
 
-            {/* Divider */}
-            <div className="h-8 w-px bg-white/40 mx-1 md:mx-2 shrink-0" />
+                {/* Divider */}
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 
-            {/* Branch select */}
-            <div className="w-[160px] md:w-[220px] overflow-visible h-full flex items-center px-1">
-                <LiquidSelect
-                    value={filterBranch}
-                    onChange={setFilterBranch}
-                    options={branchOptions}
-                    placeholder="Todas las sucursales"
-                    icon={Building2}
-                    compact
-                />
+                {/* Branch select */}
+                <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
+                    <LiquidSelect
+                        value={filterBranch}
+                        onChange={setFilterBranch}
+                        options={branchOptions}
+                        placeholder="Todas"
+                        icon={Building2}
+                        compact
+                    />
+                </div>
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+
+                {/* Search button */}
+                <button onClick={openSearch}
+                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
+                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                </button>
             </div>
         </div>
     );
@@ -623,11 +657,11 @@ export default function VentasView() {
             liveIndicator={activeTab === 'anulaciones'}
             filtersContent={filtersContent}
         >
-
             {activeTab === 'anulaciones' && (
                 <TabAnulaciones
                     branches={salesBranches}
                     filterBranch={filterBranch}
+                    searchTerm={rawSearch}
                 />
             )}
             {activeTab === 'vendedores' && (
@@ -635,11 +669,13 @@ export default function VentasView() {
                     branches={salesBranches}
                     filterBranch={filterBranch}
                     employees={employees}
+                    searchTerm={rawSearch}
                 />
             )}
             {activeTab === 'productos' && (
                 <TabProductos
                     filterBranch={filterBranch}
+                    searchTerm={rawSearch}
                 />
             )}
         </GlassViewLayout>

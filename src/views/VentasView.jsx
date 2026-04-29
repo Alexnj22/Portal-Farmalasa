@@ -946,39 +946,39 @@ export default function VentasView() {
             liveIndicator={activeTab === 'anulaciones'}
             filtersContent={filtersContent}
         >
-            {activeTab === 'anulaciones' && (
+            <div className={activeTab === 'anulaciones' ? '' : 'hidden'}>
                 <TabAnulaciones
                     branches={salesBranches}
                     filterBranch={filterBranch}
                     searchTerm={rawSearch}
                 />
-            )}
-            {activeTab === 'vendedores' && (
+            </div>
+            <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
                 <TabVendedores
                     branches={salesBranches}
                     filterBranch={filterBranch}
                     employees={employees}
                     searchTerm={rawSearch}
                 />
-            )}
-            {activeTab === 'productos' && (
+            </div>
+            <div className={activeTab === 'productos' ? '' : 'hidden'}>
                 <TabProductos
                     filterBranch={filterBranch}
                     searchTerm={rawSearch}
                 />
-            )}
-            {activeTab === 'integridad' && (
+            </div>
+            <div className={activeTab === 'integridad' ? '' : 'hidden'}>
                 <TabIntegridad
                     branches={salesBranches}
                     filterBranch={filterBranch}
                 />
-            )}
-            {activeTab === 'cambios' && (
+            </div>
+            <div className={activeTab === 'cambios' ? '' : 'hidden'}>
                 <TabCambios
                     branches={salesBranches}
                     filterBranch={filterBranch}
                 />
-            )}
+            </div>
         </GlassViewLayout>
     );
 }

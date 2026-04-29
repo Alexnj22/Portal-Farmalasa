@@ -61,7 +61,24 @@ Deno.serve(async (req) => {
     }));
     await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
 
-    // 3. Upsert products (core fields)
+    // 3. Upsert presentaciones catalog (pure lookup: tipo, descripcion, factor)
+    const presMap = new Map<number, any>();
+    for (const p of productos) {
+      for (const pres of (p.presentaciones ?? [])) {
+        if (!presMap.has(pres.id_presentacion)) {
+          presMap.set(pres.id_presentacion, {
+            id:          pres.id_presentacion,
+            tipo:        pres.tipo?.trim() ?? null,
+            descripcion: pres.descripcion ?? null,
+            factor:      pres.factor ?? 1,
+            updated_at:  new Date().toISOString(),
+          });
+        }
+      }
+    }
+    await supabase.from('presentaciones').upsert([...presMap.values()], { onConflict: 'id' });
+
+    // 4. Upsert products (core fields only — no prices)
     const productRows = productos.map(p => ({
       id:             p.id,
       nombre:         p.nombre,
@@ -70,7 +87,6 @@ Deno.serve(async (req) => {
       es_antibiotico: p.es_antibiotico ?? false,
       activo:         p.activo ?? true,
       perecedero:     p.perecedero ?? false,
-      // keep descripcion/presentacion from sales data if already set
       updated_at:     new Date().toISOString(),
     }));
 
@@ -79,17 +95,14 @@ Deno.serve(async (req) => {
       await supabase.from('products').upsert(productRows.slice(i, i + CHUNK), { onConflict: 'id' });
     }
 
-    // 4. Upsert presentations with flattened prices
-    const presentationRows: any[] = [];
+    // 5. Upsert product_precios: (product_id, id_presentacion) → prices
+    const precioRows: any[] = [];
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
         const precios = pres.lista_precios?.[0]?.precios?.[0] ?? {};
-        presentationRows.push({
+        precioRows.push({
           product_id:      p.id,
           id_presentacion: pres.id_presentacion,
-          tipo:            pres.tipo?.trim() ?? null,
-          descripcion:     pres.descripcion ?? null,
-          factor:          pres.factor ?? 1,
           activo:          pres.activo ?? true,
           costo:           pres.costo ?? null,
           vineta:          precios.vineta ?? null,
@@ -104,18 +117,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    for (let i = 0; i < presentationRows.length; i += CHUNK) {
+    for (let i = 0; i < precioRows.length; i += CHUNK) {
       await supabase
-        .from('product_presentations')
-        .upsert(presentationRows.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
+        .from('product_precios')
+        .upsert(precioRows.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         laboratorios: labRows.length,
+        presentaciones: presMap.size,
         products: productRows.length,
-        presentations: presentationRows.length,
+        product_precios: precioRows.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

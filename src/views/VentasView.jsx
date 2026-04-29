@@ -539,11 +539,128 @@ function TabProductos({ filterBranch, searchTerm }) {
     );
 }
 
+// ─── Tab: Integridad ─────────────────────────────────────────────────────────
+function TabIntegridad({ branches, filterBranch }) {
+    const [gaps, setGaps] = useState([]);
+    const [nulls, setNulls] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const getBranch = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
+
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            let qGaps = supabase.from('sales_invoice_gaps').select('*');
+            let qNulls = supabase.from('sales_invoice_nulls').select('*');
+            if (filterBranch) {
+                qGaps  = qGaps.eq('branch_id', Number(filterBranch));
+                qNulls = qNulls.eq('branch_id', Number(filterBranch));
+            }
+            const [{ data: gData }, { data: nData }] = await Promise.all([qGaps, qNulls]);
+            setGaps(gData || []);
+            setNulls(nData || []);
+            setLoading(false);
+        };
+        load();
+    }, [filterBranch]);
+
+    if (loading) return <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>;
+
+    return (
+        <div className="p-4 md:p-6 space-y-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className={`border rounded-2xl p-4 ${gaps.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <p className={`text-xs font-medium mb-1 ${gaps.length > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>Saltos en correlativos</p>
+                    <p className={`text-2xl font-bold ${gaps.length > 0 ? 'text-orange-700' : 'text-emerald-700'}`}>{gaps.length}</p>
+                </div>
+                <div className={`border rounded-2xl p-4 ${nulls.length > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <p className={`text-xs font-medium mb-1 ${nulls.length > 0 ? 'text-red-500' : 'text-emerald-500'}`}>Campos indefinidos</p>
+                    <p className={`text-2xl font-bold ${nulls.length > 0 ? 'text-red-700' : 'text-emerald-700'}`}>{nulls.length}</p>
+                </div>
+            </div>
+
+            {/* Saltos */}
+            <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Saltos en correlativos</p>
+                {gaps.length === 0 ? (
+                    <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">Sin saltos detectados</p>
+                ) : (
+                    <div className="rounded-2xl border border-orange-200 overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-orange-50 text-xs font-semibold uppercase tracking-wide text-orange-700">
+                                    <th className="text-left px-4 py-3">Sucursal</th>
+                                    <th className="text-left px-4 py-3">Tipo</th>
+                                    <th className="text-left px-4 py-3">Desde</th>
+                                    <th className="text-left px-4 py-3">Hasta</th>
+                                    <th className="text-right px-4 py-3">Faltantes</th>
+                                    <th className="text-left px-4 py-3 hidden md:table-cell">Siguiente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {gaps.map((g, i) => (
+                                    <tr key={i} className="border-t border-orange-100 hover:bg-orange-50/50 transition-colors">
+                                        <td className="px-4 py-3 text-xs text-slate-600">{getBranch(g.branch_id)}</td>
+                                        <td className="px-4 py-3"><span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md">{g.tipo_documento}</span></td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{String(g.gap_from).padStart(7, '0')}</td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{String(g.gap_to).padStart(7, '0')}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-orange-700">{g.gap_count}</td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-400 hidden md:table-cell">{g.siguiente_correlativo}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Nulos */}
+            <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Campos indefinidos / nulos</p>
+                {nulls.length === 0 ? (
+                    <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">Sin registros con campos indefinidos</p>
+                ) : (
+                    <div className="rounded-2xl border border-red-200 overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-red-50 text-xs font-semibold uppercase tracking-wide text-red-700">
+                                    <th className="text-left px-4 py-3">Sucursal</th>
+                                    <th className="text-left px-4 py-3">Correlativo</th>
+                                    <th className="text-left px-4 py-3">Fecha</th>
+                                    <th className="text-left px-4 py-3">Campos nulos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {nulls.map((n) => (
+                                    <tr key={n.id} className="border-t border-red-100 hover:bg-red-50/50 transition-colors">
+                                        <td className="px-4 py-3 text-xs text-slate-600">{getBranch(n.branch_id)}</td>
+                                        <td className="px-4 py-3 font-mono text-xs">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}</td>
+                                        <td className="px-4 py-3 text-xs text-slate-600">{n.fecha || '—'}</td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(n.campos_nulos || []).map(c => (
+                                                    <span key={c} className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-md">{c}</span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ─── Main View ────────────────────────────────────────────────────────────────
 const TABS = [
     { key: 'anulaciones', label: 'Anulaciones', icon: AlertTriangle },
     { key: 'vendedores',  label: 'Vendedores',  icon: Users },
     { key: 'productos',   label: 'Productos',   icon: Package },
+    { key: 'integridad',  label: 'Integridad',  icon: BadgeAlert },
 ];
 
 export default function VentasView() {
@@ -678,6 +795,12 @@ export default function VentasView() {
                 <TabProductos
                     filterBranch={filterBranch}
                     searchTerm={rawSearch}
+                />
+            )}
+            {activeTab === 'integridad' && (
+                <TabIntegridad
+                    branches={salesBranches}
+                    filterBranch={filterBranch}
                 />
             )}
         </GlassViewLayout>

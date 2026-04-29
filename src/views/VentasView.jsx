@@ -561,7 +561,6 @@ const TABS = [
 
 export default function VentasView() {
     const { branches, employees } = useStaff();
-    const { rolePerms } = useAuth();
     const [activeTab, setActiveTab] = useState('anulaciones');
     const [filterBranch, setFilterBranch] = useState('');
 
@@ -570,42 +569,23 @@ export default function VentasView() {
         [branches]
     );
 
-    const branchOptions = useMemo(() => [
-        ...salesBranches.map(b => ({ value: String(b.id), label: b.name }))
-    ], [salesBranches]);
+    const branchOptions = useMemo(() =>
+        salesBranches.map(b => ({ value: String(b.id), label: b.name })),
+        [salesBranches]
+    );
 
     const filtersContent = (
-        <div className="flex items-center gap-2 flex-wrap">
-            {/* Tabs */}
-            <div className="flex bg-black/5 rounded-2xl p-1 gap-1">
-                {TABS.map(t => {
-                    const Icon = t.icon;
-                    const active = activeTab === t.key;
-                    return (
-                        <button
-                            key={t.key}
-                            onClick={() => setActiveTab(t.key)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                active
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                            }`}
-                        >
-                            <Icon size={14} />
-                            <span className="hidden sm:inline">{t.label}</span>
-                        </button>
-                    );
-                })}
+        <div className="flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-visible">
+            <div className="w-[180px] md:w-[230px] overflow-visible h-full flex items-center px-1">
+                <LiquidSelect
+                    value={filterBranch}
+                    onChange={setFilterBranch}
+                    options={branchOptions}
+                    placeholder="Todas las sucursales"
+                    icon={Building2}
+                    compact
+                />
             </div>
-            {/* Branch filter */}
-            <LiquidSelect
-                value={filterBranch}
-                onChange={setFilterBranch}
-                options={branchOptions}
-                placeholder="Todas las sucursales"
-                icon={Building2}
-                compact
-            />
         </div>
     );
 
@@ -616,6 +596,28 @@ export default function VentasView() {
             liveIndicator={activeTab === 'anulaciones'}
             filtersContent={filtersContent}
         >
+            {/* Tab bar inside the body */}
+            <div className="flex items-center gap-1 px-4 md:px-6 pt-4 pb-2 border-b border-slate-100">
+                {TABS.map(t => {
+                    const Icon = t.icon;
+                    const active = activeTab === t.key;
+                    return (
+                        <button
+                            key={t.key}
+                            onClick={() => setActiveTab(t.key)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                active
+                                    ? 'bg-[#007AFF]/10 text-[#007AFF]'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                            <Icon size={14} strokeWidth={active ? 2.5 : 2} />
+                            {t.label}
+                        </button>
+                    );
+                })}
+            </div>
+
             {activeTab === 'anulaciones' && (
                 <TabAnulaciones
                     branches={salesBranches}

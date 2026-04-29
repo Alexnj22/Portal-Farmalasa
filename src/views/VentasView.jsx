@@ -179,7 +179,7 @@ function AnulacionTable({ rows, getBranch, urgent }) {
                                     {timeAgo(r.fecha, r.hora)}
                                 </span>
                                 {(r.estado === null || r.estado === 'undefined') && (
-                                    <span className="block text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md text-center">SIN ESTADO</span>
+                                    <span className="block text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md text-center">UNDEFINED</span>
                                 )}
                             </td>
                         </tr>

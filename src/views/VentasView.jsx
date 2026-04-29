@@ -75,17 +75,38 @@ function TabAnulaciones({ branches, filterBranch, searchTerm, currentUser }) {
             .order('fecha', { ascending: true })
             .order('hora', { ascending: true });
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-        const [invoicesRes, resolvedRes] = await Promise.all([
+
+        const [invoicesRes, resolutionsRes, historialRes] = await Promise.all([
             q,
+            supabase.from('sales_invoice_resolutions').select('invoice_id'),
             supabase
                 .from('sales_invoice_resolutions')
-                .select('id, invoice_id, comment, resolved_by, resolved_at, sales_invoices(correlativo, branch_id, tipo_documento, cliente, fecha, total, erp_invoice_id)')
+                .select('id, invoice_id, comment, resolved_by, resolved_at')
                 .order('resolved_at', { ascending: false }),
         ]);
-        setRows(invoicesRes.data || []);
-        const resolvedData = resolvedRes.data || [];
-        setResolved(resolvedData);
-        setResolvedIds(new Set(resolvedData.map(r => r.invoice_id)));
+
+        const invoiceRows = invoicesRes.data || [];
+        const resolvedIdSet = new Set((resolutionsRes.data || []).map(r => r.invoice_id));
+
+        // Enrich historial with invoice data from the already-fetched invoices + any others
+        const allInvoiceIds = (historialRes.data || []).map(r => r.invoice_id);
+        let invoiceDetails = {};
+        if (allInvoiceIds.length > 0) {
+            const { data: detailRows } = await supabase
+                .from('sales_invoices')
+                .select('id, correlativo, branch_id, tipo_documento, cliente, fecha, total, erp_invoice_id')
+                .in('id', allInvoiceIds);
+            for (const inv of (detailRows || [])) invoiceDetails[inv.id] = inv;
+        }
+
+        const enriched = (historialRes.data || []).map(r => ({
+            ...r,
+            sales_invoices: invoiceDetails[r.invoice_id] || null,
+        }));
+
+        setRows(invoiceRows);
+        setResolvedIds(resolvedIdSet);
+        setResolved(enriched);
         setLastRefresh(new Date());
         setLoading(false);
     }, [filterBranch]);

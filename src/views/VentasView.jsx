@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
     TrendingUp, AlertTriangle, Users, Package,
     Clock, Building2, Loader2, ChevronDown,
-    ChevronUp, BadgeAlert, Search, X, Trophy, Star, ChevronRight
+    ChevronUp, BadgeAlert, Search, X, Trophy, Star, ChevronRight, History
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -655,12 +655,126 @@ function TabIntegridad({ branches, filterBranch }) {
     );
 }
 
+// ─── Tab: Cambios ─────────────────────────────────────────────────────────────
+function TabCambios({ branches, filterBranch }) {
+    const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [limit, setLimit] = useState(50);
+
+    const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        let q = supabase
+            .from('sales_invoice_changelog')
+            .select('id, invoice_id, branch_id, tipo_documento, campo, valor_anterior, valor_nuevo, detected_at, codigo_generacion')
+            .order('detected_at', { ascending: false })
+            .limit(limit);
+        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+        const { data } = await q;
+        setRows(data || []);
+        setLoading(false);
+    }, [filterBranch, limit]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const FIELD_LABELS = { estado: 'Estado', tipo_pago: 'Tipo Pago' };
+
+    const BADGE = {
+        estado: { old: 'bg-orange-100 text-orange-700', new: 'bg-emerald-100 text-emerald-700' },
+        tipo_pago: { old: 'bg-slate-100 text-slate-600', new: 'bg-blue-100 text-blue-700' },
+    };
+
+    const badge = (campo, which, value) => {
+        const colors = BADGE[campo]?.[which] || 'bg-slate-100 text-slate-600';
+        return (
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${colors}`}>
+                {value || '—'}
+            </span>
+        );
+    };
+
+    return (
+        <div className="p-4 md:p-6 space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                    <p className="text-xs text-blue-500 font-medium mb-1">Cambios registrados</p>
+                    <p className="text-2xl font-bold text-blue-700">{rows.length}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                    <p className="text-xs text-slate-500 font-medium mb-1">Mostrando últimos</p>
+                    <p className="text-2xl font-bold text-slate-700">{limit}</p>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+            ) : rows.length === 0 ? (
+                <div className="text-center py-16 text-slate-400">
+                    <History size={40} className="mx-auto mb-3" />
+                    <p className="font-medium">Sin cambios registrados</p>
+                    <p className="text-sm mt-1">Los cambios en estado y tipo de pago aparecerán aquí</p>
+                </div>
+            ) : (
+                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                <th className="text-left px-4 py-3">Cuando</th>
+                                <th className="text-left px-4 py-3 hidden md:table-cell">Sucursal</th>
+                                <th className="text-left px-4 py-3">Correlativo</th>
+                                <th className="text-left px-4 py-3 hidden sm:table-cell">Campo</th>
+                                <th className="text-left px-4 py-3">Anterior</th>
+                                <th className="text-left px-4 py-3">Nuevo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map(r => {
+                                const dt = new Date(r.detected_at);
+                                const dtStr = dt.toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                return (
+                                    <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
+                                        <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{dtStr}</td>
+                                        <td className="px-4 py-3 text-xs text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
+                                        <td className="px-4 py-3 font-mono text-xs text-slate-700">
+                                            <p>{r.tipo_documento || '—'} #{r.invoice_id}</p>
+                                            {r.codigo_generacion && <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{r.codigo_generacion}</p>}
+                                        </td>
+                                        <td className="px-4 py-3 hidden sm:table-cell">
+                                            <span className="text-[11px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md uppercase">
+                                                {FIELD_LABELS[r.campo] || r.campo}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3">{badge(r.campo, 'old', r.valor_anterior)}</td>
+                                        <td className="px-4 py-3">{badge(r.campo, 'new', r.valor_nuevo)}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                    {rows.length === limit && (
+                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50 text-center">
+                            <button
+                                onClick={() => setLimit(l => l + 50)}
+                                className="text-xs font-semibold text-[#007AFF] hover:underline">
+                                Cargar más
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Main View ────────────────────────────────────────────────────────────────
 const TABS = [
     { key: 'anulaciones', label: 'Anulaciones', icon: AlertTriangle },
     { key: 'vendedores',  label: 'Vendedores',  icon: Users },
     { key: 'productos',   label: 'Productos',   icon: Package },
     { key: 'integridad',  label: 'Integridad',  icon: BadgeAlert },
+    { key: 'cambios',     label: 'Cambios',     icon: History },
 ];
 
 export default function VentasView() {
@@ -756,15 +870,17 @@ export default function VentasView() {
                     />
                 </div>
 
-                {/* Divider */}
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-
-                {/* Search button */}
-                <button onClick={openSearch}
-                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
-                    <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                    {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
-                </button>
+                {/* Search button — hidden for tabs without text search */}
+                {!['integridad', 'cambios'].includes(activeTab) && (
+                    <>
+                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                        <button onClick={openSearch}
+                            className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
+                            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+                            {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -799,6 +915,12 @@ export default function VentasView() {
             )}
             {activeTab === 'integridad' && (
                 <TabIntegridad
+                    branches={salesBranches}
+                    filterBranch={filterBranch}
+                />
+            )}
+            {activeTab === 'cambios' && (
+                <TabCambios
                     branches={salesBranches}
                     filterBranch={filterBranch}
                 />

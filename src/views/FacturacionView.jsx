@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
-    Loader2, BadgeAlert, Search, X, Check, History
+    Loader2, BadgeAlert, Search, X, Check, History, ChevronRight
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -612,84 +612,111 @@ export default function FacturacionView() {
     const branches = useStaff((state) => state.branches);
     const [activeTab, setActiveTab] = useState('anuladas');
     const [filterBranch, setFilterBranch] = useState('');
+    const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
-    const [searchOpen, setSearchOpen] = useState(false);
+    const searchInputRef = useRef(null);
 
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
     );
 
-    const branchOptions = useMemo(() => [
-        { value: '', label: 'Todas las sucursales' },
-        ...salesBranches.map(b => ({ value: String(b.id), label: b.name })),
-    ], [salesBranches]);
+    const branchOptions = useMemo(() =>
+        salesBranches.map(b => ({ value: String(b.id), label: b.name })),
+        [salesBranches]
+    );
 
-    const openSearch = () => setSearchOpen(true);
-    const closeSearch = () => { setSearchOpen(false); setRawSearch(''); };
+    const openSearch = () => {
+        setIsSearchMode(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+    };
 
-    const hasSearch = !['saltos'].includes(activeTab);
+    const closeSearch = () => {
+        setIsSearchMode(false);
+        setRawSearch('');
+    };
+
+    const hasSearch = activeTab !== 'saltos';
+
+    const searchPlaceholder = {
+        anuladas:     'Buscar correlativo o cliente...',
+        pendiente_mh: 'Buscar correlativo o cliente...',
+        no_efectivo:  'Buscar correlativo, cliente o método...',
+    }[activeTab] || 'Buscar...';
 
     const filtersContent = (
-        <div className="flex items-center gap-2 w-full overflow-x-auto scrollbar-hide px-4 md:px-6 py-2">
-            {TABS.map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.key;
-                return (
-                    <button
-                        key={tab.key}
-                        onClick={() => { setActiveTab(tab.key); setRawSearch(''); setSearchOpen(false); }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 shrink-0 ${
-                            isActive
-                                ? 'bg-white/80 text-slate-800 shadow-md border border-white/90'
-                                : 'text-slate-500 hover:bg-white/40 hover:text-slate-700'
-                        }`}
-                    >
-                        <Icon size={12} strokeWidth={2.5} className={isActive ? tab.color : ''} />
-                        <span className="hidden sm:inline">{tab.label}</span>
-                    </button>
-                );
-            })}
+        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
-            <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-
-            <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
-                <LiquidSelect
-                    value={filterBranch}
-                    onChange={setFilterBranch}
-                    options={branchOptions}
-                    placeholder="Todas"
-                    icon={Building2}
-                    compact
+            {/* Search mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
+                ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={searchPlaceholder}
+                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
+                    value={rawSearch}
+                    onChange={e => setRawSearch(e.target.value)}
                 />
+                {rawSearch && (
+                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0">
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                )}
+                <button onClick={closeSearch}
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2">
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
             </div>
 
-            {hasSearch && (
-                <>
-                    <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-                    {searchOpen ? (
-                        <div className="flex items-center gap-2 bg-white/80 rounded-full px-3 py-1.5 border border-white/90 shadow-sm">
-                            <Search size={14} className="text-slate-400 shrink-0" />
-                            <input
-                                autoFocus
-                                value={rawSearch}
-                                onChange={e => setRawSearch(e.target.value)}
-                                placeholder="Buscar..."
-                                className="bg-transparent text-[12px] text-slate-700 outline-none w-32 md:w-48 placeholder:text-slate-400"
-                            />
-                            <button onClick={closeSearch} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ) : (
+            {/* Normal mode */}
+            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
+                ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
+
+                {/* Tab pills */}
+                {TABS.map(tab => {
+                    const Icon = tab.icon;
+                    return (
+                        <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
+                                activeTab === tab.key
+                                    ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                            }`}>
+                            <Icon size={12} strokeWidth={2.5} />
+                            <span className="hidden sm:inline">{tab.label}</span>
+                        </button>
+                    );
+                })}
+
+                {/* Divider */}
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+
+                {/* Branch select */}
+                <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
+                    <LiquidSelect
+                        value={filterBranch}
+                        onChange={setFilterBranch}
+                        options={branchOptions}
+                        placeholder="Todas"
+                        icon={Building2}
+                        compact
+                    />
+                </div>
+
+                {/* Search button */}
+                {hasSearch && (
+                    <>
+                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                         <button onClick={openSearch}
                             className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                             {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                         </button>
-                    )}
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 

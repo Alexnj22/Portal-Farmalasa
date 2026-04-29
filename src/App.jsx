@@ -33,6 +33,7 @@ import AuditView from "./views/AuditView";
 import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
 import PayrollView from "./views/PayrollView";
+import VentasView from "./views/VentasView";
 import NoAccessView from "./views/NoAccessView";
 import AccessDeniedView from "./views/AccessDeniedView";
 import DashboardView from "./views/DashboardView";
@@ -465,6 +466,8 @@ function MainApp() {
                                     <Route path="vacation-plan" element={<PermissionGuard moduleKey="vacation_plan"><VacationPlanView /></PermissionGuard>} />
                                     <Route path="payroll" element={<PermissionGuard moduleKey="payroll"><PayrollView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
+
+                                    <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}
                                     <Route path="branches">

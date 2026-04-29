@@ -32,7 +32,7 @@ const MODULE_MAP = {
     permissions:       { path: '/permissions',     label: 'Permisos de Acceso',       icon: Lock          },
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
     // ── Próximamente ──
-    ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp,   comingSoon: true },
+    ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
     promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },

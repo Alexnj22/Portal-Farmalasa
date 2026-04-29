@@ -181,10 +181,9 @@ Deno.serve(async (req) => {
           for (const p of (venta.productos ?? [])) {
             if (p.id && !productMap.has(p.id)) {
               productMap.set(p.id, {
-                id:           p.id,
-                descripcion:  p.descripcion,
-                presentacion: p.presentacion,
-                updated_at:   new Date().toISOString(),
+                id:        p.id,
+                nombre:    p.descripcion,
+                updated_at: new Date().toISOString(),
               });
             }
           }

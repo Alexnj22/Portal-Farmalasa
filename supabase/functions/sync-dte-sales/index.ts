@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
         const changelogs: any[] = [];
         const newCodigos = new Set<string>();
         const productMap = new Map<number, any>();
+        const customerNames = new Set<string>();
 
         for (const venta of ventas) {
           const codigoLower = venta.codigo_generacion?.toLowerCase();
@@ -143,6 +144,9 @@ Deno.serve(async (req) => {
             newCodigos.add(codigoLower);
           }
 
+          const clienteName = venta.cliente?.trim() || null;
+          if (clienteName) customerNames.add(clienteName);
+
           invoicesToUpsert.push({
             branch_id:         branchId,
             erp_invoice_id:    venta.id_factura,
@@ -151,7 +155,7 @@ Deno.serve(async (req) => {
             tipo_documento:    tipoDoc,
             fecha:             venta.fecha,
             hora:              venta.hora,
-            cliente:           venta.cliente?.trim() || null,
+            cliente:           clienteName,
             cod_vendedor:      venta.cod_vendedor,
             tipo_pago:         venta.tipo_pago,
             estado:            venta.estado,
@@ -176,6 +180,25 @@ Deno.serve(async (req) => {
         // 4. Upsert product catalog
         if (productMap.size > 0) {
           await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id' });
+        }
+
+        // 4b. Upsert customers via RPC and build name→id map
+        const customerIdMap = new Map<string, number>();
+        if (customerNames.size > 0) {
+          const { data: customerData } = await supabase.rpc('upsert_customers', {
+            names: [...customerNames],
+          });
+          for (const c of (customerData ?? [])) {
+            customerIdMap.set(c.customer_name, c.customer_id);
+          }
+        }
+
+        // Attach customer_id to each invoice
+        for (const inv of invoicesToUpsert) {
+          if (inv.cliente) {
+            const cid = customerIdMap.get(inv.cliente.trim().toUpperCase());
+            if (cid) inv.customer_id = cid;
+          }
         }
 
         // 5. Upsert invoices

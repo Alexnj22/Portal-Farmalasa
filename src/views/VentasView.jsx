@@ -256,7 +256,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 
     const empMap = useMemo(() => {
         const m = new Map();
-        (employees || []).forEach(e => m.set(`${e.branch_id}::${e.code}`, e));
+        (employees || []).forEach(e => m.set(e.code, e));
         return m;
     }, [employees]);
 
@@ -267,56 +267,62 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
             p_ffin: ffin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
         });
-        setRows((data || []).map(r => ({
-            branch_id: r.branch_id,
-            cod_vendedor: r.cod_vendedor,
-            total: parseFloat(r.total_ventas || 0),
-            count: parseInt(r.total_facturas || 0),
-        })));
+        // Consolidate across branches — cod_vendedor is unique company-wide
+        const consolidated = new Map();
+        for (const r of (data || [])) {
+            const cur = consolidated.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0, branchIds: [] };
+            cur.total += parseFloat(r.total_ventas || 0);
+            cur.count += parseInt(r.total_facturas || 0);
+            cur.branchIds.push(r.branch_id);
+            consolidated.set(r.cod_vendedor, cur);
+        }
+        setRows([...consolidated.values()].sort((a, b) => b.total - a.total));
         setLoading(false);
     }, [fini, ffin, filterBranch]);
 
     useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
 
-    const toggleExpand = async (key, branchId, cod) => {
-        if (expanded === key) { setExpanded(null); return; }
-        setExpanded(key);
+    const toggleExpand = async (cod) => {
+        if (expanded === cod) { setExpanded(null); return; }
+        setExpanded(cod);
         setLoadingExpand(true);
         const { data } = await supabase.rpc('get_vendedor_diario', {
-            p_branch_id: branchId,
             p_cod_vendedor: cod,
             p_fini: fini,
             p_ffin: ffin,
         });
-        setExpandedData((data || []).map(d => ({
-            fecha: d.fecha,
-            total: parseFloat(d.total_ventas || 0),
-            count: parseInt(d.total_facturas || 0),
-        })));
+        // Group by fecha, keep branch_id per entry to detect cross-branch days
+        const byDate = new Map();
+        for (const d of (data || [])) {
+            const cur = byDate.get(d.fecha) || { fecha: d.fecha, total: 0, count: 0, branches: [] };
+            cur.total += parseFloat(d.total_ventas || 0);
+            cur.count += parseInt(d.total_facturas || 0);
+            cur.branches.push({ branch_id: d.branch_id, total: parseFloat(d.total_ventas || 0) });
+            byDate.set(d.fecha, cur);
+        }
+        setExpandedData([...byDate.values()]);
         setLoadingExpand(false);
     };
 
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Sucursal ${id}`;
 
-    const { knownRows, unknownByBranch } = useMemo(() => {
+    const { knownRows, unknownRows } = useMemo(() => {
         const s = searchTerm.toLowerCase();
         const known = [];
-        const unknownMap = new Map(); // branch_id → rows[]
+        const unknown = [];
         for (const r of rows) {
-            const emp = empMap.get(`${r.branch_id}::${r.cod_vendedor}`);
+            const emp = empMap.get(r.cod_vendedor);
             if (emp) {
                 if (!s || `${emp.first_names} ${emp.last_names}`.toLowerCase().includes(s) || r.cod_vendedor?.toLowerCase().includes(s)) {
                     known.push({ ...r, emp });
                 }
             } else {
-                if (!s || r.cod_vendedor?.toLowerCase().includes(s) || getBranchName(r.branch_id).toLowerCase().includes(s)) {
-                    const list = unknownMap.get(r.branch_id) || [];
-                    list.push(r);
-                    unknownMap.set(r.branch_id, list);
+                if (!s || r.cod_vendedor?.toLowerCase().includes(s)) {
+                    unknown.push(r);
                 }
             }
         }
-        return { knownRows: known, unknownByBranch: unknownMap };
+        return { knownRows: known, unknownRows: unknown };
     }, [rows, searchTerm, empMap]);
 
     const totalVentas = rows.reduce((s, r) => s + r.total, 0);
@@ -342,8 +348,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                     <p className="text-xs text-blue-500 font-medium mb-1">Vendedores activos</p>
                     <p className="text-2xl font-bold text-blue-700">{knownRows.length}</p>
-                    {unknownByBranch.size > 0 && (
-                        <p className="text-[10px] text-orange-500 font-semibold mt-0.5">{[...unknownByBranch.values()].reduce((s, a) => s + a.length, 0)} cód. incorrecto</p>
+                    {unknownRows.length > 0 && (
+                        <p className="text-[10px] text-orange-500 font-semibold mt-0.5">{unknownRows.length} cód. incorrecto</p>
                     )}
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
@@ -374,16 +380,16 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                         </thead>
                         <tbody>
                             {knownRows.map((r, i) => {
-                                const key = `${r.branch_id}::${r.cod_vendedor}`;
-                                const isOpen = expanded === key;
+                                const isOpen = expanded === r.cod_vendedor;
                                 const ticket = r.count > 0 ? r.total / r.count : 0;
                                 const pct = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
+                                const baseBranchId = r.emp.branch_id;
 
                                 return (
-                                    <React.Fragment key={key}>
+                                    <React.Fragment key={r.cod_vendedor}>
                                         <tr
                                             className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors cursor-pointer"
-                                            onClick={() => toggleExpand(key, r.branch_id, r.cod_vendedor)}
+                                            onClick={() => toggleExpand(r.cod_vendedor)}
                                         >
                                             <td className="px-4 py-3">
                                                 {i === 0 ? <Trophy size={16} className="text-yellow-500" />
@@ -404,7 +410,12 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 hidden md:table-cell text-slate-600 text-xs">{getBranchName(r.branch_id)}</td>
+                                            <td className="px-4 py-3 hidden md:table-cell text-slate-600 text-xs">
+                                                {getBranchName(baseBranchId)}
+                                                {r.branchIds.filter(id => id !== baseBranchId).map(id => (
+                                                    <span key={id} className="ml-1 text-[10px] text-orange-500 font-semibold">+{getBranchName(id)}</span>
+                                                ))}
+                                            </td>
                                             <td className="px-4 py-3 text-right font-medium text-slate-700">{fmtNum(r.count)}</td>
                                             <td className="px-4 py-3 text-right">
                                                 <div>
@@ -428,13 +439,19 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                                         <div>
                                                             <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Ventas diarias</p>
                                                             <div className="flex flex-wrap gap-2">
-                                                                {expandedData.map(d => (
-                                                                    <div key={d.fecha} className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs">
-                                                                        <p className="text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                        <p className="font-bold text-slate-800">{fmt(d.total)}</p>
-                                                                        <p className="text-slate-400">{d.count} fact.</p>
-                                                                    </div>
-                                                                ))}
+                                                                {expandedData.map(d => {
+                                                                    const crossBranches = d.branches.filter(b => b.branch_id !== baseBranchId);
+                                                                    return (
+                                                                        <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${crossBranches.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200'}`}>
+                                                                            <p className="text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                                                            <p className="font-bold text-slate-800">{fmt(d.total)}</p>
+                                                                            <p className="text-slate-400">{d.count} fact.</p>
+                                                                            {crossBranches.map(b => (
+                                                                                <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
+                                                                            ))}
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         </div>
                                                     )}
@@ -445,13 +462,12 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                 );
                             })}
 
-                            {/* Unknown / incorrect codes — one aggregated row per branch */}
-                            {[...unknownByBranch.entries()].map(([branchId, bRows]) => {
-                                const totalU = bRows.reduce((s, r) => s + r.total, 0);
-                                const countU = bRows.reduce((s, r) => s + r.count, 0);
-                                const ticketU = countU > 0 ? totalU / countU : 0;
+                            {/* Unknown / incorrect codes — one row per unknown code */}
+                            {unknownRows.map(r => {
+                                const ticket = r.count > 0 ? r.total / r.count : 0;
+                                const branchLabel = r.branchIds.map(id => getBranchName(id)).join(', ');
                                 return (
-                                    <tr key={`unknown-${branchId}`} className="border-t border-orange-100 bg-orange-50/30">
+                                    <tr key={`unknown-${r.cod_vendedor}`} className="border-t border-orange-100 bg-orange-50/30">
                                         <td className="px-4 py-3">
                                             <span className="text-[10px] font-bold text-orange-300">—</span>
                                         </td>
@@ -460,13 +476,16 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
                                                 <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
                                                     <Users size={14} className="text-orange-400" />
                                                 </div>
-                                                <p className="font-medium text-orange-600 text-sm">Cód. Incorrecto — {getBranchName(branchId)}</p>
+                                                <div>
+                                                    <p className="font-medium text-orange-600 text-sm">Cód. Incorrecto</p>
+                                                    <p className="text-xs text-orange-400">Cód. {r.cod_vendedor}</p>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-xs">—</td>
-                                        <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(countU)}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-slate-600">{fmt(totalU)}</td>
-                                        <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticketU)}</td>
+                                        <td className="px-4 py-3 hidden md:table-cell text-orange-400 text-xs">{branchLabel}</td>
+                                        <td className="px-4 py-3 text-right font-medium text-slate-500">{fmtNum(r.count)}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-slate-600">{fmt(r.total)}</td>
+                                        <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400">{fmt(ticket)}</td>
                                         <td className="px-4 py-3" />
                                     </tr>
                                 );

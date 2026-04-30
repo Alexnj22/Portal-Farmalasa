@@ -69,7 +69,6 @@ function Pagination({ page, total, onChange }) {
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
 function TabVentas({ branches, filterBranch, searchTerm }) {
     const [rows, setRows]         = useState([]);
-    const [loading, setLoading]   = useState(true);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
     const [page, setPage]         = useState(1);
@@ -82,49 +81,60 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
     });
 
     const [fini, ffin] = monthRange.split('|');
+    const [loadingRows, setLoadingRows] = useState(true);
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
+    const isSearching = searchTerm?.trim().length > 0;
 
-    const fetchVentas = useCallback(async () => {
-        setLoading(true);
-        // Stats: tabla pre-agregada para meses pasados, RPC en tiempo real para mes actual
+    // Stats: solo cuando cambia mes o sucursal (no en cambio de página)
+    const fetchStats = useCallback(async () => {
         const isCurrentMonth = fini === currentMonthRange().fini;
-        let stats;
         if (isCurrentMonth) {
             const { data } = await supabase.rpc('get_ventas_stats', {
                 p_fini: fini, p_ffin: ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
             });
-            stats = data?.[0] || { total_count: 0, total_sum: 0, avg_ticket: 0 };
+            const s = data?.[0] || { total_count: 0, total_sum: 0 };
+            setTotalCount(parseInt(s.total_count || 0));
+            setTotalAmount(parseFloat(s.total_sum || 0));
         } else {
             const { data } = await supabase
                 .from('ventas_monthly_stats')
-                .select('total_count, total_sum, avg_ticket')
+                .select('total_count, total_sum')
                 .eq('mes', fini)
                 .eq('branch_id', filterBranch ? Number(filterBranch) : -1)
                 .eq('cod_vendedor', '')
                 .single();
-            stats = data || { total_count: 0, total_sum: 0, avg_ticket: 0 };
+            setTotalCount(parseInt(data?.total_count || 0));
+            setTotalAmount(parseFloat(data?.total_sum || 0));
         }
-        setTotalCount(parseInt(stats.total_count || 0));
-        setTotalAmount(parseFloat(stats.total_sum || 0));
+    }, [fini, ffin, filterBranch]);
 
-        // Get paginated rows
+    // Rows: pagina normal o búsqueda en BD (sin paginación)
+    const fetchRows = useCallback(async () => {
+        setLoadingRows(true);
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, tipo_pago, subtotal, iva, total')
+            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, tipo_pago, total')
             .gte('fecha', fini).lte('fecha', ffin)
             .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
             .order('fecha', { ascending: false })
-            .order('hora', { ascending: false })
-            .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+            .order('hora', { ascending: false });
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+        if (isSearching) {
+            const s = searchTerm.trim();
+            q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`)
+                 .limit(200);
+        } else {
+            q = q.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+        }
         const { data } = await q;
         setRows(data || []);
-        setLoading(false);
-    }, [fini, ffin, filterBranch, page]);
+        setLoadingRows(false);
+    }, [fini, ffin, filterBranch, page, isSearching, searchTerm]);
 
-    useEffect(() => { fetchVentas(); }, [fetchVentas]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch]);
+    useEffect(() => { fetchStats(); }, [fetchStats]);
+    useEffect(() => { fetchRows(); }, [fetchRows]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, isSearching]);
 
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
@@ -140,17 +150,7 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
         setLoadingItems(false);
     }, [expandedId, itemsCache]);
 
-    const filtered = useMemo(() => {
-        if (!searchTerm) return rows;
-        const s = searchTerm.toLowerCase();
-        return rows.filter(r =>
-            r.correlativo?.toLowerCase().includes(s) ||
-            r.cliente?.toLowerCase().includes(s) ||
-            r.erp_invoice_id?.toLowerCase().includes(s)
-        );
-    }, [rows, searchTerm]);
-
-    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const totalPages = isSearching ? 1 : Math.ceil(totalCount / PAGE_SIZE);
     const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
 
     return (
@@ -177,16 +177,16 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
                 ))}
             </div>
 
-            {loading ? (
+            {loadingRows && rows.length === 0 ? (
                 <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
-            ) : filtered.length === 0 ? (
+            ) : !loadingRows && rows.length === 0 ? (
                 <div className="text-center py-20 text-slate-400">
                     <TrendingUp size={40} className="mx-auto mb-3" />
-                    <p className="font-medium">Sin ventas para este período</p>
+                    <p className="font-medium">{isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período'}</p>
                 </div>
             ) : (
                 <>
-                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                    <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-black/[0.06]">
@@ -199,7 +199,7 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map(r => {
+                                {rows.map(r => {
                                     const isCCF = r.tipo_documento === 'CCF';
                                     const isExpanded = expandedId === r.id;
                                     const items = itemsCache[r.id] || [];

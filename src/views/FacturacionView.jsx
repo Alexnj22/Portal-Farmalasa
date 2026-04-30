@@ -379,10 +379,14 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                             <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                         </div>
                                         {/* Row 2: correlativo + meta */}
-                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        <p className="text-[11px] text-slate-400 truncate mb-2">
-                                            {r.erp_invoice_id ? `#${r.erp_invoice_id} · ` : ''}{getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
-                                        </p>
+                                        <p className={`font-mono text-[13px] font-black leading-none mb-1.5 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                            {r.erp_invoice_id && <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">#{r.erp_invoice_id}</span>}
+                                            <span className="text-[11px] font-semibold text-slate-600">{getBranch(r.branch_id)}</span>
+                                            <span className="text-[10px] text-slate-400">·</span>
+                                            <span className="text-[11px] font-semibold text-slate-600">{r.fecha}</span>
+                                        </div>
+                                        {r.cliente && <p className="text-[11px] text-slate-400 truncate mb-2">{r.cliente}</p>}
                                         {/* Row 3: total + action */}
                                         <div className="flex items-center justify-between">
                                             <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>
@@ -629,10 +633,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                             <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                         </div>
                                         {/* Row 2: correlativo + meta */}
-                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        <p className={`text-[11px] truncate mb-2 ${isLate ? 'text-red-400' : 'text-slate-400'}`}>
-                                            {r.erp_invoice_id ? `#${r.erp_invoice_id} · ` : ''}{getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
-                                        </p>
+                                        <p className={`font-mono text-[13px] font-black leading-none mb-1.5 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                            {r.erp_invoice_id && <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">#{r.erp_invoice_id}</span>}
+                                            <span className="text-[11px] font-semibold text-slate-600">{getBranch(r.branch_id)}</span>
+                                            <span className="text-[10px] text-slate-400">·</span>
+                                            <span className={`text-[11px] font-semibold ${isLate ? 'text-red-500' : 'text-slate-600'}`}>{r.fecha}</span>
+                                        </div>
+                                        {r.cliente && <p className="text-[11px] text-slate-400 truncate mb-2">{r.cliente}</p>}
                                         {/* Row 3: total + action */}
                                         <div className="flex items-center justify-between">
                                             <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>

@@ -362,62 +362,47 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Todo está al día" subtitle="No hay anulaciones pendientes por atender en este momento." />
             ) : (
                 <>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2">
                         {pageRows.map(r => {
                             const isCCF = r.tipo_documento === 'CCF';
                             const isSolving = solvingId === r.id;
                             return (
-                                <div key={r.id} className={`rounded-2xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-300 ${isSolving ? 'border-emerald-300 shadow-emerald-100' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md hover:-translate-y-0.5' : 'border-slate-200 hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5'}`}>
-                                    <div className="px-5 pt-5 pb-4">
-                                        {/* Badges + time */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                                {(r.estado === null || r.estado === 'undefined') && <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-yellow-50 text-yellow-600 border border-yellow-200">Undefined</span>}
-                                                {!r.recibido_mh && <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Sin MH</span>}
+                                <div key={r.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}`}>
+                                    <div className="px-4 py-3">
+                                        {/* Row 1: badges + time */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <div className="flex items-center gap-1 flex-wrap">
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
+                                                {(r.estado === null || r.estado === 'undefined') && <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-yellow-50 text-yellow-600 border border-yellow-200">Undef</span>}
+                                                {!r.recibido_mh && <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Sin MH</span>}
                                             </div>
-                                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0 ml-2 ${isCCF ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
+                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                         </div>
-                                        {/* Correlativo */}
-                                        <p className={`font-mono text-[20px] font-black mb-3 leading-none ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        {/* Info grid */}
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Sucursal</p>
-                                                <p className="text-[13px] font-semibold text-slate-700">{getBranch(r.branch_id)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Fecha</p>
-                                                <p className="text-[13px] font-semibold text-slate-700">{r.fecha}</p>
-                                            </div>
-                                            {r.cliente && <div className="col-span-2">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
-                                                <p className="text-[13px] font-semibold text-slate-700 truncate">{r.cliente}</p>
-                                            </div>}
-                                        </div>
-                                        {/* Total + Solventar */}
-                                        <div className="flex items-end justify-between">
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
-                                                <p className={`text-[20px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                            </div>
+                                        {/* Row 2: correlativo + meta */}
+                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                        <p className="text-[11px] text-slate-400 truncate mb-2">
+                                            {getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
+                                        </p>
+                                        {/* Row 3: total + action */}
+                                        <div className="flex items-center justify-between">
+                                            <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>
                                             <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:-translate-y-0.5 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={11} /> Cancelar</> : <><Check size={11} /> Solventar</>}
+                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
+                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
                                             </button>
                                         </div>
                                     </div>
                                     {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-5 py-4">
+                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
                                             <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-3"
+                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
                                                 rows={2} autoFocus
-                                                placeholder="Comentario opcional — ej: cliente canceló, error de sistema…"
+                                                placeholder="Comentario opcional…"
                                                 value={comment} onChange={e => setComment(e.target.value)}
                                             />
                                             <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar solución
+                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
                                             </button>
                                         </div>
                                     )}
@@ -622,67 +607,52 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
             ) : (
                 <>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2">
                         {pageRows.map(r => {
                             const isCCF = r.tipo_documento === 'CCF';
                             const isLate = isCCF && r.fecha !== todayStr;
                             const isSolving = solvingId === r.id;
                             return (
-                                <div key={r.id} className={`rounded-2xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-300 ${isSolving ? 'border-emerald-300 shadow-emerald-100' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md hover:-translate-y-0.5' : 'border-violet-200 hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5'}`}>
-                                    <div className="px-5 pt-5 pb-4">
-                                        {/* Badges + time */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
+                                <div key={r.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md' : 'border-violet-200 hover:border-violet-300 hover:shadow-md'}`}>
+                                    <div className="px-4 py-3">
+                                        {/* Row 1: badges + time */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <div className="flex items-center gap-1 flex-wrap">
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
                                                 {isCCF && (
-                                                    <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${isLate ? 'bg-red-100 text-red-700 border-red-300' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                                                        <AlertTriangle size={9} />{isLate ? 'Vencido' : 'Mismo día'}
+                                                    <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isLate ? 'bg-red-100 text-red-700 border-red-300' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                                                        <AlertTriangle size={8} />{isLate ? 'Vencido' : 'Mismo día'}
                                                     </span>
                                                 )}
-                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pendiente MH</span>
+                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pend. MH</span>
                                             </div>
-                                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0 ml-2 ${isCCF ? 'bg-red-50 text-red-500' : 'bg-violet-50 text-violet-500'}`}>{timeAgo(r.fecha, r.hora)}</span>
+                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-violet-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                         </div>
-                                        {/* Correlativo */}
-                                        <p className={`font-mono text-[20px] font-black mb-3 leading-none ${isCCF ? 'text-red-700' : 'text-violet-700'}`}>{r.correlativo}</p>
-                                        {/* Info grid */}
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Sucursal</p>
-                                                <p className="text-[13px] font-semibold text-slate-700">{getBranch(r.branch_id)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Fecha</p>
-                                                <p className={`text-[13px] font-semibold ${isLate ? 'text-red-600' : 'text-slate-700'}`}>{r.fecha}</p>
-                                            </div>
-                                            {r.cliente && <div className="col-span-2">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
-                                                <p className="text-[13px] font-semibold text-slate-700 truncate">{r.cliente}</p>
-                                            </div>}
-                                        </div>
-                                        {/* Total + Solventar */}
-                                        <div className="flex items-end justify-between">
-                                            <div>
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
-                                                <p className={`text-[20px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                            </div>
+                                        {/* Row 2: correlativo + meta */}
+                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-violet-700'}`}>{r.correlativo}</p>
+                                        <p className={`text-[11px] truncate mb-2 ${isLate ? 'text-red-400' : 'text-slate-400'}`}>
+                                            {getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
+                                        </p>
+                                        {/* Row 3: total + action */}
+                                        <div className="flex items-center justify-between">
+                                            <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>
                                             <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:-translate-y-0.5 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={11} /> Cancelar</> : <><Check size={11} /> Solventar</>}
+                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
+                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
                                             </button>
                                         </div>
                                     </div>
                                     {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-5 py-4">
+                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
                                             <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-3"
+                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
                                                 rows={2} autoFocus
-                                                placeholder="Comentario opcional — ej: enviado manualmente al MH, referencia…"
+                                                placeholder="Comentario opcional…"
                                                 value={comment} onChange={e => setComment(e.target.value)}
                                             />
                                             <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar solución
+                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
                                             </button>
                                         </div>
                                     )}
@@ -822,75 +792,60 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2">
                         {pendingGaps.map((g, i) => {
                             const key = gapKey(g);
                             const isSolving = solvingGap === key;
                             const isCCF = g.tipo_documento === 'CCF';
                             return (
-                                <div key={i} className={`rounded-2xl border-2 bg-white shadow-sm transition-all duration-300 overflow-hidden ${isSolving ? 'border-emerald-300 shadow-emerald-100' : 'border-orange-200 hover:border-orange-300 hover:shadow-md hover:-translate-y-0.5'}`}>
-                                    {/* Card header */}
-                                    <div className="px-5 pt-5 pb-4">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
-                                                    {g.tipo_documento}
-                                                </span>
-                                                <span className="text-[14px] font-bold text-slate-700">{getBranch(g.branch_id)}</span>
+                                <div key={i} className={`rounded-xl border-2 bg-white shadow-sm transition-all duration-200 overflow-hidden ${isSolving ? 'border-emerald-300' : 'border-orange-200 hover:border-orange-300 hover:shadow-md'}`}>
+                                    <div className="px-4 py-3">
+                                        {/* Row 1: badges + count */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <div className="flex items-center gap-1">
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{g.tipo_documento}</span>
+                                                <span className="text-[12px] font-bold text-slate-700">{getBranch(g.branch_id)}</span>
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="text-[9px] font-bold uppercase tracking-widest text-orange-400">Faltantes</p>
-                                                <p className="text-[26px] font-black text-orange-600 leading-none">{g.gap_count}</p>
-                                            </div>
+                                            <span className="text-[10px] font-black text-orange-500 shrink-0">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span>
                                         </div>
 
                                         {/* Sequence visualization */}
-                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 mb-4">
-                                            <div className="text-center shrink-0">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-orange-400 mb-0.5">Desde</p>
-                                                <p className="font-mono text-[13px] font-black text-slate-700">{pad7(g.gap_from)}</p>
-                                            </div>
-                                            <div className="flex-1 flex items-center gap-1 px-2">
+                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2 mb-2">
+                                            <p className="font-mono text-[12px] font-black text-slate-700">{pad7(g.gap_from)}</p>
+                                            <div className="flex-1 flex items-center gap-1">
                                                 <div className="flex-1 border-t-2 border-dashed border-orange-300" />
-                                                <AlertTriangle size={13} className="text-orange-400 shrink-0" />
+                                                <AlertTriangle size={11} className="text-orange-400 shrink-0" />
                                                 <div className="flex-1 border-t-2 border-dashed border-orange-300" />
                                             </div>
-                                            <div className="text-center shrink-0">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-orange-400 mb-0.5">Hasta</p>
-                                                <p className="font-mono text-[13px] font-black text-slate-700">{pad7(g.gap_to)}</p>
-                                            </div>
+                                            <p className="font-mono text-[12px] font-black text-slate-700">{pad7(g.gap_to)}</p>
                                         </div>
 
-                                        {/* Footer row */}
+                                        {/* Row 3: siguiente + solve */}
                                         <div className="flex items-center justify-between">
                                             {g.siguiente_correlativo ? (
-                                                <p className="text-[11px] text-slate-400">
-                                                    Siguiente: <span className="font-mono font-bold text-slate-600">{g.siguiente_correlativo}</span>
+                                                <p className="text-[10px] text-slate-400">
+                                                    Sig: <span className="font-mono font-bold text-slate-600">{g.siguiente_correlativo}</span>
                                                 </p>
                                             ) : <span />}
                                             <button onClick={() => { setSolvingGap(isSolving ? null : key); setComment(''); }}
-                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:-translate-y-0.5 ${
-                                                    isSolving
-                                                        ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500'
-                                                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'
-                                                }`}>
-                                                {isSolving ? <><X size={11} /> Cancelar</> : <><Check size={11} /> Solventar</>}
+                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
+                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Solve panel */}
                                     {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-5 py-4">
+                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
                                             <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-3"
+                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
                                                 rows={2} autoFocus
-                                                placeholder="Comentario — ej: factura física encontrada, numeración externa…"
+                                                placeholder="Comentario opcional…"
                                                 value={comment} onChange={e => setComment(e.target.value)}
                                             />
                                             <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar solución
+                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
                                             </button>
                                         </div>
                                     )}
@@ -917,44 +872,42 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         <p className="text-[13px] font-bold text-emerald-700">Sin campos indefinidos</p>
                     </div>
                 ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2">
                         {nulls.filter(n => !nullResolvedIds.has(n.id)).map(n => {
                             const isSolving = solvingNull === n.id;
                             return (
-                                <div key={n.id} className={`rounded-2xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-300 ${isSolving ? 'border-emerald-300' : 'border-red-200 hover:border-red-300 hover:shadow-md hover:-translate-y-0.5'}`}>
-                                    <div className="px-5 pt-4 pb-4">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div>
-                                                <p className="text-[14px] font-bold text-slate-700">{getBranch(n.branch_id)}</p>
-                                                <p className="font-mono text-[12px] text-slate-400 mt-0.5">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}{n.fecha ? ` · ${n.fecha}` : ''}</p>
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 ml-3">
-                                                <AlertTriangle size={14} className="text-red-500" />
-                                            </div>
+                                <div key={n.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : 'border-red-200 hover:border-red-300 hover:shadow-md'}`}>
+                                    <div className="px-4 py-3">
+                                        {/* Row 1: branch + correlativo */}
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <p className="text-[12px] font-bold text-slate-700">{getBranch(n.branch_id)}</p>
+                                            <p className="font-mono text-[11px] text-slate-400 truncate">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}{n.fecha ? ` · ${n.fecha}` : ''}</p>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5 mb-4">
+                                        {/* Campo pills */}
+                                        <div className="flex flex-wrap gap-1 mb-2">
                                             {(n.campos_nulos || []).map(c => (
-                                                <span key={c} className="text-[10px] font-bold bg-red-100 text-red-700 px-2.5 py-1 rounded-lg border border-red-200">{c}</span>
+                                                <span key={c} className="text-[9px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-md border border-red-200">{c}</span>
                                             ))}
                                         </div>
+                                        {/* Solve button */}
                                         <div className="flex justify-end">
                                             <button onClick={() => { setSolvingNull(isSolving ? null : n.id); setNullComment(''); }}
-                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:-translate-y-0.5 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={11} /> Cancelar</> : <><Check size={11} /> Solventar</>}
+                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
+                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
                                             </button>
                                         </div>
                                     </div>
                                     {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-5 py-4">
+                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
                                             <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-3"
+                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
                                                 rows={2} autoFocus
-                                                placeholder="Comentario — ej: campo corregido en sistema, dato no aplicable…"
+                                                placeholder="Comentario opcional…"
                                                 value={nullComment} onChange={e => setNullComment(e.target.value)}
                                             />
                                             <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
-                                                className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                                                {nullSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar solución
+                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                {nullSaving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
                                             </button>
                                         </div>
                                     )}

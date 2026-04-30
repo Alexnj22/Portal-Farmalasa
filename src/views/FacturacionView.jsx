@@ -681,7 +681,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
                                                                             isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                                                             isCCF    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                       'bg-violet-50 text-violet-600 border-violet-100 hover:bg-violet-100 hover:text-violet-800'
+                                                                                       'bg-violet-50 text-slate-600 border-violet-100 hover:bg-violet-100'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
@@ -693,7 +693,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${
-                                                                            isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-white text-slate-300 hover:bg-emerald-50 hover:text-emerald-600'
+                                                                            isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'
                                                                         }`}>
                                                                         {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                     </button>

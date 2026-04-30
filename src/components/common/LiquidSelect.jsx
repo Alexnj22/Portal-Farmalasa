@@ -57,33 +57,26 @@ const LiquidSelect = ({
             const spaceBelow = viewportHeight - rect.bottom;
             const spaceAbove = rect.top;
 
-            let finalTop = rect.bottom + window.scrollY + 8; // Posición normal (abajo)
+            // Use viewport coords (fixed positioning via portal — no scroll offset needed)
+            let finalTop = rect.bottom + 8;
             let finalMaxHeight = DROPDOWN_IDEAL_HEIGHT;
             let finalOrigin = 'origin-top';
             let flipped = false;
 
-            // Lógica de decisión: ¿Hacia arriba o hacia abajo?
             if (spaceBelow < DROPDOWN_IDEAL_HEIGHT && spaceAbove > spaceBelow) {
-                // Hay más espacio arriba, así que abrimos hacia arriba (Flipped)
                 flipped = true;
                 finalOrigin = 'origin-bottom';
-                
-                // El maxHeight es el espacio de arriba menos un margen
-                finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceAbove - MARGIN); 
-                
-                // La posición Y será exactamente la parte superior del input, menos la altura del dropdown y un margen.
-                // Restamos window.scrollY para compensar si el usuario bajó la página.
-                finalTop = (rect.top + window.scrollY) - finalMaxHeight - 8; 
+                finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceAbove - MARGIN);
+                finalTop = rect.top - finalMaxHeight - 8;
             } else {
-                // Abrimos hacia abajo normal, pero aseguramos que el scroll interno funcione si roza el piso
                 finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceBelow - MARGIN);
             }
 
             setCoords({
                 top: finalTop,
-                left: rect.left + window.scrollX,
+                left: rect.left,
                 width: rect.width,
-                maxHeight: Math.max(finalMaxHeight, 150), // Nunca dejar que sea más pequeño que 150px
+                maxHeight: Math.max(finalMaxHeight, 150),
                 transformOrigin: finalOrigin,
                 isFlipped: flipped
             });
@@ -179,10 +172,10 @@ const LiquidSelect = ({
             style={{
                 top: coords.top,
                 left: coords.left,
-                width: Math.max(coords.width, compact ? 150 : 200) + 'px',
+                width: Math.max(coords.width, compact ? 170 : 200) + 'px',
                 maxHeight: coords.maxHeight + 'px', // 🚨 EL MAX-HEIGHT DINÁMICO
             }}
-            className={`absolute z-[99999] ${coords.transformOrigin} transition-all duration-300 rounded-[1.5rem] overflow-y-auto p-3 
+            className={`fixed z-[99999] ${coords.transformOrigin} transition-all duration-300 rounded-[1.5rem] overflow-y-auto p-3
             ${coords.isFlipped ? 'animate-in fade-in slide-in-from-bottom-2' : 'animate-in fade-in slide-in-from-top-2'} 
             duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
             ${isDark

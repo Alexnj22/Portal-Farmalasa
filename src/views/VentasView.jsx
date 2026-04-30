@@ -58,8 +58,8 @@ function SmartPagination({ page, total, onChange }) {
     const buildPages = () => {
         if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
         const pages = [1];
-        const left  = Math.max(2, page - 2);
-        const right = Math.min(total - 1, page + 2);
+        const left  = Math.max(2, page - 1);
+        const right = Math.min(total - 1, page + 1);
         if (left > 2) pages.push('…');
         for (let i = left; i <= right; i++) pages.push(i);
         if (right < total - 1) pages.push('…');
@@ -67,24 +67,26 @@ function SmartPagination({ page, total, onChange }) {
         return pages;
     };
     return (
-        <div className="flex items-center justify-center gap-1 py-3">
+        <div className="flex items-center gap-1.5 py-2">
             <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
-                <ChevronLeft size={14} />
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
             </button>
-            {buildPages().map((p, i) =>
-                p === '…'
-                    ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-[12px]">…</span>
-                    : <button key={p} onClick={() => onChange(p)}
-                        className={`w-8 h-8 rounded-full text-[12px] font-bold transition-all ${
-                            p === page
-                                ? 'bg-[#007AFF] text-white shadow-sm shadow-blue-200'
-                                : 'text-slate-500 hover:bg-slate-100'
-                        }`}>{p}</button>
-            )}
+            <div className="flex items-center gap-1">
+                {buildPages().map((p, i) =>
+                    p === '…'
+                        ? <span key={`e${i}`} className="w-6 text-center text-slate-300 text-[12px] font-bold select-none">·</span>
+                        : <button key={p} onClick={() => onChange(p)}
+                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
+                                p === page
+                                    ? 'bg-[#007AFF] text-white shadow-md shadow-blue-200 scale-110'
+                                    : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
+                            }`}>{p}</button>
+                )}
+            </div>
             <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
-                <ChevronRight size={14} />
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                Sig. <ChevronRight size={12} strokeWidth={2.5} />
             </button>
         </div>
     );
@@ -251,24 +253,26 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                     <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         <table className="w-full text-sm">
                             <thead className="sticky top-0 z-10">
-                                <tr className="bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
-                                    <SortTh label="Fecha" col="fecha" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                    <SortTh label="ID / Correl." col="correlativo" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden lg:table-cell">Sucursal</th>
-                                    <SortTh label="Cliente" col="cliente" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:table-cell">Tipo</th>
-                                    <SortTh label="Total" col="total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                <tr className="bg-gradient-to-b from-white/95 to-white/80 backdrop-blur-xl border-b border-white/60 shadow-[0_1px_0_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.04)]">
+                                    <SortTh label="Fecha" col="fecha" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
+                                    <SortTh label="ID / Correl." col="correlativo" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
+                                    <SortTh label="Sucursal" col="branch_id" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-3.5" />
+                                    <SortTh label="Cliente" col="cliente" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
+                                    <SortTh label="Método pago" col="tipo_pago" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
+                                    <SortTh label="Total" col="total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-3.5" />
                                 </tr>
                             </thead>
                             <tbody>
                                 {rows.map(r => {
                                     const isCCF = r.tipo_documento === 'CCF';
                                     const isExpanded = expandedId === r.id;
-                                    const items = itemsCache[r.id] || [];
+                                    const cachedItems = itemsCache[r.id];
+                                    const hasItems = cachedItems && cachedItems.length > 0;
+                                    const noData = cachedItems && cachedItems.length === 0;
                                     return (
                                         <React.Fragment key={r.id}>
                                             <tr onClick={() => toggleRow(r.id)}
-                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/60' : 'hover:bg-slate-50/60'}`}>
+                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'}`}>
                                                 <td className="px-4 py-2.5">
                                                     <p className="text-[12px] font-bold text-slate-700">{r.fecha}</p>
                                                     {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
@@ -277,50 +281,58 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                                                     {r.erp_invoice_id && <p className="font-mono text-[11px] font-black text-slate-500">#{r.erp_invoice_id}</p>}
                                                     <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
                                                 </td>
-                                                <td className="px-4 py-2.5 text-[11px] text-slate-600 hidden lg:table-cell">{getBranch(r.branch_id)}</td>
+                                                <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                    <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
+                                                    {isCCF && <span className="ml-1.5 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-red-50 text-red-500">CCF</span>}
+                                                </td>
                                                 <td className="px-4 py-2.5">
                                                     <p className="text-[12px] text-slate-700 truncate max-w-[180px]">{r.cliente || '—'}</p>
                                                 </td>
                                                 <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${isCCF ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>{r.tipo_documento}</span>
-                                                    {r.tipo_pago && <p className="text-[10px] text-slate-400 mt-0.5">{r.tipo_pago}</p>}
+                                                    {r.tipo_pago
+                                                        ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
+                                                        : <span className="text-slate-300">—</span>}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                                        <ChevronDown size={12} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                        <ChevronDown size={12}
+                                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
                                                     </div>
                                                 </td>
                                             </tr>
                                             {isExpanded && (
-                                                <tr className="border-t border-blue-100">
-                                                    <td colSpan={6} className="px-4 py-3 bg-blue-50/40">
-                                                        {loadingItems && items.length === 0 ? (
+                                                <tr className="border-t border-blue-100/60">
+                                                    <td colSpan={6} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
+                                                        {loadingItems && !cachedItems ? (
                                                             <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
-                                                                <Loader2 size={12} className="animate-spin" /> Cargando productos...
+                                                                <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
                                                             </div>
-                                                        ) : items.length === 0 ? (
-                                                            <p className="text-[11px] text-slate-400 py-1">Sin detalle de productos disponible.</p>
+                                                        ) : noData ? (
+                                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
+                                                                <Info size={12} className="text-slate-300 shrink-0" />
+                                                                Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
+                                                            </div>
                                                         ) : (
                                                             <table className="w-full text-[11px]">
                                                                 <thead>
-                                                                    <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                                                        <th className="text-left pb-1.5">Producto</th>
-                                                                        <th className="text-right pb-1.5">Cant.</th>
-                                                                        <th className="text-right pb-1.5 hidden sm:table-cell">Precio Unit.</th>
-                                                                        <th className="text-right pb-1.5">Total</th>
+                                                                    <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                                                        <th className="text-left pb-2">Producto</th>
+                                                                        <th className="text-right pb-2">Cant.</th>
+                                                                        <th className="text-right pb-2 hidden sm:table-cell">Precio Unit.</th>
+                                                                        <th className="text-right pb-2">Total</th>
                                                                     </tr>
                                                                 </thead>
-                                                                <tbody className="divide-y divide-blue-100">
-                                                                    {items.map((it, idx) => (
-                                                                        <tr key={idx}>
-                                                                            <td className="py-1.5 pr-4">
+                                                                <tbody className="divide-y divide-slate-100/60">
+                                                                    {(cachedItems || []).map((it, idx) => (
+                                                                        <tr key={idx} className="hover:bg-white/50 transition-colors">
+                                                                            <td className="py-2 pr-4">
                                                                                 <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
-                                                                                {it.presentacion && <p className="text-[10px] text-slate-400">{it.presentacion}</p>}
+                                                                                {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
                                                                             </td>
-                                                                            <td className="py-1.5 text-right font-bold text-slate-600">{it.cantidad}</td>
-                                                                            <td className="py-1.5 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
-                                                                            <td className="py-1.5 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
+                                                                            <td className="py-2 text-right font-bold text-slate-600">{it.cantidad}</td>
+                                                                            <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
+                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
                                                                         </tr>
                                                                     ))}
                                                                 </tbody>
@@ -335,14 +347,14 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                             </tbody>
                         </table>
                     </div>
-                    <div className="flex items-center justify-between px-4 border-t border-black/[0.05]">
-                        <div className="w-[120px]">
+                    <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
+                        <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}
                                 onChange={v => { setPageSize(Number(v)); setPage(1); }}
                                 options={PAGE_SIZE_OPTIONS} clearable={false} compact />
                         </div>
                         <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[120px] text-right">
+                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
                             {isSearching ? `${rows.length} resultados` : `${fmtNum(totalCount)} total`}
                         </span>
                     </div>

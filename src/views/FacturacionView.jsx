@@ -682,141 +682,201 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
     if (loading) return <div className="flex justify-center py-24"><Loader2 size={24} className="animate-spin text-slate-400" /></div>;
 
+    const pad7 = n => String(n).padStart(7, '0');
+
     return (
-        <div className="p-5 md:p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-3">
-                <div className={`border rounded-2xl p-4 ${pendingGaps.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                    <p className={`text-xs font-medium mb-1 ${pendingGaps.length > 0 ? 'text-orange-500' : 'text-emerald-500'}`}>Saltos pendientes</p>
-                    <p className={`text-2xl font-bold ${pendingGaps.length > 0 ? 'text-orange-700' : 'text-emerald-700'}`}>{pendingGaps.length}</p>
-                </div>
-                <div className={`border rounded-2xl p-4 ${nulls.length > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                    <p className={`text-xs font-medium mb-1 ${nulls.length > 0 ? 'text-red-500' : 'text-emerald-500'}`}>Campos indefinidos</p>
-                    <p className={`text-2xl font-bold ${nulls.length > 0 ? 'text-red-700' : 'text-emerald-700'}`}>{nulls.length}</p>
-                </div>
+        <div className="p-5 md:p-6 space-y-8">
+
+            {/* ── Stats strip ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                    { label: 'Saltos detectados', value: gaps.length,         icon: History,      urgent: gaps.length > 0,       colors: gaps.length > 0 ? 'from-orange-500 to-amber-400' : 'from-slate-400 to-slate-300' },
+                    { label: 'Sin resolver',       value: pendingGaps.length,  icon: AlertTriangle, urgent: pendingGaps.length > 0, colors: pendingGaps.length > 0 ? 'from-red-500 to-orange-400' : 'from-emerald-500 to-teal-400' },
+                    { label: 'Solventados',        value: resolvedGaps.length, icon: CheckCircle2,  urgent: false,                  colors: resolvedGaps.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300' },
+                    { label: 'Campos nulos',       value: nulls.length,        icon: AlertTriangle, urgent: nulls.length > 0,       colors: nulls.length > 0 ? 'from-red-500 to-rose-400' : 'from-slate-400 to-slate-300' },
+                ].map(({ label, value, icon: Icon, colors }) => (
+                    <div key={label} className="relative overflow-hidden rounded-2xl bg-white border border-black/[0.06] shadow-sm p-4">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${colors} opacity-[0.07]`} />
+                        <div className="relative">
+                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center mb-3 shadow-sm`}>
+                                <Icon size={15} className="text-white" strokeWidth={2.5} />
+                            </div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
+                            <p className="text-[28px] font-black text-slate-800 leading-none">{value}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            <div>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Saltos en correlativos</p>
+            {/* ── Saltos pendientes ── */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Saltos en correlativos</h3>
+                    {pendingGaps.length > 0 && (
+                        <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full">{pendingGaps.length} pendiente{pendingGaps.length !== 1 ? 's' : ''}</span>
+                    )}
+                </div>
+
                 {pendingGaps.length === 0 ? (
-                    <EmptyState icon={CheckCircle2} iconClass="text-emerald-500" glowClass="bg-emerald-500"
-                        title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas detectadas." />
+                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
+                        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                        <div>
+                            <p className="text-[13px] font-bold text-emerald-700">Sin saltos detectados</p>
+                            <p className="text-[12px] text-emerald-600">Los correlativos están en orden. No hay brechas.</p>
+                        </div>
+                    </div>
                 ) : (
-                    <div className="rounded-2xl border border-orange-200 overflow-hidden">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-orange-50/80 border-b border-orange-100 text-[11px] font-bold uppercase tracking-widest text-orange-700">
-                                    <th className="px-5 py-3">Sucursal</th>
-                                    <th className="px-5 py-3">Tipo</th>
-                                    <th className="px-5 py-3">Desde</th>
-                                    <th className="px-5 py-3">Hasta</th>
-                                    <th className="px-5 py-3 text-right">Faltantes</th>
-                                    <th className="px-5 py-3 hidden md:table-cell">Siguiente</th>
-                                    <th className="px-5 py-3"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-orange-100">
-                                {pendingGaps.map((g, i) => {
-                                    const key = gapKey(g);
-                                    const isSolving = solvingGap === key;
-                                    return (
-                                        <React.Fragment key={i}>
-                                            <tr className="hover:bg-orange-50/40 transition-colors border-l-4 border-transparent hover:border-l-orange-400/60">
-                                                <td className="px-5 py-3 text-[13px] text-slate-600">{getBranch(g.branch_id)}</td>
-                                                <td className="px-5 py-3"><span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md">{g.tipo_documento}</span></td>
-                                                <td className="px-5 py-3 font-mono text-[12px] text-slate-700">{String(g.gap_from).padStart(7, '0')}</td>
-                                                <td className="px-5 py-3 font-mono text-[12px] text-slate-700">{String(g.gap_to).padStart(7, '0')}</td>
-                                                <td className="px-5 py-3 text-right font-bold text-orange-700">{g.gap_count}</td>
-                                                <td className="px-5 py-3 font-mono text-[11px] text-slate-400 hidden md:table-cell">{g.siguiente_correlativo}</td>
-                                                <td className="px-5 py-3 text-right">
-                                                    <button onClick={() => { setSolvingGap(isSolving ? null : key); setComment(''); }}
-                                                        className="bg-white text-emerald-600 border border-slate-200 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest hover:border-emerald-400 hover:bg-emerald-50 transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ml-auto">
-                                                        <Check size={11} strokeWidth={2.5} /> Solventar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {isSolving && (
-                                                <tr>
-                                                    <td colSpan={7} className="px-5 py-4 bg-emerald-50/60 border-t border-emerald-100">
-                                                        <div className="flex items-start gap-3 max-w-2xl">
-                                                            <textarea
-                                                                className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
-                                                                rows={2} autoFocus
-                                                                placeholder="Comentario — ej: factura física encontrada, numeración externa, etc."
-                                                                value={comment} onChange={e => setComment(e.target.value)}
-                                                            />
-                                                            <div className="flex flex-col gap-2 shrink-0">
-                                                                <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
-                                                                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                                                                </button>
-                                                                <button onClick={() => setSolvingGap(null)}
-                                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-all hover:-translate-y-0.5">
-                                                                    <X size={12} /> Cancelar
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                    <div className="grid gap-3 md:grid-cols-2">
+                        {pendingGaps.map((g, i) => {
+                            const key = gapKey(g);
+                            const isSolving = solvingGap === key;
+                            const isCCF = g.tipo_documento === 'CCF';
+                            return (
+                                <div key={i} className={`rounded-2xl border-2 bg-white shadow-sm transition-all duration-300 overflow-hidden ${isSolving ? 'border-emerald-300 shadow-emerald-100' : 'border-orange-200 hover:border-orange-300 hover:shadow-md hover:-translate-y-0.5'}`}>
+                                    {/* Card header */}
+                                    <div className="px-5 pt-5 pb-4">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                                                    {g.tipo_documento}
+                                                </span>
+                                                <span className="text-[14px] font-bold text-slate-700">{getBranch(g.branch_id)}</span>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <p className="text-[9px] font-bold uppercase tracking-widest text-orange-400">Faltantes</p>
+                                                <p className="text-[26px] font-black text-orange-600 leading-none">{g.gap_count}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Sequence visualization */}
+                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 mb-4">
+                                            <div className="text-center shrink-0">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-orange-400 mb-0.5">Desde</p>
+                                                <p className="font-mono text-[13px] font-black text-slate-700">{pad7(g.gap_from)}</p>
+                                            </div>
+                                            <div className="flex-1 flex items-center gap-1 px-2">
+                                                <div className="flex-1 border-t-2 border-dashed border-orange-300" />
+                                                <AlertTriangle size={13} className="text-orange-400 shrink-0" />
+                                                <div className="flex-1 border-t-2 border-dashed border-orange-300" />
+                                            </div>
+                                            <div className="text-center shrink-0">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-orange-400 mb-0.5">Hasta</p>
+                                                <p className="font-mono text-[13px] font-black text-slate-700">{pad7(g.gap_to)}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Footer row */}
+                                        <div className="flex items-center justify-between">
+                                            {g.siguiente_correlativo ? (
+                                                <p className="text-[11px] text-slate-400">
+                                                    Siguiente: <span className="font-mono font-bold text-slate-600">{g.siguiente_correlativo}</span>
+                                                </p>
+                                            ) : <span />}
+                                            <button onClick={() => { setSolvingGap(isSolving ? null : key); setComment(''); }}
+                                                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:-translate-y-0.5 ${
+                                                    isSolving
+                                                        ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500'
+                                                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-200'
+                                                }`}>
+                                                {isSolving ? <><X size={11} /> Cancelar</> : <><Check size={11} /> Solventar</>}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Solve panel */}
+                                    {isSolving && (
+                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-5 py-4">
+                                            <textarea
+                                                className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-3"
+                                                rows={2} autoFocus
+                                                placeholder="Comentario — ej: factura física encontrada, numeración externa…"
+                                                value={comment} onChange={e => setComment(e.target.value)}
+                                            />
+                                            <button onClick={() => handleSolveGap(g)} disabled={saving}
+                                                className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar solución
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
-            <div>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Campos indefinidos / nulos</p>
+            {/* ── Campos nulos ── */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Campos indefinidos / nulos</h3>
+                    {nulls.length > 0 && (
+                        <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">{nulls.length}</span>
+                    )}
+                </div>
                 {nulls.length === 0 ? (
-                    <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">Sin registros con campos indefinidos</p>
+                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
+                        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                        <p className="text-[13px] font-bold text-emerald-700">Sin campos indefinidos</p>
+                    </div>
                 ) : (
-                    <div className="rounded-2xl border border-red-200 overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead><tr className="bg-red-50 text-[11px] font-bold uppercase tracking-widest text-red-700">
-                                <th className="px-5 py-3">Sucursal</th><th className="px-5 py-3">Correlativo</th>
-                                <th className="px-5 py-3">Fecha</th><th className="px-5 py-3">Campos nulos</th>
-                            </tr></thead>
-                            <tbody className="divide-y divide-red-100">
-                                {nulls.map(n => (
-                                    <tr key={n.id} className="hover:bg-red-50/40 transition-colors">
-                                        <td className="px-5 py-3 text-[13px] text-slate-600">{getBranch(n.branch_id)}</td>
-                                        <td className="px-5 py-3 font-mono text-[12px]">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}</td>
-                                        <td className="px-5 py-3 text-[13px] text-slate-600">{n.fecha || '—'}</td>
-                                        <td className="px-5 py-3"><div className="flex flex-wrap gap-1">{(n.campos_nulos || []).map(c => <span key={c} className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-md">{c}</span>)}</div></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="rounded-2xl border border-red-200 overflow-hidden bg-white shadow-sm">
+                        {nulls.map((n, i) => (
+                            <div key={n.id} className={`flex items-center gap-4 px-5 py-3.5 hover:bg-red-50/40 transition-colors ${i > 0 ? 'border-t border-red-100' : ''}`}>
+                                <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[13px] font-bold text-slate-700 truncate">{getBranch(n.branch_id)}</span>
+                                        <span className="font-mono text-[11px] text-slate-400 shrink-0">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}</span>
+                                        {n.fecha && <span className="text-[11px] text-slate-400 shrink-0">{n.fecha}</span>}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                        {(n.campos_nulos || []).map(c => (
+                                            <span key={c} className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-md">{c}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
 
+            {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
-                <div className="border border-black/[0.06] rounded-2xl overflow-hidden">
+                <div className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
                     <button onClick={() => setShowHistorial(v => !v)}
-                        className="w-full flex items-center justify-between px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-black/[0.02] transition-colors">
-                        <span className="flex items-center gap-2"><Check size={12} className="text-emerald-500" strokeWidth={3} />{resolvedGaps.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''}</span>
-                        {showHistorial ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <Check size={13} className="text-emerald-600" strokeWidth={3} />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[13px] font-bold text-slate-700">{resolvedGaps.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''}</p>
+                                <p className="text-[11px] text-slate-400">Historial de resoluciones</p>
+                            </div>
+                        </div>
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />
                     </button>
                     {showHistorial && (
-                        <table className="w-full text-left border-collapse">
-                            <AuditThead cols={['Sucursal', 'Tipo', 'Desde', 'Hasta', 'Solventado por', 'Cuándo', 'Comentario']} />
-                            <tbody className="divide-y divide-black/[0.03]">
-                                {resolvedGaps.map(r => (
-                                    <tr key={r.id} className="hover:bg-white/70 transition-colors border-l-4 border-transparent hover:border-l-emerald-400/50">
-                                        <td className="p-5 pl-8 text-[13px] text-slate-600">{getBranch(r.branch_id)}</td>
-                                        <td className="p-5"><span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{r.tipo_documento}</span></td>
-                                        <td className="p-5 font-mono text-[12px] text-slate-600">{String(r.gap_from).padStart(7, '0')}</td>
-                                        <td className="p-5 font-mono text-[12px] text-slate-600">{String(r.gap_to).padStart(7, '0')}</td>
-                                        <td className="p-5 text-[13px] font-semibold text-emerald-700">{r.resolved_by || '—'}</td>
-                                        <td className="p-5 text-[12px] text-slate-400 whitespace-nowrap">{r.resolved_at ? new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                                        <td className="p-5 pr-8 text-[12px] text-slate-500">{r.comment || <span className="italic text-slate-300">Sin comentario</span>}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="border-t border-black/[0.04]">
+                            {resolvedGaps.map((r, i) => (
+                                <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
+                                    <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
+                                            <span className="text-[13px] font-bold text-slate-700">{getBranch(r.branch_id)}</span>
+                                            <span className="font-mono text-[11px] text-slate-400">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
+                                        </div>
+                                        {r.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.comment}"</p>}
+                                        <p className="text-[11px] text-slate-400">
+                                            Solventado por <span className="font-semibold text-slate-600">{r.resolved_by || '—'}</span>
+                                            {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             )}

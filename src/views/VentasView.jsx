@@ -85,25 +85,15 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 
     const fetchVentas = useCallback(async () => {
         setLoading(true);
-        // Count (HEAD request — no data transferred)
-        let qCount = supabase
-            .from('sales_invoices')
-            .select('*', { count: 'exact', head: true })
-            .gte('fecha', fini).lte('fecha', ffin)
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")');
-        if (filterBranch) qCount = qCount.eq('branch_id', Number(filterBranch));
-
-        // Sum server-side (single aggregate row, no 1000-row cap)
-        let qSum = supabase
-            .from('sales_invoices')
-            .select('total.sum()')
-            .gte('fecha', fini).lte('fecha', ffin)
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")');
-        if (filterBranch) qSum = qSum.eq('branch_id', Number(filterBranch));
-
-        const [{ count }, { data: sumData }] = await Promise.all([qCount, qSum]);
-        setTotalCount(count || 0);
-        setTotalAmount(parseFloat(sumData?.[0]?.sum || 0));
+        // Get count + sum via RPC (avoids row limit issues)
+        const { data: statsData } = await supabase.rpc('get_ventas_stats', {
+            p_fini: fini,
+            p_ffin: ffin,
+            p_branch_id: filterBranch ? Number(filterBranch) : null,
+        });
+        const stats = statsData?.[0];
+        setTotalCount(parseInt(stats?.total_count || 0));
+        setTotalAmount(parseFloat(stats?.total_sum || 0));
 
         // Get paginated rows
         let q = supabase

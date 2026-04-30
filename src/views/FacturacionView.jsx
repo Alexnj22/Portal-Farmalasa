@@ -631,7 +631,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         const branchTotal = Object.values(byFecha).flat().length;
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
                         return (
-                            <div key={branchId} className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
                                 {/* Branch header */}
                                 <div className={`flex items-center justify-between px-4 py-2.5 border-b border-black/[0.05] ${branchHasCCF ? 'bg-red-50/40' : 'bg-slate-50/60'}`}>
                                     <div className="flex items-center gap-2">
@@ -674,14 +674,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
                                                                     isSolving ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
                                                                     isCCF     ? 'border-red-200 hover:border-red-300' :
-                                                                                'border-slate-200 hover:border-violet-300'
+                                                                                'border-violet-200 hover:border-violet-400'
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
                                                                             isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                                                             isCCF    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                       'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
+                                                                                       'bg-violet-50 text-violet-600 border-violet-100 hover:bg-violet-100 hover:text-violet-800'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}

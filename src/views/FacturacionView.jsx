@@ -665,99 +665,96 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 {/* Pills row */}
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
-                                                        const isCCF      = r.tipo_documento === 'CCF';
-                                                        const isExpanded = expandedId === r.id;
-                                                        const isSolving  = solvingId === r.id;
-                                                        const isCopied   = copiedId === r.erp_invoice_id;
+                                                        const isCCF    = r.tipo_documento === 'CCF';
+                                                        const isSolving = solvingId === r.id;
+                                                        const isCopied  = copiedId === r.erp_invoice_id;
                                                         return (
-                                                            <div key={r.id} className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
-                                                                isSolving  ? 'border-emerald-400 shadow-emerald-100' :
-                                                                isExpanded ? (isCCF ? 'border-red-400 shadow-red-100' : 'border-violet-400 shadow-violet-100') :
-                                                                isCCF     ? 'border-red-200 hover:border-red-300' :
-                                                                             'border-slate-200 hover:border-violet-300'
-                                                            }`}>
-                                                                {/* Copy zone */}
-                                                                <button onClick={() => copyErpId(r.erp_invoice_id)} title="Copiar ID"
-                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
-                                                                        isCopied   ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                                                        isCCF      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                     'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
-                                                                    }`}>
-                                                                    {isCopied ? <Check size={8} /> : <Copy size={8} />}
-                                                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                </button>
-                                                                {/* Tipo + detail expand */}
-                                                                <button onClick={() => {
-                                                                    const opening = !isExpanded || isSolving;
-                                                                    setExpandedId(opening ? r.id : null);
-                                                                    setSolvingId(null); setComment('');
-                                                                }} className={`flex items-center gap-1 px-2 py-1.5 border-r border-slate-100 transition-all ${
-                                                                    isExpanded && !isSolving ? (isCCF ? 'bg-red-50/60' : 'bg-violet-50/60') : 'bg-white hover:bg-slate-50'
+                                                            <div key={r.id} className="relative group/tip">
+                                                                {/* Pill */}
+                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+                                                                    isSolving ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
+                                                                    isCCF     ? 'border-red-200 hover:border-red-300' :
+                                                                                'border-slate-200 hover:border-violet-300'
                                                                 }`}>
-                                                                    <span className={`text-[9px] font-black uppercase ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
-                                                                    <ChevronDown size={10} className={`transition-transform duration-150 ${isExpanded && !isSolving ? 'rotate-180 text-violet-500' : 'text-slate-300'}`} />
-                                                                </button>
-                                                                {/* Solventar shortcut */}
-                                                                <button onClick={() => {
-                                                                    if (isSolving) { setSolvingId(null); setExpandedId(null); setComment(''); }
-                                                                    else { setExpandedId(r.id); setSolvingId(r.id); setComment(''); }
-                                                                }} className={`flex items-center gap-1 px-2 py-1.5 transition-all ${
-                                                                    isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-white text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'
-                                                                }`}>
-                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
-                                                                </button>
+                                                                    {/* Copy zone */}
+                                                                    <button onClick={() => copyErpId(r.erp_invoice_id)}
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
+                                                                            isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                            isCCF    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                                                       'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
+                                                                        }`}>
+                                                                        {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                        {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                    </button>
+                                                                    {/* Tipo label (tooltip trigger) */}
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    </div>
+                                                                    {/* Solventar / cancel button */}
+                                                                    <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                        className={`flex items-center px-2 py-1.5 transition-all ${
+                                                                            isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-white text-slate-300 hover:bg-emerald-50 hover:text-emerald-600'
+                                                                        }`}>
+                                                                        {isSolving ? <X size={10} /> : <Check size={10} />}
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Tooltip */}
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none
+                                                                    opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100
+                                                                    transition-all duration-150 ease-out w-[210px]">
+                                                                    <div className="bg-white/95 backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3">
+                                                                        <div className="space-y-2">
+                                                                            <div>
+                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Correlativo</p>
+                                                                                <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                                                            </div>
+                                                                            {r.cliente && <div>
+                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Cliente</p>
+                                                                                <p className="text-[11px] font-semibold text-slate-700 truncate">{r.cliente}</p>
+                                                                            </div>}
+                                                                            <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
+                                                                                <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Total</p>
+                                                                                <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Arrow */}
+                                                                    <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                </div>
                                                             </div>
                                                         );
                                                     })}
                                                 </div>
 
-                                                {/* Expanded panel */}
-                                                {expandedRow && (() => {
-                                                    const r         = expandedRow;
-                                                    const isCCF     = r.tipo_documento === 'CCF';
-                                                    const isSolving = solvingId === r.id;
+                                                {/* Solve form — shown below pills when ✓ clicked */}
+                                                {fechaRows.some(r => r.id === solvingId) && (() => {
+                                                    const r    = fechaRows.find(r => r.id === solvingId);
+                                                    const isCCF = r.tipo_documento === 'CCF';
                                                     return (
-                                                        <div className={`mt-2.5 rounded-xl border px-4 py-3 ${isSolving ? 'bg-emerald-50/40 border-emerald-200' : isCCF ? 'bg-red-50/40 border-red-200' : 'bg-violet-50/20 border-violet-200/60'}`}>
-                                                            {/* Info row — always visible */}
-                                                            <div className="flex items-start gap-4 flex-wrap mb-3">
-                                                                <div>
-                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Correlativo</p>
-                                                                    <p className={`font-mono text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                                                </div>
-                                                                <div className="flex-1 min-w-[100px]">
-                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
-                                                                    <p className="text-[12px] font-semibold text-slate-700 truncate">{r.cliente || '—'}</p>
-                                                                </div>
-                                                                <div className="shrink-0">
-                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
-                                                                    <p className={`text-[15px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                        <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
+                                                            <div className="flex items-center gap-2 mb-2.5">
+                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-slate-700'}`}>{r.correlativo}</span>
+                                                                {r.cliente && <span className="text-[11px] text-slate-500 truncate">· {r.cliente}</span>}
+                                                                <span className="ml-auto text-[12px] font-black text-slate-700">{fmt(r.total)}</span>
+                                                            </div>
+                                                            <div className="flex items-start gap-3">
+                                                                <textarea
+                                                                    className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                    rows={2} autoFocus placeholder="Comentario opcional…"
+                                                                    value={comment} onChange={e => setComment(e.target.value)}
+                                                                />
+                                                                <div className="flex flex-col gap-1.5 shrink-0">
+                                                                    <button onClick={() => handleSolve(r.id)} disabled={saving}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                                                                    </button>
+                                                                    <button onClick={() => { setSolvingId(null); setComment(''); }}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                                        <X size={10} /> Cancelar
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            {/* Solve form */}
-                                                            {isSolving ? (
-                                                                <div className="flex items-start gap-3">
-                                                                    <textarea
-                                                                        className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
-                                                                        rows={2} autoFocus placeholder="Comentario opcional…"
-                                                                        value={comment} onChange={e => setComment(e.target.value)}
-                                                                    />
-                                                                    <div className="flex flex-col gap-1.5 shrink-0">
-                                                                        <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                            {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                                        </button>
-                                                                        <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
-                                                                            <X size={10} /> Cancelar
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <button onClick={() => { setSolvingId(r.id); setComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
-                                                                    <Check size={10} /> Solventar
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     );
                                                 })()}

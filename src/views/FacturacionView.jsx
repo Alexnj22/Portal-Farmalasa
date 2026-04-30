@@ -492,7 +492,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         setTimeout(() => setCopiedId(null), 1500);
     };
     const daysAgoLabel = (fechaStr) => {
-        const diff = Math.floor((svNow() - new Date(`${fechaStr}T12:00:00-06:00`)) / 86400000);
+        const today = svNow();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
+        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
         if (diff === 0) return 'hoy';
         if (diff === 1) return 'ayer';
         return `hace ${diff}d`;

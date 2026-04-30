@@ -475,6 +475,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
+    const [showTotal, setShowTotal] = useState(true);
     const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
 
     // Month-end alert
@@ -599,9 +600,21 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 ))}
             </div>
 
-            <div className="flex items-center justify-between">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
-                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
+                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setShowTotal(v => !v)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${showTotal ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}>
+                        {showTotal ? <ChevronUp size={11} /> : <ChevronDown size={11} />} Total
+                    </button>
+                    <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#007AFF] hover:bg-blue-600 text-white shadow-sm shadow-blue-200 transition-all hover:-translate-y-0.5 active:scale-95">
+                        <ExternalLink size={11} /> Finalizar en ERP
+                    </a>
+                </div>
             </div>
 
             {loading ? (
@@ -610,10 +623,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 <EmptyState icon={CheckCircle2} iconClass="text-violet-500" glowClass="bg-violet-500"
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
             ) : (
-                <div className="rounded-2xl overflow-hidden border border-violet-200/70 shadow-[0_4px_32px_rgba(139,92,246,0.10)] bg-white/70 backdrop-blur-xl">
+                <div className="rounded-2xl overflow-hidden border border-violet-200/50 shadow-[0_4px_32px_rgba(139,92,246,0.08)] bg-white/70 backdrop-blur-xl">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-gradient-to-r from-violet-500/10 via-purple-500/8 to-violet-400/10 border-b border-violet-200/60">
+                            <tr className="bg-black/[0.025] border-b border-black/[0.06]">
                                 {[
                                     { label: 'ID',          key: null },
                                     { label: 'Tipo',        key: 'tipo' },
@@ -622,20 +635,20 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                     { label: 'Cliente',     key: 'cliente' },
                                     { label: 'Fecha',       key: 'fecha' },
                                     { label: 'Tiempo',      key: null },
-                                    { label: 'Total',       key: 'total' },
+                                    ...(showTotal ? [{ label: 'Total', key: 'total' }] : []),
                                     { label: '',            key: null },
-                                ].map((col, i) => {
+                                ].map((col, i, arr) => {
                                     const active = col.key && sortKey === col.key;
                                     return (
                                         <th key={col.label + i}
                                             onClick={col.key ? () => toggle(col.key) : undefined}
-                                            className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest text-violet-600/80 whitespace-nowrap select-none
-                                                ${i === 0 ? 'pl-6' : ''} ${i === 8 ? 'pr-6' : ''}
-                                                ${col.key ? 'cursor-pointer hover:text-violet-800 transition-colors' : ''}`}>
+                                            className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap select-none
+                                                ${i === 0 ? 'pl-6' : ''} ${i === arr.length - 1 ? 'pr-6' : ''}
+                                                ${col.key ? 'cursor-pointer hover:text-slate-700 transition-colors' : ''}`}>
                                             <span className="inline-flex items-center gap-1">
                                                 {col.label}
                                                 {col.key && (active
-                                                    ? (sortDir === 'asc' ? <ChevronUp size={10} className="text-violet-500" /> : <ChevronDown size={10} className="text-violet-500" />)
+                                                    ? (sortDir === 'asc' ? <ChevronUp size={10} className="text-[#007AFF]" /> : <ChevronDown size={10} className="text-[#007AFF]" />)
                                                     : <ChevronUp size={10} className="opacity-20" />)}
                                             </span>
                                         </th>
@@ -690,7 +703,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                             </td>
                                             {/* Total */}
-                                            <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>
+                                            {showTotal && <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>}
                                             {/* Acción */}
                                             <td className="py-3 px-4 pr-6 text-right">
                                                 <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
@@ -701,7 +714,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         </tr>
                                         {isSolving && (
                                             <tr>
-                                                <td colSpan={9} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
+                                                <td colSpan={showTotal ? 9 : 8} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
                                                     <div className="flex items-start gap-3 max-w-2xl">
                                                         <textarea
                                                             className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"

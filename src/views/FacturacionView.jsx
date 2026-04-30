@@ -610,66 +610,126 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 <EmptyState icon={CheckCircle2} iconClass="text-violet-500" glowClass="bg-violet-500"
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
             ) : (
-                <>
-                    <div className="grid gap-2 md:grid-cols-2">
-                        {pageRows.map(r => {
-                            const isCCF = r.tipo_documento === 'CCF';
-                            const isLate = isCCF && r.fecha !== todayStr;
-                            const isSolving = solvingId === r.id;
-                            return (
-                                <div key={r.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md' : 'border-violet-200 hover:border-violet-300 hover:shadow-md'}`}>
-                                    <div className="px-4 py-3">
-                                        {/* Row 1: badges + time */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <div className="flex items-center gap-1 flex-wrap">
-                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                                {isCCF && (
-                                                    <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isLate ? 'bg-red-100 text-red-700 border-red-300' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                                                        <AlertTriangle size={8} />{isLate ? 'Vencido' : 'Mismo día'}
-                                                    </span>
-                                                )}
-                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pend. MH</span>
-                                            </div>
-                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
-                                        </div>
-                                        {/* Row 2: correlativo + meta */}
-                                        <p className={`font-mono text-[13px] font-black leading-none mb-1.5 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                            {r.erp_invoice_id && <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">#{r.erp_invoice_id}</span>}
-                                            <span className="text-[11px] font-semibold text-slate-600">{getBranch(r.branch_id)}</span>
-                                            <span className="text-[10px] text-slate-400">·</span>
-                                            <span className={`text-[11px] font-semibold ${isLate ? 'text-red-500' : 'text-slate-600'}`}>{r.fecha}</span>
-                                        </div>
-                                        {r.cliente && <p className="text-[11px] text-slate-400 truncate mb-2">{r.cliente}</p>}
-                                        {/* Row 3: total + action */}
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>
-                                            <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
-                                            <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
-                                                rows={2} autoFocus
-                                                placeholder="Comentario opcional…"
-                                                value={comment} onChange={e => setComment(e.target.value)}
-                                            />
-                                            <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                <div className="rounded-2xl overflow-hidden border border-violet-200/70 shadow-[0_4px_32px_rgba(139,92,246,0.10)] bg-white/70 backdrop-blur-xl">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gradient-to-r from-violet-500/10 via-purple-500/8 to-violet-400/10 border-b border-violet-200/60">
+                                {[
+                                    { label: 'ID',          key: null },
+                                    { label: 'Tipo',        key: 'tipo' },
+                                    { label: 'Correlativo', key: 'correlativo' },
+                                    { label: 'Sucursal',    key: 'sucursal' },
+                                    { label: 'Cliente',     key: 'cliente' },
+                                    { label: 'Fecha',       key: 'fecha' },
+                                    { label: 'Tiempo',      key: null },
+                                    { label: 'Total',       key: 'total' },
+                                    { label: '',            key: null },
+                                ].map((col, i) => {
+                                    const active = col.key && sortKey === col.key;
+                                    return (
+                                        <th key={col.label + i}
+                                            onClick={col.key ? () => toggle(col.key) : undefined}
+                                            className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest text-violet-600/80 whitespace-nowrap select-none
+                                                ${i === 0 ? 'pl-6' : ''} ${i === 8 ? 'pr-6' : ''}
+                                                ${col.key ? 'cursor-pointer hover:text-violet-800 transition-colors' : ''}`}>
+                                            <span className="inline-flex items-center gap-1">
+                                                {col.label}
+                                                {col.key && (active
+                                                    ? (sortDir === 'asc' ? <ChevronUp size={10} className="text-violet-500" /> : <ChevronDown size={10} className="text-violet-500" />)
+                                                    : <ChevronUp size={10} className="opacity-20" />)}
+                                            </span>
+                                        </th>
+                                    );
+                                })}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pageRows.map((r, idx) => {
+                                const isCCF = r.tipo_documento === 'CCF';
+                                const isLate = isCCF && r.fecha !== todayStr;
+                                const isSolving = solvingId === r.id;
+                                const rowBase = isSolving
+                                    ? 'bg-emerald-50/60'
+                                    : isCCF
+                                        ? 'bg-red-50/40 hover:bg-red-50/70'
+                                        : idx % 2 === 0
+                                            ? 'bg-white/60 hover:bg-violet-50/50'
+                                            : 'bg-violet-50/20 hover:bg-violet-50/50';
+                                return (
+                                    <React.Fragment key={r.id}>
+                                        <tr className={`border-b border-violet-100/50 transition-colors duration-150 group border-l-4 ${isSolving ? 'border-l-emerald-400' : isCCF ? 'border-l-red-400' : 'border-l-transparent hover:border-l-violet-400'} ${rowBase}`}>
+                                            {/* ID */}
+                                            <td className="py-3 px-4 pl-6">
+                                                <span className="text-[11px] font-bold text-violet-700 bg-violet-100/70 px-2 py-0.5 rounded-md font-mono">
+                                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                </span>
+                                            </td>
+                                            {/* Tipo */}
+                                            <td className="py-3 px-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border w-fit ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
+                                                    {isCCF && (
+                                                        <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase border w-fit ${isLate ? 'bg-red-100 text-red-700 border-red-300' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                                                            <AlertTriangle size={8} />{isLate ? 'Vencido' : 'Mismo día'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            {/* Correlativo */}
+                                            <td className="py-3 px-4">
+                                                <p className={`font-mono text-[12px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                            </td>
+                                            {/* Sucursal */}
+                                            <td className="py-3 px-4 text-[12px] font-semibold text-slate-700 whitespace-nowrap">{getBranch(r.branch_id)}</td>
+                                            {/* Cliente */}
+                                            <td className="py-3 px-4 text-[12px] text-slate-500 max-w-[140px] truncate">{r.cliente || '—'}</td>
+                                            {/* Fecha */}
+                                            <td className={`py-3 px-4 text-[12px] font-semibold whitespace-nowrap ${isLate ? 'text-red-600' : 'text-slate-700'}`}>{r.fecha}</td>
+                                            {/* Tiempo */}
+                                            <td className="py-3 px-4">
+                                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
+                                            </td>
+                                            {/* Total */}
+                                            <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>
+                                            {/* Acción */}
+                                            <td className="py-3 px-4 pr-6 text-right">
+                                                <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
+                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ml-auto ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
+                                                    {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {isSolving && (
+                                            <tr>
+                                                <td colSpan={9} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
+                                                    <div className="flex items-start gap-3 max-w-2xl">
+                                                        <textarea
+                                                            className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                            rows={2} autoFocus
+                                                            placeholder="Comentario opcional — ej: enviado manualmente al MH, referencia…"
+                                                            value={comment} onChange={e => setComment(e.target.value)}
+                                                        />
+                                                        <div className="flex flex-col gap-2 shrink-0">
+                                                            <button onClick={() => handleSolve(r.id)} disabled={saving}
+                                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
+                                                            </button>
+                                                            <button onClick={() => { setSolvingId(null); setComment(''); }}
+                                                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 hover:border-red-200 shadow transition-all">
+                                                                <X size={11} /> Cancelar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                     <Pagination page={page} total={totalPages} onChange={p => { setPage(p); setSolvingId(null); }} />
-                </>
+                </div>
             )}
         </div>
     );

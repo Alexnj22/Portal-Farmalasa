@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
     const hoy = new Date(Date.now() - 6 * 3600_000);
     const toYear  = body.toYear  ?? hoy.getFullYear();
     const toMonth = body.toMonth ?? (hoy.getMonth() + 1);
-    const onlyBranch = body.branchId ?? null;
+    const onlyBranch  = body.branchId ?? null;
+    const forceItems  = body.forceItems ?? false;
 
     const months: { fini: string; ffin: string }[] = [];
     let y = fromYear, m = fromMonth;
@@ -44,6 +45,7 @@ Deno.serve(async (req) => {
     for (const { fini, ffin } of months) {
       const payload: any = { fini, ffin };
       if (onlyBranch) payload.branchId = onlyBranch;
+      if (forceItems) payload.forceItems = true;
 
       const res = await fetch(SYNC_URL, {
         method: 'POST',

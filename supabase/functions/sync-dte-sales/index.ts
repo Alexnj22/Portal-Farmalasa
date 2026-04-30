@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { fini, ffin, branchId: onlyBranch } = body;
+    const { fini, ffin, branchId: onlyBranch, forceItems = false } = body;
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
     const startDate = fini || hoy;
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
         const { data: existingRaw } = await supabase
           .from('sales_invoices')
           .select('id, codigo_generacion, estado, tipo_pago, recibido_mh')
-          .in('codigo_generacion', codigos);
+          .in('codigo_generacion', codigos.map(c => c.toLowerCase()));
 
         const existingMap = new Map(
           (existingRaw ?? []).map(inv => [inv.codigo_generacion.toLowerCase(), inv])
@@ -225,14 +225,17 @@ Deno.serve(async (req) => {
           (upserted ?? []).map(inv => [inv.codigo_generacion.toLowerCase(), inv.id])
         );
 
-        // 6. Insert items only for new invoices
+        // 6. Insert items — for new invoices always, for existing only if forceItems=true
         const itemsToInsert: any[] = [];
         for (const venta of ventas) {
           const codigoLower = venta.codigo_generacion?.toLowerCase();
-          if (!newCodigos.has(codigoLower)) continue;
-          const invoiceId = invoiceIdMap.get(codigoLower);
+          const isNew = newCodigos.has(codigoLower);
+          if (!isNew && !forceItems) continue;
+          const invoiceId = invoiceIdMap.get(codigoLower)
+            ?? existingMap.get(codigoLower)?.id;
           if (!invoiceId) continue;
-          for (const p of (venta.productos ?? [])) {
+          if (!(venta.productos ?? []).length) continue;
+          for (const p of venta.productos) {
             itemsToInsert.push({
               invoice_id:      invoiceId,
               erp_product_id:  p.id || null,
@@ -246,6 +249,11 @@ Deno.serve(async (req) => {
         }
 
         if (itemsToInsert.length > 0) {
+          if (forceItems) {
+            // Delete existing items first to avoid duplicates, then re-insert
+            const invoiceIds = [...new Set(itemsToInsert.map(i => i.invoice_id))];
+            await supabase.from('sales_invoice_items').delete().in('invoice_id', invoiceIds);
+          }
           await supabase.from('sales_invoice_items').insert(itemsToInsert);
         }
 

@@ -475,7 +475,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
-    const [showTotal, setShowTotal] = useState(true);
+    const [pageSize, setPageSize] = useState(10);
     const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
 
     // Month-end alert
@@ -542,10 +542,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         return sortFn(list, SORT_ACCESSORS);
     }, [rows, searchTerm, sortKey, sortDir]);
 
-    useEffect(() => { setPage(1); }, [filtered.length, searchTerm]);
+    useEffect(() => { setPage(1); }, [filtered.length, searchTerm, pageSize]);
 
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-    const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const totalPages = Math.ceil(filtered.length / pageSize);
+    const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
 
     const COLS = [
@@ -605,15 +605,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
                     {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setShowTotal(v => !v)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${showTotal ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}`}>
-                        {showTotal ? <ChevronUp size={11} /> : <ChevronDown size={11} />} Total
-                    </button>
-                    <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#007AFF] hover:bg-blue-600 text-white shadow-sm shadow-blue-200 transition-all hover:-translate-y-0.5 active:scale-95">
-                        <ExternalLink size={11} /> Finalizar en ERP
-                    </a>
+                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                    {[10, 25, 50].map(n => (
+                        <button key={n} onClick={() => { setPageSize(n); setPage(1); }}
+                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${pageSize === n ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                            {n}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -635,7 +633,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                     { label: 'Cliente',     key: 'cliente' },
                                     { label: 'Fecha',       key: 'fecha' },
                                     { label: 'Tiempo',      key: null },
-                                    ...(showTotal ? [{ label: 'Total', key: 'total' }] : []),
+                                    { label: 'Total', key: 'total' },
                                     { label: '',            key: null },
                                 ].map((col, i, arr) => {
                                     const active = col.key && sortKey === col.key;
@@ -703,7 +701,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                             </td>
                                             {/* Total */}
-                                            {showTotal && <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>}
+                                            <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>
                                             {/* Acción */}
                                             <td className="py-3 px-4 pr-6 text-right">
                                                 <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
@@ -714,7 +712,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         </tr>
                                         {isSolving && (
                                             <tr>
-                                                <td colSpan={showTotal ? 9 : 8} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
+                                                <td colSpan={9} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
                                                     <div className="flex items-start gap-3 max-w-2xl">
                                                         <textarea
                                                             className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
@@ -1609,6 +1607,12 @@ export default function FacturacionView() {
                 <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact />
                 </div>
+
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap">
+                    <ExternalLink size={12} /> Admin Facturas
+                </a>
 
                 {hasSearch && (
                     <>

@@ -3,7 +3,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronRight, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -47,45 +47,93 @@ function monthOptions(count = 12) {
     return opts;
 }
 
-function Pagination({ page, total, onChange }) {
+const PAGE_SIZE_OPTIONS = [
+    { value: '25',  label: '25 filas' },
+    { value: '50',  label: '50 filas' },
+    { value: '100', label: '100 filas' },
+];
+
+function SmartPagination({ page, total, onChange }) {
     if (total <= 1) return null;
+    const buildPages = () => {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+        const pages = [1];
+        const left  = Math.max(2, page - 2);
+        const right = Math.min(total - 1, page + 2);
+        if (left > 2) pages.push('…');
+        for (let i = left; i <= right; i++) pages.push(i);
+        if (right < total - 1) pages.push('…');
+        pages.push(total);
+        return pages;
+    };
     return (
-        <div className="flex items-center justify-center gap-2 py-2">
+        <div className="flex items-center justify-center gap-1 py-3">
             <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-all">
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
                 <ChevronLeft size={14} />
             </button>
-            <span className="text-[12px] font-bold text-slate-500">
-                {page} / {total}
-            </span>
+            {buildPages().map((p, i) =>
+                p === '…'
+                    ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-[12px]">…</span>
+                    : <button key={p} onClick={() => onChange(p)}
+                        className={`w-8 h-8 rounded-full text-[12px] font-bold transition-all ${
+                            p === page
+                                ? 'bg-[#007AFF] text-white shadow-sm shadow-blue-200'
+                                : 'text-slate-500 hover:bg-slate-100'
+                        }`}>{p}</button>
+            )}
             <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 transition-all">
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
                 <ChevronRight size={14} />
             </button>
         </div>
     );
 }
 
+// Sortable column header button
+function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
+    const active = sortCol === col;
+    return (
+        <th className={`px-4 py-3 select-none ${className}`}>
+            <button onClick={() => onSort(col)}
+                className="flex items-center gap-1 group text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-700 transition-colors">
+                {label}
+                {active
+                    ? sortDir === 'asc'
+                        ? <ChevronUp size={10} className="text-[#007AFF]" />
+                        : <ChevronDown size={10} className="text-[#007AFF]" />
+                    : <ChevronsUpDown size={10} className="opacity-25 group-hover:opacity-60" />
+                }
+            </button>
+        </th>
+    );
+}
+
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
-function TabVentas({ branches, filterBranch, searchTerm }) {
-    const [rows, setRows]         = useState([]);
+function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
+    const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
-    const [page, setPage]         = useState(1);
-    const [expandedId, setExpandedId]     = useState(null);
-    const [itemsCache, setItemsCache]     = useState({});
+    const [page, setPage]             = useState(1);
+    const [pageSize, setPageSize]     = useState(50);
+    const [sortCol, setSortCol]       = useState('fecha');
+    const [sortDir, setSortDir]       = useState('desc');
+    const [expandedId, setExpandedId] = useState(null);
+    const [itemsCache, setItemsCache] = useState({});
     const [loadingItems, setLoadingItems] = useState(false);
-    const [monthRange, setMonthRange] = useState(() => {
-        const r = currentMonthRange();
-        return `${r.fini}|${r.ffin}`;
-    });
+    const [loadingRows, setLoadingRows]   = useState(true);
 
     const [fini, ffin] = monthRange.split('|');
-    const [loadingRows, setLoadingRows] = useState(true);
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const isSearching = searchTerm?.trim().length > 0;
 
-    // Stats: solo cuando cambia mes o sucursal (no en cambio de página)
+    const handleSort = (col) => {
+        if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortCol(col); setSortDir('desc'); }
+        setPage(1);
+    };
+
+    // Stats: solo cuando cambia mes o sucursal
     const fetchStats = useCallback(async () => {
         const isCurrentMonth = fini === currentMonthRange().fini;
         if (isCurrentMonth) {
@@ -109,32 +157,51 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
         }
     }, [fini, ffin, filterBranch]);
 
-    // Rows: pagina normal o búsqueda en BD (sin paginación)
+    // Rows: paginado con sort o búsqueda en BD sin paginación
     const fetchRows = useCallback(async () => {
         setLoadingRows(true);
+        const asc = sortDir === 'asc';
         let q = supabase
             .from('sales_invoices')
             .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, tipo_pago, total')
             .gte('fecha', fini).lte('fecha', ffin)
             .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-            .order('fecha', { ascending: false })
-            .order('hora', { ascending: false });
+            .order(sortCol, { ascending: asc });
+        if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
         if (isSearching) {
             const s = searchTerm.trim();
-            q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`)
-                 .limit(200);
+            q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
         } else {
-            q = q.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+            q = q.range((page - 1) * pageSize, page * pageSize - 1);
         }
         const { data } = await q;
-        setRows(data || []);
+        const fetched = data || [];
+        setRows(fetched);
         setLoadingRows(false);
-    }, [fini, ffin, filterBranch, page, isSearching, searchTerm]);
+
+        // Prefetch items for all visible rows in background
+        const uncached = fetched.map(r => r.id).filter(id => !itemsCache[id]);
+        if (uncached.length > 0) {
+            supabase.from('sales_invoice_items')
+                .select('invoice_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+                .in('invoice_id', uncached)
+                .order('total_linea', { ascending: false })
+                .then(({ data: items }) => {
+                    if (!items) return;
+                    const grouped = {};
+                    for (const it of items) {
+                        if (!grouped[it.invoice_id]) grouped[it.invoice_id] = [];
+                        grouped[it.invoice_id].push(it);
+                    }
+                    setItemsCache(prev => ({ ...prev, ...grouped }));
+                });
+        }
+    }, [fini, ffin, filterBranch, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, isSearching]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, isSearching, pageSize]);
 
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
@@ -150,16 +217,11 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
         setLoadingItems(false);
     }, [expandedId, itemsCache]);
 
-    const totalPages = isSearching ? 1 : Math.ceil(totalCount / PAGE_SIZE);
+    const totalPages = isSearching ? 1 : Math.ceil(totalCount / pageSize);
     const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            <div className="flex items-center gap-3">
-                <LiquidSelect value={monthRange} onChange={v => { setMonthRange(v); setPage(1); }}
-                    options={monthOptions()} placeholder="Seleccionar mes..." icon={Clock} clearable={false} compact />
-            </div>
-
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
@@ -188,14 +250,14 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
                 <>
                     <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-black/[0.06]">
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Fecha</th>
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden md:table-cell">ID / Correlativo</th>
+                            <thead className="sticky top-0 z-10">
+                                <tr className="bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
+                                    <SortTh label="Fecha" col="fecha" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                    <SortTh label="ID / Correl." col="correlativo" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
                                     <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden lg:table-cell">Sucursal</th>
-                                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Cliente</th>
+                                    <SortTh label="Cliente" col="cliente" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
                                     <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:table-cell">Tipo</th>
-                                    <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Total</th>
+                                    <SortTh label="Total" col="total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -273,7 +335,17 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
                             </tbody>
                         </table>
                     </div>
-                    <Pagination page={page} total={totalPages} onChange={setPage} />
+                    <div className="flex items-center justify-between px-4 border-t border-black/[0.05]">
+                        <div className="w-[120px]">
+                            <LiquidSelect value={String(pageSize)}
+                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
+                        </div>
+                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                        <span className="text-[10px] text-slate-400 font-semibold w-[120px] text-right">
+                            {isSearching ? `${rows.length} resultados` : `${fmtNum(totalCount)} total`}
+                        </span>
+                    </div>
                 </>
             )}
         </div>
@@ -281,16 +353,12 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 }
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
-function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
+function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRange }) {
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
-    const [monthRange, setMonthRange]   = useState(() => {
-        const r = currentMonthRange();
-        return `${r.fini}|${r.ffin}`;
-    });
     // Historical rankings
     const [historial, setHistorial]     = useState(null);
     const [loadingHist, setLoadingHist] = useState(false);
@@ -485,8 +553,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
         <div className="p-4 md:p-6 space-y-4">
             {/* Controls */}
             <div className="flex items-center gap-3 flex-wrap">
-                <LiquidSelect value={monthRange} onChange={v => { setMonthRange(v); setExpanded(null); }}
-                    options={monthOptions()} placeholder="Seleccionar mes..." icon={Clock} clearable={false} compact />
                 <button onClick={() => setShowHist(v => !v)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${showHist ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
                     <TrendingUp size={12} /> Historial
@@ -721,15 +787,18 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
-function TabProductos({ filterBranch, searchTerm }) {
+function TabProductos({ filterBranch, searchTerm, monthRange }) {
     const [rows, setRows]       = useState([]);
     const [loading, setLoading] = useState(true);
-    const [monthRange, setMonthRange] = useState(() => {
-        const r = currentMonthRange();
-        return `${r.fini}|${r.ffin}`;
-    });
+    const [sortCol, setSortCol] = useState('total');
+    const [sortDir, setSortDir] = useState('desc');
 
     const [fini, ffin] = monthRange.split('|');
+
+    const handleSort = (col) => {
+        if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortCol(col); setSortDir('desc'); }
+    };
 
     const fetchProductos = useCallback(async () => {
         setLoading(true);
@@ -829,12 +898,20 @@ function TabProductos({ filterBranch, searchTerm }) {
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 
     const filtered = useMemo(() => {
-        if (!searchTerm) return rows;
-        const s = searchTerm.toLowerCase();
-        return rows.filter(r => r.descripcion?.toLowerCase().includes(s) || r.presentacion?.toLowerCase().includes(s));
-    }, [rows, searchTerm]);
+        let list = rows;
+        if (searchTerm) {
+            const s = searchTerm.toLowerCase();
+            list = list.filter(r => r.descripcion?.toLowerCase().includes(s) || r.presentacion?.toLowerCase().includes(s));
+        }
+        return [...list].sort((a, b) => {
+            const asc = sortDir === 'asc' ? 1 : -1;
+            const av = a[sortCol] ?? -Infinity;
+            const bv = b[sortCol] ?? -Infinity;
+            return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
+        });
+    }, [rows, searchTerm, sortCol, sortDir]);
 
-    const maxTotal   = filtered[0]?.total || 1;
+    const maxTotal    = rows[0]?.total || 1;
     const totIngresos = filtered.reduce((s, r) => s + r.total, 0);
     const totUtilidad = filtered.filter(r => r.utilidad != null).reduce((s, r) => s + r.utilidad, 0);
     const totCosto    = filtered.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
@@ -842,11 +919,6 @@ function TabProductos({ filterBranch, searchTerm }) {
 
     return (
         <div className="p-4 md:p-6 space-y-4">
-            <div className="flex items-center gap-3 flex-wrap">
-                <LiquidSelect value={monthRange} onChange={setMonthRange}
-                    options={monthOptions()} placeholder="Seleccionar mes..." icon={Clock} clearable={false} compact />
-            </div>
-
             {/* Stats */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
@@ -880,15 +952,15 @@ function TabProductos({ filterBranch, searchTerm }) {
             ) : (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-black/[0.06] text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                <th className="text-left px-4 py-3 w-8">#</th>
-                                <th className="text-left px-4 py-3">Producto</th>
-                                <th className="text-right px-4 py-3 hidden md:table-cell">Unidades</th>
-                                <th className="text-right px-4 py-3">Ingresos</th>
-                                <th className="text-right px-4 py-3 hidden lg:table-cell">Costo Est.</th>
-                                <th className="text-right px-4 py-3 hidden sm:table-cell">Utilidad</th>
-                                <th className="text-right px-4 py-3">Margen</th>
+                        <thead className="sticky top-0 z-10">
+                            <tr className="bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
+                                <th className="text-left px-4 py-3 w-8 text-[10px] font-black uppercase tracking-widest text-slate-500">#</th>
+                                <SortTh label="Producto"  col="descripcion" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                <SortTh label="Unidades"  col="cantidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
+                                <SortTh label="Ingresos"  col="total"       sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                <SortTh label="Costo Est." col="costo_total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
+                                <SortTh label="Utilidad"  col="utilidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                <SortTh label="Margen"    col="margen"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
                             </tr>
                         </thead>
                         <tbody>
@@ -950,6 +1022,10 @@ export default function VentasView() {
     const { user: currentUser }   = useAuth();
     const [activeTab, setActiveTab]     = useState('ventas');
     const [filterBranch, setFilterBranch] = useState('');
+    const [monthRange, setMonthRange]   = useState(() => {
+        const r = currentMonthRange();
+        return `${r.fini}|${r.ffin}`;
+    });
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch]     = useState('');
     const searchInputRef = useRef(null);
@@ -1014,9 +1090,16 @@ export default function VentasView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 
-                <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
+                <div className="w-[130px] md:w-[170px] overflow-visible h-full flex items-center">
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch}
                         options={branchOptions} placeholder="Todas" icon={Building2} compact />
+                </div>
+
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+
+                <div className="w-[130px] md:w-[160px] overflow-visible h-full flex items-center">
+                    <LiquidSelect value={monthRange} onChange={setMonthRange}
+                        options={monthOptions()} placeholder="Mes..." icon={Clock} clearable={false} compact />
                 </div>
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
@@ -1032,14 +1115,14 @@ export default function VentasView() {
     return (
         <GlassViewLayout icon={TrendingUp} title="Ventas" filtersContent={filtersContent}>
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
-                <TabVentas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} />
+                <TabVentas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} />
             </div>
             <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch}
-                    employees={employees} searchTerm={rawSearch} />
+                    employees={employees} searchTerm={rawSearch} monthRange={monthRange} />
             </div>
             <div className={activeTab === 'productos' ? '' : 'hidden'}>
-                <TabProductos filterBranch={filterBranch} searchTerm={rawSearch} />
+                <TabProductos filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} />
             </div>
         </GlassViewLayout>
     );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -476,8 +476,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [solvingId, setSolvingId]     = useState(null);
     const [comment, setComment]         = useState('');
     const [saving, setSaving]           = useState(false);
-    const [expandedId, setExpandedId]   = useState(null);
-    const [copiedId, setCopiedId]       = useState(null);
+    const [expandedId, setExpandedId]         = useState(null);
+    const [copiedId, setCopiedId]             = useState(null);
+    const [collapsedBranches, setCollapsedBranches] = useState({});
 
     const now      = svNow();
     const todayStr = now.toISOString().slice(0, 10);
@@ -627,23 +628,32 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
             ) : (
                 <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
+                        <Info size={13} className="text-blue-400 shrink-0" />
+                        Al corregirse en sistema se confirman automáticamente en el portal.
+                    </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
                         const branchTotal = Object.values(byFecha).flat().length;
                         const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
+                        const isCollapsed = !!collapsedBranches[branchId];
                         return (
                             <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
-                                {/* Branch header */}
-                                <div className={`flex items-center justify-between px-4 py-2.5 border-b border-black/[0.05] ${branchHasCCF ? 'bg-red-50/40' : 'bg-slate-50/60'}`}>
+                                {/* Branch header — collapsible */}
+                                <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-red-50/40 hover:bg-red-50/70' : 'bg-slate-50/60 hover:bg-slate-100/60'}`}>
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-red-400' : 'text-slate-400'} />
                                         <span className="text-[13px] font-black text-slate-700">{getBranch(Number(branchId))}</span>
                                         {branchHasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">CCF</span>}
                                     </div>
-                                    <span className="text-[10px] font-black text-slate-400">{branchTotal} doc</span>
-                                </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black text-slate-400">{branchTotal} doc</span>
+                                        <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                    </div>
+                                </button>
 
                                 {/* Date sections */}
-                                <div className="divide-y divide-black/[0.04]">
+                                {!isCollapsed && <div className="divide-y divide-black/[0.04]">
                                     {Object.entries(byFecha).map(([fecha, fechaRows]) => {
                                         const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
                                         const isToday = fecha === todayStr;
@@ -674,14 +684,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
                                                                     isSolving ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
                                                                     isCCF     ? 'border-red-200 hover:border-red-300' :
-                                                                                'border-violet-200 hover:border-violet-400'
+                                                                                'border-slate-200 hover:border-slate-300'
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
                                                                             isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                                                             isCCF    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                       'bg-violet-50 text-slate-600 border-violet-100 hover:bg-violet-100'
+                                                                                       'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
@@ -761,7 +771,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                             </div>
                                         );
                                     })}
-                                </div>
+                                </div>}
                             </div>
                         );
                     })}

@@ -667,50 +667,58 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                     {fechaRows.map(r => {
                                                         const isCCF      = r.tipo_documento === 'CCF';
                                                         const isExpanded = expandedId === r.id;
+                                                        const isSolving  = solvingId === r.id;
                                                         const isCopied   = copiedId === r.erp_invoice_id;
                                                         return (
                                                             <div key={r.id} className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
-                                                                isExpanded
-                                                                    ? (isCCF ? 'border-red-400 shadow-red-100' : 'border-violet-400 shadow-violet-100')
-                                                                    : (isCCF ? 'border-red-200 hover:border-red-300' : 'border-slate-200 hover:border-violet-300')
+                                                                isSolving  ? 'border-emerald-400 shadow-emerald-100' :
+                                                                isExpanded ? (isCCF ? 'border-red-400 shadow-red-100' : 'border-violet-400 shadow-violet-100') :
+                                                                isCCF     ? 'border-red-200 hover:border-red-300' :
+                                                                             'border-slate-200 hover:border-violet-300'
                                                             }`}>
                                                                 {/* Copy zone */}
-                                                                <button
-                                                                    onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                    title="Copiar ID"
+                                                                <button onClick={() => copyErpId(r.erp_invoice_id)} title="Copiar ID"
                                                                     className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
-                                                                        isCopied
-                                                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                                                            : isCCF
-                                                                                ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
+                                                                        isCopied   ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                        isCCF      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                                                     'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
                                                                     }`}>
                                                                     {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                     {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                 </button>
-                                                                {/* Tipo + expand */}
-                                                                <button
-                                                                    onClick={() => { setExpandedId(isExpanded ? null : r.id); if (isExpanded) { setSolvingId(null); setComment(''); } }}
-                                                                    className={`flex items-center gap-1 px-2 py-1.5 transition-all ${
-                                                                        isExpanded
-                                                                            ? (isCCF ? 'bg-red-50/60' : 'bg-violet-50/60')
-                                                                            : 'bg-white hover:bg-slate-50'
-                                                                    }`}>
+                                                                {/* Tipo + detail expand */}
+                                                                <button onClick={() => {
+                                                                    const opening = !isExpanded || isSolving;
+                                                                    setExpandedId(opening ? r.id : null);
+                                                                    setSolvingId(null); setComment('');
+                                                                }} className={`flex items-center gap-1 px-2 py-1.5 border-r border-slate-100 transition-all ${
+                                                                    isExpanded && !isSolving ? (isCCF ? 'bg-red-50/60' : 'bg-violet-50/60') : 'bg-white hover:bg-slate-50'
+                                                                }`}>
                                                                     <span className={`text-[9px] font-black uppercase ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
-                                                                    <ChevronDown size={10} className={`transition-transform duration-150 ${isExpanded ? 'rotate-180 text-violet-500' : 'text-slate-300'}`} />
+                                                                    <ChevronDown size={10} className={`transition-transform duration-150 ${isExpanded && !isSolving ? 'rotate-180 text-violet-500' : 'text-slate-300'}`} />
+                                                                </button>
+                                                                {/* Solventar shortcut */}
+                                                                <button onClick={() => {
+                                                                    if (isSolving) { setSolvingId(null); setExpandedId(null); setComment(''); }
+                                                                    else { setExpandedId(r.id); setSolvingId(r.id); setComment(''); }
+                                                                }} className={`flex items-center gap-1 px-2 py-1.5 transition-all ${
+                                                                    isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-white text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'
+                                                                }`}>
+                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
                                                             </div>
                                                         );
                                                     })}
                                                 </div>
 
-                                                {/* Expanded detail card */}
+                                                {/* Expanded panel */}
                                                 {expandedRow && (() => {
-                                                    const r        = expandedRow;
-                                                    const isCCF    = r.tipo_documento === 'CCF';
+                                                    const r         = expandedRow;
+                                                    const isCCF     = r.tipo_documento === 'CCF';
                                                     const isSolving = solvingId === r.id;
                                                     return (
-                                                        <div className={`mt-2.5 rounded-xl border px-4 py-3 ${isCCF ? 'bg-red-50/40 border-red-200' : 'bg-violet-50/20 border-violet-200/60'}`}>
+                                                        <div className={`mt-2.5 rounded-xl border px-4 py-3 ${isSolving ? 'bg-emerald-50/40 border-emerald-200' : isCCF ? 'bg-red-50/40 border-red-200' : 'bg-violet-50/20 border-violet-200/60'}`}>
+                                                            {/* Info row — always visible */}
                                                             <div className="flex items-start gap-4 flex-wrap mb-3">
                                                                 <div>
                                                                     <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Correlativo</p>
@@ -725,12 +733,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <p className={`text-[15px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                                                 </div>
                                                             </div>
-                                                            {!isSolving ? (
-                                                                <button onClick={() => { setSolvingId(r.id); setComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
-                                                                    <Check size={10} /> Solventar
-                                                                </button>
-                                                            ) : (
+                                                            {/* Solve form */}
+                                                            {isSolving ? (
                                                                 <div className="flex items-start gap-3">
                                                                     <textarea
                                                                         className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
@@ -748,6 +752,11 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         </button>
                                                                     </div>
                                                                 </div>
+                                                            ) : (
+                                                                <button onClick={() => { setSolvingId(r.id); setComment(''); }}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
+                                                                    <Check size={10} /> Solventar
+                                                                </button>
                                                             )}
                                                         </div>
                                                     );

@@ -381,7 +381,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         {/* Row 2: correlativo + meta */}
                                         <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
                                         <p className="text-[11px] text-slate-400 truncate mb-2">
-                                            {getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
+                                            {r.erp_invoice_id ? `#${r.erp_invoice_id} · ` : ''}{getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
                                         </p>
                                         {/* Row 3: total + action */}
                                         <div className="flex items-center justify-between">
@@ -626,12 +626,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 )}
                                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Pend. MH</span>
                                             </div>
-                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-violet-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
+                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
                                         </div>
                                         {/* Row 2: correlativo + meta */}
-                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-violet-700'}`}>{r.correlativo}</p>
+                                        <p className={`font-mono text-[13px] font-black leading-none mb-1 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
                                         <p className={`text-[11px] truncate mb-2 ${isLate ? 'text-red-400' : 'text-slate-400'}`}>
-                                            {getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
+                                            {r.erp_invoice_id ? `#${r.erp_invoice_id} · ` : ''}{getBranch(r.branch_id)}{r.cliente ? ` · ${r.cliente}` : ''} · {r.fecha}
                                         </p>
                                         {/* Row 3: total + action */}
                                         <div className="flex items-center justify-between">

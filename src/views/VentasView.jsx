@@ -72,6 +72,9 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
     const [page, setPage]         = useState(1);
+    const [expandedId, setExpandedId]     = useState(null);
+    const [itemsCache, setItemsCache]     = useState({});
+    const [loadingItems, setLoadingItems] = useState(false);
     const [monthRange, setMonthRange] = useState(() => {
         const r = currentMonthRange();
         return `${r.fini}|${r.ffin}`;
@@ -110,6 +113,20 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 
     useEffect(() => { fetchVentas(); }, [fetchVentas]);
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch]);
+
+    const toggleRow = useCallback(async (invoiceId) => {
+        if (expandedId === invoiceId) { setExpandedId(null); return; }
+        setExpandedId(invoiceId);
+        if (itemsCache[invoiceId]) return;
+        setLoadingItems(true);
+        const { data } = await supabase
+            .from('sales_invoice_items')
+            .select('descripcion, presentacion, cantidad, precio_unitario, total_linea')
+            .eq('invoice_id', invoiceId)
+            .order('total_linea', { ascending: false });
+        setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
+        setLoadingItems(false);
+    }, [expandedId, itemsCache]);
 
     const filtered = useMemo(() => {
         if (!searchTerm) return rows;
@@ -172,28 +189,73 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
                             <tbody>
                                 {filtered.map(r => {
                                     const isCCF = r.tipo_documento === 'CCF';
+                                    const isExpanded = expandedId === r.id;
+                                    const items = itemsCache[r.id] || [];
                                     return (
-                                        <tr key={r.id} className="border-t border-black/[0.04] hover:bg-slate-50/60 transition-colors">
-                                            <td className="px-4 py-2.5">
-                                                <p className="text-[12px] font-bold text-slate-700">{r.fecha}</p>
-                                                {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden md:table-cell">
-                                                {r.erp_invoice_id && <p className="font-mono text-[11px] font-black text-slate-500">#{r.erp_invoice_id}</p>}
-                                                <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
-                                            </td>
-                                            <td className="px-4 py-2.5 text-[11px] text-slate-600 hidden lg:table-cell">{getBranch(r.branch_id)}</td>
-                                            <td className="px-4 py-2.5">
-                                                <p className="text-[12px] text-slate-700 truncate max-w-[180px]">{r.cliente || '—'}</p>
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${isCCF ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>{r.tipo_documento}</span>
-                                                {r.tipo_pago && <p className="text-[10px] text-slate-400 mt-0.5">{r.tipo_pago}</p>}
-                                            </td>
-                                            <td className="px-4 py-2.5 text-right">
-                                                <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                            </td>
-                                        </tr>
+                                        <React.Fragment key={r.id}>
+                                            <tr onClick={() => toggleRow(r.id)}
+                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/60' : 'hover:bg-slate-50/60'}`}>
+                                                <td className="px-4 py-2.5">
+                                                    <p className="text-[12px] font-bold text-slate-700">{r.fecha}</p>
+                                                    {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
+                                                </td>
+                                                <td className="px-4 py-2.5 hidden md:table-cell">
+                                                    {r.erp_invoice_id && <p className="font-mono text-[11px] font-black text-slate-500">#{r.erp_invoice_id}</p>}
+                                                    <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
+                                                </td>
+                                                <td className="px-4 py-2.5 text-[11px] text-slate-600 hidden lg:table-cell">{getBranch(r.branch_id)}</td>
+                                                <td className="px-4 py-2.5">
+                                                    <p className="text-[12px] text-slate-700 truncate max-w-[180px]">{r.cliente || '—'}</p>
+                                                </td>
+                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${isCCF ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>{r.tipo_documento}</span>
+                                                    {r.tipo_pago && <p className="text-[10px] text-slate-400 mt-0.5">{r.tipo_pago}</p>}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                        <ChevronDown size={12} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr className="border-t border-blue-100">
+                                                    <td colSpan={6} className="px-4 py-3 bg-blue-50/40">
+                                                        {loadingItems && items.length === 0 ? (
+                                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
+                                                                <Loader2 size={12} className="animate-spin" /> Cargando productos...
+                                                            </div>
+                                                        ) : items.length === 0 ? (
+                                                            <p className="text-[11px] text-slate-400 py-1">Sin detalle de productos disponible.</p>
+                                                        ) : (
+                                                            <table className="w-full text-[11px]">
+                                                                <thead>
+                                                                    <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                                                        <th className="text-left pb-1.5">Producto</th>
+                                                                        <th className="text-right pb-1.5">Cant.</th>
+                                                                        <th className="text-right pb-1.5 hidden sm:table-cell">Precio Unit.</th>
+                                                                        <th className="text-right pb-1.5">Total</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-blue-100">
+                                                                    {items.map((it, idx) => (
+                                                                        <tr key={idx}>
+                                                                            <td className="py-1.5 pr-4">
+                                                                                <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
+                                                                                {it.presentacion && <p className="text-[10px] text-slate-400">{it.presentacion}</p>}
+                                                                            </td>
+                                                                            <td className="py-1.5 text-right font-bold text-slate-600">{it.cantidad}</td>
+                                                                            <td className="py-1.5 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
+                                                                            <td className="py-1.5 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
                                     );
                                 })}
                             </tbody>

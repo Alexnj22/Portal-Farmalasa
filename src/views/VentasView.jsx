@@ -85,16 +85,16 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 
     const fetchVentas = useCallback(async () => {
         setLoading(true);
-        // Get total count + amount for stats
+        // Get total count + sum server-side (avoids 1000-row cap on client aggregation)
         let qStats = supabase
             .from('sales_invoices')
-            .select('total', { count: 'exact' })
+            .select('total.sum()', { count: 'exact' })
             .gte('fecha', fini).lte('fecha', ffin)
             .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")');
         if (filterBranch) qStats = qStats.eq('branch_id', Number(filterBranch));
         const { data: statsData, count } = await qStats;
         setTotalCount(count || 0);
-        setTotalAmount((statsData || []).reduce((s, r) => s + parseFloat(r.total || 0), 0));
+        setTotalAmount(parseFloat(statsData?.[0]?.sum || 0));
 
         // Get paginated rows
         let q = supabase

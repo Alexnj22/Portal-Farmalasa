@@ -16,9 +16,6 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
 
-// Past-month stats cache: key = "fini|ffin|branchId" → { total_count, total_sum }
-// Past months never change so we never invalidate this cache.
-const _statsCache = new Map();
 const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
@@ -89,22 +86,24 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 
     const fetchVentas = useCallback(async () => {
         setLoading(true);
-        // Stats: use cache for past months, always re-fetch current month
-        const currentFini = currentMonthRange().fini;
-        const isCurrentMonth = fini === currentFini;
-        const cacheKey = `${fini}|${ffin}|${filterBranch || 'all'}`;
-
+        // Stats: tabla pre-agregada para meses pasados, RPC en tiempo real para mes actual
+        const isCurrentMonth = fini === currentMonthRange().fini;
         let stats;
-        if (!isCurrentMonth && _statsCache.has(cacheKey)) {
-            stats = _statsCache.get(cacheKey);
-        } else {
-            const { data: statsData } = await supabase.rpc('get_ventas_stats', {
-                p_fini: fini,
-                p_ffin: ffin,
+        if (isCurrentMonth) {
+            const { data } = await supabase.rpc('get_ventas_stats', {
+                p_fini: fini, p_ffin: ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
             });
-            stats = statsData?.[0] || { total_count: 0, total_sum: 0 };
-            if (!isCurrentMonth) _statsCache.set(cacheKey, stats);
+            stats = data?.[0] || { total_count: 0, total_sum: 0, avg_ticket: 0 };
+        } else {
+            const { data } = await supabase
+                .from('ventas_monthly_stats')
+                .select('total_count, total_sum, avg_ticket')
+                .eq('mes', fini)
+                .eq('branch_id', filterBranch ? Number(filterBranch) : -1)
+                .eq('cod_vendedor', '')
+                .single();
+            stats = data || { total_count: 0, total_sum: 0, avg_ticket: 0 };
         }
         setTotalCount(parseInt(stats.total_count || 0));
         setTotalAmount(parseFloat(stats.total_sum || 0));
@@ -322,29 +321,75 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm }) {
 
     useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
 
-    // Load historical rankings for last 6 months
+    // Load historical rankings — 1 query a ventas_monthly_stats para meses pasados
+    // + 1 RPC solo para el mes actual (tiempo real)
     const loadHistorial = useCallback(async () => {
         setLoadingHist(true);
         const months = monthOptions(6);
-        const results = await Promise.all(months.map(async (m) => {
-            const [f, l] = m.value.split('|');
-            const { data } = await supabase.rpc('get_vendedores_resumen', {
-                p_fini: f, p_ffin: l,
+        const currentFini = currentMonthRange().fini;
+        const branchId = filterBranch ? Number(filterBranch) : -1;
+
+        // Meses pasados: una sola query
+        const pastMeses = months.filter(m => m.value.split('|')[0] !== currentFini);
+        const oldestPast = pastMeses[pastMeses.length - 1]?.value.split('|')[0];
+
+        const [{ data: pastData }, currentResult] = await Promise.all([
+            oldestPast
+                ? supabase
+                    .from('ventas_monthly_stats')
+                    .select('mes, cod_vendedor, total_count, total_sum, avg_ticket')
+                    .gte('mes', oldestPast)
+                    .lt('mes', currentFini)
+                    .eq('branch_id', branchId)
+                    .neq('cod_vendedor', '')
+                    .order('mes', { ascending: false })
+                : Promise.resolve({ data: [] }),
+            // Mes actual: RPC en tiempo real
+            supabase.rpc('get_vendedores_resumen', {
+                p_fini: currentFini,
+                p_ffin: currentMonthRange().ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
-            });
-            const byVend = new Map();
-            for (const r of (data || [])) {
-                const cur = byVend.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0 };
-                cur.total += parseFloat(r.total_ventas || 0);
-                cur.count += parseInt(r.total_facturas || 0);
-                byVend.set(r.cod_vendedor, cur);
+            }),
+        ]);
+
+        // Agrupar datos pasados por mes
+        const pastByMes = new Map();
+        for (const r of (pastData || [])) {
+            const key = r.mes;
+            if (!pastByMes.has(key)) pastByMes.set(key, []);
+            pastByMes.get(key).push(r);
+        }
+
+        // Procesar mes actual desde RPC
+        const byVendCurrent = new Map();
+        for (const r of (currentResult.data || [])) {
+            const cur = byVendCurrent.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0 };
+            cur.total += parseFloat(r.total_ventas || 0);
+            cur.count += parseInt(r.total_facturas || 0);
+            byVendCurrent.set(r.cod_vendedor, cur);
+        }
+
+        const SKIP = new Set(['1000', '125']);
+        const rankMonth = (vendors) => vendors
+            .filter(v => !SKIP.has(v.cod_vendedor))
+            .sort((a, b) => b.total - a.total)
+            .map((v, i) => ({ ...v, rank: i + 1 }));
+
+        const results = months.map((m) => {
+            const mFini = m.value.split('|')[0];
+            if (mFini === currentFini) {
+                return { label: m.label, value: m.value, ranked: rankMonth([...byVendCurrent.values()]) };
             }
-            const ranked = [...byVend.values()]
-                .filter(v => v.cod_vendedor !== '1000' && v.cod_vendedor !== '125')
-                .sort((a, b) => b.total - a.total)
-                .map((v, i) => ({ ...v, rank: i + 1 }));
-            return { label: m.label, value: m.value, ranked };
-        }));
+            const rows = pastByMes.get(mFini) || [];
+            const vendors = rows.map(r => ({
+                cod_vendedor: r.cod_vendedor,
+                total: parseFloat(r.total_sum),
+                count: parseInt(r.total_count),
+                avg_ticket: parseFloat(r.avg_ticket),
+            }));
+            return { label: m.label, value: m.value, ranked: rankMonth(vendors) };
+        });
+
         setHistorial(results);
         setLoadingHist(false);
     }, [filterBranch]);

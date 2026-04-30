@@ -468,45 +468,78 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
 function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
-    const [rows, setRows] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [rows, setRows]               = useState([]);
+    const [resolved, setResolved]       = useState([]);
+    const [showResolved, setShowResolved] = useState(false);
+    const [loading, setLoading]         = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
-    const [solvingId, setSolvingId] = useState(null);
-    const [comment, setComment] = useState('');
-    const [saving, setSaving] = useState(false);
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-    const [expandedId, setExpandedId] = useState(null);
-    const [copiedId, setCopiedId] = useState(null);
-    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
+    const [solvingId, setSolvingId]     = useState(null);
+    const [comment, setComment]         = useState('');
+    const [saving, setSaving]           = useState(false);
+    const [expandedId, setExpandedId]   = useState(null);
+    const [copiedId, setCopiedId]       = useState(null);
 
-    const copyErpId = (erpId) => {
+    const now      = svNow();
+    const todayStr = now.toISOString().slice(0, 10);
+    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+
+    const getBranch   = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
+    const copyErpId   = (erpId) => {
         if (!erpId) return;
         navigator.clipboard.writeText(String(erpId));
         setCopiedId(erpId);
         setTimeout(() => setCopiedId(null), 1500);
     };
-
-    // Month-end alert
-    const now = svNow();
-    const todayStr = now.toISOString().slice(0, 10);
-    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
-    const monthEndWarning = daysLeft <= 5;
-    const monthEndCritical = daysLeft <= 2;
+    const daysAgoLabel = (fechaStr) => {
+        const diff = Math.floor((svNow() - new Date(`${fechaStr}T12:00:00-06:00`)) / 86400000);
+        if (diff === 0) return 'hoy';
+        if (diff === 1) return 'ayer';
+        return `hace ${diff}d`;
+    };
 
     const loadData = useCallback(async () => {
         setLoading(true);
-        let q = supabase
+        const n = svNow();
+        const y = n.getFullYear(), m = String(n.getMonth() + 1).padStart(2, '0');
+        const fini = `${y}-${m}-01`;
+        const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
+
+        let qPend = supabase
             .from('sales_invoices')
             .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado')
             .is('recibido_mh', null)
             .not('estado', 'eq', 'NULA')
             .order('branch_id', { ascending: true })
-            .order('fecha', { ascending: true })
-            .order('hora', { ascending: true });
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-        const { data } = await q;
-        setRows(data || []);
+            .order('fecha',     { ascending: true })
+            .order('hora',      { ascending: true });
+        if (filterBranch) qPend = qPend.eq('branch_id', Number(filterBranch));
+
+        let qRes = supabase
+            .from('sales_invoices')
+            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
+            .eq('recibido_mh', true)
+            .gte('fecha', fini).lte('fecha', ffin)
+            .order('fecha', { ascending: false });
+        if (filterBranch) qRes = qRes.eq('branch_id', Number(filterBranch));
+
+        const [{ data: pendData }, { data: resInvs }] = await Promise.all([qPend, qRes]);
+
+        // load resolution comments
+        let resMap = {};
+        if ((resInvs || []).length > 0) {
+            const ids = resInvs.map(r => r.id);
+            const { data: resRows } = await supabase
+                .from('sales_invoice_resolutions')
+                .select('invoice_id, comment, resolved_by, resolved_at')
+                .in('invoice_id', ids)
+                .order('resolved_at', { ascending: false });
+            for (const x of (resRows || [])) {
+                if (!resMap[x.invoice_id]) resMap[x.invoice_id] = x;
+            }
+        }
+
+        setRows(pendData || []);
+        setResolved((resInvs || []).map(inv => ({ ...inv, resolution: resMap[inv.id] || null })));
         setLastRefresh(new Date());
         setLoading(false);
     }, [filterBranch]);
@@ -514,28 +547,22 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     useEffect(() => { loadData(); }, [loadData]);
     useEffect(() => { const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData]);
 
-    const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
-
     const handleSolve = async (invoiceId) => {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        await supabase.from('sales_invoices').update({ recibido_mh: true }).eq('id', invoiceId);
+        const inv = rows.find(r => r.id === invoiceId);
+        await Promise.all([
+            supabase.from('sales_invoices').update({ recibido_mh: true }).eq('id', invoiceId),
+            supabase.from('sales_invoice_resolutions').insert({
+                invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
+            }),
+        ]);
         useStaff.getState().appendAuditLog('SOLVENTAR_PENDIENTE_MH', String(invoiceId), {
-            correlativo: rows.find(r => r.id === invoiceId)?.correlativo,
-            comment: comment.trim() || null,
-            resolved_by: resolvedBy,
+            correlativo: inv?.correlativo, comment: comment.trim() || null, resolved_by: resolvedBy,
         });
+        setResolved(prev => [{ ...inv, resolution: { comment: comment.trim() || null, resolved_by: resolvedBy, resolved_at: new Date().toISOString() } }, ...prev]);
         setRows(prev => prev.filter(r => r.id !== invoiceId));
-        setSolvingId(null); setComment(''); setSaving(false);
-    };
-
-    const SORT_ACCESSORS = {
-        tipo:       r => r.tipo_documento,
-        correlativo: r => r.correlativo,
-        sucursal:   r => getBranch(r.branch_id),
-        cliente:    r => r.cliente,
-        fecha:      r => r.fecha + (r.hora || ''),
-        total:      r => parseFloat(r.total || 0),
+        setExpandedId(null); setSolvingId(null); setComment(''); setSaving(false);
     };
 
     const filtered = useMemo(() => {
@@ -548,36 +575,41 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 r.erp_invoice_id?.toString().includes(s)
             );
         }
-        return sortFn(list, SORT_ACCESSORS);
-    }, [rows, searchTerm, sortKey, sortDir]);
+        // CCF first, then by branch + fecha
+        const ccf  = list.filter(r => r.tipo_documento === 'CCF');
+        const rest = list.filter(r => r.tipo_documento !== 'CCF');
+        return [...ccf, ...rest];
+    }, [rows, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [filtered.length, searchTerm, pageSize]);
-
-    const totalPages = Math.ceil(filtered.length / pageSize);
-    const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
 
-    const COLS = [
-        { label: 'Tipo / Correlativo', key: 'tipo' },
-        { label: 'Sucursal', key: 'sucursal' },
-        { label: 'Cliente', key: 'cliente' },
-        { label: 'Fecha', key: 'fecha' },
-        { label: 'Total', key: 'total' },
-        'Tiempo en espera',
-        '',
-    ];
+    // Group by branch_id → fecha (CCF rows always first within each fecha)
+    const grouped = useMemo(() => {
+        const g = {};
+        for (const r of filtered) {
+            if (!g[r.branch_id]) g[r.branch_id] = {};
+            if (!g[r.branch_id][r.fecha]) g[r.branch_id][r.fecha] = [];
+            g[r.branch_id][r.fecha].push(r);
+        }
+        return g;
+    }, [filtered]);
+
+    const daysLeftLabel = daysLeft === 0 ? 'Último día' : daysLeft;
+    const daysLeftText  = daysLeft === 0 ? 'text-red-700' : daysLeft <= 2 ? 'text-red-700' : daysLeft <= 5 ? 'text-amber-700' : 'text-emerald-700';
+    const daysLeftBg    = daysLeft === 0 ? 'bg-red-50 border-red-200' : daysLeft <= 2 ? 'bg-red-50 border-red-200' : daysLeft <= 5 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200';
+    const daysLeftGrad  = daysLeft === 0 ? 'from-red-600 to-red-400' : daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400';
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            {/* Stats strip — compact inline */}
+            {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         colors: filtered.length > 0 ? 'from-violet-500 to-purple-400' : 'from-slate-400 to-slate-300',        text: filtered.length > 0 ? 'text-violet-700' : 'text-slate-500', bg: filtered.length > 0 ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200' },
-                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle, colors: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',                    text: ccfCount > 0 ? 'text-red-700' : 'text-slate-500',           bg: ccfCount > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200' },
-                    { label: 'Días restantes', value: daysLeft,       icon: History,       colors: daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400', text: daysLeft <= 2 ? 'text-red-700' : daysLeft <= 5 ? 'text-amber-700' : 'text-emerald-700', bg: daysLeft <= 2 ? 'bg-red-50 border-red-200' : daysLeft <= 5 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200' },
-                ].map(({ label, value, icon: Icon, colors, text, bg }) => (
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-violet-500 to-purple-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-violet-700' : 'text-slate-500', bg: filtered.length > 0 ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200' },
+                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-red-700' : 'text-slate-500',           bg: ccfCount > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200' },
+                    { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
+                ].map(({ label, value, icon: Icon, grad, text, bg }) => (
                     <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${colors} flex items-center justify-center shrink-0`}>
+                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                             <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
@@ -587,147 +619,191 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
-            <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
-                    {[10, 25, 50].map(n => (
-                        <button key={n} onClick={() => { setPageSize(n); setPage(1); }}
-                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${pageSize === n ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {n}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
+            {/* Pending list */}
             {loading ? (
                 <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-violet-500" glowClass="bg-violet-500"
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
-            ) : (() => {
-                const ccfRows   = pageRows.filter(r => r.tipo_documento === 'CCF');
-                const otherRows = pageRows.filter(r => r.tipo_documento !== 'CCF');
-                const renderPill = (r) => {
-                    const isCCF      = r.tipo_documento === 'CCF';
-                    const isLate     = isCCF && r.fecha !== todayStr;
-                    const isExpanded = expandedId === r.id;
-                    const isSolving  = solvingId === r.id;
-                    return (
-                        <div key={r.id} className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
-                            isSolving  ? 'border-emerald-300 shadow-sm shadow-emerald-100' :
-                            isExpanded ? (isCCF ? 'border-red-300 shadow-sm' : 'border-violet-300 shadow-sm shadow-violet-100') :
-                            isCCF     ? 'border-red-200 bg-red-50/20 hover:border-red-300' :
-                                        'border-slate-200 bg-white hover:border-violet-200'
-                        }`}>
-                            {/* ── Collapsed pill row ── */}
-                            <div className="flex items-center gap-2 px-3 py-2.5">
-                                {/* ID — tappable copy zone */}
-                                <button
-                                    onClick={() => copyErpId(r.erp_invoice_id)}
-                                    title="Copiar ID"
-                                    className={`flex items-center gap-1 px-2 py-1 rounded-lg font-mono text-[11px] font-black transition-all active:scale-95 shrink-0 ${
-                                        copiedId === r.erp_invoice_id
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : isCCF ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-violet-100/80 text-violet-700 hover:bg-violet-200'
-                                    }`}>
-                                    {copiedId === r.erp_invoice_id ? <Check size={9} /> : <Copy size={9} />}
-                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                </button>
-
-                                {/* Tipo badge */}
-                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase border shrink-0 ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                {isCCF && isLate && <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 text-red-700 border border-red-300 shrink-0"><AlertTriangle size={8} />Vencido</span>}
-
-                                {/* Sucursal */}
-                                <span className="text-[12px] font-semibold text-slate-700 truncate flex-1 min-w-0">{getBranch(r.branch_id)}</span>
-
-                                {/* Fecha */}
-                                <span className={`text-[11px] font-semibold shrink-0 ${isLate ? 'text-red-500' : 'text-slate-500'}`}>{r.fecha}</span>
-
-                                {/* Time ago badge */}
-                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
-
-                                {/* Expand toggle */}
-                                <button onClick={() => { setExpandedId(isExpanded ? null : r.id); if (isExpanded) { setSolvingId(null); setComment(''); } }}
-                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/[0.05] transition-all shrink-0">
-                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                                </button>
-                            </div>
-
-                            {/* ── Expanded panel ── */}
-                            {isExpanded && (
-                                <div className={`border-t px-4 py-3 ${isCCF ? 'border-red-100 bg-red-50/30' : 'border-violet-100/60 bg-violet-50/20'}`}>
-                                    {/* Info row */}
-                                    <div className="flex items-center gap-4 flex-wrap mb-3">
-                                        <div>
-                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Correlativo</p>
-                                            <p className={`font-mono text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
-                                            <p className="text-[12px] font-semibold text-slate-700 truncate">{r.cliente || '—'}</p>
-                                        </div>
-                                        <div className="shrink-0">
-                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
-                                            <p className={`text-[15px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                        </div>
+            ) : (
+                <div className="space-y-3">
+                    {Object.entries(grouped).map(([branchId, byFecha]) => {
+                        const branchTotal = Object.values(byFecha).flat().length;
+                        const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
+                        return (
+                            <div key={branchId} className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                                {/* Branch header */}
+                                <div className={`flex items-center justify-between px-4 py-2.5 border-b border-black/[0.05] ${branchHasCCF ? 'bg-red-50/40' : 'bg-slate-50/60'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <Building2 size={13} className={branchHasCCF ? 'text-red-400' : 'text-slate-400'} />
+                                        <span className="text-[13px] font-black text-slate-700">{getBranch(Number(branchId))}</span>
+                                        {branchHasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">CCF</span>}
                                     </div>
+                                    <span className="text-[10px] font-black text-slate-400">{branchTotal} doc</span>
+                                </div>
 
-                                    {/* Solve section */}
-                                    {!isSolving ? (
-                                        <button onClick={() => { setSolvingId(r.id); setComment(''); }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
-                                            <Check size={10} /> Solventar
-                                        </button>
-                                    ) : (
-                                        <div className="flex items-start gap-3">
-                                            <textarea
-                                                className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
-                                                rows={2} autoFocus
-                                                placeholder="Comentario opcional…"
-                                                value={comment} onChange={e => setComment(e.target.value)}
-                                            />
-                                            <div className="flex flex-col gap-1.5 shrink-0">
-                                                <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                    {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
-                                                </button>
-                                                <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
-                                                    <X size={10} /> Cancelar
-                                                </button>
+                                {/* Date sections */}
+                                <div className="divide-y divide-black/[0.04]">
+                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
+                                        const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
+                                        const isToday = fecha === todayStr;
+                                        const dLabel = daysAgoLabel(fecha);
+                                        const expandedRow = fechaRows.find(r => r.id === expandedId);
+
+                                        return (
+                                            <div key={fecha} className="px-4 py-3">
+                                                {/* Date label */}
+                                                <div className="flex items-center gap-2 mb-2.5">
+                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-red-600' : 'text-slate-600'}`}>{fecha}</span>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                                                        isToday ? 'bg-blue-100 text-blue-600' :
+                                                        hasCCF  ? 'bg-red-100 text-red-600' :
+                                                                  'bg-slate-100 text-slate-500'
+                                                    }`}>{dLabel}</span>
+                                                </div>
+
+                                                {/* Pills row */}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {fechaRows.map(r => {
+                                                        const isCCF      = r.tipo_documento === 'CCF';
+                                                        const isExpanded = expandedId === r.id;
+                                                        const isCopied   = copiedId === r.erp_invoice_id;
+                                                        return (
+                                                            <div key={r.id} className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+                                                                isExpanded
+                                                                    ? (isCCF ? 'border-red-400 shadow-red-100' : 'border-violet-400 shadow-violet-100')
+                                                                    : (isCCF ? 'border-red-200 hover:border-red-300' : 'border-slate-200 hover:border-violet-300')
+                                                            }`}>
+                                                                {/* Copy zone */}
+                                                                <button
+                                                                    onClick={() => copyErpId(r.erp_invoice_id)}
+                                                                    title="Copiar ID"
+                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
+                                                                        isCopied
+                                                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                                                            : isCCF
+                                                                                ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-700'
+                                                                    }`}>
+                                                                    {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                </button>
+                                                                {/* Tipo + expand */}
+                                                                <button
+                                                                    onClick={() => { setExpandedId(isExpanded ? null : r.id); if (isExpanded) { setSolvingId(null); setComment(''); } }}
+                                                                    className={`flex items-center gap-1 px-2 py-1.5 transition-all ${
+                                                                        isExpanded
+                                                                            ? (isCCF ? 'bg-red-50/60' : 'bg-violet-50/60')
+                                                                            : 'bg-white hover:bg-slate-50'
+                                                                    }`}>
+                                                                    <span className={`text-[9px] font-black uppercase ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    <ChevronDown size={10} className={`transition-transform duration-150 ${isExpanded ? 'rotate-180 text-violet-500' : 'text-slate-300'}`} />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Expanded detail card */}
+                                                {expandedRow && (() => {
+                                                    const r        = expandedRow;
+                                                    const isCCF    = r.tipo_documento === 'CCF';
+                                                    const isSolving = solvingId === r.id;
+                                                    return (
+                                                        <div className={`mt-2.5 rounded-xl border px-4 py-3 ${isCCF ? 'bg-red-50/40 border-red-200' : 'bg-violet-50/20 border-violet-200/60'}`}>
+                                                            <div className="flex items-start gap-4 flex-wrap mb-3">
+                                                                <div>
+                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Correlativo</p>
+                                                                    <p className={`font-mono text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                                                </div>
+                                                                <div className="flex-1 min-w-[100px]">
+                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
+                                                                    <p className="text-[12px] font-semibold text-slate-700 truncate">{r.cliente || '—'}</p>
+                                                                </div>
+                                                                <div className="shrink-0">
+                                                                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
+                                                                    <p className={`text-[15px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                                </div>
+                                                            </div>
+                                                            {!isSolving ? (
+                                                                <button onClick={() => { setSolvingId(r.id); setComment(''); }}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
+                                                                    <Check size={10} /> Solventar
+                                                                </button>
+                                                            ) : (
+                                                                <div className="flex items-start gap-3">
+                                                                    <textarea
+                                                                        className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                        rows={2} autoFocus placeholder="Comentario opcional…"
+                                                                        value={comment} onChange={e => setComment(e.target.value)}
+                                                                    />
+                                                                    <div className="flex flex-col gap-1.5 shrink-0">
+                                                                        <button onClick={() => handleSolve(r.id)} disabled={saving}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                            {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                                                                        </button>
+                                                                        <button onClick={() => { setSolvingId(null); setComment(''); }}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                                            <X size={10} /> Cancelar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })}
                                 </div>
-                            )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Historial solventados */}
+            {!loading && resolved.length > 0 && (
+                <div className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                    <button onClick={() => setShowResolved(v => !v)}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <Check size={13} className="text-emerald-600" strokeWidth={3} />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[13px] font-bold text-slate-700">{resolved.length} solventado{resolved.length !== 1 ? 's' : ''} este mes</p>
+                                <p className="text-[11px] text-slate-400">Historial de envíos al MH</p>
+                            </div>
                         </div>
-                    );
-                };
-                return (
-                    <div className="space-y-4">
-                        {ccfRows.length > 0 && (
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-2 px-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500">CCF urgentes</span>
-                                    <span className="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full">{ccfRows.length}</span>
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showResolved && (
+                        <div className="border-t border-black/[0.04]">
+                            {resolved.map((r, i) => (
+                                <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
+                                    <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                            <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.tipo_documento}</span>
+                                            <span className="font-mono text-[12px] font-bold text-slate-700">{r.correlativo}</span>
+                                            <span className="text-[12px] text-slate-500">{getBranch(r.branch_id)}</span>
+                                            {r.erp_invoice_id && <span className="font-mono text-[11px] text-slate-400">#{r.erp_invoice_id}</span>}
+                                            {r.total && <span className="text-[12px] font-bold text-slate-700 ml-auto">{fmt(r.total)}</span>}
+                                        </div>
+                                        {r.resolution?.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.resolution.comment}"</p>}
+                                        <p className="text-[11px] text-slate-400">
+                                            {r.resolution?.resolved_by ? <>Solventado por <span className="font-semibold text-slate-600">{r.resolution.resolved_by}</span></> : 'Marcado como recibido'}
+                                            {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                            {!r.resolution && <> · {r.fecha}</>}
+                                        </p>
+                                    </div>
                                 </div>
-                                {ccfRows.map(renderPill)}
-                            </div>
-                        )}
-                        {otherRows.length > 0 && (
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-2 px-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Documentos</span>
-                                    <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{otherRows.length}</span>
-                                </div>
-                                {otherRows.map(renderPill)}
-                            </div>
-                        )}
-                        <Pagination page={page} total={totalPages} onChange={p => { setPage(p); setExpandedId(null); setSolvingId(null); }} />
-                    </div>
-                );
-            })()}
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

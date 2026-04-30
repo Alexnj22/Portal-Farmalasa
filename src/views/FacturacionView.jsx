@@ -219,9 +219,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
     const [showHistorial, setShowHistorial] = useState(false);
-    const [page, setPage] = useState(1);
-    const [historialPage, setHistorialPage] = useState(1);
-    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
+    const [collapsedBranches, setCollapsedBranches] = useState({});
+    const [copiedId, setCopiedId] = useState(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -283,76 +282,69 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
-    const SORT_ACCESSORS = {
-        tipo:      r => r.tipo_documento,
-        correlativo: r => r.correlativo,
-        sucursal:  r => getBranch(r.branch_id),
-        cliente:   r => r.cliente,
-        fecha:     r => r.fecha + (r.hora || ''),
-        total:     r => parseFloat(r.total || 0),
+    const now      = svNow();
+    const todayStr = now.toISOString().slice(0, 10);
+
+    const copyErpId = (erpId) => {
+        if (!erpId) return;
+        navigator.clipboard.writeText(String(erpId));
+        setCopiedId(erpId);
+        setTimeout(() => setCopiedId(null), 1500);
+    };
+
+    const daysAgoLabel = (fechaStr) => {
+        const today = svNow();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
+        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
+        if (diff === 0) return 'hoy';
+        if (diff === 1) return 'ayer';
+        return `hace ${diff}d`;
     };
 
     const filtered = useMemo(() => {
         const active = rows.filter(r => !resolvedIds.has(r.id));
-        let list = !searchTerm ? active : active.filter(r => {
+        const list = !searchTerm ? active : active.filter(r => {
             const s = searchTerm.toLowerCase();
             return r.correlativo?.toLowerCase().includes(s) ||
                 r.cliente?.toLowerCase().includes(s) ||
                 r.codigo_generacion?.toLowerCase().includes(s);
         });
-        const ccf = list.filter(r => r.tipo_documento === 'CCF');
-        const rest = list.filter(r => r.tipo_documento !== 'CCF');
-        return [...sortFn(ccf, SORT_ACCESSORS), ...sortFn(rest, SORT_ACCESSORS)];
-    }, [rows, resolvedIds, searchTerm, sortKey, sortDir]);
+        const ccf  = list.filter(r => r.tipo_documento === 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
+        const rest = list.filter(r => r.tipo_documento !== 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
+        return [...ccf, ...rest];
+    }, [rows, resolvedIds, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [filtered.length, searchTerm]);
-
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-    const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    const historialTotalPages = Math.ceil(resolved.length / PAGE_SIZE);
-    const historialPageRows = resolved.slice((historialPage - 1) * PAGE_SIZE, historialPage * PAGE_SIZE);
+    const grouped = useMemo(() => {
+        const g = {};
+        for (const r of filtered) {
+            if (!g[r.branch_id]) g[r.branch_id] = {};
+            if (!g[r.branch_id][r.fecha]) g[r.branch_id][r.fecha] = [];
+            g[r.branch_id][r.fecha].push(r);
+        }
+        return g;
+    }, [filtered]);
 
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
 
-    const COLS = [
-        { label: 'Tipo / Correlativo', key: 'tipo' },
-        { label: 'Sucursal', key: 'sucursal' },
-        { label: 'Cliente', key: 'cliente' },
-        { label: 'Fecha', key: 'fecha' },
-        { label: 'Total', key: 'total' },
-        'Tiempo',
-        '',
-    ];
-
     return (
-        <div className="p-5 md:p-6 space-y-6">
+        <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, colors: filtered.length > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, colors: ccfCount > 0 ? 'from-red-600 to-red-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  colors: resolved.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300' },
-                ].map(({ label, value, icon: Icon, colors }) => (
-                    <div key={label} className="relative overflow-hidden rounded-2xl bg-white border border-black/[0.06] shadow-sm p-4">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${colors} opacity-[0.07]`} />
-                        <div className="relative">
-                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center mb-3 shadow-sm`}>
-                                <Icon size={15} className="text-white" strokeWidth={2.5} />
-                            </div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
-                            <p className="text-[28px] font-black text-slate-800 leading-none">{value}</p>
+                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-red-600' : 'text-slate-500', bg: 'border-slate-100 bg-white' },
+                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-red-600 to-red-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-red-700' : 'text-slate-500',        bg: 'border-slate-100 bg-white' },
+                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300', text: resolved.length > 0 ? 'text-emerald-600' : 'text-slate-500', bg: 'border-slate-100 bg-white' },
+                ].map(({ label, value, icon: Icon, grad, text, bg }) => (
+                    <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
+                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                            <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
-            </div>
-
-            {/* Refresh row */}
-            <div className="flex items-center justify-between -mt-2">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Anulaciones pendientes</h3>
-                    {ccfCount > 0 && <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">{ccfCount} CCF urgente{ccfCount > 1 ? 's' : ''}</span>}
-                </div>
-                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
             {loading ? (
@@ -361,61 +353,118 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                 <EmptyState icon={CheckCircle2} iconClass="text-emerald-500" glowClass="bg-emerald-500"
                     title="Todo está al día" subtitle="No hay anulaciones pendientes por atender en este momento." />
             ) : (
-                <>
-                    <div className="grid gap-2 md:grid-cols-2">
-                        {pageRows.map(r => {
-                            const isCCF = r.tipo_documento === 'CCF';
-                            const isSolving = solvingId === r.id;
-                            return (
-                                <div key={r.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : isCCF ? 'border-red-200 hover:border-red-300 hover:shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}`}>
-                                    <div className="px-4 py-3">
-                                        {/* Row 1: badges + time */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <div className="flex items-center gap-1 flex-wrap">
-                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                                {(r.estado === null || r.estado === 'undefined') && <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-yellow-50 text-yellow-600 border border-yellow-200">Undef</span>}
-                                                {!r.recibido_mh && <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-200">Sin MH</span>}
-                                            </div>
-                                            <span className={`text-[10px] font-bold shrink-0 ${isCCF ? 'text-red-400' : 'text-slate-400'}`}>{timeAgo(r.fecha, r.hora)}</span>
-                                        </div>
-                                        {/* Row 2: correlativo + meta */}
-                                        <p className={`font-mono text-[13px] font-black leading-none mb-1.5 ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                            {r.erp_invoice_id && <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">#{r.erp_invoice_id}</span>}
-                                            <span className="text-[11px] font-semibold text-slate-600">{getBranch(r.branch_id)}</span>
-                                            <span className="text-[10px] text-slate-400">·</span>
-                                            <span className="text-[11px] font-semibold text-slate-600">{r.fecha}</span>
-                                        </div>
-                                        {r.cliente && <p className="text-[11px] text-slate-400 truncate mb-2">{r.cliente}</p>}
-                                        {/* Row 3: total + action */}
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-[14px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</span>
-                                            <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
-                                            <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
-                                                rows={2} autoFocus
-                                                placeholder="Comentario opcional…"
-                                                value={comment} onChange={e => setComment(e.target.value)}
-                                            />
-                                            <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
+                        <Info size={13} className="text-blue-400 shrink-0" />
+                        Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
                     </div>
-                    <Pagination page={page} total={totalPages} onChange={p => { setPage(p); setSolvingId(null); }} />
-                </>
+                    {Object.entries(grouped).map(([branchId, byFecha]) => {
+                        const branchTotal = Object.values(byFecha).flat().length;
+                        const branchHasCCF = Object.values(byFecha).flat().some(r => r.tipo_documento === 'CCF');
+                        const isCollapsed = !!collapsedBranches[branchId];
+                        return (
+                            <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                                <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-red-50/40 hover:bg-red-50/70' : 'bg-slate-50/60 hover:bg-slate-100/60'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <Building2 size={13} className={branchHasCCF ? 'text-red-400' : 'text-slate-400'} />
+                                        <span className="text-[13px] font-black text-slate-700">{getBranch(Number(branchId))}</span>
+                                        {branchHasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">CCF</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black text-slate-400">{branchTotal} doc</span>
+                                        <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                    </div>
+                                </button>
+                                {!isCollapsed && <div className="divide-y divide-black/[0.04]">
+                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
+                                        const hasCCF   = fechaRows.some(r => r.tipo_documento === 'CCF');
+                                        const isToday  = fecha === todayStr;
+                                        const dLabel   = daysAgoLabel(fecha);
+                                        return (
+                                            <div key={fecha} className="px-4 py-3">
+                                                <div className="flex items-center gap-2 mb-2.5">
+                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-red-600' : 'text-slate-600'}`}>{fecha}</span>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-100 text-blue-600' : hasCCF ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>{dLabel}</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {fechaRows.map(r => {
+                                                        const isCCF     = r.tipo_documento === 'CCF';
+                                                        const isSolving = solvingId === r.id;
+                                                        const isCopied  = copiedId === r.erp_invoice_id;
+                                                        return (
+                                                            <div key={r.id} className="relative group/tip">
+                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : isCCF ? 'border-red-200 hover:border-red-300' : 'border-slate-200 hover:border-slate-300'}`}>
+                                                                    <button onClick={() => copyErpId(r.erp_invoice_id)}
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : isCCF ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
+                                                                        {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                        {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                    </button>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    </div>
+                                                                    <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                        className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}>
+                                                                        {isSolving ? <X size={10} /> : <Check size={10} />}
+                                                                    </button>
+                                                                </div>
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
+                                                                    <div className="bg-white/95 backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                        <div>
+                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Correlativo</p>
+                                                                            <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                                                        </div>
+                                                                        {r.cliente && <div>
+                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Cliente</p>
+                                                                            <p className="text-[11px] font-semibold text-slate-700 truncate">{r.cliente}</p>
+                                                                        </div>}
+                                                                        <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
+                                                                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Total</p>
+                                                                            <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                {fechaRows.some(r => r.id === solvingId) && (() => {
+                                                    const r = fechaRows.find(r => r.id === solvingId);
+                                                    const isCCF = r.tipo_documento === 'CCF';
+                                                    return (
+                                                        <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
+                                                            <div className="flex items-center gap-2 mb-2.5">
+                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-red-700' : 'text-slate-700'}`}>{r.correlativo}</span>
+                                                                {r.cliente && <span className="text-[11px] text-slate-500 truncate">· {r.cliente}</span>}
+                                                                <span className="ml-auto text-[12px] font-black text-slate-700">{fmt(r.total)}</span>
+                                                            </div>
+                                                            <div className="flex items-start gap-3">
+                                                                <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                    rows={2} autoFocus placeholder="Comentario opcional…"
+                                                                    value={comment} onChange={e => setComment(e.target.value)} />
+                                                                <div className="flex flex-col gap-1.5 shrink-0">
+                                                                    <button onClick={() => handleSolve(r.id)} disabled={saving}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                                                                    </button>
+                                                                    <button onClick={() => { setSolvingId(null); setComment(''); }}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                                        <X size={10} /> Cancelar
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        );
+                                    })}
+                                </div>}
+                            </div>
+                        );
+                    })}
+                </div>
             )}
 
             {/* Historial */}
@@ -436,7 +485,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                     {showHistorial && (
                         <div className="border-t border-black/[0.04]">
-                            {historialPageRows.map((r, i) => {
+                            {resolved.map((r, i) => {
                                 const inv = r.invoice;
                                 return (
                                     <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
@@ -457,7 +506,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                     </div>
                                 );
                             })}
-                            <Pagination page={historialPage} total={historialTotalPages} onChange={setHistorialPage} />
                         </div>
                     )}
                 </div>
@@ -841,6 +889,9 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
     const [saving, setSaving] = useState(false);
     const [nullSaving, setNullSaving] = useState(false);
     const [showHistorial, setShowHistorial] = useState(false);
+    const [collapsedGapBranches, setCollapsedGapBranches] = useState({});
+    const [collapsedNullBranches, setCollapsedNullBranches] = useState({});
+    const [copiedNullId, setCopiedNullId] = useState(null);
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
@@ -910,103 +961,144 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
     const pad7 = n => String(n).padStart(7, '0');
 
-    return (
-        <div className="p-5 md:p-6 space-y-8">
+    const copyNullId = (val) => {
+        if (!val) return;
+        navigator.clipboard.writeText(String(val));
+        setCopiedNullId(val);
+        setTimeout(() => setCopiedNullId(null), 1500);
+    };
 
-            {/* ── Stats strip ── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    // Group gaps by branch_id
+    const gapsByBranch = {};
+    for (const g of pendingGaps) {
+        if (!gapsByBranch[g.branch_id]) gapsByBranch[g.branch_id] = [];
+        gapsByBranch[g.branch_id].push(g);
+    }
+
+    // Group active nulls by branch_id
+    const activeNulls = nulls.filter(n => !nullResolvedIds.has(n.id));
+    const nullsByBranch = {};
+    for (const n of activeNulls) {
+        if (!nullsByBranch[n.branch_id]) nullsByBranch[n.branch_id] = [];
+        nullsByBranch[n.branch_id].push(n);
+    }
+
+    return (
+        <div className="p-5 md:p-6 space-y-6">
+
+            {/* Stats strip */}
+            <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Saltos detectados', value: gaps.length,         icon: History,      urgent: gaps.length > 0,       colors: gaps.length > 0 ? 'from-orange-500 to-amber-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'Sin resolver',       value: pendingGaps.length,  icon: AlertTriangle, urgent: pendingGaps.length > 0, colors: pendingGaps.length > 0 ? 'from-red-500 to-orange-400' : 'from-emerald-500 to-teal-400' },
-                    { label: 'Solventados',        value: resolvedGaps.length, icon: CheckCircle2,  urgent: false,                  colors: resolvedGaps.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'Campos nulos',       value: nulls.length,        icon: AlertTriangle, urgent: nulls.length > 0,       colors: nulls.length > 0 ? 'from-red-500 to-rose-400' : 'from-slate-400 to-slate-300' },
-                ].map(({ label, value, icon: Icon, colors }) => (
-                    <div key={label} className="relative overflow-hidden rounded-2xl bg-white border border-black/[0.06] shadow-sm p-4">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${colors} opacity-[0.07]`} />
-                        <div className="relative">
-                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center mb-3 shadow-sm`}>
-                                <Icon size={15} className="text-white" strokeWidth={2.5} />
-                            </div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
-                            <p className="text-[28px] font-black text-slate-800 leading-none">{value}</p>
+                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-orange-500 to-amber-400' : 'from-slate-400 to-slate-300',           text: gaps.length > 0 ? 'text-orange-600' : 'text-slate-500' },
+                    { label: 'Sin resolver', value: pendingGaps.length,  icon: AlertTriangle, grad: pendingGaps.length > 0 ? 'from-red-500 to-orange-400' : 'from-emerald-500 to-teal-400',     text: pendingGaps.length > 0 ? 'text-red-600' : 'text-emerald-600' },
+                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-emerald-500 to-teal-400' : 'from-slate-400 to-slate-300',   text: resolvedGaps.length > 0 ? 'text-emerald-600' : 'text-slate-500' },
+                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-red-500 to-rose-400' : 'from-slate-400 to-slate-300',        text: activeNulls.length > 0 ? 'text-red-600' : 'text-slate-500' },
+                ].map(({ label, value, icon: Icon, grad, text }) => (
+                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
+                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                            <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
             </div>
 
             {/* ── Saltos pendientes ── */}
             <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Saltos en correlativos</h3>
-                    {pendingGaps.length > 0 && (
-                        <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full">{pendingGaps.length} pendiente{pendingGaps.length !== 1 ? 's' : ''}</span>
-                    )}
-                </div>
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Saltos en correlativos</h3>
 
                 {pendingGaps.length === 0 ? (
-                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
-                        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                        <div>
-                            <p className="text-[13px] font-bold text-emerald-700">Sin saltos detectados</p>
-                            <p className="text-[12px] text-emerald-600">Los correlativos están en orden. No hay brechas.</p>
-                        </div>
-                    </div>
+                    <EmptyState icon={CheckCircle2} iconClass="text-emerald-500" glowClass="bg-emerald-500"
+                        title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
                 ) : (
-                    <div className="grid gap-2 md:grid-cols-2">
-                        {pendingGaps.map((g, i) => {
-                            const key = gapKey(g);
-                            const isSolving = solvingGap === key;
-                            const isCCF = g.tipo_documento === 'CCF';
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
+                            <Info size={13} className="text-blue-400 shrink-0" />
+                            Cada salto indica correlativos faltantes entre dos documentos consecutivos.
+                        </div>
+                        {Object.entries(gapsByBranch).map(([branchId, branchGaps]) => {
+                            const isCollapsed = !!collapsedGapBranches[branchId];
+                            const hasCCF = branchGaps.some(g => g.tipo_documento === 'CCF');
                             return (
-                                <div key={i} className={`rounded-xl border-2 bg-white shadow-sm transition-all duration-200 overflow-hidden ${isSolving ? 'border-emerald-300' : 'border-orange-200 hover:border-orange-300 hover:shadow-md'}`}>
-                                    <div className="px-4 py-3">
-                                        {/* Row 1: badges + count */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <div className="flex items-center gap-1">
-                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{g.tipo_documento}</span>
-                                                <span className="text-[12px] font-bold text-slate-700">{getBranch(g.branch_id)}</span>
+                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                                    <button onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${hasCCF ? 'bg-red-50/40 hover:bg-red-50/70' : 'bg-slate-50/60 hover:bg-slate-100/60'}`}>
+                                        <div className="flex items-center gap-2">
+                                            <Building2 size={13} className={hasCCF ? 'text-red-400' : 'text-slate-400'} />
+                                            <span className="text-[13px] font-black text-slate-700">{getBranch(Number(branchId))}</span>
+                                            {hasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">CCF</span>}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black text-slate-400">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
+                                            <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        </div>
+                                    </button>
+                                    {!isCollapsed && (
+                                        <div className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {branchGaps.map((g, i) => {
+                                                    const key = gapKey(g);
+                                                    const isSolving = solvingGap === key;
+                                                    const isCCF = g.tipo_documento === 'CCF';
+                                                    return (
+                                                        <div key={i} className="relative group/tip">
+                                                            <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : isCCF ? 'border-red-200 hover:border-red-300' : 'border-orange-200 hover:border-orange-300'}`}>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                                                                    {pad7(g.gap_from)}–{pad7(g.gap_to)}
+                                                                </div>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                    <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{g.tipo_documento}</span>
+                                                                </div>
+                                                                <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
+                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}>
+                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
+                                                                </button>
+                                                            </div>
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                                <div className="bg-white/95 backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                    <div>
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Rango</p>
+                                                                        <p className="font-mono text-[11px] font-black text-slate-800">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Faltantes</p>
+                                                                        <p className="text-[13px] font-black text-orange-600">{g.gap_count}</p>
+                                                                    </div>
+                                                                    {g.siguiente_correlativo && <div>
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Siguiente</p>
+                                                                        <p className="font-mono text-[11px] font-semibold text-slate-700">{g.siguiente_correlativo}</p>
+                                                                    </div>}
+                                                                </div>
+                                                                <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                            <span className="text-[10px] font-black text-orange-500 shrink-0">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span>
-                                        </div>
-
-                                        {/* Sequence visualization */}
-                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2 mb-2">
-                                            <p className="font-mono text-[12px] font-black text-slate-700">{pad7(g.gap_from)}</p>
-                                            <div className="flex-1 flex items-center gap-1">
-                                                <div className="flex-1 border-t-2 border-dashed border-orange-300" />
-                                                <AlertTriangle size={11} className="text-orange-400 shrink-0" />
-                                                <div className="flex-1 border-t-2 border-dashed border-orange-300" />
-                                            </div>
-                                            <p className="font-mono text-[12px] font-black text-slate-700">{pad7(g.gap_to)}</p>
-                                        </div>
-
-                                        {/* Row 3: siguiente + solve */}
-                                        <div className="flex items-center justify-between">
-                                            {g.siguiente_correlativo ? (
-                                                <p className="text-[10px] text-slate-400">
-                                                    Sig: <span className="font-mono font-bold text-slate-600">{g.siguiente_correlativo}</span>
-                                                </p>
-                                            ) : <span />}
-                                            <button onClick={() => { setSolvingGap(isSolving ? null : key); setComment(''); }}
-                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Solve panel */}
-                                    {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
-                                            <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
-                                                rows={2} autoFocus
-                                                placeholder="Comentario opcional…"
-                                                value={comment} onChange={e => setComment(e.target.value)}
-                                            />
-                                            <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
-                                            </button>
+                                            {branchGaps.some(g => solvingGap === gapKey(g)) && (() => {
+                                                const g = branchGaps.find(g => solvingGap === gapKey(g));
+                                                return (
+                                                    <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
+                                                        <p className="font-mono text-[11px] font-black text-slate-700 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-orange-600">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
+                                                        <div className="flex items-start gap-3">
+                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                rows={2} autoFocus placeholder="Comentario opcional…"
+                                                                value={comment} onChange={e => setComment(e.target.value)} />
+                                                            <div className="flex flex-col gap-1.5 shrink-0">
+                                                                <button onClick={() => handleSolveGap(g)} disabled={saving}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                                                                </button>
+                                                                <button onClick={() => { setSolvingGap(null); setComment(''); }}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                                    <X size={10} /> Cancelar
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>
@@ -1018,57 +1110,101 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
             {/* ── Campos nulos ── */}
             <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Campos indefinidos / nulos</h3>
-                    {nulls.filter(n => !nullResolvedIds.has(n.id)).length > 0 && (
-                        <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">
-                            {nulls.filter(n => !nullResolvedIds.has(n.id)).length}
-                        </span>
-                    )}
-                </div>
-                {nulls.filter(n => !nullResolvedIds.has(n.id)).length === 0 ? (
-                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
-                        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                        <p className="text-[13px] font-bold text-emerald-700">Sin campos indefinidos</p>
-                    </div>
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Campos indefinidos / nulos</h3>
+                {activeNulls.length === 0 ? (
+                    <EmptyState icon={CheckCircle2} iconClass="text-emerald-500" glowClass="bg-emerald-500"
+                        title="Sin campos indefinidos" subtitle="Todos los documentos tienen sus campos completos." />
                 ) : (
-                    <div className="grid gap-2 md:grid-cols-2">
-                        {nulls.filter(n => !nullResolvedIds.has(n.id)).map(n => {
-                            const isSolving = solvingNull === n.id;
+                    <div className="space-y-3">
+                        {Object.entries(nullsByBranch).map(([branchId, branchNulls]) => {
+                            const isCollapsed = !!collapsedNullBranches[branchId];
                             return (
-                                <div key={n.id} className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden transition-all duration-200 ${isSolving ? 'border-emerald-300' : 'border-red-200 hover:border-red-300 hover:shadow-md'}`}>
-                                    <div className="px-4 py-3">
-                                        {/* Row 1: branch + correlativo */}
-                                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <p className="text-[12px] font-bold text-slate-700">{getBranch(n.branch_id)}</p>
-                                            <p className="font-mono text-[11px] text-slate-400 truncate">{n.correlativo || n.erp_invoice_id || `ID ${n.id}`}{n.fecha ? ` · ${n.fecha}` : ''}</p>
+                                <div key={branchId} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm">
+                                    <button onClick={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors bg-slate-50/60 hover:bg-slate-100/60 ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'}`}>
+                                        <div className="flex items-center gap-2">
+                                            <Building2 size={13} className="text-slate-400" />
+                                            <span className="text-[13px] font-black text-slate-700">{getBranch(Number(branchId))}</span>
                                         </div>
-                                        {/* Campo pills */}
-                                        <div className="flex flex-wrap gap-1 mb-2">
-                                            {(n.campos_nulos || []).map(c => (
-                                                <span key={c} className="text-[9px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-md border border-red-200">{c}</span>
-                                            ))}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black text-slate-400">{branchNulls.length} doc</span>
+                                            <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                                         </div>
-                                        {/* Solve button */}
-                                        <div className="flex justify-end">
-                                            <button onClick={() => { setSolvingNull(isSolving ? null : n.id); setNullComment(''); }}
-                                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
-                                                {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {isSolving && (
-                                        <div className="border-t border-emerald-100 bg-emerald-50/60 px-4 py-3">
-                                            <textarea
-                                                className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none mb-2"
-                                                rows={2} autoFocus
-                                                placeholder="Comentario opcional…"
-                                                value={nullComment} onChange={e => setNullComment(e.target.value)}
-                                            />
-                                            <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
-                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                {nullSaving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
-                                            </button>
+                                    </button>
+                                    {!isCollapsed && (
+                                        <div className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {branchNulls.map(n => {
+                                                    const isSolving = solvingNull === n.id;
+                                                    const copyVal = n.erp_invoice_id || n.correlativo;
+                                                    const isCopied = copiedNullId === copyVal;
+                                                    return (
+                                                        <div key={n.id} className="relative group/tip">
+                                                            <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : 'border-red-200 hover:border-red-300'}`}>
+                                                                <button onClick={() => copyNullId(copyVal)}
+                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}`}>
+                                                                    {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                    {n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
+                                                                </button>
+                                                                <div className="flex items-center gap-1 px-2 py-1.5 border-r border-slate-100 bg-red-50/40">
+                                                                    {(n.campos_nulos || []).slice(0, 2).map(c => (
+                                                                        <span key={c} className="text-[8px] font-black text-red-600 uppercase">{c}</span>
+                                                                    ))}
+                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-[8px] font-black text-red-400">+{n.campos_nulos.length - 2}</span>}
+                                                                </div>
+                                                                <button onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
+                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}>
+                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
+                                                                </button>
+                                                            </div>
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
+                                                                <div className="bg-white/95 backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-3.5 py-3 space-y-2">
+                                                                    {n.correlativo && <div>
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Correlativo</p>
+                                                                        <p className="font-mono text-[12px] font-black text-slate-800">{n.correlativo}</p>
+                                                                    </div>}
+                                                                    {n.fecha && <div>
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Fecha</p>
+                                                                        <p className="text-[11px] font-semibold text-slate-700">{n.fecha}</p>
+                                                                    </div>}
+                                                                    <div className="pt-1 border-t border-black/[0.05]">
+                                                                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mb-1">Campos nulos</p>
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {(n.campos_nulos || []).map(c => (
+                                                                                <span key={c} className="text-[9px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">{c}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="w-3 h-3 bg-white border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {branchNulls.some(n => n.id === solvingNull) && (() => {
+                                                const n = branchNulls.find(n => n.id === solvingNull);
+                                                return (
+                                                    <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
+                                                        <p className="font-mono text-[11px] font-black text-slate-700 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
+                                                        <div className="flex items-start gap-3">
+                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                rows={2} autoFocus placeholder="Comentario opcional…"
+                                                                value={nullComment} onChange={e => setNullComment(e.target.value)} />
+                                                            <div className="flex flex-col gap-1.5 shrink-0">
+                                                                <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                                                                </button>
+                                                                <button onClick={() => { setSolvingNull(null); setNullComment(''); }}
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                                    <X size={10} /> Cancelar
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>

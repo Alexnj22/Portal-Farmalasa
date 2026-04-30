@@ -559,52 +559,27 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     ];
 
     return (
-        <div className="p-5 md:p-6 space-y-6">
-            {/* Alerts */}
-            {monthEndWarning && (
-                <div className={`flex items-center gap-3 rounded-2xl px-5 py-4 border-2 ${monthEndCritical ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}>
-                    <AlertTriangle size={18} className={monthEndCritical ? 'text-red-500 shrink-0' : 'text-amber-500 shrink-0'} />
-                    <p className={`text-[13px] font-bold ${monthEndCritical ? 'text-red-700' : 'text-amber-700'}`}>
-                        {monthEndCritical
-                            ? `Quedan solo ${daysLeft} día${daysLeft !== 1 ? 's' : ''} del mes — todos los documentos deben enviarse a MH antes de que termine.`
-                            : `Quedan ${daysLeft} días del mes — recuerda enviar todos los documentos a MH antes que acabe el mes.`}
-                    </p>
-                </div>
-            )}
-            {ccfCount > 0 && (
-                <div className="flex items-center gap-3 rounded-2xl px-5 py-4 bg-red-50 border-2 border-red-300">
-                    <AlertTriangle size={18} className="text-red-500 shrink-0" />
-                    <p className="text-[13px] font-bold text-red-700">
-                        {ccfCount} CCF pendiente{ccfCount > 1 ? 's' : ''} — los CCF deben enviarse a MH el mismo día de emisión.
-                    </p>
-                </div>
-            )}
-
-            {/* Stats strip */}
-            <div className="grid grid-cols-3 gap-3">
+        <div className="p-5 md:p-6 space-y-5">
+            {/* Stats strip — compact inline */}
+            <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         colors: filtered.length > 0 ? 'from-violet-500 to-purple-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle, colors: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300' },
-                    { label: 'Días restantes', value: daysLeft,       icon: History,       colors: daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400' },
-                ].map(({ label, value, icon: Icon, colors }) => (
-                    <div key={label} className="relative overflow-hidden rounded-2xl bg-white border border-black/[0.06] shadow-sm p-4">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${colors} opacity-[0.07]`} />
-                        <div className="relative">
-                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center mb-3 shadow-sm`}>
-                                <Icon size={15} className="text-white" strokeWidth={2.5} />
-                            </div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
-                            <p className="text-[28px] font-black text-slate-800 leading-none">{value}</p>
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         colors: filtered.length > 0 ? 'from-violet-500 to-purple-400' : 'from-slate-400 to-slate-300',        text: filtered.length > 0 ? 'text-violet-700' : 'text-slate-500', bg: filtered.length > 0 ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200' },
+                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle, colors: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',                    text: ccfCount > 0 ? 'text-red-700' : 'text-slate-500',           bg: ccfCount > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200' },
+                    { label: 'Días restantes', value: daysLeft,       icon: History,       colors: daysLeft <= 2 ? 'from-red-500 to-red-400' : daysLeft <= 5 ? 'from-amber-500 to-orange-400' : 'from-emerald-500 to-teal-400', text: daysLeft <= 2 ? 'text-red-700' : daysLeft <= 5 ? 'text-amber-700' : 'text-emerald-700', bg: daysLeft <= 2 ? 'bg-red-50 border-red-200' : daysLeft <= 5 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200' },
+                ].map(({ label, value, icon: Icon, colors, text, bg }) => (
+                    <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
+                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${colors} flex items-center justify-center shrink-0`}>
+                            <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
+                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
             <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
-                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
-                </div>
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documentos pendientes</h3>
                 <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
                     {[10, 25, 50].map(n => (
                         <button key={n} onClick={() => { setPageSize(n); setPage(1); }}

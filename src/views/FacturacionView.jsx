@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -476,7 +476,16 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [expandedId, setExpandedId] = useState(null);
+    const [copiedId, setCopiedId] = useState(null);
     const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha');
+
+    const copyErpId = (erpId) => {
+        if (!erpId) return;
+        navigator.clipboard.writeText(String(erpId));
+        setCopiedId(erpId);
+        setTimeout(() => setCopiedId(null), 1500);
+    };
 
     // Month-end alert
     const now = svNow();
@@ -595,128 +604,130 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-violet-500" glowClass="bg-violet-500"
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
-            ) : (
-                <div className="rounded-2xl overflow-hidden border border-violet-200/50 shadow-[0_4px_32px_rgba(139,92,246,0.08)] bg-white/70 backdrop-blur-xl">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-black/[0.025] border-b border-black/[0.06]">
-                                {[
-                                    { label: 'ID',          key: null },
-                                    { label: 'Tipo',        key: 'tipo' },
-                                    { label: 'Correlativo', key: 'correlativo' },
-                                    { label: 'Sucursal',    key: 'sucursal' },
-                                    { label: 'Cliente',     key: 'cliente' },
-                                    { label: 'Fecha',       key: 'fecha' },
-                                    { label: 'Tiempo',      key: null },
-                                    { label: 'Total', key: 'total' },
-                                    { label: '',            key: null },
-                                ].map((col, i, arr) => {
-                                    const active = col.key && sortKey === col.key;
-                                    return (
-                                        <th key={col.label + i}
-                                            onClick={col.key ? () => toggle(col.key) : undefined}
-                                            className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap select-none
-                                                ${i === 0 ? 'pl-6' : ''} ${i === arr.length - 1 ? 'pr-6' : ''}
-                                                ${col.key ? 'cursor-pointer hover:text-slate-700 transition-colors' : ''}`}>
-                                            <span className="inline-flex items-center gap-1">
-                                                {col.label}
-                                                {col.key && (active
-                                                    ? (sortDir === 'asc' ? <ChevronUp size={10} className="text-[#007AFF]" /> : <ChevronDown size={10} className="text-[#007AFF]" />)
-                                                    : <ChevronUp size={10} className="opacity-20" />)}
-                                            </span>
-                                        </th>
-                                    );
-                                })}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pageRows.map((r, idx) => {
-                                const isCCF = r.tipo_documento === 'CCF';
-                                const isLate = isCCF && r.fecha !== todayStr;
-                                const isSolving = solvingId === r.id;
-                                const rowBase = isSolving
-                                    ? 'bg-emerald-50/60'
-                                    : isCCF
-                                        ? 'bg-red-50/40 hover:bg-red-50/70'
-                                        : idx % 2 === 0
-                                            ? 'bg-white/60 hover:bg-violet-50/50'
-                                            : 'bg-violet-50/20 hover:bg-violet-50/50';
-                                return (
-                                    <React.Fragment key={r.id}>
-                                        <tr className={`border-b border-violet-100/50 transition-colors duration-150 group border-l-4 ${isSolving ? 'border-l-emerald-400' : isCCF ? 'border-l-red-400' : 'border-l-transparent hover:border-l-violet-400'} ${rowBase}`}>
-                                            {/* ID */}
-                                            <td className="py-3 px-4 pl-6">
-                                                <span className="text-[11px] font-bold text-violet-700 bg-violet-100/70 px-2 py-0.5 rounded-md font-mono">
-                                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                </span>
-                                            </td>
-                                            {/* Tipo */}
-                                            <td className="py-3 px-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border w-fit ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
-                                                    {isCCF && (
-                                                        <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase border w-fit ${isLate ? 'bg-red-100 text-red-700 border-red-300' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                                                            <AlertTriangle size={8} />{isLate ? 'Vencido' : 'Mismo día'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            {/* Correlativo */}
-                                            <td className="py-3 px-4">
-                                                <p className={`font-mono text-[12px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
-                                            </td>
-                                            {/* Sucursal */}
-                                            <td className="py-3 px-4 text-[12px] font-semibold text-slate-700 whitespace-nowrap">{getBranch(r.branch_id)}</td>
-                                            {/* Cliente */}
-                                            <td className="py-3 px-4 text-[12px] text-slate-500 max-w-[140px] truncate">{r.cliente || '—'}</td>
-                                            {/* Fecha */}
-                                            <td className={`py-3 px-4 text-[12px] font-semibold whitespace-nowrap ${isLate ? 'text-red-600' : 'text-slate-700'}`}>{r.fecha}</td>
-                                            {/* Tiempo */}
-                                            <td className="py-3 px-4">
-                                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
-                                            </td>
-                                            {/* Total */}
-                                            <td className={`py-3 px-4 text-[13px] font-black whitespace-nowrap ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</td>
-                                            {/* Acción */}
-                                            <td className="py-3 px-4 pr-6 text-right">
-                                                <button onClick={() => { setSolvingId(isSolving ? null : r.id); setComment(''); }}
-                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ml-auto ${isSolving ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm shadow-emerald-200'}`}>
-                                                    {isSolving ? <><X size={10} /> Cancelar</> : <><Check size={10} /> Solventar</>}
+            ) : (() => {
+                const ccfRows   = pageRows.filter(r => r.tipo_documento === 'CCF');
+                const otherRows = pageRows.filter(r => r.tipo_documento !== 'CCF');
+                const renderPill = (r) => {
+                    const isCCF      = r.tipo_documento === 'CCF';
+                    const isLate     = isCCF && r.fecha !== todayStr;
+                    const isExpanded = expandedId === r.id;
+                    const isSolving  = solvingId === r.id;
+                    return (
+                        <div key={r.id} className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
+                            isSolving  ? 'border-emerald-300 shadow-sm shadow-emerald-100' :
+                            isExpanded ? (isCCF ? 'border-red-300 shadow-sm' : 'border-violet-300 shadow-sm shadow-violet-100') :
+                            isCCF     ? 'border-red-200 bg-red-50/20 hover:border-red-300' :
+                                        'border-slate-200 bg-white hover:border-violet-200'
+                        }`}>
+                            {/* ── Collapsed pill row ── */}
+                            <div className="flex items-center gap-2 px-3 py-2.5">
+                                {/* ID — tappable copy zone */}
+                                <button
+                                    onClick={() => copyErpId(r.erp_invoice_id)}
+                                    title="Copiar ID"
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-lg font-mono text-[11px] font-black transition-all active:scale-95 shrink-0 ${
+                                        copiedId === r.erp_invoice_id
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : isCCF ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-violet-100/80 text-violet-700 hover:bg-violet-200'
+                                    }`}>
+                                    {copiedId === r.erp_invoice_id ? <Check size={9} /> : <Copy size={9} />}
+                                    {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                </button>
+
+                                {/* Tipo badge */}
+                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase border shrink-0 ${isCCF ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_documento}</span>
+                                {isCCF && isLate && <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 text-red-700 border border-red-300 shrink-0"><AlertTriangle size={8} />Vencido</span>}
+
+                                {/* Sucursal */}
+                                <span className="text-[12px] font-semibold text-slate-700 truncate flex-1 min-w-0">{getBranch(r.branch_id)}</span>
+
+                                {/* Fecha */}
+                                <span className={`text-[11px] font-semibold shrink-0 ${isLate ? 'text-red-500' : 'text-slate-500'}`}>{r.fecha}</span>
+
+                                {/* Time ago badge */}
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${isCCF ? 'bg-red-100 text-red-600' : 'bg-violet-100/80 text-violet-600'}`}>{timeAgo(r.fecha, r.hora)}</span>
+
+                                {/* Expand toggle */}
+                                <button onClick={() => { setExpandedId(isExpanded ? null : r.id); if (isExpanded) { setSolvingId(null); setComment(''); } }}
+                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-black/[0.05] transition-all shrink-0">
+                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                            </div>
+
+                            {/* ── Expanded panel ── */}
+                            {isExpanded && (
+                                <div className={`border-t px-4 py-3 ${isCCF ? 'border-red-100 bg-red-50/30' : 'border-violet-100/60 bg-violet-50/20'}`}>
+                                    {/* Info row */}
+                                    <div className="flex items-center gap-4 flex-wrap mb-3">
+                                        <div>
+                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Correlativo</p>
+                                            <p className={`font-mono text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{r.correlativo}</p>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Cliente</p>
+                                            <p className="text-[12px] font-semibold text-slate-700 truncate">{r.cliente || '—'}</p>
+                                        </div>
+                                        <div className="shrink-0">
+                                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Total</p>
+                                            <p className={`text-[15px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Solve section */}
+                                    {!isSolving ? (
+                                        <button onClick={() => { setSolvingId(r.id); setComment(''); }}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">
+                                            <Check size={10} /> Solventar
+                                        </button>
+                                    ) : (
+                                        <div className="flex items-start gap-3">
+                                            <textarea
+                                                className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                rows={2} autoFocus
+                                                placeholder="Comentario opcional…"
+                                                value={comment} onChange={e => setComment(e.target.value)}
+                                            />
+                                            <div className="flex flex-col gap-1.5 shrink-0">
+                                                <button onClick={() => handleSolve(r.id)} disabled={saving}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                    {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                 </button>
-                                            </td>
-                                        </tr>
-                                        {isSolving && (
-                                            <tr>
-                                                <td colSpan={9} className="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100">
-                                                    <div className="flex items-start gap-3 max-w-2xl">
-                                                        <textarea
-                                                            className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
-                                                            rows={2} autoFocus
-                                                            placeholder="Comentario opcional — ej: enviado manualmente al MH, referencia…"
-                                                            value={comment} onChange={e => setComment(e.target.value)}
-                                                        />
-                                                        <div className="flex flex-col gap-2 shrink-0">
-                                                            <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
-                                                                {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Confirmar
-                                                            </button>
-                                                            <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 hover:border-red-200 shadow transition-all">
-                                                                <X size={11} /> Cancelar
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                    <Pagination page={page} total={totalPages} onChange={p => { setPage(p); setSolvingId(null); }} />
-                </div>
-            )}
+                                                <button onClick={() => { setSolvingId(null); setComment(''); }}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[9px] font-black uppercase border border-slate-200 hover:border-red-200 transition-all">
+                                                    <X size={10} /> Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                };
+                return (
+                    <div className="space-y-4">
+                        {ccfRows.length > 0 && (
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2 px-1">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500">CCF urgentes</span>
+                                    <span className="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full">{ccfRows.length}</span>
+                                </div>
+                                {ccfRows.map(renderPill)}
+                            </div>
+                        )}
+                        {otherRows.length > 0 && (
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2 px-1">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Documentos</span>
+                                    <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{otherRows.length}</span>
+                                </div>
+                                {otherRows.map(renderPill)}
+                            </div>
+                        )}
+                        <Pagination page={page} total={totalPages} onChange={p => { setPage(p); setExpandedId(null); setSolvingId(null); }} />
+                    </div>
+                );
+            })()}
         </div>
     );
 }

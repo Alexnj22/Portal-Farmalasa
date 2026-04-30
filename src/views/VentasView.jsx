@@ -15,6 +15,10 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
+
+// Past-month stats cache: key = "fini|ffin|branchId" → { total_count, total_sum }
+// Past months never change so we never invalidate this cache.
+const _statsCache = new Map();
 const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
@@ -85,15 +89,25 @@ function TabVentas({ branches, filterBranch, searchTerm }) {
 
     const fetchVentas = useCallback(async () => {
         setLoading(true);
-        // Get count + sum via RPC (avoids row limit issues)
-        const { data: statsData } = await supabase.rpc('get_ventas_stats', {
-            p_fini: fini,
-            p_ffin: ffin,
-            p_branch_id: filterBranch ? Number(filterBranch) : null,
-        });
-        const stats = statsData?.[0];
-        setTotalCount(parseInt(stats?.total_count || 0));
-        setTotalAmount(parseFloat(stats?.total_sum || 0));
+        // Stats: use cache for past months, always re-fetch current month
+        const currentFini = currentMonthRange().fini;
+        const isCurrentMonth = fini === currentFini;
+        const cacheKey = `${fini}|${ffin}|${filterBranch || 'all'}`;
+
+        let stats;
+        if (!isCurrentMonth && _statsCache.has(cacheKey)) {
+            stats = _statsCache.get(cacheKey);
+        } else {
+            const { data: statsData } = await supabase.rpc('get_ventas_stats', {
+                p_fini: fini,
+                p_ffin: ffin,
+                p_branch_id: filterBranch ? Number(filterBranch) : null,
+            });
+            stats = statsData?.[0] || { total_count: 0, total_sum: 0 };
+            if (!isCurrentMonth) _statsCache.set(cacheKey, stats);
+        }
+        setTotalCount(parseInt(stats.total_count || 0));
+        setTotalAmount(parseFloat(stats.total_sum || 0));
 
         // Get paginated rows
         let q = supabase

@@ -81,11 +81,29 @@ async function syncBranch(
 
   // 2. Fetch facturas existentes
   const codigos = ventas.map(v => v.codigo_generacion?.toLowerCase()).filter(Boolean);
-  const { data: existingRaw } = await supabase
-    .from('sales_invoices')
-    .select('id, codigo_generacion, estado, tipo_pago, recibido_mh')
-    .in('codigo_generacion', codigos)
-    .limit(10000);
+  const erpInvoiceIds = ventas.map(v => String(v.id_factura)).filter(Boolean);
+
+  // Fetch by codigo_generacion (current records) AND by erp_invoice_id (to detect re-issued DTEs)
+  const [{ data: existingRaw }, { data: existingByErpId }] = await Promise.all([
+    supabase.from('sales_invoices')
+      .select('id, codigo_generacion, estado, tipo_pago, recibido_mh, erp_invoice_id')
+      .in('codigo_generacion', codigos).limit(10000),
+    supabase.from('sales_invoices')
+      .select('id, codigo_generacion, erp_invoice_id')
+      .in('erp_invoice_id', erpInvoiceIds).limit(10000),
+  ]);
+
+  // Detect re-issued DTEs: same erp_invoice_id but different codigo_generacion → delete old ghost
+  const currentCodigosSet = new Set(codigos);
+  const ghostIds: number[] = [];
+  for (const old of (existingByErpId ?? [])) {
+    if (!currentCodigosSet.has(old.codigo_generacion?.toLowerCase())) {
+      ghostIds.push(old.id);
+    }
+  }
+  if (ghostIds.length > 0) {
+    await supabase.from('sales_invoices').delete().in('id', ghostIds);
+  }
 
   const existingMap = new Map(
     (existingRaw ?? []).map((inv: any) => [inv.codigo_generacion.toLowerCase(), inv])

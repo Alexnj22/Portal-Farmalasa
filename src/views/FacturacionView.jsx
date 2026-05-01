@@ -221,6 +221,24 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [showHistorial, setShowHistorial] = useState(false);
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const [copiedId, setCopiedId] = useState(null);
+    const [visitedIds, setVisitedIds] = useState(() => {
+        try { return new Set(JSON.parse(localStorage.getItem('facturacion_visited') || '[]')); }
+        catch { return new Set(); }
+    });
+
+    const markVisited = (erpId) => {
+        if (!erpId) return;
+        setVisitedIds(prev => {
+            const next = new Set(prev);
+            next.add(String(erpId));
+            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
+            return next;
+        });
+    };
+    const clearVisited = () => {
+        setVisitedIds(new Set());
+        try { localStorage.removeItem('facturacion_visited'); } catch {}
+    };
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -288,6 +306,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const copyErpId = (erpId) => {
         if (!erpId) return;
         navigator.clipboard.writeText(String(erpId));
+        markVisited(erpId);
         setCopiedId(erpId);
         setTimeout(() => setCopiedId(null), 1500);
     };
@@ -344,6 +363,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
+                {visitedIds.size > 0 && (
+                    <button onClick={clearVisited}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">
+                        <Check size={10} strokeWidth={3} /> {visitedIds.size} marcado{visitedIds.size !== 1 ? 's' : ''} · limpiar
+                    </button>
+                )}
                 {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
@@ -392,16 +417,27 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                         const isCCF     = r.tipo_documento === 'CCF';
                                                         const isSolving = solvingId === r.id;
                                                         const isCopied  = copiedId === r.erp_invoice_id;
+                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
-                                                            <div key={r.id} className="relative group/tip">
-                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : isCCF ? 'border-red-200 hover:border-red-300' : 'border-slate-200 hover:border-slate-300'}`}>
+                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
+                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+                                                                    isSolving   ? 'border-emerald-400 shadow-emerald-100' :
+                                                                    isVisited   ? 'border-amber-300' :
+                                                                    isCCF       ? 'border-red-200 hover:border-red-300' :
+                                                                                  'border-slate-200 hover:border-slate-300'
+                                                                }`}>
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : isCCF ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}>
-                                                                        {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
+                                                                            isCopied  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                            isVisited ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                            isCCF     ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                                                        'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                                                        }`}>
+                                                                        {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-amber-50/40' : isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-amber-600' : isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}>
@@ -527,6 +563,24 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [expandedId, setExpandedId]         = useState(null);
     const [copiedId, setCopiedId]             = useState(null);
     const [collapsedBranches, setCollapsedBranches] = useState({});
+    const [visitedIds, setVisitedIds] = useState(() => {
+        try { return new Set(JSON.parse(localStorage.getItem('facturacion_visited') || '[]')); }
+        catch { return new Set(); }
+    });
+
+    const markVisited = (erpId) => {
+        if (!erpId) return;
+        setVisitedIds(prev => {
+            const next = new Set(prev);
+            next.add(String(erpId));
+            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
+            return next;
+        });
+    };
+    const clearVisited = () => {
+        setVisitedIds(new Set());
+        try { localStorage.removeItem('facturacion_visited'); } catch {}
+    };
 
     const now      = svNow();
     const todayStr = now.toISOString().slice(0, 10);
@@ -536,6 +590,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const copyErpId   = (erpId) => {
         if (!erpId) return;
         navigator.clipboard.writeText(String(erpId));
+        markVisited(erpId);
         setCopiedId(erpId);
         setTimeout(() => setCopiedId(null), 1500);
     };
@@ -692,6 +747,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
+                {visitedIds.size > 0 && (
+                    <button onClick={clearVisited}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">
+                        <Check size={10} strokeWidth={3} /> {visitedIds.size} marcado{visitedIds.size !== 1 ? 's' : ''} · limpiar
+                    </button>
+                )}
                 {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
@@ -753,27 +814,30 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                         const isCCF    = r.tipo_documento === 'CCF';
                                                         const isSolving = solvingId === r.id;
                                                         const isCopied  = copiedId === r.erp_invoice_id;
+                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
-                                                            <div key={r.id} className="relative group/tip">
+                                                            <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* Pill */}
                                                                 <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
                                                                     isSolving ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
+                                                                    isVisited ? 'border-amber-300' :
                                                                     isCCF     ? 'border-red-200 hover:border-red-300' :
                                                                                 'border-slate-200 hover:border-slate-300'
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
-                                                                            isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                                                            isCCF    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                       'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                                                            isCopied  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                            isVisited ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                            isCCF     ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                                                        'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                                                         }`}>
-                                                                        {isCopied ? <Check size={8} /> : <Copy size={8} />}
+                                                                        {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
                                                                     {/* Tipo label (tooltip trigger) */}
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-amber-50/40' : isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-amber-600' : isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}

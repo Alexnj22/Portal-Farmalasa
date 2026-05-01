@@ -226,6 +226,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
     const [showHistorial, setShowHistorial] = useState(false);
+    const [showAllResolved, setShowAllResolved] = useState(false);
+    const resolvedSectionRef = useRef(null);
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const [copiedId, setCopiedId] = useState(null);
     const [visitedIds, setVisitedIds] = useState(() => {
@@ -271,7 +273,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         let invMap = {};
         if (allIds.length > 0) {
             const { data: d } = await supabase.from('sales_invoices')
-                .select('id, correlativo, branch_id, tipo_documento, cliente, fecha, total')
+                .select('id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total')
                 .in('id', allIds);
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
@@ -307,8 +309,37 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
-    const now      = svNow();
-    const todayStr = now.toISOString().slice(0, 10);
+    const now         = svNow();
+    const todayStr    = now.toISOString().slice(0, 10);
+    const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
+
+    const resolvedMatchesTerm = useCallback((r, s) =>
+        String(r.invoice?.erp_invoice_id || '').includes(s) ||
+        r.invoice?.correlativo?.toLowerCase().includes(s) ||
+        r.invoice?.cliente?.toLowerCase().includes(s),
+    []);
+
+    const resolvedThisMonth = useMemo(() =>
+        resolved.filter(r => (r.resolved_at || '').startsWith(currentMonthStr)),
+        [resolved, currentMonthStr]
+    );
+    const resolvedDisplay = useMemo(() => {
+        const base = showAllResolved ? resolved : resolvedThisMonth;
+        if (!searchTerm) return base;
+        const s = searchTerm.toLowerCase();
+        return base.filter(r => resolvedMatchesTerm(r, s));
+    }, [resolved, resolvedThisMonth, showAllResolved, searchTerm, resolvedMatchesTerm]);
+
+    useEffect(() => {
+        if (!searchTerm) return;
+        const s = searchTerm.toLowerCase();
+        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, s));
+        if (!matchesAny) return;
+        setShowHistorial(true);
+        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, s));
+        if (!inMonth) setShowAllResolved(true);
+        setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }, [searchTerm]);
 
     const copyErpId = (erpId) => {
         if (!erpId) return;
@@ -512,7 +543,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
             {/* Historial */}
             {!loading && resolved.length > 0 && (
-                <div className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
                     <button onClick={() => setShowHistorial(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -520,7 +551,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                 <Check size={13} className="text-emerald-600" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-slate-700">{resolved.length} solventada{resolved.length !== 1 ? 's' : ''}</p>
+                                <p className="text-[13px] font-bold text-slate-700">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventada{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
                                 <p className="text-[11px] text-slate-400">Historial de resoluciones</p>
                             </div>
                         </div>
@@ -528,7 +559,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                     {showHistorial && (
                         <div className="border-t border-black/[0.04]">
-                            {resolved.map((r, i) => {
+                            {resolvedDisplay.map((r, i) => {
                                 const inv = r.invoice;
                                 const photo = empPhotoMap[r.resolved_by] || null;
                                 const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -543,8 +574,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{inv?.tipo_documento}</span>
-                                                <span className="font-mono text-[12px] font-bold text-slate-700">{inv?.correlativo}</span>
-                                                <span className="text-[12px] text-slate-500">{getBranch(inv?.branch_id)}</span>
+                                                {inv?.erp_invoice_id && <span className="font-mono text-[12px] font-black text-slate-800">#{inv.erp_invoice_id}</span>}
+                                                <span className="font-mono text-[11px] text-slate-500">{inv?.correlativo}</span>
+                                                <span className="text-[11px] text-slate-400">{getBranch(inv?.branch_id)}</span>
                                                 {inv?.total && <span className="text-[12px] font-bold text-slate-700 ml-auto">{fmt(inv.total)}</span>}
                                             </div>
                                             {r.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.comment}"</p>}
@@ -556,6 +588,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                     </div>
                                 );
                             })}
+                            <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
+                                <button onClick={() => setShowAllResolved(v => !v)}
+                                    className="text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                                    {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -575,6 +613,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [rows, setRows]               = useState([]);
     const [resolved, setResolved]       = useState([]);
     const [showResolved, setShowResolved] = useState(false);
+    const [showAllResolved, setShowAllResolved] = useState(false);
+    const resolvedSectionRef = useRef(null);
     const [loading, setLoading]         = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
     const [solvingId, setSolvingId]     = useState(null);
@@ -624,6 +664,39 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         if (diff === 1) return 'ayer';
         return `hace ${diff}d`;
     };
+
+    const currentMonthStr = svNow().toISOString().slice(0, 7);
+
+    const resolvedMatchesTerm = useCallback((r, s) =>
+        String(r.erp_invoice_id || '').includes(s) ||
+        r.correlativo?.toLowerCase().includes(s) ||
+        r.cliente?.toLowerCase().includes(s),
+    []);
+
+    const resolvedThisMonth = useMemo(() =>
+        resolved.filter(r => {
+            const date = r.resolution?.resolved_at || r.fecha || '';
+            return date.startsWith(currentMonthStr);
+        }),
+        [resolved, currentMonthStr]
+    );
+    const resolvedDisplay = useMemo(() => {
+        const base = showAllResolved ? resolved : resolvedThisMonth;
+        if (!searchTerm) return base;
+        const s = searchTerm.toLowerCase();
+        return base.filter(r => resolvedMatchesTerm(r, s));
+    }, [resolved, resolvedThisMonth, showAllResolved, searchTerm, resolvedMatchesTerm]);
+
+    useEffect(() => {
+        if (!searchTerm) return;
+        const s = searchTerm.toLowerCase();
+        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, s));
+        if (!matchesAny) return;
+        setShowResolved(true);
+        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, s));
+        if (!inMonth) setShowAllResolved(true);
+        setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }, [searchTerm]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -947,7 +1020,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
             {/* Historial solventados */}
             {!loading && resolved.length > 0 && (
-                <div className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
                     <button onClick={() => setShowResolved(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -955,7 +1028,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                 <Check size={13} className="text-emerald-600" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-slate-700">{resolved.length} solventado{resolved.length !== 1 ? 's' : ''} este mes</p>
+                                <p className="text-[13px] font-bold text-slate-700">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventado{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
                                 <p className="text-[11px] text-slate-400">Historial de envíos al MH</p>
                             </div>
                         </div>
@@ -963,7 +1036,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                     {showResolved && (
                         <div className="border-t border-black/[0.04]">
-                            {resolved.map((r, i) => {
+                            {resolvedDisplay.map((r, i) => {
                                 const resolvedBy = r.resolution?.resolved_by || null;
                                 const photo = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
                                 const initials = (resolvedBy || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -978,9 +1051,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.tipo_documento}</span>
-                                                <span className="font-mono text-[12px] font-bold text-slate-700">{r.correlativo}</span>
-                                                <span className="text-[12px] text-slate-500">{getBranch(r.branch_id)}</span>
-                                                {r.erp_invoice_id && <span className="font-mono text-[11px] text-slate-400">#{r.erp_invoice_id}</span>}
+                                                {r.erp_invoice_id && <span className="font-mono text-[12px] font-black text-slate-800">#{r.erp_invoice_id}</span>}
+                                                <span className="font-mono text-[11px] text-slate-500">{r.correlativo}</span>
+                                                <span className="text-[11px] text-slate-400">{getBranch(r.branch_id)}</span>
                                                 {r.total && <span className="text-[12px] font-bold text-slate-700 ml-auto">{fmt(r.total)}</span>}
                                             </div>
                                             {r.resolution?.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.resolution.comment}"</p>}
@@ -995,6 +1068,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                     </div>
                                 );
                             })}
+                            <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
+                                <button onClick={() => setShowAllResolved(v => !v)}
+                                    className="text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                                    {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1023,6 +1102,8 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
     const [saving, setSaving] = useState(false);
     const [nullSaving, setNullSaving] = useState(false);
     const [showHistorial, setShowHistorial] = useState(false);
+    const [showAllResolved, setShowAllResolved] = useState(false);
+    const resolvedSectionRef = useRef(null);
     const [collapsedGapBranches, setCollapsedGapBranches] = useState({});
     const [collapsedNullBranches, setCollapsedNullBranches] = useState({});
     const [copiedNullId, setCopiedNullId] = useState(null);
@@ -1063,6 +1144,13 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         })),
         [gapResolutions, gaps]
     );
+
+    const currentMonthStr = svNow().toISOString().slice(0, 7);
+    const resolvedGapsThisMonth = useMemo(() =>
+        resolvedGaps.filter(r => (r.resolved_at || '').startsWith(currentMonthStr)),
+        [resolvedGaps, currentMonthStr]
+    );
+    const resolvedGapsDisplay = showAllResolved ? resolvedGaps : resolvedGapsThisMonth;
 
     const handleSolveGap = async (gap) => {
         setSaving(true);
@@ -1353,7 +1441,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
             {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
-                <div className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
+                <div ref={resolvedSectionRef} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm">
                     <button onClick={() => setShowHistorial(v => !v)}
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] transition-colors">
                         <div className="flex items-center gap-3">
@@ -1361,7 +1449,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                 <Check size={13} className="text-emerald-600" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-slate-700">{resolvedGaps.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''}</p>
+                                <p className="text-[13px] font-bold text-slate-700">{showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
                                 <p className="text-[11px] text-slate-400">Historial de resoluciones</p>
                             </div>
                         </div>
@@ -1369,7 +1457,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                     </button>
                     {showHistorial && (
                         <div className="border-t border-black/[0.04]">
-                            {resolvedGaps.map((r, i) => {
+                            {resolvedGapsDisplay.map((r, i) => {
                                 const photo = r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null;
                                 const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                                 return (
@@ -1395,6 +1483,12 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                     </div>
                                 );
                             })}
+                            <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
+                                <button onClick={() => setShowAllResolved(v => !v)}
+                                    className="text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                                    {showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

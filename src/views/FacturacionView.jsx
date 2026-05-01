@@ -574,7 +574,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             .order('fecha', { ascending: false });
         if (filterBranch) qRes = qRes.eq('branch_id', Number(filterBranch));
 
-        const [{ data: pendData }, { data: resInvs }] = await Promise.all([qPend, qRes]);
+        const [{ data: pendData }, { data: resInvs }, { data: allResolutions }] = await Promise.all([
+            qPend, qRes,
+            supabase.from('sales_invoice_resolutions').select('invoice_id'),
+        ]);
+
+        // Exclude already-resolved invoices from the pending list
+        const resolvedIds = new Set((allResolutions || []).map(r => r.invoice_id));
+        const filteredPend = (pendData || []).filter(r => !resolvedIds.has(r.id));
 
         // load resolution comments
         let resMap = {};
@@ -590,7 +597,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             }
         }
 
-        setRows(pendData || []);
+        setRows(filteredPend);
         setResolved((resInvs || []).map(inv => ({ ...inv, resolution: resMap[inv.id] || null })));
         setLastRefresh(new Date());
         setLoading(false);

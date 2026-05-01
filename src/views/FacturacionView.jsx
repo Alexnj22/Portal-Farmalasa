@@ -576,29 +576,46 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
         const [{ data: pendData }, { data: resInvs }, { data: allResolutions }] = await Promise.all([
             qPend, qRes,
-            supabase.from('sales_invoice_resolutions').select('invoice_id'),
+            supabase.from('sales_invoice_resolutions')
+                .select('invoice_id, comment, resolved_by, resolved_at')
+                .order('resolved_at', { ascending: false }),
         ]);
 
         // Exclude already-resolved invoices from the pending list
         const resolvedIds = new Set((allResolutions || []).map(r => r.invoice_id));
         const filteredPend = (pendData || []).filter(r => !resolvedIds.has(r.id));
 
-        // load resolution comments
-        let resMap = {};
-        if ((resInvs || []).length > 0) {
-            const ids = resInvs.map(r => r.id);
-            const { data: resRows } = await supabase
-                .from('sales_invoice_resolutions')
-                .select('invoice_id, comment, resolved_by, resolved_at')
-                .in('invoice_id', ids)
-                .order('resolved_at', { ascending: false });
-            for (const x of (resRows || [])) {
-                if (!resMap[x.invoice_id]) resMap[x.invoice_id] = x;
-            }
+        // Build resolution map (all resolutions)
+        const resMap = {};
+        for (const x of (allResolutions || [])) {
+            if (!resMap[x.invoice_id]) resMap[x.invoice_id] = x;
         }
 
+        // Invoices confirmed by MH (recibido_mh = true) — already have full data
+        const mhConfirmedIds = new Set((resInvs || []).map(r => r.id));
+
+        // Invoices manually resolved via sales_invoice_resolutions (recibido_mh still null)
+        const manuallyResolvedIds = [...resolvedIds].filter(id => !mhConfirmedIds.has(id));
+        let manuallyResolvedInvs = [];
+        if (manuallyResolvedIds.length > 0) {
+            const { data: mrData } = await supabase
+                .from('sales_invoices')
+                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
+                .in('id', manuallyResolvedIds);
+            manuallyResolvedInvs = mrData || [];
+        }
+
+        const allResolved = [
+            ...(resInvs || []).map(inv => ({ ...inv, resolution: resMap[inv.id] || null })),
+            ...manuallyResolvedInvs.map(inv => ({ ...inv, resolution: resMap[inv.id] || null })),
+        ].sort((a, b) => {
+            const da = resMap[a.id]?.resolved_at || a.fecha || '';
+            const db = resMap[b.id]?.resolved_at || b.fecha || '';
+            return db.localeCompare(da);
+        });
+
         setRows(filteredPend);
-        setResolved((resInvs || []).map(inv => ({ ...inv, resolution: resMap[inv.id] || null })));
+        setResolved(allResolved);
         setLastRefresh(new Date());
         setLoading(false);
     }, [filterBranch]);

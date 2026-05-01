@@ -79,129 +79,102 @@ async function syncBranch(
   const ventas: any[] = payload?.ventas ?? [];
   if (ventas.length === 0) return { total: 0, new: 0, changes: 0, items: 0, idMin: null, idMax: null };
 
-  // 2. Fetch facturas existentes
-  const codigos = ventas.map(v => v.codigo_generacion?.toLowerCase()).filter(Boolean);
+  // 2. Fetch facturas existentes por erp_invoice_id (clave única global del ERP)
   const erpInvoiceIds = ventas.map(v => String(v.id_factura)).filter(Boolean);
 
-  // Fetch by codigo_generacion (current records) AND by erp_invoice_id (to detect re-issued DTEs)
-  const [{ data: existingRaw }, { data: existingByErpId }] = await Promise.all([
-    supabase.from('sales_invoices')
-      .select('id, codigo_generacion, estado, tipo_pago, recibido_mh, erp_invoice_id')
-      .in('codigo_generacion', codigos).limit(10000),
-    supabase.from('sales_invoices')
-      .select('id, codigo_generacion, erp_invoice_id')
-      .in('erp_invoice_id', erpInvoiceIds).limit(10000),
-  ]);
-
-  // Detect re-issued DTEs: same erp_invoice_id but different codigo_generacion → delete old ghost
-  const currentCodigosSet = new Set(codigos);
-  const ghostIds: number[] = [];
-  for (const old of (existingByErpId ?? [])) {
-    if (!currentCodigosSet.has(old.codigo_generacion?.toLowerCase())) {
-      ghostIds.push(old.id);
-    }
-  }
-  if (ghostIds.length > 0) {
-    await supabase.from('sales_invoices').delete().in('id', ghostIds);
-  }
+  const { data: existingRaw } = await supabase
+    .from('sales_invoices')
+    .select('id, erp_invoice_id, codigo_generacion, estado, tipo_pago, recibido_mh')
+    .in('erp_invoice_id', erpInvoiceIds)
+    .limit(10000);
 
   const existingMap = new Map(
-    (existingRaw ?? []).map((inv: any) => [inv.codigo_generacion.toLowerCase(), inv])
+    (existingRaw ?? []).map((inv: any) => [String(inv.erp_invoice_id), inv])
   );
 
   const invoicesToUpsert: any[] = [];
   const changelogs: any[] = [];
-  const newCodigos = new Set<string>();
+  const newErpIds = new Set<string>();
   const productMap = new Map<number, any>();
   const customerNames = new Set<string>();
 
   for (const venta of ventas) {
-    const codigoLower = venta.codigo_generacion?.toLowerCase();
-    if (!codigoLower) continue;
-
-    const tipoDoc  = parseTipoDoc(venta.correlativo);
-    const existing = existingMap.get(codigoLower);
+    if (!venta.id_factura) continue;
+    const erpId   = String(venta.id_factura);
+    const tipoDoc = parseTipoDoc(venta.correlativo);
+    const existing = existingMap.get(erpId);
 
     if (existing) {
-      if (existing.estado !== venta.estado) {
+      if (existing.estado !== venta.estado)
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'estado', valor_anterior: existing.estado, valor_nuevo: venta.estado });
-      }
-      if (existing.tipo_pago !== venta.tipo_pago) {
+      if (existing.tipo_pago !== venta.tipo_pago)
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'tipo_pago', valor_anterior: existing.tipo_pago, valor_nuevo: venta.tipo_pago });
-      }
-      if (!existing.recibido_mh && venta.recibido_mh) {
+      if (!existing.recibido_mh && venta.recibido_mh)
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'recibido_mh', valor_anterior: null, valor_nuevo: venta.recibido_mh });
-      }
     } else {
-      newCodigos.add(codigoLower);
+      newErpIds.add(erpId);
     }
 
     const clienteName = venta.cliente?.trim() || null;
     if (clienteName) customerNames.add(clienteName);
 
     invoicesToUpsert.push({
-      branch_id:        branchId,
-      erp_invoice_id:   venta.id_factura,
+      branch_id:         branchId,
+      erp_invoice_id:    venta.id_factura,
       codigo_generacion: venta.codigo_generacion,
-      correlativo:      venta.correlativo,
-      tipo_documento:   tipoDoc,
-      fecha:            venta.fecha,
-      hora:             venta.hora,
-      cliente:          clienteName,
-      cod_vendedor:     venta.cod_vendedor,
-      tipo_pago:        venta.tipo_pago,
-      estado:           venta.estado,
-      recibido_mh:      venta.recibido_mh ?? null,
-      subtotal:         venta.totales?.subtotal ?? 0,
-      iva:              venta.totales?.iva ?? 0,
-      total:            venta.totales?.total ?? 0,
-      updated_at:       new Date().toISOString(),
+      correlativo:       venta.correlativo,
+      tipo_documento:    tipoDoc,
+      fecha:             venta.fecha,
+      hora:              venta.hora,
+      cliente:           clienteName,
+      cod_vendedor:      venta.cod_vendedor,
+      tipo_pago:         venta.tipo_pago,
+      estado:            venta.estado,
+      recibido_mh:       venta.recibido_mh ?? null,
+      subtotal:          venta.totales?.subtotal ?? 0,
+      iva:               venta.totales?.iva ?? 0,
+      total:             venta.totales?.total ?? 0,
+      updated_at:        new Date().toISOString(),
     });
 
     for (const p of (venta.productos ?? [])) {
-      if (p.id && !productMap.has(p.id)) {
+      if (p.id && !productMap.has(p.id))
         productMap.set(p.id, { id: p.id, nombre: p.descripcion, updated_at: new Date().toISOString() });
-      }
     }
   }
 
   // 3. Productos + clientes
-  if (productMap.size > 0) {
+  if (productMap.size > 0)
     await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: true });
-  }
 
   const customerIdMap = new Map<string, number>();
   if (customerNames.size > 0) {
     const { data: customerData } = await supabase.rpc('upsert_customers', { names: [...customerNames] });
     for (const c of (customerData ?? [])) customerIdMap.set(c.customer_name, c.customer_id);
   }
-
   for (const inv of invoicesToUpsert) {
-    if (inv.cliente) {
-      const cid = customerIdMap.get(inv.cliente.trim().toUpperCase());
-      if (cid) inv.customer_id = cid;
-    }
+    if (inv.cliente) { const cid = customerIdMap.get(inv.cliente.trim().toUpperCase()); if (cid) inv.customer_id = cid; }
   }
 
-  // 4. Upsert facturas
+  // 4. Upsert facturas — clave: erp_invoice_id (único global en el ERP)
   const { data: upserted, error: upsertErr } = await supabase
     .from('sales_invoices')
-    .upsert(invoicesToUpsert, { onConflict: 'codigo_generacion' })
-    .select('id, codigo_generacion')
+    .upsert(invoicesToUpsert, { onConflict: 'erp_invoice_id' })
+    .select('id, erp_invoice_id')
     .limit(10000);
   if (upsertErr) throw upsertErr;
 
   const invoiceIdMap = new Map(
-    (upserted ?? []).map((inv: any) => [inv.codigo_generacion.toLowerCase(), inv.id])
+    (upserted ?? []).map((inv: any) => [String(inv.erp_invoice_id), inv.id])
   );
 
   // 5. Items
   const itemsToInsert: any[] = [];
   for (const venta of ventas) {
-    const codigoLower = venta.codigo_generacion?.toLowerCase();
-    const isNew = newCodigos.has(codigoLower);
+    const erpId = String(venta.id_factura);
+    const isNew = newErpIds.has(erpId);
     if (!isNew && !forceItems) continue;
-    const invoiceId = invoiceIdMap.get(codigoLower) ?? existingMap.get(codigoLower)?.id;
+    const invoiceId = invoiceIdMap.get(erpId) ?? existingMap.get(erpId)?.id;
     if (!invoiceId || !(venta.productos ?? []).length) continue;
     for (const p of venta.productos) {
       itemsToInsert.push({
@@ -232,7 +205,7 @@ async function syncBranch(
   const idMin = erpIds.length ? Math.min(...erpIds) : null;
   const idMax = erpIds.length ? Math.max(...erpIds) : null;
 
-  return { total: invoicesToUpsert.length, new: newCodigos.size, changes: changelogs.length, items: itemsToInsert.length, idMin, idMax };
+  return { total: invoicesToUpsert.length, new: newErpIds.size, changes: changelogs.length, items: itemsToInsert.length, idMin, idMax };
 }
 
 Deno.serve(async (req) => {

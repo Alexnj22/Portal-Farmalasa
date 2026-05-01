@@ -96,7 +96,8 @@ Deno.serve(async (req) => {
         const { data: existingRaw } = await supabase
           .from('sales_invoices')
           .select('id, codigo_generacion, estado, tipo_pago, recibido_mh')
-          .in('codigo_generacion', codigos.map(c => c.toLowerCase()));
+          .in('codigo_generacion', codigos.map(c => c.toLowerCase()))
+          .limit(10000);
 
         const existingMap = new Map(
           (existingRaw ?? []).map(inv => [inv.codigo_generacion.toLowerCase(), inv])
@@ -217,7 +218,8 @@ Deno.serve(async (req) => {
         const { data: upserted, error: upsertErr } = await supabase
           .from('sales_invoices')
           .upsert(invoicesToUpsert, { onConflict: 'codigo_generacion' })
-          .select('id, codigo_generacion');
+          .select('id, codigo_generacion')
+          .limit(10000);
 
         if (upsertErr) throw upsertErr;
 
@@ -250,11 +252,17 @@ Deno.serve(async (req) => {
 
         if (itemsToInsert.length > 0) {
           if (forceItems) {
-            // Delete existing items first to avoid duplicates, then re-insert
             const invoiceIds = [...new Set(itemsToInsert.map(i => i.invoice_id))];
             await supabase.from('sales_invoice_items').delete().in('invoice_id', invoiceIds);
           }
-          await supabase.from('sales_invoice_items').insert(itemsToInsert);
+          // Insert in chunks to avoid PostgREST body size limits
+          const CHUNK = 500;
+          for (let i = 0; i < itemsToInsert.length; i += CHUNK) {
+            const { error: insertErr } = await supabase
+              .from('sales_invoice_items')
+              .insert(itemsToInsert.slice(i, i + CHUNK));
+            if (insertErr) throw new Error(`items insert chunk ${i}: ${insertErr.message}`);
+          }
         }
 
         // 7. Insert changelogs

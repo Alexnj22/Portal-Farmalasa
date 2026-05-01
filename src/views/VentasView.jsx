@@ -20,6 +20,23 @@ const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFr
 const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
+const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
+
+// ERP stores cantidad in base units but precio_unitario is per pack (e.g. "CAJA 1x10").
+// Divide by multiplier to show correct pack count.
+function packMultiplier(presentacion) {
+    const m = presentacion?.match(/1x(\d+)/i);
+    return m ? parseInt(m[1]) : 1;
+}
+function adjQty(cantidad, presentacion) {
+    const q = parseFloat(cantidad || 0);
+    const mult = packMultiplier(presentacion);
+    return mult > 1 ? q / mult : q;
+}
+function fmtQty(n) {
+    return n % 1 === 0 ? String(n) : n.toFixed(3).replace(/\.?0+$/, '');
+}
+
 function currentMonthRange() {
     const now = new Date(Date.now() - 6 * 3600_000);
     const y = now.getFullYear();
@@ -261,9 +278,8 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         const asc = sortDir === 'asc';
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total')
+            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado')
             .gte('fecha', fini).lte('fecha', ffin)
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
             .order(sortCol, { ascending: asc });
         if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
         if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
@@ -361,6 +377,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                             </thead>
                             <tbody>
                                 {rows.map(r => {
+                                    const isCancelled = CANCELLED_ESTADOS.includes(r.estado);
                                     const isCCF = r.tipo_documento === 'CCF' || r.tipo_documento === 'COF';
                                     const isExpanded = expandedId === r.id;
                                     const cachedItems = itemsCache[r.id];
@@ -374,15 +391,16 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                     return (
                                         <React.Fragment key={r.id}>
                                             <tr onClick={() => toggleRow(r.id)}
-                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'}`}>
+                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isCancelled ? 'opacity-50 bg-red-50/30 hover:bg-red-50/50' : isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'}`}>
                                                 {/* Fecha */}
                                                 <td className="px-4 py-2.5">
-                                                    <p className="text-[12px] font-bold text-slate-700">{r.fecha}</p>
+                                                    <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
                                                     {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
+                                                    {isCancelled && <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>}
                                                 </td>
                                                 {/* ID */}
                                                 <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    {r.erp_invoice_id && <p className="font-mono text-[11px] font-black text-slate-500">#{r.erp_invoice_id}</p>}
+                                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-slate-500 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
                                                     <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
                                                 </td>
                                                 {/* Tipo documento */}
@@ -424,7 +442,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                 {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                                         <ChevronDown size={12}
                                                             className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
                                                     </div>
@@ -453,17 +471,21 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-slate-100/60">
-                                                                    {(cachedItems || []).map((it, idx) => (
+                                                                    {(cachedItems || []).map((it, idx) => {
+                                                                        const qty = adjQty(it.cantidad, it.presentacion);
+                                                                        const lineTotal = qty * parseFloat(it.precio_unitario || 0);
+                                                                        return (
                                                                         <tr key={idx} className="hover:bg-white/50 transition-colors">
                                                                             <td className="py-2 pr-4">
                                                                                 <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
                                                                                 {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
                                                                             </td>
-                                                                            <td className="py-2 text-right font-bold text-slate-600">{it.cantidad}</td>
+                                                                            <td className="py-2 text-right font-bold text-slate-600">{fmtQty(qty)}</td>
                                                                             <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
-                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
+                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(lineTotal)}</td>
                                                                         </tr>
-                                                                    ))}
+                                                                        );
+                                                                    })}
                                                                 </tbody>
                                                             </table>
                                                         )}

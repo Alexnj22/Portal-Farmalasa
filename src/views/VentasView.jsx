@@ -288,7 +288,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         const uncached = fetched.map(r => r.id).filter(id => !itemsCache[id]);
         if (uncached.length > 0) {
             supabase.from('sales_invoice_items')
-                .select('invoice_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+                .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
                 .in('invoice_id', uncached)
                 .order('total_linea', { ascending: false })
                 .then(({ data: items }) => {
@@ -315,7 +315,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         setLoadingItems(true);
         const { data } = await supabase
             .from('sales_invoice_items')
-            .select('descripcion, presentacion, cantidad, precio_unitario, total_linea')
+            .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
             .eq('invoice_id', invoiceId)
             .order('total_linea', { ascending: false });
         setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
@@ -452,10 +452,22 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                             </div>
                                                         ) : (
                                                             (() => {
-                                                                const visibleItems = (cachedItems || []).filter(it => it.descripcion);
-                                                                const lineSum = (cachedItems || []).reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-                                                                const pointsDiscount = lineSum - parseFloat(r.total || 0);
-                                                                const hasPointsDiscount = pointsDiscount > 0.01;
+                                                                // Deduplicate: exact same (erp_product_id/descripcion, presentacion, precio_unitario, total_linea) → keep one
+                                                                const seen = new Set();
+                                                                const deduped = (cachedItems || []).filter(it => {
+                                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}`;
+                                                                    if (seen.has(sig)) return false;
+                                                                    seen.add(sig);
+                                                                    return true;
+                                                                });
+                                                                // Discount items (ERP id=-999 = DESCPUNTO)
+                                                                const discountItems = deduped.filter(it => it.erp_product_id === -999);
+                                                                const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
+                                                                const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
+                                                                // Arithmetic fallback: if no discount item found but sum > total
+                                                                const regularSum = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
+                                                                const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
+                                                                const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
                                                                 return (
                                                                     <table className="w-full text-[11px]">
                                                                         <thead>
@@ -467,7 +479,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody className="divide-y divide-slate-100/60">
-                                                                            {visibleItems.map((it, idx) => (
+                                                                            {regularItems.map((it, idx) => (
                                                                                 <tr key={idx} className="hover:bg-white/50 transition-colors">
                                                                                     <td className="py-2 pr-4">
                                                                                         <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
@@ -478,7 +490,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                                     <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
                                                                                 </tr>
                                                                             ))}
-                                                                            {hasPointsDiscount && (
+                                                                            {finalDiscount > 0 && (
                                                                                 <tr className="bg-amber-50/60 hover:bg-amber-50 transition-colors">
                                                                                     <td className="py-2 pr-4" colSpan={2}>
                                                                                         <div className="flex items-center gap-1.5">
@@ -487,7 +499,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                                         </div>
                                                                                     </td>
                                                                                     <td className="py-2 text-right text-amber-500 hidden sm:table-cell">—</td>
-                                                                                    <td className="py-2 text-right font-black text-amber-600">-{fmt(pointsDiscount)}</td>
+                                                                                    <td className="py-2 text-right font-black text-amber-600">-{fmt(finalDiscount)}</td>
                                                                                 </tr>
                                                                             )}
                                                                         </tbody>

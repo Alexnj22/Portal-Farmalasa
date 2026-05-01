@@ -210,6 +210,13 @@ function Pagination({ page, total, onChange }) {
 
 // ─── Tab: Anuladas ────────────────────────────────────────────────────────────
 function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
+    const employees = useStaff((state) => state.employees);
+    const empPhotoMap = useMemo(() => {
+        const m = {};
+        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        return m;
+    }, [employees]);
+
     const [rows, setRows] = useState([]);
     const [resolved, setResolved] = useState([]);
     const [resolvedIds, setResolvedIds] = useState(new Set());
@@ -523,9 +530,16 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         <div className="border-t border-black/[0.04]">
                             {resolved.map((r, i) => {
                                 const inv = r.invoice;
+                                const photo = empPhotoMap[r.resolved_by] || null;
+                                const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                                 return (
-                                    <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
-                                        <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
+                                        {photo
+                                            ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 mt-0.5" />
+                                            : <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                <span className="text-[9px] font-black text-emerald-700">{initials}</span>
+                                              </div>
+                                        }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                                 <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{inv?.tipo_documento}</span>
@@ -535,7 +549,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                             </div>
                                             {r.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.comment}"</p>}
                                             <p className="text-[11px] text-slate-400">
-                                                Solventado por <span className="font-semibold text-slate-600">{r.resolved_by || '—'}</span>
+                                                <span className="font-semibold text-slate-600">{r.resolved_by || '—'}</span>
                                                 {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
                                             </p>
                                         </div>
@@ -552,6 +566,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
 function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
+    const employees = useStaff((state) => state.employees);
+    const empPhotoMap = useMemo(() => {
+        const m = {};
+        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        return m;
+    }, [employees]);
     const [rows, setRows]               = useState([]);
     const [resolved, setResolved]       = useState([]);
     const [showResolved, setShowResolved] = useState(false);
@@ -935,26 +955,38 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                     {showResolved && (
                         <div className="border-t border-black/[0.04]">
-                            {resolved.map((r, i) => (
-                                <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
-                                    <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                                            <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.tipo_documento}</span>
-                                            <span className="font-mono text-[12px] font-bold text-slate-700">{r.correlativo}</span>
-                                            <span className="text-[12px] text-slate-500">{getBranch(r.branch_id)}</span>
-                                            {r.erp_invoice_id && <span className="font-mono text-[11px] text-slate-400">#{r.erp_invoice_id}</span>}
-                                            {r.total && <span className="text-[12px] font-bold text-slate-700 ml-auto">{fmt(r.total)}</span>}
+                            {resolved.map((r, i) => {
+                                const resolvedBy = r.resolution?.resolved_by || null;
+                                const photo = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
+                                const initials = (resolvedBy || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                return (
+                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
+                                        {photo
+                                            ? <img src={photo} alt={resolvedBy} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 mt-0.5" />
+                                            : <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                <span className="text-[9px] font-black text-emerald-700">{initials}</span>
+                                              </div>
+                                        }
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.tipo_documento}</span>
+                                                <span className="font-mono text-[12px] font-bold text-slate-700">{r.correlativo}</span>
+                                                <span className="text-[12px] text-slate-500">{getBranch(r.branch_id)}</span>
+                                                {r.erp_invoice_id && <span className="font-mono text-[11px] text-slate-400">#{r.erp_invoice_id}</span>}
+                                                {r.total && <span className="text-[12px] font-bold text-slate-700 ml-auto">{fmt(r.total)}</span>}
+                                            </div>
+                                            {r.resolution?.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.resolution.comment}"</p>}
+                                            <p className="text-[11px] text-slate-400">
+                                                {resolvedBy
+                                                    ? <span className="font-semibold text-slate-600">{resolvedBy}</span>
+                                                    : 'Marcado como recibido'}
+                                                {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                                {!r.resolution && <> · {r.fecha}</>}
+                                            </p>
                                         </div>
-                                        {r.resolution?.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.resolution.comment}"</p>}
-                                        <p className="text-[11px] text-slate-400">
-                                            {r.resolution?.resolved_by ? <>Solventado por <span className="font-semibold text-slate-600">{r.resolution.resolved_by}</span></> : 'Marcado como recibido'}
-                                            {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
-                                            {!r.resolution && <> · {r.fecha}</>}
-                                        </p>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -965,6 +997,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
 // ─── Tab: Saltos ──────────────────────────────────────────────────────────────
 function TabSaltos({ branches, filterBranch, currentUser }) {
+    const employees = useStaff((state) => state.employees);
+    const empPhotoMap = useMemo(() => {
+        const m = {};
+        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        return m;
+    }, [employees]);
     const [gaps, setGaps] = useState([]);
     const [nulls, setNulls] = useState([]);
     const [gapResolutions, setGapResolutions] = useState([]);
@@ -1320,23 +1358,32 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                     </button>
                     {showHistorial && (
                         <div className="border-t border-black/[0.04]">
-                            {resolvedGaps.map((r, i) => (
-                                <div key={r.id} className={`flex items-start gap-4 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
-                                    <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
-                                            <span className="text-[13px] font-bold text-slate-700">{getBranch(r.branch_id)}</span>
-                                            <span className="font-mono text-[11px] text-slate-400">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
+                            {resolvedGaps.map((r, i) => {
+                                const photo = r.resolved_by ? (empPhotoMap[r.resolved_by] || null) : null;
+                                const initials = (r.resolved_by || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                return (
+                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-black/[0.02] transition-colors ${i > 0 ? 'border-t border-black/[0.04]' : ''}`}>
+                                        {photo
+                                            ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0 mt-0.5" />
+                                            : <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                <span className="text-[9px] font-black text-emerald-700">{initials}</span>
+                                              </div>
+                                        }
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
+                                                <span className="text-[13px] font-bold text-slate-700">{getBranch(r.branch_id)}</span>
+                                                <span className="font-mono text-[11px] text-slate-400">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
+                                            </div>
+                                            {r.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.comment}"</p>}
+                                            <p className="text-[11px] text-slate-400">
+                                                <span className="font-semibold text-slate-600">{r.resolved_by || '—'}</span>
+                                                {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                            </p>
                                         </div>
-                                        {r.comment && <p className="text-[12px] text-slate-500 mb-1">"{r.comment}"</p>}
-                                        <p className="text-[11px] text-slate-400">
-                                            Solventado por <span className="font-semibold text-slate-600">{r.resolved_by || '—'}</span>
-                                            {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
-                                        </p>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

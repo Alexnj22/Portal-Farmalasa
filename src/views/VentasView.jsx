@@ -22,19 +22,9 @@ const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
 const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
 
-// ERP stores cantidad in base units but precio_unitario is per pack (e.g. "CAJA 1x10").
-// Divide by multiplier to show correct pack count.
-function packMultiplier(presentacion) {
-    const m = presentacion?.match(/1x(\d+)/i);
-    return m ? parseInt(m[1]) : 1;
-}
-function adjQty(cantidad, presentacion) {
-    const q = parseFloat(cantidad || 0);
-    const mult = packMultiplier(presentacion);
-    return mult > 1 ? q / mult : q;
-}
 function fmtQty(n) {
-    return n % 1 === 0 ? String(n) : n.toFixed(3).replace(/\.?0+$/, '');
+    const f = parseFloat(n || 0);
+    return f % 1 === 0 ? String(f) : f.toFixed(3).replace(/\.?0+$/, '');
 }
 
 function currentMonthRange() {
@@ -471,21 +461,17 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-slate-100/60">
-                                                                    {(cachedItems || []).map((it, idx) => {
-                                                                        const qty = adjQty(it.cantidad, it.presentacion);
-                                                                        const lineTotal = qty * parseFloat(it.precio_unitario || 0);
-                                                                        return (
+                                                                    {(cachedItems || []).map((it, idx) => (
                                                                         <tr key={idx} className="hover:bg-white/50 transition-colors">
                                                                             <td className="py-2 pr-4">
                                                                                 <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
                                                                                 {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
                                                                             </td>
-                                                                            <td className="py-2 text-right font-bold text-slate-600">{fmtQty(qty)}</td>
+                                                                            <td className="py-2 text-right font-bold text-slate-600">{fmtQty(it.cantidad)}</td>
                                                                             <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
-                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(lineTotal)}</td>
+                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
                                                                         </tr>
-                                                                        );
-                                                                    })}
+                                                                    ))}
                                                                 </tbody>
                                                             </table>
                                                         )}

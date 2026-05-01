@@ -8,12 +8,38 @@ const corsHeaders = {
 const SYNC_URL = 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/sync-dte-sales';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-function monthRange(year: number, month: number): { fini: string; ffin: string } {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const fini = `${year}-${pad(month)}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const ffin = `${year}-${pad(month)}-${pad(lastDay)}`;
-  return { fini, ffin };
+const pad = (n: number) => String(n).padStart(2, '0');
+const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+function buildRanges(
+  fromYear: number, fromMonth: number,
+  toYear: number,   toMonth: number,
+  chunkDays: number | null,
+): { fini: string; ffin: string }[] {
+  const ranges: { fini: string; ffin: string }[] = [];
+
+  if (chunkDays) {
+    // Split entire span into chunkDays-day windows
+    const end = new Date(toYear, toMonth - 1, new Date(toYear, toMonth, 0).getDate());
+    let cur = new Date(fromYear, fromMonth - 1, 1);
+    while (cur <= end) {
+      const chunkEnd = new Date(cur);
+      chunkEnd.setDate(chunkEnd.getDate() + chunkDays - 1);
+      if (chunkEnd > end) chunkEnd.setTime(end.getTime());
+      ranges.push({ fini: fmt(cur), ffin: fmt(chunkEnd) });
+      cur.setDate(cur.getDate() + chunkDays);
+    }
+  } else {
+    // Default: one range per calendar month
+    let y = fromYear, m = fromMonth;
+    while (y < toYear || (y === toYear && m <= toMonth)) {
+      const lastDay = new Date(y, m, 0).getDate();
+      ranges.push({ fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(lastDay)}` });
+      m++; if (m > 12) { m = 1; y++; }
+    }
+  }
+
+  return ranges;
 }
 
 Deno.serve(async (req) => {
@@ -25,27 +51,22 @@ Deno.serve(async (req) => {
     const fromMonth = body.fromMonth ?? 5;
 
     const hoy = new Date(Date.now() - 6 * 3600_000);
-    const toYear  = body.toYear  ?? hoy.getFullYear();
-    const toMonth = body.toMonth ?? (hoy.getMonth() + 1);
-    const onlyBranch  = body.branchId ?? null;
-    const forceItems  = body.forceItems ?? false;
+    const toYear   = body.toYear   ?? hoy.getFullYear();
+    const toMonth  = body.toMonth  ?? (hoy.getMonth() + 1);
+    const onlyBranch = body.branchId  ?? null;
+    const forceItems = body.forceItems ?? false;
+    const chunkDays  = body.chunkDays  ?? null; // e.g. 7 for weekly chunks
 
-    const months: { fini: string; ffin: string }[] = [];
-    let y = fromYear, m = fromMonth;
-    while (y < toYear || (y === toYear && m <= toMonth)) {
-      months.push(monthRange(y, m));
-      m++;
-      if (m > 12) { m = 1; y++; }
-    }
+    const ranges = buildRanges(fromYear, fromMonth, toYear, toMonth, chunkDays);
 
     const summary: any[] = [];
     let totalNew = 0;
     let totalChanges = 0;
 
-    for (const { fini, ffin } of months) {
+    for (const { fini, ffin } of ranges) {
       const payload: any = { fini, ffin };
-      if (onlyBranch) payload.branchId = onlyBranch;
-      if (forceItems) payload.forceItems = true;
+      if (onlyBranch)  payload.branchId   = onlyBranch;
+      if (forceItems)  payload.forceItems  = true;
 
       const res = await fetch(SYNC_URL, {
         method: 'POST',
@@ -58,17 +79,17 @@ Deno.serve(async (req) => {
       });
 
       const data = await res.json();
-      const monthNew     = (data.results ?? []).reduce((s: number, r: any) => s + (r.new ?? 0), 0);
-      const monthChanges = (data.results ?? []).reduce((s: number, r: any) => s + (r.changes ?? 0), 0);
-      totalNew     += monthNew;
-      totalChanges += monthChanges;
-      summary.push({ period: `${fini}/${ffin}`, new: monthNew, changes: monthChanges });
+      const rangeNew     = (data.results ?? []).reduce((s: number, r: any) => s + (r.new     ?? 0), 0);
+      const rangeChanges = (data.results ?? []).reduce((s: number, r: any) => s + (r.changes ?? 0), 0);
+      totalNew     += rangeNew;
+      totalChanges += rangeChanges;
+      summary.push({ period: `${fini}/${ffin}`, new: rangeNew, changes: rangeChanges });
 
       await new Promise(r => setTimeout(r, 500));
     }
 
     return new Response(
-      JSON.stringify({ success: true, months: months.length, totalNew, totalChanges, summary }),
+      JSON.stringify({ success: true, chunks: ranges.length, totalNew, totalChanges, summary }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

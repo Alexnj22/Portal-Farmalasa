@@ -92,6 +92,53 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
+// Stat card with % change vs previous month + 6-month tooltip
+function StatCard({ label, value, pct, icon: Icon, grad, text, months, statKey }) {
+    const [show, setShow] = useState(false);
+    const maxVal = months?.length ? Math.max(...months.map(m => m[statKey] || 0), 1) : 1;
+    const abbr = (lbl) => { const p = lbl.split(' '); return p[0].slice(0,3) + ' ' + p[p.length-1].slice(2); };
+    return (
+        <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white cursor-default select-none">
+                <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                    <Icon size={11} className="text-white" strokeWidth={2.5} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+                <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+                {pct !== null && pct !== undefined && (
+                    <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                        {Math.abs(pct).toFixed(1)}%
+                    </span>
+                )}
+            </div>
+            {show && months?.length > 0 && (
+                <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-black/[0.08] p-3 w-[210px] pointer-events-none">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Últimos 6 meses</p>
+                    <div className="space-y-1.5">
+                        {months.map((m, i) => {
+                            const v = m[statKey] || 0;
+                            const barW = maxVal > 0 ? (v / maxVal) * 100 : 0;
+                            const display = statKey === 'count' ? fmtNum(v) : fmt(v);
+                            return (
+                                <div key={i}>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                        <span className="text-[10px] text-slate-500">{abbr(m.label)}</span>
+                                        <span className="text-[10px] font-bold text-slate-700">{display}</span>
+                                    </div>
+                                    <div className="h-1 rounded-full bg-slate-100">
+                                        <div className={`h-1 rounded-full transition-all ${i === 0 ? 'bg-blue-400' : 'bg-slate-300'}`} style={{ width: `${barW}%` }} />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // Sortable column header button
 function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
     const active = sortCol === col;
@@ -112,10 +159,12 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 }
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
-function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
+function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }) {
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
+    const [prevStats, setPrevStats]   = useState({ count: 0, sum: 0 });
+    const [sixMonths, setSixMonths]   = useState([]);
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(50);
     const [sortCol, setSortCol]       = useState('fecha');
@@ -129,35 +178,82 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const isSearching = searchTerm?.trim().length > 0;
 
+    const empMap = useMemo(() => {
+        const m = new Map();
+        (employees || []).forEach(e => m.set(e.code, e));
+        return m;
+    }, [employees]);
+
     const handleSort = (col) => {
         if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setSortCol(col); setSortDir('desc'); }
         setPage(1);
     };
 
-    // Stats: solo cuando cambia mes o sucursal
+    // Prev month fini helper
+    const prevMonthFini = useMemo(() => {
+        const d = new Date(fini + 'T12:00');
+        const y = d.getFullYear(), m = d.getMonth(); // getMonth() already -1
+        return `${m === 0 ? y - 1 : y}-${String(m === 0 ? 12 : m).padStart(2, '0')}-01`;
+    }, [fini]);
+
+    // Stats: current + previous month for % change
     const fetchStats = useCallback(async () => {
         const isCurrentMonth = fini === currentMonthRange().fini;
+        const branchId = filterBranch ? Number(filterBranch) : -1;
+
+        const prevQ = supabase.from('ventas_monthly_stats')
+            .select('total_count, total_sum')
+            .eq('mes', prevMonthFini).eq('branch_id', branchId).eq('cod_vendedor', '').single();
+
         if (isCurrentMonth) {
-            const { data } = await supabase.rpc('get_ventas_stats', {
-                p_fini: fini, p_ffin: ffin,
-                p_branch_id: filterBranch ? Number(filterBranch) : null,
-            });
-            const s = data?.[0] || { total_count: 0, total_sum: 0 };
+            const [cur, prev] = await Promise.all([
+                supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null }),
+                prevQ,
+            ]);
+            const s = cur.data?.[0] || { total_count: 0, total_sum: 0 };
             setTotalCount(parseInt(s.total_count || 0));
             setTotalAmount(parseFloat(s.total_sum || 0));
+            setPrevStats({ count: parseInt(prev.data?.total_count || 0), sum: parseFloat(prev.data?.total_sum || 0) });
         } else {
-            const { data } = await supabase
-                .from('ventas_monthly_stats')
-                .select('total_count, total_sum')
-                .eq('mes', fini)
-                .eq('branch_id', filterBranch ? Number(filterBranch) : -1)
-                .eq('cod_vendedor', '')
-                .single();
-            setTotalCount(parseInt(data?.total_count || 0));
-            setTotalAmount(parseFloat(data?.total_sum || 0));
+            const [cur, prev] = await Promise.all([
+                supabase.from('ventas_monthly_stats').select('total_count, total_sum')
+                    .eq('mes', fini).eq('branch_id', branchId).eq('cod_vendedor', '').single(),
+                prevQ,
+            ]);
+            setTotalCount(parseInt(cur.data?.total_count || 0));
+            setTotalAmount(parseFloat(cur.data?.total_sum || 0));
+            setPrevStats({ count: parseInt(prev.data?.total_count || 0), sum: parseFloat(prev.data?.total_sum || 0) });
         }
-    }, [fini, ffin, filterBranch]);
+    }, [fini, ffin, filterBranch, prevMonthFini]);
+
+    // 6-month history for tooltip
+    const fetchSixMonths = useCallback(async () => {
+        const opts = monthOptions(6);
+        const branchId = filterBranch ? Number(filterBranch) : -1;
+        const curFini = currentMonthRange().fini;
+        const curFfin = currentMonthRange().ffin;
+        const pastFinis = opts.map(o => o.value.split('|')[0]).filter(f => f !== curFini);
+
+        const [{ data: pastData }, curRes] = await Promise.all([
+            supabase.from('ventas_monthly_stats')
+                .select('mes, total_count, total_sum, avg_ticket')
+                .in('mes', pastFinis).eq('branch_id', branchId).eq('cod_vendedor', ''),
+            supabase.rpc('get_ventas_stats', { p_fini: curFini, p_ffin: curFfin, p_branch_id: filterBranch ? Number(filterBranch) : null }),
+        ]);
+        const pastMap = new Map((pastData || []).map(r => [r.mes, r]));
+        const curS = curRes.data?.[0] || { total_count: 0, total_sum: 0 };
+        const curC = parseInt(curS.total_count || 0);
+        const curSm = parseFloat(curS.total_sum || 0);
+
+        setSixMonths(opts.map(opt => {
+            const f = opt.value.split('|')[0];
+            if (f === curFini) return { label: opt.label, count: curC, sum: curSm, avg: curC > 0 ? curSm / curC : 0 };
+            const r = pastMap.get(f);
+            const c = parseInt(r?.total_count || 0), s = parseFloat(r?.total_sum || 0);
+            return { label: opt.label, count: c, sum: s, avg: parseFloat(r?.avg_ticket || 0) };
+        }));
+    }, [filterBranch]);
 
     // Rows: paginado con sort o búsqueda en BD sin paginación
     const fetchRows = useCallback(async () => {
@@ -165,7 +261,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
         const asc = sortDir === 'asc';
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, tipo_pago, total')
+            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, total')
             .gte('fecha', fini).lte('fecha', ffin)
             .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
             .order(sortCol, { ascending: asc });
@@ -202,6 +298,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
     }, [fini, ffin, filterBranch, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
+    useEffect(() => { fetchSixMonths(); }, [fetchSixMonths]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, isSearching, pageSize]);
 
@@ -226,19 +323,17 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
         <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Facturas',      value: fmtNum(totalCount),  icon: FileText,   grad: 'from-blue-500 to-indigo-500',    text: 'text-blue-700' },
-                    { label: 'Total Ventas',  value: fmt(totalAmount),    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700' },
-                    { label: 'Ticket Prom.',  value: fmt(avgTicket),      icon: TrendingUp, grad: 'from-slate-500 to-slate-400',   text: 'text-slate-700' },
-                ].map(({ label, value, icon: Icon, grad, text }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
+                {(() => {
+                    const pctCount = prevStats.count > 0 ? ((totalCount - prevStats.count) / prevStats.count) * 100 : null;
+                    const pctSum   = prevStats.sum   > 0 ? ((totalAmount - prevStats.sum)   / prevStats.sum)   * 100 : null;
+                    const pctAvg   = prevStats.sum   > 0 && prevStats.count > 0
+                        ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
+                    return [
+                        { label: 'Facturas',     value: fmtNum(totalCount), pct: pctCount, icon: FileText,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    statKey: 'count' },
+                        { label: 'Total Ventas', value: fmt(totalAmount),   pct: pctSum,   icon: TrendingUp, grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', statKey: 'sum'   },
+                        { label: 'Ticket Prom.', value: fmt(avgTicket),     pct: pctAvg,   icon: TrendingUp, grad: 'from-slate-500 to-slate-400',   text: 'text-slate-700',   statKey: 'avg'   },
+                    ].map(card => <StatCard key={card.label} {...card} months={sixMonths} />);
+                })()}
             </div>
 
             {loadingRows && rows.length === 0 ? (
@@ -254,12 +349,14 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                         <table className="w-full text-sm">
                             <thead className="sticky top-0 z-10">
                                 <tr className="bg-gradient-to-b from-white/95 to-white/80 backdrop-blur-xl border-b border-white/60 shadow-[0_1px_0_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.04)]">
-                                    <SortTh label="Fecha" col="fecha" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
-                                    <SortTh label="ID / Correl." col="correlativo" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
-                                    <SortTh label="Sucursal" col="branch_id" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-3.5" />
-                                    <SortTh label="Cliente" col="cliente" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
-                                    <SortTh label="Método pago" col="tipo_pago" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
-                                    <SortTh label="Total" col="total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-3.5" />
+                                    <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
+                                    <SortTh label="ID"          col="correlativo"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
+                                    <SortTh label="Tipo"        col="tipo_documento" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
+                                    <SortTh label="Sucursal"    col="branch_id"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-3.5" />
+                                    <SortTh label="Vendedor"    col="cod_vendedor"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
+                                    <SortTh label="Cliente"     col="cliente"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
+                                    <SortTh label="Método pago" col="tipo_pago"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
+                                    <SortTh label="Total"       col="total"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-3.5" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -267,32 +364,64 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                                     const isCCF = r.tipo_documento === 'CCF';
                                     const isExpanded = expandedId === r.id;
                                     const cachedItems = itemsCache[r.id];
-                                    const hasItems = cachedItems && cachedItems.length > 0;
                                     const noData = cachedItems && cachedItems.length === 0;
+                                    const emp = empMap.get(r.cod_vendedor);
+                                    const tipoBadgeColor = r.tipo_documento === 'CCF'
+                                        ? 'bg-red-50 text-red-600'
+                                        : r.tipo_documento === 'FCF'
+                                        ? 'bg-blue-50 text-blue-600'
+                                        : 'bg-slate-100 text-slate-500';
                                     return (
                                         <React.Fragment key={r.id}>
                                             <tr onClick={() => toggleRow(r.id)}
                                                 className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'}`}>
+                                                {/* Fecha */}
                                                 <td className="px-4 py-2.5">
                                                     <p className="text-[12px] font-bold text-slate-700">{r.fecha}</p>
                                                     {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
                                                 </td>
+                                                {/* ID */}
                                                 <td className="px-4 py-2.5 hidden md:table-cell">
                                                     {r.erp_invoice_id && <p className="font-mono text-[11px] font-black text-slate-500">#{r.erp_invoice_id}</p>}
                                                     <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
                                                 </td>
+                                                {/* Tipo documento */}
+                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                    {r.tipo_documento
+                                                        ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
+                                                        : <span className="text-slate-300">—</span>}
+                                                </td>
+                                                {/* Sucursal */}
                                                 <td className="px-4 py-2.5 hidden lg:table-cell">
                                                     <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
-                                                    {isCCF && <span className="ml-1.5 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-red-50 text-red-500">CCF</span>}
                                                 </td>
+                                                {/* Vendedor */}
+                                                <td className="px-4 py-2.5 hidden md:table-cell">
+                                                    <div className="flex items-center gap-2">
+                                                        {emp ? (
+                                                            <LiquidAvatar src={emp.photo_url || emp.photo} fallbackText={emp.first_names}
+                                                                className="w-6 h-6 rounded-full shrink-0" />
+                                                        ) : (
+                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                                                <Users size={11} className="text-slate-400" />
+                                                            </div>
+                                                        )}
+                                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">
+                                                            {emp ? emp.first_names : (r.cod_vendedor || '—')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                {/* Cliente */}
                                                 <td className="px-4 py-2.5">
-                                                    <p className="text-[12px] text-slate-700 truncate max-w-[180px]">{r.cliente || '—'}</p>
+                                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{r.cliente || '—'}</p>
                                                 </td>
+                                                {/* Método pago */}
                                                 <td className="px-4 py-2.5 hidden sm:table-cell">
                                                     {r.tipo_pago
                                                         ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
                                                         : <span className="text-slate-300">—</span>}
                                                 </td>
+                                                {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <p className={`text-[13px] font-black ${isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
@@ -303,7 +432,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange }) {
                                             </tr>
                                             {isExpanded && (
                                                 <tr className="border-t border-blue-100/60">
-                                                    <td colSpan={6} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
+                                                    <td colSpan={8} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
                                                         {loadingItems && !cachedItems ? (
                                                             <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
                                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
@@ -1127,7 +1256,7 @@ export default function VentasView() {
     return (
         <GlassViewLayout icon={TrendingUp} title="Ventas" filtersContent={filtersContent}>
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
-                <TabVentas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} />
+                <TabVentas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} employees={employees} />
             </div>
             <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch}

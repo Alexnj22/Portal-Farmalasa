@@ -130,7 +130,7 @@ async function syncBranch(
       cod_vendedor:      venta.cod_vendedor,
       tipo_pago:         venta.tipo_pago,
       estado:            venta.estado,
-      recibido_mh:       venta.recibido_mh ?? null,
+      recibido_mh:       venta.recibido_mh ?? existing?.recibido_mh ?? null,
       subtotal:          venta.totales?.subtotal ?? 0,
       iva:               venta.totales?.iva ?? 0,
       total:             venta.totales?.total ?? 0,

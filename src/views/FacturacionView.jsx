@@ -582,6 +582,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [saving, setSaving]           = useState(false);
     const [expandedId, setExpandedId]         = useState(null);
     const [copiedId, setCopiedId]             = useState(null);
+    const [nullCamposIds, setNullCamposIds]   = useState(new Set());
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const [visitedIds, setVisitedIds] = useState(() => {
         try { return new Set(JSON.parse(localStorage.getItem('facturacion_visited') || '[]')); }
@@ -649,12 +650,16 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             .order('fecha', { ascending: false });
         if (filterBranch) qRes = qRes.eq('branch_id', Number(filterBranch));
 
-        const [{ data: pendData }, { data: resInvs }, { data: allResolutions }] = await Promise.all([
+        const [{ data: pendData }, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
             qPend, qRes,
             supabase.from('sales_invoice_resolutions')
                 .select('invoice_id, comment, resolved_by, resolved_at')
                 .order('resolved_at', { ascending: false }),
+            supabase.from('sales_invoice_nulls').select('id'),
         ]);
+
+        // Invoices that also have non-MH null campos (e.g. cliente, correlativo)
+        setNullCamposIds(new Set((nullsData || []).map(r => r.id)));
 
         // Exclude already-resolved invoices from the pending list
         const resolvedIds = new Set((allResolutions || []).map(r => r.invoice_id));
@@ -831,33 +836,36 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 {/* Pills row */}
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
-                                                        const isCCF    = r.tipo_documento === 'CCF';
-                                                        const isSolving = solvingId === r.id;
-                                                        const isCopied  = copiedId === r.erp_invoice_id;
-                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
+                                                        const isCCF      = r.tipo_documento === 'CCF';
+                                                        const isSolving  = solvingId === r.id;
+                                                        const isCopied   = copiedId === r.erp_invoice_id;
+                                                        const isVisited  = visitedIds.has(String(r.erp_invoice_id));
+                                                        const hasNullCampos = nullCamposIds.has(r.id);
                                                         return (
                                                             <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* Pill */}
                                                                 <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
-                                                                    isSolving ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
-                                                                    isVisited ? 'border-amber-300' :
-                                                                    isCCF     ? 'border-red-200 hover:border-red-300' :
-                                                                                'border-slate-200 hover:border-slate-300'
+                                                                    isSolving    ? 'border-emerald-400 shadow-sm shadow-emerald-100' :
+                                                                    isVisited    ? 'border-amber-300' :
+                                                                    hasNullCampos ? 'border-purple-300 hover:border-purple-400' :
+                                                                    isCCF        ? 'border-red-200 hover:border-red-300' :
+                                                                                   'border-slate-200 hover:border-slate-300'
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
                                                                         className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
-                                                                            isCopied  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                                                            isVisited ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                                            isCCF     ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
-                                                                                        'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                                                            isCopied      ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                            isVisited     ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                            hasNullCampos ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' :
+                                                                            isCCF         ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
+                                                                                            'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                                                         }`}>
                                                                         {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
                                                                     {/* Tipo label (tooltip trigger) */}
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-amber-50/40' : isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-amber-600' : isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
+                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-slate-100 ${isVisited ? 'bg-amber-50/40' : hasNullCampos ? 'bg-purple-50/40' : isCCF ? 'bg-red-50/40' : 'bg-white'}`}>
+                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-amber-600' : hasNullCampos ? 'text-purple-600' : isCCF ? 'text-red-600' : 'text-slate-500'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
@@ -1101,8 +1109,11 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         gapsByBranch[g.branch_id].push(g);
     }
 
-    // Group active nulls by branch_id
-    const activeNulls = nulls.filter(n => !nullResolvedIds.has(n.id));
+    // MH-only null campos — these belong in Pendientes MH, not here
+    const MH_CAMPOS = new Set(['recibido_mh', 'codigo_generacion']);
+    const isMhOnly = (n) => (n.campos_nulos || []).every(c => MH_CAMPOS.has(c));
+
+    const activeNulls = nulls.filter(n => !nullResolvedIds.has(n.id) && !isMhOnly(n));
     const nullsByBranch = {};
     for (const n of activeNulls) {
         if (!nullsByBranch[n.branch_id]) nullsByBranch[n.branch_id] = [];

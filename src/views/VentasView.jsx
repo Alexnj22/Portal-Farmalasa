@@ -261,7 +261,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         const asc = sortDir === 'asc';
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, total')
+            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total')
             .gte('fecha', fini).lte('fecha', ffin)
             .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
             .order(sortCol, { ascending: asc });
@@ -361,7 +361,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                             </thead>
                             <tbody>
                                 {rows.map(r => {
-                                    const isCCF = r.tipo_documento === 'CCF';
+                                    const isCCF = r.tipo_documento === 'CCF' || r.tipo_documento === 'COF';
                                     const isExpanded = expandedId === r.id;
                                     const cachedItems = itemsCache[r.id];
                                     const noData = cachedItems && cachedItems.length === 0;
@@ -466,6 +466,25 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                     ))}
                                                                 </tbody>
                                                             </table>
+                                                        )}
+                                                        {/* IVA breakdown for CCF/COF */}
+                                                        {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
+                                                            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                                                                <div className="flex flex-col gap-0.5 min-w-[180px]">
+                                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                                        <span>Subtotal (sin IVA)</span>
+                                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                                        <span>IVA (13%)</span>
+                                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between gap-6 text-[12px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-0.5">
+                                                                        <span>Total</span>
+                                                                        <span>{fmt(r.total)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </td>
                                                 </tr>

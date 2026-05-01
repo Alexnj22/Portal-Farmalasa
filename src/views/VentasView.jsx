@@ -530,7 +530,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     // Historical rankings
     const [historial, setHistorial]     = useState(null);
     const [loadingHist, setLoadingHist] = useState(false);
-    const [showHist, setShowHist]       = useState(false);
+    const [showHist, setShowHist]       = useState(true);
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -630,9 +630,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
         setLoadingHist(false);
     }, [filterBranch]);
 
-    useEffect(() => {
-        if (showHist) loadHistorial();
-    }, [showHist, loadHistorial]);
+    useEffect(() => { loadHistorial(); }, [loadHistorial]);
 
     const toggleExpand = async (cod) => {
         if (expanded === cod) { setExpanded(null); return; }
@@ -702,7 +700,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 
     const TrendBadge = ({ cod, currentRank }) => {
         const prev = prevRankMap.get(cod);
-        if (!showHist || prev == null) return null;
+        if (prev == null) return null;
         const diff = prev - currentRank; // positive = improved (lower rank number)
         if (diff === 0) return <Minus size={12} className="text-slate-400" />;
         if (diff > 0) return (
@@ -994,10 +992,10 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
         }
         if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
 
-        // Aggregate by product
+        // Aggregate by product + presentacion (different presentations = different units)
         const agg = new Map();
         for (const item of itemsAll) {
-            const key = item.erp_product_id || item.descripcion;
+            const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
             const cur = agg.get(key) || {
                 erp_product_id: item.erp_product_id,
                 descripcion: item.descripcion,
@@ -1005,10 +1003,10 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
                 cantidad: 0,
                 total: 0,
                 lineas: 0,
-                precioProm: 0, // weighted avg precio_unitario for cost matching
+                precioProm: 0,
                 _precioSum: 0,
             };
-            cur.cantidad   += parseInt(item.cantidad || 0);
+            cur.cantidad   += parseFloat(item.cantidad || 0);
             cur.total      += parseFloat(item.total_linea || 0);
             cur.lineas     += 1;
             cur._precioSum += parseFloat(item.precio_unitario || 0);

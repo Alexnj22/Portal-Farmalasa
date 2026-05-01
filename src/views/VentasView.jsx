@@ -451,29 +451,49 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                                             </div>
                                                         ) : (
-                                                            <table className="w-full text-[11px]">
-                                                                <thead>
-                                                                    <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
-                                                                        <th className="text-left pb-2">Producto</th>
-                                                                        <th className="text-right pb-2">Cant.</th>
-                                                                        <th className="text-right pb-2 hidden sm:table-cell">Precio Unit.</th>
-                                                                        <th className="text-right pb-2">Total</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-slate-100/60">
-                                                                    {(cachedItems || []).map((it, idx) => (
-                                                                        <tr key={idx} className="hover:bg-white/50 transition-colors">
-                                                                            <td className="py-2 pr-4">
-                                                                                <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
-                                                                                {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
-                                                                            </td>
-                                                                            <td className="py-2 text-right font-bold text-slate-600">{fmtQty(it.cantidad)}</td>
-                                                                            <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
-                                                                            <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
+                                                            (() => {
+                                                                const visibleItems = (cachedItems || []).filter(it => it.descripcion);
+                                                                const lineSum = (cachedItems || []).reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
+                                                                const pointsDiscount = lineSum - parseFloat(r.total || 0);
+                                                                const hasPointsDiscount = pointsDiscount > 0.01;
+                                                                return (
+                                                                    <table className="w-full text-[11px]">
+                                                                        <thead>
+                                                                            <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                                                                <th className="text-left pb-2">Producto</th>
+                                                                                <th className="text-right pb-2">Cant.</th>
+                                                                                <th className="text-right pb-2 hidden sm:table-cell">Precio Unit.</th>
+                                                                                <th className="text-right pb-2">Total</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody className="divide-y divide-slate-100/60">
+                                                                            {visibleItems.map((it, idx) => (
+                                                                                <tr key={idx} className="hover:bg-white/50 transition-colors">
+                                                                                    <td className="py-2 pr-4">
+                                                                                        <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
+                                                                                        {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
+                                                                                    </td>
+                                                                                    <td className="py-2 text-right font-bold text-slate-600">{fmtQty(it.cantidad)}</td>
+                                                                                    <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>
+                                                                                    <td className="py-2 text-right font-black text-slate-700">{fmt(it.total_linea)}</td>
+                                                                                </tr>
+                                                                            ))}
+                                                                            {hasPointsDiscount && (
+                                                                                <tr className="bg-amber-50/60 hover:bg-amber-50 transition-colors">
+                                                                                    <td className="py-2 pr-4" colSpan={2}>
+                                                                                        <div className="flex items-center gap-1.5">
+                                                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                                            <p className="font-semibold text-amber-700 leading-tight">Descuento por puntos</p>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td className="py-2 text-right text-amber-500 hidden sm:table-cell">—</td>
+                                                                                    <td className="py-2 text-right font-black text-amber-600">-{fmt(pointsDiscount)}</td>
+                                                                                </tr>
+                                                                            )}
+                                                                        </tbody>
+                                                                    </table>
+                                                                );
+                                                            })()
                                                         )}
                                                         {/* IVA breakdown for CCF/COF */}
                                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
@@ -2001,7 +2002,10 @@ const TABS = [
 export default function FacturacionView() {
     const branches = useStaff((state) => state.branches);
     const { user: currentUser } = useAuth();
-    const [activeTab, setActiveTab] = useState('anuladas');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo']);
+    const activeTab = VALID_TABS.has(searchParams.get('tab')) ? searchParams.get('tab') : 'anuladas';
+    const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
     const [filterBranch, setFilterBranch] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');

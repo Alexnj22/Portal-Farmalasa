@@ -170,6 +170,7 @@ async function syncBranch(
 
   // 5. Items
   const itemsToInsert: any[] = [];
+  const invoicesWithPuntos = new Set<number>();
   for (const venta of ventas) {
     const erpId = String(venta.id_factura);
     const isNew = newErpIds.has(erpId);
@@ -177,6 +178,7 @@ async function syncBranch(
     const invoiceId = invoiceIdMap.get(erpId) ?? existingMap.get(erpId)?.id;
     if (!invoiceId || !(venta.productos ?? []).length) continue;
     for (const p of venta.productos) {
+      if (p.id === 0) invoicesWithPuntos.add(invoiceId);
       itemsToInsert.push({
         invoice_id: invoiceId, erp_product_id: p.id ?? null,
         descripcion: p.descripcion, cantidad: p.cantidad,
@@ -194,6 +196,11 @@ async function syncBranch(
     for (let i = 0; i < itemsToInsert.length; i += CHUNK) {
       const { error: insertErr } = await supabase.from('sales_invoice_items').insert(itemsToInsert.slice(i, i + CHUNK));
       if (insertErr) throw new Error(`items insert chunk ${i}: ${insertErr.message}`);
+    }
+    if (invoicesWithPuntos.size > 0) {
+      await supabase.from('sales_invoices')
+        .update({ has_puntos: true })
+        .in('id', [...invoicesWithPuntos]);
     }
   }
 

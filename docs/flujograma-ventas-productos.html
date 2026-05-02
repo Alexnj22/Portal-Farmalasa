@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flujograma — Módulo Ventas & Productos</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+    header { background: #1a1a2e; color: white; padding: 24px 40px; }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+    .section { background: white; border-radius: 16px; padding: 28px 32px; margin-bottom: 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .section h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 10px; }
+    .section h2 span { font-size: 20px; }
+    .mermaid { overflow-x: auto; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+    .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 4px; }
+    .table-card { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .table-card-header { padding: 10px 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+    .table-card-body { padding: 10px 14px; }
+    .field { display: flex; justify-content: space-between; font-size: 11.5px; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
+    .field:last-child { border-bottom: none; }
+    .field-name { color: #334155; font-family: monospace; }
+    .field-type { color: #94a3b8; font-size: 10.5px; }
+    .field-pk  { color: #f59e0b; font-size: 10px; font-weight: 700; margin-left: 4px; }
+    .field-fk  { color: #6366f1; font-size: 10px; font-weight: 700; margin-left: 4px; }
+
+    .cat-header   { background: #dbeafe; color: #1e40af; }
+    .hist-header  { background: #fce7f3; color: #9d174d; }
+    .venta-header { background: #dcfce7; color: #166534; }
+    .ops-header   { background: #f3f4f6; color: #374151; }
+
+    @media (max-width: 600px) { header { padding: 20px; } .container { padding: 16px; } .section { padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Portal Farmalasa — Módulo Ventas & Productos</h1>
+  <p>Flujograma de sincronización, modelo de datos y relaciones · v16 / v4 · Mayo 2026</p>
+</header>
+
+<div class="container">
+
+  <!-- ── FLUJO 1: SINCRONIZACIÓN DE VENTAS ── -->
+  <div class="section">
+    <h2><span>⚡</span> Flujo 1 · Sincronización de Ventas (sync-dte-sales v16)</h2>
+    <div class="mermaid">
+flowchart TD
+    classDef cron    fill:#f1f5f9,stroke:#94a3b8,color:#1e293b,rx:8
+    classDef erp     fill:#fef3c7,stroke:#f59e0b,color:#78350f,rx:8
+    classDef fn      fill:#ede9fe,stroke:#7c3aed,color:#3b0764,rx:8
+    classDef db      fill:#dcfce7,stroke:#16a34a,color:#14532d,rx:8
+    classDef log     fill:#f0f9ff,stroke:#0ea5e9,color:#0c4a6e,rx:8
+    classDef rpc     fill:#fdf4ff,stroke:#a855f7,color:#581c87,rx:8
+
+    CRON5["⏱ pg_cron\ncada 5 min (horas activas)\npor sucursal · fecha hoy"]:::cron
+    CRON1H["⏱ pg_cron\ncada hora (horas activas)\npor sucursal · últimos 7 días"]:::cron
+    CRONMONTH["⏱ pg_cron\ndía 1 del mes\nbackfill mes anterior"]:::cron
+    CRONHEAL["⏱ pg_cron\ncada 2 horas\nheal-dte-sync"]:::cron
+
+    CRON5 & CRON1H & CRONMONTH & CRONHEAL --> FN_START
+
+    FN_START["⚡ sync-dte-sales v16\nDeno Edge Function"]:::fn
+    FN_START --> PRES_LOOKUP
+
+    PRES_LOOKUP["Carga lookup de\npresentaciones\n(tipo+desc → id)"]:::fn
+    PRES_LOOKUP --> BRANCH_LOOP
+
+    BRANCH_LOOP["Itera por sucursal\n(6 sucursales)"]:::fn
+    BRANCH_LOOP --> ERP_LOGIN
+
+    ERP_LOGIN["🌐 ERP Login\nlogin.php\n→ session cookie"]:::erp
+    ERP_LOGIN --> ERP_FETCH
+
+    ERP_FETCH["🌐 ERP Fetch ventas\ndescarga_dte_emitidos_json.php\n?id_sucursal=N&fini=X&ffin=Y"]:::erp
+    ERP_FETCH --> DIFF
+
+    DIFF{"¿Factura existe\nen DB?"}:::fn
+
+    DIFF -- Nueva --> NEW_SET["Agrega a newErpIds"]:::fn
+    DIFF -- Existente --> CHK_CHANGES["Compara:\nestado / tipo_pago / recibido_mh"]:::fn
+    CHK_CHANGES -- Cambió --> CL_INVOICE["Registra en\nsales_invoice_changelog"]:::log
+    CHK_CHANGES -- Sin cambio --> SKIP[" "]
+
+    NEW_SET & CL_INVOICE & SKIP --> CUSTOMERS
+
+    CUSTOMERS["Extrae nombres de clientes"]:::fn
+    CUSTOMERS --> RPC_CUST["RPC upsert_customers\n→ INSERT / devuelve IDs"]:::rpc
+    RPC_CUST --> DB_CUSTOMERS[("customers")]:::db
+
+    RPC_CUST --> UPSERT_INV
+
+    UPSERT_INV["Upsert sales_invoices\nonConflict: erp_invoice_id"]:::fn
+    UPSERT_INV --> DB_INVOICES[("sales_invoices\nbranch_id · erp_invoice_id\nfecha · cliente · customer_id\ntipo_pago · estado · totales\nrecibido_mh · has_puntos")]:::db
+
+    UPSERT_INV --> ITEMS_LOOP
+
+    ITEMS_LOOP["Para cada ítem nuevo\n(o forceItems=true)"]:::fn
+    ITEMS_LOOP --> PRES_RESOLVE["Resuelve id_presentacion\ndesde texto presentacion\nvía lookup map"]:::fn
+    PRES_RESOLVE --> CHK_PUNTOS{"erp_product_id == 0?"}:::fn
+    CHK_PUNTOS -- Sí --> MARK_PUNTOS["Agrega invoice_id\na invoicesWithPuntos"]:::fn
+    CHK_PUNTOS -- No --> INSERT_ITEM
+    MARK_PUNTOS --> INSERT_ITEM
+
+    INSERT_ITEM["Insert sales_invoice_items\n(chunks de 500)"]:::fn
+    INSERT_ITEM --> DB_ITEMS[("sales_invoice_items\ninvoice_id · erp_product_id\nid_presentacion · presentacion\ncantidad · precio_unitario\ntotal_linea")]:::db
+
+    INSERT_ITEM --> UPD_PUNTOS["UPDATE sales_invoices\nSET has_puntos = true\nWHERE id IN puntos-set"]:::fn
+    UPD_PUNTOS --> DB_INVOICES
+
+    INSERT_ITEM --> SYNCLOG["Guarda sync_log\nbranch / rango / totales / éxito"]:::log
+    SYNCLOG --> DB_SYNCLOG[("sync_log")]:::log
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#f1f5f9;border:1px solid #94a3b8"></div> pg_cron trigger</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border:1px solid #f59e0b"></div> ERP externo</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ede9fe;border:1px solid #7c3aed"></div> Lógica edge function</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dcfce7;border:1px solid #16a34a"></div> Tabla DB</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fdf4ff;border:1px solid #a855f7"></div> RPC / función SQL</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f0f9ff;border:1px solid #0ea5e9"></div> Log / auditoría</div>
+    </div>
+  </div>
+
+  <!-- ── FLUJO 2: SINCRONIZACIÓN DE PRODUCTOS ── -->
+  <div class="section">
+    <h2><span>📦</span> Flujo 2 · Sincronización de Productos (sync-products v4)</h2>
+    <div class="mermaid">
+flowchart TD
+    classDef cron  fill:#f1f5f9,stroke:#94a3b8,color:#1e293b,rx:8
+    classDef erp   fill:#fef3c7,stroke:#f59e0b,color:#78350f,rx:8
+    classDef fn    fill:#ede9fe,stroke:#7c3aed,color:#3b0764,rx:8
+    classDef db    fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,rx:8
+    classDef hist  fill:#fce7f3,stroke:#db2777,color:#831843,rx:8
+    classDef log   fill:#f0f9ff,stroke:#0ea5e9,color:#0c4a6e,rx:8
+
+    CRON10["⏱ pg_cron\ncada 10 minutos\ntodo el día"]:::cron --> FN_START
+
+    FN_START["⚡ sync-products v4\nDeno Edge Function"]:::fn
+    FN_START --> ERP_LOGIN["🌐 ERP Login\nlogin.php → cookie"]:::erp
+    ERP_LOGIN --> ERP_FETCH["🌐 ERP Fetch\ndescargar_productos_json.php\n~6,934 productos"]:::erp
+
+    ERP_FETCH --> UPSERT_LABS["Upsert laboratorios\n(~350)"]:::fn
+    UPSERT_LABS --> DB_LABS[("laboratorios\nid · nombre")]:::db
+
+    ERP_FETCH --> UPSERT_PRES["Upsert presentaciones\n(~230)"]:::fn
+    UPSERT_PRES --> DB_PRES[("presentaciones\nid · tipo · descripcion · factor")]:::db
+
+    ERP_FETCH --> DETECT_PROD
+
+    DETECT_PROD["Compara con products en DB\n(nombre, laboratorio_id)"]:::fn
+    DETECT_PROD -- Cambió --> LOG_PROD["Registra en\nproducts_changelog\ncampo / anterior / nuevo"]:::log
+    LOG_PROD --> DB_PRODS_CL[("products_changelog")]:::log
+    DETECT_PROD --> UPSERT_PROD["Upsert products\n(~6,934, chunks 500)"]:::fn
+    UPSERT_PROD --> DB_PRODS[("products\nid · nombre · codigo_barras\nlaboratorio_id · es_antibiotico\nactivo · perecedero")]:::db
+
+    ERP_FETCH --> DETECT_PRICE
+
+    DETECT_PRICE["Compara con product_precios en DB\n(vineta, descuento_1, vip,\nclinica, mayoreo, premium, precio_7)"]:::fn
+
+    DETECT_PRICE -- Sin cambio --> UPSERT_PRICES
+    DETECT_PRICE -- Cambió --> CLOSE_HIST["UPDATE product_precios_history\nSET valid_until = now\nWHERE valid_until IS NULL"]:::hist
+    CLOSE_HIST --> NEW_HIST["INSERT product_precios_history\n(nuevo registro con valid_from = now)"]:::hist
+    NEW_HIST --> DB_HIST[("product_precios_history\nproduct_id · id_presentacion\nvineta · vip · clinica · ...\nvalid_from · valid_until")]:::hist
+    DETECT_PRICE -- Cambió --> LOG_PRICE["INSERT product_precios_changelog\ncampo / valor_anterior / valor_nuevo"]:::log
+    LOG_PRICE --> DB_PRICE_CL[("product_precios_changelog")]:::log
+
+    DETECT_PRICE -- Combo nuevo --> SEED_HIST["INSERT product_precios_history\n(valid_from = now, valid_until = NULL)"]:::hist
+    SEED_HIST --> DB_HIST
+
+    CLOSE_HIST & UPSERT_PRICES --> UPSERT_PRICES["Upsert product_precios\n(~7,841, chunks 500)"]:::fn
+    UPSERT_PRICES --> DB_PRICES[("product_precios\nproduct_id · id_presentacion\nvineta · descuento_1 · vip\nclinica · mayoreo · premium · precio_7\ncosto · activo")]:::db
+    </div>
+  </div>
+
+  <!-- ── FLUJO 3: CONSULTA DE PRECIO TIPO ── -->
+  <div class="section">
+    <h2><span>🔍</span> Flujo 3 · Verificación de Precio por Venta (get_precio_tipo)</h2>
+    <div class="mermaid">
+flowchart LR
+    classDef input fill:#fef3c7,stroke:#f59e0b,color:#78350f,rx:8
+    classDef fn    fill:#ede9fe,stroke:#7c3aed,color:#3b0764,rx:8
+    classDef db    fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,rx:8
+    classDef hist  fill:#fce7f3,stroke:#db2777,color:#831843,rx:8
+    classDef out   fill:#dcfce7,stroke:#16a34a,color:#14532d,rx:8
+
+    ITEM["sales_invoice_items\nprecio_unitario: $4.05\nerp_product_id: 7\nid_presentacion: 12\ninvoice_id: → fecha: 2026-03-15"]:::input
+
+    ITEM --> RPC["get_precio_tipo(\n  precio_unitario,\n  product_id,\n  id_presentacion,\n  fecha\n)"]:::fn
+
+    RPC --> HIST_Q["Busca en product_precios_history\nDONDE product_id = 7\nAND id_presentacion = 12\nAND valid_from ≤ fecha\nAND (valid_until IS NULL OR valid_until > fecha)\nORDER BY valid_from DESC LIMIT 1"]:::hist
+
+    HIST_Q --> COMPARE["Compara precio_unitario\nvs cada tier (±$0.005):\nvineta=$4.75 ✗\ndescuento_1=? ✗\nvip=$4.05 ✓\nclinica=$3.90 ✗\nmayoreo=$3.80 ✗\npremium=? ✗\nprecio_7=? ✗"]:::fn
+
+    COMPARE --> RESULT["→ 'vip'"]:::out
+
+    ITEM --> ITEMS_DB[("sales_invoice_items")]:::db
+    ITEMS_DB -.->|"erp_product_id + id_presentacion"| HIST_DB[("product_precios_history")]:::hist
+    HIST_DB -.->|"histórico vigente en fecha"| COMPARE
+    </div>
+
+    <div style="margin-top:16px; padding:14px 18px; background:#f8fafc; border-radius:10px; border-left:4px solid #7c3aed; font-size:13px; color:#334155; line-height:1.6;">
+      <strong>¿Qué dice esto?</strong> Dado un ítem de venta con precio <code>$4.05</code>, la función busca los precios que tenía ese producto en esa presentación el día de la venta, y determina que se vendió al tier <strong>VIP</strong>. Si el precio hubiera cambiado en otro momento, el historial lo captura para que la comparación siempre use el precio correcto de esa fecha.
+    </div>
+  </div>
+
+  <!-- ── MODELO DE DATOS ── -->
+  <div class="section">
+    <h2><span>🗄</span> Modelo de Datos · Relaciones entre Tablas</h2>
+    <div class="mermaid">
+erDiagram
+    laboratorios {
+        int     id PK
+        text    nombre
+        tstz    updated_at
+    }
+    presentaciones {
+        int     id PK
+        text    tipo
+        text    descripcion
+        int     factor
+        tstz    updated_at
+    }
+    products {
+        int     id PK
+        text    nombre
+        text    codigo_barras
+        int     laboratorio_id FK
+        bool    es_antibiotico
+        bool    activo
+        bool    perecedero
+        tstz    updated_at
+    }
+    product_precios {
+        bigint  id PK
+        int     product_id FK
+        int     id_presentacion FK
+        bool    activo
+        num     costo
+        num     vineta
+        num     descuento_1
+        num     vip
+        num     clinica
+        num     mayoreo
+        num     premium
+        num     precio_7
+        tstz    updated_at
+    }
+    product_precios_history {
+        bigint  id PK
+        int     product_id
+        int     id_presentacion
+        num     vineta
+        num     vip
+        num     clinica
+        num     mayoreo
+        num     premium
+        num     precio_7
+        tstz    valid_from
+        tstz    valid_until
+    }
+    product_precios_changelog {
+        bigint  id PK
+        int     product_id
+        int     id_presentacion
+        text    campo
+        num     valor_anterior
+        num     valor_nuevo
+        tstz    detected_at
+    }
+    products_changelog {
+        bigint  id PK
+        int     product_id
+        text    campo
+        text    valor_anterior
+        text    valor_nuevo
+        tstz    detected_at
+    }
+    customers {
+        bigint  id PK
+        text    name
+        text    nit
+        text    dui
+        text    erp_id
+        tstz    created_at
+    }
+    sales_invoices {
+        bigint  id PK
+        bigint  branch_id
+        text    erp_invoice_id
+        uuid    codigo_generacion
+        text    correlativo
+        text    tipo_documento
+        date    fecha
+        text    cliente
+        bigint  customer_id FK
+        text    cod_vendedor
+        text    tipo_pago
+        text    estado
+        num     subtotal
+        num     iva
+        num     total
+        bool    has_puntos
+        text    recibido_mh
+        tstz    updated_at
+    }
+    sales_invoice_items {
+        bigint  id PK
+        bigint  invoice_id FK
+        int     erp_product_id
+        int     id_presentacion
+        text    presentacion
+        text    descripcion
+        num     cantidad
+        num     precio_unitario
+        num     total_linea
+    }
+    sales_invoice_changelog {
+        bigint  id PK
+        bigint  invoice_id FK
+        uuid    codigo_generacion
+        text    campo
+        text    valor_anterior
+        text    valor_nuevo
+        tstz    detected_at
+    }
+    sync_log {
+        bigint  id PK
+        int     branch_id
+        date    fini
+        date    ffin
+        int     invoices_total
+        int     invoices_new
+        int     items_inserted
+        bool    success
+        int     attempts
+        text    error_msg
+        tstz    ran_at
+    }
+
+    laboratorios        ||--o{ products                   : "tiene"
+    products            ||--o{ product_precios             : "tiene precios"
+    products            ||--o{ products_changelog          : "historial cambios"
+    presentaciones      ||--o{ product_precios             : "define presentación"
+    product_precios     ||--o{ product_precios_history     : "historial precios"
+    product_precios     ||--o{ product_precios_changelog   : "changelog precios"
+    customers           ||--o{ sales_invoices              : "tiene facturas"
+    sales_invoices      ||--o{ sales_invoice_items         : "tiene ítems"
+    sales_invoices      ||--o{ sales_invoice_changelog     : "cambios de estado"
+    </div>
+  </div>
+
+  <!-- ── RESUMEN DE TABLAS ── -->
+  <div class="section">
+    <h2><span>📋</span> Resumen de Tablas por Grupo</h2>
+    <div class="tables-grid">
+
+      <div class="table-card">
+        <div class="table-card-header cat-header">📦 CATÁLOGO — laboratorios</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">id<span class="field-pk">PK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">nombre</span><span class="field-type">text · NOT NULL</span></div>
+          <div class="field"><span class="field-name">updated_at</span><span class="field-type">timestamptz</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header cat-header">📦 CATÁLOGO — presentaciones</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">id<span class="field-pk">PK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">tipo</span><span class="field-type">text (ej: CAJA X 20)</span></div>
+          <div class="field"><span class="field-name">descripcion</span><span class="field-type">text (ej: 1x20)</span></div>
+          <div class="field"><span class="field-name">factor</span><span class="field-type">integer</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header cat-header">📦 CATÁLOGO — products</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">id<span class="field-pk">PK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">nombre</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">codigo_barras</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">laboratorio_id<span class="field-fk">FK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">es_antibiotico</span><span class="field-type">boolean</span></div>
+          <div class="field"><span class="field-name">activo / perecedero</span><span class="field-type">boolean</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header cat-header">📦 CATÁLOGO — product_precios</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">product_id<span class="field-fk">FK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">id_presentacion<span class="field-fk">FK</span></span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">costo</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">vineta</span><span class="field-type">numeric · precio público</span></div>
+          <div class="field"><span class="field-name">descuento_1</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">vip</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">clinica</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">mayoreo</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">premium</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">precio_7</span><span class="field-type">numeric</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header hist-header">🕓 HISTORIAL — product_precios_history</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">product_id</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">id_presentacion</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">vineta / vip / clinica / ...</span><span class="field-type">numeric × 7</span></div>
+          <div class="field"><span class="field-name">valid_from</span><span class="field-type">timestamptz · NOT NULL</span></div>
+          <div class="field"><span class="field-name">valid_until</span><span class="field-type">timestamptz · NULL = vigente</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header hist-header">🕓 HISTORIAL — product_precios_changelog</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">product_id</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">id_presentacion</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">campo</span><span class="field-type">text (ej: vip)</span></div>
+          <div class="field"><span class="field-name">valor_anterior</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">valor_nuevo</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">detected_at</span><span class="field-type">timestamptz</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header hist-header">🕓 HISTORIAL — products_changelog</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">product_id</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">campo</span><span class="field-type">text (nombre / laboratorio_id)</span></div>
+          <div class="field"><span class="field-name">valor_anterior</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">valor_nuevo</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">detected_at</span><span class="field-type">timestamptz</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header venta-header">🧾 VENTAS — customers</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">id<span class="field-pk">PK</span></span><span class="field-type">bigint</span></div>
+          <div class="field"><span class="field-name">name</span><span class="field-type">text · UNIQUE UPPER</span></div>
+          <div class="field"><span class="field-name">nit / dui / erp_id</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">phone / email</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">→ Auto-creado por upsert_customers RPC</span><span class="field-type"></span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header venta-header">🧾 VENTAS — sales_invoices</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">id<span class="field-pk">PK</span></span><span class="field-type">bigint</span></div>
+          <div class="field"><span class="field-name">branch_id</span><span class="field-type">bigint · sucursal</span></div>
+          <div class="field"><span class="field-name">erp_invoice_id</span><span class="field-type">text · UNIQUE</span></div>
+          <div class="field"><span class="field-name">customer_id<span class="field-fk">FK</span></span><span class="field-type">bigint</span></div>
+          <div class="field"><span class="field-name">fecha · hora</span><span class="field-type">date · time</span></div>
+          <div class="field"><span class="field-name">estado</span><span class="field-type">text (PROCESADO / NULA / ...)</span></div>
+          <div class="field"><span class="field-name">tipo_pago</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">subtotal · iva · total</span><span class="field-type">numeric × 3</span></div>
+          <div class="field"><span class="field-name">has_puntos</span><span class="field-type">boolean · default false</span></div>
+          <div class="field"><span class="field-name">recibido_mh</span><span class="field-type">text · confirmación MH</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header venta-header">🧾 VENTAS — sales_invoice_items</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">invoice_id<span class="field-fk">FK</span></span><span class="field-type">bigint</span></div>
+          <div class="field"><span class="field-name">erp_product_id</span><span class="field-type">integer (0 = puntos)</span></div>
+          <div class="field"><span class="field-name">id_presentacion</span><span class="field-type">integer (resuelto)</span></div>
+          <div class="field"><span class="field-name">presentacion</span><span class="field-type">text original ERP</span></div>
+          <div class="field"><span class="field-name">descripcion</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">cantidad</span><span class="field-type">numeric</span></div>
+          <div class="field"><span class="field-name">precio_unitario</span><span class="field-type">numeric · precio real cobrado</span></div>
+          <div class="field"><span class="field-name">total_linea</span><span class="field-type">numeric</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header venta-header">🧾 VENTAS — sales_invoice_changelog</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">invoice_id<span class="field-fk">FK</span></span><span class="field-type">bigint</span></div>
+          <div class="field"><span class="field-name">campo</span><span class="field-type">estado / tipo_pago / recibido_mh</span></div>
+          <div class="field"><span class="field-name">valor_anterior / valor_nuevo</span><span class="field-type">text</span></div>
+          <div class="field"><span class="field-name">detected_at</span><span class="field-type">timestamptz</span></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header ops-header">⚙️ OPS — sync_log</div>
+        <div class="table-card-body">
+          <div class="field"><span class="field-name">branch_id</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">fini / ffin</span><span class="field-type">date · rango sincronizado</span></div>
+          <div class="field"><span class="field-name">invoices_total / new</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">items_inserted</span><span class="field-type">integer</span></div>
+          <div class="field"><span class="field-name">success</span><span class="field-type">boolean</span></div>
+          <div class="field"><span class="field-name">attempts / error_msg</span><span class="field-type">int / text</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── CRONS ── -->
+  <div class="section">
+    <h2><span>⏱</span> Programación de Crons (pg_cron)</h2>
+    <div class="mermaid">
+gantt
+    title Crons activos por hora (zona horaria UTC-6)
+    dateFormat HH:mm
+    axisFormat %H:%M
+
+    section sync-dte-sales (cada sucursal)
+    Hoy · cada 5 min       : active, 06:00, 23:59
+    Últimos 7 días · cada hora : active, 06:00, 23:59
+
+    section sync-products
+    Catálogo · cada 10 min : active, 00:00, 23:59
+
+    section heal-dte-sync
+    Gaps · cada 2 horas    : active, 00:00, 23:59
+    </div>
+
+    <div style="margin-top:18px; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:#f8fafc; text-align:left;">
+            <th style="padding:10px 14px; border-bottom:2px solid #e2e8f0; font-weight:700; color:#374151;">Job</th>
+            <th style="padding:10px 14px; border-bottom:2px solid #e2e8f0; font-weight:700; color:#374151;">Schedule</th>
+            <th style="padding:10px 14px; border-bottom:2px solid #e2e8f0; font-weight:700; color:#374151;">Acción</th>
+            <th style="padding:10px 14px; border-bottom:2px solid #e2e8f0; font-weight:700; color:#374151;">Rango</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#7c3aed;">dte-salud{1-5}-min / dte-popular-min</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">*/5 12-23,0-5 * * *</td>
+            <td style="padding:9px 14px; color:#334155;">sync-dte-sales · 1 sucursal</td>
+            <td style="padding:9px 14px; color:#64748b;">hoy</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#7c3aed;">dte-salud{1-5}-hora / dte-popular-hora</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">0 12-23,0-5 * * *</td>
+            <td style="padding:9px 14px; color:#334155;">sync-dte-sales · 1 sucursal</td>
+            <td style="padding:9px 14px; color:#64748b;">últimos 7 días</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#2563eb;">sync-products-10min</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">*/10 * * * *</td>
+            <td style="padding:9px 14px; color:#334155;">sync-products · catálogo completo</td>
+            <td style="padding:9px 14px; color:#64748b;">siempre</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#0f766e;">heal-dte-sync</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">0 */2 * * *</td>
+            <td style="padding:9px 14px; color:#334155;">Detecta y rellena gaps de sync</td>
+            <td style="padding:9px 14px; color:#64748b;">últimos 7 días</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#b45309;">dte-resync-month-{sucursal}</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">0 5 1 * *</td>
+            <td style="padding:9px 14px; color:#334155;">backfill mes anterior · 1 sucursal</td>
+            <td style="padding:9px 14px; color:#64748b;">mes anterior</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px; font-family:monospace; font-size:12px; color:#374151;">close-ventas-month</td>
+            <td style="padding:9px 14px; font-family:monospace; color:#0f172a;">0 8 1 * *</td>
+            <td style="padding:9px 14px; color:#334155;">Cierra el mes de ventas</td>
+            <td style="padding:9px 14px; color:#64748b;">mes anterior</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ESTADO ACTUAL ── -->
+  <div class="section">
+    <h2><span>📊</span> Estado Actual de la Base de Datos</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px;">
+      <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#15803d;">272,820</div>
+        <div style="font-size:12px; color:#166534; margin-top:4px;">Facturas</div>
+      </div>
+      <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#15803d;">465,340</div>
+        <div style="font-size:12px; color:#166534; margin-top:4px;">Ítems de venta</div>
+      </div>
+      <div style="background:#eff6ff; border:1px solid #93c5fd; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#1d4ed8;">6,934</div>
+        <div style="font-size:12px; color:#1e40af; margin-top:4px;">Productos</div>
+      </div>
+      <div style="background:#eff6ff; border:1px solid #93c5fd; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#1d4ed8;">7,841</div>
+        <div style="font-size:12px; color:#1e40af; margin-top:4px;">Precios</div>
+      </div>
+      <div style="background:#fdf4ff; border:1px solid #d8b4fe; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#7e22ce;">350</div>
+        <div style="font-size:12px; color:#6b21a8; margin-top:4px;">Laboratorios</div>
+      </div>
+      <div style="background:#fdf4ff; border:1px solid #d8b4fe; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#7e22ce;">230</div>
+        <div style="font-size:12px; color:#6b21a8; margin-top:4px;">Presentaciones</div>
+      </div>
+      <div style="background:#fce7f3; border:1px solid #f9a8d4; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#be185d;">652</div>
+        <div style="font-size:12px; color:#9d174d; margin-top:4px;">Facturas con puntos</div>
+      </div>
+      <div style="background:#fce7f3; border:1px solid #f9a8d4; border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#be185d;">$3,642</div>
+        <div style="font-size:12px; color:#9d174d; margin-top:4px;">Descuento puntos</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#ede9fe',
+      primaryBorderColor: '#7c3aed',
+      primaryTextColor: '#3b0764',
+      lineColor: '#94a3b8',
+      secondaryColor: '#dbeafe',
+      tertiaryColor: '#dcfce7',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      fontSize: '13px',
+    },
+    flowchart: { curve: 'basis', padding: 20, nodeSpacing: 40, rankSpacing: 50 },
+    er: { diagramPadding: 20, useMaxWidth: true },
+  });
+</script>
+</body>
+</html>

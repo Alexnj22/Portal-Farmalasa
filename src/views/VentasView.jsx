@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
@@ -1085,7 +1086,10 @@ const TABS = [
 export default function VentasView() {
     const { branches, employees } = useStaff();
     const { user: currentUser }   = useAuth();
-    const [activeTab, setActiveTab]     = useState('ventas');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const VALID_TABS = new Set(['ventas', 'vendedores', 'productos']);
+    const activeTab = VALID_TABS.has(searchParams.get('tab')) ? searchParams.get('tab') : 'ventas';
+    const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
     const [filterBranch, setFilterBranch] = useState('');
     const [monthRange, setMonthRange]   = useState(() => {
         const r = currentMonthRange();

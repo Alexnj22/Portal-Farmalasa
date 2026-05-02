@@ -100,50 +100,22 @@ function SmartPagination({ page, total, onChange }) {
 }
 
 // Stat card with % change vs previous month + 6-month tooltip
-function StatCard({ label, value, pct, icon: Icon, grad, text, months, statKey, onClick, active }) {
-    const [show, setShow] = useState(false);
-    const maxVal = months?.length ? Math.max(...months.map(m => m[statKey] || 0), 1) : 1;
-    const abbr = (lbl) => { const p = lbl.split(' '); return p[0].slice(0,3) + ' ' + p[p.length-1].slice(2); };
+function StatCard({ label, value, pct, icon: Icon, grad, text, onClick, active }) {
     return (
-        <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-            <div
-                onClick={onClick}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border bg-white select-none transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${active ? 'border-amber-400 ring-2 ring-amber-200 shadow-md' : 'border-slate-100'}`}
-            >
-                <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                    <Icon size={11} className="text-white" strokeWidth={2.5} />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-                <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-                {pct !== null && pct !== undefined && (
-                    <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
-                        {Math.abs(pct).toFixed(1)}%
-                    </span>
-                )}
+        <div
+            onClick={onClick}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border bg-white select-none transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${active ? 'border-amber-400 ring-2 ring-amber-200 shadow-md' : 'border-slate-100'}`}
+        >
+            <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
+                <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
-            {show && months?.length > 0 && (
-                <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-black/[0.08] p-3 w-[210px] pointer-events-none">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Últimos 6 meses</p>
-                    <div className="space-y-1.5">
-                        {months.map((m, i) => {
-                            const v = m[statKey] || 0;
-                            const barW = maxVal > 0 ? (v / maxVal) * 100 : 0;
-                            const display = statKey === 'count' ? fmtNum(v) : fmt(v);
-                            return (
-                                <div key={i}>
-                                    <div className="flex items-center justify-between mb-0.5">
-                                        <span className="text-[10px] text-slate-500">{abbr(m.label)}</span>
-                                        <span className="text-[10px] font-bold text-slate-700">{display}</span>
-                                    </div>
-                                    <div className="h-1 rounded-full bg-slate-100">
-                                        <div className={`h-1 rounded-full transition-all ${i === 0 ? 'bg-blue-400' : 'bg-slate-300'}`} style={{ width: `${barW}%` }} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+            <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+            {pct !== null && pct !== undefined && (
+                <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                    {Math.abs(pct).toFixed(1)}%
+                </span>
             )}
         </div>
     );
@@ -177,7 +149,6 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     const [filterPuntos, setFilterPuntos] = useState(false);
     const [puntosCount, setPuntosCount] = useState(0);
     const [prevStats, setPrevStats]   = useState({ count: 0, sum: 0 });
-    const [sixMonths, setSixMonths]   = useState([]);
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(50);
     const [sortCol, setSortCol]       = useState('fecha');
@@ -247,59 +218,47 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     }, [fini, ffin, filterBranch, prevMonthFini]);
 
     // 6-month history for tooltip
-    const fetchSixMonths = useCallback(async () => {
-        const opts = monthOptions(6);
-        const branchId = filterBranch ? Number(filterBranch) : -1;
-        const curFini = currentMonthRange().fini;
-        const curFfin = currentMonthRange().ffin;
-        const pastFinis = opts.map(o => o.value.split('|')[0]).filter(f => f !== curFini);
-
-        const [{ data: pastData }, curRes] = await Promise.all([
-            supabase.from('ventas_monthly_stats')
-                .select('mes, total_count, total_sum, avg_ticket')
-                .in('mes', pastFinis).eq('branch_id', branchId).eq('cod_vendedor', ''),
-            supabase.rpc('get_ventas_stats', { p_fini: curFini, p_ffin: curFfin, p_branch_id: filterBranch ? Number(filterBranch) : null }),
-        ]);
-        const pastMap = new Map((pastData || []).map(r => [r.mes, r]));
-        const curS = curRes.data?.[0] || { total_count: 0, total_sum: 0 };
-        const curC = parseInt(curS.total_count || 0);
-        const curSm = parseFloat(curS.total_sum || 0);
-
-        setSixMonths(opts.map(opt => {
-            const f = opt.value.split('|')[0];
-            if (f === curFini) return { label: opt.label, count: curC, sum: curSm, avg: curC > 0 ? curSm / curC : 0 };
-            const r = pastMap.get(f);
-            const c = parseInt(r?.total_count || 0), s = parseFloat(r?.total_sum || 0);
-            return { label: opt.label, count: c, sum: s, avg: parseFloat(r?.avg_ticket || 0) };
-        }));
-    }, [filterBranch]);
 
     // Rows: paginado con sort o búsqueda en BD sin paginación
     const fetchRows = useCallback(async () => {
         setLoadingRows(true);
-        const asc = sortDir === 'asc';
-        const table = filterPuntos ? 'invoices_with_puntos_view' : 'sales_invoices';
-        const selectOpts = filterPuntos ? { count: 'exact' } : undefined;
-        let q = supabase
-            .from(table)
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado', selectOpts)
-            .gte('fecha', fini).lte('fecha', ffin)
-            .order(sortCol, { ascending: asc });
-        if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-        if (isSearching) {
-            const s = searchTerm.trim();
-            q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
+        let fetched = [];
+
+        if (filterPuntos && !isSearching) {
+            const { data } = await supabase.rpc('get_ventas_con_puntos', {
+                p_fini:      fini,
+                p_ffin:      ffin,
+                p_branch_id: filterBranch ? Number(filterBranch) : null,
+                p_offset:    (page - 1) * pageSize,
+                p_limit:     pageSize,
+                p_sort_col:  sortCol,
+                p_sort_dir:  sortDir,
+            });
+            fetched = data || [];
+            setPuntosCount(fetched.length > 0 ? Number(fetched[0].total_count) : 0);
         } else {
-            q = q.range((page - 1) * pageSize, page * pageSize - 1);
+            const asc = sortDir === 'asc';
+            let q = supabase
+                .from('sales_invoices')
+                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado')
+                .gte('fecha', fini).lte('fecha', ffin)
+                .order(sortCol, { ascending: asc });
+            if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
+            if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+            if (isSearching) {
+                const s = searchTerm.trim();
+                q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
+            } else {
+                q = q.range((page - 1) * pageSize, page * pageSize - 1);
+            }
+            const { data } = await q;
+            fetched = data || [];
         }
-        const { data, count } = await q;
-        if (filterPuntos && count !== null) setPuntosCount(count);
-        const fetched = data || [];
+
         setRows(fetched);
         setLoadingRows(false);
 
-        // Prefetch items for all visible rows in background
+        // Prefetch items for visible rows in background
         const uncached = fetched.map(r => r.id).filter(id => !itemsCache[id]);
         if (uncached.length > 0) {
             supabase.from('sales_invoice_items')
@@ -319,7 +278,6 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     }, [fini, ffin, filterBranch, filterPuntos, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
-    useEffect(() => { fetchSixMonths(); }, [fetchSixMonths]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, isSearching, pageSize]);
 
@@ -350,11 +308,11 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                     const pctAvg   = prevStats.sum   > 0 && prevStats.count > 0
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
                     return [
-                        { label: 'Facturas',     value: fmtNum(totalCount), pct: pctCount, icon: FileText,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    statKey: 'count' },
-                        { label: 'Total Ventas', value: fmt(totalAmount),   pct: pctSum,   icon: TrendingUp, grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', statKey: 'sum'   },
-                        { label: 'Ticket Prom.', value: fmt(avgTicket),     pct: pctAvg,   icon: TrendingUp, grad: 'from-slate-500 to-slate-400',   text: 'text-slate-700',   statKey: 'avg'    },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos), pct: null,     icon: Star,       grad: 'from-amber-500 to-orange-400',  text: 'text-amber-700',   statKey: 'puntos', onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
-                    ].map(card => <StatCard key={card.label} {...card} months={sixMonths} />);
+                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount, icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700'    },
+                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,   icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,   icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700'   },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: null,     icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',  onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
+                    ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
             </div>
 

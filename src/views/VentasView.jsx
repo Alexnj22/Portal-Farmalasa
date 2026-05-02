@@ -574,10 +574,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     const [expanded, setExpanded]       = useState(null);
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
-    // Historical rankings
-    const [historial, setHistorial]     = useState(null);
-    const [loadingHist, setLoadingHist] = useState(false);
-    const [showHist, setShowHist]       = useState(true);
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -604,80 +600,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 
     useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
 
-    // Load historical rankings — 1 query a ventas_monthly_stats para meses pasados
-    // + 1 RPC solo para el mes actual (tiempo real)
-    const loadHistorial = useCallback(async () => {
-        setLoadingHist(true);
-        const months = monthOptions(6);
-        const currentFini = currentMonthRange().fini;
-        const branchId = filterBranch ? Number(filterBranch) : -1;
-
-        // Meses pasados: una sola query
-        const pastMeses = months.filter(m => m.value.split('|')[0] !== currentFini);
-        const oldestPast = pastMeses[pastMeses.length - 1]?.value.split('|')[0];
-
-        const [{ data: pastData }, currentResult] = await Promise.all([
-            oldestPast
-                ? supabase
-                    .from('ventas_monthly_stats')
-                    .select('mes, cod_vendedor, total_count, total_sum, avg_ticket')
-                    .gte('mes', oldestPast)
-                    .lt('mes', currentFini)
-                    .eq('branch_id', branchId)
-                    .neq('cod_vendedor', '')
-                    .order('mes', { ascending: false })
-                : Promise.resolve({ data: [] }),
-            // Mes actual: RPC en tiempo real
-            supabase.rpc('get_vendedores_resumen', {
-                p_fini: currentFini,
-                p_ffin: currentMonthRange().ffin,
-                p_branch_id: filterBranch ? Number(filterBranch) : null,
-            }),
-        ]);
-
-        // Agrupar datos pasados por mes
-        const pastByMes = new Map();
-        for (const r of (pastData || [])) {
-            const key = r.mes;
-            if (!pastByMes.has(key)) pastByMes.set(key, []);
-            pastByMes.get(key).push(r);
-        }
-
-        // Procesar mes actual desde RPC
-        const byVendCurrent = new Map();
-        for (const r of (currentResult.data || [])) {
-            const cur = byVendCurrent.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0, count: 0 };
-            cur.total += parseFloat(r.total_ventas || 0);
-            cur.count += parseInt(r.total_facturas || 0);
-            byVendCurrent.set(r.cod_vendedor, cur);
-        }
-
-        const SKIP = new Set(['1000', '125']);
-        const rankMonth = (vendors) => vendors
-            .filter(v => !SKIP.has(v.cod_vendedor))
-            .sort((a, b) => b.total - a.total)
-            .map((v, i) => ({ ...v, rank: i + 1 }));
-
-        const results = months.map((m) => {
-            const mFini = m.value.split('|')[0];
-            if (mFini === currentFini) {
-                return { label: m.label, value: m.value, ranked: rankMonth([...byVendCurrent.values()]) };
-            }
-            const rows = pastByMes.get(mFini) || [];
-            const vendors = rows.map(r => ({
-                cod_vendedor: r.cod_vendedor,
-                total: parseFloat(r.total_sum),
-                count: parseInt(r.total_count),
-                avg_ticket: parseFloat(r.avg_ticket),
-            }));
-            return { label: m.label, value: m.value, ranked: rankMonth(vendors) };
-        });
-
-        setHistorial(results);
-        setLoadingHist(false);
-    }, [filterBranch]);
-
-    useEffect(() => { loadHistorial(); }, [loadHistorial]);
 
     const toggleExpand = async (cod) => {
         if (expanded === cod) { setExpanded(null); return; }
@@ -734,44 +656,11 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
         return { knownRows: known, unknownByBranch: unknownMap };
     }, [rows, searchTerm, empMap]);
 
-    // Build rank map from previous month (historial[1]) for trend arrows
-    const prevRankMap = useMemo(() => {
-        if (!historial || historial.length < 2) return new Map();
-        const m = new Map();
-        for (const v of historial[1].ranked) m.set(v.cod_vendedor, v.rank);
-        return m;
-    }, [historial]);
-
     const totalVentas   = rows.reduce((s, r) => s + r.total, 0);
     const totalFacturas = rows.reduce((s, r) => s + r.count, 0);
 
-    const TrendBadge = ({ cod, currentRank }) => {
-        const prev = prevRankMap.get(cod);
-        if (prev == null) return null;
-        const diff = prev - currentRank; // positive = improved (lower rank number)
-        if (diff === 0) return <Minus size={12} className="text-slate-400" />;
-        if (diff > 0) return (
-            <span className="flex items-center gap-0.5 text-emerald-600 text-[10px] font-black">
-                <ArrowUp size={10} />{diff}
-            </span>
-        );
-        return (
-            <span className="flex items-center gap-0.5 text-red-500 text-[10px] font-black">
-                <ArrowDown size={10} />{Math.abs(diff)}
-            </span>
-        );
-    };
-
     return (
         <div className="p-4 md:p-6 space-y-4">
-            {/* Controls */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <button onClick={() => setShowHist(v => !v)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${showHist ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
-                    <TrendingUp size={12} /> Historial
-                </button>
-            </div>
-
             {/* Stats */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
@@ -787,9 +676,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
                         <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
-                {unknownByBranch.size > 0 && (
-                    <span className="text-[10px] text-orange-500 font-bold ml-2">{unknownByBranch.size} suc. con cód. incorrecto</span>
-                )}
             </div>
 
             {loading ? (
@@ -826,7 +712,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
                                                         : i === 1 ? <Trophy size={15} className="text-slate-400" />
                                                         : i === 2 ? <Trophy size={15} className="text-amber-600" />
                                                         : <span className="text-xs text-slate-400 font-bold w-4 text-center">{i + 1}</span>}
-                                                    <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
@@ -918,83 +803,6 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
                 </div>
             )}
 
-            {/* ── Historial Rankings ── */}
-            {showHist && (
-                <div className="rounded-2xl border border-black/[0.07] bg-white shadow-sm overflow-hidden">
-                    <div className="px-5 py-3 border-b border-black/[0.05] bg-slate-50/60 flex items-center gap-2">
-                        <TrendingUp size={14} className="text-slate-500" />
-                        <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Ranking histórico · últimos 6 meses</span>
-                    </div>
-                    {loadingHist ? (
-                        <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-slate-400" /></div>
-                    ) : historial ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm min-w-[700px]">
-                                <thead>
-                                    <tr className="border-b border-black/[0.05]">
-                                        <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-52">Vendedor</th>
-                                        {historial.map((m, i) => (
-                                            <th key={i} className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
-                                                {m.label.split(' ')[0].slice(0, 3)} {m.label.split(' ').pop()}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Build unified vendor list from most recent month */}
-                                    {(historial[0]?.ranked || []).slice(0, 20).map(v => {
-                                        const emp = empMap.get(v.cod_vendedor);
-                                        const name = SPECIAL_CODES[v.cod_vendedor] ||
-                                            (emp ? `${emp.first_names} ${emp.last_names}` : `Cód. ${v.cod_vendedor}`);
-                                        return (
-                                            <tr key={v.cod_vendedor} className="border-t border-black/[0.04] hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-4 py-2.5">
-                                                    <div className="flex items-center gap-2">
-                                                        {emp ? (
-                                                            <LiquidAvatar src={emp.photo_url || emp.photo}
-                                                                fallbackText={emp.first_names}
-                                                                className="w-6 h-6 rounded-full shrink-0" />
-                                                        ) : (
-                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                                <Users size={11} className="text-slate-400" />
-                                                            </div>
-                                                        )}
-                                                        <span className="text-[12px] font-semibold text-slate-700 truncate max-w-[140px]">{name}</span>
-                                                    </div>
-                                                </td>
-                                                {historial.map((m, mi) => {
-                                                    const mEntry = m.ranked.find(x => x.cod_vendedor === v.cod_vendedor);
-                                                    const rank   = mEntry?.rank;
-                                                    const prevRank = historial[mi + 1]?.ranked.find(x => x.cod_vendedor === v.cod_vendedor)?.rank;
-                                                    const diff = prevRank != null && rank != null ? prevRank - rank : null;
-                                                    const rankColor = rank === 1 ? 'text-yellow-600 font-black' : rank === 2 ? 'text-slate-500 font-black' : rank === 3 ? 'text-amber-600 font-black' : 'text-slate-600 font-bold';
-                                                    return (
-                                                        <td key={mi} className="px-3 py-2.5 text-center">
-                                                            {rank != null ? (
-                                                                <div className="flex flex-col items-center gap-0.5">
-                                                                    <span className={`text-[13px] ${rankColor}`}>#{rank}</span>
-                                                                    {diff != null && (
-                                                                        diff > 0 ? <span className="flex items-center text-[9px] font-black text-emerald-600"><ArrowUp size={8} />{diff}</span>
-                                                                        : diff < 0 ? <span className="flex items-center text-[9px] font-black text-red-500"><ArrowDown size={8} />{Math.abs(diff)}</span>
-                                                                        : <Minus size={8} className="text-slate-300" />
-                                                                    )}
-                                                                    <span className="text-[10px] text-slate-400">{fmt(mEntry.total)}</span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-slate-200 text-[11px]">—</span>
-                                                            )}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : null}
-                </div>
-            )}
         </div>
     );
 }

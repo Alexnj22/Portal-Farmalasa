@@ -184,10 +184,12 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         const lastDay = new Date(prevY, prevM + 1, 0).getDate();
         return `${prevY}-${String(prevM + 1).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
     };
-    const prevMonthRange = useMemo(
-        () => ({ prevFini: shiftMonthBack(fini), prevFfin: shiftMonthBack(ffin) }),
-        [fini, ffin]
-    );
+    const prevMonthRange = useMemo(() => {
+        const today = new Date().toISOString().split('T')[0];
+        const isCurrentMonth = fini === currentMonthRange().fini;
+        const effectiveFfin = isCurrentMonth ? today : ffin;
+        return { prevFini: shiftMonthBack(fini), prevFfin: shiftMonthBack(effectiveFfin) };
+    }, [fini, ffin]);
 
     // Stats: current + same days last month for % change
     const fetchStats = useCallback(async () => {

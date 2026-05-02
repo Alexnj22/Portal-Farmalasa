@@ -100,13 +100,16 @@ function SmartPagination({ page, total, onChange }) {
 }
 
 // Stat card with % change vs previous month + 6-month tooltip
-function StatCard({ label, value, pct, icon: Icon, grad, text, months, statKey }) {
+function StatCard({ label, value, pct, icon: Icon, grad, text, months, statKey, onClick, active }) {
     const [show, setShow] = useState(false);
     const maxVal = months?.length ? Math.max(...months.map(m => m[statKey] || 0), 1) : 1;
     const abbr = (lbl) => { const p = lbl.split(' '); return p[0].slice(0,3) + ' ' + p[p.length-1].slice(2); };
     return (
         <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white cursor-default select-none">
+            <div
+                onClick={onClick}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border bg-white select-none transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${active ? 'border-amber-400 ring-2 ring-amber-200 shadow-md' : 'border-slate-100'}`}
+            >
                 <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                     <Icon size={11} className="text-white" strokeWidth={2.5} />
                 </div>
@@ -171,6 +174,8 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
     const [totalPuntos, setTotalPuntos] = useState(0);
+    const [filterPuntos, setFilterPuntos] = useState(false);
+    const [puntosCount, setPuntosCount] = useState(0);
     const [prevStats, setPrevStats]   = useState({ count: 0, sum: 0 });
     const [sixMonths, setSixMonths]   = useState([]);
     const [page, setPage]             = useState(1);
@@ -273,9 +278,11 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     const fetchRows = useCallback(async () => {
         setLoadingRows(true);
         const asc = sortDir === 'asc';
+        const table = filterPuntos ? 'invoices_with_puntos_view' : 'sales_invoices';
+        const selectOpts = filterPuntos ? { count: 'exact' } : undefined;
         let q = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado')
+            .from(table)
+            .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado', selectOpts)
             .gte('fecha', fini).lte('fecha', ffin)
             .order(sortCol, { ascending: asc });
         if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
@@ -286,7 +293,8 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         } else {
             q = q.range((page - 1) * pageSize, page * pageSize - 1);
         }
-        const { data } = await q;
+        const { data, count } = await q;
+        if (filterPuntos && count !== null) setPuntosCount(count);
         const fetched = data || [];
         setRows(fetched);
         setLoadingRows(false);
@@ -308,12 +316,12 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                     setItemsCache(prev => ({ ...prev, ...grouped }));
                 });
         }
-    }, [fini, ffin, filterBranch, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
+    }, [fini, ffin, filterBranch, filterPuntos, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchSixMonths(); }, [fetchSixMonths]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, isSearching, pageSize]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, isSearching, pageSize]);
 
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
@@ -329,7 +337,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         setLoadingItems(false);
     }, [expandedId, itemsCache]);
 
-    const totalPages = isSearching ? 1 : Math.ceil(totalCount / pageSize);
+    const totalPages = isSearching ? 1 : Math.ceil((filterPuntos ? puntosCount : totalCount) / pageSize);
     const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
 
     return (
@@ -345,7 +353,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                         { label: 'Facturas',     value: fmtNum(totalCount), pct: pctCount, icon: FileText,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    statKey: 'count' },
                         { label: 'Total Ventas', value: fmt(totalAmount),   pct: pctSum,   icon: TrendingUp, grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', statKey: 'sum'   },
                         { label: 'Ticket Prom.', value: fmt(avgTicket),     pct: pctAvg,   icon: TrendingUp, grad: 'from-slate-500 to-slate-400',   text: 'text-slate-700',   statKey: 'avg'    },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos), pct: null,     icon: Star,       grad: 'from-amber-500 to-orange-400',  text: 'text-amber-700',   statKey: 'puntos' },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos), pct: null,     icon: Star,       grad: 'from-amber-500 to-orange-400',  text: 'text-amber-700',   statKey: 'puntos', onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} months={sixMonths} />);
                 })()}
             </div>

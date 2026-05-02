@@ -174,48 +174,48 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         setPage(1);
     };
 
-    // Prev month fini helper
-    const prevMonthFini = useMemo(() => {
-        const d = new Date(fini + 'T12:00');
-        const y = d.getFullYear(), m = d.getMonth(); // getMonth() already -1
-        return `${m === 0 ? y - 1 : y}-${String(m === 0 ? 12 : m).padStart(2, '0')}-01`;
-    }, [fini]);
+    // Shift a date string back one month, capping at the last valid day
+    const shiftMonthBack = (dateStr) => {
+        const d = new Date(dateStr + 'T12:00');
+        const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+        const prevM = m === 0 ? 11 : m - 1;
+        const prevY = m === 0 ? y - 1 : y;
+        const lastDay = new Date(prevY, prevM + 1, 0).getDate();
+        return `${prevY}-${String(prevM + 1).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
+    };
+    const prevMonthRange = useMemo(
+        () => ({ prevFini: shiftMonthBack(fini), prevFfin: shiftMonthBack(ffin) }),
+        [fini, ffin]
+    );
 
-    // Stats: current + previous month for % change
+    // Stats: current + same days last month for % change
     const fetchStats = useCallback(async () => {
         const isCurrentMonth = fini === currentMonthRange().fini;
         const branchId = filterBranch ? Number(filterBranch) : -1;
+        const branchFilter = filterBranch ? Number(filterBranch) : null;
+        const { prevFini, prevFfin } = prevMonthRange;
 
-        const prevQ = supabase.from('ventas_monthly_stats')
-            .select('total_count, total_sum')
-            .eq('mes', prevMonthFini).eq('branch_id', branchId).eq('cod_vendedor', '').single();
-
-        const puntosQ = supabase.rpc('get_puntos_canjeados', { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null });
-
-        if (isCurrentMonth) {
-            const [cur, prev, puntos] = await Promise.all([
-                supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null }),
-                prevQ,
-                puntosQ,
-            ]);
-            const s = cur.data?.[0] || { total_count: 0, total_sum: 0 };
-            setTotalCount(parseInt(s.total_count || 0));
-            setTotalAmount(parseFloat(s.total_sum || 0));
-            setTotalPuntos(parseFloat(puntos.data || 0));
-            setPrevStats({ count: parseInt(prev.data?.total_count || 0), sum: parseFloat(prev.data?.total_sum || 0) });
-        } else {
-            const [cur, prev, puntos] = await Promise.all([
-                supabase.from('ventas_monthly_stats').select('total_count, total_sum')
+        const [cur, prev, puntosCur, puntosPrev] = await Promise.all([
+            isCurrentMonth
+                ? supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: branchFilter })
+                : supabase.from('ventas_monthly_stats').select('total_count, total_sum')
                     .eq('mes', fini).eq('branch_id', branchId).eq('cod_vendedor', '').single(),
-                prevQ,
-                puntosQ,
-            ]);
-            setTotalCount(parseInt(cur.data?.total_count || 0));
-            setTotalAmount(parseFloat(cur.data?.total_sum || 0));
-            setTotalPuntos(parseFloat(puntos.data || 0));
-            setPrevStats({ count: parseInt(prev.data?.total_count || 0), sum: parseFloat(prev.data?.total_sum || 0) });
-        }
-    }, [fini, ffin, filterBranch, prevMonthFini]);
+            supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
+            supabase.rpc('get_puntos_canjeados', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter }),
+            supabase.rpc('get_puntos_canjeados', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
+        ]);
+
+        const s    = isCurrentMonth ? (cur.data?.[0] || {}) : (cur.data || {});
+        const prevS = prev.data?.[0] || {};
+        setTotalCount(parseInt(s.total_count || 0));
+        setTotalAmount(parseFloat(s.total_sum || 0));
+        setTotalPuntos(parseFloat(puntosCur.data || 0));
+        setPrevStats({
+            count:  parseInt(prevS.total_count || 0),
+            sum:    parseFloat(prevS.total_sum || 0),
+            puntos: parseFloat(puntosPrev.data || 0),
+        });
+    }, [fini, ffin, filterBranch, prevMonthRange]);
 
     // 6-month history for tooltip
 
@@ -305,13 +305,14 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                 {(() => {
                     const pctCount = prevStats.count > 0 ? ((totalCount - prevStats.count) / prevStats.count) * 100 : null;
                     const pctSum   = prevStats.sum   > 0 ? ((totalAmount - prevStats.sum)   / prevStats.sum)   * 100 : null;
-                    const pctAvg   = prevStats.sum   > 0 && prevStats.count > 0
+                    const pctAvg    = prevStats.sum > 0 && prevStats.count > 0
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
+                    const pctPuntos = prevStats.puntos > 0 ? ((totalPuntos - prevStats.puntos) / prevStats.puntos) * 100 : null;
                     return [
-                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount, icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700'    },
-                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,   icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,   icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700'   },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: null,     icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',  onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
+                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700'    },
+                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700'   },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',  onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
             </div>

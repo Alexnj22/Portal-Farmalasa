@@ -178,7 +178,7 @@ async function syncBranch(
     if (!invoiceId || !(venta.productos ?? []).length) continue;
     for (const p of venta.productos) {
       itemsToInsert.push({
-        invoice_id: invoiceId, erp_product_id: p.id || null,
+        invoice_id: invoiceId, erp_product_id: p.id ?? null,
         descripcion: p.descripcion, cantidad: p.cantidad,
         presentacion: p.presentacion, precio_unitario: p.precio_unitario, total_linea: p.total_linea,
       });

@@ -155,6 +155,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
     const [sortDir, setSortDir]       = useState('desc');
     const [expandedId, setExpandedId] = useState(null);
     const [itemsCache, setItemsCache] = useState({});
+    const [loadingStats, setLoadingStats] = useState(true);
     const [loadingItems, setLoadingItems] = useState(false);
     const [loadingRows, setLoadingRows]   = useState(true);
 
@@ -190,6 +191,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
 
     // Stats: current + same days last month for % change
     const fetchStats = useCallback(async () => {
+        setLoadingStats(true);
         const isCurrentMonth = fini === currentMonthRange().fini;
         const branchId = filterBranch ? Number(filterBranch) : -1;
         const branchFilter = filterBranch ? Number(filterBranch) : null;
@@ -215,6 +217,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
             sum:    parseFloat(prevS.total_sum || 0),
             puntos: parseFloat(puntosPrev.data || 0),
         });
+        setLoadingStats(false);
     }, [fini, ffin, filterBranch, prevMonthRange]);
 
     // 6-month history for tooltip
@@ -302,12 +305,20 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
-                {(() => {
-                    const pctCount = prevStats.count > 0 ? ((totalCount - prevStats.count) / prevStats.count) * 100 : null;
-                    const pctSum   = prevStats.sum   > 0 ? ((totalAmount - prevStats.sum)   / prevStats.sum)   * 100 : null;
+                {loadingStats ? (
+                    [120, 160, 140, 150].map(w => (
+                        <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
+                            <div className="w-6 h-6 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                            <div className={`h-3 rounded-full bg-slate-200 animate-pulse`} style={{ width: w * 0.45 }} />
+                            <div className={`h-4 rounded-full bg-slate-200 animate-pulse`} style={{ width: w * 0.55 }} />
+                        </div>
+                    ))
+                ) : (() => {
+                    const pctCount  = prevStats.count  > 0 ? ((totalCount  - prevStats.count)  / prevStats.count)  * 100 : null;
+                    const pctSum    = prevStats.sum    > 0 ? ((totalAmount  - prevStats.sum)    / prevStats.sum)    * 100 : null;
                     const pctAvg    = prevStats.sum > 0 && prevStats.count > 0
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
-                    const pctPuntos = prevStats.puntos > 0 ? ((totalPuntos - prevStats.puntos) / prevStats.puntos) * 100 : null;
+                    const pctPuntos = prevStats.puntos > 0 ? ((totalPuntos  - prevStats.puntos) / prevStats.puntos) * 100 : null;
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700'    },
                         { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
@@ -318,7 +329,24 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
             </div>
 
             {loadingRows && rows.length === 0 ? (
-                <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                    <table className="w-full text-sm">
+                        <tbody>
+                            {Array.from({ length: 10 }).map((_, i) => (
+                                <tr key={i} className="border-b border-slate-50 last:border-0">
+                                    <td className="px-4 py-3"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-12 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3"><div className="h-3 w-32 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 text-right"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             ) : !loadingRows && rows.length === 0 ? (
                 <div className="text-center py-20 text-slate-400">
                     <TrendingUp size={40} className="mx-auto mb-3" />

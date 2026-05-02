@@ -101,10 +101,18 @@ function SmartPagination({ page, total, onChange }) {
 
 // Stat card with % change vs previous month + 6-month tooltip
 function StatCard({ label, value, pct, icon: Icon, grad, text, onClick, active }) {
+    const isFilter = !!onClick;
     return (
         <div
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border bg-white select-none transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} ${active ? 'border-amber-400 ring-2 ring-amber-200 shadow-md' : 'border-slate-100'}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-all
+                ${isFilter ? 'cursor-pointer hover:shadow-md' : 'cursor-default bg-white'}
+                ${active
+                    ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-amber-50'
+                    : isFilter
+                        ? 'border-amber-200 bg-amber-50/40 hover:bg-amber-50'
+                        : 'border-slate-100'
+                }`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
@@ -117,6 +125,8 @@ function StatCard({ label, value, pct, icon: Icon, grad, text, onClick, active }
                     {Math.abs(pct).toFixed(1)}%
                 </span>
             )}
+            {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
+            {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
         </div>
     );
 }

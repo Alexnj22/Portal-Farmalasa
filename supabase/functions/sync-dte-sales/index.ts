@@ -64,6 +64,7 @@ async function syncBranch(
   startDate: string,
   endDate: string,
   forceItems: boolean,
+  presLookup: Map<string, number>,
 ): Promise<{ total: number; new: number; changes: number; items: number; idMin: number | null; idMax: number | null }> {
 
   // 1. Login + fetch con reintentos
@@ -179,10 +180,16 @@ async function syncBranch(
     if (!invoiceId || !(venta.productos ?? []).length) continue;
     for (const p of venta.productos) {
       if (p.id === 0) invoicesWithPuntos.add(invoiceId);
+      const presKey = (p.presentacion ?? '').replace(/\s+/g, ' ').toUpperCase().trim();
       itemsToInsert.push({
-        invoice_id: invoiceId, erp_product_id: p.id ?? null,
-        descripcion: p.descripcion, cantidad: p.cantidad,
-        presentacion: p.presentacion, precio_unitario: p.precio_unitario, total_linea: p.total_linea,
+        invoice_id:      invoiceId,
+        erp_product_id:  p.id ?? null,
+        descripcion:     p.descripcion,
+        cantidad:        p.cantidad,
+        presentacion:    p.presentacion,
+        id_presentacion: presLookup.get(presKey) ?? null,
+        precio_unitario: p.precio_unitario,
+        total_linea:     p.total_linea,
       });
     }
   }
@@ -235,6 +242,16 @@ Deno.serve(async (req) => {
       ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
       : BRANCH_MAP;
 
+    // Lookup de presentaciones: "TIPO DESCRIPCION" → id (cargado una sola vez)
+    const { data: presData } = await supabase
+      .from('presentaciones')
+      .select('id, tipo, descripcion');
+    const presLookup = new Map<string, number>();
+    for (const p of (presData ?? [])) {
+      const key = `${p.tipo ?? ''} ${p.descripcion ?? ''}`.replace(/\s+/g, ' ').toUpperCase().trim();
+      presLookup.set(key, p.id);
+    }
+
     const results: any[] = [];
     const logRows: any[] = [];
 
@@ -247,7 +264,7 @@ Deno.serve(async (req) => {
       for (let attempt = 1; attempt <= 3; attempt++) {
         attempts = attempt;
         try {
-          branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems);
+          branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup);
           lastErr = null;
           break;
         } catch (e: any) {

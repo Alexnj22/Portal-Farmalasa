@@ -574,6 +574,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     const [expanded, setExpanded]       = useState(null);
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
+    const [prevRankMap, setPrevRankMap] = useState(new Map());
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -600,6 +601,31 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 
     useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
 
+    // Carga ranking del mes anterior para flechas de tendencia
+    useEffect(() => {
+        const d = new Date(fini + 'T12:00');
+        d.setMonth(d.getMonth() - 1);
+        const prevMes = d.toISOString().split('T')[0].slice(0, 7) + '-01';
+        const branchId = filterBranch ? Number(filterBranch) : -1;
+        const SKIP = new Set(['1000', '125']);
+        supabase.from('ventas_monthly_stats')
+            .select('cod_vendedor, total_sum')
+            .eq('mes', prevMes).eq('branch_id', branchId).neq('cod_vendedor', '')
+            .then(({ data }) => {
+                const byVend = new Map();
+                for (const r of (data || [])) {
+                    const cur = byVend.get(r.cod_vendedor) || { cod_vendedor: r.cod_vendedor, total: 0 };
+                    cur.total += parseFloat(r.total_sum || 0);
+                    byVend.set(r.cod_vendedor, cur);
+                }
+                const ranked = [...byVend.values()]
+                    .filter(v => !SKIP.has(v.cod_vendedor))
+                    .sort((a, b) => b.total - a.total);
+                const m = new Map();
+                ranked.forEach((v, i) => m.set(v.cod_vendedor, i + 1));
+                setPrevRankMap(m);
+            });
+    }, [fini, filterBranch]);
 
     const toggleExpand = async (cod) => {
         if (expanded === cod) { setExpanded(null); return; }
@@ -659,6 +685,23 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     const totalVentas   = rows.reduce((s, r) => s + r.total, 0);
     const totalFacturas = rows.reduce((s, r) => s + r.count, 0);
 
+    const TrendBadge = ({ cod, currentRank }) => {
+        const prev = prevRankMap.get(cod);
+        if (prev == null) return null;
+        const diff = prev - currentRank;
+        if (diff === 0) return <Minus size={12} className="text-slate-400" />;
+        if (diff > 0) return (
+            <span className="flex items-center gap-0.5 text-emerald-600 text-[10px] font-black">
+                <ArrowUp size={10} />{diff}
+            </span>
+        );
+        return (
+            <span className="flex items-center gap-0.5 text-red-500 text-[10px] font-black">
+                <ArrowDown size={10} />{Math.abs(diff)}
+            </span>
+        );
+    };
+
     return (
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats */}
@@ -712,6 +755,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
                                                         : i === 1 ? <Trophy size={15} className="text-slate-400" />
                                                         : i === 2 ? <Trophy size={15} className="text-amber-600" />
                                                         : <span className="text-xs text-slate-400 font-bold w-4 text-center">{i + 1}</span>}
+                                                    <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">

@@ -215,11 +215,13 @@ async function syncBranch(
     if (!isNew && !forceItems) continue;
     const invoiceId = invoiceIdMap.get(erpId_s);
     if (!invoiceId || !(venta.productos ?? []).length) continue;
-    for (const p of venta.productos) {
+    for (let lineIdx = 0; lineIdx < venta.productos.length; lineIdx++) {
+      const p = venta.productos[lineIdx];
       if (p.id === 0) invoicesWithPuntos.add(invoiceId);
       const presKey = (p.presentacion ?? '').replace(/\s+/g, ' ').toUpperCase().trim();
       itemsToInsert.push({
         invoice_id:      invoiceId,
+        linea_num:       lineIdx,
         erp_product_id:  p.id ?? null,
         descripcion:     p.descripcion,
         cantidad:        p.cantidad,
@@ -233,13 +235,21 @@ async function syncBranch(
 
   if (itemsToInsert.length > 0) {
     if (forceItems) {
+      // forceItems: borrar y reinsertar limpio desde el ERP
       const invoiceIds = [...new Set(itemsToInsert.map(i => i.invoice_id))];
       await supabase.from('sales_invoice_items').delete().in('invoice_id', invoiceIds);
     }
     const CHUNK = 500;
     for (let i = 0; i < itemsToInsert.length; i += CHUNK) {
-      const { error: insertErr } = await supabase.from('sales_invoice_items').insert(itemsToInsert.slice(i, i + CHUNK));
-      if (insertErr) throw new Error(`items insert chunk ${i}: ${insertErr.message}`);
+      // upsert con ignoreDuplicates: si (invoice_id, linea_num) ya existe → skip
+      // Esto hace imposible insertar duplicados incluso con runs concurrentes
+      const { error: insertErr } = await supabase
+        .from('sales_invoice_items')
+        .upsert(itemsToInsert.slice(i, i + CHUNK), {
+          onConflict: 'invoice_id,linea_num',
+          ignoreDuplicates: true,
+        });
+      if (insertErr) throw new Error(`items upsert chunk ${i}: ${insertErr.message}`);
     }
     if (invoicesWithPuntos.size > 0) {
       await supabase.from('sales_invoices')

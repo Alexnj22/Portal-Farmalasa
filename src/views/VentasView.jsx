@@ -56,6 +56,21 @@ function monthOptions(count = 12) {
     return opts;
 }
 
+function computePrevRange(fini, ffin) {
+    const s = new Date(fini + 'T12:00:00');
+    const numDays = Math.round((new Date(ffin + 'T12:00:00') - s) / 86400000) + 1;
+    const prevEnd = new Date(s); prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(s); prevStart.setDate(prevStart.getDate() - numDays);
+    const toStr = d => d.toISOString().split('T')[0];
+    return { prevFini: toStr(prevStart), prevFfin: toStr(prevEnd) };
+}
+
+function fmtShort(dateStr) {
+    if (!dateStr) return '';
+    const [, m, d] = dateStr.split('-');
+    return `${parseInt(d)}/${parseInt(m)}`;
+}
+
 const PAGE_SIZE_OPTIONS = [
     { value: '25',  label: '25 filas' },
     { value: '50',  label: '50 filas' },
@@ -101,8 +116,8 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-// Stat card with % change vs previous month + 6-month tooltip
-function StatCard({ label, value, pct, icon: Icon, grad, text, onClick, active }) {
+// Stat card with % change vs previous period + optional sub label
+function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active }) {
     const isFilter = !!onClick;
     return (
         <div
@@ -113,20 +128,25 @@ function StatCard({ label, value, pct, icon: Icon, grad, text, onClick, active }
                     ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-amber-50'
                     : isFilter
                         ? 'border-amber-200 bg-amber-50/40 hover:bg-amber-50'
-                        : 'border-slate-100'
+                        : 'border-slate-100 bg-white'
                 }`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-            <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-            {pct !== null && pct !== undefined && (
-                <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
-                    {Math.abs(pct).toFixed(1)}%
-                </span>
-            )}
+            <div className="flex flex-col min-w-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">{label}</span>
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+                    {pct !== null && pct !== undefined && (
+                        <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                            {Math.abs(pct).toFixed(1)}%
+                        </span>
+                    )}
+                </div>
+                {sub && <span className="text-[9px] text-slate-400 font-medium leading-none mt-0.5">{sub}</span>}
+            </div>
             {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
         </div>
@@ -187,21 +207,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
         setPage(1);
     };
 
-    // Shift a date string back one month, capping at the last valid day
-    const shiftMonthBack = (dateStr) => {
-        const d = new Date(dateStr + 'T12:00');
-        const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
-        const prevM = m === 0 ? 11 : m - 1;
-        const prevY = m === 0 ? y - 1 : y;
-        const lastDay = new Date(prevY, prevM + 1, 0).getDate();
-        return `${prevY}-${String(prevM + 1).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
-    };
-    const prevMonthRange = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
-        const isCurrentMonth = fini === currentMonthRange().fini;
-        const effectiveFfin = isCurrentMonth ? today : ffin;
-        return { prevFini: shiftMonthBack(fini), prevFfin: shiftMonthBack(effectiveFfin) };
-    }, [fini, ffin]);
+    const prevMonthRange = useMemo(() => computePrevRange(fini, ffin), [fini, ffin]);
 
     // Stats: current + same days last month for % change
     const fetchStats = useCallback(async () => {
@@ -334,10 +340,10 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
                     const pctPuntos = prevStats.puntos > 0 ? ((totalPuntos  - prevStats.puntos) / prevStats.puntos) * 100 : null;
                     return [
-                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700'    },
-                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700'   },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',  onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
+                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
             </div>
@@ -576,7 +582,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     const [expanded, setExpanded]       = useState(null);
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
-    const [prevRankMap, setPrevRankMap] = useState(new Map());
+    const [prevRankMap, setPrevRankMap]     = useState(new Map());
+    const [prevVendStats, setPrevVendStats] = useState({ sum: 0, count: 0 });
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -602,6 +609,17 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
     }, [fini, ffin, filterBranch]);
 
     useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
+
+    useEffect(() => {
+        const { prevFini, prevFfin } = computePrevRange(fini, ffin);
+        supabase.rpc('get_ventas_stats', {
+            p_fini: prevFini, p_ffin: prevFfin,
+            p_branch_id: filterBranch ? Number(filterBranch) : null,
+        }).then(({ data }) => {
+            const s = data?.[0] || {};
+            setPrevVendStats({ sum: parseFloat(s.total_sum || 0), count: parseInt(s.total_count || 0) });
+        });
+    }, [fini, ffin, filterBranch]);
 
     // Carga ranking del mes anterior para flechas de tendencia
     useEffect(() => {
@@ -708,19 +726,17 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats */}
             <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Vendedores',   value: knownRows.length,       icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700' },
-                    { label: 'Total Ventas', value: fmt(totalVentas),        icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700' },
-                    { label: 'Facturas',     value: fmtNum(totalFacturas),   icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700' },
-                ].map(({ label, value, icon: Icon, grad, text }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
+                {(() => {
+                    const { prevFini, prevFfin } = computePrevRange(fini, ffin);
+                    const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
+                    const pctSum   = prevVendStats.sum   > 0 ? ((totalVentas   - prevVendStats.sum)   / prevVendStats.sum)   * 100 : null;
+                    const pctCount = prevVendStats.count > 0 ? ((totalFacturas - prevVendStats.count) / prevVendStats.count) * 100 : null;
+                    return [
+                        { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    pct: null,     sub: undefined },
+                        { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
+                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
+                    ].map(card => <StatCard key={card.label} {...card} />);
+                })()}
             </div>
 
             {loading ? (
@@ -855,10 +871,11 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
 function TabProductos({ filterBranch, searchTerm, monthRange }) {
-    const [rows, setRows]       = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [sortCol, setSortCol] = useState('total');
-    const [sortDir, setSortDir] = useState('desc');
+    const [rows, setRows]           = useState([]);
+    const [loading, setLoading]     = useState(true);
+    const [sortCol, setSortCol]     = useState('total');
+    const [sortDir, setSortDir]     = useState('desc');
+    const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -964,6 +981,15 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 
+    useEffect(() => {
+        const { prevFini, prevFfin } = computePrevRange(fini, ffin);
+        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: null })
+            .then(({ data }) => {
+                const s = data?.[0] || {};
+                setPrevProdStats({ sum: parseFloat(s.total_sum || 0) });
+            });
+    }, [fini, ffin]);
+
     const filtered = useMemo(() => {
         let list = rows;
         if (searchTerm) {
@@ -988,20 +1014,16 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats */}
             <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Ingresos',  value: fmt(totIngresos),   icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700' },
-                    { label: 'Costo',     value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700' },
-                    { label: 'Utilidad',  value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700' },
-                    { label: 'Margen',    value: fmtPct(margenGlobal), icon: Star,        grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700' },
-                ].map(({ label, value, icon: Icon, grad, text }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
+                {(() => {
+                    const { prevFini, prevFfin } = computePrevRange(fini, ffin);
+                    const pctIngresos = prevProdStats.sum > 0 ? ((totIngresos - prevProdStats.sum) / prevProdStats.sum) * 100 : null;
+                    return [
+                        { label: 'Ingresos', value: fmt(totIngresos),     icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined },
+                        { label: 'Costo',    value: fmt(totCosto),        icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
+                        { label: 'Utilidad', value: fmt(totUtilidad),     icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
+                        { label: 'Margen',   value: fmtPct(margenGlobal), icon: Star,         grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
+                    ].map(card => <StatCard key={card.label} {...card} />);
+                })()}
             </div>
 
             <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
@@ -1157,6 +1179,35 @@ export default function VentasView() {
                         </button>
                     );
                 })}
+
+                <div className="h-6 w-px bg-white/40 mx-0.5 shrink-0 hidden sm:block" />
+
+                {/* Quick period tabs */}
+                {(() => {
+                    const nowMs = Date.now() - 6 * 3600_000;
+                    const sv    = new Date(nowMs);
+                    const p     = n => String(n).padStart(2, '0');
+                    const y = sv.getUTCFullYear(), m = sv.getUTCMonth(), d = sv.getUTCDate();
+                    const todayStr  = `${y}-${p(m+1)}-${p(d)}`;
+                    const dFromMon  = (sv.getUTCDay() + 6) % 7;
+                    const mon       = new Date(nowMs - dFromMon * 86400_000);
+                    const weekStart = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
+                    const monthStart = `${y}-${p(m+1)}-01`;
+                    return [
+                        { label: 'Hoy',  value: `${todayStr}|${todayStr}` },
+                        { label: 'Sem.', value: `${weekStart}|${todayStr}` },
+                        { label: 'Mes',  value: `${monthStart}|${todayStr}` },
+                    ].map(qt => (
+                        <button key={qt.label} onClick={() => setMonthRange(qt.value)}
+                            className={`px-2.5 h-8 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 border ${
+                                monthRange === qt.value
+                                    ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:shadow-sm'
+                            }`}>
+                            {qt.label}
+                        </button>
+                    ));
+                })()}
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 

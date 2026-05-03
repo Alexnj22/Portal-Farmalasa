@@ -71,6 +71,46 @@ function fmtShort(dateStr) {
     return `${parseInt(d)}/${parseInt(m)}`;
 }
 
+function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
+    const nowMs = Date.now() - 6 * 3600_000;
+    const sv    = new Date(nowMs);
+    const p     = n => String(n).padStart(2, '0');
+    const y = sv.getUTCFullYear(), m = sv.getUTCMonth(), d = sv.getUTCDate();
+    const todayStr  = `${y}-${p(m+1)}-${p(d)}`;
+    const dFromMon  = (sv.getUTCDay() + 6) % 7;
+    const mon       = new Date(nowMs - dFromMon * 86400_000);
+    const weekStart = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
+    const monthStart = `${y}-${p(m+1)}-01`;
+    const quickTabs = [
+        { label: 'Hoy',  value: `${todayStr}|${todayStr}` },
+        { label: 'Sem.', value: `${weekStart}|${todayStr}` },
+        { label: 'Mes',  value: `${monthStart}|${todayStr}` },
+    ];
+    return (
+        <div className="flex items-center gap-1 bg-slate-50/90 border border-slate-200/80 rounded-2xl px-2.5 py-1.5 shrink-0 shadow-sm">
+            {quickTabs.map(qt => (
+                <button key={qt.label} onClick={() => setMonthRange(qt.value)}
+                    className={`px-2.5 h-7 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 border ${
+                        monthRange === qt.value
+                            ? 'bg-white text-slate-800 border-slate-200 shadow-sm'
+                            : 'bg-transparent text-slate-400 border-transparent hover:bg-white hover:text-slate-700 hover:border-slate-100'
+                    }`}>
+                    {qt.label}
+                </button>
+            ))}
+            <div className="h-4 w-px bg-slate-200 mx-0.5 shrink-0" />
+            <div className="w-[115px] overflow-visible">
+                <LiquidSelect value={filterBranch} onChange={setFilterBranch}
+                    options={branchOptions} placeholder="Todas" icon={Building2} compact />
+            </div>
+            <div className="h-4 w-px bg-slate-200 mx-0.5 shrink-0" />
+            <div className="overflow-visible">
+                <PeriodPicker value={monthRange} onChange={setMonthRange} />
+            </div>
+        </div>
+    );
+}
+
 const PAGE_SIZE_OPTIONS = [
     { value: '25',  label: '25 filas' },
     { value: '50',  label: '50 filas' },
@@ -173,7 +213,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 }
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
-function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }) {
+function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions }) {
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -323,8 +363,9 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            {/* Stats strip */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Stats strip + inline filters */}
+            <div className="flex items-start gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
                         <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
@@ -346,6 +387,8 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
+                </div>
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
 
             {loadingRows && rows.length === 0 ? (
@@ -576,7 +619,7 @@ function TabVentas({ branches, filterBranch, searchTerm, monthRange, employees }
 }
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
-function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRange }) {
+function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -724,8 +767,9 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 
     return (
         <div className="p-4 md:p-6 space-y-4">
-            {/* Stats */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Stats + inline filters */}
+            <div className="flex items-start gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
@@ -737,6 +781,8 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
                         { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
+                </div>
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
 
             {loading ? (
@@ -870,7 +916,7 @@ function TabVendedores({ branches, filterBranch, employees, searchTerm, monthRan
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
-function TabProductos({ filterBranch, searchTerm, monthRange }) {
+function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [sortCol, setSortCol]     = useState('total');
@@ -1012,8 +1058,9 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
 
     return (
         <div className="p-4 md:p-6 space-y-4">
-            {/* Stats */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Stats + inline filters */}
+            <div className="flex items-start gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const pctIngresos = prevProdStats.sum > 0 ? ((totIngresos - prevProdStats.sum) / prevProdStats.sum) * 100 : null;
@@ -1024,6 +1071,8 @@ function TabProductos({ filterBranch, searchTerm, monthRange }) {
                         { label: 'Margen',   value: fmtPct(margenGlobal), icon: Star,         grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
+                </div>
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
 
             <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
@@ -1180,48 +1229,6 @@ export default function VentasView() {
                     );
                 })}
 
-                <div className="h-6 w-px bg-white/40 mx-0.5 shrink-0 hidden sm:block" />
-
-                {/* Quick period tabs */}
-                {(() => {
-                    const nowMs = Date.now() - 6 * 3600_000;
-                    const sv    = new Date(nowMs);
-                    const p     = n => String(n).padStart(2, '0');
-                    const y = sv.getUTCFullYear(), m = sv.getUTCMonth(), d = sv.getUTCDate();
-                    const todayStr  = `${y}-${p(m+1)}-${p(d)}`;
-                    const dFromMon  = (sv.getUTCDay() + 6) % 7;
-                    const mon       = new Date(nowMs - dFromMon * 86400_000);
-                    const weekStart = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
-                    const monthStart = `${y}-${p(m+1)}-01`;
-                    return [
-                        { label: 'Hoy',  value: `${todayStr}|${todayStr}` },
-                        { label: 'Sem.', value: `${weekStart}|${todayStr}` },
-                        { label: 'Mes',  value: `${monthStart}|${todayStr}` },
-                    ].map(qt => (
-                        <button key={qt.label} onClick={() => setMonthRange(qt.value)}
-                            className={`px-2.5 h-8 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 border ${
-                                monthRange === qt.value
-                                    ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:shadow-sm'
-                            }`}>
-                            {qt.label}
-                        </button>
-                    ));
-                })()}
-
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-
-                <div className="w-[130px] md:w-[170px] overflow-visible h-full flex items-center">
-                    <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                        options={branchOptions} placeholder="Todas" icon={Building2} compact />
-                </div>
-
-                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-
-                <div className="w-[170px] md:w-[210px] overflow-visible h-full flex items-center">
-                    <PeriodPicker value={monthRange} onChange={setMonthRange} />
-                </div>
-
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={openSearch}
                     className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
@@ -1235,14 +1242,19 @@ export default function VentasView() {
     return (
         <GlassViewLayout icon={TrendingUp} title="Ventas" filtersContent={filtersContent}>
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
-                <TabVentas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} employees={employees} />
+                <TabVentas branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                    searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    employees={employees} branchOptions={branchOptions} />
             </div>
             <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
-                <TabVendedores branches={salesBranches} filterBranch={filterBranch}
-                    employees={employees} searchTerm={rawSearch} monthRange={monthRange} />
+                <TabVendedores branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                    employees={employees} searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    branchOptions={branchOptions} />
             </div>
             <div className={activeTab === 'productos' ? '' : 'hidden'}>
-                <TabProductos filterBranch={filterBranch} searchTerm={rawSearch} monthRange={monthRange} />
+                <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                    searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    branchOptions={branchOptions} />
             </div>
         </GlassViewLayout>
     );

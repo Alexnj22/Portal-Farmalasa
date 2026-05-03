@@ -116,8 +116,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    for (let i = 0; i < productRows.length; i += CHUNK) {
-      await supabase.from('products').upsert(productRows.slice(i, i + CHUNK), { onConflict: 'id' });
+    // Solo upsertear productos nuevos o con cambios detectados
+    const changedProductIds = new Set(productChangelogs.map((c: any) => c.product_id));
+    const productRowsToUpsert = productRows.filter((p: any) =>
+      !existingProductsMap.has(p.id) || changedProductIds.has(p.id)
+    );
+    for (let i = 0; i < productRowsToUpsert.length; i += CHUNK) {
+      await supabase.from('products').upsert(productRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'id' });
     }
     if (productChangelogs.length > 0) {
       await supabase.from('products_changelog').insert(productChangelogs);
@@ -229,9 +234,14 @@ Deno.serve(async (req) => {
       await supabase.from('product_precios_changelog').insert(precioChangelogs);
     }
 
-    // 5d. Upsert product_precios
-    for (let i = 0; i < precioRows.length; i += CHUNK) {
-      await supabase.from('product_precios').upsert(precioRows.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
+    // 5d. Upsert solo precios nuevos o con cambios detectados
+    const newComboKeys = new Set(newCombos.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
+    const precioRowsToUpsert = precioRows.filter((r: any) => {
+      const key = `${r.product_id}_${r.id_presentacion}`;
+      return changedKeys.has(key) || newComboKeys.has(key);
+    });
+    for (let i = 0; i < precioRowsToUpsert.length; i += CHUNK) {
+      await supabase.from('product_precios').upsert(precioRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
     }
 
     return new Response(
@@ -239,8 +249,10 @@ Deno.serve(async (req) => {
         success:         true,
         laboratorios:    labRows.length,
         presentaciones:  presMap.size,
-        products:        productRows.length,
-        product_precios: precioRows.length,
+        products_total:   productRows.length,
+        products_written: productRowsToUpsert.length,
+        precios_total:    precioRows.length,
+        precios_written:  precioRowsToUpsert.length,
         price_changes:   precioChangelogs.length,
         product_changes: productChangelogs.length,
         new_combos:      newCombos.length,

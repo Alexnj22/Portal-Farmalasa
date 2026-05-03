@@ -160,6 +160,65 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
     );
 };
 
+const MONTHS_SHORT_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function buildPresets() {
+    const nowMs = Date.now() - 6 * 3600_000;
+    const sv    = new Date(nowMs);
+    const y  = sv.getUTCFullYear();
+    const m  = sv.getUTCMonth();
+    const d  = sv.getUTCDate();
+    const pad = n => String(n).padStart(2, '0');
+    const today = `${y}-${pad(m + 1)}-${pad(d)}`;
+
+    const daysFromMon = (sv.getUTCDay() + 6) % 7;
+    const monSv = new Date(nowMs - daysFromMon * 86400_000);
+    const weekStart = `${monSv.getUTCFullYear()}-${pad(monSv.getUTCMonth()+1)}-${pad(monSv.getUTCDate())}`;
+
+    const monthStart = `${y}-${pad(m + 1)}-01`;
+    const monthEnd   = new Date(y, m + 1, 0);
+    const monthEndStr = `${y}-${pad(m + 1)}-${pad(monthEnd.getDate())}`;
+
+    const pM = m === 0 ? 11 : m - 1;
+    const pY = m === 0 ? y - 1 : y;
+    const prevMonthStart = `${pY}-${pad(pM + 1)}-01`;
+    const prevMonthEnd   = new Date(pY, pM + 1, 0);
+    const prevMonthEndStr = `${pY}-${pad(pM + 1)}-${pad(prevMonthEnd.getDate())}`;
+
+    const m3 = m - 2;
+    const y3 = m3 < 0 ? y - 1 : y;
+    const m3adj = ((m3 % 12) + 12) % 12;
+    const threeMonthsStart = `${y3}-${pad(m3adj + 1)}-01`;
+
+    const yearStart = `${y}-01-01`;
+    const yearEnd   = `${y}-12-31`;
+
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+        const mi = ((m - i) % 12 + 12) % 12;
+        const yi = m - i < 0 ? y - 1 : y;
+        const last = new Date(yi, mi + 1, 0).getDate();
+        months.push({
+            label: `${MONTHS_SHORT_ES[mi]} ${yi}`,
+            start: `${yi}-${pad(mi + 1)}-01`,
+            end:   `${yi}-${pad(mi + 1)}-${pad(last)}`,
+        });
+    }
+
+    return {
+        quick: [
+            { label: 'Hoy',              start: today,           end: today },
+            { label: 'Esta semana',       start: weekStart,       end: today },
+            { label: 'Este mes',          start: monthStart,      end: today },
+            { label: 'Mes completo',      start: monthStart,      end: monthEndStr },
+            { label: 'Mes anterior',      start: prevMonthStart,  end: prevMonthEndStr },
+            { label: 'Últimos 3 meses',   start: threeMonthsStart,end: today },
+            { label: 'Este año',          start: yearStart,       end: yearEnd },
+        ],
+        months,
+    };
+}
+
 const RangeDatePicker = ({
     startDate,
     endDate,
@@ -171,6 +230,8 @@ const RangeDatePicker = ({
     multiRange = false,
     onMultiChange,
     initialRanges = [],
+    showPresets = false,
+    compact = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selecting, setSelecting] = useState('start');
@@ -222,7 +283,7 @@ const RangeDatePicker = ({
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
             const popH = 440;
-            const popW = 596;
+            const popW = showPresets ? 780 : 596;
             let top = rect.bottom + window.scrollY + 8;
             let left = rect.left + window.scrollX;
             if (rect.bottom + popH > window.innerHeight) {
@@ -231,6 +292,7 @@ const RangeDatePicker = ({
             if (left + popW > window.innerWidth) {
                 left = window.innerWidth - popW - 16;
             }
+            if (left < 8) left = 8;
             setPopupStyle({ top, left });
         }
         setIsOpen(true);
@@ -341,13 +403,22 @@ const RangeDatePicker = ({
         ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
         : 0;
 
+    const presets = showPresets ? buildPresets() : null;
+
+    const handlePreset = (start, end) => {
+        setDraftStart(start);
+        setDraftEnd(end);
+        onRangeChange(start, end);
+        setIsOpen(false);
+    };
+
     const popup = isOpen && createPortal(
         <>
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
-                className="fixed z-[9999] bg-white/80 backdrop-blur-md border border-white/60 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 w-[580px] max-w-[calc(100vw-32px)]"
-                style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
+                className="fixed z-[9999] bg-white/80 backdrop-blur-md border border-white/60 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] p-6 max-w-[calc(100vw-32px)]"
+                style={{ ...popupStyle, width: showPresets ? '780px' : '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
                 {/* Header */}
@@ -358,7 +429,7 @@ const RangeDatePicker = ({
                         </div>
                         <div>
                             <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">
-                                {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin')}
+                                {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el período' : 'Ajusta la fecha de fin')}
                             </p>
                             <p className="text-[10px] text-slate-400 font-bold">
                                 {multiRange
@@ -373,8 +444,48 @@ const RangeDatePicker = ({
                     </button>
                 </div>
 
-                {/* Calendars */}
                 <div className="flex gap-4">
+                    {/* Presets panel */}
+                    {showPresets && presets && (
+                        <>
+                            <div className="flex flex-col gap-1 w-[148px] shrink-0">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 px-1">Accesos rápidos</p>
+                                {presets.quick.map(p => {
+                                    const active = draftStart === p.start && draftEnd === p.end;
+                                    return (
+                                        <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
+                                            className={`text-left px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                                                active
+                                                    ? 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.35)]'
+                                                    : 'text-slate-600 hover:bg-white hover:text-[#007AFF] hover:shadow-sm'
+                                            }`}>
+                                            {p.label}
+                                        </button>
+                                    );
+                                })}
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-3 mb-1 px-1">Meses</p>
+                                <div className="flex flex-col gap-0.5 max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">
+                                    {presets.months.map(p => {
+                                        const active = draftStart === p.start && draftEnd === p.end;
+                                        return (
+                                            <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
+                                                className={`text-left px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                                    active
+                                                        ? 'bg-[#007AFF] text-white'
+                                                        : 'text-slate-500 hover:bg-white hover:text-[#007AFF]'
+                                                }`}>
+                                                {p.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="w-px bg-white/40 self-stretch shrink-0" />
+                        </>
+                    )}
+
+                    {/* Calendars */}
+                    <div className="flex gap-4 flex-1">
                     <MonthGrid
                         year={viewYear} month={viewMonth}
                         startDate={draftStart} endDate={draftEnd}
@@ -396,6 +507,7 @@ const RangeDatePicker = ({
                         onNext={handleNext}
                         selectedRanges={selectedRanges}
                     />
+                    </div>
                 </div>
 
                 {/* Footer */}
@@ -453,6 +565,15 @@ const RangeDatePicker = ({
                                 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
                                 : placeholder}
                         </p>
+                    </div>
+                ) : compact ? (
+                    <div className={`flex items-center gap-2 h-full px-3 rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'text-[#007AFF]' : ''}`}>
+                        <CalendarDays size={13} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
+                        <span className={`flex-1 text-[12px] font-bold truncate whitespace-nowrap ${startDate && endDate ? 'text-slate-700' : 'text-slate-400'}`}>
+                            {startDate && endDate
+                                ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
+                                : placeholder}
+                        </span>
                     </div>
                 ) : (
                     <div className={`flex items-center gap-3 h-[48px] px-4 bg-white/50 border rounded-2xl transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>

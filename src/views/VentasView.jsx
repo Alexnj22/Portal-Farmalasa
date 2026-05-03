@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
+import RangeDatePicker from '../components/common/RangeDatePicker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1166,9 +1167,15 @@ export default function VentasView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 
-                <div className="w-[130px] md:w-[160px] overflow-visible h-full flex items-center">
-                    <LiquidSelect value={monthRange} onChange={setMonthRange}
-                        options={monthOptions()} placeholder="Mes..." icon={Clock} clearable={false} compact />
+                <div className="w-[170px] md:w-[210px] overflow-visible h-full flex items-center">
+                    <RangeDatePicker
+                        startDate={monthRange.split('|')[0]}
+                        endDate={monthRange.split('|')[1]}
+                        onRangeChange={(s, e) => setMonthRange(`${s}|${e}`)}
+                        showPresets
+                        compact
+                        placeholder="Período..."
+                    />
                 </div>
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />

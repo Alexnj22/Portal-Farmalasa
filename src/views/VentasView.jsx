@@ -76,35 +76,47 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
     const sv    = new Date(nowMs);
     const p     = n => String(n).padStart(2, '0');
     const y = sv.getUTCFullYear(), m = sv.getUTCMonth(), d = sv.getUTCDate();
-    const todayStr  = `${y}-${p(m+1)}-${p(d)}`;
-    const dFromMon  = (sv.getUTCDay() + 6) % 7;
-    const mon       = new Date(nowMs - dFromMon * 86400_000);
-    const weekStart = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
+    const todayStr   = `${y}-${p(m+1)}-${p(d)}`;
+    const dFromMon   = (sv.getUTCDay() + 6) % 7;
+    const mon        = new Date(nowMs - dFromMon * 86400_000);
+    const weekStart  = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
     const monthStart = `${y}-${p(m+1)}-01`;
-    const quickTabs = [
+    const quickTabs  = [
         { label: 'Hoy',  value: `${todayStr}|${todayStr}` },
         { label: 'Sem.', value: `${weekStart}|${todayStr}` },
         { label: 'Mes',  value: `${monthStart}|${todayStr}` },
     ];
     return (
-        <div className="flex items-center gap-1 bg-slate-50/90 border border-slate-200/80 rounded-2xl px-2.5 py-1.5 shrink-0 shadow-sm">
-            {quickTabs.map(qt => (
-                <button key={qt.label} onClick={() => setMonthRange(qt.value)}
-                    className={`px-2.5 h-7 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 border ${
-                        monthRange === qt.value
-                            ? 'bg-white text-slate-800 border-slate-200 shadow-sm'
-                            : 'bg-transparent text-slate-400 border-transparent hover:bg-white hover:text-slate-700 hover:border-slate-100'
-                    }`}>
-                    {qt.label}
-                </button>
-            ))}
-            <div className="h-4 w-px bg-slate-200 mx-0.5 shrink-0" />
-            <div className="w-[115px] overflow-visible">
+        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+
+            {/* Segmented period tabs */}
+            <div className="px-2.5 py-2">
+                <div className="flex items-center gap-0.5 bg-slate-100/80 rounded-xl p-[3px]">
+                    {quickTabs.map(qt => (
+                        <button key={qt.label} onClick={() => setMonthRange(qt.value)}
+                            className={`px-2.5 h-[22px] rounded-[9px] text-[9.5px] font-black uppercase tracking-wider transition-all duration-200 shrink-0 ${
+                                monthRange === qt.value
+                                    ? 'bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.12)] scale-[1.02]'
+                                    : 'text-slate-400 hover:text-slate-600'
+                            }`}>
+                            {qt.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Branch select */}
+            <div className="px-2 py-2 w-[120px] overflow-visible">
                 <LiquidSelect value={filterBranch} onChange={setFilterBranch}
                     options={branchOptions} placeholder="Todas" icon={Building2} compact />
             </div>
-            <div className="h-4 w-px bg-slate-200 mx-0.5 shrink-0" />
-            <div className="overflow-visible">
+
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Period picker */}
+            <div className="px-2 py-2 overflow-visible">
                 <PeriodPicker value={monthRange} onChange={setMonthRange} />
             </div>
         </div>
@@ -197,16 +209,22 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
 function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
     const active = sortCol === col;
     return (
-        <th className={`px-4 py-3 select-none ${className}`}>
+        <th className={`px-2 py-3 select-none ${className}`}>
             <button onClick={() => onSort(col)}
-                className="flex items-center gap-1 group text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-700 transition-colors">
+                className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
+                    active
+                        ? 'text-[#007AFF] bg-blue-50'
+                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100/70'
+                }`}>
                 {label}
-                {active
-                    ? sortDir === 'asc'
-                        ? <ChevronUp size={10} className="text-[#007AFF]" />
-                        : <ChevronDown size={10} className="text-[#007AFF]" />
-                    : <ChevronsUpDown size={10} className="opacity-25 group-hover:opacity-60" />
-                }
+                <span className={`transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+                    {active
+                        ? sortDir === 'asc'
+                            ? <ChevronUp size={10} />
+                            : <ChevronDown size={10} />
+                        : <ChevronsUpDown size={10} />
+                    }
+                </span>
             </button>
         </th>
     );
@@ -249,25 +267,20 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
     const prevMonthRange = useMemo(() => computePrevRange(fini, ffin), [fini, ffin]);
 
-    // Stats: current + same days last month for % change
+    // Stats: always use live RPC (supports arbitrary date ranges incl. Hoy / Sem.)
     const fetchStats = useCallback(async () => {
         setLoadingStats(true);
-        const isCurrentMonth = fini === currentMonthRange().fini;
-        const branchId = filterBranch ? Number(filterBranch) : -1;
         const branchFilter = filterBranch ? Number(filterBranch) : null;
         const { prevFini, prevFfin } = prevMonthRange;
 
         const [cur, prev, puntosCur, puntosPrev] = await Promise.all([
-            isCurrentMonth
-                ? supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: branchFilter })
-                : supabase.from('ventas_monthly_stats').select('total_count, total_sum')
-                    .eq('mes', fini).eq('branch_id', branchId).eq('cod_vendedor', '').single(),
+            supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: branchFilter }),
             supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
             supabase.rpc('get_puntos_canjeados', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter }),
             supabase.rpc('get_puntos_canjeados', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
         ]);
 
-        const s    = isCurrentMonth ? (cur.data?.[0] || {}) : (cur.data || {});
+        const s    = cur.data?.[0] || {};
         const prevS = prev.data?.[0] || {};
         setTotalCount(parseInt(s.total_count || 0));
         setTotalAmount(parseFloat(s.total_sum || 0));
@@ -420,15 +433,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                         <table className="w-full text-sm">
                             <thead className="sticky top-0 z-10">
-                                <tr className="bg-gradient-to-b from-white/95 to-white/80 backdrop-blur-xl border-b border-white/60 shadow-[0_1px_0_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.04)]">
-                                    <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
-                                    <SortTh label="ID"          col="correlativo"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
-                                    <SortTh label="Tipo"        col="tipo_documento" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
-                                    <SortTh label="Sucursal"    col="branch_id"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-3.5" />
-                                    <SortTh label="Vendedor"    col="cod_vendedor"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-3.5" />
-                                    <SortTh label="Cliente"     col="cliente"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-3.5" />
-                                    <SortTh label="Método pago" col="tipo_pago"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-3.5" />
-                                    <SortTh label="Total"       col="total"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-3.5" />
+                                <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                    <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
+                                    <SortTh label="ID"          col="correlativo"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-2.5" />
+                                    <SortTh label="Tipo"        col="tipo_documento" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-2.5" />
+                                    <SortTh label="Sucursal"    col="branch_id"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-2.5" />
+                                    <SortTh label="Vendedor"    col="cod_vendedor"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-2.5" />
+                                    <SortTh label="Cliente"     col="cliente"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
+                                    <SortTh label="Método pago" col="tipo_pago"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-2.5" />
+                                    <SortTh label="Total"       col="total"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-2.5" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -498,7 +511,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : isCCF ? 'text-red-700' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                                         <ChevronDown size={12}
                                                             className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
                                                     </div>
@@ -1091,14 +1104,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="w-full text-sm">
                         <thead className="sticky top-0 z-10">
-                            <tr className="bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
-                                <th className="text-left px-4 py-3 w-8 text-[10px] font-black uppercase tracking-widest text-slate-500">#</th>
-                                <SortTh label="Producto"  col="descripcion" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                <SortTh label="Unidades"  col="cantidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
-                                <SortTh label="Ingresos"  col="total"       sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                <SortTh label="Costo Est." col="costo_total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
-                                <SortTh label="Utilidad"  col="utilidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                <SortTh label="Margen"    col="margen"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                            <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                <th className="text-left px-4 py-2.5 w-8 text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
+                                <SortTh label="Producto"   col="descripcion"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                <SortTh label="Unidades"   col="cantidad"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
+                                <SortTh label="Ingresos"   col="total"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                <SortTh label="Costo Est." col="costo_total"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
+                                <SortTh label="Utilidad"   col="utilidad"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                <SortTh label="Margen"     col="margen"       sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
                             </tr>
                         </thead>
                         <tbody>

@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Crown
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Crown, Loader2
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { RESPUESTAS, BLOQUES, PREGUNTAS, JEFE_POR_SUCURSAL, SUPERVISOR_DE_JEFE, BLOQUE_CONTEXTO } from '../data/encuestaData';
+import { supabase } from '../supabaseClient';
+import { JEFE_POR_SUCURSAL, SUPERVISOR_DE_JEFE } from '../data/encuestaData';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -215,7 +216,73 @@ export default function EncuestaView() {
     const [filterSucursal, setFilterSucursal] = useState('');
     const [filterRol, setFilterRol] = useState('');
 
-    const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), []);
+    // ── Supabase data ──────────────────────────────────────────────────────────
+    const [surveys, setSurveys] = useState([]);
+    const [selectedSurveyId, setSelectedSurveyId] = useState(null);
+    const [RESPUESTAS, setRespuestas] = useState([]);
+    const [BLOQUES, setBloques] = useState([]);
+    const [PREGUNTAS, setPreguntas] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        supabase.from('surveys').select('*').order('año', { ascending: false })
+            .then(({ data }) => {
+                if (data?.length) {
+                    setSurveys(data);
+                    setSelectedSurveyId(data[0].id);
+                }
+            });
+    }, []);
+
+    useEffect(() => {
+        if (!selectedSurveyId) return;
+        setLoading(true);
+        setExpandedQ(null);
+        setExpandedBloque(null);
+
+        Promise.all([
+            supabase.from('survey_bloques').select('*').eq('survey_id', selectedSurveyId).order('numero'),
+            supabase.from('survey_preguntas').select('*').eq('survey_id', selectedSurveyId).order('numero'),
+            supabase.from('survey_responses')
+                .select('*, employee:employees(photo_url, branch:branches(name))')
+                .eq('survey_id', selectedSurveyId),
+        ]).then(([bRes, pRes, rRes]) => {
+            setBloques((bRes.data || []).map(b => ({
+                id: b.numero,
+                _dbId: b.id,
+                nombre: b.nombre,
+                color: b.color,
+                desc: b.descripcion,
+                indices: b.indices,
+                ctx: b.ctx_dirigido ? {
+                    dirigido: b.ctx_dirigido,
+                    tipo: b.ctx_tipo,
+                    badge: b.ctx_badge,
+                    nota: b.ctx_nota,
+                } : null,
+            })));
+            setPreguntas((pRes.data || []).map(p => ({
+                id: p.numero,
+                bloque: p.bloque_id ? (bRes.data || []).find(b => b.id === p.bloque_id)?.numero ?? null : null,
+                idx: p.indice,
+                texto: p.texto,
+                opciones: p.opciones,
+                tipo: p.tipo,
+                invertida: p.invertida,
+            })));
+            setRespuestas((rRes.data || []).map(r => ({
+                nombre: r.display_name || r.employee?.first_names || '',
+                isJefe: r.is_jefe,
+                sucursal: r.employee?.branch?.name || '',
+                photo: r.employee?.photo_url || null,
+                r: r.responses,
+                comentario: r.comentario,
+            })));
+            setLoading(false);
+        });
+    }, [selectedSurveyId]);
+
+    const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 
     const filteredRows = useMemo(() => {
         let r = RESPUESTAS;
@@ -223,16 +290,16 @@ export default function EncuestaView() {
         if (filterRol === 'jefe') r = r.filter(x => x.isJefe);
         if (filterRol === 'colab') r = r.filter(x => !x.isJefe);
         return r;
-    }, [filterSucursal, filterRol]);
+    }, [filterSucursal, filterRol, RESPUESTAS]);
 
     const bloquesScores = useMemo(() =>
         BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices) })),
-    [filteredRows]);
+    [filteredRows, BLOQUES]);
 
     const globalScore = useMemo(() => {
         const allIdx = BLOQUES.flatMap(b => b.indices);
         return blockScore(filteredRows, allIdx);
-    }, [filteredRows]);
+    }, [filteredRows, BLOQUES]);
 
     // Distribución P31 (autocalificación numérica)
     const selfRatings = useMemo(() => {
@@ -259,9 +326,30 @@ export default function EncuestaView() {
 
     const toggleQ = (id) => setExpandedQ(prev => prev === id ? null : id);
 
+    const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
+
     return (
-        <GlassViewLayout title="Clima Organizacional 2026" subtitle="Farmacias La Popular y La Salud — 27 colaboradores">
+        <GlassViewLayout
+            title={selectedSurvey?.nombre ?? 'Clima Organizacional'}
+            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}>
             <div className="p-5 md:p-6 space-y-5">
+
+                {/* Survey selector + Tabs row */}
+                <div className="flex flex-wrap items-center gap-3">
+                    {surveys.length > 1 && (
+                        <select value={selectedSurveyId ?? ''} onChange={e => setSelectedSurveyId(Number(e.target.value))}
+                            className="h-9 px-3 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-700 bg-white shadow-sm">
+                            {surveys.map(s => <option key={s.id} value={s.id}>{s.nombre} ({s.año})</option>)}
+                        </select>
+                    )}
+                </div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center h-48 gap-2 text-slate-400">
+                        <Loader2 size={18} className="animate-spin" />
+                        <span className="text-[12px] font-semibold">Cargando encuesta…</span>
+                    </div>
+                ) : (<>
 
                 {/* Tabs */}
                 <div className="flex items-center gap-1 bg-slate-100/80 rounded-xl p-1 w-fit">
@@ -443,7 +531,7 @@ export default function EncuestaView() {
                 {tab === 'bloques' && (
                     <div className="space-y-3">
                         {BLOQUES.map(bloque => {
-                            const ctx   = BLOQUE_CONTEXTO[bloque.id];
+                            const ctx   = bloque.ctx ?? null;
                             const score = blockScore(RESPUESTAS, bloque.indices);
                             const c     = PCT_COLORS[bloque.color];
                             const sl    = scoreLabel(score);
@@ -860,6 +948,7 @@ export default function EncuestaView() {
                     </div>
                 )}
 
+                </>)}
             </div>
         </GlassViewLayout>
     );

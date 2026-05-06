@@ -7,7 +7,8 @@ import {
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse, Download,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
-    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight
+    KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
+    BarChart2, Smile, ThumbsUp, Meh, Frown
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -72,6 +73,23 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     useEffect(() => {
         if (currentTab === 'requests') loadEmpRequests();
     }, [currentTab]);
+
+    // ── Encuestas de clima ────────────────────────────────────────────────────
+    const [surveyResults, setSurveyResults] = useState([]);
+    const [loadingSurvey, setLoadingSurvey] = useState(false);
+    useEffect(() => {
+        if (!activeEmployee?.id) return;
+        setLoadingSurvey(true);
+        supabase
+            .from('survey_responses')
+            .select(`*, survey:surveys(nombre, año), bloques:survey_bloques(numero, nombre, color, indices)`)
+            .eq('employee_id', activeEmployee.id)
+            .order('survey_id', { ascending: false })
+            .then(({ data }) => {
+                setSurveyResults(data || []);
+                setLoadingSurvey(false);
+            });
+    }, [activeEmployee?.id]);
 
     useEffect(() => {
         if (showCancelModal) setCancelModalRender(true);
@@ -322,13 +340,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             
             <div className="flex items-center relative bg-white/50 border border-white/60 rounded-full p-1 shrink-0 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
                 <div
-                    className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    className="absolute top-1 bottom-1 w-[calc(16.667%-2px)] bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     style={{
                         transform: currentTab === 'history'     ? 'translateX(0%)' :
                                    currentTab === 'documents'   ? 'translateX(100%)' :
                                    currentTab === 'permissions' ? 'translateX(200%)' :
                                    currentTab === 'payroll'     ? 'translateX(300%)' :
-                                   'translateX(400%)'
+                                   currentTab === 'requests'    ? 'translateX(400%)' :
+                                   'translateX(500%)'
                     }}
                 ></div>
 
@@ -346,6 +365,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </button>
                 <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
+                </button>
+                <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <BarChart2 size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Clima</span>
                 </button>
             </div>
 
@@ -1232,6 +1254,112 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 )}
 
                             </div>
+
+                                {/* ── TAB CLIMA ─────────────────────────────────────────── */}
+                                {currentTab === 'clima' && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                        <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
+                                            <BarChart2 size={18} className="text-[#007AFF]"/> Encuestas de Clima
+                                        </h3>
+
+                                        {loadingSurvey ? (
+                                            <div className="flex items-center gap-2 text-slate-400 py-6">
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span className="text-[12px]">Cargando…</span>
+                                            </div>
+                                        ) : surveyResults.length === 0 ? (
+                                            <div className="rounded-2xl border border-slate-100 bg-white/60 p-6 text-center text-slate-400 text-[12px]">
+                                                No participó en ninguna encuesta registrada.
+                                            </div>
+                                        ) : surveyResults.map(result => {
+                                            const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
+                                            const bloques = result.bloques || [];
+                                            const responses = result.responses || [];
+
+                                            const bScore = (indices) => {
+                                                let total = 0, count = 0;
+                                                for (const i of indices) {
+                                                    const v = responses[i];
+                                                    const s = v && SCORE_MAP[v.toUpperCase()] ? SCORE_MAP[v.toUpperCase()] : null;
+                                                    if (s) { total += s; count++; }
+                                                }
+                                                return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
+                                            };
+
+                                            const allIdx = bloques.flatMap(b => b.indices);
+                                            const global = bScore(allIdx);
+
+                                            const COLOR_MAP = {
+                                                blue: { bar: 'bg-blue-500', text: 'text-blue-700' },
+                                                emerald: { bar: 'bg-emerald-500', text: 'text-emerald-700' },
+                                                amber: { bar: 'bg-amber-500', text: 'text-amber-700' },
+                                                indigo: { bar: 'bg-indigo-500', text: 'text-indigo-700' },
+                                                purple: { bar: 'bg-purple-500', text: 'text-purple-700' },
+                                                teal: { bar: 'bg-teal-500', text: 'text-teal-700' },
+                                                rose: { bar: 'bg-rose-500', text: 'text-rose-700' },
+                                            };
+
+                                            const scoreLabel = (pct) =>
+                                                pct >= 85 ? { label: 'Excelente', Icon: Smile,     color: 'text-emerald-600' } :
+                                                pct >= 70 ? { label: 'Bueno',     Icon: ThumbsUp,  color: 'text-blue-600'    } :
+                                                pct >= 55 ? { label: 'Regular',   Icon: Meh,       color: 'text-amber-600'   } :
+                                                            { label: 'Crítico',   Icon: Frown,     color: 'text-rose-600'    };
+
+                                            return (
+                                                <div key={result.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm p-4 space-y-4">
+                                                    {/* Header */}
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-[13px] font-black text-slate-800">{result.survey?.nombre}</p>
+                                                            <p className="text-[10px] text-slate-400">{result.survey?.año} · {result.is_jefe ? 'Jefe/a de sala' : 'Colaborador/a'}</p>
+                                                        </div>
+                                                        {global != null && (() => { const sl = scoreLabel(global); return (
+                                                            <div className="text-right">
+                                                                <div className="text-[26px] font-black text-slate-800 leading-none">{global}<span className="text-[14px]">%</span></div>
+                                                                <div className={`text-[10px] font-black ${sl.color}`}>{sl.label}</div>
+                                                            </div>
+                                                        );})()}
+                                                    </div>
+
+                                                    {/* Score global bar */}
+                                                    {global != null && (
+                                                        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                            <div className={`h-full rounded-full transition-all duration-700 ${global >= 85 ? 'bg-emerald-500' : global >= 70 ? 'bg-blue-500' : global >= 55 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                                                                style={{ width: `${global}%` }} />
+                                                        </div>
+                                                    )}
+
+                                                    {/* Por bloque */}
+                                                    <div className="space-y-2 pt-1">
+                                                        {bloques.map(b => {
+                                                            const s = bScore(b.indices);
+                                                            if (!s) return null;
+                                                            const c = COLOR_MAP[b.color] || COLOR_MAP.blue;
+                                                            return (
+                                                                <div key={b.id} className="flex items-center gap-3">
+                                                                    <span className={`text-[9px] font-black uppercase tracking-wider w-28 shrink-0 truncate ${c.text}`}>{b.nombre}</span>
+                                                                    <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                                                        <div className={`h-full rounded-full ${c.bar} transition-all duration-700`} style={{ width: `${s}%` }} />
+                                                                    </div>
+                                                                    <span className={`text-[11px] font-black w-8 text-right ${c.text}`}>{s}%</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    {/* Comentario */}
+                                                    {result.comentario && (
+                                                        <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+                                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Comentario</p>
+                                                            <p className="text-[11px] text-slate-600 leading-relaxed">{result.comentario}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
                         </div>
                     </div>
 

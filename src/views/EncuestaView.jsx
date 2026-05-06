@@ -157,14 +157,14 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
                                         {namesByOption[k].map(({ nombre, isJefe, sucursal, photo }) => (
-                                            <div key={nombre} className={`flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full ${chip}`}>
-                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={18} />
+                                            <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white/70 border border-black/10">
+                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={24} />
                                                 <div className="flex flex-col leading-tight">
-                                                    <span className="text-[8px] font-black leading-none">
+                                                    <span className="text-[10px] font-black leading-none text-slate-800">
                                                         {nombre.split(' ').map((w, i) => i === 0 ? w : w.charAt(0) + '.').join(' ')}
-                                                        {isJefe && <span className="ml-1 opacity-70">·J</span>}
+                                                        {isJefe && <span className="ml-1 opacity-60">·J</span>}
                                                     </span>
-                                                    <span className="text-[7px] opacity-60 leading-none mt-0.5">{sucursal}</span>
+                                                    <span className="text-[9px] opacity-55 leading-none mt-0.5 text-slate-600">{sucursal}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -546,12 +546,12 @@ export default function EncuestaView() {
 
                             // Bloque 2: scoreboard por sucursal (colabs evaluando su jefe)
                             const jefesScoreboard = bloque.id === 2
-                                ? Object.entries(JEFE_POR_SUCURSAL).map(([suc, jefeNombre]) => {
+                                ? Object.entries(JEFE_POR_SUCURSAL).map(([suc, jefeNickname]) => {
                                     const colabRows = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
-                                    const jefe      = RESPUESTAS.find(r => r.nombre === jefeNombre);
+                                    const jefe      = RESPUESTAS.find(r => r.sucursal === suc && r.isJefe);
                                     const sColabs   = blockScore(colabRows, bloque.indices);
                                     const sJefe     = jefe ? blockScore([jefe], bloque.indices) : null;
-                                    return { suc, jefeNombre, colabRows, sColabs, sJefe };
+                                    return { suc, jefeNickname, jefe, colabRows, sColabs, sJefe };
                                   }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0))
                                 : null;
 
@@ -610,14 +610,17 @@ export default function EncuestaView() {
                                                             Colaboradores evaluando a su Jefe/a de Sala
                                                         </p>
                                                         <div className="space-y-2">
-                                                            {jefesScoreboard.map(({ suc, jefeNombre, colabRows, sColabs }) => {
+                                                            {jefesScoreboard.map(({ suc, jefeNickname, jefe, colabRows, sColabs }) => {
                                                                 if (!sColabs) return null;
                                                                 const sl2 = scoreLabel(sColabs);
+                                                                const jefeDisplay = jefe
+                                                                    ? jefe.nombre.split(' ').slice(0, 2).join(' ')
+                                                                    : jefeNickname;
                                                                 return (
                                                                     <div key={suc} className="group relative flex items-center gap-3">
                                                                         <div className="w-20 shrink-0">
                                                                             <div className="text-[10px] font-black text-slate-700">{suc}</div>
-                                                                            <div className="text-[9px] text-slate-400">{jefeNombre} · {colabRows.length} eval.</div>
+                                                                            <div className="text-[9px] text-slate-400">{jefeDisplay} · {colabRows.length} eval.</div>
                                                                         </div>
                                                                         <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
                                                                             <div className={`h-full rounded-full ${sColabs >= 70 ? 'bg-emerald-500' : sColabs >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
@@ -652,42 +655,70 @@ export default function EncuestaView() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Jefes evaluando a su supervisor */}
+                                                    {/* Jefes evaluando a su jefe inmediato (agrupado) */}
                                                     <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3">
                                                         <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1">
-                                                            Jefes de Sala evaluando a su Supervisor/a
+                                                            Jefes evaluando a su Jefe Inmediato
                                                         </p>
-                                                        <p className="text-[9px] text-slate-400 mb-2">
-                                                            Los jefes de sala y bodega responden sobre su propio jefe inmediato (Supervisor de Ventas o Administración).
+                                                        <p className="text-[9px] text-slate-400 mb-3">
+                                                            Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.
                                                         </p>
-                                                        <div className="space-y-1.5">
-                                                            {RESPUESTAS.filter(r => r.isJefe).map(jefe => {
-                                                                const s = blockScore([jefe], bloque.indices);
-                                                                const sc = s == null ? 'text-slate-300'
-                                                                    : s >= 85 ? 'text-emerald-600'
-                                                                    : s >= 70 ? 'text-blue-600'
-                                                                    : s >= 55 ? 'text-amber-600'
-                                                                    : 'text-rose-500';
+                                                        {(() => {
+                                                            const groups = {};
+                                                            RESPUESTAS.filter(r => r.isJefe).forEach(jefe => {
+                                                                const sup = SUPERVISOR_DE_JEFE[jefe.sucursal] || 'Sin definir';
+                                                                if (!groups[sup]) groups[sup] = [];
+                                                                groups[sup].push(jefe);
+                                                            });
+                                                            return Object.entries(groups).map(([supervisor, jefes], gi, arr) => {
+                                                                const groupScore = blockScore(jefes, bloque.indices);
+                                                                const gsl = groupScore ? scoreLabel(groupScore) : null;
                                                                 return (
-                                                                    <div key={jefe.nombre} className="flex items-center gap-3">
-                                                                        <div className="flex items-center gap-2 w-28 shrink-0">
-                                                                            <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
-                                                                            <div>
-                                                                                <div className="text-[10px] font-black text-slate-700 capitalize leading-tight">{jefe.nombre.charAt(0).toUpperCase() + jefe.nombre.slice(1).toLowerCase()}</div>
-                                                                                <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
-                                                                            </div>
+                                                                    <div key={supervisor} className={gi < arr.length - 1 ? 'mb-3 pb-3 border-b border-purple-100/60' : ''}>
+                                                                        <div className="flex items-center justify-between mb-2">
+                                                                            <span className="text-[9px] font-black text-purple-600 uppercase tracking-wide">
+                                                                                → {supervisor}
+                                                                            </span>
+                                                                            {gsl && (
+                                                                                <span className={`text-[11px] font-black ${gsl.color}`}>
+                                                                                    {groupScore.toFixed(0)}% · {gsl.label}
+                                                                                </span>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
-                                                                            <div className={`h-full rounded-full ${s >= 70 ? 'bg-purple-500' : s >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
-                                                                                style={{ width: `${s ?? 0}%` }} />
+                                                                        <div className="space-y-1.5">
+                                                                            {jefes.map(jefe => {
+                                                                                const s = blockScore([jefe], bloque.indices);
+                                                                                const sc = s == null ? 'text-slate-300'
+                                                                                    : s >= 85 ? 'text-emerald-600'
+                                                                                    : s >= 70 ? 'text-blue-600'
+                                                                                    : s >= 55 ? 'text-amber-600'
+                                                                                    : 'text-rose-500';
+                                                                                return (
+                                                                                    <div key={jefe.nombre} className="flex items-center gap-3">
+                                                                                        <div className="flex items-center gap-2 w-32 shrink-0">
+                                                                                            <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
+                                                                                            <div>
+                                                                                                <div className="text-[10px] font-black text-slate-700 leading-tight">
+                                                                                                    {jefe.nombre.split(' ').slice(0, 2).join(' ')}
+                                                                                                </div>
+                                                                                                <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
+                                                                                            <div className={`h-full rounded-full ${s >= 70 ? 'bg-purple-500' : s >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
+                                                                                                style={{ width: `${s ?? 0}%` }} />
+                                                                                        </div>
+                                                                                        <span className={`text-[12px] font-black w-8 text-right ${sc}`}>{s ? `${s.toFixed(0)}%` : '–'}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
                                                                         </div>
-                                                                        <span className={`text-[12px] font-black w-8 text-right ${sc}`}>{s ? `${s.toFixed(0)}%` : '–'}</span>
                                                                     </div>
                                                                 );
-                                                            })}
-                                                        </div>
-                                                        <div className="mt-2 pt-2 border-t border-purple-100/60 flex items-center justify-between">
-                                                            <span className="text-[9px] text-slate-400">Score colectivo</span>
+                                                            });
+                                                        })()}
+                                                        <div className="mt-2 pt-2 border-t border-purple-200/60 flex items-center justify-between">
+                                                            <span className="text-[9px] text-slate-400">Score global jefes</span>
                                                             <span className="text-[14px] font-black text-purple-700">{jefesEvalSupervisor?.toFixed(0)}%</span>
                                                         </div>
                                                     </div>

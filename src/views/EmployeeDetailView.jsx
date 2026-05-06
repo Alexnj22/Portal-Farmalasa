@@ -366,9 +366,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
                 </button>
-                <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <BarChart2 size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Clima</span>
-                </button>
+                {isAdmin && (
+                    <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                        <BarChart2 size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Clima</span>
+                    </button>
+                )}
             </div>
 
             {isAdmin && <div className="w-px h-6 bg-white/50 mx-1 shrink-0"></div>}
@@ -1256,7 +1258,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
 
                                 {/* ── TAB CLIMA ─────────────────────────────────────────── */}
-                                {currentTab === 'clima' && (
+                                {currentTab === 'clima' && isAdmin && (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                                         <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
                                             <BarChart2 size={18} className="text-[#007AFF]"/> Encuestas de Clima

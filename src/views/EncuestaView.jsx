@@ -273,8 +273,8 @@ export default function EncuestaView() {
                 invertida: p.invertida,
             })));
             setRespuestas((rRes.data || []).map(r => {
-                const fn = r.employee?.first_names || '';
-                const ln = r.employee?.last_names  || '';
+                const fn = (r.employee?.first_names || '').split(' ')[0];
+                const ln = (r.employee?.last_names  || '').split(' ')[0];
                 return {
                     nombre: `${fn} ${ln}`.trim() || r.display_name || '',
                     isJefe: r.is_jefe,

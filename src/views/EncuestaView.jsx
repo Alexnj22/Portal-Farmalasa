@@ -7,7 +7,17 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
-import { JEFE_POR_SUCURSAL, SUPERVISOR_DE_JEFE } from '../data/encuestaData';
+
+// Jefe inmediato de cada sucursal — configuración de org-chart
+const SUPERVISOR_DE_JEFE = {
+    'La Popular': 'Supervisor/a de Ventas',
+    'Salud 1':    'Supervisor/a de Ventas',
+    'Salud 2':    'Supervisor/a de Ventas',
+    'Salud 3':    'Supervisor/a de Ventas',
+    'Salud 4':    'Supervisor/a de Ventas',
+    'Salud 5':    'Supervisor/a de Ventas',
+    'Bodega':     'Administración / Jefe de Logística',
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -562,12 +572,12 @@ export default function EncuestaView() {
 
                             // Bloque 2: scoreboard por sucursal (colabs evaluando su jefe)
                             const jefesScoreboard = bloque.id === 2
-                                ? Object.entries(JEFE_POR_SUCURSAL).map(([suc, jefeNickname]) => {
+                                ? [...new Set(RESPUESTAS.filter(r => r.isJefe).map(r => r.sucursal))].map(suc => {
                                     const colabRows = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
                                     const jefe      = RESPUESTAS.find(r => r.sucursal === suc && r.isJefe);
                                     const sColabs   = blockScore(colabRows, bloque.indices);
                                     const sJefe     = jefe ? blockScore([jefe], bloque.indices) : null;
-                                    return { suc, jefeNickname, jefe, colabRows, sColabs, sJefe };
+                                    return { suc, jefe, colabRows, sColabs, sJefe };
                                   }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0))
                                 : null;
 
@@ -626,12 +636,12 @@ export default function EncuestaView() {
                                                             Colaboradores evaluando a su Jefe/a de Sala
                                                         </p>
                                                         <div className="space-y-2">
-                                                            {jefesScoreboard.map(({ suc, jefeNickname, jefe, colabRows, sColabs }) => {
+                                                            {jefesScoreboard.map(({ suc, jefe, colabRows, sColabs }) => {
                                                                 if (!sColabs) return null;
                                                                 const sl2 = scoreLabel(sColabs);
                                                                 const jefeDisplay = jefe
                                                                     ? jefe.nombre.split(' ').slice(0, 2).join(' ')
-                                                                    : jefeNickname;
+                                                                    : '–';
                                                                 return (
                                                                     <div key={suc} className="group relative flex items-center gap-3">
                                                                         <div className="w-20 shrink-0">

@@ -1,6 +1,6 @@
 // src/components/common/PeriodPicker.jsx
-// Date range picker with presets for the ventas/facturación filter bar.
-// value format: "YYYY-MM-DD|YYYY-MM-DD"  (same as monthRange in VentasView)
+// Date range picker — click-based (click start, click end).
+// value format: "YYYY-MM-DD|YYYY-MM-DD"
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -9,8 +9,6 @@ import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react'
 const MONTHS     = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MONTHS_SH  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
-
-// ── helpers ──────────────────────────────────────────────────────────────────
 
 const pad = n => String(n).padStart(2, '0');
 
@@ -78,13 +76,11 @@ function formatDisplay(dateStr) {
 
 // ── MonthGrid ─────────────────────────────────────────────────────────────────
 
-function MonthGrid({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, onPrev, onNext }) {
-    const firstDay   = new Date(year, month, 1).getDay();
-    const offset     = (firstDay + 6) % 7;
+function MonthGrid({ year, month, startDate, endDate, onDayClick, onDayHover, onPrev, onNext, pickingEnd }) {
+    const firstDay    = new Date(year, month, 1).getDay();
+    const offset      = (firstDay + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
     const toStr = d => `${year}-${pad(month + 1)}-${pad(d)}`;
-
     const todayStr = svToday();
 
     return (
@@ -126,22 +122,18 @@ function MonthGrid({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         const s = startDate < endDate ? startDate : endDate;
                         const e = startDate < endDate ? endDate   : startDate;
                         inRange = dayStr > s && dayStr < e;
-                        if (!isStart && !isEnd) {
-                            if (isStart) wrapBg = 'bg-gradient-to-r from-transparent to-blue-100';
-                            else if (isEnd) wrapBg = 'bg-gradient-to-l from-transparent to-blue-100';
-                            else if (inRange) wrapBg = 'bg-blue-100';
-                        }
+                        if (!isStart && !isEnd && inRange) wrapBg = 'bg-blue-100';
                     }
 
-                    let btnCls = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 select-none cursor-pointer ';
+                    let btnCls = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 select-none ';
                     if (isStart || isEnd) {
-                        btnCls += 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110';
+                        btnCls += 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110 cursor-pointer';
                     } else if (inRange) {
-                        btnCls += 'text-[#007AFF] font-black hover:bg-white hover:shadow-sm';
+                        btnCls += 'text-[#007AFF] font-black hover:bg-white hover:shadow-sm cursor-pointer';
                     } else if (isToday) {
-                        btnCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 hover:bg-slate-100';
+                        btnCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 hover:bg-slate-100 cursor-pointer';
                     } else {
-                        btnCls += 'text-slate-600 hover:bg-slate-100 hover:text-[#007AFF]';
+                        btnCls += `text-slate-600 hover:bg-slate-100 hover:text-[#007AFF] ${pickingEnd ? 'cursor-crosshair' : 'cursor-pointer'}`;
                     }
 
                     return (
@@ -149,8 +141,7 @@ function MonthGrid({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                             className={`h-9 flex items-center justify-center relative ${wrapBg}`}
                             onMouseEnter={() => onDayHover(dayStr)}>
                             <button type="button"
-                                onMouseDown={e => { e.preventDefault(); onDayMouseDown(dayStr); }}
-                                onMouseUp={() => onDayMouseUp(dayStr)}
+                                onClick={() => onDayClick(dayStr)}
                                 className={btnCls}>
                                 {day}
                             </button>
@@ -173,8 +164,8 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const [isOpen,     setIsOpen]     = useState(false);
     const [draftStart, setDraftStart] = useState(fini  || null);
     const [draftEnd,   setDraftEnd]   = useState(ffin  || null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart,  setDragStart]  = useState(null);
+    const [clickPhase, setClickPhase] = useState('idle'); // 'idle' | 'picking-end'
+    const [hoverDate,  setHoverDate]  = useState(null);
     const [viewYear,   setViewYear]   = useState(() => fini ? parseInt(fini.split('-')[0]) : new Date().getFullYear());
     const [viewMonth,  setViewMonth]  = useState(() => fini ? parseInt(fini.split('-')[1]) - 1 : new Date().getMonth());
     const [popupStyle, setPopupStyle] = useState({});
@@ -185,11 +176,21 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const secondMonth = viewMonth === 11 ? 0  : viewMonth + 1;
     const secondYear  = viewMonth === 11 ? viewYear + 1 : viewYear;
 
+    // During picking-end, show hover preview as end date
+    const previewEnd   = clickPhase === 'picking-end' && hoverDate
+        ? (hoverDate >= draftStart ? hoverDate : draftStart)
+        : draftEnd;
+    const previewStart = clickPhase === 'picking-end' && hoverDate && hoverDate < draftStart
+        ? hoverDate
+        : draftStart;
+
     // Sync draft when value changes externally
     useEffect(() => {
         const [s, e] = value ? value.split('|') : ['', ''];
         setDraftStart(s || null);
         setDraftEnd(e || null);
+        setClickPhase('idle');
+        setHoverDate(null);
     }, [value]);
 
     const open = () => {
@@ -214,45 +215,51 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
             if (left < 8) left = 8;
             setPopupStyle({ top, left });
         }
+        setClickPhase('idle');
+        setHoverDate(null);
         setIsOpen(true);
     };
 
-    const close = () => setIsOpen(false);
+    const close = () => {
+        setIsOpen(false);
+        setClickPhase('idle');
+        setHoverDate(null);
+    };
 
     const confirm = (s, e) => {
         onChange(`${s}|${e}`);
         setIsOpen(false);
+        setClickPhase('idle');
+        setHoverDate(null);
     };
 
     const handlePreset = (s, e) => {
         setDraftStart(s);
         setDraftEnd(e);
+        setClickPhase('idle');
+        setHoverDate(null);
         confirm(s, e);
     };
 
-    const handleDayMouseDown = useCallback(dayStr => {
-        setIsDragging(true);
-        setDragStart(dayStr);
-        setDraftStart(dayStr);
-        setDraftEnd(dayStr);
-    }, []);
-
-    const handleDayMouseUp = useCallback(dayStr => {
-        if (!isDragging) return;
-        setIsDragging(false);
-        const s = dragStart <= dayStr ? dragStart : dayStr;
-        const e = dragStart <= dayStr ? dayStr    : dragStart;
-        setDraftStart(s);
-        setDraftEnd(e);
-        setDragStart(null);
-    }, [isDragging, dragStart]);
-
-    const handleDayHover = useCallback(dayStr => {
-        if (isDragging && dragStart) {
-            setDraftStart(dragStart <= dayStr ? dragStart : dayStr);
-            setDraftEnd  (dragStart <= dayStr ? dayStr    : dragStart);
+    const handleDayClick = useCallback((dayStr) => {
+        if (clickPhase === 'idle') {
+            setDraftStart(dayStr);
+            setDraftEnd(null);
+            setClickPhase('picking-end');
+            setHoverDate(null);
+        } else {
+            const s = dayStr <= draftStart ? dayStr : draftStart;
+            const e = dayStr <= draftStart ? draftStart : dayStr;
+            setDraftStart(s);
+            setDraftEnd(e);
+            setClickPhase('idle');
+            setHoverDate(null);
         }
-    }, [isDragging, dragStart]);
+    }, [clickPhase, draftStart]);
+
+    const handleDayHover = useCallback((dayStr) => {
+        if (clickPhase === 'picking-end') setHoverDate(dayStr);
+    }, [clickPhase]);
 
     const handlePrev = () => {
         if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
@@ -272,13 +279,6 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [isOpen]);
-
-    useEffect(() => {
-        if (!isDragging) return;
-        const cancel = () => { setIsDragging(false); setDragStart(null); };
-        document.addEventListener('mouseup', cancel);
-        return () => document.removeEventListener('mouseup', cancel);
-    }, [isDragging]);
 
     const daysCount = draftStart && draftEnd
         ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
@@ -301,10 +301,12 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         </div>
                         <div>
                             <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">Seleccionar período</p>
-                            <p className="text-[10px] text-slate-400 font-bold">
-                                {draftStart && draftEnd
-                                    ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)} · ${daysCount} día${daysCount !== 1 ? 's' : ''}`
-                                    : 'Elige un preset o arrastra en el calendario'}
+                            <p className={`text-[10px] font-bold transition-colors ${clickPhase === 'picking-end' ? 'text-[#007AFF]' : 'text-slate-400'}`}>
+                                {clickPhase === 'picking-end'
+                                    ? `Inicio: ${formatDisplay(draftStart)} — ahora selecciona la fecha de fin`
+                                    : draftStart && draftEnd
+                                        ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)} · ${daysCount} día${daysCount !== 1 ? 's' : ''}`
+                                        : 'Elige un preset o haz clic en el día de inicio'}
                             </p>
                         </div>
                     </div>
@@ -319,7 +321,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     <div className="flex flex-col w-[148px] shrink-0 gap-0.5">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 px-1">Accesos rápidos</p>
                         {presets.quick.map(p => {
-                            const active = draftStart === p.start && draftEnd === p.end;
+                            const active = draftStart === p.start && draftEnd === p.end && clickPhase === 'idle';
                             return (
                                 <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                     className={`text-left px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
@@ -335,7 +337,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-3 mb-1 px-1">Meses</p>
                         <div className="flex flex-col gap-0.5 overflow-y-auto max-h-[176px] pr-0.5">
                             {presets.months.map(p => {
-                                const active = draftStart === p.start && draftEnd === p.end;
+                                const active = draftStart === p.start && draftEnd === p.end && clickPhase === 'idle';
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                         className={`text-left px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
@@ -356,36 +358,43 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     <div className="flex gap-4 flex-1">
                         <MonthGrid
                             year={viewYear} month={viewMonth}
-                            startDate={draftStart} endDate={draftEnd}
-                            onDayMouseDown={handleDayMouseDown}
-                            onDayMouseUp={handleDayMouseUp}
+                            startDate={previewStart} endDate={previewEnd}
+                            onDayClick={handleDayClick}
                             onDayHover={handleDayHover}
+                            pickingEnd={clickPhase === 'picking-end'}
                             onPrev={handlePrev}
                         />
                         <div className="w-px bg-white/30 self-stretch shrink-0" />
                         <MonthGrid
                             year={secondYear} month={secondMonth}
-                            startDate={draftStart} endDate={draftEnd}
-                            onDayMouseDown={handleDayMouseDown}
-                            onDayMouseUp={handleDayMouseUp}
+                            startDate={previewStart} endDate={previewEnd}
+                            onDayClick={handleDayClick}
                             onDayHover={handleDayHover}
+                            pickingEnd={clickPhase === 'picking-end'}
                             onNext={handleNext}
                         />
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-end gap-3">
-                    <button type="button" onClick={close}
-                        className="px-4 py-2 rounded-xl text-[11px] font-black text-slate-500 hover:bg-slate-100 transition-all uppercase tracking-widest">
-                        Cancelar
-                    </button>
-                    <button type="button"
-                        disabled={!draftStart || !draftEnd}
-                        onClick={() => confirm(draftStart, draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
-                        <Check size={14} strokeWidth={3} /> Aplicar
-                    </button>
+                <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
+                    {clickPhase === 'picking-end' ? (
+                        <p className="text-[11px] text-[#007AFF] font-bold animate-pulse">
+                            Haz clic en la fecha de fin...
+                        </p>
+                    ) : <div />}
+                    <div className="flex items-center gap-3">
+                        <button type="button" onClick={close}
+                            className="px-4 py-2 rounded-xl text-[11px] font-black text-slate-500 hover:bg-slate-100 transition-all uppercase tracking-widest">
+                            Cancelar
+                        </button>
+                        <button type="button"
+                            disabled={!draftStart || !draftEnd || clickPhase === 'picking-end'}
+                            onClick={() => confirm(draftStart, draftEnd)}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
+                            <Check size={14} strokeWidth={3} /> Aplicar
+                        </button>
+                    </div>
                 </div>
             </div>
         </>,

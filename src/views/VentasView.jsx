@@ -72,6 +72,8 @@ function fmtShort(dateStr) {
 }
 
 function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
+    const [activePill, setActivePill] = useState(null);
+
     const nowMs = Date.now() - 6 * 3600_000;
     const sv    = new Date(nowMs);
     const p     = n => String(n).padStart(2, '0');
@@ -86,6 +88,22 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
         { label: 'Sem.', value: `${weekStart}|${todayStr}` },
         { label: 'Mes',  value: `${monthStart}|${todayStr}` },
     ];
+
+    const handleQuickTab = (label, value) => {
+        setActivePill(label);
+        setMonthRange(value);
+    };
+
+    const handlePeriodChange = (val) => {
+        setActivePill(null);
+        setMonthRange(val);
+    };
+
+    const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
+    const branchW = selectedBranch
+        ? Math.max(110, Math.min(220, 56 + selectedBranch.label.length * 7.5))
+        : 110;
+
     return (
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
 
@@ -93,9 +111,9 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
             <div className="px-2.5 py-2">
                 <div className="flex items-center gap-0.5 bg-slate-100/80 rounded-xl p-[3px]">
                     {quickTabs.map(qt => (
-                        <button key={qt.label} onClick={() => setMonthRange(qt.value)}
+                        <button key={qt.label} onClick={() => handleQuickTab(qt.label, qt.value)}
                             className={`px-2.5 h-[22px] rounded-[9px] text-[9.5px] font-black uppercase tracking-wider transition-all duration-200 shrink-0 ${
-                                monthRange === qt.value
+                                activePill === qt.label
                                     ? 'bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.12)] scale-[1.02]'
                                     : 'text-slate-400 hover:text-slate-600'
                             }`}>
@@ -108,7 +126,7 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
             <div className="h-5 w-px bg-slate-100 shrink-0" />
 
             {/* Branch select */}
-            <div className="px-2 py-2 w-[120px] overflow-visible">
+            <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>
                 <LiquidSelect value={filterBranch} onChange={setFilterBranch}
                     options={branchOptions} placeholder="Todas" icon={Building2} compact />
             </div>
@@ -117,7 +135,7 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
 
             {/* Period picker */}
             <div className="px-2 py-2 overflow-visible">
-                <PeriodPicker value={monthRange} onChange={setMonthRange} />
+                <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
             </div>
         </div>
     );

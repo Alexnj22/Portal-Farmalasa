@@ -89,6 +89,15 @@ function dailyPct(curTotal, curDays, prevTotal, prevDays) {
     return ((curAvg - prevAvg) / prevAvg) * 100;
 }
 
+// Returns "HH:MM:00" in CST if ffin is today, null for past ranges (no cutoff needed)
+function currentHoraCorte(ffin) {
+    const nowSV   = new Date(Date.now() - 6 * 3600_000);
+    const pad     = n => String(n).padStart(2, '0');
+    const todaySV = `${nowSV.getUTCFullYear()}-${pad(nowSV.getUTCMonth() + 1)}-${pad(nowSV.getUTCDate())}`;
+    if (ffin !== todaySV) return null;
+    return `${pad(nowSV.getUTCHours())}:${pad(nowSV.getUTCMinutes())}:00`;
+}
+
 function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
     const [activePill, setActivePill] = useState(null);
 
@@ -330,12 +339,13 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         setLoadingStats(true);
         const branchFilter = filterBranch ? Number(filterBranch) : null;
         const { prevFini, prevFfin } = prevMonthRange;
+        const horaCorte = currentHoraCorte(ffin);
 
         const [cur, prev, puntosCur, puntosPrev] = await Promise.all([
-            supabase.rpc('get_ventas_stats', { p_fini: fini, p_ffin: ffin, p_branch_id: branchFilter }),
-            supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
-            supabase.rpc('get_puntos_canjeados', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter }),
-            supabase.rpc('get_puntos_canjeados', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter }),
+            supabase.rpc('get_ventas_stats', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            supabase.rpc('get_puntos_canjeados', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
+            supabase.rpc('get_puntos_canjeados', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
         ]);
 
         const s    = cur.data?.[0] || {};
@@ -729,9 +739,11 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
+        const horaCorte = currentHoraCorte(ffin);
         supabase.rpc('get_ventas_stats', {
             p_fini: prevFini, p_ffin: prevFfin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
+            p_hora_corte: horaCorte,
         }).then(({ data }) => {
             const s = data?.[0] || {};
             setPrevVendStats({ sum: parseFloat(s.total_sum || 0), count: parseInt(s.total_count || 0) });
@@ -1105,7 +1117,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
-        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: null })
+        const horaCorte = currentHoraCorte(ffin);
+        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: null, p_hora_corte: horaCorte })
             .then(({ data }) => {
                 const s = data?.[0] || {};
                 setPrevProdStats({ sum: parseFloat(s.total_sum || 0) });

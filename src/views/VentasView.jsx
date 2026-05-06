@@ -99,9 +99,19 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
         setMonthRange(val);
     };
 
+    const resetAll = () => {
+        const r = currentMonthRange();
+        setActivePill(null);
+        setFilterBranch('');
+        setMonthRange(`${r.fini}|${r.ffin}`);
+    };
+
+    const hasActiveFilters = !!filterBranch || activePill !== null;
+
+    // compact mode: pl-10 pr-9 = 76px of internal padding, add ~10px buffer per char
     const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
     const branchW = selectedBranch
-        ? Math.max(110, Math.min(220, 56 + selectedBranch.label.length * 7.5))
+        ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
         : 110;
 
     return (
@@ -137,6 +147,18 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
             <div className="px-2 py-2 overflow-visible">
                 <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
             </div>
+
+            {/* Clear all filters */}
+            {hasActiveFilters && (
+                <>
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <button onClick={resetAll}
+                        title="Limpiar filtros"
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                        <X size={11} strokeWidth={3} />
+                    </button>
+                </>
+            )}
         </div>
     );
 }

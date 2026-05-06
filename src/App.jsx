@@ -36,6 +36,7 @@ import PayrollView from "./views/PayrollView";
 import VentasView from "./views/VentasView";
 import FacturacionView from "./views/FacturacionView";
 import EncuestaView from "./views/EncuestaView";
+import EncuestaAdminView from "./views/EncuestaAdminView";
 import NoAccessView from "./views/NoAccessView";
 import AccessDeniedView from "./views/AccessDeniedView";
 import DashboardView from "./views/DashboardView";
@@ -472,6 +473,7 @@ function MainApp() {
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
+                                    <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}
                                     <Route path="branches">

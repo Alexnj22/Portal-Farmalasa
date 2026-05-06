@@ -62,6 +62,13 @@ const MODULE_GROUPS = [
         ],
     },
     {
+        group: 'RRHH',
+        color: 'text-violet-600',
+        modules: [
+            { key: 'encuesta', label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y colaborador', icon: BarChart2, hasApprove: false },
+        ],
+    },
+    {
         group: 'Estructura',
         color: 'text-teal-600',
         modules: [

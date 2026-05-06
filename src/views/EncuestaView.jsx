@@ -334,21 +334,40 @@ export default function EncuestaView() {
 
     const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
 
-    return (
-        <GlassViewLayout
-            title={selectedSurvey?.nombre ?? 'Clima Organizacional'}
-            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}>
-            <div className="p-5 md:p-6 space-y-5">
-
-                {/* Survey selector + Tabs row */}
-                <div className="flex flex-wrap items-center gap-3">
-                    {surveys.length > 1 && (
+    const filtersContent = (
+        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+            <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
+                {TABS.map(({ key, label, Icon }) => (
+                    <button key={key} onClick={() => setTab(key)}
+                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
+                            tab === key
+                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                        }`}>
+                        <Icon size={12} strokeWidth={2.5} />
+                        <span className="hidden sm:inline">{label}</span>
+                    </button>
+                ))}
+                {surveys.length > 1 && (
+                    <>
+                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                         <select value={selectedSurveyId ?? ''} onChange={e => setSelectedSurveyId(Number(e.target.value))}
-                            className="h-9 px-3 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-700 bg-white shadow-sm">
+                            className="h-9 px-3 rounded-full border border-white/50 text-[10px] font-bold text-slate-700 bg-white/80 shadow-sm">
                             {surveys.map(s => <option key={s.id} value={s.id}>{s.nombre} ({s.año})</option>)}
                         </select>
-                    )}
-                </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <GlassViewLayout
+            icon={BarChart2}
+            title={selectedSurvey?.nombre ?? 'Clima Organizacional'}
+            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}
+            filtersContent={filtersContent}>
+            <div className="p-5 md:p-6 space-y-5">
 
                 {loading ? (
                     <div className="flex items-center justify-center h-48 gap-2 text-slate-400">
@@ -356,21 +375,6 @@ export default function EncuestaView() {
                         <span className="text-[12px] font-semibold">Cargando encuesta…</span>
                     </div>
                 ) : (<>
-
-                {/* Tabs */}
-                <div className="flex items-center gap-1 bg-slate-100/80 rounded-xl p-1 w-fit">
-                    {TABS.map(({ key, label, Icon }) => (
-                        <button key={key} onClick={() => setTab(key)}
-                            className={`flex items-center gap-1.5 px-3 h-8 rounded-[9px] text-[11px] font-black transition-all duration-200 ${
-                                tab === key
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600'
-                            }`}>
-                            <Icon size={12} strokeWidth={2.5} />
-                            {label}
-                        </button>
-                    ))}
-                </div>
 
                 {/* ── RESUMEN ─────────────────────────────────────────────── */}
                 {tab === 'resumen' && (

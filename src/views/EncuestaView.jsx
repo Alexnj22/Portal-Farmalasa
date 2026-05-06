@@ -5,7 +5,7 @@ import {
     UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { RESPUESTAS, BLOQUES, PREGUNTAS } from '../data/encuestaData';
+import { RESPUESTAS, BLOQUES, PREGUNTAS, JEFE_POR_SUCURSAL, SUPERVISOR_DE_JEFE, BLOQUE_CONTEXTO } from '../data/encuestaData';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -394,14 +394,32 @@ export default function EncuestaView() {
                 {tab === 'bloques' && (
                     <div className="space-y-3">
                         {BLOQUES.map(bloque => {
+                            const ctx   = BLOQUE_CONTEXTO[bloque.id];
                             const score = blockScore(RESPUESTAS, bloque.indices);
-                            const c = PCT_COLORS[bloque.color];
-                            const sl = scoreLabel(score);
+                            const c     = PCT_COLORS[bloque.color];
+                            const sl    = scoreLabel(score);
                             const isOpen = expandedBloque === bloque.id;
-                            const pqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
+                            const pqs   = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
+
+                            // Bloque 2: scoreboard por sucursal (colabs evaluando su jefe)
+                            const jefesScoreboard = bloque.id === 2
+                                ? Object.entries(JEFE_POR_SUCURSAL).map(([suc, jefeNombre]) => {
+                                    const colabs = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
+                                    const jefe   = RESPUESTAS.find(r => r.nombre === jefeNombre);
+                                    const sColabs = blockScore(colabs, bloque.indices);
+                                    const sJefe   = jefe ? blockScore([jefe], bloque.indices) : null;
+                                    return { suc, jefeNombre, colabs: colabs.length, sColabs, sJefe };
+                                  }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0))
+                                : null;
+
+                            // Score de jefes evaluando a su supervisor (Bloque 2, jefes only)
+                            const jefesEvalSupervisor = bloque.id === 2
+                                ? blockScore(RESPUESTAS.filter(r => r.isJefe), bloque.indices)
+                                : null;
 
                             return (
                                 <div key={bloque.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+                                    {/* Header */}
                                     <button className="w-full px-4 py-3.5 flex items-center gap-3 text-left hover:bg-slate-50/50 transition-colors"
                                         onClick={() => setExpandedBloque(isOpen ? null : bloque.id)}>
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${c.bar}`}>
@@ -411,6 +429,7 @@ export default function EncuestaView() {
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="text-[13px] font-black text-slate-800">{bloque.nombre}</span>
                                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${c.badge}`}>{pqs.length} preguntas</span>
+                                                {ctx && <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
                                                 {score && <span className={`text-[9px] font-black ${sl.color}`}>{sl.label}</span>}
                                             </div>
                                             <p className="text-[10px] text-slate-400 mt-0.5">{bloque.desc}</p>
@@ -430,6 +449,69 @@ export default function EncuestaView() {
 
                                     {isOpen && (
                                         <div className="border-t border-slate-50">
+                                            {/* Nota contextual */}
+                                            {ctx && (
+                                                <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-[10px] text-slate-600 leading-relaxed flex gap-2 items-start ${ctx.badge.replace('text-', 'border-').replace('bg-', 'bg-')} bg-opacity-30`}
+                                                    style={{ background: 'none' }}>
+                                                    <Info size={12} className="shrink-0 mt-0.5 opacity-60" />
+                                                    <span><strong>¿A quién va dirigido?</strong> {ctx.nota}</span>
+                                                </div>
+                                            )}
+
+                                            {/* Bloque 2: scoreboard de jefes */}
+                                            {bloque.id === 2 && jefesScoreboard && (
+                                                <div className="mx-4 mt-3 mb-2 space-y-2">
+                                                    {/* Colabs evaluando jefes de sala */}
+                                                    <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
+                                                        <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider mb-2.5">
+                                                            Colaboradores evaluando a su Jefe/a de Sala
+                                                        </p>
+                                                        <div className="space-y-2">
+                                                            {jefesScoreboard.map(({ suc, jefeNombre, colabs, sColabs }) => {
+                                                                if (!sColabs) return null;
+                                                                const sl2 = scoreLabel(sColabs);
+                                                                return (
+                                                                    <div key={suc} className="flex items-center gap-3">
+                                                                        <div className="w-20 shrink-0">
+                                                                            <div className="text-[10px] font-black text-slate-700">{suc}</div>
+                                                                            <div className="text-[9px] text-slate-400">{jefeNombre} · {colabs} eval.</div>
+                                                                        </div>
+                                                                        <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
+                                                                            <div className={`h-full rounded-full ${sColabs >= 70 ? 'bg-emerald-500' : sColabs >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
+                                                                                style={{ width: `${sColabs}%` }} />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                                            <span className="text-[13px] font-black text-slate-700 w-8 text-right">{sColabs.toFixed(0)}%</span>
+                                                                            <span className={`text-[9px] font-black w-14 ${sl2.color}`}>{sl2.label}</span>
+                                                                            {sColabs < 55 && <AlertTriangle size={11} className="text-rose-500 shrink-0" />}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Jefes evaluando a su supervisor */}
+                                                    <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3">
+                                                        <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1">
+                                                            Jefes de Sala evaluando a su Supervisor/a
+                                                        </p>
+                                                        <p className="text-[9px] text-slate-400 mb-2">
+                                                            Los jefes de sala y bodega responden sobre su propio jefe inmediato (Supervisor de Ventas o Administración).
+                                                        </p>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[10px] text-slate-500 shrink-0">Score colectivo ({RESPUESTAS.filter(r => r.isJefe).length} jefes)</span>
+                                                            <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
+                                                                <div className={`h-full rounded-full ${jefesEvalSupervisor >= 70 ? 'bg-emerald-500' : jefesEvalSupervisor >= 55 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                                                                    style={{ width: `${jefesEvalSupervisor}%` }} />
+                                                            </div>
+                                                            <span className="text-[14px] font-black text-purple-700 shrink-0">{jefesEvalSupervisor?.toFixed(0)}%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Preguntas */}
                                             {pqs.map(p => (
                                                 <PreguntaRow key={p.id} pregunta={p} rows={RESPUESTAS}
                                                     showDetail={expandedQ === p.id}

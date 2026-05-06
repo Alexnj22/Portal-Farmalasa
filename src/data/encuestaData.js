@@ -41,6 +41,74 @@ export const BLOQUES = [
   { id: 8, nombre: 'Situación Financiera',       color: 'rose',    desc: 'Percepción de seguridad laboral',        indices: [38,39,40,41] },
 ];
 
+// Jefe de sala por sucursal (quien es evaluado por los colaboradores en Bloque 2)
+export const JEFE_POR_SUCURSAL = {
+  'La Popular': 'LOLI',
+  'Salud 1':    'NATHALY',
+  'Salud 2':    'BRISSA',
+  'Salud 3':    'RODRIGO',
+  'Salud 4':    'ELI',
+  'Salud 5':    'YAMILETH',
+  'Bodega':     'CENDY',
+};
+
+// Supervisor inmediato de cada jefe de sala (quien evalúan los jefes en Bloque 2)
+export const SUPERVISOR_DE_JEFE = {
+  'La Popular': 'Supervisor/a de Ventas',
+  'Salud 1':    'Supervisor/a de Ventas',
+  'Salud 2':    'Supervisor/a de Ventas',
+  'Salud 3':    'Supervisor/a de Ventas',
+  'Salud 4':    'Supervisor/a de Ventas',
+  'Salud 5':    'Supervisor/a de Ventas',
+  'Bodega':     'Administración / Jefe de Logística',
+};
+
+// Contexto de cada bloque: a quién va dirigida la retroalimentación
+export const BLOQUE_CONTEXTO = {
+  2: {
+    dirigido: 'Jefe inmediato',
+    tipo: 'liderazgo',
+    badge: 'bg-blue-100 text-blue-700',
+    nota: 'Los colaboradores evalúan a su Jefe/a de Sala. Los propios jefes evalúan a su Supervisor/a (o Administración en Bodega). Las puntuaciones bajas aquí requieren acción a nivel de liderazgo local.',
+  },
+  3: {
+    dirigido: 'Jefe + Empresa',
+    tipo: 'mixto',
+    badge: 'bg-violet-100 text-violet-700',
+    nota: 'El ambiente psicológico, físico y el sentido de equipo dependen tanto de la gestión del Jefe de Sala como de las condiciones que provee la empresa. Las áreas bajas requieren intervención en ambos niveles.',
+  },
+  4: {
+    dirigido: 'Empresa / Admin',
+    tipo: 'empresa',
+    badge: 'bg-amber-100 text-amber-700',
+    nota: 'Salario, bonos, equidad y oportunidades de crecimiento son decisiones de Administración y Gerencia. Un puntaje bajo aquí es una señal directa hacia la empresa, no hacia los jefes de sala.',
+  },
+  5: {
+    dirigido: 'Personal + Empresa',
+    tipo: 'mixto',
+    badge: 'bg-indigo-100 text-indigo-700',
+    nota: 'El compromiso y orgullo laboral refleja tanto la motivación personal del colaborador como la calidad del ambiente que crea la empresa. Alto compromiso con bajo salario es una señal de alerta de retención.',
+  },
+  6: {
+    dirigido: 'Personal',
+    tipo: 'personal',
+    badge: 'bg-purple-100 text-purple-700',
+    nota: 'Autoevaluación del propio colaborador. Mide actitud, proactividad, relaciones interpersonales y cómo maneja sus inconformidades. Útil para identificar patrones de comunicación o actitud por sucursal.',
+  },
+  7: {
+    dirigido: 'Alta Dirección',
+    tipo: 'empresa',
+    badge: 'bg-teal-100 text-teal-700',
+    nota: 'Mide la confianza en las decisiones de Gerencia y la transparencia de la dirección. Un score bajo aquí indica desconexión entre la dirección y el equipo operativo.',
+  },
+  8: {
+    dirigido: 'Empresa / Gerencia',
+    tipo: 'empresa',
+    badge: 'bg-rose-100 text-rose-700',
+    nota: 'Percepción de estabilidad financiera y seguridad laboral. La pregunta de recorte de personal (P42) es inversa: acuerdo = preocupación. Un score bajo refleja incertidumbre generalizada.',
+  },
+};
+
 export const PREGUNTAS = [
   // BLOQUE 1 – Generalidades (no puntuadas)
   { id: 1,  bloque: 1, idx: 0,  texto: '¿Cuánto tiempo tiene de laborar?',                                       opciones: ['< 1 año','1–3 años','3–5 años','> 5 años'],                                         tipo: 'categorica' },

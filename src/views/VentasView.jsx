@@ -77,6 +77,18 @@ function fmtShort(dateStr) {
     return `${parseInt(d)}/${parseInt(m)}`;
 }
 
+function countDays(fini, ffin) {
+    return Math.round((new Date(ffin + 'T12:00:00') - new Date(fini + 'T12:00:00')) / 86400000) + 1;
+}
+
+// Compare by daily average (total/days) so months with different lengths are fair
+function dailyPct(curTotal, curDays, prevTotal, prevDays) {
+    if (!prevTotal || !prevDays || !curDays) return null;
+    const curAvg  = curTotal  / curDays;
+    const prevAvg = prevTotal / prevDays;
+    return ((curAvg - prevAvg) / prevAvg) * 100;
+}
+
 function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
     const [activePill, setActivePill] = useState(null);
 
@@ -434,11 +446,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         </div>
                     ))
                 ) : (() => {
-                    const pctCount  = prevStats.count  > 0 ? ((totalCount  - prevStats.count)  / prevStats.count)  * 100 : null;
-                    const pctSum    = prevStats.sum    > 0 ? ((totalAmount  - prevStats.sum)    / prevStats.sum)    * 100 : null;
+                    const { prevFini: pf, prevFfin: pff } = prevMonthRange;
+                    const curDays  = countDays(fini, ffin);
+                    const prevDays = countDays(pf, pff);
+                    const pctCount  = dailyPct(totalCount,  curDays, prevStats.count,  prevDays);
+                    const pctSum    = dailyPct(totalAmount,  curDays, prevStats.sum,    prevDays);
                     const pctAvg    = prevStats.sum > 0 && prevStats.count > 0
                         ? (((totalAmount/totalCount) - (prevStats.sum/prevStats.count)) / (prevStats.sum/prevStats.count)) * 100 : null;
-                    const pctPuntos = prevStats.puntos > 0 ? ((totalPuntos  - prevStats.puntos) / prevStats.puntos) * 100 : null;
+                    const pctPuntos = dailyPct(totalPuntos,  curDays, prevStats.puntos, prevDays);
                     return [
                         { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
@@ -832,8 +847,10 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
-                    const pctSum   = prevVendStats.sum   > 0 ? ((totalVentas   - prevVendStats.sum)   / prevVendStats.sum)   * 100 : null;
-                    const pctCount = prevVendStats.count > 0 ? ((totalFacturas - prevVendStats.count) / prevVendStats.count) * 100 : null;
+                    const curDaysV  = countDays(fini, ffin);
+                    const prevDaysV = countDays(prevFini, prevFfin);
+                    const pctSum   = dailyPct(totalVentas,   curDaysV, prevVendStats.sum,   prevDaysV);
+                    const pctCount = dailyPct(totalFacturas, curDaysV, prevVendStats.count, prevDaysV);
                     return [
                         { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    pct: null,     sub: undefined },
                         { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
@@ -1122,7 +1139,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
-                    const pctIngresos = prevProdStats.sum > 0 ? ((totIngresos - prevProdStats.sum) / prevProdStats.sum) * 100 : null;
+                    const curDaysP  = countDays(fini, ffin);
+                    const prevDaysP = countDays(prevFini, prevFfin);
+                    const pctIngresos = dailyPct(totIngresos, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
                         { label: 'Ingresos', value: fmt(totIngresos),     icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined },
                         { label: 'Costo',    value: fmt(totCosto),        icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },

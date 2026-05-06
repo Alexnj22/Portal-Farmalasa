@@ -55,15 +55,14 @@ function scoreLabel(pct) {
 }
 
 // ─── Employee avatar with photo fallback ─────────────────────────────────────
-function PersonAvatar({ nombre, isJefe = false, size = 32 }) {
+function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
     const [failed, setFailed] = useState(false);
-    const src = `/fotos/${nombre.toLowerCase()}.jpg`;
     const initials = nombre.charAt(0).toUpperCase();
     return (
         <div className="relative shrink-0" style={{ width: size, height: size }}>
-            {!failed ? (
+            {photo && !failed ? (
                 <img
-                    src={src}
+                    src={photo}
                     alt={nombre}
                     onError={() => setFailed(true)}
                     className="w-full h-full rounded-full object-cover object-top"
@@ -123,7 +122,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     rows.forEach(r => {
         const v = r.r[pregunta.idx];
         if (v && namesByOption[v] !== undefined) {
-            namesByOption[v].push({ nombre: r.nombre, isJefe: r.isJefe });
+            namesByOption[v].push({ nombre: r.nombre, isJefe: r.isJefe, photo: r.photo });
         }
     });
 
@@ -158,9 +157,9 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 <div className="text-[9px] leading-tight mt-1 mb-2 opacity-80">{label}</div>
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
-                                        {namesByOption[k].map(({ nombre, isJefe }) => (
+                                        {namesByOption[k].map(({ nombre, isJefe, photo }) => (
                                             <div key={nombre} className={`flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full ${chip}`}>
-                                                <PersonAvatar nombre={nombre} isJefe={isJefe} size={16} />
+                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={16} />
                                                 <span className="text-[8px] font-black leading-none">
                                                     {nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase()}
                                                 </span>
@@ -577,9 +576,12 @@ export default function EncuestaView() {
                                                                     : 'text-rose-500';
                                                                 return (
                                                                     <div key={jefe.nombre} className="flex items-center gap-3">
-                                                                        <div className="w-24 shrink-0">
-                                                                            <div className="text-[10px] font-black text-slate-700 capitalize">{jefe.nombre.charAt(0).toUpperCase() + jefe.nombre.slice(1).toLowerCase()}</div>
-                                                                            <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
+                                                                        <div className="flex items-center gap-2 w-28 shrink-0">
+                                                                            <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
+                                                                            <div>
+                                                                                <div className="text-[10px] font-black text-slate-700 capitalize leading-tight">{jefe.nombre.charAt(0).toUpperCase() + jefe.nombre.slice(1).toLowerCase()}</div>
+                                                                                <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
                                                                             <div className={`h-full rounded-full ${s >= 70 ? 'bg-purple-500' : s >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
@@ -788,7 +790,7 @@ export default function EncuestaView() {
                                             <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
                                                 <td className="px-4 py-2.5">
                                                     <div className="flex items-center gap-2">
-                                                        <PersonAvatar nombre={row.nombre} isJefe={row.isJefe} size={30} />
+                                                        <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
                                                         <span className="font-black text-[12px] text-slate-800 capitalize">{row.nombre.charAt(0).toUpperCase() + row.nombre.slice(1).toLowerCase()}</span>
                                                     </div>
                                                 </td>
@@ -839,7 +841,7 @@ export default function EncuestaView() {
                         {RESPUESTAS.filter(r => r.comentario && r.comentario.trim()).map((row, i) => (
                             <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
-                                    <PersonAvatar nombre={row.nombre} isJefe={row.isJefe} size={34} />
+                                    <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
                                     <div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-[12px] font-black text-slate-700 capitalize">{row.nombre.charAt(0).toUpperCase() + row.nombre.slice(1).toLowerCase()}</span>

@@ -89,6 +89,15 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     if (!total) return null;
     const pct = (n) => Math.round((n / total) * 100);
 
+    // Map each option to the names who chose it
+    const namesByOption = { A: [], B: [], C: [], D: [] };
+    rows.forEach(r => {
+        const v = r.r[pregunta.idx];
+        if (v && namesByOption[v] !== undefined) {
+            namesByOption[v].push(r.nombre);
+        }
+    });
+
     return (
         <div className="border-b border-slate-50 last:border-0">
             <button className="w-full text-left px-4 py-3 hover:bg-slate-50/60 transition-colors flex items-start gap-3"
@@ -109,15 +118,24 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                 <div className="px-4 pb-3 pt-0">
                     <div className="ml-10 grid grid-cols-4 gap-2">
                         {[
-                            { k: 'A', label: pregunta.opciones?.[0] || 'Siempre / Totalmente de acuerdo',     cls: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
-                            { k: 'B', label: pregunta.opciones?.[1] || 'Frecuentemente / De acuerdo',          cls: 'bg-blue-50 border-blue-200 text-blue-700' },
-                            { k: 'C', label: pregunta.opciones?.[2] || 'A veces / En desacuerdo',              cls: 'bg-amber-50 border-amber-200 text-amber-700' },
-                            { k: 'D', label: pregunta.opciones?.[3] || 'Nunca / Totalmente en desacuerdo',     cls: 'bg-rose-50 border-rose-200 text-rose-700' },
-                        ].map(({ k, label, cls }) => (
+                            { k: 'A', label: pregunta.opciones?.[0] || 'Siempre / Totalmente de acuerdo',  cls: 'bg-emerald-50 border-emerald-200 text-emerald-700', chip: 'bg-emerald-100 text-emerald-700' },
+                            { k: 'B', label: pregunta.opciones?.[1] || 'Frecuentemente / De acuerdo',       cls: 'bg-blue-50 border-blue-200 text-blue-700',           chip: 'bg-blue-100 text-blue-700' },
+                            { k: 'C', label: pregunta.opciones?.[2] || 'A veces / En desacuerdo',           cls: 'bg-amber-50 border-amber-200 text-amber-700',         chip: 'bg-amber-100 text-amber-700' },
+                            { k: 'D', label: pregunta.opciones?.[3] || 'Nunca / Totalmente en desacuerdo',  cls: 'bg-rose-50 border-rose-200 text-rose-700',            chip: 'bg-rose-100 text-rose-700' },
+                        ].map(({ k, label, cls, chip }) => (
                             <div key={k} className={`border rounded-xl p-2.5 ${cls}`}>
                                 <div className="text-[18px] font-black leading-none">{dist[k]}</div>
                                 <div className="text-[9px] font-black uppercase tracking-wider opacity-70 mt-0.5">{k} · {pct(dist[k])}%</div>
-                                <div className="text-[9px] leading-tight mt-1 opacity-80">{label}</div>
+                                <div className="text-[9px] leading-tight mt-1 mb-2 opacity-80">{label}</div>
+                                {namesByOption[k].length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1 border-t border-current/10 pt-1.5">
+                                        {namesByOption[k].map(n => (
+                                            <span key={n} className={`text-[8px] font-black px-1.5 py-0.5 rounded-full ${chip}`}>
+                                                {n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

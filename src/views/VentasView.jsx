@@ -33,9 +33,10 @@ function currentMonthRange() {
     const now = new Date(Date.now() - 6 * 3600_000);
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
+    const d = now.getDate();
     const pad = (n) => String(n).padStart(2, '0');
-    const lastDay = new Date(y, m, 0).getDate();
-    return { fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(lastDay)}`, label: `${y}-${pad(m)}` };
+    // Use today as ffin so the comparison period is "same days last month", not full-month-vs-full-month
+    return { fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(d)}`, label: `${y}-${pad(m)}` };
 }
 
 function monthOptions(count = 12) {
@@ -108,11 +109,11 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
 
     const hasActiveFilters = !!filterBranch || activePill !== null;
 
-    // compact mode: pl-10 pr-9 = 76px of internal padding, add ~10px buffer per char
+    // compact mode: pl-10 pr-9 = 76px of internal padding; default 145px fits "Todas" with room
     const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
     const branchW = selectedBranch
         ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
-        : 110;
+        : 145;
 
     return (
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">

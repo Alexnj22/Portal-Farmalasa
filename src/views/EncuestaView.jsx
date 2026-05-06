@@ -348,6 +348,12 @@ export default function EncuestaView() {
                         <span className="hidden sm:inline">{label}</span>
                     </button>
                 ))}
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <select value={filterSucursal} onChange={e => setFilterSucursal(e.target.value)}
+                    className="h-9 px-3 rounded-full border border-white/50 text-[10px] font-bold text-slate-700 bg-white/80 shadow-sm cursor-pointer">
+                    <option value="">Todas las sucursales</option>
+                    {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
                 {surveys.length > 1 && (
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
@@ -880,13 +886,8 @@ export default function EncuestaView() {
                 {/* ── PERSONAS ────────────────────────────────────────────── */}
                 {tab === 'personas' && (
                     <div className="space-y-4">
-                        {/* Filtros */}
+                        {/* Filtro de rol */}
                         <div className="flex items-center gap-3 flex-wrap">
-                            <select value={filterSucursal} onChange={e => setFilterSucursal(e.target.value)}
-                                className="h-8 px-3 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 bg-white shadow-sm">
-                                <option value="">Todas las sucursales</option>
-                                {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
                             <select value={filterRol} onChange={e => setFilterRol(e.target.value)}
                                 className="h-8 px-3 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 bg-white shadow-sm">
                                 <option value="">Todos los roles</option>

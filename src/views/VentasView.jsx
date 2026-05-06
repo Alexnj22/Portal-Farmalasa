@@ -59,10 +59,29 @@ function monthOptions(count = 12) {
 
 function computePrevRange(fini, ffin) {
     const s = new Date(fini + 'T12:00:00');
-    const numDays = Math.round((new Date(ffin + 'T12:00:00') - s) / 86400000) + 1;
+    const e = new Date(ffin + 'T12:00:00');
+    const numDays = Math.round((e - s) / 86400000) + 1;
+    const pad = n => String(n).padStart(2, '0');
+    const toStr = d => d.toISOString().split('T')[0];
+
+    // Range starts on the 1st and stays within the same month (MTD or full month):
+    // compare the same calendar days in the previous month — more intuitive for business.
+    // e.g. May 1-6 → Apr 1-6, May 1-31 → Apr 1-30
+    const sameMonth = s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
+    if (s.getDate() === 1 && sameMonth) {
+        const prevYear  = s.getMonth() === 0 ? s.getFullYear() - 1 : s.getFullYear();
+        const prevMonth = s.getMonth() === 0 ? 11 : s.getMonth() - 1;
+        const prevLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
+        return {
+            prevFini: `${prevYear}-${pad(prevMonth + 1)}-01`,
+            prevFfin: `${prevYear}-${pad(prevMonth + 1)}-${pad(Math.min(e.getDate(), prevLastDay))}`,
+        };
+    }
+
+    // Custom ranges not starting on the 1st: same number of days immediately before.
+    // e.g. "Hoy" May 6 → May 5, "Sem." May 4-6 → May 1-3
     const prevEnd = new Date(s); prevEnd.setDate(prevEnd.getDate() - 1);
     const prevStart = new Date(s); prevStart.setDate(prevStart.getDate() - numDays);
-    const toStr = d => d.toISOString().split('T')[0];
     return { prevFini: toStr(prevStart), prevFfin: toStr(prevEnd) };
 }
 

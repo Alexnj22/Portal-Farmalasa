@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Crown, Loader2
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { supabase } from '../supabaseClient';
@@ -66,18 +66,16 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
                     src={photo}
                     alt={nombre}
                     onError={() => setFailed(true)}
-                    className="w-full h-full rounded-full object-cover object-top"
+                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
                 />
             ) : (
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black"
+                <div className={`w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
                     style={{ fontSize: size * 0.38 }}>
                     {initials}
                 </div>
             )}
             {isJefe && (
-                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 border border-white flex items-center justify-center">
-                    <Crown size={8} className="text-white" strokeWidth={2.5} />
-                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-400 border-[1.5px] border-white" />
             )}
         </div>
     );
@@ -123,7 +121,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     rows.forEach(r => {
         const v = r.r[pregunta.idx];
         if (v && namesByOption[v] !== undefined) {
-            namesByOption[v].push({ nombre: r.nombre, isJefe: r.isJefe, photo: r.photo });
+            namesByOption[v].push({ nombre: r.nombre, isJefe: r.isJefe, sucursal: r.sucursal, photo: r.photo });
         }
     });
 
@@ -158,12 +156,16 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 <div className="text-[9px] leading-tight mt-1 mb-2 opacity-80">{label}</div>
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
-                                        {namesByOption[k].map(({ nombre, isJefe, photo }) => (
-                                            <div key={nombre} className={`flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full ${chip}`}>
-                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={16} />
-                                                <span className="text-[8px] font-black leading-none">
-                                                    {nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase()}
-                                                </span>
+                                        {namesByOption[k].map(({ nombre, isJefe, sucursal, photo }) => (
+                                            <div key={nombre} className={`flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full ${chip}`}>
+                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={18} />
+                                                <div className="flex flex-col leading-tight">
+                                                    <span className="text-[8px] font-black leading-none">
+                                                        {nombre.split(' ').map((w, i) => i === 0 ? w : w.charAt(0) + '.').join(' ')}
+                                                        {isJefe && <span className="ml-1 opacity-70">·J</span>}
+                                                    </span>
+                                                    <span className="text-[7px] opacity-60 leading-none mt-0.5">{sucursal}</span>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -244,7 +246,7 @@ export default function EncuestaView() {
             supabase.from('survey_bloques').select('*').eq('survey_id', selectedSurveyId).order('numero'),
             supabase.from('survey_preguntas').select('*').eq('survey_id', selectedSurveyId).order('numero'),
             supabase.from('survey_responses')
-                .select('*, employee:employees(photo_url, branch:branches(name))')
+                .select('*, employee:employees(first_names, last_names, photo_url, branch:branches(name))')
                 .eq('survey_id', selectedSurveyId),
         ]).then(([bRes, pRes, rRes]) => {
             setBloques((bRes.data || []).map(b => ({
@@ -270,14 +272,18 @@ export default function EncuestaView() {
                 tipo: p.tipo,
                 invertida: p.invertida,
             })));
-            setRespuestas((rRes.data || []).map(r => ({
-                nombre: r.display_name || r.employee?.first_names || '',
-                isJefe: r.is_jefe,
-                sucursal: r.employee?.branch?.name || '',
-                photo: r.employee?.photo_url || null,
-                r: r.responses,
-                comentario: r.comentario,
-            })));
+            setRespuestas((rRes.data || []).map(r => {
+                const fn = r.employee?.first_names || '';
+                const ln = r.employee?.last_names  || '';
+                return {
+                    nombre: `${fn} ${ln}`.trim() || r.display_name || '',
+                    isJefe: r.is_jefe,
+                    sucursal: r.employee?.branch?.name || '',
+                    photo: r.employee?.photo_url || null,
+                    r: r.responses,
+                    comentario: r.comentario,
+                };
+            }));
             setLoading(false);
         });
     }, [selectedSurveyId]);
@@ -859,8 +865,7 @@ export default function EncuestaView() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200/60">
-                                        <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador</th>
-                                        <th className="text-left px-3 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Sucursal</th>
+                                        <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador · Sucursal</th>
                                         <th className="text-center px-3 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Rol</th>
                                         {BLOQUES.map(b => (
                                             <th key={b.id} className="text-center px-2 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">B{b.id}</th>
@@ -877,15 +882,17 @@ export default function EncuestaView() {
                                         return (
                                             <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
                                                 <td className="px-4 py-2.5">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2.5">
                                                         <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
-                                                        <span className="font-black text-[12px] text-slate-800 capitalize">{row.nombre.charAt(0).toUpperCase() + row.nombre.slice(1).toLowerCase()}</span>
+                                                        <div>
+                                                            <div className="font-black text-[12px] text-slate-800 leading-tight">{row.nombre}</div>
+                                                            <div className="text-[9px] text-slate-400 leading-tight">{row.sucursal}</div>
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-2.5 text-[11px] text-slate-500">{row.sucursal}</td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                        {row.isJefe ? '👑 Jefe/a' : 'Colab.'}
+                                                        {row.isJefe ? 'Jefe/a' : 'Colab.'}
                                                     </span>
                                                 </td>
                                                 {BLOQUES.map(b => {
@@ -932,10 +939,10 @@ export default function EncuestaView() {
                                     <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
                                     <div>
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-[12px] font-black text-slate-700 capitalize">{row.nombre.charAt(0).toUpperCase() + row.nombre.slice(1).toLowerCase()}</span>
+                                            <span className="text-[12px] font-black text-slate-700">{row.nombre}</span>
                                             {row.isJefe && (
-                                                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                                                    <Crown size={8} /> Jefe/a
+                                                <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                                                    Jefe/a
                                                 </span>
                                             )}
                                         </div>

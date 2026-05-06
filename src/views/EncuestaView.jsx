@@ -422,11 +422,11 @@ export default function EncuestaView() {
                             // Bloque 2: scoreboard por sucursal (colabs evaluando su jefe)
                             const jefesScoreboard = bloque.id === 2
                                 ? Object.entries(JEFE_POR_SUCURSAL).map(([suc, jefeNombre]) => {
-                                    const colabs = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
-                                    const jefe   = RESPUESTAS.find(r => r.nombre === jefeNombre);
-                                    const sColabs = blockScore(colabs, bloque.indices);
-                                    const sJefe   = jefe ? blockScore([jefe], bloque.indices) : null;
-                                    return { suc, jefeNombre, colabs: colabs.length, sColabs, sJefe };
+                                    const colabRows = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
+                                    const jefe      = RESPUESTAS.find(r => r.nombre === jefeNombre);
+                                    const sColabs   = blockScore(colabRows, bloque.indices);
+                                    const sJefe     = jefe ? blockScore([jefe], bloque.indices) : null;
+                                    return { suc, jefeNombre, colabRows, sColabs, sJefe };
                                   }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0))
                                 : null;
 
@@ -485,14 +485,14 @@ export default function EncuestaView() {
                                                             Colaboradores evaluando a su Jefe/a de Sala
                                                         </p>
                                                         <div className="space-y-2">
-                                                            {jefesScoreboard.map(({ suc, jefeNombre, colabs, sColabs }) => {
+                                                            {jefesScoreboard.map(({ suc, jefeNombre, colabRows, sColabs }) => {
                                                                 if (!sColabs) return null;
                                                                 const sl2 = scoreLabel(sColabs);
                                                                 return (
-                                                                    <div key={suc} className="flex items-center gap-3">
+                                                                    <div key={suc} className="group relative flex items-center gap-3">
                                                                         <div className="w-20 shrink-0">
                                                                             <div className="text-[10px] font-black text-slate-700">{suc}</div>
-                                                                            <div className="text-[9px] text-slate-400">{jefeNombre} · {colabs} eval.</div>
+                                                                            <div className="text-[9px] text-slate-400">{jefeNombre} · {colabRows.length} eval.</div>
                                                                         </div>
                                                                         <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
                                                                             <div className={`h-full rounded-full ${sColabs >= 70 ? 'bg-emerald-500' : sColabs >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
@@ -502,6 +502,24 @@ export default function EncuestaView() {
                                                                             <span className="text-[13px] font-black text-slate-700 w-8 text-right">{sColabs.toFixed(0)}%</span>
                                                                             <span className={`text-[9px] font-black w-14 ${sl2.color}`}>{sl2.label}</span>
                                                                             {sColabs < 55 && <AlertTriangle size={11} className="text-rose-500 shrink-0" />}
+                                                                        </div>
+                                                                        {/* Tooltip: individual colab scores */}
+                                                                        <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 min-w-[190px] pointer-events-none">
+                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Respuestas individuales</p>
+                                                                            {colabRows.map(r => {
+                                                                                const s = blockScore([r], bloque.indices);
+                                                                                const sc = s == null ? 'text-slate-300'
+                                                                                    : s >= 85 ? 'text-emerald-600'
+                                                                                    : s >= 70 ? 'text-blue-600'
+                                                                                    : s >= 55 ? 'text-amber-600'
+                                                                                    : 'text-rose-500';
+                                                                                return (
+                                                                                    <div key={r.nombre} className="flex items-center justify-between gap-3 py-0.5">
+                                                                                        <span className="text-[10px] font-bold text-slate-700 capitalize">{r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1).toLowerCase()}</span>
+                                                                                        <span className={`text-[10px] font-black ${sc}`}>{s ? `${s.toFixed(0)}%` : '–'}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -517,13 +535,32 @@ export default function EncuestaView() {
                                                         <p className="text-[9px] text-slate-400 mb-2">
                                                             Los jefes de sala y bodega responden sobre su propio jefe inmediato (Supervisor de Ventas o Administración).
                                                         </p>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-[10px] text-slate-500 shrink-0">Score colectivo ({RESPUESTAS.filter(r => r.isJefe).length} jefes)</span>
-                                                            <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
-                                                                <div className={`h-full rounded-full ${jefesEvalSupervisor >= 70 ? 'bg-emerald-500' : jefesEvalSupervisor >= 55 ? 'bg-amber-400' : 'bg-rose-500'}`}
-                                                                    style={{ width: `${jefesEvalSupervisor}%` }} />
-                                                            </div>
-                                                            <span className="text-[14px] font-black text-purple-700 shrink-0">{jefesEvalSupervisor?.toFixed(0)}%</span>
+                                                        <div className="space-y-1.5">
+                                                            {RESPUESTAS.filter(r => r.isJefe).map(jefe => {
+                                                                const s = blockScore([jefe], bloque.indices);
+                                                                const sc = s == null ? 'text-slate-300'
+                                                                    : s >= 85 ? 'text-emerald-600'
+                                                                    : s >= 70 ? 'text-blue-600'
+                                                                    : s >= 55 ? 'text-amber-600'
+                                                                    : 'text-rose-500';
+                                                                return (
+                                                                    <div key={jefe.nombre} className="flex items-center gap-3">
+                                                                        <div className="w-24 shrink-0">
+                                                                            <div className="text-[10px] font-black text-slate-700 capitalize">{jefe.nombre.charAt(0).toUpperCase() + jefe.nombre.slice(1).toLowerCase()}</div>
+                                                                            <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
+                                                                        </div>
+                                                                        <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
+                                                                            <div className={`h-full rounded-full ${s >= 70 ? 'bg-purple-500' : s >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
+                                                                                style={{ width: `${s ?? 0}%` }} />
+                                                                        </div>
+                                                                        <span className={`text-[12px] font-black w-8 text-right ${sc}`}>{s ? `${s.toFixed(0)}%` : '–'}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div className="mt-2 pt-2 border-t border-purple-100/60 flex items-center justify-between">
+                                                            <span className="text-[9px] text-slate-400">Score colectivo</span>
+                                                            <span className="text-[14px] font-black text-purple-700">{jefesEvalSupervisor?.toFixed(0)}%</span>
                                                         </div>
                                                     </div>
                                                 </div>

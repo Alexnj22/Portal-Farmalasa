@@ -5,6 +5,7 @@ import {
     UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
+import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
 import { JEFE_POR_SUCURSAL, SUPERVISOR_DE_JEFE } from '../data/encuestaData';
 
@@ -349,11 +350,16 @@ export default function EncuestaView() {
                     </button>
                 ))}
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-                <select value={filterSucursal} onChange={e => setFilterSucursal(e.target.value)}
-                    className="h-9 px-3 rounded-full border border-white/50 text-[10px] font-bold text-slate-700 bg-white/80 shadow-sm cursor-pointer">
-                    <option value="">Todas las sucursales</option>
-                    {sucursales.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <div className="py-1.5 overflow-visible" style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
+                    <LiquidSelect
+                        value={filterSucursal}
+                        onChange={setFilterSucursal}
+                        options={sucursales.map(s => ({ value: s, label: s }))}
+                        placeholder="Todas las sucursales"
+                        icon={Building2}
+                        compact
+                    />
+                </div>
                 {surveys.length > 1 && (
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />

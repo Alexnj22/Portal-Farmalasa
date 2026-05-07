@@ -7,14 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// 🧬 EL ADN DE SALY (Directora de Operaciones)
-const SALY_PERSONA = `Eres Saly, Directora de Operaciones y estratega experta en WFM de "Farmacia La Salud" y "La Popular". Eres analítica, extremadamente rápida, empática y posees una visión holística de la empresa.
-Tu tono es ejecutivo, cálido y resolutivo. Utilizas analogías médicas sutiles (ej. "signos vitales estables", "recetar una cobertura óptima", "diagnóstico de asistencia").
-Reglas Universales: 
+// SALY — Asistente de Operaciones
+const SALY_PERSONA = `Eres Saly, asistente ejecutiva de operaciones de "Farmacia La Salud" y "La Popular". Tienes un perfil de consultora senior: analítica, precisa y orientada a decisiones. Tu comunicación es formal, moderna y sin adornos — vas directo al dato y a la acción.
+Nunca uses metáforas médicas ni lenguaje poético. Hablas como una directora de operaciones profesional, no como un asistente genérico de IA.
+Reglas Universales:
 1. Límite legal 44h semanales. Turnos >7h que crucen de 11 am a 2 pm requieren almuerzo.
-2. Eres OMNISCIENTE. Basa tus respuestas ESTRICTAMENTE en los datos en tiempo real que se te proporcionan en la base de datos SQL. NUNCA inventes información.
-3. Sé MUY concisa. Respuestas directas, sin texto de relleno.
-4. Siempre comunícate usando formato de hora 12h (am/pm).`;
+2. Basa tus respuestas ESTRICTAMENTE en los datos que se te proporcionan. NUNCA inventes información.
+3. Respuestas directas y concisas. Cero texto de relleno, cero saludos, cero frases de cierre.
+4. Formato de hora 12h (am/pm) siempre.`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -177,21 +177,26 @@ Deno.serve(async (req) => {
 
       case 'analyze-survey-comments': {
         const { comments, segment } = payload;
-        const textos = (comments || []).map((c: any, i: number) =>
-            `${i + 1}. [${c.isJefe ? 'Jefe/a' : 'Colaborador/a'} – ${c.sucursal}]: "${c.texto}"`
+        const textos = (comments || []).map((c: any) =>
+            `[${c.isJefe ? 'Jefe/a' : 'Colaborador/a'} – ${c.sucursal}]: "${c.texto}"`
         ).join('\n');
-        prompt = `Eres un analista de clima organizacional. Analiza estos comentarios libres de una encuesta interna de Farmacia La Salud y La Popular.
-Segmento: ${segment} (${(comments || []).length} comentarios)
+        prompt = `Analiza los siguientes ${(comments || []).length} comentarios abiertos de una encuesta de clima organizacional. Segmento: ${segment}.
 
+COMENTARIOS:
 ${textos}
 
-Redacta un resumen ejecutivo en español (máx. 180 palabras) con estas secciones:
-**Temas recurrentes:** menciona los 2–3 temas más comunes.
-**Aspectos positivos:** lo que más valoran los empleados.
-**Áreas de mejora:** problemas principales mencionados.
-**Conclusión:** 1–2 oraciones con la principal acción recomendada.
+Entrega un análisis ejecutivo en español con exactamente estas cuatro secciones. No agregues introducción ni cierre.
 
-Sé directo. Usa solo lo que dicen los comentarios, no inventes.`;
+**Ideas recurrentes:** Las 2–3 ideas o percepciones que más se repiten entre los comentarios. Describe la idea en concreto, no solo el tema genérico.
+**Aspectos valorados:** Qué reconocen o agradecen los colaboradores. Solo si aparece en los comentarios.
+**Fricciones identificadas:** Problemas, quejas o tensiones concretas mencionadas. Sé específico.
+**Acción recomendada:** Una sola acción prioritaria, directa y ejecutable, basada en lo que dicen los comentarios.
+
+Reglas estrictas:
+- Máximo 200 palabras en total.
+- NUNCA cites ni referencíes números de comentario.
+- Usa solo lo que está escrito. No inferencias ni suposiciones.
+- Lenguaje formal, sin metáforas.`;
         responseKey = "aiSummary";
         break;
       }

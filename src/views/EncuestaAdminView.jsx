@@ -20,11 +20,20 @@ function blockScore(answers, indices, invertedSet = new Set()) {
     let total = 0, count = 0;
     for (const i of (indices || [])) {
         const v = answers?.[i];
-        if (v && SCORE_MAP[v] !== undefined) {
-            const raw = SCORE_MAP[v];
-            total += invertedSet.has(i) ? (5 - raw) : raw;
-            count++;
+        if (!v) continue;
+        let raw;
+        if (SCORE_MAP[v] !== undefined) {
+            raw = SCORE_MAP[v];
+        } else {
+            const n = parseInt(v, 10);
+            if (!isNaN(n) && n >= 1 && n <= 10) {
+                raw = n >= 9 ? 4 : n >= 7 ? 3 : n >= 5 ? 2 : 1;
+            } else {
+                continue;
+            }
         }
+        total += invertedSet.has(i) ? (5 - raw) : raw;
+        count++;
     }
     return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
 }
@@ -525,13 +534,17 @@ export default function EncuestaAdminView() {
                                         <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-white/50 border border-white/60 rounded-2xl px-3 py-1 focus-within:border-[#007AFF]/30 transition-all">
-                                            <p className="text-[8px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 mb-0.5">Inicio</p>
-                                            <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
+                                            <div className="h-[42px] bg-white/50 border border-white/60 rounded-2xl focus-within:bg-white focus-within:border-[#007AFF]/30 focus-within:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] hover:bg-white/70 hover:border-white hover:shadow-sm transition-all duration-300">
+                                                <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
+                                            </div>
                                         </div>
-                                        <div className="bg-white/50 border border-white/60 rounded-2xl px-3 py-1 focus-within:border-[#007AFF]/30 transition-all">
-                                            <p className="text-[8px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 mb-0.5">Fin</p>
-                                            <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
+                                            <div className="h-[42px] bg-white/50 border border-white/60 rounded-2xl focus-within:bg-white focus-within:border-[#007AFF]/30 focus-within:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] hover:bg-white/70 hover:border-white hover:shadow-sm transition-all duration-300">
+                                                <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -793,14 +806,19 @@ export default function EncuestaAdminView() {
                                                                 </span>
                                                                 <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 {p.tipo === 'numerica' ? (
-                                                                    <div className="shrink-0 flex items-center gap-1 mt-0.5">
-                                                                        {NUMERIC_OPTS.map(({ k, label }) => {
-                                                                            const oc = OPT_COLORS[k];
+                                                                    <div className="shrink-0 flex items-center gap-0.5 mt-0.5 flex-wrap justify-end">
+                                                                        {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                                                                            const nStr = String(n);
+                                                                            const exactMatch = val === nStr;
+                                                                            const legacyMatch = (val === 'A' && n >= 9) || (val === 'B' && (n === 7 || n === 8)) ||
+                                                                                               (val === 'C' && (n === 5 || n === 6)) || (val === 'D' && n <= 4);
+                                                                            const isActive = exactMatch || legacyMatch;
+                                                                            const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
                                                                             return (
-                                                                                <button key={k}
-                                                                                    onClick={() => setRfAnswer(p.indice, val === k ? null : k)}
-                                                                                    className={`px-2 h-7 rounded-lg text-[10px] font-black transition-all duration-150 ${val === k ? oc.on : oc.off}`}>
-                                                                                    {label}
+                                                                                <button key={n}
+                                                                                    onClick={() => setRfAnswer(p.indice, exactMatch ? null : nStr)}
+                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black transition-all duration-150 ${isActive ? oc.on : oc.off}`}>
+                                                                                    {n}
                                                                                 </button>
                                                                             );
                                                                         })}
@@ -1155,13 +1173,18 @@ export default function EncuestaAdminView() {
                                                                                                                                 <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-400 mt-0.5">{p.numero}</span>
                                                                                                                                 <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {p.tipo === 'numerica' ? (
-                                                                                                                                    <div className="shrink-0 flex items-center gap-1">
-                                                                                                                                        {NUMERIC_OPTS.map(({ k, label }) => {
-                                                                                                                                            const oc = OPT_COLORS[k];
+                                                                                                                                    <div className="shrink-0 flex items-center gap-0.5 flex-wrap justify-end">
+                                                                                                                                        {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                                                                                                                                            const nStr = String(n);
+                                                                                                                                            const exactMatch = ans === nStr;
+                                                                                                                                            const legacyMatch = (ans === 'A' && n >= 9) || (ans === 'B' && (n === 7 || n === 8)) ||
+                                                                                                                                                               (ans === 'C' && (n === 5 || n === 6)) || (ans === 'D' && n <= 4);
+                                                                                                                                            const isActive = exactMatch || legacyMatch;
+                                                                                                                                            const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
                                                                                                                                             return (
-                                                                                                                                                <span key={k}
-                                                                                                                                                    className={`px-2 h-6 rounded-lg text-[10px] font-black flex items-center justify-center transition-all ${ans === k ? oc.on : 'bg-slate-50 text-slate-200'}`}>
-                                                                                                                                                    {label}
+                                                                                                                                                <span key={n}
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${isActive ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                    {n}
                                                                                                                                                 </span>
                                                                                                                                             );
                                                                                                                                         })}

@@ -16,17 +16,21 @@ import { useToastStore } from '../store/toastStore';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 
-function blockScore(answers, indices) {
+function blockScore(answers, indices, invertedSet = new Set()) {
     let total = 0, count = 0;
     for (const i of (indices || [])) {
         const v = answers?.[i];
-        if (v && SCORE_MAP[v] !== undefined) { total += SCORE_MAP[v]; count++; }
+        if (v && SCORE_MAP[v] !== undefined) {
+            const raw = SCORE_MAP[v];
+            total += invertedSet.has(i) ? (5 - raw) : raw;
+            count++;
+        }
     }
     return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
 }
 
-function avgBlockScore(respuestas, indices) {
-    const scores = respuestas.map(r => blockScore(r.responses || [], indices)).filter(s => s != null);
+function avgBlockScore(respuestas, indices, invertedSet = new Set()) {
+    const scores = respuestas.map(r => blockScore(r.responses || [], indices, invertedSet)).filter(s => s != null);
     return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
 }
 
@@ -372,6 +376,11 @@ export default function EncuestaAdminView() {
 
     // ── Computed ──────────────────────────────────────────────────────────────
     const allIndices = bloques.flatMap(b => b.indices || []);
+
+    const invertedIndices = useMemo(
+        () => new Set(preguntas.filter(p => p.invertida).map(p => p.indice)),
+        [preguntas]
+    );
 
     const respondedIds = new Set(respuestas.map(r => r.employee_id));
 
@@ -848,7 +857,7 @@ export default function EncuestaAdminView() {
                             const count = responseCounts[s.id] || 0;
                             const isExpanded = expandedSurveyId === s.id;
                             const isEditing = editingSurvey?.id === s.id;
-                            const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices) : null;
+                            const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
                                 <div key={s.id} className={`rounded-[2.5rem] border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
@@ -1030,7 +1039,7 @@ export default function EncuestaAdminView() {
                                                                             const fn = (row.employee?.first_names || '').split(' ')[0];
                                                                             const ln = (row.employee?.last_names  || '').split(' ')[0];
                                                                             const nombre = `${fn} ${ln}`.trim() || '–';
-                                                                            const global = blockScore(row.responses || [], allIndices);
+                                                                            const global = blockScore(row.responses || [], allIndices, invertedIndices);
                                                                             const isRowExp = expandedResponseId === row.id;
                                                                             return (
                                                                                 <React.Fragment key={row.id}>
@@ -1052,7 +1061,7 @@ export default function EncuestaAdminView() {
                                                                                             </span>
                                                                                         </td>
                                                                                         {bloques.map(b => {
-                                                                                            const sc = blockScore(row.responses || [], b.indices || []);
+                                                                                            const sc = blockScore(row.responses || [], b.indices || [], invertedIndices);
                                                                                             return (
                                                                                                 <td key={b.id} className="py-2.5 px-2 text-center">
                                                                                                     {sc != null
@@ -1102,7 +1111,7 @@ export default function EncuestaAdminView() {
                                                                                                         const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
                                                                                                         if (!bqs.length) return null;
                                                                                                         const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
-                                                                                                        const bsc = blockScore(row.responses || [], bloque.indices || []);
+                                                                                                        const bsc = blockScore(row.responses || [], bloque.indices || [], invertedIndices);
                                                                                                         return (
                                                                                                             <div key={bloque.id} className="rounded-xl border border-white/70 bg-white/60 overflow-hidden">
                                                                                                                 <div className={`flex items-center justify-between px-4 py-2 border-b border-white/50 ${barCls} bg-opacity-10`}>

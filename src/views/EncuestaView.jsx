@@ -38,12 +38,15 @@ function scoreVal(v) {
     return SCORE_MAP[v.toUpperCase()] ?? null;
 }
 
-function blockScore(rows, indices) {
+function blockScore(rows, indices, invertedSet = new Set()) {
     let total = 0, count = 0;
     for (const row of rows) {
         for (const i of indices) {
             const v = scoreVal(row.r[i]);
-            if (v !== null) { total += v; count++; }
+            if (v !== null) {
+                total += invertedSet.has(i) ? (5 - v) : v;
+                count++;
+            }
         }
     }
     return count > 0 ? (total / (count * 4)) * 100 : null;
@@ -301,6 +304,11 @@ export default function EncuestaView() {
 
     const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 
+    const invertedIndices = useMemo(
+        () => new Set(PREGUNTAS.filter(p => p.invertida).map(p => p.idx)),
+        [PREGUNTAS]
+    );
+
     const filteredRows = useMemo(() => {
         let r = RESPUESTAS;
         if (filterSucursal) r = r.filter(x => x.sucursal === filterSucursal);
@@ -310,13 +318,13 @@ export default function EncuestaView() {
     }, [filterSucursal, filterRol, RESPUESTAS]);
 
     const bloquesScores = useMemo(() =>
-        BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices) })),
-    [filteredRows, BLOQUES]);
+        BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices, invertedIndices) })),
+    [filteredRows, BLOQUES, invertedIndices]);
 
     const globalScore = useMemo(() => {
         const allIdx = BLOQUES.flatMap(b => b.indices);
-        return blockScore(filteredRows, allIdx);
-    }, [filteredRows, BLOQUES]);
+        return blockScore(filteredRows, allIdx, invertedIndices);
+    }, [filteredRows, BLOQUES, invertedIndices]);
 
     // Distribución P31 (autocalificación numérica)
     const selfRatings = useMemo(() => {
@@ -564,7 +572,7 @@ export default function EncuestaView() {
                     <div className="space-y-3">
                         {BLOQUES.map(bloque => {
                             const ctx   = bloque.ctx ?? null;
-                            const score = blockScore(RESPUESTAS, bloque.indices);
+                            const score = blockScore(RESPUESTAS, bloque.indices, invertedIndices);
                             const c     = PCT_COLORS[bloque.color];
                             const sl    = scoreLabel(score);
                             const isOpen = expandedBloque === bloque.id;
@@ -575,15 +583,15 @@ export default function EncuestaView() {
                                 ? [...new Set(RESPUESTAS.filter(r => r.isJefe).map(r => r.sucursal))].map(suc => {
                                     const colabRows = RESPUESTAS.filter(r => r.sucursal === suc && !r.isJefe);
                                     const jefe      = RESPUESTAS.find(r => r.sucursal === suc && r.isJefe);
-                                    const sColabs   = blockScore(colabRows, bloque.indices);
-                                    const sJefe     = jefe ? blockScore([jefe], bloque.indices) : null;
+                                    const sColabs   = blockScore(colabRows, bloque.indices, invertedIndices);
+                                    const sJefe     = jefe ? blockScore([jefe], bloque.indices, invertedIndices) : null;
                                     return { suc, jefe, colabRows, sColabs, sJefe };
                                   }).sort((a, b) => (a.sColabs ?? 0) - (b.sColabs ?? 0))
                                 : null;
 
                             // Score de jefes evaluando a su supervisor (Bloque 2, jefes only)
                             const jefesEvalSupervisor = bloque.id === 2
-                                ? blockScore(RESPUESTAS.filter(r => r.isJefe), bloque.indices)
+                                ? blockScore(RESPUESTAS.filter(r => r.isJefe), bloque.indices, invertedIndices)
                                 : null;
 
                             return (
@@ -661,7 +669,7 @@ export default function EncuestaView() {
                                                                         <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 min-w-[190px] pointer-events-none">
                                                                             <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Respuestas individuales</p>
                                                                             {colabRows.map(r => {
-                                                                                const s = blockScore([r], bloque.indices);
+                                                                                const s = blockScore([r], bloque.indices, invertedIndices);
                                                                                 const sc = s == null ? 'text-slate-300'
                                                                                     : s >= 85 ? 'text-emerald-600'
                                                                                     : s >= 70 ? 'text-blue-600'
@@ -697,7 +705,7 @@ export default function EncuestaView() {
                                                                 groups[sup].push(jefe);
                                                             });
                                                             return Object.entries(groups).map(([supervisor, jefes], gi, arr) => {
-                                                                const groupScore = blockScore(jefes, bloque.indices);
+                                                                const groupScore = blockScore(jefes, bloque.indices, invertedIndices);
                                                                 const gsl = groupScore ? scoreLabel(groupScore) : null;
                                                                 return (
                                                                     <div key={supervisor} className={gi < arr.length - 1 ? 'mb-3 pb-3 border-b border-purple-100/60' : ''}>
@@ -713,7 +721,7 @@ export default function EncuestaView() {
                                                                         </div>
                                                                         <div className="space-y-1.5">
                                                                             {jefes.map(jefe => {
-                                                                                const s = blockScore([jefe], bloque.indices);
+                                                                                const s = blockScore([jefe], bloque.indices, invertedIndices);
                                                                                 const sc = s == null ? 'text-slate-300'
                                                                                     : s >= 85 ? 'text-emerald-600'
                                                                                     : s >= 70 ? 'text-blue-600'
@@ -787,8 +795,8 @@ export default function EncuestaView() {
                                         {BLOQUES.map(b => {
                                             const jefes = RESPUESTAS.filter(r => r.isJefe);
                                             const colabs = RESPUESTAS.filter(r => !r.isJefe);
-                                            const sJ = blockScore(jefes, b.indices);
-                                            const sC = blockScore(colabs, b.indices);
+                                            const sJ = blockScore(jefes, b.indices, invertedIndices);
+                                            const sC = blockScore(colabs, b.indices, invertedIndices);
                                             const delta = sJ && sC ? sJ - sC : null;
                                             const c = PCT_COLORS[b.color];
                                             return (
@@ -827,7 +835,7 @@ export default function EncuestaView() {
                                 {sucursales.map(suc => {
                                     const rows = RESPUESTAS.filter(r => r.sucursal === suc);
                                     const allIdx = BLOQUES.flatMap(b => b.indices);
-                                    const score = blockScore(rows, allIdx);
+                                    const score = blockScore(rows, allIdx, invertedIndices);
                                     if (!score) return null;
                                     const sl = scoreLabel(score);
                                     const jCount = rows.filter(r => r.isJefe).length;
@@ -872,7 +880,7 @@ export default function EncuestaView() {
                                             <tr key={suc} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
                                                 <td className="px-2 py-2 font-black text-[11px] text-slate-700 whitespace-nowrap">{suc}</td>
                                                 {BLOQUES.map(b => {
-                                                    const s = blockScore(rows, b.indices);
+                                                    const s = blockScore(rows, b.indices, invertedIndices);
                                                     const cls = s == null ? 'text-slate-300'
                                                         : s >= 85 ? 'text-emerald-600 font-black'
                                                         : s >= 70 ? 'text-blue-600 font-bold'
@@ -929,7 +937,7 @@ export default function EncuestaView() {
                                 <tbody>
                                     {filteredRows.map((row, i) => {
                                         const allIdx = BLOQUES.flatMap(b => b.indices);
-                                        const global = blockScore([row], allIdx);
+                                        const global = blockScore([row], allIdx, invertedIndices);
                                         const self = parseInt(row.r[30]);
                                         return (
                                             <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
@@ -948,7 +956,7 @@ export default function EncuestaView() {
                                                     </span>
                                                 </td>
                                                 {BLOQUES.map(b => {
-                                                    const s = blockScore([row], b.indices);
+                                                    const s = blockScore([row], b.indices, invertedIndices);
                                                     const cls = s == null ? 'text-slate-300'
                                                         : s >= 85 ? 'text-emerald-600'
                                                         : s >= 70 ? 'text-blue-600'

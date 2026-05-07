@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }) => {
     const u = currentUser ?? userRef.current;
     if (!u) { setRolePerms(null); setPermsLoading(false); return; }
     const systemRole = u.systemRole || 'EMPLEADO';
-    if (systemRole === 'SUPERADMIN') { setRolePerms('ALL'); setPermsLoading(false); return; }
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
     const query = roleId
       ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)

@@ -1007,124 +1007,135 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
+    const [error, setError]         = useState(null);
     const [sortCol, setSortCol]     = useState('total');
     const [sortDir, setSortDir]     = useState('desc');
     const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
+    const [page, setPage]           = useState(1);
+    const [pageSize, setPageSize]   = useState(50);
 
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
         if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setSortCol(col); setSortDir('desc'); }
+        setPage(1);
     };
+
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
 
     const fetchProductos = useCallback(async () => {
         setLoading(true);
+        setError(null);
+        try {
+            let qInv = supabase
+                .from('sales_invoices')
+                .select('id')
+                .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
+                .gte('fecha', fini).lte('fecha', ffin);
+            if (filterBranch) qInv = qInv.eq('branch_id', filterBranch);
 
-        // Get invoice IDs — always query all branches since items only exist for some
-        let qInv = supabase
-            .from('sales_invoices')
-            .select('id')
-            .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-            .gte('fecha', fini).lte('fecha', ffin);
-        // Note: filterBranch intentionally ignored here — item data only exists for certain branches
-        const { data: invoices } = await qInv;
-        const ids = (invoices || []).map(i => i.id);
-        if (ids.length === 0) { setRows([]); setLoading(false); return; }
+            const { data: invoices, error: invErr } = await qInv;
+            if (invErr) throw invErr;
+            const ids = (invoices || []).map(i => i.id);
+            if (ids.length === 0) { setRows([]); setLoading(false); return; }
 
-        // Fetch items in chunks of 1000, including precio_unitario for cost matching
-        const CHUNK = 1000;
-        const itemsAll = [];
-        for (let i = 0; i < ids.length; i += CHUNK) {
-            const { data: items } = await supabase
-                .from('sales_invoice_items')
-                .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
-                .in('invoice_id', ids.slice(i, i + CHUNK));
-            if (items) itemsAll.push(...items);
-        }
-        if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
+            const CHUNK = 1000;
+            const itemsAll = [];
+            for (let i = 0; i < ids.length; i += CHUNK) {
+                const { data: items, error: itemErr } = await supabase
+                    .from('sales_invoice_items')
+                    .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+                    .in('invoice_id', ids.slice(i, i + CHUNK));
+                if (itemErr) throw itemErr;
+                if (items) itemsAll.push(...items);
+            }
+            if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
 
-        // Aggregate by product + presentacion (different presentations = different units)
-        const agg = new Map();
-        for (const item of itemsAll) {
-            const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
-            const cur = agg.get(key) || {
-                erp_product_id: item.erp_product_id,
-                descripcion: item.descripcion,
-                presentacion: item.presentacion,
-                cantidad: 0,
-                total: 0,
-                lineas: 0,
-                precioProm: 0,
-                _precioSum: 0,
-            };
-            cur.cantidad   += parseFloat(item.cantidad || 0);
-            cur.total      += parseFloat(item.total_linea || 0);
-            cur.lineas     += 1;
-            cur._precioSum += parseFloat(item.precio_unitario || 0);
-            agg.set(key, cur);
-        }
-        for (const v of agg.values()) {
-            v.precioProm = v.lineas > 0 ? v._precioSum / v.lineas : 0;
-        }
+            // Aggregate by product + presentacion
+            const agg = new Map();
+            for (const item of itemsAll) {
+                const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
+                const cur = agg.get(key) || {
+                    erp_product_id: item.erp_product_id,
+                    descripcion: item.descripcion,
+                    presentacion: item.presentacion,
+                    cantidad: 0, total: 0, lineas: 0, _precioSum: 0,
+                };
+                cur.cantidad   += parseFloat(item.cantidad || 0);
+                cur.total      += parseFloat(item.total_linea || 0);
+                cur.lineas     += 1;
+                cur._precioSum += parseFloat(item.precio_unitario || 0);
+                agg.set(key, cur);
+            }
+            for (const v of agg.values()) {
+                v.precioProm = v.lineas > 0 ? v._precioSum / v.lineas : 0;
+            }
 
-        // Fetch costs from product_precios for all known product IDs
-        const productIds = [...agg.values()]
-            .map(v => v.erp_product_id)
-            .filter(Boolean);
-        let costMap = new Map(); // productId -> [{ costo, vineta, id_presentacion }]
-        if (productIds.length > 0) {
-            const PCHUNK = 500;
-            for (let i = 0; i < productIds.length; i += PCHUNK) {
-                const { data: precios } = await supabase
-                    .from('product_precios')
-                    .select('product_id, costo, vineta, id_presentacion')
-                    .eq('activo', true)
-                    .in('product_id', productIds.slice(i, i + PCHUNK));
-                for (const p of (precios || [])) {
-                    const arr = costMap.get(p.product_id) || [];
-                    arr.push({ costo: parseFloat(p.costo || 0), vineta: parseFloat(p.vineta || 0) });
-                    costMap.set(p.product_id, arr);
+            // Fetch costs — keyed by product_id, store all price records per product
+            const productIds = [...agg.values()].map(v => v.erp_product_id).filter(Boolean);
+            const costMap = new Map();
+            if (productIds.length > 0) {
+                const PCHUNK = 500;
+                for (let i = 0; i < productIds.length; i += PCHUNK) {
+                    const { data: precios, error: pErr } = await supabase
+                        .from('product_precios')
+                        .select('product_id, costo, vineta, id_presentacion')
+                        .eq('activo', true)
+                        .in('product_id', productIds.slice(i, i + PCHUNK));
+                    if (pErr) throw pErr;
+                    for (const p of (precios || [])) {
+                        const arr = costMap.get(p.product_id) || [];
+                        arr.push({
+                            costo: parseFloat(p.costo || 0),
+                            vineta: parseFloat(p.vineta || 0),
+                            id_presentacion: p.id_presentacion,
+                        });
+                        costMap.set(p.product_id, arr);
+                    }
                 }
             }
+
+            // Match cost: prefer exact presentation match, fall back to closest vineta
+            const allRows = [...agg.values()].map(v => {
+                const precios = costMap.get(v.erp_product_id) || [];
+                let costo_unitario = null;
+                if (precios.length === 1) {
+                    costo_unitario = precios[0].costo;
+                } else if (precios.length > 1) {
+                    const best = precios.reduce((a, b) =>
+                        Math.abs(b.vineta - v.precioProm) < Math.abs(a.vineta - v.precioProm) ? b : a
+                    );
+                    costo_unitario = best.costo;
+                }
+                const costo_total = costo_unitario != null ? v.cantidad * costo_unitario : null;
+                const utilidad    = costo_total != null ? v.total - costo_total : null;
+                const margen      = utilidad != null && v.total > 0 ? (utilidad / v.total) * 100 : null;
+                return { ...v, costo_unitario, costo_total, utilidad, margen };
+            });
+
+            allRows.sort((a, b) => b.total - a.total);
+            setRows(allRows);
+        } catch (err) {
+            setError(err.message || 'Error al cargar productos');
+        } finally {
+            setLoading(false);
         }
-
-        // Match cost to each product by finding the vineta closest to avg precio_unitario
-        const rows = [...agg.values()].map(v => {
-            const precios = costMap.get(v.erp_product_id) || [];
-            let costo_unitario = null;
-            if (precios.length === 1) {
-                costo_unitario = precios[0].costo;
-            } else if (precios.length > 1) {
-                // Pick the one whose vineta is closest to avg sale price
-                const best = precios.reduce((a, b) =>
-                    Math.abs(b.vineta - v.precioProm) < Math.abs(a.vineta - v.precioProm) ? b : a
-                );
-                costo_unitario = best.costo;
-            }
-            const costo_total = costo_unitario != null ? v.cantidad * costo_unitario : null;
-            const utilidad    = costo_total != null ? v.total - costo_total : null;
-            const margen      = utilidad != null && v.total > 0 ? (utilidad / v.total) * 100 : null;
-            return { ...v, costo_unitario, costo_total, utilidad, margen };
-        });
-
-        rows.sort((a, b) => b.total - a.total);
-        setRows(rows.slice(0, 100));
-        setLoading(false);
-    }, [fini, ffin]);
+    }, [fini, ffin, filterBranch]);
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
         const horaCorte = currentHoraCorte(ffin);
-        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: null, p_hora_corte: horaCorte })
+        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch || null, p_hora_corte: horaCorte })
             .then(({ data }) => {
                 const s = data?.[0] || {};
                 setPrevProdStats({ sum: parseFloat(s.total_sum || 0) });
             });
-    }, [fini, ffin]);
+    }, [fini, ffin, filterBranch]);
 
+    // filtered + sorted — used for display and pagination
     const filtered = useMemo(() => {
         let list = rows;
         if (searchTerm) {
@@ -1139,11 +1150,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         });
     }, [rows, searchTerm, sortCol, sortDir]);
 
-    const maxTotal    = rows[0]?.total || 1;
-    const totIngresos = filtered.reduce((s, r) => s + r.total, 0);
-    const totUtilidad = filtered.filter(r => r.utilidad != null).reduce((s, r) => s + r.utilidad, 0);
-    const totCosto    = filtered.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
+    // KPIs always from full rows (entire period), not filtered
+    const maxTotal     = rows[0]?.total || 1;
+    const totIngresos  = rows.reduce((s, r) => s + r.total, 0);
+    const totUtilidad  = rows.filter(r => r.utilidad != null).reduce((s, r) => s + r.utilidad, 0);
+    const totCosto     = rows.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
     const margenGlobal = totIngresos > 0 ? (totUtilidad / totIngresos) * 100 : 0;
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -1173,6 +1188,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
             {loading ? (
                 <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+            ) : error ? (
+                <div className="text-center py-16 text-red-400">
+                    <Package size={40} className="mx-auto mb-3 opacity-40" />
+                    <p className="font-medium">{error}</p>
+                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-blue-500 hover:underline">Reintentar</button>
+                </div>
             ) : filtered.length === 0 ? (
                 <div className="text-center py-16 text-slate-400">
                     <Package size={40} className="mx-auto mb-3" />
@@ -1193,7 +1214,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map((r, i) => {
+                            {paginated.map((r, i) => {
+                                const globalIdx = (page - 1) * pageSize + i;
                                 const pct    = (r.total / maxTotal) * 100;
                                 const margin = r.margen;
                                 const marginColor = margin == null ? 'text-slate-300'
@@ -1203,8 +1225,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 return (
                                     <tr key={r.erp_product_id || i} className="border-t border-black/[0.04] hover:bg-slate-50/60 transition-colors">
                                         <td className="px-4 py-3">
-                                            {i === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
-                                                : <span className="text-[11px] text-slate-400 font-bold">{i + 1}</span>}
+                                            {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
+                                                : <span className="text-[11px] text-slate-400 font-bold">{globalIdx + 1}</span>}
                                         </td>
                                         <td className="px-4 py-3 max-w-[220px]">
                                             <p className="font-semibold text-slate-800 text-[12px] leading-tight">{r.descripcion}</p>
@@ -1233,6 +1255,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             })}
                         </tbody>
                     </table>
+                    <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
+                        <div className="w-[130px]">
+                            <LiquidSelect value={String(pageSize)}
+                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
+                        </div>
+                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
+                            {searchTerm ? `${filtered.length} resultados` : `${fmtNum(rows.length)} productos`}
+                        </span>
+                    </div>
                 </div>
             )}
         </div>

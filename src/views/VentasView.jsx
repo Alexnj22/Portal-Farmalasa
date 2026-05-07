@@ -1050,15 +1050,24 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             }
             if (ids.length === 0) { setRows([]); setLoading(false); return; }
 
-            const CHUNK = 1000;
+            // Chunks pequeños de IDs + paginación de resultados para no chocar con el límite de 1000 filas de PostgREST
+            const CHUNK = 200;
             const itemsAll = [];
             for (let i = 0; i < ids.length; i += CHUNK) {
-                const { data: items, error: itemErr } = await supabase
-                    .from('sales_invoice_items')
-                    .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
-                    .in('invoice_id', ids.slice(i, i + CHUNK));
-                if (itemErr) throw itemErr;
-                if (items) itemsAll.push(...items);
+                const sliceIds = ids.slice(i, i + CHUNK);
+                let itemFrom = 0;
+                while (true) {
+                    const { data: items, error: itemErr } = await supabase
+                        .from('sales_invoice_items')
+                        .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+                        .in('invoice_id', sliceIds)
+                        .range(itemFrom, itemFrom + 999);
+                    if (itemErr) throw itemErr;
+                    if (!items || items.length === 0) break;
+                    itemsAll.push(...items);
+                    if (items.length < 1000) break;
+                    itemFrom += 1000;
+                }
             }
             if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
 

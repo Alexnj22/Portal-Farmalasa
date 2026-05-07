@@ -35,7 +35,7 @@ const MODULE_MAP = {
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
-    encuesta_admin:    { path: '/encuesta-admin',   label: 'Gestión de Encuesta',      icon: PenLine    },
+    encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
     promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },

@@ -1080,6 +1080,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     const { data: precios, error: pErr } = await supabase
                         .from('product_precios')
                         .select('product_id, costo, vineta')
+                        .eq('activo', true)
                         .in('product_id', productIds.slice(i, i + PCHUNK));
                     if (pErr) throw pErr;
                     for (const p of (precios || [])) {

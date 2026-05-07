@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
     Check, X, ArrowLeft, Building2, Loader2, BarChart2, ClipboardList,
-    CalendarRange, Settings2, Eye, EyeOff, Globe, Lock, Edit2, FileText,
-    ChevronRight, AlertCircle, LayoutList, User, UserCog
+    CalendarRange, Settings2, Eye, EyeOff, Globe, Lock, Edit3,
+    AlertCircle, LayoutList, UserCog, Flame, FileText, ChevronLeft
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -52,25 +52,25 @@ const OPT_COLORS = {
     D: { on: 'bg-rose-500 text-white shadow-sm shadow-rose-200',       off: 'bg-rose-50 text-rose-600 hover:bg-rose-100' },
 };
 
-const TIPO_OPTIONS = [
-    { value: 'clima',        label: 'Clima organizacional' },
-    { value: 'satisfaccion', label: 'Satisfacción laboral' },
-    { value: 'desempeno',    label: 'Evaluación de desempeño' },
-    { value: 'adhoc',        label: 'Ad-hoc / Especial' },
+const TIPO_TABS = [
+    { id: 'clima',        label: 'Clima' },
+    { id: 'satisfaccion', label: 'Satisfacción' },
+    { id: 'desempeno',    label: 'Desempeño' },
+    { id: 'adhoc',        label: 'Ad-hoc' },
 ];
 
-const ESTADO_OPTIONS = [
-    { value: 'borrador', label: 'Borrador' },
-    { value: 'activa',   label: 'Activa' },
-    { value: 'cerrada',  label: 'Cerrada' },
-    { value: 'archivada',label: 'Archivada' },
+const ESTADO_TABS = [
+    { id: 'borrador',  label: 'Borrador' },
+    { id: 'activa',    label: 'Activa' },
+    { id: 'cerrada',   label: 'Cerrada' },
+    { id: 'archivada', label: 'Archivada' },
 ];
 
-const SCOPE_OPTIONS = [
-    { value: 'all',       label: 'Todos los empleados' },
-    { value: 'branches',  label: 'Sucursales específicas' },
-    { value: 'roles',     label: 'Solo jefaturas' },
-    { value: 'employees', label: 'Empleados específicos' },
+const SCOPE_TABS = [
+    { id: 'all',       label: 'Todos' },
+    { id: 'branches',  label: 'Sucursales' },
+    { id: 'roles',     label: 'Jefaturas' },
+    { id: 'employees', label: 'Personal' },
 ];
 
 const ESTADO_STYLE = {
@@ -87,6 +87,8 @@ const TIPO_STYLE = {
     adhoc:        'bg-amber-100 text-amber-700',
 };
 
+const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Ad-hoc' };
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function PersonAvatar({ src, name, isJefe, size = 28 }) {
     const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`;
@@ -99,398 +101,20 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
     );
 }
 
-// ─── Survey Card ──────────────────────────────────────────────────────────────
-function SurveyCard({ survey, responseCount, onSelect, onEdit }) {
+// ─── Segment Control ──────────────────────────────────────────────────────────
+function SegmentControl({ options, value, onChange, accent = '#007AFF' }) {
     return (
-        <div
-            onClick={() => onSelect(survey)}
-            className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-4 flex flex-col gap-3 group">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-black text-slate-800 leading-snug truncate">{survey.nombre}</h3>
-                    {survey.descripcion && (
-                        <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{survey.descripcion}</p>
-                    )}
-                </div>
-                <button
-                    onClick={e => { e.stopPropagation(); onEdit(survey); }}
-                    className="shrink-0 w-7 h-7 rounded-lg bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-500 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                    <Edit2 size={12} strokeWidth={2.5} />
+        <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)]">
+            {options.map(opt => (
+                <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
+                    className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${
+                        value === opt.id
+                            ? 'bg-white text-[#007AFF] border-white shadow-sm scale-[1.02]'
+                            : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:-translate-y-0.5 hover:shadow-sm'
+                    }`}>
+                    {opt.label}
                 </button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${ESTADO_STYLE[survey.estado] || 'bg-slate-100 text-slate-500'}`}>
-                    {survey.estado}
-                </span>
-                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${TIPO_STYLE[survey.tipo] || 'bg-slate-100 text-slate-400'}`}>
-                    {TIPO_OPTIONS.find(t => t.value === survey.tipo)?.label || survey.tipo}
-                </span>
-                {survey.anonima && (
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 flex items-center gap-1">
-                        <EyeOff size={8} strokeWidth={3} /> Anónima
-                    </span>
-                )}
-            </div>
-            <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-                <div className="flex items-center gap-1 text-[11px] text-slate-400 font-semibold">
-                    <ClipboardList size={12} strokeWidth={2} />
-                    <span>{responseCount} {responseCount === 1 ? 'respuesta' : 'respuestas'}</span>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                    {survey.año && <span>{survey.año}</span>}
-                    {survey.fecha_inicio && (
-                        <span className="flex items-center gap-0.5">
-                            <CalendarRange size={10} strokeWidth={2} />
-                            {survey.fecha_inicio}
-                            {survey.fecha_fin && ` → ${survey.fecha_fin}`}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── Survey Form (create / edit) ──────────────────────────────────────────────
-function SurveyForm({ initial, branches, employees, onSave, onCancel, saving }) {
-    const [nombre, setNombre] = useState(initial?.nombre || '');
-    const [año, setAño] = useState(initial?.año || new Date().getFullYear());
-    const [tipo, setTipo] = useState(initial?.tipo || 'clima');
-    const [estado, setEstado] = useState(initial?.estado || 'activa');
-    const [descripcion, setDescripcion] = useState(initial?.descripcion || '');
-    const [anonima, setAnonima] = useState(initial?.anonima ?? true);
-    const [compartir, setCompartir] = useState(initial?.compartir_resultados ?? false);
-    const [scopeTipo, setScopeTipo] = useState(initial?.scope_tipo || 'all');
-    const [scopeIds, setScopeIds] = useState(initial?.scope_ids || []);
-    const [fechaInicio, setFechaInicio] = useState(initial?.fecha_inicio || '');
-    const [fechaFin, setFechaFin] = useState(initial?.fecha_fin || '');
-
-    const branchOptions = branches.map(b => ({ value: b.id, label: b.name }));
-    const employeeOptions = employees.map(e => ({
-        value: e.id,
-        label: `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim(),
-        sublabel: e.branch?.name || '',
-        avatar: e.photo_url || '',
-    }));
-
-    const toggleId = (id) => setScopeIds(prev =>
-        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-
-    const handleSubmit = () => {
-        if (!nombre.trim()) return;
-        onSave({ nombre: nombre.trim(), año: Number(año), tipo, estado, descripcion: descripcion.trim() || null,
-            anonima, compartir_resultados: compartir, scope_tipo: scopeTipo,
-            scope_ids: scopeTipo === 'all' || scopeTipo === 'roles' ? [] : scopeIds,
-            fecha_inicio: fechaInicio || null, fecha_fin: fechaFin || null });
-    };
-
-    return (
-        <div className="space-y-4 max-w-2xl">
-            {/* Nombre + año + tipo */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Información básica</p>
-                <div>
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">Título *</label>
-                    <input value={nombre} onChange={e => setNombre(e.target.value)}
-                        placeholder="Encuesta de clima organizacional..."
-                        className="w-full h-10 rounded-xl border border-slate-200 px-3 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-300" />
-                </div>
-                <div className="flex gap-3">
-                    <div className="w-24 shrink-0">
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">Año</label>
-                        <input type="number" value={año} onChange={e => setAño(e.target.value)}
-                            className="w-full h-10 rounded-xl border border-slate-200 px-3 text-[13px] font-bold text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
-                    </div>
-                    <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">Tipo</label>
-                        <LiquidSelect value={tipo} onChange={setTipo} options={TIPO_OPTIONS}
-                            placeholder="Tipo…" icon={FileText} compact />
-                    </div>
-                    <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">Estado</label>
-                        <LiquidSelect value={estado} onChange={setEstado} options={ESTADO_OPTIONS}
-                            placeholder="Estado…" icon={Settings2} compact />
-                    </div>
-                </div>
-                <div>
-                    <label className="text-[10px] text-slate-500 font-semibold block mb-1">Descripción</label>
-                    <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)}
-                        rows={2} placeholder="Objetivo de esta encuesta..."
-                        className="w-full resize-none rounded-xl border border-slate-200 text-[12px] text-slate-700 p-3 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-300" />
-                </div>
-            </div>
-
-            {/* Fechas */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <CalendarRange size={11} strokeWidth={2.5} /> Período de aplicación
-                </p>
-                <div className="flex gap-3">
-                    <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">Fecha inicio</label>
-                        <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)}
-                            className="w-full h-10 rounded-xl border border-slate-200 px-3 text-[12px] text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
-                    </div>
-                    <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 font-semibold block mb-1">Fecha fin</label>
-                        <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)}
-                            className="w-full h-10 rounded-xl border border-slate-200 px-3 text-[12px] text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
-                    </div>
-                </div>
-            </div>
-
-            {/* Privacidad */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Lock size={11} strokeWidth={2.5} /> Privacidad y visibilidad
-                </p>
-                <div className="flex gap-3">
-                    <button onClick={() => setAnonima(v => !v)}
-                        className={`flex-1 flex items-center gap-2 px-4 h-10 rounded-xl border font-black text-[11px] transition-all duration-200 ${
-                            anonima
-                                ? 'bg-violet-50 border-violet-300 text-violet-700 shadow-sm'
-                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
-                        }`}>
-                        {anonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
-                        {anonima ? 'Anónima' : 'No anónima'}
-                    </button>
-                    <button onClick={() => setCompartir(v => !v)}
-                        className={`flex-1 flex items-center gap-2 px-4 h-10 rounded-xl border font-black text-[11px] transition-all duration-200 ${
-                            compartir
-                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm'
-                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
-                        }`}>
-                        <Globe size={13} strokeWidth={2.5} />
-                        {compartir ? 'Resultados públicos' : 'Resultados privados'}
-                    </button>
-                </div>
-                {anonima && (
-                    <p className="text-[10px] text-violet-500 bg-violet-50 rounded-xl px-3 py-2 flex items-start gap-2">
-                        <AlertCircle size={12} strokeWidth={2.5} className="shrink-0 mt-0.5" />
-                        Aunque sea anónima, el sistema guarda internamente quién respondió. El empleado no ve su propia atribución.
-                    </p>
-                )}
-            </div>
-
-            {/* Audiencia */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Users size={11} strokeWidth={2.5} /> Dirigida a
-                </p>
-                <LiquidSelect value={scopeTipo} onChange={v => { setScopeTipo(v); setScopeIds([]); }}
-                    options={SCOPE_OPTIONS} placeholder="Audiencia…" icon={UserCog} compact />
-
-                {scopeTipo === 'branches' && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                        {branches.map(b => (
-                            <button key={b.id} onClick={() => toggleId(b.id)}
-                                className={`flex items-center gap-1.5 px-3 h-8 rounded-xl border text-[11px] font-black transition-all ${
-                                    scopeIds.includes(b.id)
-                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
-                                        : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
-                                }`}>
-                                <Building2 size={10} strokeWidth={2.5} />
-                                {b.name}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {scopeTipo === 'employees' && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 max-h-48 overflow-y-auto">
-                        {employees.map(e => {
-                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
-                            const sel = scopeIds.includes(e.id);
-                            return (
-                                <button key={e.id} onClick={() => toggleId(e.id)}
-                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-left transition-all ${
-                                        sel ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200'
-                                    }`}>
-                                    <PersonAvatar src={e.photo_url} name={fn} size={22} />
-                                    <div className="min-w-0">
-                                        <div className="text-[10px] font-black truncate">{fn}</div>
-                                        <div className="text-[9px] text-slate-400 truncate">{e.branch?.name || ''}</div>
-                                    </div>
-                                    {sel && <Check size={10} className="ml-auto shrink-0 text-blue-500" strokeWidth={3} />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {scopeTipo === 'roles' && (
-                    <p className="text-[11px] text-slate-400 bg-slate-50 rounded-xl px-3 py-2">
-                        Solo aplicará a empleados con rol de jefe/a de sala en cada sucursal.
-                    </p>
-                )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-3 pb-2">
-                <button onClick={onCancel}
-                    className="flex items-center gap-1.5 px-4 h-10 rounded-xl border border-slate-200 bg-white text-[12px] font-black text-slate-500 hover:bg-slate-50 transition-all">
-                    <ArrowLeft size={13} strokeWidth={2.5} /> Cancelar
-                </button>
-                <button onClick={handleSubmit} disabled={!nombre.trim() || saving}
-                    className="flex items-center gap-1.5 px-5 h-10 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[12px] font-black transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                    {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
-                    {saving ? 'Guardando…' : initial ? 'Actualizar encuesta' : 'Crear encuesta'}
-                </button>
-            </div>
-        </div>
-    );
-}
-
-// ─── Response Form (add / edit) ───────────────────────────────────────────────
-function ResponseForm({ initial, employeeOptions, bloques, preguntas, onSave, onCancel, saving }) {
-    const maxIdx = preguntas.reduce((m, p) => Math.max(m, p.indice ?? 0), 0);
-    const [selectedEmployeeId, setSelectedEmployeeId] = useState(initial?.employee_id || '');
-    const [isJefe, setIsJefe] = useState(initial?.is_jefe ?? false);
-    const [answers, setAnswers] = useState(() => {
-        const a = Array(maxIdx + 1).fill(null);
-        if (initial?.responses) initial.responses.forEach((v, i) => { a[i] = v; });
-        return a;
-    });
-    const [comentario, setComentario] = useState(initial?.comentario || '');
-    const [openBloques, setOpenBloques] = useState(() => {
-        const o = {}; bloques.forEach(b => { o[b.id] = true; }); return o;
-    });
-
-    const setAnswer = (idx, val) =>
-        setAnswers(prev => { const a = [...prev]; a[idx] = val; return a; });
-
-    const formPreguntas = preguntas.filter(p => p.tipo !== 'sucursal');
-    const answeredCount = formPreguntas.filter(p => answers[p.indice] !== null).length;
-
-    return (
-        <div className="space-y-4 max-w-3xl">
-            {/* Employee + rol */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-                <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Colaborador</p>
-                    {initial ? (
-                        <div className="flex items-center gap-2 h-10 px-3 rounded-xl bg-slate-50 border border-slate-200">
-                            <PersonAvatar src={initial.employee?.photo_url} name={`${(initial.employee?.first_names||'').split(' ')[0]} ${(initial.employee?.last_names||'').split(' ')[0]}`} size={22} />
-                            <span className="text-[12px] font-black text-slate-700">
-                                {`${(initial.employee?.first_names||'').split(' ')[0]} ${(initial.employee?.last_names||'').split(' ')[0]}`}
-                            </span>
-                            <span className="text-[10px] text-slate-400 ml-1">{initial.employee?.branch?.name}</span>
-                        </div>
-                    ) : (
-                        <LiquidSelect value={selectedEmployeeId} onChange={setSelectedEmployeeId}
-                            options={employeeOptions} placeholder="Seleccionar empleado…"
-                            icon={Users} compact />
-                    )}
-                </div>
-                <div className="shrink-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Rol en encuesta</p>
-                    <button onClick={() => setIsJefe(v => !v)}
-                        className={`flex items-center gap-2 px-4 h-10 rounded-xl border font-black text-[11px] transition-all duration-200 ${
-                            isJefe
-                                ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-sm'
-                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
-                        }`}>
-                        <UserCheck size={14} strokeWidth={2.5} />
-                        {isJefe ? 'Jefe/a de sala' : 'Colaborador/a'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Progress */}
-            {formPreguntas.length > 0 && (
-                <div className="flex items-center gap-3">
-                    <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-blue-500 transition-all duration-300"
-                            style={{ width: `${(answeredCount / formPreguntas.length) * 100}%` }} />
-                    </div>
-                    <span className="text-[11px] font-black text-slate-500 shrink-0 tabular-nums">
-                        {answeredCount} / {formPreguntas.length}
-                    </span>
-                </div>
-            )}
-
-            {/* Questions by bloque */}
-            {bloques.map(bloque => {
-                const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
-                if (!bqs.length) return null;
-                const isOpen = openBloques[bloque.id] !== false;
-                const answered = bqs.filter(p => answers[p.indice] !== null).length;
-                const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
-                return (
-                    <div key={bloque.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-                        <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-slate-50/50 transition-colors"
-                            onClick={() => setOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}>
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 ${barCls}`}>
-                                B{bloque.numero}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-[12px] font-black text-slate-800">{bloque.nombre}</span>
-                                <span className="ml-2 text-[10px] text-slate-400 font-semibold">{answered}/{bqs.length}</span>
-                            </div>
-                            {answered === bqs.length && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={3} />}
-                            {isOpen ? <ChevronUp size={13} className="text-slate-400 shrink-0" /> : <ChevronDown size={13} className="text-slate-400 shrink-0" />}
-                        </button>
-                        {isOpen && (
-                            <div className="border-t border-slate-50">
-                                {bqs.map((p, qi) => {
-                                    const val = answers[p.indice];
-                                    return (
-                                        <div key={p.id}
-                                            className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-slate-50' : ''}`}>
-                                            <span className="shrink-0 w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-[9px] font-black text-slate-400 mt-0.5">
-                                                {p.numero}
-                                            </span>
-                                            <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
-                                            <div className="shrink-0 flex items-center gap-1 mt-0.5">
-                                                {p.tipo === 'numerica' ? (
-                                                    <input type="number" min="1" max="10" value={val ?? ''}
-                                                        onChange={e => setAnswer(p.indice, e.target.value || null)}
-                                                        placeholder="1-10"
-                                                        className="w-14 h-8 rounded-xl border border-slate-200 text-center text-[13px] font-black text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
-                                                ) : (
-                                                    ['A','B','C','D'].map(opt => {
-                                                        const oc = OPT_COLORS[opt];
-                                                        return (
-                                                            <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                onClick={() => setAnswer(p.indice, val === opt ? null : opt)}
-                                                                className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
-                                                                {opt}
-                                                            </button>
-                                                        );
-                                                    })
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-
-            {/* Comment */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Comentario (opcional)</p>
-                <textarea value={comentario} onChange={e => setComentario(e.target.value)} rows={3}
-                    placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                    className="w-full resize-none rounded-xl border border-slate-200 text-[12px] text-slate-700 p-3 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-300" />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-3 pb-2">
-                <button onClick={onCancel}
-                    className="flex items-center gap-1.5 px-4 h-10 rounded-xl border border-slate-200 bg-white text-[12px] font-black text-slate-500 hover:bg-slate-50 transition-all">
-                    <ArrowLeft size={13} strokeWidth={2.5} /> Cancelar
-                </button>
-                <button onClick={() => onSave({ employee_id: initial?.employee_id || selectedEmployeeId, is_jefe: isJefe, responses: answers, comentario: comentario.trim() || null })}
-                    disabled={(!initial && !selectedEmployeeId) || saving}
-                    className="flex items-center gap-1.5 px-5 h-10 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[12px] font-black transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                    {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
-                    {saving ? 'Guardando…' : initial ? 'Actualizar respuesta' : 'Guardar respuesta'}
-                </button>
-            </div>
+            ))}
         </div>
     );
 }
@@ -499,46 +123,64 @@ function ResponseForm({ initial, employeeOptions, bloques, preguntas, onSave, on
 export default function EncuestaAdminView() {
     const appendAuditLog = useStaff(state => state.appendAuditLog);
     const { showToast } = useToastStore();
+    const storeBranches = useStaff(state => state.branches) || [];
 
-    // mode: 'surveys' | 'survey-form' | 'detail' | 'response-form'
-    const [mode, setMode] = useState('surveys');
+    // ── Panel state ───────────────────────────────────────────────────────────
+    // leftPanel: 'survey-form' | 'response-form'
+    // rightPanel: 'surveys' | 'detail'
+    const [leftPanel, setLeftPanel]   = useState('survey-form');
+    const [rightPanel, setRightPanel] = useState('surveys');
 
-    // Surveys
-    const [surveys, setSurveys] = useState([]);
+    // ── Survey form state ─────────────────────────────────────────────────────
+    const [editingSurvey, setEditingSurvey] = useState(null);
+    const [sfNombre,      setSfNombre]      = useState('');
+    const [sfAño,         setSfAño]         = useState(new Date().getFullYear());
+    const [sfTipo,        setSfTipo]        = useState('clima');
+    const [sfEstado,      setSfEstado]      = useState('activa');
+    const [sfDescripcion, setSfDescripcion] = useState('');
+    const [sfAnonima,     setSfAnonima]     = useState(true);
+    const [sfCompartir,   setSfCompartir]   = useState(false);
+    const [sfScope,       setSfScope]       = useState('all');
+    const [sfScopeIds,    setSfScopeIds]    = useState([]);
+    const [sfFechaInicio, setSfFechaInicio] = useState('');
+    const [sfFechaFin,    setSfFechaFin]    = useState('');
+    const [sfError,       setSfError]       = useState('');
+    const [savingSurvey,  setSavingSurvey]  = useState(false);
+
+    // ── Surveys list ──────────────────────────────────────────────────────────
+    const [surveys,        setSurveys]        = useState([]);
     const [responseCounts, setResponseCounts] = useState({});
     const [loadingSurveys, setLoadingSurveys] = useState(false);
-    const [editingSurvey, setEditingSurvey] = useState(null);
-    const [savingSurvey, setSavingSurvey] = useState(false);
 
-    // Detail
+    // ── Detail state ──────────────────────────────────────────────────────────
     const [selectedSurvey, setSelectedSurvey] = useState(null);
-    const [bloques, setBloques] = useState([]);
-    const [preguntas, setPreguntas] = useState([]);
-    const [respuestas, setRespuestas] = useState([]);
-    const [loadingDetail, setLoadingDetail] = useState(false);
-    const [confirmDelete, setConfirmDelete] = useState(null);
-    const [editingResponse, setEditingResponse] = useState(null);
-    const [savingResponse, setSavingResponse] = useState(false);
+    const [bloques,        setBloques]        = useState([]);
+    const [preguntas,      setPreguntas]      = useState([]);
+    const [respuestas,     setRespuestas]     = useState([]);
+    const [loadingDetail,  setLoadingDetail]  = useState(false);
+    const [confirmDelete,  setConfirmDelete]  = useState(null);
 
-    // Shared employee list for forms
+    // ── Response form state ───────────────────────────────────────────────────
+    const [editingResponse,  setEditingResponse]  = useState(null);
+    const [rfEmployeeId,     setRfEmployeeId]     = useState('');
+    const [rfIsJefe,         setRfIsJefe]         = useState(false);
+    const [rfAnswers,        setRfAnswers]        = useState([]);
+    const [rfComentario,     setRfComentario]     = useState('');
+    const [rfOpenBloques,    setRfOpenBloques]    = useState({});
+    const [savingResponse,   setSavingResponse]   = useState(false);
+
+    // ── Employees list ────────────────────────────────────────────────────────
     const [employees, setEmployees] = useState([]);
 
-    // Branches from store
-    const storeBranches = useStaff(state => state.branches);
-    const branches = storeBranches || [];
-
-    // ── Load surveys ──────────────────────────────────────────────────────────
+    // ── Load ──────────────────────────────────────────────────────────────────
     const loadSurveys = useCallback(async () => {
         setLoadingSurveys(true);
         const { data } = await supabase.from('surveys').select('*').order('año', { ascending: false });
         const list = data || [];
         setSurveys(list);
-        // counts
         if (list.length) {
             const { data: counts } = await supabase
-                .from('survey_responses')
-                .select('survey_id')
-                .in('survey_id', list.map(s => s.id));
+                .from('survey_responses').select('survey_id').in('survey_id', list.map(s => s.id));
             const map = {};
             list.forEach(s => { map[s.id] = 0; });
             (counts || []).forEach(r => { map[r.survey_id] = (map[r.survey_id] || 0) + 1; });
@@ -547,17 +189,15 @@ export default function EncuestaAdminView() {
         setLoadingSurveys(false);
     }, []);
 
-    // ── Load employees ────────────────────────────────────────────────────────
+    useEffect(() => { loadSurveys(); }, [loadSurveys]);
+
     useEffect(() => {
         supabase.from('employees')
-            .select('id, first_names, last_names, photo_url, role_id, branch:branches(name)')
+            .select('id, first_names, last_names, photo_url, role_id, branch:branches(id, name)')
             .order('first_names')
             .then(({ data }) => setEmployees(data || []));
     }, []);
 
-    useEffect(() => { loadSurveys(); }, [loadSurveys]);
-
-    // ── Load detail ───────────────────────────────────────────────────────────
     const loadDetail = useCallback(async (survey) => {
         if (!survey) return;
         setLoadingDetail(true);
@@ -566,85 +206,151 @@ export default function EncuestaAdminView() {
             supabase.from('survey_preguntas').select('*').eq('survey_id', survey.id).order('numero'),
             supabase.from('survey_responses')
                 .select('*, employee:employees(id, first_names, last_names, photo_url, role_id, branch:branches(id, name))')
-                .eq('survey_id', survey.id)
-                .order('is_jefe', { ascending: false }),
+                .eq('survey_id', survey.id),
         ]);
-        setBloques(bRes.data || []);
-        setPreguntas(pRes.data || []);
-        // Sort: jefes first, then by branch name
+        const bData = bRes.data || [];
+        const pData = pRes.data || [];
+        setBloques(bData);
+        setPreguntas(pData);
         const sorted = (rRes.data || []).sort((a, b) => {
             if (a.is_jefe !== b.is_jefe) return a.is_jefe ? -1 : 1;
             return (a.employee?.branch?.name || '').localeCompare(b.employee?.branch?.name || '');
         });
         setRespuestas(sorted);
+        // Default all bloques open in response form
+        const open = {};
+        bData.forEach(b => { open[b.id] = false; });
+        if (bData.length) open[bData[0].id] = true;
+        setRfOpenBloques(open);
         setLoadingDetail(false);
     }, []);
 
-    const openDetail = (survey) => {
-        setSelectedSurvey(survey);
-        loadDetail(survey);
-        setMode('detail');
+    // ── Survey form helpers ───────────────────────────────────────────────────
+    const resetSurveyForm = () => {
+        setEditingSurvey(null);
+        setSfNombre(''); setSfAño(new Date().getFullYear()); setSfTipo('clima');
+        setSfEstado('activa'); setSfDescripcion(''); setSfAnonima(true);
+        setSfCompartir(false); setSfScope('all'); setSfScopeIds([]);
+        setSfFechaInicio(''); setSfFechaFin(''); setSfError('');
     };
 
-    // ── Save survey ───────────────────────────────────────────────────────────
-    const handleSaveSurvey = async (data) => {
+    const loadSurveyIntoForm = (s) => {
+        setEditingSurvey(s);
+        setSfNombre(s.nombre || ''); setSfAño(s.año || new Date().getFullYear());
+        setSfTipo(s.tipo || 'clima'); setSfEstado(s.estado || 'activa');
+        setSfDescripcion(s.descripcion || ''); setSfAnonima(s.anonima ?? true);
+        setSfCompartir(s.compartir_resultados ?? false); setSfScope(s.scope_tipo || 'all');
+        setSfScopeIds(s.scope_ids || []); setSfFechaInicio(s.fecha_inicio || '');
+        setSfFechaFin(s.fecha_fin || ''); setSfError('');
+    };
+
+    const handleSaveSurvey = async () => {
+        if (!sfNombre.trim()) { setSfError('El título de la encuesta es obligatorio.'); return; }
+        setSfError('');
         setSavingSurvey(true);
+        const payload = {
+            nombre: sfNombre.trim(), año: Number(sfAño), tipo: sfTipo, estado: sfEstado,
+            descripcion: sfDescripcion.trim() || null, anonima: sfAnonima,
+            compartir_resultados: sfCompartir, scope_tipo: sfScope,
+            scope_ids: (sfScope === 'all' || sfScope === 'roles') ? [] : sfScopeIds,
+            fecha_inicio: sfFechaInicio || null, fecha_fin: sfFechaFin || null,
+        };
         if (editingSurvey?.id) {
-            const { error } = await supabase.from('surveys').update(data).eq('id', editingSurvey.id);
-            if (error) { showToast('Error', 'No se pudo actualizar la encuesta.', 'error'); setSavingSurvey(false); return; }
-            await appendAuditLog('ENCUESTA_ACTUALIZADA', null, { survey_id: editingSurvey.id, cambios: data });
-            showToast('Actualizado', 'Encuesta actualizada correctamente.', 'success');
+            const { error } = await supabase.from('surveys').update(payload).eq('id', editingSurvey.id);
+            if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingSurvey(false); return; }
+            await appendAuditLog('ENCUESTA_ACTUALIZADA', null, { survey_id: editingSurvey.id });
+            showToast('Actualizado', 'Encuesta actualizada.', 'success');
+            // refresh selected survey if it's the same
+            if (selectedSurvey?.id === editingSurvey.id) {
+                setSelectedSurvey({ ...selectedSurvey, ...payload });
+            }
         } else {
-            const { error } = await supabase.from('surveys').insert(data);
-            if (error) { showToast('Error', 'No se pudo crear la encuesta.', 'error'); setSavingSurvey(false); return; }
-            await appendAuditLog('ENCUESTA_CREADA', null, { nombre: data.nombre });
-            showToast('Creado', 'Encuesta creada correctamente.', 'success');
+            const { error } = await supabase.from('surveys').insert(payload);
+            if (error) { showToast('Error', 'No se pudo crear.', 'error'); setSavingSurvey(false); return; }
+            await appendAuditLog('ENCUESTA_CREADA', null, { nombre: payload.nombre });
+            showToast('Creado', 'Encuesta creada.', 'success');
         }
         setSavingSurvey(false);
-        setEditingSurvey(null);
-        setMode('surveys');
+        resetSurveyForm();
         loadSurveys();
     };
 
-    // ── Save response ─────────────────────────────────────────────────────────
-    const handleSaveResponse = async (data) => {
+    const toggleScopeId = (id) =>
+        setSfScopeIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+    // ── Response form helpers ─────────────────────────────────────────────────
+    const resetResponseForm = () => {
+        setEditingResponse(null);
+        setRfEmployeeId(''); setRfIsJefe(false);
+        const maxIdx = preguntas.reduce((m, p) => Math.max(m, p.indice ?? 0), 0);
+        setRfAnswers(Array(maxIdx + 1).fill(null));
+        setRfComentario('');
+    };
+
+    const openResponseForm = (response = null) => {
+        if (response) {
+            setEditingResponse(response);
+            setRfEmployeeId(response.employee_id);
+            setRfIsJefe(response.is_jefe ?? false);
+            const maxIdx = preguntas.reduce((m, p) => Math.max(m, p.indice ?? 0), 0);
+            const a = Array(maxIdx + 1).fill(null);
+            if (response.responses) response.responses.forEach((v, i) => { a[i] = v; });
+            setRfAnswers(a);
+            setRfComentario(response.comentario || '');
+        } else {
+            resetResponseForm();
+        }
+        setLeftPanel('response-form');
+    };
+
+    const handleSaveResponse = async () => {
+        const empId = editingResponse?.employee_id || rfEmployeeId;
+        if (!empId) return;
         setSavingResponse(true);
         if (editingResponse?.id) {
             const { error } = await supabase.from('survey_responses')
-                .update({ is_jefe: data.is_jefe, responses: data.responses, comentario: data.comentario,
+                .update({ is_jefe: rfIsJefe, responses: rfAnswers, comentario: rfComentario.trim() || null,
                     updated_at: new Date().toISOString() })
                 .eq('id', editingResponse.id);
-            if (error) { showToast('Error', 'No se pudo actualizar la respuesta.', 'error'); setSavingResponse(false); return; }
-            await appendAuditLog('ENCUESTA_RESPUESTA_EDITADA', data.employee_id, { survey_id: selectedSurvey.id, response_id: editingResponse.id });
+            if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingResponse(false); return; }
+            await appendAuditLog('ENCUESTA_RESPUESTA_EDITADA', empId, { survey_id: selectedSurvey.id, response_id: editingResponse.id });
             showToast('Actualizado', 'Respuesta actualizada.', 'success');
         } else {
             const { error } = await supabase.from('survey_responses').insert({
-                survey_id: selectedSurvey.id, ...data,
+                survey_id: selectedSurvey.id, employee_id: empId, is_jefe: rfIsJefe,
+                responses: rfAnswers, comentario: rfComentario.trim() || null,
             });
-            if (error) { showToast('Error', 'No se pudo guardar la respuesta.', 'error'); setSavingResponse(false); return; }
-            await appendAuditLog('ENCUESTA_RESPUESTA_AGREGADA', data.employee_id, { survey_id: selectedSurvey.id, is_jefe: data.is_jefe });
+            if (error) { showToast('Error', 'No se pudo guardar.', 'error'); setSavingResponse(false); return; }
+            await appendAuditLog('ENCUESTA_RESPUESTA_AGREGADA', empId, { survey_id: selectedSurvey.id });
             showToast('Guardado', 'Respuesta registrada.', 'success');
+            setResponseCounts(p => ({ ...p, [selectedSurvey.id]: (p[selectedSurvey.id] || 0) + 1 }));
         }
         setSavingResponse(false);
-        setEditingResponse(null);
-        setMode('detail');
+        setLeftPanel('survey-form');
+        resetResponseForm();
         loadDetail(selectedSurvey);
-        // Update response count
-        setResponseCounts(prev => ({
-            ...prev,
-            [selectedSurvey.id]: editingResponse ? prev[selectedSurvey.id] : (prev[selectedSurvey.id] || 0) + 1,
-        }));
     };
 
-    // ── Delete response ───────────────────────────────────────────────────────
     const handleDeleteResponse = async (row) => {
         const { error } = await supabase.from('survey_responses').delete().eq('id', row.id);
         if (error) { showToast('Error', 'No se pudo eliminar.', 'error'); return; }
         await appendAuditLog('ENCUESTA_RESPUESTA_ELIMINADA', row.employee_id, { survey_id: selectedSurvey.id });
         showToast('Eliminado', 'Respuesta eliminada.', 'success');
         setRespuestas(r => r.filter(x => x.id !== row.id));
-        setResponseCounts(prev => ({ ...prev, [selectedSurvey.id]: Math.max(0, (prev[selectedSurvey.id] || 1) - 1) }));
+        setResponseCounts(p => ({ ...p, [selectedSurvey.id]: Math.max(0, (p[selectedSurvey.id] || 1) - 1) }));
         setConfirmDelete(null);
+    };
+
+    const setRfAnswer = (idx, val) =>
+        setRfAnswers(prev => { const a = [...prev]; a[idx] = val; return a; });
+
+    // ── Open survey detail ────────────────────────────────────────────────────
+    const openDetail = (survey) => {
+        setSelectedSurvey(survey);
+        loadDetail(survey);
+        setRightPanel('detail');
+        setLeftPanel('survey-form');
+        resetSurveyForm();
     };
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -661,62 +367,53 @@ export default function EncuestaAdminView() {
         })),
     [employees, respuestas]);
 
-    // Group responses by branch
     const responsesByBranch = useMemo(() => {
         const groups = {};
         respuestas.forEach(r => {
-            const branchName = r.employee?.branch?.name || 'Sin sucursal';
-            if (!groups[branchName]) groups[branchName] = { jefes: [], colabs: [] };
-            if (r.is_jefe) groups[branchName].jefes.push(r);
-            else groups[branchName].colabs.push(r);
+            const b = r.employee?.branch?.name || 'Sin sucursal';
+            if (!groups[b]) groups[b] = { jefes: [], colabs: [] };
+            if (r.is_jefe) groups[b].jefes.push(r); else groups[b].colabs.push(r);
         });
         return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
     }, [respuestas]);
 
-    // ── Pending respondents ───────────────────────────────────────────────────
     const pendingEmployees = useMemo(() => {
         if (!selectedSurvey) return [];
         let pool = employees;
         if (selectedSurvey.scope_tipo === 'roles') pool = pool.filter(e => e.role_id === 3 || e.role_id === 11);
         else if (selectedSurvey.scope_tipo === 'branches' && selectedSurvey.scope_ids?.length)
-            pool = pool.filter(e => {
-                const b = branches.find(br => br.id === e.branchId);
-                return b && selectedSurvey.scope_ids.includes(b.id);
-            });
+            pool = pool.filter(e => selectedSurvey.scope_ids.some(id => e.branch?.id === id));
         else if (selectedSurvey.scope_tipo === 'employees' && selectedSurvey.scope_ids?.length)
             pool = pool.filter(e => selectedSurvey.scope_ids.includes(e.id));
+        else return [];
         return pool.filter(e => !respondedIds.has(e.id));
-    }, [selectedSurvey, employees, respuestas, branches]);
+    }, [selectedSurvey, employees, respuestas]);
 
-    // ─── Header ───────────────────────────────────────────────────────────────
+    const formPreguntas = preguntas.filter(p => p.tipo !== 'sucursal');
+    const rfAnsweredCount = formPreguntas.filter(p => rfAnswers[p.indice] !== null).length;
+
+    // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 w-max max-w-full overflow-hidden">
-            <div className="flex items-center h-full pl-2 pr-1 gap-1 md:gap-1.5">
-                {[
-                    { key: 'surveys', label: 'Encuestas', Icon: LayoutList },
-                    { key: 'survey-form', label: 'Nueva encuesta', Icon: Plus },
-                ].map(({ key, label, Icon }) => (
-                    <button key={key}
-                        onClick={() => {
-                            if (key === 'survey-form') { setEditingSurvey(null); }
-                            setMode(key);
-                        }}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
-                            (mode === key || (mode === 'survey-form' && key === 'survey-form'))
-                                ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
-                        }`}>
-                        <Icon size={12} strokeWidth={2.5} />
-                        <span className="hidden sm:inline">{label}</span>
-                    </button>
-                ))}
-                {(mode === 'detail' || mode === 'response-form') && selectedSurvey && (
+        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+            <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
+                {rightPanel === 'detail' && selectedSurvey ? (
                     <>
+                        <button onClick={() => { setRightPanel('surveys'); setLeftPanel('survey-form'); resetSurveyForm(); resetResponseForm(); }}
+                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 bg-white text-slate-800 border-white shadow-md">
+                            <ChevronLeft size={12} strokeWidth={2.5} />
+                            <span className="hidden sm:inline">Encuestas</span>
+                        </button>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-                        <div className="flex items-center gap-1 text-[10px] text-white/70 font-semibold px-1">
-                            <ChevronRight size={10} strokeWidth={2.5} />
-                            <span className="hidden sm:inline truncate max-w-[160px]">{selectedSurvey.nombre}</span>
-                        </div>
+                        <span className="text-[10px] text-white/80 font-semibold px-2 truncate max-w-[200px] hidden sm:block">
+                            {selectedSurvey.nombre}
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-slate-800 border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                            <LayoutList size={12} strokeWidth={2.5} />
+                            <span className="hidden sm:inline">Encuestas</span>
+                        </button>
                     </>
                 )}
             </div>
@@ -727,258 +424,641 @@ export default function EncuestaAdminView() {
         <GlassViewLayout
             icon={PenLine}
             title="Gestión de Encuestas"
-            subtitle="Crear, configurar y administrar encuestas organizacionales"
-            filtersContent={filtersContent}>
-            <div className="p-5 md:p-6">
+            filtersContent={filtersContent}
+            transparentBody={true}
+            fixedScrollMode={true}>
 
-                {/* ── SURVEY LIST ─────────────────────────────────────────── */}
-                {mode === 'surveys' && (
-                    <div className="space-y-4">
-                        {loadingSurveys ? (
-                            <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
-                                <Loader2 size={18} className="animate-spin" />
-                                <span className="text-[12px] font-semibold">Cargando…</span>
+            <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+
+                {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
+                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
+
+                    {/* ── Survey form ─────────────────────────────────────────── */}
+                    {leftPanel === 'survey-form' && (
+                        <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
+                            editingSurvey
+                                ? 'border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                                : 'border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
+                        }`}>
+
+                            {/* Form header */}
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                                        {editingSurvey ? <Edit3 size={16} strokeWidth={2.5} /> : <Plus size={16} strokeWidth={2.5} />}
+                                    </div>
+                                    <span className="font-black uppercase tracking-tight ml-1">
+                                        {editingSurvey ? 'Editar Encuesta' : 'Nueva Encuesta'}
+                                    </span>
+                                </h3>
+                                {editingSurvey && (
+                                    <button onClick={resetSurveyForm}
+                                        className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                                        <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
+                                    </button>
+                                )}
                             </div>
-                        ) : surveys.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-300">
-                                <BarChart2 size={40} strokeWidth={1.5} />
-                                <div className="text-center">
-                                    <p className="text-[13px] font-black text-slate-400">Sin encuestas aún</p>
-                                    <p className="text-[11px] text-slate-300 mt-0.5">Crea la primera con el botón "Nueva encuesta"</p>
+
+                            {sfError && (
+                                <div className="mb-5 bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2">
+                                    <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                    <span className="leading-tight">{sfError}</span>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                                {surveys.map(s => (
-                                    <SurveyCard key={s.id} survey={s}
-                                        responseCount={responseCounts[s.id] || 0}
-                                        onSelect={openDetail}
-                                        onEdit={survey => { setEditingSurvey(survey); setMode('survey-form'); }} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
 
-                {/* ── SURVEY FORM ─────────────────────────────────────────── */}
-                {mode === 'survey-form' && (
-                    <SurveyForm
-                        initial={editingSurvey}
-                        branches={branches}
-                        employees={employees}
-                        onSave={handleSaveSurvey}
-                        onCancel={() => { setEditingSurvey(null); setMode('surveys'); }}
-                        saving={savingSurvey}
-                    />
-                )}
+                            <div className="space-y-5">
+                                {/* Nombre */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título *</label>
+                                    <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
+                                        placeholder="Encuesta de clima organizacional…"
+                                        className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
+                                </div>
 
-                {/* ── SURVEY DETAIL ────────────────────────────────────────── */}
-                {mode === 'detail' && selectedSurvey && (
-                    <div className="space-y-5">
-                        {/* Survey meta */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <h2 className="text-[15px] font-black text-slate-800">{selectedSurvey.nombre}</h2>
-                                    {selectedSurvey.descripcion && (
-                                        <p className="text-[11px] text-slate-400 mt-0.5">{selectedSurvey.descripcion}</p>
+                                {/* Año */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Año</label>
+                                    <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
+                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                </div>
+
+                                {/* Tipo */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de encuesta</label>
+                                    <SegmentControl options={TIPO_TABS} value={sfTipo} onChange={setSfTipo} />
+                                </div>
+
+                                {/* Estado */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Estado</label>
+                                    <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} />
+                                </div>
+
+                                {/* Descripción */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Descripción</label>
+                                    <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
+                                        rows={2} placeholder="Objetivo de esta encuesta…"
+                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
+                                </div>
+
+                                {/* Fechas */}
+                                <div className="pt-4 border-t border-white/50">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1 flex items-center gap-1.5">
+                                        <CalendarRange size={11} strokeWidth={2.5} /> Período de aplicación
+                                    </label>
+                                    <div className="flex gap-3">
+                                        <div className="flex-1">
+                                            <label className="text-[9px] text-slate-400 font-semibold block mb-1 ml-1">Inicio</label>
+                                            <input type="date" value={sfFechaInicio} onChange={e => setSfFechaInicio(e.target.value)}
+                                                className="w-full py-3 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-[9px] text-slate-400 font-semibold block mb-1 ml-1">Fin</label>
+                                            <input type="date" value={sfFechaFin} onChange={e => setSfFechaFin(e.target.value)}
+                                                className="w-full py-3 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Privacidad */}
+                                <div className="pt-4 border-t border-white/50">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 block ml-1 flex items-center gap-1.5">
+                                        <Lock size={11} strokeWidth={2.5} /> Privacidad
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button type="button" onClick={() => setSfAnonima(v => !v)}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                                sfAnonima
+                                                    ? 'bg-violet-50/80 border-violet-300/60 text-violet-700 shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
+                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                            }`}>
+                                            {sfAnonima ? <EyeOff size={14} strokeWidth={2.5} /> : <Eye size={14} strokeWidth={2.5} />}
+                                            {sfAnonima ? 'Anónima' : 'No anónima'}
+                                        </button>
+                                        <button type="button" onClick={() => setSfCompartir(v => !v)}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                                sfCompartir
+                                                    ? 'bg-emerald-50/80 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
+                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                            }`}>
+                                            <Globe size={14} strokeWidth={2.5} />
+                                            {sfCompartir ? 'Resultados públicos' : 'Privado'}
+                                        </button>
+                                    </div>
+                                    {sfAnonima && (
+                                        <p className="text-[10px] text-violet-500 mt-2 ml-1 flex items-start gap-1.5">
+                                            <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
+                                            El sistema guarda quién respondió, pero el empleado no ve su propia atribución.
+                                        </p>
                                     )}
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${ESTADO_STYLE[selectedSurvey.estado] || 'bg-slate-100 text-slate-500'}`}>
-                                            {selectedSurvey.estado}
+                                </div>
+
+                                {/* Audiencia */}
+                                <div className="pt-4 border-t border-white/50">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1 flex items-center gap-1.5">
+                                        <Users size={11} strokeWidth={2.5} /> Dirigida a
+                                    </label>
+                                    <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); }} />
+
+                                    {sfScope === 'branches' && (
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                            {storeBranches.map(b => (
+                                                <button key={b.id} type="button" onClick={() => toggleScopeId(b.id)}
+                                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-xl border text-[11px] font-black transition-all ${
+                                                        sfScopeIds.includes(b.id)
+                                                            ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-sm'
+                                                            : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white hover:border-[#007AFF]/30'
+                                                    }`}>
+                                                    <Building2 size={10} strokeWidth={2.5} /> {b.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {sfScope === 'employees' && (
+                                        <div className="grid grid-cols-1 gap-1.5 mt-3 max-h-48 overflow-y-auto">
+                                            {employees.map(e => {
+                                                const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                const sel = sfScopeIds.includes(e.id);
+                                                return (
+                                                    <button key={e.id} type="button" onClick={() => toggleScopeId(e.id)}
+                                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all ${
+                                                            sel ? 'bg-[#007AFF]/10 border-[#007AFF]/30 text-[#007AFF]' : 'bg-white/40 border-white/60 text-slate-600 hover:bg-white/80'
+                                                        }`}>
+                                                        <PersonAvatar src={e.photo_url} name={fn} size={22} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-[11px] font-black truncate">{fn}</div>
+                                                            <div className="text-[9px] text-slate-400 truncate">{e.branch?.name}</div>
+                                                        </div>
+                                                        {sel && <Check size={11} className="shrink-0 text-[#007AFF]" strokeWidth={3} />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {sfScope === 'roles' && (
+                                        <p className="text-[11px] text-slate-400 mt-3 ml-1">
+                                            Solo aplicará a jefes/as de sala registrados en el sistema.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Submit */}
+                                <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey}
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
+                                        editingSurvey
+                                            ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
+                                            : 'bg-[#007AFF] hover:bg-[#0066CC]'
+                                    }`}>
+                                    {savingSurvey
+                                        ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
+                                        : editingSurvey
+                                            ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</>
+                                            : <><Plus size={16} strokeWidth={2.5} /> Crear Encuesta</>}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Response form ────────────────────────────────────────── */}
+                    {leftPanel === 'response-form' && (
+                        <div className="bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                            {/* Form header */}
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                                        {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
+                                    </div>
+                                    <span className="font-black uppercase tracking-tight ml-1">
+                                        {editingResponse ? 'Editar Respuesta' : 'Nueva Respuesta'}
+                                    </span>
+                                </h3>
+                                <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                                    <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
+                                </button>
+                            </div>
+
+                            <div className="space-y-5">
+                                {/* Colaborador */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Colaborador</label>
+                                    {editingResponse ? (
+                                        <div className="flex items-center gap-2.5 py-3 px-4 bg-white/50 border border-white/60 rounded-2xl">
+                                            <PersonAvatar
+                                                src={editingResponse.employee?.photo_url}
+                                                name={`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
+                                                size={24} />
+                                            <div>
+                                                <div className="text-[13px] font-bold text-slate-700">
+                                                    {`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400">{editingResponse.employee?.branch?.name}</div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <LiquidSelect value={rfEmployeeId} onChange={setRfEmployeeId}
+                                            options={availableEmployeeOptions}
+                                            placeholder="Seleccionar empleado…"
+                                            icon={Users} compact />
+                                    )}
+                                </div>
+
+                                {/* Rol */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button type="button" onClick={() => setRfIsJefe(false)}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                                !rfIsJefe
+                                                    ? 'bg-white/80 border-[#007AFF]/30 text-[#007AFF] shadow-[0_2px_10px_rgba(0,122,255,0.2)]'
+                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                            }`}>
+                                            <Users size={14} strokeWidth={2.5} /> Colaborador/a
+                                        </button>
+                                        <button type="button" onClick={() => setRfIsJefe(true)}
+                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                                rfIsJefe
+                                                    ? 'bg-amber-50/80 border-amber-300/60 text-amber-700 shadow-[0_2px_10px_rgba(245,158,11,0.2)]'
+                                                    : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
+                                            }`}>
+                                            <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Progress */}
+                                {formPreguntas.length > 0 && (
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
+                                            <div className="h-full rounded-full bg-[#007AFF] transition-all duration-300"
+                                                style={{ width: `${(rfAnsweredCount / formPreguntas.length) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[11px] font-black text-slate-500 shrink-0 tabular-nums">
+                                            {rfAnsweredCount}/{formPreguntas.length}
                                         </span>
-                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${TIPO_STYLE[selectedSurvey.tipo] || 'bg-slate-100 text-slate-400'}`}>
-                                            {TIPO_OPTIONS.find(t => t.value === selectedSurvey.tipo)?.label || selectedSurvey.tipo}
+                                    </div>
+                                )}
+
+                                {/* Questions by bloque */}
+                                {bloques.map(bloque => {
+                                    const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
+                                    if (!bqs.length) return null;
+                                    const isOpen = rfOpenBloques[bloque.id];
+                                    const answered = bqs.filter(p => rfAnswers[p.indice] !== null).length;
+                                    const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
+                                    return (
+                                        <div key={bloque.id} className="rounded-2xl border border-white/70 bg-white/30 backdrop-blur-sm overflow-hidden">
+                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-white/30 transition-colors"
+                                                onClick={() => setRfOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}>
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 ${barCls}`}>
+                                                    B{bloque.numero}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-[12px] font-black text-slate-800">{bloque.nombre}</span>
+                                                    <span className="ml-2 text-[10px] text-slate-400 font-semibold">{answered}/{bqs.length}</span>
+                                                </div>
+                                                {answered === bqs.length && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={3} />}
+                                                {isOpen ? <ChevronUp size={13} className="text-slate-400 shrink-0" /> : <ChevronDown size={13} className="text-slate-400 shrink-0" />}
+                                            </button>
+                                            {isOpen && (
+                                                <div className="border-t border-white/50">
+                                                    {bqs.map((p, qi) => {
+                                                        const val = rfAnswers[p.indice];
+                                                        return (
+                                                            <div key={p.id}
+                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-white/40' : ''}`}>
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-white/60 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">
+                                                                    {p.numero}
+                                                                </span>
+                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <div className="shrink-0 flex items-center gap-1 mt-0.5">
+                                                                    {['A','B','C','D'].map(opt => {
+                                                                        const oc = OPT_COLORS[opt];
+                                                                        return (
+                                                                            <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
+                                                                                onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
+                                                                                className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
+                                                                                {opt}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Comentario */}
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
+                                    <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
+                                        placeholder="¿Qué mejorarías del ambiente de trabajo?"
+                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                </div>
+
+                                {/* Submit */}
+                                <button type="button" onClick={handleSaveResponse}
+                                    disabled={(!editingResponse && !rfEmployeeId) || savingResponse}
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
+                                        editingResponse ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#007AFF] hover:bg-[#0066CC]'
+                                    }`}>
+                                    {savingResponse
+                                        ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
+                                        : editingResponse
+                                            ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</>
+                                            : <><ClipboardList size={16} strokeWidth={2.5} /> Registrar Respuesta</>}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* ══ RIGHT PANEL ═════════════════════════════════════════════════ */}
+                <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+                    <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
+
+                        {/* ── Survey list ─────────────────────────────────────── */}
+                        {rightPanel === 'surveys' && (
+                            <>
+                                {loadingSurveys ? (
+                                    <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
+                                        <Loader2 size={18} className="animate-spin" />
+                                        <span className="text-[12px] font-semibold">Cargando…</span>
+                                    </div>
+                                ) : surveys.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
+                                        <div className="relative group flex flex-col items-center text-center">
+                                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-[#007AFF]" />
+                                            <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-[#007AFF] group-hover:-translate-y-2 transition-all duration-700">
+                                                <BarChart2 size={40} strokeWidth={2} />
+                                            </div>
+                                            <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">Sin encuestas aún</h3>
+                                            <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                                Crea la primera encuesta usando el formulario de la izquierda.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : surveys.map(s => {
+                                    const count = responseCounts[s.id] || 0;
+                                    const isEditing = editingSurvey?.id === s.id;
+                                    return (
+                                        <div key={s.id}
+                                            className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer ${
+                                                isEditing
+                                                    ? 'bg-white/95 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)] z-10'
+                                                    : 'border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-white/60 backdrop-blur-2xl'
+                                            }`}
+                                            onClick={() => openDetail(s)}>
+
+                                            {/* Action buttons */}
+                                            <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                                <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
+                                                    className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                    title="Editar encuesta">
+                                                    <Edit3 size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+
+                                            {/* Badges */}
+                                            <div className="flex flex-wrap items-center gap-2 pr-16">
+                                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                                    s.estado === 'activa' ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
+                                                    s.estado === 'cerrada' ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
+                                                    s.estado === 'borrador' ? 'text-slate-500 bg-slate-50 border-slate-200/50' :
+                                                    'text-slate-400 bg-slate-100 border-slate-200/50'
+                                                }`}>{s.estado}</span>
+                                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                                    s.tipo === 'clima' ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
+                                                    s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
+                                                    s.tipo === 'desempeno' ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
+                                                    'text-amber-600 bg-amber-50 border-amber-200/50'
+                                                }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
+                                                {s.anonima && (
+                                                    <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
+                                                        <EyeOff size={10} strokeWidth={2.5} /> Anónima
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
+                                                    {s.año}
+                                                </span>
+                                            </div>
+
+                                            {/* Title */}
+                                            <div>
+                                                <h4 className="font-black text-slate-800 text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
+                                                {s.descripcion && <p className="text-slate-500 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="flex items-center justify-between pt-3 border-t border-white/60">
+                                                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                                                    <ClipboardList size={14} strokeWidth={2} />
+                                                    {count} {count === 1 ? 'respuesta' : 'respuestas'}
+                                                </div>
+                                                {(s.fecha_inicio || s.fecha_fin) && (
+                                                    <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+                                                        <CalendarRange size={12} strokeWidth={2} />
+                                                        {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
+
+                        {/* ── Survey detail ─────────────────────────────────────── */}
+                        {rightPanel === 'detail' && selectedSurvey && (
+                            <div className="space-y-5">
+                                {/* Survey meta card */}
+                                <div className="p-6 rounded-[2.5rem] border border-white/80 bg-white/60 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-4">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                            selectedSurvey.estado === 'activa' ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
+                                            selectedSurvey.estado === 'cerrada' ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
+                                            'text-slate-400 bg-slate-100 border-slate-200/50'
+                                        }`}>{selectedSurvey.estado}</span>
+                                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${TIPO_STYLE[selectedSurvey.tipo] || 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                                            {TIPO_LABEL[selectedSurvey.tipo] || selectedSurvey.tipo}
                                         </span>
                                         {selectedSurvey.anonima && (
-                                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 flex items-center gap-1">
-                                                <EyeOff size={8} strokeWidth={3} /> Anónima
+                                            <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
+                                                <EyeOff size={10} strokeWidth={2.5} /> Anónima
                                             </span>
                                         )}
                                     </div>
+                                    <div>
+                                        <h4 className="font-black text-slate-800 text-[20px] leading-tight tracking-tight">{selectedSurvey.nombre}</h4>
+                                        {selectedSurvey.descripcion && <p className="text-slate-500 text-[13px] mt-1 leading-relaxed">{selectedSurvey.descripcion}</p>}
+                                    </div>
+                                    <div className="flex items-center justify-between pt-3 border-t border-white/60">
+                                        <div className="flex items-center gap-6">
+                                            <div>
+                                                <p className="text-[20px] font-black text-slate-800">{respuestas.length}</p>
+                                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Respuestas</p>
+                                            </div>
+                                            {pendingEmployees.length > 0 && (
+                                                <div>
+                                                    <p className="text-[20px] font-black text-amber-600">{pendingEmployees.length}</p>
+                                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Pendientes</p>
+                                                </div>
+                                            )}
+                                            {(() => {
+                                                const g = blockScore(respuestas.flatMap(r => r.responses || []), allIndices);
+                                                return g != null ? (
+                                                    <div>
+                                                        <p className={`text-[20px] font-black ${scoreColor(g)}`}>{g}%</p>
+                                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Promedio</p>
+                                                    </div>
+                                                ) : null;
+                                            })()}
+                                        </div>
+                                        <button onClick={() => openResponseForm()}
+                                            className="flex items-center gap-2 px-5 py-3 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">
+                                            <Plus size={14} strokeWidth={2.5} /> Agregar respuesta
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <button onClick={() => { setEditingSurvey(selectedSurvey); setMode('survey-form'); }}
-                                        className="flex items-center gap-1.5 px-3 h-8 rounded-xl border border-slate-200 bg-white text-[11px] font-black text-slate-500 hover:bg-slate-50 transition-all">
-                                        <Edit2 size={12} strokeWidth={2.5} /> Editar
-                                    </button>
-                                    <button onClick={() => { setEditingResponse(null); setMode('response-form'); }}
-                                        className="flex items-center gap-1.5 px-3 h-8 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-black transition-all shadow-sm">
-                                        <Plus size={12} strokeWidth={3} /> Agregar respuesta
-                                    </button>
-                                </div>
-                            </div>
-                            {/* Stats */}
-                            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-50">
-                                <div className="text-center">
-                                    <p className="text-[18px] font-black text-slate-800">{respuestas.length}</p>
-                                    <p className="text-[9px] text-slate-400 font-semibold uppercase">Respuestas</p>
-                                </div>
-                                {selectedSurvey.scope_tipo !== 'all' && pendingEmployees.length > 0 && (
-                                    <div className="text-center">
-                                        <p className="text-[18px] font-black text-amber-600">{pendingEmployees.length}</p>
-                                        <p className="text-[9px] text-slate-400 font-semibold uppercase">Pendientes</p>
+
+                                {/* Pending */}
+                                {pendingEmployees.length > 0 && (
+                                    <div className="p-5 rounded-[2rem] border border-amber-200/60 bg-amber-50/60 backdrop-blur-xl flex flex-col gap-3">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
+                                            <AlertCircle size={12} strokeWidth={2.5} />
+                                            Pendientes de responder ({pendingEmployees.length})
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {pendingEmployees.map(e => {
+                                                const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                return (
+                                                    <div key={e.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 border border-amber-200/60">
+                                                        <PersonAvatar src={e.photo_url} name={fn} size={18} />
+                                                        <span className="text-[10px] font-black text-amber-700">{fn}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
-                                {respuestas.length > 0 && (() => {
-                                    const global = blockScore(
-                                        respuestas.flatMap(r => r.responses || []),
-                                        allIndices
-                                    );
-                                    return global != null ? (
-                                        <div className="text-center">
-                                            <p className={`text-[18px] font-black ${scoreColor(global)}`}>{global}%</p>
-                                            <p className="text-[9px] text-slate-400 font-semibold uppercase">Promedio global</p>
-                                        </div>
-                                    ) : null;
-                                })()}
-                            </div>
-                        </div>
 
-                        {/* Pending respondents */}
-                        {selectedSurvey.scope_tipo !== 'all' && pendingEmployees.length > 0 && (
-                            <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-600 mb-2 flex items-center gap-1.5">
-                                    <AlertCircle size={11} strokeWidth={2.5} />
-                                    Pendientes de responder ({pendingEmployees.length})
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {pendingEmployees.map(e => {
-                                        const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                {/* Responses by branch */}
+                                {loadingDetail ? (
+                                    <div className="flex items-center justify-center h-32 gap-2 text-slate-400">
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="text-[12px] font-semibold">Cargando…</span>
+                                    </div>
+                                ) : respuestas.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center min-h-[200px] text-center">
+                                        <ClipboardList size={36} strokeWidth={1.5} className="text-slate-300 mb-3" />
+                                        <p className="text-[13px] font-bold text-slate-400">Sin respuestas registradas</p>
+                                        <p className="text-[11px] text-slate-300 mt-1">Usa el botón "Agregar respuesta" para comenzar.</p>
+                                    </div>
+                                ) : (
+                                    responsesByBranch.map(([branchName, group]) => {
+                                        const allRows = [...group.jefes, ...group.colabs];
                                         return (
-                                            <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200">
-                                                <PersonAvatar src={e.photo_url} name={fn} size={18} />
-                                                <span className="text-[10px] font-black text-amber-700">{fn}</span>
-                                                <span className="text-[9px] text-amber-500">{e.branch?.name}</span>
+                                            <div key={branchName} className="p-6 rounded-[2.5rem] border border-white/80 bg-white/60 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-0">
+                                                {/* Branch header */}
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <Building2 size={14} strokeWidth={2.5} className="text-slate-400" />
+                                                    <span className="text-[13px] font-black text-slate-700">{branchName}</span>
+                                                    <span className="text-[11px] text-slate-400">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                                </div>
+
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full min-w-[520px]">
+                                                        <thead>
+                                                            <tr className="border-b border-white/50">
+                                                                <th className="text-left pb-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
+                                                                <th className="text-center pb-2 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
+                                                                {bloques.map(b => (
+                                                                    <th key={b.id} className="text-center pb-2 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300">B{b.numero}</th>
+                                                                ))}
+                                                                <th className="text-center pb-2 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Global</th>
+                                                                <th className="pb-2 w-16" />
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {allRows.map(row => {
+                                                                const fn = (row.employee?.first_names || '').split(' ')[0];
+                                                                const ln = (row.employee?.last_names  || '').split(' ')[0];
+                                                                const nombre = `${fn} ${ln}`.trim() || '–';
+                                                                const global = blockScore(row.responses || [], allIndices);
+                                                                return (
+                                                                    <tr key={row.id} className="border-b border-white/40 last:border-0 hover:bg-white/20 group/row transition-colors">
+                                                                        <td className="py-2.5 pr-3">
+                                                                            <div className="flex items-center gap-2.5">
+                                                                                <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
+                                                                                <span className="text-[12px] font-black text-slate-800">{nombre}</span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-2.5 px-2 text-center">
+                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                                {row.is_jefe ? 'Jefe/a' : 'Colab.'}
+                                                                            </span>
+                                                                        </td>
+                                                                        {bloques.map(b => {
+                                                                            const s = blockScore(row.responses || [], b.indices || []);
+                                                                            return (
+                                                                                <td key={b.id} className="py-2.5 px-2 text-center">
+                                                                                    {s != null
+                                                                                        ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(s)}`}>{s}</span>
+                                                                                        : <span className="text-slate-200 text-[10px]">—</span>}
+                                                                                </td>
+                                                                            );
+                                                                        })}
+                                                                        <td className="py-2.5 px-2 text-center">
+                                                                            <span className={`text-[12px] font-black ${scoreColor(global)}`}>
+                                                                                {global != null ? `${global}%` : '–'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-2.5">
+                                                                            {confirmDelete === row.id ? (
+                                                                                <div className="flex items-center gap-1 justify-center">
+                                                                                    <button onClick={() => handleDeleteResponse(row)}
+                                                                                        className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors">
+                                                                                        <Check size={10} strokeWidth={3} />
+                                                                                    </button>
+                                                                                    <button onClick={() => setConfirmDelete(null)}
+                                                                                        className="w-6 h-6 rounded-full bg-white/80 text-slate-400 flex items-center justify-center hover:bg-white transition-colors border border-white/60">
+                                                                                        <X size={10} strokeWidth={3} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
+                                                                                    <button onClick={() => openResponseForm(row)}
+                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                        <Edit3 size={11} strokeWidth={2.5} />
+                                                                                    </button>
+                                                                                    <button onClick={() => setConfirmDelete(row.id)}
+                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                        <Trash2 size={11} strokeWidth={2.5} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
                                         );
-                                    })}
-                                </div>
+                                    })
+                                )}
                             </div>
-                        )}
-
-                        {/* Responses grouped by branch */}
-                        {loadingDetail ? (
-                            <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
-                                <Loader2 size={18} className="animate-spin" />
-                                <span className="text-[12px] font-semibold">Cargando…</span>
-                            </div>
-                        ) : respuestas.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-40 gap-2 text-slate-300">
-                                <ClipboardList size={36} strokeWidth={1.5} />
-                                <span className="text-[12px] font-semibold text-slate-400">Sin respuestas registradas</span>
-                            </div>
-                        ) : (
-                            responsesByBranch.map(([branchName, group]) => {
-                                const allRows = [...group.jefes, ...group.colabs];
-                                return (
-                                    <div key={branchName} className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-                                        {/* Branch header */}
-                                        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
-                                            <Building2 size={12} strokeWidth={2.5} className="text-slate-400" />
-                                            <span className="text-[11px] font-black text-slate-600">{branchName}</span>
-                                            <span className="text-[10px] text-slate-400">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
-                                        </div>
-                                        {/* Table */}
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[580px]">
-                                                <thead>
-                                                    <tr className="border-b border-slate-50">
-                                                        <th className="text-left px-4 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
-                                                        <th className="text-center px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
-                                                        {bloques.map(b => (
-                                                            <th key={b.id} className="text-center px-2 py-2 text-[8px] font-black uppercase tracking-wider text-slate-300">
-                                                                B{b.numero}
-                                                            </th>
-                                                        ))}
-                                                        <th className="text-center px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Global</th>
-                                                        <th className="px-3 py-2 w-16" />
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {allRows.map(row => {
-                                                        const fn = (row.employee?.first_names || '').split(' ')[0];
-                                                        const ln = (row.employee?.last_names  || '').split(' ')[0];
-                                                        const nombre = `${fn} ${ln}`.trim() || '–';
-                                                        const global = blockScore(row.responses || [], allIndices);
-                                                        return (
-                                                            <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 group">
-                                                                <td className="px-4 py-2.5">
-                                                                    <div className="flex items-center gap-2.5">
-                                                                        <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
-                                                                        <span className="text-[12px] font-black text-slate-800">{nombre}</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-3 py-2.5 text-center">
-                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                                        {row.is_jefe ? 'Jefe/a' : 'Colab.'}
-                                                                    </span>
-                                                                </td>
-                                                                {bloques.map(b => {
-                                                                    const s = blockScore(row.responses || [], b.indices || []);
-                                                                    return (
-                                                                        <td key={b.id} className="px-2 py-2.5 text-center">
-                                                                            {s != null ? (
-                                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(s)}`}>{s}</span>
-                                                                            ) : <span className="text-slate-200 text-[10px]">—</span>}
-                                                                        </td>
-                                                                    );
-                                                                })}
-                                                                <td className="px-3 py-2.5 text-center">
-                                                                    <span className={`text-[12px] font-black ${scoreColor(global)}`}>
-                                                                        {global != null ? `${global}%` : '–'}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="px-2 py-2.5">
-                                                                    {confirmDelete === row.id ? (
-                                                                        <div className="flex items-center gap-1 justify-center">
-                                                                            <button onClick={() => handleDeleteResponse(row)}
-                                                                                className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition-colors">
-                                                                                <Check size={10} strokeWidth={3} />
-                                                                            </button>
-                                                                            <button onClick={() => setConfirmDelete(null)}
-                                                                                className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors">
-                                                                                <X size={10} strokeWidth={3} />
-                                                                            </button>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-center">
-                                                                            <button onClick={() => { setEditingResponse(row); setMode('response-form'); }}
-                                                                                className="w-6 h-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-500 transition-all">
-                                                                                <Edit2 size={9} strokeWidth={2.5} />
-                                                                            </button>
-                                                                            <button onClick={() => setConfirmDelete(row.id)}
-                                                                                className="w-6 h-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all">
-                                                                                <Trash2 size={9} strokeWidth={2.5} />
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                );
-                            })
                         )}
                     </div>
-                )}
-
-                {/* ── RESPONSE FORM ────────────────────────────────────────── */}
-                {mode === 'response-form' && (
-                    <ResponseForm
-                        initial={editingResponse}
-                        employeeOptions={availableEmployeeOptions}
-                        bloques={bloques}
-                        preguntas={preguntas}
-                        onSave={handleSaveResponse}
-                        onCancel={() => { setEditingResponse(null); setMode('detail'); }}
-                        saving={savingResponse}
-                    />
-                )}
+                </div>
             </div>
         </GlassViewLayout>
     );

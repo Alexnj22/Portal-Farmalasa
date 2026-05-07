@@ -79,23 +79,6 @@ function scoreLabel(pct) {
     return               { label: 'Crítico',    color: 'text-rose-600',    Icon: Frown };
 }
 
-const STOPWORDS = new Set(['de','la','el','en','que','y','a','los','del','se','las','por','un','para','con','una','su','al','es','lo','como','más','pero','sus','le','ya','o','este','si','me','no','muy','ha','te','mi','hay','nos','ser','todo','esta','porque','también','entre','cuando','era','fue','son','hace','esto','han','están','está','bien','así','sin','sobre','aquí','mismo','cada','donde','haber','algo','tan','mientras','dentro','nada','desde','entonces','poco','antes','tanto','solo','aún','gran','hasta','aunque','igual','todos','puede','ver','tiene','otro','tener','tenemos','otros','la','que','no','un','una']);
-
-function wordFrequency(comments, top = 18) {
-    const freq = {};
-    comments.forEach(txt => {
-        (txt || '').toLowerCase()
-            .replace(/[¿?¡!.,;:()\-"""'']/g, ' ')
-            .split(/\s+/)
-            .forEach(w => {
-                const clean = w.trim();
-                if (clean.length >= 4 && !STOPWORDS.has(clean) && !/^\d+$/.test(clean)) {
-                    freq[clean] = (freq[clean] || 0) + 1;
-                }
-            });
-    });
-    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, top);
-}
 
 // ─── Employee avatar with photo fallback ─────────────────────────────────────
 function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
@@ -593,41 +576,63 @@ export default function EncuestaView() {
                             </div>
 
                             {/* Autocalificación */}
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
+                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3">
+                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                                     <Star size={12} className="text-amber-400" /> Autocalificación como trabajador/a
                                 </h3>
-                                <p className="text-[10px] text-slate-400 mb-3">A = 9-10 · B = 7-8 · C = 5-6 · D = 1-4</p>
                                 {Object.values(selfRatings.dist).every(n => n === 0) ? (
-                                    <p className="text-[11px] text-slate-300 text-center py-6">Sin datos de autocalificación</p>
-                                ) : (
-                                    <div className="flex items-end gap-2 h-24">
-                                        {[
-                                            { k: 'A', label: '9-10', cls: 'bg-emerald-400' },
-                                            { k: 'B', label: '7-8',  cls: 'bg-blue-400'    },
-                                            { k: 'C', label: '5-6',  cls: 'bg-amber-400'   },
-                                            { k: 'D', label: '1-4',  cls: 'bg-rose-400'    },
-                                        ].map(({ k, label, cls }) => {
-                                            const n = selfRatings.dist[k] || 0;
-                                            const maxN = Math.max(...Object.values(selfRatings.dist), 1);
-                                            const h = Math.round((n / maxN) * 100);
-                                            return (
-                                                <div key={k} className="flex-1 flex flex-col items-center gap-1">
-                                                    <span className="text-[10px] font-black text-slate-600">{n > 0 ? n : ''}</span>
-                                                    <div className={`w-full rounded-t-lg ${cls} transition-all`} style={{ height: `${Math.max(h, n > 0 ? 8 : 0)}%` }} />
-                                                    <span className="text-[10px] font-black text-slate-400">{label}</span>
+                                    <p className="text-[11px] text-slate-300 text-center py-6">Sin datos</p>
+                                ) : (() => {
+                                    const total = Object.values(selfRatings.dist).reduce((a, b) => a + b, 0);
+                                    const ranges = [
+                                        { k: 'A', label: '9 – 10', from: 9, bar: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-emerald-50' },
+                                        { k: 'B', label: '7 – 8',  from: 7, bar: 'bg-blue-400',    text: 'text-blue-700',    bg: 'bg-blue-50'    },
+                                        { k: 'C', label: '5 – 6',  from: 5, bar: 'bg-amber-400',   text: 'text-amber-700',   bg: 'bg-amber-50'   },
+                                        { k: 'D', label: '1 – 4',  from: 1, bar: 'bg-rose-400',    text: 'text-rose-700',    bg: 'bg-rose-50'    },
+                                    ];
+                                    const avg = selfRatings.numericAvg;
+                                    const avgPct = avg != null ? ((avg - 1) / 9) * 100 : null;
+                                    return (
+                                        <>
+                                        {/* Average score prominent display */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 shrink-0">
+                                                <span className="text-[28px] font-black text-amber-600 leading-none">{avg != null ? avg.toFixed(1) : '–'}</span>
+                                                <span className="text-[10px] font-bold text-amber-400">/ 10</span>
+                                            </div>
+                                            <div className="flex-1 space-y-2">
+                                                {/* Gradient track */}
+                                                <div className="relative h-3 rounded-full overflow-hidden bg-gradient-to-r from-rose-300 via-amber-300 via-blue-300 to-emerald-400">
+                                                    {avgPct != null && (
+                                                        <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-amber-500 shadow-md transition-all duration-700"
+                                                            style={{ left: `calc(${avgPct}% - 7px)` }} />
+                                                    )}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                                <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-2">
-                                    <span className="text-[10px] text-slate-400">Promedio</span>
-                                    <span className="text-[22px] font-black text-amber-600">
-                                        {selfRatings.numericAvg != null ? `${selfRatings.numericAvg.toFixed(1)}` : '–'}
-                                        {selfRatings.numericAvg != null && <span className="text-[13px] font-bold text-amber-400"> / 10</span>}
-                                    </span>
-                                </div>
+                                                <div className="flex justify-between text-[9px] font-bold text-slate-400">
+                                                    <span>1</span><span>5</span><span>10</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-400">{total} respuestas · {avg != null ? (avg >= 8 ? 'Muy alta autopercepción' : avg >= 6 ? 'Buena autopercepción' : 'Autopercepción moderada') : ''}</p>
+                                            </div>
+                                        </div>
+                                        {/* Distribution rows */}
+                                        <div className="space-y-1.5 pt-1 border-t border-slate-50">
+                                            {ranges.map(({ k, label, bar, text, bg }) => {
+                                                const n = selfRatings.dist[k] || 0;
+                                                const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+                                                return (
+                                                    <div key={k} className="flex items-center gap-2">
+                                                        <span className={`w-10 text-[9px] font-black shrink-0 ${text}`}>{label}</span>
+                                                        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                                            <div className={`h-full rounded-full ${bar} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-slate-500 w-14 text-right shrink-0">{n} <span className="font-normal text-slate-300">({pct}%)</span></span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
 
@@ -1162,9 +1167,6 @@ export default function EncuestaView() {
                 {/* ── COMENTARIOS ─────────────────────────────────────────── */}
                 {tab === 'comentarios' && (() => {
                     const withComment = RESPUESTAS.filter(r => r.comentario && r.comentario.trim() && r.comentario !== 'null');
-                    const allTexts = withComment.map(r => r.comentario);
-                    const topWords = wordFrequency(allTexts);
-                    const maxFreq = topWords[0]?.[1] || 1;
 
                     const segments = [
                         { key: 'General', label: 'General', comments: withComment.map(r => ({ texto: r.comentario, isJefe: r.isJefe, sucursal: r.sucursal })) },
@@ -1174,26 +1176,6 @@ export default function EncuestaView() {
 
                     return (
                     <div className="space-y-4">
-                        {/* Word frequency */}
-                        {topWords.length > 0 && (
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                                    <MessageSquare size={12} className="text-blue-400" /> Palabras más frecuentes
-                                </h3>
-                                <div className="space-y-1.5">
-                                    {topWords.map(([word, count]) => (
-                                        <div key={word} className="flex items-center gap-2">
-                                            <span className="w-24 text-[10px] font-black text-slate-600 capitalize truncate shrink-0">{word}</span>
-                                            <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                                                <div className="h-full rounded-full bg-blue-400 transition-all" style={{ width: `${(count / maxFreq) * 100}%` }} />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-slate-400 w-6 text-right shrink-0">{count}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {/* AI summary segments */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">

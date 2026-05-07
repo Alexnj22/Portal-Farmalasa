@@ -1085,29 +1085,36 @@ export default function EncuestaView() {
                                                                         <div className="divide-y divide-slate-50">
                                                                             {bqs.map(p => {
                                                                                 const ans = row.r[p.idx];
+                                                                                const ABCD = ['A','B','C','D'];
+                                                                                const DEFAULT_OPTS = [
+                                                                                    'Siempre / Totalmente de acuerdo',
+                                                                                    'Frecuentemente / De acuerdo',
+                                                                                    'A veces / En desacuerdo',
+                                                                                    'Nunca / Totalmente en desacuerdo',
+                                                                                ];
                                                                                 return (
-                                                                                    <div key={p.id} className="flex items-start gap-3 px-4 py-2">
+                                                                                    <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
                                                                                         <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">{p.id}</span>
-                                                                                        <p className="flex-1 text-[10px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
-                                                                                        <div className="shrink-0 flex items-center gap-0.5">
-                                                                                            {p.tipo === 'numerica'
-                                                                                                ? [1,2,3,4,5,6,7,8,9,10].map(n => {
-                                                                                                    const nStr = String(n);
-                                                                                                    const exactMatch = ans === nStr;
-                                                                                                    const legacyMatch = (ans === 'A' && n >= 9) || (ans === 'B' && (n === 7 || n === 8)) || (ans === 'C' && (n === 5 || n === 6)) || (ans === 'D' && n <= 4);
-                                                                                                    const isActive = exactMatch || legacyMatch;
-                                                                                                    const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
-                                                                                                    return (
-                                                                                                        <span key={n} className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center ${isActive ? oc.on : oc.off}`}>{n}</span>
-                                                                                                    );
-                                                                                                })
-                                                                                                : ['A','B','C','D'].map(opt => {
-                                                                                                    const oc = OPT_COLORS[opt];
-                                                                                                    return (
-                                                                                                        <span key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt} className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center ${ans === opt ? oc.on : oc.off}`}>{opt}</span>
-                                                                                                    );
-                                                                                                })
-                                                                                            }
+                                                                                        <div className="flex-1 min-w-0 space-y-1">
+                                                                                            <p className="text-[10px] text-slate-500 leading-snug">{p.texto}</p>
+                                                                                            {p.tipo === 'numerica' ? (
+                                                                                                (() => {
+                                                                                                    if (!ans) return <span className="text-[10px] text-slate-300">Sin respuesta</span>;
+                                                                                                    const n = parseInt(ans, 10);
+                                                                                                    const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
+                                                                                                    const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
+                                                                                                    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black ${oc.on}`}>{display}</span>;
+                                                                                                })()
+                                                                                            ) : (
+                                                                                                ans ? (
+                                                                                                    <div className="flex items-center gap-1.5">
+                                                                                                        <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-400'}`}>{ans}</span>
+                                                                                                        <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-slate-600'}`}>
+                                                                                                            {p.opciones?.[ABCD.indexOf(ans)] || DEFAULT_OPTS[ABCD.indexOf(ans)] || ans}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                ) : <span className="text-[10px] text-slate-300">Sin respuesta</span>
+                                                                                            )}
                                                                                         </div>
                                                                                     </div>
                                                                                 );

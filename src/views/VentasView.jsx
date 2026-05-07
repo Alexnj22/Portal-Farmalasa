@@ -1054,67 +1054,69 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             }
             if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
 
-            // Aggregate by product + presentacion
-            const agg = new Map();
-            for (const item of itemsAll) {
-                const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
-                const cur = agg.get(key) || {
-                    erp_product_id: item.erp_product_id,
-                    descripcion:    item.descripcion,
-                    presentacion:   item.presentacion,
-                    cantidad: 0, total: 0, lineas: 0, _precioSum: 0,
-                };
-                cur.cantidad   += parseFloat(item.cantidad   || 0);
-                cur.total      += parseFloat(item.total_linea || 0);
-                cur.lineas     += 1;
-                cur._precioSum += parseFloat(item.precio_unitario || 0);
-                agg.set(key, cur);
-            }
-            // precioProm con IVA para comparar con vineta ERP (que también incluye IVA)
-            for (const v of agg.values()) {
-                v.precioProm = v.lineas > 0 ? v._precioSum / v.lineas : 0;
-            }
-
-            // Fetch costs — keyed by product_id
-            const productIds = [...agg.values()].map(v => v.erp_product_id).filter(Boolean);
+            // Fetch costs FIRST — before any aggregation, so each line can use its own precio
+            const productIds = [...new Set(itemsAll.map(i => i.erp_product_id).filter(Boolean))];
             const costMap = new Map();
             if (productIds.length > 0) {
                 const PCHUNK = 500;
                 for (let i = 0; i < productIds.length; i += PCHUNK) {
                     const { data: precios, error: pErr } = await supabase
                         .from('product_precios')
-                        .select('product_id, costo, vineta, id_presentacion')
+                        .select('product_id, costo, vineta')
                         .in('product_id', productIds.slice(i, i + PCHUNK));
                     if (pErr) throw pErr;
                     for (const p of (precios || [])) {
                         const arr = costMap.get(p.product_id) || [];
-                        arr.push({
-                            costo:           parseFloat(p.costo  || 0),
-                            vineta:          parseFloat(p.vineta || 0),
-                            id_presentacion: p.id_presentacion,
-                        });
+                        arr.push({ costo: parseFloat(p.costo || 0), vineta: parseFloat(p.vineta || 0) });
                         costMap.set(p.product_id, arr);
                     }
                 }
             }
 
-            // Match cost: 1 presentación → directo; varias → la más cercana al precio neto real
-            const allRows = [...agg.values()].map(v => {
-                const precios = costMap.get(v.erp_product_id) || [];
-                let costo_unitario = null;
+            // Per-line aggregation: each line contributes its own neto and cost
+            const agg = new Map();
+            for (const item of itemsAll) {
+                const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
+                if (!agg.has(key)) {
+                    agg.set(key, {
+                        erp_product_id: item.erp_product_id,
+                        descripcion:    item.descripcion,
+                        presentacion:   item.presentacion,
+                        cantidad: 0, total: 0, lineas: 0,
+                        _netoAcum: 0, _costoAcum: 0, _costoLines: 0,
+                    });
+                }
+                const cur  = agg.get(key);
+                const qty  = parseFloat(item.cantidad    || 0);
+                const tl   = parseFloat(item.total_linea || 0);
+                const pu   = parseFloat(item.precio_unitario || 0);
+
+                cur.cantidad     += qty;
+                cur.total        += tl;
+                cur.lineas       += 1;
+                cur._netoAcum    += tl / IVA;
+
+                // Match the right presentation using THIS line's actual precio_unitario
+                const precios = costMap.get(item.erp_product_id) || [];
                 if (precios.length === 1) {
-                    costo_unitario = precios[0].costo;
+                    cur._costoAcum  += qty * precios[0].costo;
+                    cur._costoLines += 1;
                 } else if (precios.length > 1) {
                     const best = precios.reduce((a, b) =>
-                        Math.abs(b.vineta - v.precioProm) < Math.abs(a.vineta - v.precioProm) ? b : a
+                        Math.abs(b.vineta - pu) < Math.abs(a.vineta - pu) ? b : a
                     );
-                    costo_unitario = best.costo;
+                    cur._costoAcum  += qty * best.costo;
+                    cur._costoLines += 1;
                 }
-                // neto = ingresos sin IVA (base imponible real); costo ERP ya es sin IVA
-                const neto        = v.total / IVA;
-                const costo_total = costo_unitario != null ? v.cantidad * costo_unitario : null;
-                const utilidad    = costo_total != null ? neto - costo_total : null;
-                const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+            }
+
+            const allRows = [...agg.values()].map(v => {
+                const neto         = v._netoAcum;
+                const costo_total  = v._costoLines > 0 ? v._costoAcum : null;
+                const utilidad     = costo_total != null ? neto - costo_total : null;
+                const margen       = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+                // costo_unitario ponderado para mostrar en tabla (costo_total / unidades vendidas)
+                const costo_unitario = costo_total != null && v.cantidad > 0 ? costo_total / v.cantidad : null;
                 return { ...v, neto, costo_unitario, costo_total, utilidad, margen };
             });
 

@@ -1070,9 +1070,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 cur._precioSum += parseFloat(item.precio_unitario || 0);
                 agg.set(key, cur);
             }
-            // precio promedio ya sin IVA para comparar con vineta del ERP
+            // precioProm con IVA para comparar con vineta ERP (que también incluye IVA)
             for (const v of agg.values()) {
-                v.precioProm_neto = v.lineas > 0 ? (v._precioSum / v.lineas) / IVA : 0;
+                v.precioProm = v.lineas > 0 ? v._precioSum / v.lineas : 0;
             }
 
             // Fetch costs — keyed by product_id
@@ -1106,7 +1106,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     costo_unitario = precios[0].costo;
                 } else if (precios.length > 1) {
                     const best = precios.reduce((a, b) =>
-                        Math.abs(b.vineta - v.precioProm_neto) < Math.abs(a.vineta - v.precioProm_neto) ? b : a
+                        Math.abs(b.vineta - v.precioProm) < Math.abs(a.vineta - v.precioProm) ? b : a
                     );
                     costo_unitario = best.costo;
                 }

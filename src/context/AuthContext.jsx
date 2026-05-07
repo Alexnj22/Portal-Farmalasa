@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 
@@ -51,21 +51,12 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   // Carga permisos del rol cuando el usuario cambia
-  useEffect(() => {
-    if (!user) { setRolePerms(null); setPermsLoading(false); return; }
-    const systemRole = user.systemRole || 'EMPLEADO';
-    // SUPERADMIN tiene acceso total hardcoded — no necesita DB
-    if (systemRole === 'SUPERADMIN') {
-      setRolePerms('ALL');
-      setPermsLoading(false);
-      return;
-    }
-    setRolePerms(null);
-    setPermsLoading(true);
-    // user.roleId: campo explícito del Edge Function (nuevo)
-    // user.role como integer: viene de loginWithUsername
-    // user.role como string (nombre del cargo): versión vieja del Edge Function — no sirve como ID
-    const roleId = user.roleId ?? (Number.isInteger(user.role) ? user.role : null);
+  const refreshPermissions = useCallback((currentUser) => {
+    const u = currentUser ?? userRef.current;
+    if (!u) { setRolePerms(null); setPermsLoading(false); return; }
+    const systemRole = u.systemRole || 'EMPLEADO';
+    if (systemRole === 'SUPERADMIN') { setRolePerms('ALL'); setPermsLoading(false); return; }
+    const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
     const query = roleId
       ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
       : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('system_role', systemRole);
@@ -75,7 +66,18 @@ export const AuthProvider = ({ children }) => {
       setRolePerms(map);
       setPermsLoading(false);
     });
+  }, []);
+
+  useEffect(() => {
+    refreshPermissions(user);
   }, [user?.id, user?.roleId, user?.role, user?.systemRole]);
+
+  // Refresca permisos cuando el usuario vuelve a la pestaña
+  useEffect(() => {
+    const onFocus = () => { if (userRef.current) refreshPermissions(); };
+    document.addEventListener('visibilitychange', onFocus);
+    return () => document.removeEventListener('visibilitychange', onFocus);
+  }, [refreshPermissions]);
 
   // -------------------------
   // Helpers de Inactividad
@@ -508,8 +510,9 @@ export const AuthProvider = ({ children }) => {
       loginWithEmail,
       loginWithUsername,
       logout,
+      refreshPermissions,
     };
-  }, [user, loading, rolePerms]);
+  }, [user, loading, rolePerms, refreshPermissions]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
     Check, X, Building2, Loader2, BarChart2, ClipboardList,
     CalendarRange, Eye, EyeOff, Globe, Lock, Edit3, Search,
-    AlertCircle, LayoutList, ChevronLeft
+    AlertCircle, TrendingUp
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -22,6 +23,11 @@ function blockScore(answers, indices) {
         if (v && SCORE_MAP[v] !== undefined) { total += SCORE_MAP[v]; count++; }
     }
     return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
+}
+
+function avgBlockScore(respuestas, indices) {
+    const scores = respuestas.map(r => blockScore(r.responses || [], indices)).filter(s => s != null);
+    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
 }
 
 function scoreColor(s) {
@@ -81,13 +87,6 @@ const SCOPE_TABS = [
     { id: 'employees', label: 'Personal' },
 ];
 
-const ESTADO_STYLE = {
-    borrador:  'bg-slate-100 text-slate-500',
-    activa:    'bg-emerald-100 text-emerald-700',
-    cerrada:   'bg-blue-100 text-blue-600',
-    archivada: 'bg-slate-200 text-slate-400',
-};
-
 const TIPO_STYLE = {
     clima:        'bg-indigo-100 text-indigo-700',
     satisfaccion: 'bg-teal-100 text-teal-700',
@@ -129,15 +128,15 @@ function SegmentControl({ options, value, onChange, compact = false }) {
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 export default function EncuestaAdminView() {
+    const navigate = useNavigate();
     const appendAuditLog = useStaff(state => state.appendAuditLog);
     const { showToast } = useToastStore();
     const storeBranches = useStaff(state => state.branches) || [];
 
     // ── Panel state ───────────────────────────────────────────────────────────
-    // leftPanel: 'survey-form' | 'response-form'
-    // rightPanel: 'surveys' | 'detail'
-    const [leftPanel, setLeftPanel]   = useState('survey-form');
-    const [rightPanel, setRightPanel] = useState('surveys');
+    const [leftPanel,          setLeftPanel]          = useState('survey-form');
+    const [expandedSurveyId,   setExpandedSurveyId]   = useState(null);
+    const [expandedResponseId, setExpandedResponseId] = useState(null);
 
     // ── Survey form state ─────────────────────────────────────────────────────
     const [editingSurvey, setEditingSurvey] = useState(null);
@@ -162,12 +161,17 @@ export default function EncuestaAdminView() {
     const [loadingSurveys, setLoadingSurveys] = useState(false);
 
     // ── Detail state ──────────────────────────────────────────────────────────
-    const [selectedSurvey, setSelectedSurvey] = useState(null);
-    const [bloques,        setBloques]        = useState([]);
-    const [preguntas,      setPreguntas]      = useState([]);
-    const [respuestas,     setRespuestas]     = useState([]);
-    const [loadingDetail,  setLoadingDetail]  = useState(false);
-    const [confirmDelete,  setConfirmDelete]  = useState(null);
+    const [bloques,       setBloques]       = useState([]);
+    const [preguntas,     setPreguntas]     = useState([]);
+    const [respuestas,    setRespuestas]    = useState([]);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
+
+    // ── Derived ───────────────────────────────────────────────────────────────
+    const selectedSurvey = useMemo(
+        () => surveys.find(s => s.id === expandedSurveyId) || null,
+        [surveys, expandedSurveyId]
+    );
 
     // ── Response form state ───────────────────────────────────────────────────
     const [editingResponse,  setEditingResponse]  = useState(null);
@@ -226,7 +230,6 @@ export default function EncuestaAdminView() {
             return (a.employee?.branch?.name || '').localeCompare(b.employee?.branch?.name || '');
         });
         setRespuestas(sorted);
-        // Default all bloques open in response form
         const open = {};
         bData.forEach(b => { open[b.id] = false; });
         if (bData.length) open[bData[0].id] = true;
@@ -269,10 +272,6 @@ export default function EncuestaAdminView() {
             if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingSurvey(false); return; }
             await appendAuditLog('ENCUESTA_ACTUALIZADA', null, { survey_id: editingSurvey.id });
             showToast('Actualizado', 'Encuesta actualizada.', 'success');
-            // refresh selected survey if it's the same
-            if (selectedSurvey?.id === editingSurvey.id) {
-                setSelectedSurvey({ ...selectedSurvey, ...payload });
-            }
         } else {
             const { error } = await supabase.from('surveys').insert(payload);
             if (error) { showToast('Error', 'No se pudo crear.', 'error'); setSavingSurvey(false); return; }
@@ -314,7 +313,7 @@ export default function EncuestaAdminView() {
 
     const handleSaveResponse = async () => {
         const empId = editingResponse?.employee_id || rfEmployeeId;
-        if (!empId) return;
+        if (!empId || !selectedSurvey) return;
         setSavingResponse(true);
         if (editingResponse?.id) {
             const { error } = await supabase.from('survey_responses')
@@ -341,6 +340,7 @@ export default function EncuestaAdminView() {
     };
 
     const handleDeleteResponse = async (row) => {
+        if (!selectedSurvey) return;
         const { error } = await supabase.from('survey_responses').delete().eq('id', row.id);
         if (error) { showToast('Error', 'No se pudo eliminar.', 'error'); return; }
         await appendAuditLog('ENCUESTA_RESPUESTA_ELIMINADA', row.employee_id, { survey_id: selectedSurvey.id });
@@ -353,13 +353,21 @@ export default function EncuestaAdminView() {
     const setRfAnswer = (idx, val) =>
         setRfAnswers(prev => { const a = [...prev]; a[idx] = val; return a; });
 
-    // ── Open survey detail ────────────────────────────────────────────────────
-    const openDetail = (survey) => {
-        setSelectedSurvey(survey);
-        loadDetail(survey);
-        setRightPanel('detail');
-        setLeftPanel('survey-form');
-        resetSurveyForm();
+    // ── Toggle expand survey card ─────────────────────────────────────────────
+    const toggleExpand = (survey) => {
+        if (expandedSurveyId === survey.id) {
+            setExpandedSurveyId(null);
+            setExpandedResponseId(null);
+            setRespuestas([]);
+            setBloques([]);
+            setPreguntas([]);
+        } else {
+            setExpandedSurveyId(survey.id);
+            setExpandedResponseId(null);
+            loadDetail(survey);
+            setLeftPanel('survey-form');
+            resetSurveyForm();
+        }
     };
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -403,28 +411,12 @@ export default function EncuestaAdminView() {
 
     // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
-            <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
-                {rightPanel === 'detail' && selectedSurvey ? (
-                    <>
-                        <button onClick={() => { setRightPanel('surveys'); setLeftPanel('survey-form'); resetSurveyForm(); resetResponseForm(); }}
-                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 bg-white text-slate-800 border-white shadow-md">
-                            <ChevronLeft size={12} strokeWidth={2.5} />
-                            <span className="hidden sm:inline">Encuestas</span>
-                        </button>
-                        <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-                        <span className="text-[10px] text-white/80 font-semibold px-2 truncate max-w-[200px] hidden sm:block">
-                            {selectedSurvey.nombre}
-                        </span>
-                    </>
-                ) : (
-                    <>
-                        <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-slate-800 border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
-                            <LayoutList size={12} strokeWidth={2.5} />
-                            <span className="hidden sm:inline">Encuestas</span>
-                        </button>
-                    </>
-                )}
+        <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
+            <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-white text-slate-800 border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                    <ClipboardList size={12} strokeWidth={2.5} />
+                    <span className="hidden sm:inline">Encuestas</span>
+                </button>
             </div>
         </div>
     );
@@ -440,7 +432,7 @@ export default function EncuestaAdminView() {
             <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
                 {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
-                <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
+                <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-[50] transform-gpu">
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && (
@@ -450,7 +442,6 @@ export default function EncuestaAdminView() {
                                 : 'border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
 
-                            {/* Form header */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[14px]">
                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
@@ -476,7 +467,6 @@ export default function EncuestaAdminView() {
                             )}
 
                             <div className="space-y-3">
-
                                 {/* Título */}
                                 <div>
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
@@ -485,7 +475,7 @@ export default function EncuestaAdminView() {
                                         className={`w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
                                 </div>
 
-                                {/* Año + Estado en fila */}
+                                {/* Año + Estado */}
                                 <div className="grid grid-cols-[100px_1fr] gap-3 items-end">
                                     <div>
                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
@@ -513,7 +503,7 @@ export default function EncuestaAdminView() {
                                         className="w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[12px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
                                 </div>
 
-                                {/* Fechas en fila */}
+                                {/* Fechas */}
                                 <div>
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
@@ -530,7 +520,7 @@ export default function EncuestaAdminView() {
                                     </div>
                                 </div>
 
-                                {/* Privacidad en fila */}
+                                {/* Privacidad */}
                                 <div>
                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Lock size={10} strokeWidth={2.5} /> Privacidad
@@ -555,7 +545,6 @@ export default function EncuestaAdminView() {
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
-                                    {/* Leyendas de privacidad */}
                                     <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-violet-500' : 'text-slate-400'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
@@ -577,7 +566,6 @@ export default function EncuestaAdminView() {
                                     </label>
                                     <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
 
-                                    {/* Branches chips */}
                                     {sfScope === 'branches' && (
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {storeBranches.map(b => (
@@ -593,7 +581,6 @@ export default function EncuestaAdminView() {
                                         </div>
                                     )}
 
-                                    {/* Employee search */}
                                     {sfScope === 'employees' && (() => {
                                         const q = sfEmpSearch.trim().toLowerCase();
                                         const empResults = q
@@ -605,7 +592,6 @@ export default function EncuestaAdminView() {
                                         const selectedEmps = employees.filter(e => sfScopeIds.includes(e.id));
                                         return (
                                             <div className="mt-2 space-y-2">
-                                                {/* Selected chips */}
                                                 {selectedEmps.length > 0 && (
                                                     <div className="flex flex-wrap gap-1.5 p-2.5 bg-white/60 rounded-2xl border border-white/80">
                                                         {selectedEmps.map(e => {
@@ -622,7 +608,6 @@ export default function EncuestaAdminView() {
                                                         })}
                                                     </div>
                                                 )}
-                                                {/* Search input */}
                                                 <div className="relative">
                                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
@@ -630,7 +615,6 @@ export default function EncuestaAdminView() {
                                                         className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[12px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
                                                     {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-400 transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
-                                                {/* Results dropdown */}
                                                 {empResults.length > 0 && (
                                                     <div className="bg-white/90 backdrop-blur-xl border border-white/90 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden">
                                                         {empResults.map(e => {
@@ -684,7 +668,6 @@ export default function EncuestaAdminView() {
                     {/* ── Response form ────────────────────────────────────────── */}
                     {leftPanel === 'response-form' && (
                         <div className="bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
-                            {/* Form header */}
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
@@ -843,279 +826,347 @@ export default function EncuestaAdminView() {
                 <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
                     <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
 
-                        {/* ── Survey list ─────────────────────────────────────── */}
-                        {rightPanel === 'surveys' && (
-                            <>
-                                {loadingSurveys ? (
-                                    <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
-                                        <Loader2 size={18} className="animate-spin" />
-                                        <span className="text-[12px] font-semibold">Cargando…</span>
+                        {loadingSurveys ? (
+                            <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
+                                <Loader2 size={18} className="animate-spin" />
+                                <span className="text-[12px] font-semibold">Cargando…</span>
+                            </div>
+                        ) : surveys.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
+                                <div className="relative group flex flex-col items-center text-center">
+                                    <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-[#007AFF]" />
+                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-[#007AFF] group-hover:-translate-y-2 transition-all duration-700">
+                                        <BarChart2 size={40} strokeWidth={2} />
                                     </div>
-                                ) : surveys.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
-                                        <div className="relative group flex flex-col items-center text-center">
-                                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-[#007AFF]" />
-                                            <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-[#007AFF] group-hover:-translate-y-2 transition-all duration-700">
-                                                <BarChart2 size={40} strokeWidth={2} />
-                                            </div>
-                                            <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">Sin encuestas aún</h3>
-                                            <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
-                                                Crea la primera encuesta usando el formulario de la izquierda.
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : surveys.map(s => {
-                                    const count = responseCounts[s.id] || 0;
-                                    const isEditing = editingSurvey?.id === s.id;
-                                    return (
-                                        <div key={s.id}
-                                            className={`p-6 rounded-[2.5rem] border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer ${
-                                                isEditing
-                                                    ? 'bg-white/95 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)] z-10'
-                                                    : 'border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-white/60 backdrop-blur-2xl'
-                                            }`}
-                                            onClick={() => openDetail(s)}>
+                                    <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">Sin encuestas aún</h3>
+                                    <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
+                                        Crea la primera encuesta usando el formulario de la izquierda.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : surveys.map(s => {
+                            const count = responseCounts[s.id] || 0;
+                            const isExpanded = expandedSurveyId === s.id;
+                            const isEditing = editingSurvey?.id === s.id;
+                            const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices) : null;
 
-                                            {/* Action buttons */}
-                                            <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                    className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
-                                                    title="Editar encuesta">
-                                                    <Edit3 size={14} strokeWidth={2.5} />
+                            return (
+                                <div key={s.id} className={`rounded-[2.5rem] border flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
+                                    isExpanded
+                                        ? 'border-[#007AFF]/20 shadow-[0_12px_50px_rgba(0,0,0,0.10)] bg-white/80 backdrop-blur-2xl z-10'
+                                        : isEditing
+                                            ? 'bg-white/95 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
+                                            : 'border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 bg-white/60 backdrop-blur-2xl'
+                                }`}>
+
+                                    {/* ── Card header ── */}
+                                    <div className={`p-6 flex flex-col gap-4 ${!isExpanded ? 'cursor-pointer' : ''}`}
+                                        onClick={() => { if (!isExpanded) toggleExpand(s); }}>
+
+                                        {/* Action buttons */}
+                                        <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                            {isExpanded && (
+                                                <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
+                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/80 border border-white/60 text-slate-500 hover:bg-white hover:text-slate-700 shadow-sm transition-all active:scale-95">
+                                                    <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
-                                            </div>
+                                            )}
+                                            <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
+                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                title="Editar encuesta">
+                                                <Edit3 size={14} strokeWidth={2.5} />
+                                            </button>
+                                        </div>
 
-                                            {/* Badges */}
-                                            <div className="flex flex-wrap items-center gap-2 pr-16">
-                                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                    s.estado === 'activa' ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
-                                                    s.estado === 'cerrada' ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
-                                                    s.estado === 'borrador' ? 'text-slate-500 bg-slate-50 border-slate-200/50' :
-                                                    'text-slate-400 bg-slate-100 border-slate-200/50'
-                                                }`}>{s.estado}</span>
-                                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                    s.tipo === 'clima' ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
-                                                    s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
-                                                    s.tipo === 'desempeno' ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
-                                                    'text-amber-600 bg-amber-50 border-amber-200/50'
-                                                }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
-                                                {s.anonima && (
-                                                    <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
-                                                        <EyeOff size={10} strokeWidth={2.5} /> Anónima
-                                                    </span>
-                                                )}
-                                                <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
-                                                    {s.año}
+                                        {/* Badges */}
+                                        <div className="flex flex-wrap items-center gap-2 pr-28">
+                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                                s.estado === 'activa'    ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
+                                                s.estado === 'cerrada'   ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
+                                                s.estado === 'borrador'  ? 'text-slate-500 bg-slate-50 border-slate-200/50' :
+                                                                           'text-slate-400 bg-slate-100 border-slate-200/50'
+                                            }`}>{s.estado}</span>
+                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                                s.tipo === 'clima'        ? 'text-indigo-600 bg-indigo-50 border-indigo-200/50' :
+                                                s.tipo === 'satisfaccion' ? 'text-teal-600 bg-teal-50 border-teal-200/50' :
+                                                s.tipo === 'desempeno'    ? 'text-purple-600 bg-purple-50 border-purple-200/50' :
+                                                                            'text-amber-600 bg-amber-50 border-amber-200/50'
+                                            }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
+                                            {s.anonima && (
+                                                <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
+                                                    <EyeOff size={10} strokeWidth={2.5} /> Anónima
                                                 </span>
-                                            </div>
+                                            )}
+                                            <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
+                                                {s.año}
+                                            </span>
+                                        </div>
 
-                                            {/* Title */}
-                                            <div>
-                                                <h4 className="font-black text-slate-800 text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
-                                                {s.descripcion && <p className="text-slate-500 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
-                                            </div>
+                                        {/* Title */}
+                                        <div>
+                                            <h4 className="font-black text-slate-800 text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
+                                            {s.descripcion && <p className="text-slate-500 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
+                                        </div>
 
-                                            {/* Footer */}
-                                            <div className="flex items-center justify-between pt-3 border-t border-white/60">
-                                                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                                                    <ClipboardList size={14} strokeWidth={2} />
-                                                    {count} {count === 1 ? 'respuesta' : 'respuestas'}
-                                                </div>
+                                        {/* Footer */}
+                                        <div className="flex items-center justify-between pt-3 border-t border-white/60">
+                                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                                                <ClipboardList size={14} strokeWidth={2} />
+                                                {count} {count === 1 ? 'respuesta' : 'respuestas'}
+                                            </div>
+                                            <div className="flex items-center gap-2">
                                                 {(s.fecha_inicio || s.fecha_fin) && (
                                                     <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold uppercase tracking-widest">
                                                         <CalendarRange size={12} strokeWidth={2} />
                                                         {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
                                                     </div>
                                                 )}
+                                                {!isExpanded && (
+                                                    <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
+                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#007AFF] px-3 h-7 rounded-full bg-[#007AFF]/10 hover:bg-[#007AFF]/20 transition-colors border border-[#007AFF]/20 active:scale-95">
+                                                        Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </>
-                        )}
+                                    </div>
 
-                        {/* ── Survey detail ─────────────────────────────────────── */}
-                        {rightPanel === 'detail' && selectedSurvey && (
-                            <div className="space-y-5">
-                                {/* Survey meta card */}
-                                <div className="p-6 rounded-[2.5rem] border border-white/80 bg-white/60 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-4">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                            selectedSurvey.estado === 'activa' ? 'text-emerald-600 bg-emerald-50 border-emerald-200/50' :
-                                            selectedSurvey.estado === 'cerrada' ? 'text-blue-600 bg-blue-50 border-blue-200/50' :
-                                            'text-slate-400 bg-slate-100 border-slate-200/50'
-                                        }`}>{selectedSurvey.estado}</span>
-                                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${TIPO_STYLE[selectedSurvey.tipo] || 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                                            {TIPO_LABEL[selectedSurvey.tipo] || selectedSurvey.tipo}
-                                        </span>
-                                        {selectedSurvey.anonima && (
-                                            <span className="flex items-center gap-1 text-violet-600 bg-violet-50 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-violet-200/50">
-                                                <EyeOff size={10} strokeWidth={2.5} /> Anónima
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-slate-800 text-[20px] leading-tight tracking-tight">{selectedSurvey.nombre}</h4>
-                                        {selectedSurvey.descripcion && <p className="text-slate-500 text-[13px] mt-1 leading-relaxed">{selectedSurvey.descripcion}</p>}
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 border-t border-white/60">
-                                        <div className="flex items-center gap-6">
-                                            <div>
-                                                <p className="text-[20px] font-black text-slate-800">{respuestas.length}</p>
-                                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Respuestas</p>
+                                    {/* ── Expanded detail ── */}
+                                    {isExpanded && (
+                                        <div className="border-t border-[#007AFF]/10 px-6 pb-6 pt-5 space-y-5">
+
+                                            {/* Stats + actions row */}
+                                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="text-center">
+                                                        <p className="text-[22px] font-black text-slate-800 leading-none">{respuestas.length}</p>
+                                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Respuestas</p>
+                                                    </div>
+                                                    {pendingEmployees.length > 0 && (
+                                                        <div className="text-center">
+                                                            <p className="text-[22px] font-black text-amber-600 leading-none">{pendingEmployees.length}</p>
+                                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Pendientes</p>
+                                                        </div>
+                                                    )}
+                                                    {globalAvg != null && (
+                                                        <div className="text-center">
+                                                            <p className={`text-[22px] font-black leading-none ${scoreColor(globalAvg)}`}>{globalAvg}%</p>
+                                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Promedio</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {s.tipo === 'clima' && (
+                                                        <button onClick={() => navigate('/encuesta')}
+                                                            className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border border-indigo-200/50 hover:-translate-y-0.5 active:scale-95">
+                                                            <TrendingUp size={13} strokeWidth={2.5} /> Ver análisis
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => openResponseForm()}
+                                                        className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">
+                                                        <Plus size={14} strokeWidth={2.5} /> Agregar
+                                                    </button>
+                                                </div>
                                             </div>
+
+                                            {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
-                                                <div>
-                                                    <p className="text-[20px] font-black text-amber-600">{pendingEmployees.length}</p>
-                                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Pendientes</p>
+                                                <div className="p-4 rounded-[1.5rem] border border-amber-200/60 bg-amber-50/60 backdrop-blur-xl flex flex-col gap-2.5">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
+                                                        <AlertCircle size={12} strokeWidth={2.5} />
+                                                        Pendientes ({pendingEmployees.length})
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {pendingEmployees.map(e => {
+                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            return (
+                                                                <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200/60">
+                                                                    <PersonAvatar src={e.photo_url} name={fn} size={16} />
+                                                                    <span className="text-[10px] font-black text-amber-700">{fn}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
                                             )}
-                                            {(() => {
-                                                const g = blockScore(respuestas.flatMap(r => r.responses || []), allIndices);
-                                                return g != null ? (
-                                                    <div>
-                                                        <p className={`text-[20px] font-black ${scoreColor(g)}`}>{g}%</p>
-                                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Promedio</p>
-                                                    </div>
-                                                ) : null;
-                                            })()}
-                                        </div>
-                                        <button onClick={() => openResponseForm()}
-                                            className="flex items-center gap-2 px-5 py-3 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">
-                                            <Plus size={14} strokeWidth={2.5} /> Agregar respuesta
-                                        </button>
-                                    </div>
-                                </div>
 
-                                {/* Pending */}
-                                {pendingEmployees.length > 0 && (
-                                    <div className="p-5 rounded-[2rem] border border-amber-200/60 bg-amber-50/60 backdrop-blur-xl flex flex-col gap-3">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
-                                            <AlertCircle size={12} strokeWidth={2.5} />
-                                            Pendientes de responder ({pendingEmployees.length})
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {pendingEmployees.map(e => {
-                                                const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
-                                                return (
-                                                    <div key={e.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 border border-amber-200/60">
-                                                        <PersonAvatar src={e.photo_url} name={fn} size={18} />
-                                                        <span className="text-[10px] font-black text-amber-700">{fn}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Responses by branch */}
-                                {loadingDetail ? (
-                                    <div className="flex items-center justify-center h-32 gap-2 text-slate-400">
-                                        <Loader2 size={16} className="animate-spin" />
-                                        <span className="text-[12px] font-semibold">Cargando…</span>
-                                    </div>
-                                ) : respuestas.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center min-h-[200px] text-center">
-                                        <ClipboardList size={36} strokeWidth={1.5} className="text-slate-300 mb-3" />
-                                        <p className="text-[13px] font-bold text-slate-400">Sin respuestas registradas</p>
-                                        <p className="text-[11px] text-slate-300 mt-1">Usa el botón "Agregar respuesta" para comenzar.</p>
-                                    </div>
-                                ) : (
-                                    responsesByBranch.map(([branchName, group]) => {
-                                        const allRows = [...group.jefes, ...group.colabs];
-                                        return (
-                                            <div key={branchName} className="p-6 rounded-[2.5rem] border border-white/80 bg-white/60 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-0">
-                                                {/* Branch header */}
-                                                <div className="flex items-center gap-2 mb-4">
-                                                    <Building2 size={14} strokeWidth={2.5} className="text-slate-400" />
-                                                    <span className="text-[13px] font-black text-slate-700">{branchName}</span>
-                                                    <span className="text-[11px] text-slate-400">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                            {/* Responses */}
+                                            {loadingDetail ? (
+                                                <div className="flex items-center justify-center h-32 gap-2 text-slate-400">
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                    <span className="text-[12px] font-semibold">Cargando…</span>
                                                 </div>
-
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full min-w-[520px]">
-                                                        <thead>
-                                                            <tr className="border-b border-white/50">
-                                                                <th className="text-left pb-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
-                                                                <th className="text-center pb-2 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
-                                                                {bloques.map(b => (
-                                                                    <th key={b.id} className="text-center pb-2 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300">B{b.numero}</th>
-                                                                ))}
-                                                                <th className="text-center pb-2 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Global</th>
-                                                                <th className="pb-2 w-16" />
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {allRows.map(row => {
-                                                                const fn = (row.employee?.first_names || '').split(' ')[0];
-                                                                const ln = (row.employee?.last_names  || '').split(' ')[0];
-                                                                const nombre = `${fn} ${ln}`.trim() || '–';
-                                                                const global = blockScore(row.responses || [], allIndices);
-                                                                return (
-                                                                    <tr key={row.id} className="border-b border-white/40 last:border-0 hover:bg-white/20 group/row transition-colors">
-                                                                        <td className="py-2.5 pr-3">
-                                                                            <div className="flex items-center gap-2.5">
-                                                                                <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
-                                                                                <span className="text-[12px] font-black text-slate-800">{nombre}</span>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="py-2.5 px-2 text-center">
-                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                                                {row.is_jefe ? 'Jefe/a' : 'Colab.'}
-                                                                            </span>
-                                                                        </td>
-                                                                        {bloques.map(b => {
-                                                                            const s = blockScore(row.responses || [], b.indices || []);
+                                            ) : respuestas.length === 0 ? (
+                                                <div className="flex flex-col items-center justify-center min-h-[180px] text-center">
+                                                    <ClipboardList size={32} strokeWidth={1.5} className="text-slate-300 mb-3" />
+                                                    <p className="text-[13px] font-bold text-slate-400">Sin respuestas registradas</p>
+                                                    <p className="text-[11px] text-slate-300 mt-1">Usa el botón "Agregar" para comenzar.</p>
+                                                </div>
+                                            ) : (
+                                                responsesByBranch.map(([branchName, group]) => {
+                                                    const allRows = [...group.jefes, ...group.colabs];
+                                                    return (
+                                                        <div key={branchName} className="rounded-[1.75rem] border border-white/80 bg-white/40 backdrop-blur-xl overflow-hidden">
+                                                            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/50 bg-white/20">
+                                                                <Building2 size={13} strokeWidth={2.5} className="text-slate-400" />
+                                                                <span className="text-[12px] font-black text-slate-700">{branchName}</span>
+                                                                <span className="text-[11px] text-slate-400">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                                            </div>
+                                                            <div className="overflow-x-auto">
+                                                                <table className="w-full min-w-[520px]">
+                                                                    <thead>
+                                                                        <tr className="border-b border-white/50">
+                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
+                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
+                                                                            {bloques.map(b => (
+                                                                                <th key={b.id} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300">B{b.numero}</th>
+                                                                            ))}
+                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Global</th>
+                                                                            <th className="py-2.5 w-20 pr-3" />
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {allRows.map(row => {
+                                                                            const fn = (row.employee?.first_names || '').split(' ')[0];
+                                                                            const ln = (row.employee?.last_names  || '').split(' ')[0];
+                                                                            const nombre = `${fn} ${ln}`.trim() || '–';
+                                                                            const global = blockScore(row.responses || [], allIndices);
+                                                                            const isRowExp = expandedResponseId === row.id;
                                                                             return (
-                                                                                <td key={b.id} className="py-2.5 px-2 text-center">
-                                                                                    {s != null
-                                                                                        ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(s)}`}>{s}</span>
-                                                                                        : <span className="text-slate-200 text-[10px]">—</span>}
-                                                                                </td>
+                                                                                <React.Fragment key={row.id}>
+                                                                                    <tr className={`border-b border-white/40 last:border-0 transition-colors group/row ${isRowExp ? 'bg-[#007AFF]/5' : 'hover:bg-white/20'}`}>
+                                                                                        <td className="py-2.5 pl-5 pr-3">
+                                                                                            <button
+                                                                                                className="flex items-center gap-2 text-left w-full"
+                                                                                                onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}>
+                                                                                                <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
+                                                                                                <span className="text-[12px] font-black text-slate-800">{nombre}</span>
+                                                                                                {isRowExp
+                                                                                                    ? <ChevronUp size={10} className="text-[#007AFF] ml-1 shrink-0" strokeWidth={2.5} />
+                                                                                                    : <ChevronDown size={10} className="text-slate-300 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
+                                                                                            </button>
+                                                                                        </td>
+                                                                                        <td className="py-2.5 px-2 text-center">
+                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                                                {row.is_jefe ? 'Jefe/a' : 'Colab.'}
+                                                                                            </span>
+                                                                                        </td>
+                                                                                        {bloques.map(b => {
+                                                                                            const sc = blockScore(row.responses || [], b.indices || []);
+                                                                                            return (
+                                                                                                <td key={b.id} className="py-2.5 px-2 text-center">
+                                                                                                    {sc != null
+                                                                                                        ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
+                                                                                                        : <span className="text-slate-200 text-[10px]">—</span>}
+                                                                                                </td>
+                                                                                            );
+                                                                                        })}
+                                                                                        <td className="py-2.5 px-2 text-center">
+                                                                                            <span className={`text-[12px] font-black ${scoreColor(global)}`}>
+                                                                                                {global != null ? `${global}%` : '–'}
+                                                                                            </span>
+                                                                                        </td>
+                                                                                        <td className="py-2.5 pr-4">
+                                                                                            {confirmDelete === row.id ? (
+                                                                                                <div className="flex items-center gap-1 justify-center">
+                                                                                                    <button onClick={() => handleDeleteResponse(row)}
+                                                                                                        className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors">
+                                                                                                        <Check size={10} strokeWidth={3} />
+                                                                                                    </button>
+                                                                                                    <button onClick={() => setConfirmDelete(null)}
+                                                                                                        className="w-6 h-6 rounded-full bg-white/80 text-slate-400 flex items-center justify-center hover:bg-white transition-colors border border-white/60">
+                                                                                                        <X size={10} strokeWidth={3} />
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
+                                                                                                    <button onClick={() => openResponseForm(row)}
+                                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                                        <Edit3 size={11} strokeWidth={2.5} />
+                                                                                                    </button>
+                                                                                                    <button onClick={() => setConfirmDelete(row.id)}
+                                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                                        <Trash2 size={11} strokeWidth={2.5} />
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </td>
+                                                                                    </tr>
+
+                                                                                    {/* Expanded Q&A viewer */}
+                                                                                    {isRowExp && (
+                                                                                        <tr>
+                                                                                            <td colSpan={bloques.length + 4} className="px-5 pb-5 pt-2 bg-[#007AFF]/[0.03]">
+                                                                                                <div className="space-y-2.5">
+                                                                                                    {bloques.map(bloque => {
+                                                                                                        const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
+                                                                                                        if (!bqs.length) return null;
+                                                                                                        const barCls = BAR_COLORS[bloque.color] || 'bg-slate-400';
+                                                                                                        const bsc = blockScore(row.responses || [], bloque.indices || []);
+                                                                                                        return (
+                                                                                                            <div key={bloque.id} className="rounded-xl border border-white/70 bg-white/60 overflow-hidden">
+                                                                                                                <div className={`flex items-center justify-between px-4 py-2 border-b border-white/50 ${barCls} bg-opacity-10`}>
+                                                                                                                    <div className="flex items-center gap-2">
+                                                                                                                        <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 ${barCls}`}>
+                                                                                                                            B{bloque.numero}
+                                                                                                                        </div>
+                                                                                                                        <span className="text-[11px] font-black text-slate-700">{bloque.nombre}</span>
+                                                                                                                    </div>
+                                                                                                                    {bsc != null && (
+                                                                                                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                                <div className="divide-y divide-white/40">
+                                                                                                                    {bqs.map(p => {
+                                                                                                                        const ans = row.responses?.[p.indice];
+                                                                                                                        return (
+                                                                                                                            <div key={p.id} className="flex items-start gap-3 px-4 py-2">
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-400 mt-0.5">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                <div className="shrink-0 flex items-center gap-0.5">
+                                                                                                                                    {['A','B','C','D'].map(opt => {
+                                                                                                                                        const oc = OPT_COLORS[opt];
+                                                                                                                                        return (
+                                                                                                                                            <span key={opt}
+                                                                                                                                                title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
+                                                                                                                                                className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                {opt}
+                                                                                                                                            </span>
+                                                                                                                                        );
+                                                                                                                                    })}
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        );
+                                                                                                                    })}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                    {row.comentario && (
+                                                                                                        <div className="rounded-xl border border-white/70 bg-white/60 px-4 py-3">
+                                                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">Comentario</p>
+                                                                                                            <p className="text-[12px] text-slate-600 leading-relaxed">{row.comentario}</p>
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                </React.Fragment>
                                                                             );
                                                                         })}
-                                                                        <td className="py-2.5 px-2 text-center">
-                                                                            <span className={`text-[12px] font-black ${scoreColor(global)}`}>
-                                                                                {global != null ? `${global}%` : '–'}
-                                                                            </span>
-                                                                        </td>
-                                                                        <td className="py-2.5">
-                                                                            {confirmDelete === row.id ? (
-                                                                                <div className="flex items-center gap-1 justify-center">
-                                                                                    <button onClick={() => handleDeleteResponse(row)}
-                                                                                        className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors">
-                                                                                        <Check size={10} strokeWidth={3} />
-                                                                                    </button>
-                                                                                    <button onClick={() => setConfirmDelete(null)}
-                                                                                        className="w-6 h-6 rounded-full bg-white/80 text-slate-400 flex items-center justify-center hover:bg-white transition-colors border border-white/60">
-                                                                                        <X size={10} strokeWidth={3} />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
-                                                                                    <button onClick={() => openResponseForm(row)}
-                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
-                                                                                        <Edit3 size={11} strokeWidth={2.5} />
-                                                                                    </button>
-                                                                                    <button onClick={() => setConfirmDelete(row.id)}
-                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
-                                                                                        <Trash2 size={11} strokeWidth={2.5} />
-                                                                                    </button>
-                                                                                </div>
-                                                                            )}
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        )}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

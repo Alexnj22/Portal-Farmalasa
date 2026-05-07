@@ -1004,11 +1004,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
+const IVA = 1.13; // precios en facturas incluyen IVA 13%; costos ERP son sin IVA
+
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(null);
-    const [sortCol, setSortCol]     = useState('total');
+    const [sortCol, setSortCol]     = useState('neto');
     const [sortDir, setSortDir]     = useState('desc');
     const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
     const [page, setPage]           = useState(1);
@@ -1058,21 +1060,22 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
                 const cur = agg.get(key) || {
                     erp_product_id: item.erp_product_id,
-                    descripcion: item.descripcion,
-                    presentacion: item.presentacion,
+                    descripcion:    item.descripcion,
+                    presentacion:   item.presentacion,
                     cantidad: 0, total: 0, lineas: 0, _precioSum: 0,
                 };
-                cur.cantidad   += parseFloat(item.cantidad || 0);
+                cur.cantidad   += parseFloat(item.cantidad   || 0);
                 cur.total      += parseFloat(item.total_linea || 0);
                 cur.lineas     += 1;
                 cur._precioSum += parseFloat(item.precio_unitario || 0);
                 agg.set(key, cur);
             }
+            // precio promedio ya sin IVA para comparar con vineta del ERP
             for (const v of agg.values()) {
-                v.precioProm = v.lineas > 0 ? v._precioSum / v.lineas : 0;
+                v.precioProm_neto = v.lineas > 0 ? (v._precioSum / v.lineas) / IVA : 0;
             }
 
-            // Fetch costs — keyed by product_id, store all price records per product
+            // Fetch costs — keyed by product_id
             const productIds = [...agg.values()].map(v => v.erp_product_id).filter(Boolean);
             const costMap = new Map();
             if (productIds.length > 0) {
@@ -1086,8 +1089,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     for (const p of (precios || [])) {
                         const arr = costMap.get(p.product_id) || [];
                         arr.push({
-                            costo: parseFloat(p.costo || 0),
-                            vineta: parseFloat(p.vineta || 0),
+                            costo:           parseFloat(p.costo  || 0),
+                            vineta:          parseFloat(p.vineta || 0),
                             id_presentacion: p.id_presentacion,
                         });
                         costMap.set(p.product_id, arr);
@@ -1095,7 +1098,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }
             }
 
-            // Match cost: prefer exact presentation match, fall back to closest vineta
+            // Match cost: 1 presentación → directo; varias → la más cercana al precio neto real
             const allRows = [...agg.values()].map(v => {
                 const precios = costMap.get(v.erp_product_id) || [];
                 let costo_unitario = null;
@@ -1103,17 +1106,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     costo_unitario = precios[0].costo;
                 } else if (precios.length > 1) {
                     const best = precios.reduce((a, b) =>
-                        Math.abs(b.vineta - v.precioProm) < Math.abs(a.vineta - v.precioProm) ? b : a
+                        Math.abs(b.vineta - v.precioProm_neto) < Math.abs(a.vineta - v.precioProm_neto) ? b : a
                     );
                     costo_unitario = best.costo;
                 }
+                // neto = ingresos sin IVA (base imponible real); costo ERP ya es sin IVA
+                const neto        = v.total / IVA;
                 const costo_total = costo_unitario != null ? v.cantidad * costo_unitario : null;
-                const utilidad    = costo_total != null ? v.total - costo_total : null;
-                const margen      = utilidad != null && v.total > 0 ? (utilidad / v.total) * 100 : null;
-                return { ...v, costo_unitario, costo_total, utilidad, margen };
+                const utilidad    = costo_total != null ? neto - costo_total : null;
+                const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+                return { ...v, neto, costo_unitario, costo_total, utilidad, margen };
             });
 
-            allRows.sort((a, b) => b.total - a.total);
+            allRows.sort((a, b) => b.neto - a.neto);
             setRows(allRows);
         } catch (err) {
             setError(err.message || 'Error al cargar productos');
@@ -1130,11 +1135,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch || null, p_hora_corte: horaCorte })
             .then(({ data }) => {
                 const s = data?.[0] || {};
-                setPrevProdStats({ sum: parseFloat(s.total_sum || 0) });
+                // también sin IVA para comparar manzanas con manzanas
+                setPrevProdStats({ sum: parseFloat(s.total_sum || 0) / IVA });
             });
     }, [fini, ffin, filterBranch]);
 
-    // filtered + sorted — used for display and pagination
+    // filtered + sorted — busca en TODO el dataset, no solo en la página visible
     const filtered = useMemo(() => {
         let list = rows;
         if (searchTerm) {
@@ -1143,18 +1149,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         }
         return [...list].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
-            const av = a[sortCol] ?? -Infinity;
-            const bv = b[sortCol] ?? -Infinity;
+            const av = a[sortCol];
+            const bv = b[sortCol];
+            if (av == null && bv == null) return 0;
+            if (av == null) return 1;   // nulos siempre al fondo
+            if (bv == null) return -1;
             return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
         });
     }, [rows, searchTerm, sortCol, sortDir]);
 
-    // KPIs always from full rows (entire period), not filtered
-    const maxTotal     = rows[0]?.total || 1;
-    const totIngresos  = rows.reduce((s, r) => s + r.total, 0);
-    const totUtilidad  = rows.filter(r => r.utilidad != null).reduce((s, r) => s + r.utilidad, 0);
+    // KPIs sobre el período completo (no afectados por búsqueda)
+    const maxNeto      = rows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
+    const totNeto      = rows.reduce((s, r) => s + r.neto, 0);
     const totCosto     = rows.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
-    const margenGlobal = totIngresos > 0 ? (totUtilidad / totIngresos) * 100 : 0;
+    const totUtilidad  = rows.filter(r => r.utilidad    != null).reduce((s, r) => s + r.utilidad,    0);
+    const margenGlobal = totNeto > 0 ? (totUtilidad / totNeto) * 100 : 0;
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -1168,21 +1177,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const curDaysP  = countDays(fini, ffin);
                     const prevDaysP = countDays(prevFini, prevFfin);
-                    const pctIngresos = dailyPct(totIngresos, curDaysP, prevProdStats.sum, prevDaysP);
+                    const pctIngresos = dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
-                        { label: 'Ingresos', value: fmt(totIngresos),     icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined },
-                        { label: 'Costo',    value: fmt(totCosto),        icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
-                        { label: 'Utilidad', value: fmt(totUtilidad),     icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
-                        { label: 'Margen',   value: fmtPct(margenGlobal), icon: Star,         grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
+                        { label: 'Ventas s/IVA', value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined },
+                        { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
+                        { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
+                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
                 </div>
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
-            </div>
-
-            <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
-                <Info size={13} className="text-blue-400 shrink-0" />
-                El costo se obtiene de la lista de precios activa más cercana al precio de venta promedio. Solo aplica a sucursales con detalle de productos.
             </div>
 
             {loading ? (
@@ -1204,25 +1208,25 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
                                 <th className="text-left px-4 py-2.5 w-8 text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
-                                <SortTh label="Producto"   col="descripcion"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                <SortTh label="Unidades"   col="cantidad"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
-                                <SortTh label="Ingresos"   col="total"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                <SortTh label="Costo Est." col="costo_total"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
-                                <SortTh label="Utilidad"   col="utilidad"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                <SortTh label="Margen"     col="margen"       sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                <SortTh label="Producto"  col="descripcion" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                <SortTh label="Unidades"  col="cantidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
+                                <SortTh label="Ventas"    col="neto"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                <SortTh label="Costo"     col="costo_total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
+                                <SortTh label="Utilidad"  col="utilidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                <SortTh label="Margen"    col="margen"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
                             </tr>
                         </thead>
                         <tbody>
                             {paginated.map((r, i) => {
                                 const globalIdx = (page - 1) * pageSize + i;
-                                const pct    = (r.total / maxTotal) * 100;
+                                const pct    = (r.neto / maxNeto) * 100;
                                 const margin = r.margen;
                                 const marginColor = margin == null ? 'text-slate-300'
                                     : margin >= 25 ? 'text-emerald-600'
                                     : margin >= 10 ? 'text-amber-600'
                                     : 'text-red-600';
                                 return (
-                                    <tr key={r.erp_product_id || i} className="border-t border-black/[0.04] hover:bg-slate-50/60 transition-colors">
+                                    <tr key={`${r.erp_product_id}||${r.presentacion}`} className="border-t border-black/[0.04] hover:bg-slate-50/60 transition-colors">
                                         <td className="px-4 py-3">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
                                                 : <span className="text-[11px] text-slate-400 font-bold">{globalIdx + 1}</span>}
@@ -1235,7 +1239,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-600 hidden md:table-cell">{fmtNum(r.cantidad)}</td>
-                                        <td className="px-4 py-3 text-right font-black text-slate-800 text-[13px]">{fmt(r.total)}</td>
+                                        <td className="px-4 py-3 text-right font-black text-slate-800 text-[13px]">{fmt(r.neto)}</td>
                                         <td className="px-4 py-3 text-right text-[12px] text-slate-500 hidden lg:table-cell">
                                             {r.costo_total != null ? fmt(r.costo_total) : <span className="text-slate-200">—</span>}
                                         </td>
@@ -1262,7 +1266,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         </div>
                         <SmartPagination page={page} total={totalPages} onChange={setPage} />
                         <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
-                            {searchTerm ? `${filtered.length} resultados` : `${fmtNum(rows.length)} productos`}
+                            {searchTerm ? `${filtered.length} de ${rows.length}` : `${fmtNum(rows.length)} productos`}
                         </span>
                     </div>
                 </div>

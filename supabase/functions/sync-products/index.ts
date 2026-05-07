@@ -150,13 +150,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5a. Detect price changes vs current product_precios
-    const { data: existingPrecios } = await supabase
-      .from('product_precios')
-      .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7');
+    // 5a. Detect price changes vs current product_precios — fetch ALL rows in chunks
+    const existingPreciosAll: any[] = [];
+    let pFrom = 0;
+    while (true) {
+      const { data: batch } = await supabase
+        .from('product_precios')
+        .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
+        .range(pFrom, pFrom + CHUNK - 1);
+      if (!batch || batch.length === 0) break;
+      existingPreciosAll.push(...batch);
+      if (batch.length < CHUNK) break;
+      pFrom += CHUNK;
+    }
 
     const existingPreciosMap = new Map(
-      (existingPrecios ?? []).map((p: any) => [`${p.product_id}_${p.id_presentacion}`, p])
+      existingPreciosAll.map((p: any) => [`${p.product_id}_${p.id_presentacion}`, p])
     );
 
     const precioChangelogs: any[] = [];

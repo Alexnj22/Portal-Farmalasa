@@ -1113,13 +1113,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 cur.lineas       += 1;
                 cur._netoAcum    += tl / IVA;
 
-                // Match the right presentation using THIS line's actual precio_unitario
-                const precios = costMap.get(item.erp_product_id) || [];
-                if (precios.length === 1) {
-                    cur._costoAcum  += qty * precios[0].costo;
+                // Match the right presentation using THIS line's actual precio_unitario.
+                // First filter out presentations where costo > vineta (impossible in real life,
+                // signals bad ERP data like $250 cost on a $5 product).
+                const allPrecios = costMap.get(item.erp_product_id) || [];
+                const precios = allPrecios.filter(p => p.vineta === 0 || p.costo <= p.vineta);
+                const candidates = precios.length > 0 ? precios : allPrecios;
+                if (candidates.length === 1) {
+                    cur._costoAcum  += qty * candidates[0].costo;
                     cur._costoLines += 1;
-                } else if (precios.length > 1) {
-                    const best = precios.reduce((a, b) =>
+                } else if (candidates.length > 1) {
+                    const best = candidates.reduce((a, b) =>
                         Math.abs(b.vineta - pu) < Math.abs(a.vineta - pu) ? b : a
                     );
                     cur._costoAcum  += qty * best.costo;

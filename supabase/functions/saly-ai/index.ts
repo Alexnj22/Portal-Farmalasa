@@ -187,15 +187,22 @@ ${textos}
 
 Entrega un análisis ejecutivo en español con exactamente estas cuatro secciones. No agregues introducción ni cierre.
 
-**Ideas recurrentes:** Las 2–3 ideas o percepciones que más se repiten entre los comentarios. Describe la idea en concreto, no solo el tema genérico.
+**Ideas recurrentes:** Las 2–3 ideas o percepciones que más se repiten. Describe la idea en concreto — no el tema genérico. Si varios comentarios de distintas sucursales apuntan a lo mismo, indícalo.
+
 **Aspectos valorados:** Qué reconocen o agradecen los colaboradores. Solo si aparece en los comentarios.
-**Fricciones identificadas:** Problemas, quejas o tensiones concretas mencionadas. Sé específico.
-**Acción recomendada:** Una sola acción prioritaria, directa y ejecutable, basada en lo que dicen los comentarios.
+
+**Fricciones identificadas:** Lista cada problema concreto en una línea separada. Para cada uno, indica:
+- Qué problema es (específico, no genérico)
+- En qué sucursal o perfil aparece (usa el nombre de sucursal del comentario)
+- Si es aislado o repetido en varios comentarios
+Ejemplo: "Falta de comunicación del jefe de sala → La Popular Centro (mencionado por 2 colaboradores)"
+
+**Acción recomendada:** Una sola acción prioritaria, directa y ejecutable. Indica a qué sucursal o grupo aplica si el problema es localizado.
 
 Reglas estrictas:
-- Máximo 200 palabras en total.
-- NUNCA cites ni referencíes números de comentario.
-- Usa solo lo que está escrito. No inferencias ni suposiciones.
+- Máximo 220 palabras en total.
+- NUNCA uses números de comentario como referencia.
+- Usa solo lo que está escrito. Sin inferencias ni suposiciones.
 - Lenguaje formal, sin metáforas.`;
         responseKey = "aiSummary";
         break;

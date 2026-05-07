@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
-    Check, X, ArrowLeft, Building2, Loader2, BarChart2, ClipboardList,
-    CalendarRange, Settings2, Eye, EyeOff, Globe, Lock, Edit3,
-    AlertCircle, LayoutList, UserCog, Flame, FileText, ChevronLeft
+    Check, X, Building2, Loader2, BarChart2, ClipboardList,
+    CalendarRange, Eye, EyeOff, Globe, Lock, Edit3, Search,
+    AlertCircle, LayoutList, ChevronLeft
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -59,6 +59,13 @@ const TIPO_TABS = [
     { id: 'adhoc',        label: 'Ad-hoc' },
 ];
 
+const TIPO_DESC = {
+    clima:        'Mide el ambiente general de trabajo, motivación y relaciones interpersonales.',
+    satisfaccion: 'Evalúa qué tan satisfechos están los empleados con su rol y condiciones laborales.',
+    desempeno:    'Evalúa el rendimiento individual y competencias de cada colaborador.',
+    adhoc:        'Encuesta libre para objetivos específicos o situaciones puntuales.',
+};
+
 const ESTADO_TABS = [
     { id: 'borrador',  label: 'Borrador' },
     { id: 'activa',    label: 'Activa' },
@@ -102,12 +109,12 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
 }
 
 // ─── Segment Control ──────────────────────────────────────────────────────────
-function SegmentControl({ options, value, onChange, accent = '#007AFF' }) {
+function SegmentControl({ options, value, onChange, compact = false }) {
     return (
-        <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)]">
+        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
-                    className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${
+                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[8px]' : 'h-8 text-[9px] md:text-[10px]'} ${
                         value === opt.id
                             ? 'bg-white text-[#007AFF] border-white shadow-sm scale-[1.02]'
                             : 'bg-transparent text-slate-500 border-transparent hover:bg-white/70 hover:text-slate-700 hover:-translate-y-0.5 hover:shadow-sm'
@@ -144,6 +151,7 @@ export default function EncuestaAdminView() {
     const [sfScopeIds,    setSfScopeIds]    = useState([]);
     const [sfFechaInicio, setSfFechaInicio] = useState('');
     const [sfFechaFin,    setSfFechaFin]    = useState('');
+    const [sfEmpSearch,   setSfEmpSearch]   = useState('');
     const [sfError,       setSfError]       = useState('');
     const [savingSurvey,  setSavingSurvey]  = useState(false);
 
@@ -231,7 +239,7 @@ export default function EncuestaAdminView() {
         setSfNombre(''); setSfAño(new Date().getFullYear()); setSfTipo('clima');
         setSfEstado('activa'); setSfDescripcion(''); setSfAnonima(true);
         setSfCompartir(false); setSfScope('all'); setSfScopeIds([]);
-        setSfFechaInicio(''); setSfFechaFin(''); setSfError('');
+        setSfFechaInicio(''); setSfFechaFin(''); setSfEmpSearch(''); setSfError('');
     };
 
     const loadSurveyIntoForm = (s) => {
@@ -431,175 +439,208 @@ export default function EncuestaAdminView() {
             <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
                 {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
-                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
+                <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && (
-                        <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
+                        <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
                                 ? 'border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                         }`}>
 
                             {/* Form header */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
-                                        {editingSurvey ? <Edit3 size={16} strokeWidth={2.5} /> : <Plus size={16} strokeWidth={2.5} />}
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[14px]">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                                        {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
-                                    <span className="font-black uppercase tracking-tight ml-1">
+                                    <span className="font-black uppercase tracking-tight ml-0.5">
                                         {editingSurvey ? 'Editar Encuesta' : 'Nueva Encuesta'}
                                     </span>
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
-                                        <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                                        <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
                             </div>
 
                             {sfError && (
-                                <div className="mb-5 bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-700 px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2">
-                                    <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <div className="mb-3 bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-700 px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
+                                    <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
                             )}
 
-                            <div className="space-y-5">
-                                {/* Nombre */}
+                            <div className="space-y-3">
+
+                                {/* Título */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título *</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-amber-300' : ''}`} />
                                 </div>
 
-                                {/* Año */}
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Año</label>
-                                    <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                {/* Año + Estado en fila */}
+                                <div className="grid grid-cols-[100px_1fr] gap-3 items-end">
+                                    <div>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
+                                        <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
+                                            className="w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
+                                        <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} compact />
+                                    </div>
                                 </div>
 
                                 {/* Tipo */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de encuesta</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
                                     <SegmentControl options={TIPO_TABS} value={sfTipo} onChange={setSfTipo} />
-                                </div>
-
-                                {/* Estado */}
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Estado</label>
-                                    <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} />
+                                    <p className="text-[10px] text-slate-400 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
                                 </div>
 
                                 {/* Descripción */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Descripción</label>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
-                                        rows={2} placeholder="Objetivo de esta encuesta…"
-                                        className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
+                                        rows={2} placeholder="Objetivo específico de esta encuesta…"
+                                        className="w-full py-2.5 px-3.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[12px] outline-none font-medium text-slate-700 resize-none transition-all duration-300 placeholder-slate-400 placeholder:font-normal leading-relaxed" />
                                 </div>
 
-                                {/* Fechas */}
-                                <div className="pt-4 border-t border-white/50">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1 flex items-center gap-1.5">
-                                        <CalendarRange size={11} strokeWidth={2.5} /> Período de aplicación
+                                {/* Fechas en fila */}
+                                <div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                        <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
                                     </label>
-                                    <div className="flex gap-3">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 font-semibold block mb-1 ml-1">Inicio</label>
-                                            <input type="date" value={sfFechaInicio} onChange={e => setSfFechaInicio(e.target.value)}
-                                                className="w-full py-3 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 font-semibold block mb-1 ml-1">Fin</label>
-                                            <input type="date" value={sfFechaFin} onChange={e => setSfFechaFin(e.target.value)}
-                                                className="w-full py-3 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input type="date" value={sfFechaInicio} onChange={e => setSfFechaInicio(e.target.value)}
+                                            className="w-full py-2.5 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                        <input type="date" value={sfFechaFin} onChange={e => setSfFechaFin(e.target.value)}
+                                            className="w-full py-2.5 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
                                     </div>
                                 </div>
 
-                                {/* Privacidad */}
-                                <div className="pt-4 border-t border-white/50">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 block ml-1 flex items-center gap-1.5">
-                                        <Lock size={11} strokeWidth={2.5} /> Privacidad
+                                {/* Privacidad en fila */}
+                                <div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                        <Lock size={10} strokeWidth={2.5} /> Privacidad
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <button type="button" onClick={() => setSfAnonima(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfAnonima
                                                     ? 'bg-violet-50/80 border-violet-300/60 text-violet-700 shadow-[0_2px_10px_rgba(139,92,246,0.2)]'
                                                     : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
-                                            {sfAnonima ? <EyeOff size={14} strokeWidth={2.5} /> : <Eye size={14} strokeWidth={2.5} />}
+                                            {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
                                             {sfAnonima ? 'Anónima' : 'No anónima'}
                                         </button>
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
+                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
                                                 sfCompartir
                                                     ? 'bg-emerald-50/80 border-emerald-300/60 text-emerald-700 shadow-[0_2px_10px_rgba(16,185,129,0.2)]'
                                                     : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
-                                            <Globe size={14} strokeWidth={2.5} />
+                                            <Globe size={13} strokeWidth={2.5} />
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
-                                    {sfAnonima && (
-                                        <p className="text-[10px] text-violet-500 mt-2 ml-1 flex items-start gap-1.5">
-                                            <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
-                                            El sistema guarda quién respondió, pero el empleado no ve su propia atribución.
-                                        </p>
-                                    )}
                                 </div>
 
                                 {/* Audiencia */}
-                                <div className="pt-4 border-t border-white/50">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1 flex items-center gap-1.5">
-                                        <Users size={11} strokeWidth={2.5} /> Dirigida a
+                                <div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                        <Users size={10} strokeWidth={2.5} /> Dirigida a
                                     </label>
-                                    <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); }} />
+                                    <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
 
+                                    {/* Branches chips */}
                                     {sfScope === 'branches' && (
-                                        <div className="flex flex-wrap gap-2 mt-3">
+                                        <div className="flex flex-wrap gap-2 mt-2">
                                             {storeBranches.map(b => (
                                                 <button key={b.id} type="button" onClick={() => toggleScopeId(b.id)}
-                                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-xl border text-[11px] font-black transition-all ${
+                                                    className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-[11px] font-black transition-all ${
                                                         sfScopeIds.includes(b.id)
                                                             ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-sm'
                                                             : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white hover:border-[#007AFF]/30'
                                                     }`}>
-                                                    <Building2 size={10} strokeWidth={2.5} /> {b.name}
+                                                    <Building2 size={9} strokeWidth={2.5} /> {b.name}
                                                 </button>
                                             ))}
                                         </div>
                                     )}
 
-                                    {sfScope === 'employees' && (
-                                        <div className="grid grid-cols-1 gap-1.5 mt-3 max-h-48 overflow-y-auto">
-                                            {employees.map(e => {
-                                                const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
-                                                const sel = sfScopeIds.includes(e.id);
-                                                return (
-                                                    <button key={e.id} type="button" onClick={() => toggleScopeId(e.id)}
-                                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all ${
-                                                            sel ? 'bg-[#007AFF]/10 border-[#007AFF]/30 text-[#007AFF]' : 'bg-white/40 border-white/60 text-slate-600 hover:bg-white/80'
-                                                        }`}>
-                                                        <PersonAvatar src={e.photo_url} name={fn} size={22} />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="text-[11px] font-black truncate">{fn}</div>
-                                                            <div className="text-[9px] text-slate-400 truncate">{e.branch?.name}</div>
-                                                        </div>
-                                                        {sel && <Check size={11} className="shrink-0 text-[#007AFF]" strokeWidth={3} />}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                    {/* Employee search */}
+                                    {sfScope === 'employees' && (() => {
+                                        const q = sfEmpSearch.trim().toLowerCase();
+                                        const empResults = q
+                                            ? employees.filter(e => {
+                                                const fn = `${e.first_names || ''} ${e.last_names || ''}`.toLowerCase();
+                                                return fn.includes(q) && !sfScopeIds.includes(e.id);
+                                            }).slice(0, 8)
+                                            : [];
+                                        const selectedEmps = employees.filter(e => sfScopeIds.includes(e.id));
+                                        return (
+                                            <div className="mt-2 space-y-2">
+                                                {/* Selected chips */}
+                                                {selectedEmps.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-white/60 rounded-2xl border border-white/80">
+                                                        {selectedEmps.map(e => {
+                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            return (
+                                                                <div key={e.id} className="flex items-center gap-1.5 bg-[#007AFF]/10 text-[#007AFF] px-2.5 py-1 rounded-lg text-[11px] font-bold border border-[#007AFF]/20">
+                                                                    <PersonAvatar src={e.photo_url} name={fn} size={16} />
+                                                                    <span>{fn}</span>
+                                                                    <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-red-500 transition-colors ml-0.5">
+                                                                        <X size={10} strokeWidth={2.5} />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                {/* Search input */}
+                                                <div className="relative">
+                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={13} strokeWidth={2.5} />
+                                                    <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
+                                                        placeholder="Buscar por nombre…"
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_3px_rgba(0,122,255,0.12)] rounded-2xl text-[12px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal" />
+                                                    {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-400 transition-colors"><X size={12} strokeWidth={2.5} /></button>}
+                                                </div>
+                                                {/* Results dropdown */}
+                                                {empResults.length > 0 && (
+                                                    <div className="bg-white/90 backdrop-blur-xl border border-white/90 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+                                                        {empResults.map(e => {
+                                                            const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
+                                                            return (
+                                                                <button key={e.id} type="button"
+                                                                    onClick={() => { toggleScopeId(e.id); setSfEmpSearch(''); }}
+                                                                    className="w-full px-4 py-2.5 hover:bg-[#007AFF]/10 text-left flex items-center gap-3 transition-colors border-b border-slate-50 last:border-0">
+                                                                    <PersonAvatar src={e.photo_url} name={fn} size={24} />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-[12px] font-bold text-slate-700">{fn}</p>
+                                                                        <p className="text-[10px] text-slate-400">{e.branch?.name}</p>
+                                                                    </div>
+                                                                    <Plus size={13} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                {q && empResults.length === 0 && (
+                                                    <p className="text-[11px] text-slate-400 text-center py-2">Sin resultados para "{sfEmpSearch}"</p>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {sfScope === 'roles' && (
-                                        <p className="text-[11px] text-slate-400 mt-3 ml-1">
+                                        <p className="text-[11px] text-slate-400 mt-2 ml-1">
                                             Solo aplicará a jefes/as de sala registrados en el sistema.
                                         </p>
                                     )}
@@ -607,16 +648,16 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
+                                    className={`w-full py-3 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
                                         editingSurvey
                                             ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
                                             : 'bg-[#007AFF] hover:bg-[#0066CC]'
                                     }`}>
                                     {savingSurvey
-                                        ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
+                                        ? <><Loader2 size={15} className="animate-spin" /> Procesando…</>
                                         : editingSurvey
-                                            ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</>
-                                            : <><Plus size={16} strokeWidth={2.5} /> Crear Encuesta</>}
+                                            ? <><Save size={15} strokeWidth={2.5} /> Guardar Cambios</>
+                                            : <><Plus size={15} strokeWidth={2.5} /> Crear Encuesta</>}
                                 </button>
                             </div>
                         </div>

@@ -56,14 +56,14 @@ const TIPO_TABS = [
     { id: 'clima',        label: 'Clima' },
     { id: 'satisfaccion', label: 'Satisfacción' },
     { id: 'desempeno',    label: 'Desempeño' },
-    { id: 'adhoc',        label: 'Ad-hoc' },
+    { id: 'adhoc',        label: 'Personalizada' },
 ];
 
 const TIPO_DESC = {
     clima:        'Mide el ambiente general de trabajo, motivación y relaciones interpersonales.',
     satisfaccion: 'Evalúa qué tan satisfechos están los empleados con su rol y condiciones laborales.',
     desempeno:    'Evalúa el rendimiento individual y competencias de cada colaborador.',
-    adhoc:        'Encuesta libre para objetivos específicos o situaciones puntuales.',
+    adhoc:        'Encuesta libre para objetivos específicos que no encajan en los otros tipos.',
 };
 
 const ESTADO_TABS = [
@@ -94,7 +94,7 @@ const TIPO_STYLE = {
     adhoc:        'bg-amber-100 text-amber-700',
 };
 
-const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Ad-hoc' };
+const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function PersonAvatar({ src, name, isJefe, size = 28 }) {

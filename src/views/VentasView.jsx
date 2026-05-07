@@ -1030,16 +1030,24 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setLoading(true);
         setError(null);
         try {
-            let qInv = supabase
-                .from('sales_invoices')
-                .select('id')
-                .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-                .gte('fecha', fini).lte('fecha', ffin);
-            if (filterBranch) qInv = qInv.eq('branch_id', filterBranch);
-
-            const { data: invoices, error: invErr } = await qInv;
-            if (invErr) throw invErr;
-            const ids = (invoices || []).map(i => i.id);
+            // Paginar IDs de facturas — PostgREST corta a 1000 sin paginación explícita
+            const ids = [];
+            let invFrom = 0;
+            while (true) {
+                let qInv = supabase
+                    .from('sales_invoices')
+                    .select('id')
+                    .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
+                    .gte('fecha', fini).lte('fecha', ffin)
+                    .range(invFrom, invFrom + 999);
+                if (filterBranch) qInv = qInv.eq('branch_id', filterBranch);
+                const { data: invoices, error: invErr } = await qInv;
+                if (invErr) throw invErr;
+                if (!invoices || invoices.length === 0) break;
+                invoices.forEach(i => ids.push(i.id));
+                if (invoices.length < 1000) break;
+                invFrom += 1000;
+            }
             if (ids.length === 0) { setRows([]); setLoading(false); return; }
 
             const CHUNK = 1000;

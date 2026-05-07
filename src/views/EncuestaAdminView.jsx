@@ -63,6 +63,13 @@ const OPT_COLORS = {
     D: { on: 'bg-rose-500 text-white shadow-sm shadow-rose-200',       off: 'bg-rose-50 text-rose-600 hover:bg-rose-100' },
 };
 
+const NUMERIC_OPTS = [
+    { k: 'A', label: '9–10' },
+    { k: 'B', label: '7–8'  },
+    { k: 'C', label: '5–6'  },
+    { k: 'D', label: '1–4'  },
+];
+
 const TIPO_TABS = [
     { id: 'clima',        label: 'Clima' },
     { id: 'satisfaccion', label: 'Satisfacción' },
@@ -785,18 +792,33 @@ export default function EncuestaAdminView() {
                                                                     {p.numero}
                                                                 </span>
                                                                 <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
-                                                                <div className="shrink-0 flex items-center gap-1 mt-0.5">
-                                                                    {['A','B','C','D'].map(opt => {
-                                                                        const oc = OPT_COLORS[opt];
-                                                                        return (
-                                                                            <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
-                                                                                className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
-                                                                                {opt}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
+                                                                {p.tipo === 'numerica' ? (
+                                                                    <div className="shrink-0 flex items-center gap-1 mt-0.5">
+                                                                        {NUMERIC_OPTS.map(({ k, label }) => {
+                                                                            const oc = OPT_COLORS[k];
+                                                                            return (
+                                                                                <button key={k}
+                                                                                    onClick={() => setRfAnswer(p.indice, val === k ? null : k)}
+                                                                                    className={`px-2 h-7 rounded-lg text-[10px] font-black transition-all duration-150 ${val === k ? oc.on : oc.off}`}>
+                                                                                    {label}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="shrink-0 flex items-center gap-1 mt-0.5">
+                                                                        {['A','B','C','D'].map(opt => {
+                                                                            const oc = OPT_COLORS[opt];
+                                                                            return (
+                                                                                <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
+                                                                                    onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
+                                                                                    className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
+                                                                                    {opt}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     })}
@@ -1132,18 +1154,32 @@ export default function EncuestaAdminView() {
                                                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2">
                                                                                                                                 <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-400 mt-0.5">{p.numero}</span>
                                                                                                                                 <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
-                                                                                                                                <div className="shrink-0 flex items-center gap-0.5">
-                                                                                                                                    {['A','B','C','D'].map(opt => {
-                                                                                                                                        const oc = OPT_COLORS[opt];
-                                                                                                                                        return (
-                                                                                                                                            <span key={opt}
-                                                                                                                                                title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                                                                                className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-slate-50 text-slate-200'}`}>
-                                                                                                                                                {opt}
-                                                                                                                                            </span>
-                                                                                                                                        );
-                                                                                                                                    })}
-                                                                                                                                </div>
+                                                                                                                                {p.tipo === 'numerica' ? (
+                                                                                                                                    <div className="shrink-0 flex items-center gap-1">
+                                                                                                                                        {NUMERIC_OPTS.map(({ k, label }) => {
+                                                                                                                                            const oc = OPT_COLORS[k];
+                                                                                                                                            return (
+                                                                                                                                                <span key={k}
+                                                                                                                                                    className={`px-2 h-6 rounded-lg text-[10px] font-black flex items-center justify-center transition-all ${ans === k ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                    {label}
+                                                                                                                                                </span>
+                                                                                                                                            );
+                                                                                                                                        })}
+                                                                                                                                    </div>
+                                                                                                                                ) : (
+                                                                                                                                    <div className="shrink-0 flex items-center gap-0.5">
+                                                                                                                                        {['A','B','C','D'].map(opt => {
+                                                                                                                                            const oc = OPT_COLORS[opt];
+                                                                                                                                            return (
+                                                                                                                                                <span key={opt}
+                                                                                                                                                    title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-slate-50 text-slate-200'}`}>
+                                                                                                                                                    {opt}
+                                                                                                                                                </span>
+                                                                                                                                            );
+                                                                                                                                        })}
+                                                                                                                                    </div>
+                                                                                                                                )}
                                                                                                                             </div>
                                                                                                                         );
                                                                                                                     })}

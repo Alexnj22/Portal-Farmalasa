@@ -326,14 +326,14 @@ export default function EncuestaView() {
         return blockScore(filteredRows, allIdx, invertedIndices);
     }, [filteredRows, BLOQUES, invertedIndices]);
 
-    // Distribución P31 (autocalificación numérica)
+    // Distribución P31 (autocalificación — almacenada como A/B/C/D)
     const selfRatings = useMemo(() => {
-        const vals = filteredRows.map(r => parseInt(r.r[30])).filter(v => !isNaN(v));
-        const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-        const dist = {};
-        for (let i = 6; i <= 10; i++) dist[i] = vals.filter(v => v === i).length;
-        return { vals, avg, dist };
-    }, [filteredRows]);
+        const dist = { A: 0, B: 0, C: 0, D: 0 };
+        filteredRows.forEach(r => { const v = r.r[30]; if (v && dist[v] !== undefined) dist[v]++; });
+        const scores = filteredRows.map(r => blockScore([r], [30], invertedIndices)).filter(s => s != null);
+        const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+        return { dist, avg };
+    }, [filteredRows, invertedIndices]);
 
     // Razones de permanencia (P3 = index 2)
     const razones = useMemo(() => {
@@ -517,24 +517,31 @@ export default function EncuestaView() {
                                 <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
                                     <Star size={12} className="text-amber-400" /> Autocalificación como trabajador/a
                                 </h3>
-                                <p className="text-[10px] text-slate-400 mb-3">Escala 1–10 (solo se registraron valores entre 6 y 9)</p>
+                                <p className="text-[10px] text-slate-400 mb-3">A = 9-10 · B = 7-8 · C = 5-6 · D = 1-4</p>
                                 <div className="flex items-end gap-2 h-20">
-                                    {[6, 7, 8, 9, 10].map(v => {
-                                        const n = selfRatings.dist[v] || 0;
-                                        const maxN = Math.max(...Object.values(selfRatings.dist));
-                                        const h = maxN > 0 ? Math.round((n / maxN) * 100) : 0;
+                                    {[
+                                        { k: 'A', label: '9-10', cls: 'bg-emerald-400' },
+                                        { k: 'B', label: '7-8',  cls: 'bg-blue-400'    },
+                                        { k: 'C', label: '5-6',  cls: 'bg-amber-400'   },
+                                        { k: 'D', label: '1-4',  cls: 'bg-rose-400'    },
+                                    ].map(({ k, label, cls }) => {
+                                        const n = selfRatings.dist[k] || 0;
+                                        const maxN = Math.max(...Object.values(selfRatings.dist), 1);
+                                        const h = Math.round((n / maxN) * 100);
                                         return (
-                                            <div key={v} className="flex-1 flex flex-col items-center gap-1">
+                                            <div key={k} className="flex-1 flex flex-col items-center gap-1">
                                                 <span className="text-[9px] font-black text-slate-600">{n || ''}</span>
-                                                <div className="w-full rounded-t-lg bg-amber-400 transition-all" style={{ height: `${h}%`, minHeight: n > 0 ? 4 : 0 }} />
-                                                <span className="text-[10px] font-black text-slate-400">{v}</span>
+                                                <div className={`w-full rounded-t-lg ${cls} transition-all`} style={{ height: `${h}%`, minHeight: n > 0 ? 4 : 0 }} />
+                                                <span className="text-[10px] font-black text-slate-400">{label}</span>
                                             </div>
                                         );
                                     })}
                                 </div>
                                 <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-2">
-                                    <span className="text-[10px] text-slate-400">Promedio</span>
-                                    <span className="text-[18px] font-black text-amber-600">{selfRatings.avg.toFixed(1)}</span>
+                                    <span className="text-[10px] text-slate-400">Score promedio</span>
+                                    <span className="text-[18px] font-black text-amber-600">
+                                        {selfRatings.avg != null ? `${selfRatings.avg.toFixed(0)}%` : '–'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -938,7 +945,9 @@ export default function EncuestaView() {
                                     {filteredRows.map((row, i) => {
                                         const allIdx = BLOQUES.flatMap(b => b.indices);
                                         const global = blockScore([row], allIdx, invertedIndices);
-                                        const self = parseInt(row.r[30]);
+                                        const self = row.r[30];
+                                        const selfLabel = { A: '9-10', B: '7-8', C: '5-6', D: '1-4' };
+                                        const selfCls   = { A: 'text-emerald-600', B: 'text-blue-600', C: 'text-amber-600', D: 'text-rose-600' };
                                         return (
                                             <tr key={i} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/40">
                                                 <td className="px-4 py-2.5">
@@ -968,8 +977,12 @@ export default function EncuestaView() {
                                                         </td>
                                                     );
                                                 })}
-                                                <td className="px-3 py-2.5 text-center text-[13px] font-black text-amber-600">
-                                                    {isNaN(self) ? '–' : self}
+                                                <td className="px-3 py-2.5 text-center">
+                                                    {self ? (
+                                                        <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-400'}`}>
+                                                            {selfLabel[self] || self}
+                                                        </span>
+                                                    ) : '–'}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     {global ? (

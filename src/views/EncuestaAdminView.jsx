@@ -463,7 +463,7 @@ export default function EncuestaAdminView() {
                 <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-[50] transform-gpu">
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
-                    {leftPanel === 'survey-form' && (
+                    {leftPanel === 'survey-form' && canManage && (
                         <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
                             editingSurvey
                                 ? 'border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
@@ -698,7 +698,7 @@ export default function EncuestaAdminView() {
                     )}
 
                     {/* ── Response form ────────────────────────────────────────── */}
-                    {leftPanel === 'response-form' && (
+                    {leftPanel === 'response-form' && canManage && (
                         <div className="bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">

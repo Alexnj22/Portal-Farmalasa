@@ -12,6 +12,7 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -151,6 +152,8 @@ export default function EncuestaAdminView() {
     const navigate = useNavigate();
     const appendAuditLog = useStaff(state => state.appendAuditLog);
     const { showToast } = useToastStore();
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('encuesta_admin', 'can_edit');
     const storeBranches = useStaff(state => state.branches) || [];
 
     // ── Panel state ───────────────────────────────────────────────────────────
@@ -678,8 +681,8 @@ export default function EncuestaAdminView() {
                                 </div>
 
                                 {/* Submit */}
-                                <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey}
-                                    className={`w-full py-3 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
+                                <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
+                                    className={`w-full py-3 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
                                             : 'bg-[#007AFF] hover:bg-[#0066CC]'
@@ -856,8 +859,8 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveResponse}
-                                    disabled={(!editingResponse && !rfEmployeeId) || savingResponse}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 ${
+                                    disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingResponse ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#007AFF] hover:bg-[#0066CC]'
                                     }`}>
                                     {savingResponse
@@ -920,11 +923,13 @@ export default function EncuestaAdminView() {
                                                     <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
                                             )}
+                                            {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
                                                 className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
                                                 title="Editar encuesta">
                                                 <Edit3 size={14} strokeWidth={2.5} />
                                             </button>
+                                            )}
                                         </div>
 
                                         {/* Badges */}
@@ -1011,10 +1016,12 @@ export default function EncuestaAdminView() {
                                                             <TrendingUp size={13} strokeWidth={2.5} /> Ver análisis
                                                         </button>
                                                     )}
+                                                    {canManage && (
                                                     <button onClick={() => openResponseForm()}
                                                         className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">
                                                         <Plus size={14} strokeWidth={2.5} /> Agregar
                                                     </button>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -1127,7 +1134,7 @@ export default function EncuestaAdminView() {
                                                                                                         <X size={10} strokeWidth={3} />
                                                                                                     </button>
                                                                                                 </div>
-                                                                                            ) : (
+                                                                                            ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
                                                                                                     <button onClick={() => openResponseForm(row)}
                                                                                                         className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
@@ -1138,7 +1145,7 @@ export default function EncuestaAdminView() {
                                                                                                         <Trash2 size={11} strokeWidth={2.5} />
                                                                                                     </button>
                                                                                                 </div>
-                                                                                            )}
+                                                                                            ) : null}
                                                                                         </td>
                                                                                     </tr>
 

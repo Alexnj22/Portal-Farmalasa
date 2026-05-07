@@ -257,7 +257,7 @@ export default function EncuestaView() {
             supabase.from('survey_bloques').select('*').eq('survey_id', selectedSurveyId).order('numero'),
             supabase.from('survey_preguntas').select('*').eq('survey_id', selectedSurveyId).order('numero'),
             supabase.from('survey_responses')
-                .select('*, employee:employees(first_names, last_names, photo_url, branch:branches(name))')
+                .select('*, employee:employees!employee_id(first_names, last_names, photo_url, branch:branches(name))')
                 .eq('survey_id', selectedSurveyId),
         ]).then(([bRes, pRes, rRes]) => {
             setBloques((bRes.data || []).map(b => ({

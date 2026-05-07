@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
@@ -213,7 +214,7 @@ export default function EncuestaAdminView() {
             supabase.from('survey_bloques').select('*').eq('survey_id', survey.id).order('numero'),
             supabase.from('survey_preguntas').select('*').eq('survey_id', survey.id).order('numero'),
             supabase.from('survey_responses')
-                .select('*, employee:employees(id, first_names, last_names, photo_url, role_id, branch:branches(id, name))')
+                .select('*, employee:employees!employee_id(id, first_names, last_names, photo_url, role_id, branch:branches(id, name))')
                 .eq('survey_id', survey.id),
         ]);
         const bData = bRes.data || [];
@@ -518,10 +519,14 @@ export default function EncuestaAdminView() {
                                         <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <input type="date" value={sfFechaInicio} onChange={e => setSfFechaInicio(e.target.value)}
-                                            className="w-full py-2.5 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
-                                        <input type="date" value={sfFechaFin} onChange={e => setSfFechaFin(e.target.value)}
-                                            className="w-full py-2.5 px-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[11px] outline-none font-bold text-slate-700 transition-all duration-300" />
+                                        <div className="bg-white/50 border border-white/60 rounded-2xl px-3 py-1 focus-within:border-[#007AFF]/30 transition-all">
+                                            <p className="text-[8px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 mb-0.5">Inicio</p>
+                                            <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
+                                        </div>
+                                        <div className="bg-white/50 border border-white/60 rounded-2xl px-3 py-1 focus-within:border-[#007AFF]/30 transition-all">
+                                            <p className="text-[8px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 mb-0.5">Fin</p>
+                                            <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -550,6 +555,19 @@ export default function EncuestaAdminView() {
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
+                                    {/* Leyendas de privacidad */}
+                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-violet-500' : 'text-slate-400'}`}>
+                                        <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
+                                        {sfAnonima
+                                            ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
+                                            : 'Cada respuesta es visible con el nombre del colaborador.'}
+                                    </p>
+                                    <p className={`text-[10px] mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                        <Globe size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
+                                        {sfCompartir
+                                            ? 'Los resultados generales serán visibles para los colaboradores.'
+                                            : 'Los resultados solo son visibles para administradores.'}
+                                    </p>
                                 </div>
 
                                 {/* Audiencia */}

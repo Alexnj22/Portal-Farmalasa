@@ -100,6 +100,17 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #F2F2F7; 
-  overscroll-behavior: none; 
+  background-color: #F2F2F7;
+  overscroll-behavior: none;
+}
+
+/* Escala proporcional para pantallas más pequeñas que 1440px */
+@media screen and (max-width: 1439px) and (min-width: 1281px) {
+  #root { zoom: 0.9; }
+}
+@media screen and (max-width: 1280px) and (min-width: 1025px) {
+  #root { zoom: 0.82; }
+}
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+  #root { zoom: 0.75; }
 }

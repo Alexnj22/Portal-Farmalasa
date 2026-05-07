@@ -1068,7 +1068,7 @@ export default function EncuestaAdminView() {
                                                                             <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
                                                                             <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300">B{b.numero}</th>
+                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300 cursor-help">B{b.numero}</th>
                                                                             ))}
                                                                             <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
@@ -1103,7 +1103,7 @@ export default function EncuestaAdminView() {
                                                                                         {bloques.map(b => {
                                                                                             const sc = blockScore(row.responses || [], b.indices || [], invertedIndices);
                                                                                             return (
-                                                                                                <td key={b.id} className="py-2.5 px-2 text-center">
+                                                                                                <td key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="py-2.5 px-2 text-center cursor-help">
                                                                                                     {sc != null
                                                                                                         ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
                                                                                                         : <span className="text-slate-200 text-[10px]">—</span>}

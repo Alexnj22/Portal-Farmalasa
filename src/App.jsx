@@ -110,6 +110,7 @@ const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, s
 
     return (
         <EmployeeDetailView
+            key={id}
             activeEmployee={emp}
             setView={(viewName) => {
                 if (viewName === 'dashboard') navigate('/dashboard');
@@ -117,7 +118,7 @@ const EmployeeProfileWrapper = ({ activeTab, setActiveTab, openModal, setView, s
             }}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            openModal={handleOpenModal} // Pasamos la función limpiamente
+            openModal={handleOpenModal}
         />
     );
 };

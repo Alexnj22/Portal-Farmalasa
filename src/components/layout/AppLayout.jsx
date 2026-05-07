@@ -58,7 +58,7 @@ const MENU_GROUPS = [
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'promociones', 'bonificaciones'] },
-    { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta', 'encuesta_admin'] },
+    { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
     { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos']                            },
 ];
 

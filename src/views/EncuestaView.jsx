@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -226,6 +227,7 @@ const TABS = [
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function EncuestaView() {
+    const navigate = useNavigate();
     const [tab, setTab] = useState('resumen');
     const [expandedQ, setExpandedQ] = useState(null);
     const [expandedBloque, setExpandedBloque] = useState(null);
@@ -394,7 +396,17 @@ export default function EncuestaView() {
     return (
         <GlassViewLayout
             icon={BarChart2}
-            title={selectedSurvey?.nombre ?? 'Clima Organizacional'}
+            title={
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate('/encuesta-admin')}
+                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 bg-white"
+                        title="Volver a Gestión de Encuesta">
+                        <ArrowLeft size={15} strokeWidth={2.5} className="text-slate-500" />
+                    </button>
+                    <span>{selectedSurvey?.nombre ?? 'Clima Organizacional'}</span>
+                </div>
+            }
             subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}
             filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">

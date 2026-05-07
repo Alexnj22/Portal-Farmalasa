@@ -269,6 +269,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         }
 
         if (!navEl || !activeEl) {
+            const isKnownRoute = visibleGroups.some(g =>
+                g.visibleModules.some(m => {
+                    const seg = m.path.replace(/^\//, '').split('/')[0];
+                    return activeId === seg || activePath.startsWith(m.path + '/');
+                })
+            );
+            if (!isKnownRoute) {
+                setPill(prev => ({ ...prev, show: false }));
+                return;
+            }
             setPill(prev => prev.show ? prev : lastGoodPillRef.current);
             return;
         }

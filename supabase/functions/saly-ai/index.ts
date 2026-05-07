@@ -175,6 +175,27 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'analyze-survey-comments': {
+        const { comments, segment } = payload;
+        const textos = (comments || []).map((c: any, i: number) =>
+            `${i + 1}. [${c.isJefe ? 'Jefe/a' : 'Colaborador/a'} – ${c.sucursal}]: "${c.texto}"`
+        ).join('\n');
+        prompt = `Eres un analista de clima organizacional. Analiza estos comentarios libres de una encuesta interna de Farmacia La Salud y La Popular.
+Segmento: ${segment} (${(comments || []).length} comentarios)
+
+${textos}
+
+Redacta un resumen ejecutivo en español (máx. 180 palabras) con estas secciones:
+**Temas recurrentes:** menciona los 2–3 temas más comunes.
+**Aspectos positivos:** lo que más valoran los empleados.
+**Áreas de mejora:** problemas principales mencionados.
+**Conclusión:** 1–2 oraciones con la principal acción recomendada.
+
+Sé directo. Usa solo lo que dicen los comentarios, no inventes.`;
+        responseKey = "aiSummary";
+        break;
+      }
+
       default:
         throw new Error(`Acción '${action}' no reconocida.`);
     }

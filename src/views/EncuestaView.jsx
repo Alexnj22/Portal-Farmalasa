@@ -42,7 +42,10 @@ const PCT_COLORS = {
 
 function scoreVal(v) {
     if (!v || v === '-') return null;
-    return SCORE_MAP[v.toUpperCase()] ?? null;
+    if (SCORE_MAP[v.toUpperCase()] !== undefined) return SCORE_MAP[v.toUpperCase()];
+    const n = parseInt(v, 10);
+    if (!isNaN(n) && n >= 1 && n <= 10) return n >= 9 ? 4 : n >= 7 ? 3 : n >= 5 ? 2 : 1;
+    return null;
 }
 
 function blockScore(rows, indices, invertedSet = new Set()) {
@@ -360,16 +363,27 @@ export default function EncuestaView() {
         return blockScore(filteredRows, allIdx, invertedIndices);
     }, [filteredRows, BLOQUES, invertedIndices]);
 
-    // Distribución P31 (autocalificación — almacenada como A/B/C/D)
+    // Distribución P31 (autocalificación — puede ser A/B/C/D legacy o número 1-10)
     const selfRatings = useMemo(() => {
         const dist = { A: 0, B: 0, C: 0, D: 0 };
+        const numericVals = [];
         filteredRows.forEach(r => {
             const v = r.r[selfRatingIdx];
-            if (v && dist[v] !== undefined) dist[v]++;
+            if (!v) return;
+            if (dist[v] !== undefined) {
+                dist[v]++;                         // legacy A/B/C/D
+                const mid = { A: 9.5, B: 7.5, C: 5.5, D: 2.5 }[v];
+                if (mid) numericVals.push(mid);
+            } else {
+                const n = parseInt(v, 10);
+                if (!isNaN(n) && n >= 1 && n <= 10) {
+                    if (n >= 9) dist.A++; else if (n >= 7) dist.B++; else if (n >= 5) dist.C++; else dist.D++;
+                    numericVals.push(n);
+                }
+            }
         });
-        const scores = filteredRows.map(r => blockScore([r], [selfRatingIdx], invertedIndices)).filter(s => s != null);
-        const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-        return { dist, avg };
+        const numericAvg = numericVals.length ? numericVals.reduce((a, b) => a + b, 0) / numericVals.length : null;
+        return { dist, numericAvg };
     }, [filteredRows, invertedIndices, selfRatingIdx]);
 
     // Razones de permanencia (P3 = index 2)
@@ -608,9 +622,10 @@ export default function EncuestaView() {
                                     </div>
                                 )}
                                 <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-2">
-                                    <span className="text-[10px] text-slate-400">Score promedio</span>
-                                    <span className="text-[18px] font-black text-amber-600">
-                                        {selfRatings.avg != null ? `${selfRatings.avg.toFixed(0)}%` : '–'}
+                                    <span className="text-[10px] text-slate-400">Promedio</span>
+                                    <span className="text-[22px] font-black text-amber-600">
+                                        {selfRatings.numericAvg != null ? `${selfRatings.numericAvg.toFixed(1)}` : '–'}
+                                        {selfRatings.numericAvg != null && <span className="text-[13px] font-bold text-amber-400"> / 10</span>}
                                     </span>
                                 </div>
                             </div>

@@ -60,7 +60,8 @@ Deno.serve(async (req) => {
       if (p.laboratorio?.id) labMap.set(p.laboratorio.id, p.laboratorio.nombre);
     }
     const labRows = [...labMap.entries()].map(([id, nombre]) => ({ id, nombre, updated_at: now }));
-    await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
+    const { error: labErr } = await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
+    if (labErr) throw new Error(`Laboratorios upsert: ${labErr.message}`);
 
     // 3. Upsert presentaciones catalog
     const presMap = new Map<number, any>();
@@ -77,10 +78,11 @@ Deno.serve(async (req) => {
         }
       }
     }
-    await supabase.from('presentaciones').upsert([...presMap.values()], { onConflict: 'id' });
+    const { error: presErr } = await supabase.from('presentaciones').upsert([...presMap.values()], { onConflict: 'id' });
+    if (presErr) throw new Error(`Presentaciones upsert: ${presErr.message}`);
 
-    // 4. Detect product name / lab changes, then upsert
-    const productRows = productos.map((p: any) => ({
+    // 4. Build product rows — deduplicate by id (ERP may send duplicates)
+    const productRowsRaw = productos.map((p: any) => ({
       id:             p.id,
       nombre:         p.nombre,
       codigo_barras:  p.codigo_barras ?? null,
@@ -90,15 +92,25 @@ Deno.serve(async (req) => {
       perecedero:     p.perecedero ?? false,
       updated_at:     now,
     }));
+    const productRowsDeduped = new Map<number, any>();
+    for (const p of productRowsRaw) productRowsDeduped.set(p.id, p);
+    const productRows = [...productRowsDeduped.values()];
 
-    const { data: existingProducts } = await supabase
-      .from('products')
-      .select('id, nombre, laboratorio_id')
-      .in('id', productRows.map((p: any) => p.id));
-
-    const existingProductsMap = new Map(
-      (existingProducts ?? []).map((p: any) => [p.id, p])
-    );
+    // Load ALL existing products from DB via pagination (avoids URL-length limit of .in())
+    const existingProductsAll: any[] = [];
+    let epFrom = 0;
+    while (true) {
+      const { data: batch, error: epErr } = await supabase
+        .from('products')
+        .select('id, nombre, laboratorio_id')
+        .range(epFrom, epFrom + CHUNK - 1);
+      if (epErr) throw new Error(`Load products: ${epErr.message}`);
+      if (!batch || batch.length === 0) break;
+      existingProductsAll.push(...batch);
+      if (batch.length < CHUNK) break;
+      epFrom += CHUNK;
+    }
+    const existingProductsMap = new Map(existingProductsAll.map((p: any) => [p.id, p]));
 
     const productChangelogs: any[] = [];
     for (const np of productRows) {
@@ -116,24 +128,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Solo upsertear productos nuevos o con cambios detectados
     const changedProductIds = new Set(productChangelogs.map((c: any) => c.product_id));
     const productRowsToUpsert = productRows.filter((p: any) =>
       !existingProductsMap.has(p.id) || changedProductIds.has(p.id)
     );
+    const upsertErrors: string[] = [];
     for (let i = 0; i < productRowsToUpsert.length; i += CHUNK) {
-      await supabase.from('products').upsert(productRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'id' });
+      const { error } = await supabase.from('products').upsert(productRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'id' });
+      if (error) upsertErrors.push(`products[${i}]: ${error.message}`);
     }
     if (productChangelogs.length > 0) {
       await supabase.from('products_changelog').insert(productChangelogs);
     }
 
-    // 5. Build precio rows
-    const precioRows: any[] = [];
+    // 5. Build precio rows — deduplicate by (product_id, id_presentacion)
+    const precioRowsMap = new Map<string, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
+        const key = `${p.id}_${pres.id_presentacion}`;
         const precios = pres.lista_precios?.[0]?.precios?.[0] ?? {};
-        precioRows.push({
+        precioRowsMap.set(key, {
           product_id:      p.id,
           id_presentacion: pres.id_presentacion,
           activo:          pres.activo ?? true,
@@ -149,6 +163,7 @@ Deno.serve(async (req) => {
         });
       }
     }
+    const precioRows = [...precioRowsMap.values()];
 
     // 5a. Detect price changes vs current product_precios — fetch ALL rows in chunks
     const existingPreciosAll: any[] = [];
@@ -177,7 +192,6 @@ Deno.serve(async (req) => {
       const er  = existingPreciosMap.get(key);
 
       if (!er) {
-        // Brand-new product+presentacion: seed into history
         newCombos.push(nr);
         continue;
       }
@@ -215,7 +229,7 @@ Deno.serve(async (req) => {
       }
 
       const newHistoryRows = [...changedKeys].map(key => {
-        const r = precioRows.find((x: any) => `${x.product_id}_${x.id_presentacion}` === key)!;
+        const r = precioRowsMap.get(key)!;
         return {
           product_id: r.product_id, id_presentacion: r.id_presentacion,
           vineta: r.vineta, descuento_1: r.descuento_1, vip: r.vip,
@@ -235,7 +249,8 @@ Deno.serve(async (req) => {
         valid_from: now,
       }));
       for (let i = 0; i < seedRows.length; i += CHUNK) {
-        await supabase.from('product_precios_history').insert(seedRows.slice(i, i + CHUNK));
+        const { error } = await supabase.from('product_precios_history').insert(seedRows.slice(i, i + CHUNK));
+        if (error) upsertErrors.push(`history[${i}]: ${error.message}`);
       }
     }
 
@@ -243,28 +258,30 @@ Deno.serve(async (req) => {
       await supabase.from('product_precios_changelog').insert(precioChangelogs);
     }
 
-    // 5d. Upsert solo precios nuevos o con cambios detectados
+    // 5d. Upsert new and changed precios
     const newComboKeys = new Set(newCombos.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
     const precioRowsToUpsert = precioRows.filter((r: any) => {
       const key = `${r.product_id}_${r.id_presentacion}`;
       return changedKeys.has(key) || newComboKeys.has(key);
     });
     for (let i = 0; i < precioRowsToUpsert.length; i += CHUNK) {
-      await supabase.from('product_precios').upsert(precioRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
+      const { error } = await supabase.from('product_precios').upsert(precioRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
+      if (error) upsertErrors.push(`precios[${i}]: ${error.message}`);
     }
 
     return new Response(
       JSON.stringify({
-        success:         true,
-        laboratorios:    labRows.length,
-        presentaciones:  presMap.size,
+        success:          upsertErrors.length === 0,
+        laboratorios:     labRows.length,
+        presentaciones:   presMap.size,
         products_total:   productRows.length,
         products_written: productRowsToUpsert.length,
         precios_total:    precioRows.length,
         precios_written:  precioRowsToUpsert.length,
-        price_changes:   precioChangelogs.length,
-        product_changes: productChangelogs.length,
-        new_combos:      newCombos.length,
+        price_changes:    precioChangelogs.length,
+        product_changes:  productChangelogs.length,
+        new_combos:       newCombos.length,
+        errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

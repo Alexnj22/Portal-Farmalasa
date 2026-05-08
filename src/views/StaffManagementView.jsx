@@ -711,7 +711,7 @@ const StaffManagementView = ({
           </div>
 
           <div className="flex-1 overflow-x-auto overflow-y-auto hide-scrollbar">
-            <table className="w-full text-left border-collapse whitespace-nowrap">
+            <table className="min-w-full text-left border-collapse whitespace-nowrap">
               <thead className="bg-white/40 sticky top-0 z-10 backdrop-blur-md border-b border-white/60 shadow-sm">
                 <tr>
                   <th onClick={() => handleSort('name')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">

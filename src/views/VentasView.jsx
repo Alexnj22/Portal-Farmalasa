@@ -477,7 +477,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
             {loadingRows && rows.length === 0 ? (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto w-full">
+                    <table className="min-w-full text-sm">
                         <tbody>
                             {Array.from({ length: 10 }).map((_, i) => (
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
@@ -493,6 +494,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             ) : !loadingRows && rows.length === 0 ? (
                 <div className="text-center py-20 text-slate-400">
@@ -502,7 +504,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             ) : (
                 <>
                     <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                        <table className="w-full text-sm">
+                        <div className="overflow-x-auto w-full">
+                        <table className="min-w-full text-sm">
                             <thead className="sticky top-0 z-10">
                                 <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
                                     <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
@@ -619,7 +622,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
                                                                 return (
-                                                                    <table className="w-full text-[11px]">
+                                                                    <div className="overflow-x-auto w-full">
+                                                                    <table className="min-w-full text-[11px]">
                                                                         <thead>
                                                                             <tr className="text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                                                                 <th className="text-left pb-2">Producto</th>
@@ -654,6 +658,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             )}
                                                                         </tbody>
                                                                     </table>
+                                                                    </div>
                                                                 );
                                                             })()
                                                         )}
@@ -684,6 +689,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
                         <div className="w-[130px]">
@@ -877,7 +883,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
             ) : (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto w-full">
+                    <table className="min-w-full text-sm">
                         <thead>
                             <tr className="bg-slate-50 border-b border-black/[0.06] text-[10px] font-black uppercase tracking-widest text-slate-500">
                                 <th className="text-left px-4 py-3 w-10">#</th>
@@ -996,6 +1003,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             )}
 
@@ -1228,7 +1236,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 </div>
             ) : (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto w-full">
+                    <table className="min-w-full text-sm">
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
                                 <th className="text-left px-4 py-2.5 w-8 text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
@@ -1282,6 +1291,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             })}
                         </tbody>
                     </table>
+                    </div>
                     <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
                         <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}

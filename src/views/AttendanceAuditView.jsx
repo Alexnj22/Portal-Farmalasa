@@ -530,7 +530,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       {/* SECCIÓN: MARCAJES PENDIENTES DE REVISIÓN TH */}
       {pendingReviewPunches.length > 0 && (
         <div className="bg-amber-50/80 backdrop-blur-xl rounded-[2rem] border border-amber-200/70 shadow-[0_8px_32px_rgba(245,158,11,0.08)] overflow-hidden">
-          <div className="px-8 py-5 border-b border-amber-200/50 flex items-center gap-3">
+          <div className="px-4 md:px-8 py-4 md:py-5 border-b border-amber-200/50 flex items-center gap-3">
             <div className="p-2 bg-amber-400/20 rounded-xl">
               <ShieldAlert size={18} className="text-amber-600" strokeWidth={2} />
             </div>
@@ -550,7 +550,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
               const dateStr = punchDate.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' });
 
               return (
-                <div key={punch.id} className="px-8 py-5 flex items-center gap-5 hover:bg-amber-100/40 transition-colors">
+                <div key={punch.id} className="px-4 md:px-8 py-4 md:py-5 flex flex-wrap sm:flex-nowrap items-center gap-3 md:gap-5 hover:bg-amber-100/40 transition-colors">
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden shrink-0">
                     {emp?.photo ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0) || '?'}
@@ -595,19 +595,19 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       {/* TABLA DE INCONSISTENCIAS (MARCAJES FALTANTES) */}
       <div className="bg-white/50 backdrop-blur-2xl backdrop-saturate-[150%] rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="min-w-full text-left border-collapse">
             <thead>
               <tr className="bg-black/[0.02] border-b border-black/[0.04]">
-                <th className="p-5 pl-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                <th className="p-3 md:p-5 pl-4 md:pl-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                   Colaborador
                 </th>
-                <th className="p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                <th className="p-3 md:p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                   Fecha / Turno
                 </th>
-                <th className="p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest w-2/5">
+                <th className="p-3 md:p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest w-2/5">
                   Inconsistencias Detectadas
                 </th>
-                <th className="p-5 pr-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                <th className="p-3 md:p-5 pr-4 md:pr-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">
                   Acción
                 </th>
               </tr>
@@ -637,7 +637,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                       key={record.id}
                       className="hover:bg-white/70 transition-colors duration-200 group border-l-4 border-transparent hover:border-l-[#007AFF]/50"
                     >
-                      <td className="p-5 pl-8">
+                      <td className="p-3 md:p-5 pl-4 md:pl-8">
                         <button
                           type="button"
                           onClick={() => goToEmployeeProfile(emp)}
@@ -666,7 +666,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         </button>
                       </td>
 
-                      <td className="p-5">
+                      <td className="p-3 md:p-5">
                         <div className="flex flex-col items-start gap-2">
                           <span className="font-semibold text-slate-800 flex items-center gap-2 text-[13px]">
                             <Calendar size={14} className="text-[#007AFF]" />
@@ -678,7 +678,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         </div>
                       </td>
 
-                      <td className="p-5">
+                      <td className="p-3 md:p-5">
                         <div className="flex flex-wrap gap-2">
                           {record.inconsistencies.map((inc, i) => {
                             const Icon = inc.icon;
@@ -697,7 +697,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         </div>
                       </td>
 
-                      <td className="p-5 pr-8 text-right">
+                      <td className="p-3 md:p-5 pr-4 md:pr-8 text-right">
                         <button
                           onClick={() => openModal(record)}
                           disabled={!canEdit}

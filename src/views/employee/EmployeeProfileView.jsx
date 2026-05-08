@@ -373,7 +373,8 @@ const EmployeeProfileView = ({ openModal }) => {
                     {weeklySchedule.length > 0 && (
                         <SectionCard>
                             <SectionLabel icon={Clock} label="Mi Horario Habitual" color="text-slate-400" />
-                            <div className="grid grid-cols-7 gap-1.5">
+                            <div className="overflow-x-auto w-full">
+                            <div className="grid grid-cols-7 gap-1.5 min-w-[320px]">
                                 {weeklySchedule.map(d => {
                                     const todayStr = new Date().toDateString();
                                     const isToday  = d.date?.toDateString() === todayStr;
@@ -414,6 +415,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                         </div>
                                     );
                                 })}
+                            </div>
                             </div>
                         </SectionCard>
                     )}

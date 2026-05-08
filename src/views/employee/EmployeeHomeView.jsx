@@ -402,7 +402,7 @@ const EmployeeHomeView = () => {
                             <div className="bg-slate-200/80 rounded-full h-4 w-24" />
                         </div>
                         {Array.from({ length: 2 }).map((_, ri) => (
-                            <div key={ri} className="grid grid-cols-4 gap-3">
+                            <div key={ri} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {Array.from({ length: 4 }).map((_, ci) => (
                                     <div key={ci} className="bg-slate-200/80 rounded-2xl h-32" />
                                 ))}
@@ -598,7 +598,7 @@ const EmployeeHomeView = () => {
                     ) : (
                         <div key={weekLabel} className="space-y-3 animate-in fade-in slide-in-from-right-2 duration-300">
                             {[calendarDays.slice(0, 4), calendarDays.slice(4, 8)].map((row, ri) => (
-                                <div key={ri} className="grid grid-cols-4 gap-3">
+                                <div key={ri} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                     {row.map(d => {
                                         const isPast = !d.isToday && d.date < today;
                                         const branchEmpsForDay = employees

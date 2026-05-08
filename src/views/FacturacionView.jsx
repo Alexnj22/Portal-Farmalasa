@@ -1738,7 +1738,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                     </div>
                                 </div>
                                 {/* Table */}
-                                <table className="w-full text-left border-collapse">
+                                <div className="overflow-x-auto w-full">
+                                <table className="min-w-full text-left border-collapse">
                                     <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
                                     <tbody className="divide-y divide-black/[0.03]">
                                         {tipoPageRows.map(r => {
@@ -1802,6 +1803,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         })}
                                     </tbody>
                                 </table>
+                                </div>
                                 <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
                             </div>
                         );
@@ -1839,7 +1841,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
                                             </div>
                                         </div>
-                                        <table className="w-full text-left border-collapse">
+                                        <div className="overflow-x-auto w-full">
+                                        <table className="min-w-full text-left border-collapse">
                                             <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
                                             <tbody className="divide-y divide-black/[0.03]">
                                                 {tipoPageRows.map(r => {
@@ -1899,6 +1902,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 })}
                                             </tbody>
                                         </table>
+                                        </div>
                                         <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
                                     </div>
                                 );

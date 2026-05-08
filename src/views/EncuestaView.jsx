@@ -168,7 +168,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
 
             {showDetail && (
                 <div className="px-4 pb-3 pt-0">
-                    <div className="ml-10 grid grid-cols-4 gap-2">
+                    <div className="ml-10 grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
                             { k: 'A', label: pregunta.opciones?.[0] || 'Siempre / Totalmente de acuerdo',  cls: 'bg-emerald-50 border-emerald-200 text-emerald-700', chip: 'bg-emerald-100 text-emerald-700' },
                             { k: 'B', label: pregunta.opciones?.[1] || 'Frecuentemente / De acuerdo',       cls: 'bg-blue-50 border-blue-200 text-blue-700',           chip: 'bg-blue-100 text-blue-700' },
@@ -879,7 +879,7 @@ export default function EncuestaView() {
                                 <Award size={12} className="text-purple-400" /> Jefes vs Colaboradores
                             </h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                                <table className="w-full min-w-[480px] text-sm">
                                     <thead>
                                         <tr className="bg-slate-50 border-b border-slate-100">
                                             <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Bloque</th>
@@ -1018,8 +1018,8 @@ export default function EncuestaView() {
                             <span className="text-[11px] text-slate-400">{filteredRows.length} personas</span>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-                            <table className="w-full text-sm">
+                        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-x-auto">
+                            <table className="w-full min-w-[560px] text-sm">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200/60">
                                         <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador · Sucursal</th>

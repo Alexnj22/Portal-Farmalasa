@@ -420,7 +420,7 @@ const BranchCard = memo(({
                         </div>
                     </a>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-[#007AFF]"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">

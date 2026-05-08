@@ -243,6 +243,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     <div><h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-slate-600 uppercase tracking-widest leading-none">Sucursal: <span className="text-[#007AFF]">{liveBranch?.name || 'No especificada'}</span></h2></div>
                     <div className="text-right"><p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-slate-900 leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
                 </div>
+                <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b-2 border-slate-800 text-[9px] text-slate-600 uppercase tracking-widest">
@@ -267,6 +268,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                         })}
                     </tbody>
                 </table>
+                </div>
             </div>,
             document.body
         );

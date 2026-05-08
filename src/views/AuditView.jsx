@@ -480,7 +480,7 @@ const filtersContent = (
             </div>
 
             <div className="w-full overflow-x-auto scrollbar-hide">
-                <table className="w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
+                <table className="min-w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
                     <thead className="bg-white/40">
                         <tr>
                             <th onClick={() => handleSort('created_at')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">

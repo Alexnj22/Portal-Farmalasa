@@ -379,7 +379,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 p_sort_dir:  sortDir,
             });
             fetched = data || [];
-            setPuntosCount(fetched.length > 0 ? Number(fetched[0].total_count) : 0);
+            setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
         } else {
             const asc = sortDir === 'asc';
             let q = supabase

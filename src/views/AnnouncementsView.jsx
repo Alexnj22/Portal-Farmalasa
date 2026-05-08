@@ -589,7 +589,7 @@ const AnnouncementsView = ({ openModal }) => {
       <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '' })} title={alertDialog.title} message={alertDialog.message} type="error" />
 
       <GlassViewLayout icon={Megaphone} title="Centro de Comunicaciones" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
-        <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+        <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
           <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
             <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
@@ -709,7 +709,7 @@ const AnnouncementsView = ({ openModal }) => {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+          <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto">
             <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
               {paginatedList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">

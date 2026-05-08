@@ -606,9 +606,9 @@ const PermissionsView = () => {
         >
             {loading ? (
                 /* ── Skeleton ── */
-                <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[190px] lg:h-[calc(100dvh-40px)]">
+                <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] lg:h-[calc(100dvh-40px)]">
                         {/* Skeleton left column */}
-                        <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[190px] space-y-2.5 lg:pb-10">
+                        <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
                                 <div key={i} className="rounded-[1.5rem] border border-white/80 bg-white/60 p-4 animate-pulse" style={{ animationDelay: `${i * 60}ms` }}>
                                     <div className="flex items-center gap-3">
@@ -622,7 +622,7 @@ const PermissionsView = () => {
                             ))}
                         </div>
                         {/* Skeleton right */}
-                        <div className="flex-1 min-w-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[190px] space-y-6 lg:pb-10">
+                        <div className="flex-1 min-w-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] space-y-6 lg:pb-10">
                             {MODULE_GROUPS.slice(0, 3).map((g, gi) => (
                                 <div key={gi}>
                                     <div className="animate-pulse h-3 w-24 bg-slate-200/80 rounded-full mx-auto mb-3" />
@@ -648,10 +648,10 @@ const PermissionsView = () => {
                         </div>
                 </div>
             ) : (
-            <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[190px] lg:h-[calc(100dvh-40px)]">
+            <div className="flex flex-col lg:flex-row gap-5 lg:-mt-[180px] lg:h-[calc(100dvh-40px)]">
 
                     {/* ── Columna izquierda: selector de cargos ── */}
-                    <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[190px] [&::-webkit-scrollbar]:hidden">
+                    <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] [&::-webkit-scrollbar]:hidden">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
@@ -699,7 +699,7 @@ const PermissionsView = () => {
                     </div>
 
                     {/* ── Panel derecho: permisos del cargo ── */}
-                    <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[190px] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] [&::-webkit-scrollbar]:hidden">
                         {!selectedRoleId ? (
                             /* Empty state */
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">

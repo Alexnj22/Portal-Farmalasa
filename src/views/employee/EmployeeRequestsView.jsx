@@ -1009,7 +1009,7 @@ const EmployeeRequestsView = () => {
             transparentBody={true}
             fixedScrollMode={true}
         >
-            <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+            <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
                 <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
@@ -1138,7 +1138,7 @@ const EmployeeRequestsView = () => {
                 </div>
 
                 {/* ── PANEL DERECHO: Lista ── */}
-                <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 pt-4 px-3 md:px-4 content-start">
 
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}

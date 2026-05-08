@@ -76,7 +76,7 @@ const GlassViewLayout = ({
             <div
                 ref={scrollContainerRef}
                 className={`absolute inset-0 w-full h-full z-10 px-2 lg:px-6 xl:px-8 pb-10 [&::-webkit-scrollbar]:hidden ${
-                    fixedScrollMode ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scroll-smooth'
+                    fixedScrollMode ? 'overflow-y-auto lg:overflow-hidden overscroll-contain scroll-smooth' : 'overflow-y-auto overscroll-contain scroll-smooth'
                 }`}
                 style={isDesktop ? desktopMask : undefined}
                 onScroll={handleInternalScroll}

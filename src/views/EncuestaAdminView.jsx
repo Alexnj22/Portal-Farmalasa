@@ -457,7 +457,7 @@ export default function EncuestaAdminView() {
             transparentBody={true}
             fixedScrollMode={true}>
 
-            <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+            <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
                 {canManage && <div className="w-full lg:w-[560px] xl:w-[620px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 z-[50] transform-gpu">
@@ -875,7 +875,7 @@ export default function EncuestaAdminView() {
                 </div>}
 
                 {/* ══ RIGHT PANEL ═════════════════════════════════════════════════ */}
-                <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
+                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto">
                     <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
 
                         {loadingSurveys ? (

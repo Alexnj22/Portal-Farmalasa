@@ -555,7 +555,7 @@ const RolesView = ({ openModal }) => {
 
             <div className="w-full flex-1 pb-32">
                 {activeTab === 'list' ? (
-                    <div className="flex flex-col lg:flex-row items-start gap-6 md:gap-8 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+                    <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-[100] lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
@@ -691,7 +691,7 @@ const RolesView = ({ openModal }) => {
                         </div>
 
                         {/* PANEL DERECHO: GRID DE TARJETAS */}
-                        <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto relative z-10">
+                        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {filteredAndSortedRoles.map((role) => {
                                     const isRoot = !role.parent_role_id;

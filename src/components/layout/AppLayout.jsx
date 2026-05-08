@@ -349,7 +349,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div
                     key={key}
                     className={`w-full flex items-center gap-2.5 rounded-[1rem] relative
-                        ${indent ? 'px-2.5 py-2 ml-2' : 'px-3 py-3'}
+                        ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-10 flex-shrink-0">
@@ -357,7 +357,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
                     {isExpanded && (
                         <>
-                            <span className="text-[12px] font-medium text-white/40 flex-1 whitespace-nowrap">{label}</span>
+                            <span className="text-[12px] xl:text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{label}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
@@ -377,7 +377,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                 type="button"
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
-                    ${indent ? 'px-2.5 py-2 ml-2' : 'px-3 py-3'}
+                    ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
                     active:scale-[0.99]`}
             >
@@ -407,7 +407,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {isExpanded && (
                     <>
-                        <span className={`text-[12px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`text-[12px] xl:text-[13px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
                             {label}
                         </span>
                         {alert && (
@@ -470,7 +470,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     } : undefined}
                     onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                     type="button"
-                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[1rem] transition-all duration-300 group text-left
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
                         active:scale-[0.99]`}
                 >
@@ -481,7 +481,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     />
                     {isExpanded && (
                         <>
-                            <span className={`text-[12px] flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
+                            <span className={`text-[12px] xl:text-[13px] flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
@@ -536,7 +536,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto
                     ${isMobile
                         ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[280px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[280px] left-2 shadow-none')
-                        : (isSidebarOpen ? 'w-[15rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
+                        : (isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] xl:w-[5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
                     transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >

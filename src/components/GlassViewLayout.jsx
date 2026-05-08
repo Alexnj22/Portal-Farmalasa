@@ -24,12 +24,11 @@ const GlassViewLayout = ({
     }, [isScrolled]);
 
     return (
-        // 🚨 CAMBIO AQUÍ: Cambiamos max-w-7xl por max-w-[1800px] 
-        <div className="max-w-[1800px] 2xl:max-w-[2000px] mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none transition-all duration-500">
+        <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none transition-all duration-500">
 
             {/* HEADER COMPACTO Y DE UNA SOLA LÍNEA */}
-            <div className="absolute top-4 md:top-6 left-0 right-0 z-40 px-2 md:px-6 pointer-events-none">
-                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2rem] md:rounded-[2.5rem] py-4 px-4 md:py-6 md:px-10 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out`}>
+            <div className="absolute top-4 md:top-6 xl:top-7 left-0 right-0 z-40 px-2 md:px-6 xl:px-8 pointer-events-none">
+                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2rem] md:rounded-[2.5rem] py-4 px-4 md:py-6 md:px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out`}>
 
                     <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none"></div>
 
@@ -49,7 +48,7 @@ const GlassViewLayout = ({
                                             )}
                                         </div>
                                     )}
-                                    <h2 className="font-semibold text-[18px] md:text-[24px] text-slate-900 tracking-tight">
+                                    <h2 className="font-semibold text-[18px] md:text-[24px] xl:text-[26px] 2xl:text-[28px] text-slate-900 tracking-tight">
                                         {title}
                                     </h2>
                                 </div>
@@ -68,14 +67,14 @@ const GlassViewLayout = ({
             {/* CONTENEDOR DE SCROLL Y MÁSCARA */}
             <div
                 ref={scrollContainerRef}
-                className={`absolute inset-0 w-full h-full z-10 px-2 md:px-6 pb-10 [&::-webkit-scrollbar]:hidden ${fixedScrollMode ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scroll-smooth'
+                className={`absolute inset-0 w-full h-full z-10 px-2 md:px-6 xl:px-8 pb-10 [&::-webkit-scrollbar]:hidden ${fixedScrollMode ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain scroll-smooth'
                     }`} style={{
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, transparent 80px, black 80px, black 100%)',
                         maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 80px, black 80px, black 100%)'
                     }}
                 onScroll={handleInternalScroll}
             >
-                <div className="w-full shrink-0 pointer-events-none h-[140px] md:h-[190px]"></div>
+                <div className="w-full shrink-0 pointer-events-none h-[140px] md:h-[190px] xl:h-[210px]"></div>
 
                 {/* ✅ LÓGICA DE FONDO: Si es transparente, no ponemos el cristal blanco, solo mostramos el children */}
                 <div className={`group/table flex flex-col transition-all duration-500 ease-out transform-gpu ${transparentBody

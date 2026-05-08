@@ -104,7 +104,15 @@ html, body, #root {
   overscroll-behavior: none;
 }
 
-/* Escala proporcional para pantallas más pequeñas que 1440px */
+/* Escala proporcional — el diseño base es ~1440px */
+/* Pantallas grandes: escalar hacia arriba */
+@media screen and (min-width: 1920px) {
+  #root { zoom: 1.33; }
+}
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  #root { zoom: 1.15; }
+}
+/* Pantallas pequeñas: escalar hacia abajo */
 @media screen and (max-width: 1439px) and (min-width: 1281px) {
   #root { zoom: 0.9; }
 }

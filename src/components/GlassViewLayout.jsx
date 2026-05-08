@@ -27,8 +27,8 @@ const GlassViewLayout = ({
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none transition-all duration-500">
 
             {/* HEADER COMPACTO Y DE UNA SOLA LÍNEA */}
-            <div className="absolute top-4 md:top-6 xl:top-7 left-0 right-0 z-40 px-2 md:px-6 xl:px-8 pointer-events-none">
-                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2rem] md:rounded-[2.5rem] py-4 px-4 md:py-6 md:px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out`}>
+            <div className="absolute top-2 md:top-6 xl:top-7 left-0 right-0 z-40 px-2 md:px-6 xl:px-8 pointer-events-none">
+                <div className={`group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[1.5rem] md:rounded-[2.5rem] py-2.5 px-3 md:py-6 md:px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out`}>
 
                     <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none"></div>
 
@@ -38,8 +38,8 @@ const GlassViewLayout = ({
                             {headerLeft ? headerLeft : (
                                 <div className="flex items-center gap-3">
                                     {Icon && (
-                                        <div className="bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,122,255,0.25)] p-2 md:p-2.5 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer z-10">
-                                            <Icon className="text-white" size={20} strokeWidth={1.5} />
+                                        <div className="bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,122,255,0.25)] p-1.5 md:p-2.5 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer z-10">
+                                            <Icon className="text-white" size={17} strokeWidth={1.5} />
                                             {liveIndicator && (
                                                 <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 md:h-3 md:w-3">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -48,7 +48,7 @@ const GlassViewLayout = ({
                                             )}
                                         </div>
                                     )}
-                                    <h2 className="font-semibold text-[18px] md:text-[24px] xl:text-[26px] 2xl:text-[28px] text-slate-900 tracking-tight">
+                                    <h2 className="font-semibold text-[15px] md:text-[24px] xl:text-[26px] 2xl:text-[28px] text-slate-900 tracking-tight">
                                         {title}
                                     </h2>
                                 </div>
@@ -74,7 +74,7 @@ const GlassViewLayout = ({
                     }}
                 onScroll={handleInternalScroll}
             >
-                <div className="w-full shrink-0 pointer-events-none h-[140px] md:h-[190px] xl:h-[210px]"></div>
+                <div className="w-full shrink-0 pointer-events-none h-[72px] md:h-[190px] xl:h-[210px]"></div>
 
                 {/* ✅ LÓGICA DE FONDO: Si es transparente, no ponemos el cristal blanco, solo mostramos el children */}
                 <div className={`group/table flex flex-col transition-all duration-500 ease-out transform-gpu ${transparentBody

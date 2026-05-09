@@ -3,8 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info,
-    Lock, RotateCcw, ArrowRight
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -2015,10 +2014,6 @@ export default function FacturacionView() {
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
     const searchInputRef = useRef(null);
-    const [iframePhase, setIframePhase] = useState('login'); // 'login' | 'pending' | 'ready'
-    const [iframeKey, setIframeKey] = useState(0);
-    const OSS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php';
-
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
@@ -2077,6 +2072,12 @@ export default function FacturacionView() {
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact />
                 </div>
 
+                <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap">
+                    <ExternalLink size={12} /> Admin Facturas
+                </a>
+
                 {hasSearch && (
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
@@ -2097,116 +2098,18 @@ export default function FacturacionView() {
             title="Facturación"
             liveIndicator={activeTab === 'anuladas' || activeTab === 'pendiente_mh'}
             filtersContent={filtersContent}
-            transparentBody={true}
-            fixedScrollMode={true}
         >
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 items-start w-full">
-
-                {/* ── Left: tab panels ──────────────────────────────────────── */}
-                <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden
-                                lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pb-20 relative z-10">
-                    <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
-                        <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                            <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                            <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                            <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                            <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Right: iframe Admin Facturas (solo desktop, no en no_efectivo) ── */}
-                <div className={`lg:w-[500px] xl:w-[560px] 2xl:w-[620px] shrink-0
-                                lg:h-screen lg:-mt-[180px] xl:-mt-[200px]
-                                flex-col overflow-hidden relative z-10
-                                ${activeTab === 'no_efectivo' ? 'hidden' : 'hidden lg:flex'}`}>
-                    {/* Spacer to clear floating header */}
-                    <div className="hidden lg:block h-[188px] xl:h-[208px] shrink-0" />
-                    {/* Card */}
-                    <div className="flex flex-col flex-1 overflow-hidden
-                                    rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80
-                                    bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%]
-                                    shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)]
-                                    mb-8 lg:h-auto">
-                        {/* Panel header */}
-                        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100/70 bg-white/30 shrink-0">
-                            <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] transition-colors ${iframePhase === 'ready' ? 'bg-emerald-400 shadow-emerald-400/60' : 'bg-amber-400 shadow-amber-400/60'}`} />
-                            <span className="text-[12px] font-black text-slate-700 tracking-tight">Admin Facturas · OSS</span>
-                            {iframePhase === 'ready' && (
-                                <button onClick={() => setIframeKey(k => k + 1)} title="Recargar"
-                                    className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all">
-                                    <RotateCcw size={12} strokeWidth={2.5} />
-                                </button>
-                            )}
-                            <a href={OSS_URL} target="_blank" rel="noopener noreferrer" title="Abrir en pestaña nueva"
-                               className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all ${iframePhase === 'ready' ? '' : 'ml-auto'}`}>
-                                <ExternalLink size={12} strokeWidth={2.5} />
-                            </a>
-                        </div>
-
-                        {/* Overlay: login required */}
-                        {iframePhase === 'login' && (
-                            <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
-                                <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center shadow-sm">
-                                    <Lock size={22} className="text-amber-500" strokeWidth={1.5} />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <p className="text-[14px] font-black text-slate-700 tracking-tight">Sesión requerida</p>
-                                    <p className="text-[12px] text-slate-400 leading-relaxed max-w-[220px]">
-                                        Abre OSS en una nueva pestaña, inicia sesión y vuelve aquí.
-                                    </p>
-                                </div>
-                                <a href={OSS_URL} target="_blank" rel="noopener noreferrer"
-                                   onClick={() => setIframePhase('pending')}
-                                   className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 active:scale-95">
-                                    Abrir OSS <ArrowRight size={13} strokeWidth={2.5} />
-                                </a>
-                            </div>
-                        )}
-
-                        {/* Overlay: waiting for user to come back */}
-                        {iframePhase === 'pending' && (
-                            <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
-                                <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center shadow-sm">
-                                    <CheckCircle2 size={22} className="text-indigo-500" strokeWidth={1.5} />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <p className="text-[14px] font-black text-slate-700 tracking-tight">¿Ya iniciaste sesión?</p>
-                                    <p className="text-[12px] text-slate-400 leading-relaxed max-w-[220px]">
-                                        Una vez dentro de OSS, carga el sistema aquí.
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2.5">
-                                    <button onClick={() => setIframePhase('login')}
-                                        className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-500 rounded-full text-[11px] font-black uppercase tracking-widest border border-slate-200 shadow-sm transition-all hover:-translate-y-0.5 active:scale-95">
-                                        Volver
-                                    </button>
-                                    <button onClick={() => { setIframeKey(k => k + 1); setIframePhase('ready'); }}
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 active:scale-95">
-                                        Cargar sistema <ArrowRight size={13} strokeWidth={2.5} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* iframe: only mounted when ready */}
-                        {iframePhase === 'ready' && (
-                            <iframe
-                                key={iframeKey}
-                                src={OSS_URL}
-                                title="Admin Facturas OSS"
-                                className="flex-1 w-full border-0 min-h-0"
-                            />
-                        )}
-                    </div>
-                </div>
-
+            <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
+                <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+            </div>
+            <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
+                <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+            </div>
+            <div className={activeTab === 'saltos' ? '' : 'hidden'}>
+                <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
+            </div>
+            <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
+                <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
             </div>
         </GlassViewLayout>
     );

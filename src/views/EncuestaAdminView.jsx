@@ -875,7 +875,7 @@ export default function EncuestaAdminView() {
                 </div>}
 
                 {/* ══ RIGHT PANEL ═════════════════════════════════════════════════ */}
-                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
+                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
                     <div className="space-y-5 pt-4 px-3 md:px-4">
 
                         {loadingSurveys ? (

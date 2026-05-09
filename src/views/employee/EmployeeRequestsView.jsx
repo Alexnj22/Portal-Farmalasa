@@ -1138,7 +1138,7 @@ const EmployeeRequestsView = () => {
                 </div>
 
                 {/* ── PANEL DERECHO: Lista ── */}
-                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
+                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 pt-4 px-3 md:px-4 content-start">
 
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}

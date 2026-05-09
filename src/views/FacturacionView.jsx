@@ -2117,10 +2117,11 @@ export default function FacturacionView() {
                     </div>
                 </div>
 
-                {/* ── Right: iframe Admin Facturas ──────────────────────────── */}
-                <div className="w-full lg:w-[500px] xl:w-[560px] 2xl:w-[620px] shrink-0
+                {/* ── Right: iframe Admin Facturas (solo desktop, no en no_efectivo) ── */}
+                <div className={`lg:w-[500px] xl:w-[560px] 2xl:w-[620px] shrink-0
                                 lg:h-screen lg:-mt-[180px] xl:-mt-[200px]
-                                flex flex-col overflow-hidden relative z-10">
+                                flex-col overflow-hidden relative z-10
+                                ${activeTab === 'no_efectivo' ? 'hidden' : 'hidden lg:flex'}`}>
                     {/* Spacer to clear floating header */}
                     <div className="hidden lg:block h-[188px] xl:h-[208px] shrink-0" />
                     {/* Card */}

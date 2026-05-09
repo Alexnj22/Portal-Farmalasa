@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -2014,6 +2014,8 @@ export default function FacturacionView() {
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
     const searchInputRef = useRef(null);
+    const [iframeKey, setIframeKey] = useState(0);
+    const OSS_PROXY = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oss-proxy/farma_salud/admin_factura_rangos.php`;
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
@@ -2092,24 +2094,71 @@ export default function FacturacionView() {
         </div>
     );
 
+    const showIframe = activeTab !== 'no_efectivo';
+
     return (
         <GlassViewLayout
             icon={FileText}
             title="Facturación"
             liveIndicator={activeTab === 'anuladas' || activeTab === 'pendiente_mh'}
             filtersContent={filtersContent}
+            transparentBody={true}
+            fixedScrollMode={true}
         >
-            <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-            </div>
-            <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-            </div>
-            <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
-            </div>
-            <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 items-start w-full">
+
+                {/* ── Left: tab panels ──────────────────────────────────────── */}
+                <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden
+                                lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pb-20 relative z-10">
+                    <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+                        <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
+                            <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                        </div>
+                        <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
+                            <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                        </div>
+                        <div className={activeTab === 'saltos' ? '' : 'hidden'}>
+                            <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
+                        </div>
+                        <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
+                            <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Right: OSS proxy iframe (desktop only, not on no_efectivo) ── */}
+                {showIframe && (
+                    <div className="hidden lg:flex lg:w-[500px] xl:w-[560px] 2xl:w-[620px] shrink-0
+                                    lg:h-screen lg:-mt-[180px] xl:-mt-[200px]
+                                    flex-col overflow-hidden relative z-10">
+                        <div className="hidden lg:block h-[188px] xl:h-[208px] shrink-0" />
+                        <div className="flex flex-col flex-1 overflow-hidden mb-8
+                                        rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80
+                                        bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%]
+                                        shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)]">
+                            <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100/70 bg-white/30 shrink-0">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                                <span className="text-[12px] font-black text-slate-700 tracking-tight">Admin Facturas · OSS</span>
+                                <button onClick={() => setIframeKey(k => k + 1)} title="Recargar"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all">
+                                    <RotateCcw size={12} strokeWidth={2.5} />
+                                </button>
+                                <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
+                                   target="_blank" rel="noopener noreferrer" title="Abrir en pestaña nueva"
+                                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all">
+                                    <ExternalLink size={12} strokeWidth={2.5} />
+                                </a>
+                            </div>
+                            <iframe
+                                key={iframeKey}
+                                src={OSS_PROXY}
+                                title="Admin Facturas OSS"
+                                className="flex-1 w-full border-0 min-h-0"
+                            />
+                        </div>
+                    </div>
+                )}
+
             </div>
         </GlassViewLayout>
     );

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft, Sparkles, RotateCcw
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft, Sparkles, RotateCcw, Zap, Minus
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -235,19 +235,113 @@ const TABS = [
     { key: 'comentarios',label: 'Comentarios',Icon: MessageSquare },
 ];
 
+// ─── AI summary helpers ───────────────────────────────────────────────────────
+
+function parseAiSections(text) {
+    if (!text) return [];
+    const regex = /\*\*([^*]+?):\*\*/g;
+    const rawParts = [];
+    let lastEnd = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastEnd) rawParts.push({ type: 'text', content: text.slice(lastEnd, match.index).trim() });
+        rawParts.push({ type: 'header', title: match[1] });
+        lastEnd = match.index + match[0].length;
+    }
+    if (lastEnd < text.length) rawParts.push({ type: 'text', content: text.slice(lastEnd).trim() });
+
+    const sections = [];
+    let i = 0;
+    while (i < rawParts.length) {
+        if (rawParts[i].type === 'header') {
+            const content = (i + 1 < rawParts.length && rawParts[i + 1].type === 'text') ? rawParts[i + 1].content : '';
+            sections.push({ title: rawParts[i].title, content });
+            i += content ? 2 : 1;
+        } else {
+            if (rawParts[i].content) sections.push({ title: null, content: rawParts[i].content });
+            i++;
+        }
+    }
+    return sections.length ? sections : [{ title: null, content: text }];
+}
+
+function getSectionStyle(title) {
+    if (!title) return { Icon: Sparkles, color: 'text-indigo-400', dot: 'bg-indigo-400' };
+    const t = title.toLowerCase();
+    if (t.includes('recurrente') || t.includes('tema') || t.includes('idea')) return { Icon: TrendingUp, color: 'text-blue-400', dot: 'bg-blue-400' };
+    if (t.includes('valor') || t.includes('positiv') || t.includes('aspecto')) return { Icon: ThumbsUp, color: 'text-emerald-400', dot: 'bg-emerald-400' };
+    if (t.includes('friccion') || t.includes('problema') || t.includes('identif') || t.includes('riesgo')) return { Icon: AlertTriangle, color: 'text-amber-400', dot: 'bg-amber-400' };
+    if (t.includes('accion') || t.includes('acción') || t.includes('recomend')) return { Icon: Zap, color: 'text-purple-400', dot: 'bg-purple-400' };
+    return { Icon: Sparkles, color: 'text-indigo-400', dot: 'bg-indigo-400' };
+}
+
+function renderInlineBold(text) {
+    const parts = text.split(/(\*\*[^*]+?\*\*)/);
+    return parts.map((part, i) => {
+        const m = part.match(/^\*\*(.+)\*\*$/);
+        if (m) return <strong key={i} className="text-white/90 font-black">{m[1]}</strong>;
+        return part || null;
+    });
+}
+
+function renderContentItems(content) {
+    const normalized = content
+        .replace(/\s{2,}(\d+)\.\s/g, '\n$1. ')
+        .replace(/\.\s+(\d+)\.\s/g, '.\n$1. ')
+        .replace(/\s{2,}-\s/g, '\n- ')
+        .replace(/\.\s+-\s/g, '.\n- ')
+        .trim();
+    const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+    return lines.map((line, i) => {
+        const numMatch = line.match(/^(\d+)\.\s+(.+)$/);
+        const bulletMatch = line.match(/^-\s+(.+)$/);
+        if (numMatch) return (
+            <div key={i} className="flex gap-2.5 items-start">
+                <span className="shrink-0 w-4 h-4 rounded-full bg-indigo-500/25 text-indigo-300 text-[9px] font-black flex items-center justify-center mt-0.5">{numMatch[1]}</span>
+                <span className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(numMatch[2])}</span>
+            </div>
+        );
+        if (bulletMatch) {
+            const arrowIdx = bulletMatch[1].indexOf(' → ');
+            if (arrowIdx !== -1) {
+                const main = bulletMatch[1].slice(0, arrowIdx);
+                const meta = bulletMatch[1].slice(arrowIdx + 3);
+                return (
+                    <div key={i} className="flex gap-2.5 items-start">
+                        <span className="shrink-0 text-indigo-400/80 mt-1 leading-none text-[10px]">›</span>
+                        <span className="text-[11px] text-white/70 leading-relaxed">
+                            {renderInlineBold(main)}
+                            <span className="text-indigo-300/50 text-[10px]"> → {meta}</span>
+                        </span>
+                    </div>
+                );
+            }
+            return (
+                <div key={i} className="flex gap-2.5 items-start">
+                    <span className="shrink-0 text-indigo-400/80 mt-1 leading-none text-[10px]">›</span>
+                    <span className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(bulletMatch[1])}</span>
+                </div>
+            );
+        }
+        return <p key={i} className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(line)}</p>;
+    });
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function EncuestaView() {
     const navigate = useNavigate();
     const [expandedPersonIdx, setExpandedPersonIdx] = useState(null);
-    const [aiSummaries, setAiSummaries] = useState({}); // key: segment label
-    const [loadingAi, setLoadingAi] = useState({});     // key: segment label
+    const [aiSummaries, setAiSummaries] = useState({});
+    const [loadingAi, setLoadingAi] = useState({});
+    const [collapsedSummaries, setCollapsedSummaries] = useState({});
+    const [savedSummariesLoading, setSavedSummariesLoading] = useState(false);
     const [tab, setTab] = useState('resumen');
     const [expandedQ, setExpandedQ] = useState(null);
     const [expandedBloque, setExpandedBloque] = useState(null);
     const [filterSucursal, setFilterSucursal] = useState('');
     const [filterRol, setFilterRol] = useState('');
 
-    const aiAutoGenDone = useRef({});     // { [surveyId]: Set<segKey> }
+    const aiAutoGenDone = useRef({});
     const selectedSurveyIdRef = useRef(null);
 
     // ── Supabase data ──────────────────────────────────────────────────────────
@@ -323,19 +417,26 @@ export default function EncuestaView() {
     // Keep ref in sync for async operations in generateAiSummary
     useEffect(() => { selectedSurveyIdRef.current = selectedSurveyId; }, [selectedSurveyId]);
 
-    // Load saved AI summaries when survey changes
+    // Load saved AI summaries from DB when survey changes
     useEffect(() => {
         if (!selectedSurveyId) return;
-        const survey = surveys.find(s => s.id === selectedSurveyId);
-        const saved = survey?.ai_summaries || {};
-        setAiSummaries(saved);
+        setAiSummaries({});
         setLoadingAi({});
-        aiAutoGenDone.current[selectedSurveyId] = new Set(Object.keys(saved));
-    }, [selectedSurveyId]); // intentionally omit surveys — only fire on survey switch
+        setCollapsedSummaries({});
+        aiAutoGenDone.current[selectedSurveyId] = new Set();
+        setSavedSummariesLoading(true);
+        supabase.from('surveys').select('ai_summaries').eq('id', selectedSurveyId).single()
+            .then(({ data }) => {
+                const saved = data?.ai_summaries || {};
+                setAiSummaries(saved);
+                aiAutoGenDone.current[selectedSurveyId] = new Set(Object.keys(saved));
+                setSavedSummariesLoading(false);
+            });
+    }, [selectedSurveyId]);
 
-    // Auto-generate missing AI summaries when comentarios tab opens
+    // Auto-generate missing summaries only after saved summaries are loaded
     useEffect(() => {
-        if (tab !== 'comentarios' || loading || !RESPUESTAS.length || !selectedSurveyId) return;
+        if (tab !== 'comentarios' || loading || !RESPUESTAS.length || !selectedSurveyId || savedSummariesLoading) return;
         const done = aiAutoGenDone.current[selectedSurveyId] || new Set();
         if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = done;
         const withComment = RESPUESTAS.filter(r => r.comentario?.trim() && r.comentario !== 'null');
@@ -350,7 +451,7 @@ export default function EncuestaView() {
                 generateAiSummary(seg.comments, seg.key);
             }
         });
-    }, [tab, loading, RESPUESTAS, selectedSurveyId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [tab, loading, RESPUESTAS, selectedSurveyId, savedSummariesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 
@@ -440,17 +541,13 @@ export default function EncuestaView() {
             });
             if (error) throw error;
             const summary = data.aiSummary || 'Sin respuesta.';
-            setAiSummaries(prev => {
-                const updated = { ...prev, [segment]: summary };
-                if (surveyId) {
-                    supabase.from('surveys').update({ ai_summaries: updated }).eq('id', surveyId);
-                }
-                return updated;
-            });
+            setAiSummaries(prev => ({ ...prev, [segment]: summary }));
             if (surveyId) {
-                setSurveys(prev => prev.map(s =>
-                    s.id === surveyId ? { ...s, ai_summaries: { ...(s.ai_summaries || {}), [segment]: summary } } : s
-                ));
+                // Fetch current saved summaries, merge, and save — avoids losing concurrent segments
+                const { data: current } = await supabase
+                    .from('surveys').select('ai_summaries').eq('id', surveyId).single();
+                const merged = { ...(current?.ai_summaries || {}), [segment]: summary };
+                await supabase.from('surveys').update({ ai_summaries: merged }).eq('id', surveyId);
             }
         } catch (e) {
             setAiSummaries(p => ({ ...p, [segment]: 'Error al generar resumen.' }));
@@ -1245,67 +1342,107 @@ export default function EncuestaView() {
                     return (
                     <div className="space-y-4">
                         {/* AI summary segments */}
-                        <div className="rounded-2xl border border-slate-100 bg-white/60 backdrop-blur-xl shadow-sm overflow-hidden">
-                            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100/80 bg-white/40">
-                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_10px_rgba(139,92,246,0.35)]">
-                                    <Sparkles size={11} className="text-white" />
-                                </div>
-                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Resumen IA por segmento</span>
-                            </div>
-                            <div className="divide-y divide-slate-100/60">
-                                {segments.map(seg => (
-                                    <div key={seg.key}>
-                                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/40">
-                                            <span className="text-[11px] font-black text-slate-700">
-                                                {seg.label}
-                                                <span className="ml-1.5 font-normal text-slate-400">({seg.comments.length} comentarios)</span>
-                                            </span>
-                                            {aiSummaries[seg.key] && !loadingAi[seg.key] && (
-                                                <button
-                                                    onClick={() => {
-                                                        if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = new Set();
-                                                        aiAutoGenDone.current[selectedSurveyId].delete(seg.key);
-                                                        setAiSummaries(p => { const u = { ...p }; delete u[seg.key]; return u; });
-                                                        generateAiSummary(seg.comments, seg.key);
-                                                    }}
-                                                    className="flex items-center gap-1 text-[9px] text-slate-400 hover:text-indigo-500 transition-colors">
-                                                    <RotateCcw size={9} strokeWidth={2.5} /> Regenerar
-                                                </button>
-                                            )}
+                        {segments.map(seg => {
+                            const isCollapsed = !!collapsedSummaries[seg.key];
+                            const summary = aiSummaries[seg.key];
+                            const isLoading = loadingAi[seg.key];
+                            const sections = summary ? parseAiSections(summary) : [];
+
+                            return (
+                            <div key={seg.key} className="rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-white/10">
+                                {/* Segment header bar */}
+                                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 to-[#1e1b4b] border-b border-white/10">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.4)]">
+                                            <Sparkles size={10} className="text-white" />
                                         </div>
-                                        {loadingAi[seg.key] ? (
-                                            <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-4">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                                                    <span className="text-[11px] text-indigo-300/70 font-medium">Analizando comentarios…</span>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <div className="h-1.5 rounded-full bg-white/10 w-full animate-pulse" />
-                                                    <div className="h-1.5 rounded-full bg-white/10 w-4/5 animate-pulse" style={{ animationDelay: '0.15s' }} />
-                                                    <div className="h-1.5 rounded-full bg-white/10 w-3/5 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                                                </div>
-                                            </div>
-                                        ) : aiSummaries[seg.key] ? (
-                                            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-4">
-                                                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-                                                <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-                                                <p className="relative text-[11px] text-white/75 leading-relaxed whitespace-pre-line">
-                                                    {aiSummaries[seg.key]}
-                                                </p>
-                                            </div>
-                                        ) : seg.comments.length > 0 ? (
-                                            <div className="px-4 py-3 bg-slate-50/40">
-                                                <p className="text-[10px] text-slate-400 italic">Generando resumen automáticamente…</p>
-                                            </div>
-                                        ) : (
-                                            <div className="px-4 py-3 bg-slate-50/40">
-                                                <p className="text-[10px] text-slate-300 italic">Sin comentarios en este segmento.</p>
-                                            </div>
+                                        <span className="text-[12px] font-black text-white/90 tracking-tight">
+                                            Resumen IA <span className="text-white/40 font-normal">·</span> <span className="text-indigo-300/80">{seg.label}</span>
+                                        </span>
+                                        <span className="text-[10px] text-white/30 font-medium">{seg.comments.length} comentarios</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        {summary && !isLoading && (
+                                            <button
+                                                onClick={() => {
+                                                    if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = new Set();
+                                                    aiAutoGenDone.current[selectedSurveyId].delete(seg.key);
+                                                    setAiSummaries(p => { const u = { ...p }; delete u[seg.key]; return u; });
+                                                    generateAiSummary(seg.comments, seg.key);
+                                                }}
+                                                title="Regenerar"
+                                                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-all">
+                                                <RotateCcw size={11} strokeWidth={2.5} />
+                                            </button>
+                                        )}
+                                        {summary && !isLoading && (
+                                            <button
+                                                onClick={() => setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
+                                                title={isCollapsed ? 'Expandir' : 'Minimizar'}
+                                                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-all">
+                                                {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
+                                            </button>
                                         )}
                                     </div>
-                                ))}
+                                </div>
+
+                                {/* Content area */}
+                                {isLoading ? (
+                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-5">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <Loader2 size={13} className="animate-spin text-indigo-400 shrink-0" />
+                                            <span className="text-[12px] text-indigo-300/70 font-medium">Analizando comentarios con IA…</span>
+                                        </div>
+                                        <div className="space-y-2.5">
+                                            {[1, 0.8, 0.6, 0.75, 0.5].map((w, i) => (
+                                                <div key={i} className="h-1.5 rounded-full bg-white/10 animate-pulse" style={{ width: `${w * 100}%`, animationDelay: `${i * 0.1}s` }} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : summary && !isCollapsed ? (
+                                    <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-5">
+                                        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-purple-500/8 blur-3xl pointer-events-none" />
+                                        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-500/8 blur-3xl pointer-events-none" />
+                                        <div className="relative space-y-4">
+                                            {sections.map((sec, si) => {
+                                                const { Icon, color, dot } = getSectionStyle(sec.title);
+                                                return (
+                                                    <div key={si} className="space-y-2">
+                                                        {sec.title && (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className={`w-1 h-4 rounded-full ${dot} opacity-70`} />
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest ${color}`}>{sec.title}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="space-y-1.5 pl-3">
+                                                            {renderContentItems(sec.content)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : summary && isCollapsed ? (
+                                    <div className="bg-gradient-to-r from-slate-900 to-[#1e1b4b] px-5 py-3">
+                                        <p className="text-[10px] text-white/40 truncate">
+                                            {sections[0]?.title
+                                                ? <><span className="text-indigo-300/60 font-black uppercase text-[9px]">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
+                                                : summary.replace(/\*\*/g, '').slice(0, 140) + '…'
+                                            }
+                                        </p>
+                                    </div>
+                                ) : seg.comments.length === 0 ? (
+                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] px-5 py-4">
+                                        <p className="text-[11px] text-white/30 italic">Sin comentarios en este segmento.</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] px-5 py-4">
+                                        <p className="text-[11px] text-white/40 italic">Cargando resumen guardado…</p>
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                            );
+                        })}
 
                         {/* Individual comments */}
                         <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 px-1">{withComment.length} comentarios individuales</h3>

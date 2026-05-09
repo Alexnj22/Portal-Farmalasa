@@ -21,17 +21,18 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
-const ROW_H    = 120; // px per row unit
-const GAP_PX   = 16;  // gap-4
-const GRID_COLS = 4;  // fixed 4-column grid
+const ROW_H      = 120; // px per row unit
+const GAP_PX     = 16;  // gap-4
+const GRID_COLS  = 4;   // desktop columns
+const MOBILE_COLS = 2;  // mobile columns
 
 // Auto-place widgets using CSS Grid auto-placement algorithm.
 // Returns { [id]: { col, row } } (1-indexed).
-function autoPlaceOrder(order, sizes) {
+function autoPlaceOrder(order, sizes, gridCols = GRID_COLS) {
   const occ = new Set();
   const result = {};
   const fits = (col, row, cols, rows) => {
-    if (col + cols - 1 > GRID_COLS) return false;
+    if (col + cols - 1 > gridCols) return false;
     for (let c = col; c < col + cols; c++)
       for (let r = row; r < row + rows; r++)
         if (occ.has(`${c},${r}`)) return false;
@@ -45,11 +46,11 @@ function autoPlaceOrder(order, sizes) {
   };
   for (const id of order) {
     const def = WIDGET_SIZES[id] || { minCols: 1, minRows: 1 };
-    const cols = Math.max(sizes[id]?.cols ?? def.minCols, 1);
+    const cols = Math.min(Math.max(sizes[id]?.cols ?? def.minCols, 1), gridCols);
     const rows = Math.max(sizes[id]?.rows ?? def.minRows, 1);
     let placed = false;
     outer: for (let r = 1; r <= 100; r++) {
-      for (let c = 1; c <= GRID_COLS; c++) {
+      for (let c = 1; c <= gridCols; c++) {
         if (fits(c, r, cols, rows)) { stamp(c, r, cols, rows, id); placed = true; break outer; }
       }
     }
@@ -82,8 +83,8 @@ const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests'
 
 // Resolve collisions after a drop: dragged widget wins its target position,
 // displaced widgets find their next free slot (top-left priority, no cascades).
-function resolveCollisions(dragId, targetCol, targetRow, layout, sizes) {
-  const eCols = sizes[dragId]?.cols ?? getWidgetSize(dragId).minCols;
+function resolveCollisions(dragId, targetCol, targetRow, layout, sizes, gridCols = GRID_COLS) {
+  const eCols = Math.min(sizes[dragId]?.cols ?? getWidgetSize(dragId).minCols, gridCols);
   const eRows = sizes[dragId]?.rows ?? getWidgetSize(dragId).minRows;
   const occ = new Set();
   const stamp = (col, row, cols, rows) => {
@@ -91,7 +92,7 @@ function resolveCollisions(dragId, targetCol, targetRow, layout, sizes) {
       for (let r = row; r < row + rows; r++) occ.add(`${c},${r}`);
   };
   const fits = (col, row, cols, rows) => {
-    if (col + cols - 1 > GRID_COLS) return false;
+    if (col + cols - 1 > gridCols) return false;
     for (let c = col; c < col + cols; c++)
       for (let r = row; r < row + rows; r++) if (occ.has(`${c},${r}`)) return false;
     return true;
@@ -104,7 +105,7 @@ function resolveCollisions(dragId, targetCol, targetRow, layout, sizes) {
     .filter(id => id !== dragId)
     .sort((a, b) => { const pa = layout[a], pb = layout[b]; return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col; });
   for (const id of others) {
-    const wc = sizes[id]?.cols ?? getWidgetSize(id).minCols;
+    const wc = Math.min(sizes[id]?.cols ?? getWidgetSize(id).minCols, gridCols);
     const wr = sizes[id]?.rows ?? getWidgetSize(id).minRows;
     const orig = layout[id];
     if (fits(orig.col, orig.row, wc, wr)) {
@@ -113,7 +114,7 @@ function resolveCollisions(dragId, targetCol, targetRow, layout, sizes) {
     } else {
       let placed = false;
       outer: for (let r = 1; r <= 100; r++) {
-        for (let c = 1; c <= GRID_COLS; c++) {
+        for (let c = 1; c <= gridCols; c++) {
           if (fits(c, r, wc, wr)) { stamp(c, r, wc, wr); resolved[id] = { col: c, row: r }; placed = true; break outer; }
         }
       }
@@ -303,26 +304,86 @@ const DashboardView = ({ openModal }) => {
     return {};
   });
 
-  // Always allow any size 1–4 (no minimums enforced at runtime)
-  const getEffectiveCols = (id) => widgetSizes[id]?.cols ?? getWidgetSize(id).minCols;
-  const getEffectiveRows = (id) => widgetSizes[id]?.rows ?? getWidgetSize(id).minRows;
+  // ── Mobile detection ────────────────────────────────────────────────────────
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+  const isMobileRef = useRef(isMobile);
+  useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  const activeCols = isMobile ? MOBILE_COLS : GRID_COLS;
+  const activeColsRef = useRef(activeCols);
+  useEffect(() => { activeColsRef.current = activeCols; }, [activeCols]);
+
+  // ── Mobile layout/sizes (separate from desktop) ─────────────────────────────
+  const [mobileLayout, setMobileLayout] = useState(() => {
+    try { const s = localStorage.getItem(`portal_dash_mobile_layout_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
+    return {};
+  });
+  const [mobileSizes, setMobileSizes] = useState(() => {
+    try { const s = localStorage.getItem(`portal_dash_mobile_sizes_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
+    return {};
+  });
+  const mobileLayoutRef = useRef(mobileLayout);
+  const mobileSizesRef  = useRef(mobileSizes);
+  useEffect(() => { mobileLayoutRef.current = mobileLayout; }, [mobileLayout]);
+  useEffect(() => { mobileSizesRef.current  = mobileSizes;  }, [mobileSizes]);
+
+  // Active layout: mobile layout (auto-placed from desktop order if first time) or desktop
+  const activeLayout = useMemo(() => {
+    if (!isMobile) return widgetLayout;
+    if (mobileLayout && Object.keys(mobileLayout).length) return mobileLayout;
+    const order = Object.keys(widgetLayout).sort((a, b) => {
+      const pa = widgetLayout[a], pb = widgetLayout[b];
+      return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
+    });
+    return autoPlaceOrder(order, mobileSizes, MOBILE_COLS);
+  }, [isMobile, widgetLayout, mobileLayout, mobileSizes]);
+
+  const activeSizes  = isMobile ? mobileSizes  : widgetSizes;
+
+  // Active cols clamped for effective size
+  const getEffectiveCols = (id) => Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols);
+  const getEffectiveRows = (id) => activeSizes[id]?.rows ?? getWidgetSize(id).minRows;
 
   const updateWidgetSize = useCallback((id, dim, val) => {
-    // Build new sizes first (using ref so we don't need sizes in deps)
-    const newSizes = { ...widgetSizesRef.current, [id]: { ...(widgetSizesRef.current[id]||{}), [dim]: val } };
-    setWidgetSizes(newSizes);
-    try { localStorage.setItem(`portal_dash_sizes_${user?.id||'guest'}`, JSON.stringify(newSizes)); } catch {}
+    const isM   = isMobileRef.current;
+    const cols  = activeColsRef.current;
+    const sizesRef  = isM ? mobileSizesRef  : widgetSizesRef;
+    const layoutRef = isM ? mobileLayoutRef : widgetLayoutRef;
+    const setSizes  = isM ? setMobileSizes  : setWidgetSizes;
+    const setLayout = isM ? setMobileLayout : setWidgetLayout;
+    const lsLayoutKey = isM
+      ? `portal_dash_mobile_layout_${user?.id||'guest'}`
+      : `portal_dash_layout_${user?.id||'guest'}`;
+    const lsSizesKey = isM
+      ? `portal_dash_mobile_sizes_${user?.id||'guest'}`
+      : `portal_dash_sizes_${user?.id||'guest'}`;
 
-    // Resize can cause overlaps — resolve exactly like a drop: resized widget wins its cell
-    const currentLayout = widgetLayoutRef.current;
-    const pos = currentLayout[id];
+    const newSizes = { ...sizesRef.current, [id]: { ...(sizesRef.current[id]||{}), [dim]: val } };
+    setSizes(newSizes);
+    try { localStorage.setItem(lsSizesKey, JSON.stringify(newSizes)); } catch {}
+
+    const currentLayout = layoutRef.current;
+    let pos = currentLayout[id];
     if (pos) {
-      const newLayout = resolveCollisions(id, pos.col, pos.row, currentLayout, newSizes);
+      let layoutForResolve = currentLayout;
+      // Fix: if wider cols would overflow grid, shift widget left first
+      if (dim === 'cols') {
+        const clampedCol = Math.min(pos.col, cols - val + 1);
+        if (clampedCol < pos.col) {
+          layoutForResolve = { ...currentLayout, [id]: { ...pos, col: clampedCol } };
+          pos = layoutForResolve[id];
+        }
+      }
+      const newLayout = resolveCollisions(id, pos.col, pos.row, layoutForResolve, newSizes, cols);
       const movedIds = Object.keys(newLayout).filter(wid =>
         newLayout[wid].col !== currentLayout[wid]?.col || newLayout[wid].row !== currentLayout[wid]?.row
       );
-      setWidgetLayout(newLayout);
-      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+      setLayout(newLayout);
+      try { localStorage.setItem(lsLayoutKey, JSON.stringify(newLayout)); } catch {}
       if (movedIds.length) {
         setBouncingIds(new Set(movedIds));
         setTimeout(() => setBouncingIds(new Set()), 700);
@@ -341,7 +402,7 @@ const DashboardView = ({ openModal }) => {
     if (!user?.id) return;
     setPrefsReady(false); // reset while loading so save effect won't fire mid-fetch
     supabase.from('user_dashboard_prefs')
-      .select('layout, sizes, widgets')
+      .select('layout, sizes, widgets, mobile_layout, mobile_sizes')
       .eq('user_id', user.id)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -367,6 +428,14 @@ const DashboardView = ({ openModal }) => {
             setWidgetConfig(data.widgets);
             try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
           }
+          if (data.mobile_layout && Object.keys(data.mobile_layout).length) {
+            setMobileLayout(data.mobile_layout);
+            try { localStorage.setItem(`portal_dash_mobile_layout_${user.id}`, JSON.stringify(data.mobile_layout)); } catch {}
+          }
+          if (data.mobile_sizes && Object.keys(data.mobile_sizes).length) {
+            setMobileSizes(data.mobile_sizes);
+            try { localStorage.setItem(`portal_dash_mobile_sizes_${user.id}`, JSON.stringify(data.mobile_sizes)); } catch {}
+          }
         }
         setPrefsReady(true); // flip → triggers save effect below to persist current state
       });
@@ -378,14 +447,16 @@ const DashboardView = ({ openModal }) => {
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       supabase.from('user_dashboard_prefs').upsert(
-        { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig, updated_at: new Date().toISOString() },
+        { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig,
+          mobile_layout: mobileLayout, mobile_sizes: mobileSizes,
+          updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
       ).then(({ error }) => {
         if (error) console.error('[dash prefs save]', error);
       });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
-  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bounce animation tracking ──────────────────────────────────────────────
   const [bouncingIds, setBouncingIds] = useState(new Set());
@@ -408,6 +479,11 @@ const DashboardView = ({ openModal }) => {
   const widgetSizesRef  = useRef(widgetSizes);
   useEffect(() => { widgetLayoutRef.current = widgetLayout; }, [widgetLayout]);
   useEffect(() => { widgetSizesRef.current  = widgetSizes;  }, [widgetSizes]);
+  // Active refs always point to the right layout/sizes for current breakpoint
+  const activeLayoutRef = useRef(activeLayout);
+  const activeSizesRef  = useRef(activeSizes);
+  useEffect(() => { activeLayoutRef.current = activeLayout; }, [activeLayout]);
+  useEffect(() => { activeSizesRef.current  = activeSizes;  }, [activeSizes]);
 
   const [dndActive, setDndActive] = useState(null);
   const [dndSnap,   setDndSnap]   = useState(null); // { col, row, valid }
@@ -425,22 +501,23 @@ const DashboardView = ({ openModal }) => {
 
     const computeSnap = (mouseX, mouseY) => {
       if (!gridRef.current) return null;
+      const gc    = activeColsRef.current;
       const rect  = gridRef.current.getBoundingClientRect();
-      const cellW = (rect.width + GAP_PX) / GRID_COLS;
+      const cellW = (rect.width + GAP_PX) / gc;
       const cellH = ROW_H + GAP_PX;
       const relX  = mouseX - rect.left;
       const relY  = mouseY - rect.top;
-      const eCols = widgetSizesRef.current[id]?.cols ?? getWidgetSize(id).minCols;
-      const eRows = widgetSizesRef.current[id]?.rows ?? getWidgetSize(id).minRows;
-      const col   = Math.max(1, Math.min(GRID_COLS - eCols + 1, Math.floor(relX / cellW) + 1));
+      const eCols = Math.min(activeSizesRef.current[id]?.cols ?? getWidgetSize(id).minCols, gc);
+      const eRows = activeSizesRef.current[id]?.rows ?? getWidgetSize(id).minRows;
+      const col   = Math.max(1, Math.min(gc - eCols + 1, Math.floor(relX / cellW) + 1));
       const row   = Math.max(1, Math.floor(relY / cellH) + 1);
       // Collision check — skip self
-      const layout = widgetLayoutRef.current;
-      const sizes  = widgetSizesRef.current;
+      const layout = activeLayoutRef.current;
+      const sizes  = activeSizesRef.current;
       let valid = true;
       for (const [wid, pos] of Object.entries(layout)) {
         if (wid === id) continue;
-        const wc = sizes[wid]?.cols ?? getWidgetSize(wid).minCols;
+        const wc = Math.min(sizes[wid]?.cols ?? getWidgetSize(wid).minCols, gc);
         const wr = sizes[wid]?.rows ?? getWidgetSize(wid).minRows;
         if (col < pos.col + wc && col + eCols > pos.col && row < pos.row + wr && row + eRows > pos.row) {
           valid = false; break;
@@ -466,13 +543,20 @@ const DashboardView = ({ openModal }) => {
       const { active, snap, started } = dndRef.current;
       if (started && active && snap) {
         // Always resolve — red zones push displaced widgets out of the way
-        const newLayout = resolveCollisions(active, snap.col, snap.row, widgetLayoutRef.current, widgetSizesRef.current);
-        const prev = widgetLayoutRef.current;
+        const gc = activeColsRef.current;
+        const isM = isMobileRef.current;
+        const newLayout = resolveCollisions(active, snap.col, snap.row, activeLayoutRef.current, activeSizesRef.current, gc);
+        const prev = activeLayoutRef.current;
         const movedIds = Object.keys(newLayout).filter(id =>
           newLayout[id].col !== prev[id]?.col || newLayout[id].row !== prev[id]?.row
         );
-        setWidgetLayout(newLayout);
-        try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+        if (isM) {
+          setMobileLayout(newLayout);
+          try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+        } else {
+          setWidgetLayout(newLayout);
+          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+        }
         // Spring-bounce the widgets that moved
         if (movedIds.length) {
           setBouncingIds(new Set(movedIds));
@@ -729,7 +813,7 @@ const DashboardView = ({ openModal }) => {
     const { label } = getWidgetSize(id);
     const eCols = getEffectiveCols(id);
     const eRows = getEffectiveRows(id);
-    const pos   = widgetLayout[id] || { col: 1, row: 1 };
+    const pos   = activeLayout[id] || { col: 1, row: 1 };
     const isActive     = dndActive === id;
     const isBouncing   = bouncingIds.has(id);
     const isResizeOpen = resizeOpenId === id;
@@ -779,7 +863,7 @@ const DashboardView = ({ openModal }) => {
               <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-150">
                 <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl px-3 py-2.5 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
                   <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-0.5">W</span>
-                  {[1,2,3,4].map(n => (
+                  {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
                       className={`w-6 h-6 rounded-full text-[10px] font-black transition-all active:scale-90 ${n === eCols ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
@@ -1212,7 +1296,7 @@ const DashboardView = ({ openModal }) => {
   };
 
   // ── Build widget list from explicit positions ──────────────────────────────
-  const buildWidgetList = () => Object.keys(widgetLayout).map(renderWidget);
+  const buildWidgetList = () => Object.keys(activeLayout).map(renderWidget);
 
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
@@ -1265,10 +1349,10 @@ const DashboardView = ({ openModal }) => {
           </div>
         )}
 
-        {/* Main widget grid — explicit positions, fixed 4 cols */}
+        {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div
           ref={gridRef}
-          className="grid grid-cols-4 gap-4 relative min-w-[700px]"
+          className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
           style={{ gridAutoRows: `${ROW_H}px` }}
         >
           {buildWidgetList()}

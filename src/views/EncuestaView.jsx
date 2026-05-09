@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft, Sparkles
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft, Sparkles, RotateCcw
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -247,6 +247,9 @@ export default function EncuestaView() {
     const [filterSucursal, setFilterSucursal] = useState('');
     const [filterRol, setFilterRol] = useState('');
 
+    const aiAutoGenDone = useRef({});     // { [surveyId]: Set<segKey> }
+    const selectedSurveyIdRef = useRef(null);
+
     // ── Supabase data ──────────────────────────────────────────────────────────
     const [surveys, setSurveys] = useState([]);
     const [selectedSurveyId, setSelectedSurveyId] = useState(null);
@@ -317,6 +320,38 @@ export default function EncuestaView() {
         });
     }, [selectedSurveyId]);
 
+    // Keep ref in sync for async operations in generateAiSummary
+    useEffect(() => { selectedSurveyIdRef.current = selectedSurveyId; }, [selectedSurveyId]);
+
+    // Load saved AI summaries when survey changes
+    useEffect(() => {
+        if (!selectedSurveyId) return;
+        const survey = surveys.find(s => s.id === selectedSurveyId);
+        const saved = survey?.ai_summaries || {};
+        setAiSummaries(saved);
+        setLoadingAi({});
+        aiAutoGenDone.current[selectedSurveyId] = new Set(Object.keys(saved));
+    }, [selectedSurveyId]); // intentionally omit surveys — only fire on survey switch
+
+    // Auto-generate missing AI summaries when comentarios tab opens
+    useEffect(() => {
+        if (tab !== 'comentarios' || loading || !RESPUESTAS.length || !selectedSurveyId) return;
+        const done = aiAutoGenDone.current[selectedSurveyId] || new Set();
+        if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = done;
+        const withComment = RESPUESTAS.filter(r => r.comentario?.trim() && r.comentario !== 'null');
+        const segs = [
+            { key: 'General',        comments: withComment.map(r => ({ texto: r.comentario, isJefe: r.isJefe, sucursal: r.sucursal })) },
+            { key: 'Jefes',         comments: withComment.filter(r => r.isJefe).map(r => ({ texto: r.comentario, isJefe: true, sucursal: r.sucursal })) },
+            { key: 'Colaboradores', comments: withComment.filter(r => !r.isJefe).map(r => ({ texto: r.comentario, isJefe: false, sucursal: r.sucursal })) },
+        ];
+        segs.forEach(seg => {
+            if (!done.has(seg.key) && seg.comments.length > 0) {
+                done.add(seg.key);
+                generateAiSummary(seg.comments, seg.key);
+            }
+        });
+    }, [tab, loading, RESPUESTAS, selectedSurveyId]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 
     const invertedIndices = useMemo(
@@ -336,6 +371,16 @@ export default function EncuestaView() {
         if (filterRol === 'colab') r = r.filter(x => !x.isJefe);
         return r;
     }, [filterSucursal, filterRol, RESPUESTAS]);
+
+    const personasBySucursal = useMemo(() => {
+        const map = {};
+        filteredRows.forEach(row => {
+            const k = row.sucursal || 'Sin sucursal';
+            if (!map[k]) map[k] = [];
+            map[k].push(row);
+        });
+        return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+    }, [filteredRows]);
 
     const bloquesScores = useMemo(() =>
         BLOQUES.map(b => ({ ...b, score: blockScore(filteredRows, b.indices, invertedIndices) })),
@@ -387,16 +432,26 @@ export default function EncuestaView() {
 
     const generateAiSummary = async (comments, segment) => {
         if (!comments.length) return;
+        const surveyId = selectedSurveyIdRef.current;
         setLoadingAi(p => ({ ...p, [segment]: true }));
         try {
             const { data, error } = await supabase.functions.invoke('saly-ai', {
-                body: {
-                    action: 'analyze-survey-comments',
-                    payload: { comments, segment },
-                },
+                body: { action: 'analyze-survey-comments', payload: { comments, segment } },
             });
             if (error) throw error;
-            setAiSummaries(p => ({ ...p, [segment]: data.aiSummary || 'Sin respuesta.' }));
+            const summary = data.aiSummary || 'Sin respuesta.';
+            setAiSummaries(prev => {
+                const updated = { ...prev, [segment]: summary };
+                if (surveyId) {
+                    supabase.from('surveys').update({ ai_summaries: updated }).eq('id', surveyId);
+                }
+                return updated;
+            });
+            if (surveyId) {
+                setSurveys(prev => prev.map(s =>
+                    s.id === surveyId ? { ...s, ai_summaries: { ...(s.ai_summaries || {}), [segment]: summary } } : s
+                ));
+            }
         } catch (e) {
             setAiSummaries(p => ({ ...p, [segment]: 'Error al generar resumen.' }));
         } finally {
@@ -1009,158 +1064,171 @@ export default function EncuestaView() {
                     <div className="space-y-4">
                         {/* Filtro de rol */}
                         <div className="flex items-center gap-3 flex-wrap">
-                            <select value={filterRol} onChange={e => setFilterRol(e.target.value)}
-                                className="h-8 px-3 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 bg-white shadow-sm">
-                                <option value="">Todos los roles</option>
-                                <option value="jefe">Solo jefes</option>
-                                <option value="colab">Solo colaboradores</option>
-                            </select>
+                            <LiquidSelect
+                                value={filterRol}
+                                onChange={setFilterRol}
+                                options={[
+                                    { value: 'jefe',  label: 'Solo jefes' },
+                                    { value: 'colab', label: 'Solo colaboradores' },
+                                ]}
+                                placeholder="Todos los roles"
+                                icon={Users}
+                                compact={true}
+                                clearable={true}
+                            />
                             <span className="text-[11px] text-slate-400">{filteredRows.length} personas</span>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-x-auto">
-                            <table className="w-full min-w-[560px] text-sm">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200/60">
-                                        <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador · Sucursal</th>
-                                        <th className="text-center px-3 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Rol</th>
-                                        {BLOQUES.map(b => (
-                                            <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-help">B{b.id}</th>
-                                        ))}
-                                        <th className="text-center px-3 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Auto</th>
-                                        <th className="text-center px-3 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">Global</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredRows.map((row, i) => {
-                                        const allIdx = BLOQUES.flatMap(b => b.indices);
-                                        const global = blockScore([row], allIdx, invertedIndices);
-                                        const self = row.r[selfRatingIdx];
-                                        const selfLabel = { A: '9-10', B: '7-8', C: '5-6', D: '1-4' };
-                                        const selfCls   = { A: 'text-emerald-600', B: 'text-blue-600', C: 'text-amber-600', D: 'text-rose-600' };
-                                        const isExpanded = expandedPersonIdx === i;
-                                        return (
-                                            <React.Fragment key={i}>
-                                            <tr
-                                                className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/40 cursor-pointer ${isExpanded ? 'bg-blue-50/30' : ''}`}
-                                                onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
-                                                <td className="px-4 py-2.5">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
-                                                        <div>
-                                                            <div className="font-black text-[12px] text-slate-800 leading-tight">{row.nombre}</div>
-                                                            <div className="text-[9px] text-slate-400 leading-tight">{row.sucursal}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-2.5 text-center">
-                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                                                        {row.isJefe ? 'Jefe/a' : 'Colab.'}
-                                                    </span>
-                                                </td>
-                                                {BLOQUES.map(b => {
-                                                    const s = blockScore([row], b.indices, invertedIndices);
-                                                    const cls = s == null ? 'text-slate-300'
-                                                        : s >= 85 ? 'text-emerald-600'
-                                                        : s >= 70 ? 'text-blue-600'
-                                                        : s >= 55 ? 'text-amber-600'
-                                                        : 'text-rose-600 font-black';
-                                                    return (
-                                                        <td key={b.id} title={b.nombre} className={`px-2 py-2.5 text-center text-[11px] font-bold cursor-help ${cls}`}>
-                                                            {s ? `${s.toFixed(0)}` : '–'}
-                                                        </td>
-                                                    );
-                                                })}
-                                                <td className="px-3 py-2.5 text-center">
-                                                    {self ? (
-                                                        <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-400'}`}>
-                                                            {selfLabel[self] || self}
-                                                        </span>
-                                                    ) : '–'}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-center">
-                                                    <div className="flex items-center justify-center gap-1">
-                                                    {global ? (
-                                                        <span className={`text-[12px] font-black ${global >= 85 ? 'text-emerald-600' : global >= 70 ? 'text-blue-600' : global >= 55 ? 'text-amber-600' : 'text-rose-600'}`}>
-                                                            {global.toFixed(0)}%
-                                                        </span>
-                                                    ) : '–'}
-                                                    {isExpanded ? <ChevronUp size={10} className="text-slate-400" /> : <ChevronDown size={10} className="text-slate-400" />}
-                                                    </div>
-                                                </td>
+                        {personasBySucursal.map(([branchName, branchRows]) => (
+                            <div key={branchName} className="rounded-[1.75rem] border border-white/80 bg-white/60 backdrop-blur-xl overflow-hidden shadow-sm">
+                                <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100/60 bg-white/30">
+                                    <Building2 size={13} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[12px] font-black text-slate-700">{branchName}</span>
+                                    <span className="text-[11px] text-slate-400">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[560px] text-sm">
+                                        <thead>
+                                            <tr className="bg-slate-50/60 border-b border-slate-100/80">
+                                                <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Rol</th>
+                                                {BLOQUES.map(b => (
+                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-help">B{b.id}</th>
+                                                ))}
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Auto</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Global</th>
                                             </tr>
-                                            {isExpanded && (
-                                                <tr className="bg-blue-50/20">
-                                                    <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
-                                                        <div className="bg-white/80 rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
-                                                            {BLOQUES.map(bloque => {
-                                                                const bqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
-                                                                if (!bqs.length) return null;
-                                                                const c = PCT_COLORS[bloque.color];
-                                                                return (
-                                                                    <div key={bloque.id} className="border-b border-slate-50 last:border-0">
-                                                                        <div className={`px-4 py-2 flex items-center gap-2 ${c.bg}`}>
-                                                                            <span className={`text-[10px] font-black uppercase tracking-wider ${c.text}`}>{bloque.nombre}</span>
+                                        </thead>
+                                        <tbody>
+                                            {branchRows.map(row => {
+                                                const i = filteredRows.indexOf(row);
+                                                const allIdx = BLOQUES.flatMap(b => b.indices);
+                                                const global = blockScore([row], allIdx, invertedIndices);
+                                                const self = row.r[selfRatingIdx];
+                                                const selfLabel = { A: '9-10', B: '7-8', C: '5-6', D: '1-4' };
+                                                const selfCls   = { A: 'text-emerald-600', B: 'text-blue-600', C: 'text-amber-600', D: 'text-rose-600' };
+                                                const isExpanded = expandedPersonIdx === i;
+                                                return (
+                                                    <React.Fragment key={i}>
+                                                    <tr
+                                                        className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/40 cursor-pointer ${isExpanded ? 'bg-blue-50/30' : ''}`}
+                                                        onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
+                                                        <td className="px-4 py-2.5">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
+                                                                <div className="font-black text-[12px] text-slate-800 leading-tight">{row.nombre}</div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                {row.isJefe ? 'Jefe/a' : 'Colab.'}
+                                                            </span>
+                                                        </td>
+                                                        {BLOQUES.map(b => {
+                                                            const s = blockScore([row], b.indices, invertedIndices);
+                                                            const cls = s == null ? 'text-slate-300'
+                                                                : s >= 85 ? 'text-emerald-600'
+                                                                : s >= 70 ? 'text-blue-600'
+                                                                : s >= 55 ? 'text-amber-600'
+                                                                : 'text-rose-600 font-black';
+                                                            return (
+                                                                <td key={b.id} title={b.nombre} className={`px-2 py-2.5 text-center text-[11px] font-bold cursor-help ${cls}`}>
+                                                                    {s ? `${s.toFixed(0)}` : '–'}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            {self ? (
+                                                                <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-400'}`}>
+                                                                    {selfLabel[self] || self}
+                                                                </span>
+                                                            ) : '–'}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                            {global ? (
+                                                                <span className={`text-[12px] font-black ${global >= 85 ? 'text-emerald-600' : global >= 70 ? 'text-blue-600' : global >= 55 ? 'text-amber-600' : 'text-rose-600'}`}>
+                                                                    {global.toFixed(0)}%
+                                                                </span>
+                                                            ) : '–'}
+                                                            {isExpanded ? <ChevronUp size={10} className="text-slate-400" /> : <ChevronDown size={10} className="text-slate-400" />}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {isExpanded && (
+                                                        <tr className="bg-blue-50/20">
+                                                            <td colSpan={BLOQUES.length + 4} className="px-4 pb-4 pt-0">
+                                                                <div className="bg-white/80 rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-1">
+                                                                    {BLOQUES.map(bloque => {
+                                                                        const bqs = PREGUNTAS.filter(p => p.bloque === bloque.id && p.tipo !== 'sucursal');
+                                                                        if (!bqs.length) return null;
+                                                                        const c = PCT_COLORS[bloque.color];
+                                                                        return (
+                                                                            <div key={bloque.id} className="border-b border-slate-50 last:border-0">
+                                                                                <div className={`px-4 py-2 flex items-center gap-2 ${c.bg}`}>
+                                                                                    <span className={`text-[10px] font-black uppercase tracking-wider ${c.text}`}>{bloque.nombre}</span>
+                                                                                </div>
+                                                                                <div className="divide-y divide-slate-50">
+                                                                                    {bqs.map(p => {
+                                                                                        const ans = row.r[p.idx];
+                                                                                        const ABCD = ['A','B','C','D'];
+                                                                                        const DEFAULT_OPTS = [
+                                                                                            'Siempre / Totalmente de acuerdo',
+                                                                                            'Frecuentemente / De acuerdo',
+                                                                                            'A veces / En desacuerdo',
+                                                                                            'Nunca / Totalmente en desacuerdo',
+                                                                                        ];
+                                                                                        return (
+                                                                                            <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
+                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">{p.id}</span>
+                                                                                                <div className="flex-1 min-w-0 space-y-1">
+                                                                                                    <p className="text-[10px] text-slate-500 leading-snug">{p.texto}</p>
+                                                                                                    {p.tipo === 'numerica' ? (
+                                                                                                        (() => {
+                                                                                                            if (!ans) return <span className="text-[10px] text-slate-300">Sin respuesta</span>;
+                                                                                                            const n = parseInt(ans, 10);
+                                                                                                            const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
+                                                                                                            const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
+                                                                                                            return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black ${oc.on}`}>{display}</span>;
+                                                                                                        })()
+                                                                                                    ) : (
+                                                                                                        ans ? (
+                                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-400'}`}>{ans}</span>
+                                                                                                                <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-slate-600'}`}>
+                                                                                                                    {p.opciones?.[ABCD.indexOf(ans)] || DEFAULT_OPTS[ABCD.indexOf(ans)] || ans}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                        ) : <span className="text-[10px] text-slate-300">Sin respuesta</span>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                    {row.comentario && row.comentario.trim() && row.comentario !== 'null' && (
+                                                                        <div className="px-4 py-3 bg-amber-50/40 border-t border-amber-100/60">
+                                                                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                                                <MessageSquare size={10} /> Comentario
+                                                                            </p>
+                                                                            <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">{row.comentario}</p>
                                                                         </div>
-                                                                        <div className="divide-y divide-slate-50">
-                                                                            {bqs.map(p => {
-                                                                                const ans = row.r[p.idx];
-                                                                                const ABCD = ['A','B','C','D'];
-                                                                                const DEFAULT_OPTS = [
-                                                                                    'Siempre / Totalmente de acuerdo',
-                                                                                    'Frecuentemente / De acuerdo',
-                                                                                    'A veces / En desacuerdo',
-                                                                                    'Nunca / Totalmente en desacuerdo',
-                                                                                ];
-                                                                                return (
-                                                                                    <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
-                                                                                        <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">{p.id}</span>
-                                                                                        <div className="flex-1 min-w-0 space-y-1">
-                                                                                            <p className="text-[10px] text-slate-500 leading-snug">{p.texto}</p>
-                                                                                            {p.tipo === 'numerica' ? (
-                                                                                                (() => {
-                                                                                                    if (!ans) return <span className="text-[10px] text-slate-300">Sin respuesta</span>;
-                                                                                                    const n = parseInt(ans, 10);
-                                                                                                    const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
-                                                                                                    const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
-                                                                                                    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-black ${oc.on}`}>{display}</span>;
-                                                                                                })()
-                                                                                            ) : (
-                                                                                                ans ? (
-                                                                                                    <div className="flex items-center gap-1.5">
-                                                                                                        <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-400'}`}>{ans}</span>
-                                                                                                        <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-slate-600'}`}>
-                                                                                                            {p.opciones?.[ABCD.indexOf(ans)] || DEFAULT_OPTS[ABCD.indexOf(ans)] || ans}
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                ) : <span className="text-[10px] text-slate-300">Sin respuesta</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                            {row.comentario && row.comentario.trim() && row.comentario !== 'null' && (
-                                                                <div className="px-4 py-3 bg-amber-50/40 border-t border-amber-100/60">
-                                                                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                                        <MessageSquare size={10} /> Comentario
-                                                                    </p>
-                                                                    <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">{row.comentario}</p>
+                                                                    )}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
 
@@ -1177,34 +1245,62 @@ export default function EncuestaView() {
                     return (
                     <div className="space-y-4">
                         {/* AI summary segments */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                                <Sparkles size={12} className="text-purple-400" /> Resumen IA por segmento
-                            </h3>
-                            <div className="space-y-3">
+                        <div className="rounded-2xl border border-slate-100 bg-white/60 backdrop-blur-xl shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100/80 bg-white/40">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_10px_rgba(139,92,246,0.35)]">
+                                    <Sparkles size={11} className="text-white" />
+                                </div>
+                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Resumen IA por segmento</span>
+                            </div>
+                            <div className="divide-y divide-slate-100/60">
                                 {segments.map(seg => (
-                                    <div key={seg.key} className="border border-slate-100 rounded-xl p-3">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-[11px] font-black text-slate-700">{seg.label} <span className="text-slate-400 font-normal">({seg.comments.length} comentarios)</span></span>
-                                            {!aiSummaries[seg.key] && (
+                                    <div key={seg.key}>
+                                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/40">
+                                            <span className="text-[11px] font-black text-slate-700">
+                                                {seg.label}
+                                                <span className="ml-1.5 font-normal text-slate-400">({seg.comments.length} comentarios)</span>
+                                            </span>
+                                            {aiSummaries[seg.key] && !loadingAi[seg.key] && (
                                                 <button
-                                                    onClick={() => generateAiSummary(seg.comments, seg.key)}
-                                                    disabled={loadingAi[seg.key] || !seg.comments.length}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                                                    {loadingAi[seg.key]
-                                                        ? <><Loader2 size={10} className="animate-spin" /> Generando…</>
-                                                        : <><Sparkles size={10} /> Generar resumen</>}
+                                                    onClick={() => {
+                                                        if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = new Set();
+                                                        aiAutoGenDone.current[selectedSurveyId].delete(seg.key);
+                                                        setAiSummaries(p => { const u = { ...p }; delete u[seg.key]; return u; });
+                                                        generateAiSummary(seg.comments, seg.key);
+                                                    }}
+                                                    className="flex items-center gap-1 text-[9px] text-slate-400 hover:text-indigo-500 transition-colors">
+                                                    <RotateCcw size={9} strokeWidth={2.5} /> Regenerar
                                                 </button>
                                             )}
                                         </div>
-                                        {aiSummaries[seg.key] ? (
-                                            <div className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line bg-purple-50/40 rounded-lg p-3">
-                                                {aiSummaries[seg.key]}
-                                                <button onClick={() => setAiSummaries(p => ({ ...p, [seg.key]: null }))}
-                                                    className="mt-2 text-[9px] text-slate-400 hover:text-slate-600 block">↺ Regenerar</button>
+                                        {loadingAi[seg.key] ? (
+                                            <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-4">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
+                                                    <span className="text-[11px] text-indigo-300/70 font-medium">Analizando comentarios…</span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="h-1.5 rounded-full bg-white/10 w-full animate-pulse" />
+                                                    <div className="h-1.5 rounded-full bg-white/10 w-4/5 animate-pulse" style={{ animationDelay: '0.15s' }} />
+                                                    <div className="h-1.5 rounded-full bg-white/10 w-3/5 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                                                </div>
                                             </div>
-                                        ) : !loadingAi[seg.key] && (
-                                            <p className="text-[10px] text-slate-300 italic">Haz clic en "Generar resumen" para obtener un análisis IA de estos comentarios.</p>
+                                        ) : aiSummaries[seg.key] ? (
+                                            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-4">
+                                                <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+                                                <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+                                                <p className="relative text-[11px] text-white/75 leading-relaxed whitespace-pre-line">
+                                                    {aiSummaries[seg.key]}
+                                                </p>
+                                            </div>
+                                        ) : seg.comments.length > 0 ? (
+                                            <div className="px-4 py-3 bg-slate-50/40">
+                                                <p className="text-[10px] text-slate-400 italic">Generando resumen automáticamente…</p>
+                                            </div>
+                                        ) : (
+                                            <div className="px-4 py-3 bg-slate-50/40">
+                                                <p className="text-[10px] text-slate-300 italic">Sin comentarios en este segmento.</p>
+                                            </div>
                                         )}
                                     </div>
                                 ))}

@@ -876,7 +876,7 @@ export default function EncuestaAdminView() {
 
                 {/* ══ RIGHT PANEL ═════════════════════════════════════════════════ */}
                 <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
-                    <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
+                    <div className="space-y-5 pt-4 px-3 md:px-4">
 
                         {loadingSurveys ? (
                             <div className="flex items-center justify-center h-40 gap-2 text-slate-400">
@@ -975,6 +975,12 @@ export default function EncuestaAdminView() {
                                                         {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
                                                     </div>
                                                 )}
+                                                {s.tipo === 'clima' && (
+                                                    <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
+                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-95">
+                                                        <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
+                                                    </button>
+                                                )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
                                                         className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#007AFF] px-3 h-7 rounded-full bg-[#007AFF]/10 hover:bg-[#007AFF]/20 transition-colors border border-[#007AFF]/20 active:scale-95">
@@ -1010,12 +1016,6 @@ export default function EncuestaAdminView() {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    {s.tipo === 'clima' && (
-                                                        <button onClick={() => navigate('/encuesta')}
-                                                            className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border border-indigo-200/50 hover:-translate-y-0.5 active:scale-95">
-                                                            <TrendingUp size={13} strokeWidth={2.5} /> Ver análisis
-                                                        </button>
-                                                    )}
                                                     {canManage && (
                                                     <button onClick={() => openResponseForm()}
                                                         className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">

@@ -28,9 +28,9 @@ export default async function handler(req, res) {
     'upgrade-insecure-requests': '1',
   };
 
-  if (req.headers.cookie)       fwd['cookie']       = req.headers.cookie;
-  if (req.headers['content-type']) fwd['content-type'] = req.headers['content-type'];
-  if (req.headers.referer)      fwd['referer']      = req.headers.referer.replace(`https://${req.headers.host}${PROXY_PFX}`, TARGET);
+  if (req.headers.cookie)          fwd['cookie']         = req.headers.cookie;
+  if (req.headers['content-type']) fwd['content-type']   = req.headers['content-type'];
+  if (req.headers.referer)         fwd['referer']        = req.headers.referer.replace(`https://${req.headers.host}${PROXY_PFX}`, TARGET);
 
   const opts = { method: req.method, headers: fwd, redirect: 'manual' };
 
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     return res.status(502).send('Error connecting to OSS');
   }
 
-  res.status(ossRes.status);
+  const setCookies = [];
 
   for (const [k, v] of ossRes.headers.entries()) {
     const lk = k.toLowerCase();
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         .replace(/;\s*domain=[^;,]+/gi, '')
         .replace(/;\s*path=\//gi, `; path=${PROXY_PFX}/`)
         .replace(/;\s*samesite=strict/gi, '; SameSite=Lax');
-      res.append('set-cookie', rewritten);
+      setCookies.push(rewritten);
       continue;
     }
 
@@ -76,7 +76,10 @@ export default async function handler(req, res) {
     res.setHeader(k, v);
   }
 
+  if (setCookies.length) res.setHeader('set-cookie', setCookies);
   res.setHeader('access-control-allow-origin', '*');
+
+  res.status(ossRes.status);
 
   const ct = ossRes.headers.get('content-type') ?? '';
 

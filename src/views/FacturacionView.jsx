@@ -2016,6 +2016,27 @@ export default function FacturacionView() {
     const searchInputRef = useRef(null);
     const [iframeKey, setIframeKey] = useState(0);
     const OSS_PROXY = '/api/oss-proxy/farma_salud/admin_factura_rangos.php';
+    const [rightWidth, setRightWidth] = useState(500);
+    const isDragging = useRef(false);
+    const dragStartX = useRef(0);
+    const dragStartW = useRef(0);
+
+    useEffect(() => {
+        const onMove = (e) => {
+            if (!isDragging.current) return;
+            const delta = dragStartX.current - e.clientX;
+            setRightWidth(Math.max(280, Math.min(900, dragStartW.current + delta)));
+        };
+        const onUp = () => {
+            if (!isDragging.current) return;
+            isDragging.current = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    }, []);
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
@@ -2105,7 +2126,7 @@ export default function FacturacionView() {
             transparentBody={true}
             fixedScrollMode={true}
         >
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 items-start w-full">
+            <div className="flex flex-col lg:flex-row items-start w-full">
 
                 {/* ── Left: tab panels ──────────────────────────────────────── */}
                 <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden
@@ -2126,11 +2147,34 @@ export default function FacturacionView() {
                     </div>
                 </div>
 
+                {/* ── Drag handle ───────────────────────────────────────────── */}
+                {showIframe && (
+                    <div
+                        onMouseDown={e => {
+                            isDragging.current = true;
+                            dragStartX.current = e.clientX;
+                            dragStartW.current = rightWidth;
+                            document.body.style.cursor = 'col-resize';
+                            document.body.style.userSelect = 'none';
+                        }}
+                        className="hidden lg:flex w-4 shrink-0 items-center justify-center cursor-col-resize
+                                   lg:h-screen lg:-mt-[180px] xl:-mt-[200px] self-stretch relative z-20 group"
+                    >
+                        <div className="w-[3px] h-full rounded-full bg-white/30 group-hover:bg-indigo-300/60 transition-colors duration-200" />
+                        <div className="absolute flex flex-col gap-[5px] pointer-events-none">
+                            {[0,1,2,3,4].map(i => (
+                                <div key={i} className="w-[3px] h-[3px] rounded-full bg-slate-300/60 group-hover:bg-indigo-400/80 transition-colors duration-200" />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Right: OSS proxy iframe (desktop only, not on no_efectivo) ── */}
                 {showIframe && (
-                    <div className="hidden lg:flex lg:w-[500px] xl:w-[560px] 2xl:w-[620px] shrink-0
+                    <div className="hidden lg:flex shrink-0
                                     lg:h-screen lg:-mt-[180px] xl:-mt-[200px]
-                                    flex-col overflow-hidden relative z-10">
+                                    flex-col overflow-hidden relative z-10"
+                         style={{ width: `${rightWidth}px` }}>
                         <div className="hidden lg:block h-[188px] xl:h-[208px] shrink-0" />
                         <div className="flex flex-col flex-1 overflow-hidden mb-8
                                         rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80

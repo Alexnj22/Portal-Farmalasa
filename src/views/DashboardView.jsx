@@ -1266,7 +1266,6 @@ const DashboardView = ({ openModal }) => {
         )}
 
         {/* Main widget grid — explicit positions, fixed 4 cols */}
-        <div className="overflow-x-auto w-full">
         <div
           ref={gridRef}
           className="grid grid-cols-4 gap-4 relative min-w-[700px]"
@@ -1288,7 +1287,6 @@ const DashboardView = ({ openModal }) => {
               className={`rounded-[1.75rem] border-2 border-dashed transition-colors duration-100 ${dndSnap.valid ? 'border-[#007AFF]/50 bg-[#007AFF]/5' : 'border-amber-400/60 bg-amber-50/40'}`}
             />
           )}
-        </div>
         </div>
 
       </div>

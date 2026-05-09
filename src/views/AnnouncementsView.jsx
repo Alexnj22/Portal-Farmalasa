@@ -709,7 +709,7 @@ const AnnouncementsView = ({ openModal }) => {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto">
+          <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-full lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
             <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
               {paginatedList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">

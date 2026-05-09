@@ -691,7 +691,7 @@ const RolesView = ({ openModal }) => {
                         </div>
 
                         {/* PANEL DERECHO: GRID DE TARJETAS */}
-                        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-full lg:-mt-[180px] lg:pt-[180px] pointer-events-auto relative z-10">
+                        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-full lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {filteredAndSortedRoles.map((role) => {
                                     const isRoot = !role.parent_role_id;

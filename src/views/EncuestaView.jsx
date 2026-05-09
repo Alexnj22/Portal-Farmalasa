@@ -279,7 +279,7 @@ function renderInlineBold(text) {
     const parts = text.split(/(\*\*[^*]+?\*\*)/);
     return parts.map((part, i) => {
         const m = part.match(/^\*\*(.+)\*\*$/);
-        if (m) return <strong key={i} className="text-white/90 font-black">{m[1]}</strong>;
+        if (m) return <strong key={i} className="text-slate-800 font-black">{m[1]}</strong>;
         return part || null;
     });
 }
@@ -297,8 +297,8 @@ function renderContentItems(content) {
         const bulletMatch = line.match(/^-\s+(.+)$/);
         if (numMatch) return (
             <div key={i} className="flex gap-2.5 items-start">
-                <span className="shrink-0 w-4 h-4 rounded-full bg-indigo-500/25 text-indigo-300 text-[9px] font-black flex items-center justify-center mt-0.5">{numMatch[1]}</span>
-                <span className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(numMatch[2])}</span>
+                <span className="shrink-0 w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[9px] font-black flex items-center justify-center mt-0.5">{numMatch[1]}</span>
+                <span className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(numMatch[2])}</span>
             </div>
         );
         if (bulletMatch) {
@@ -308,22 +308,22 @@ function renderContentItems(content) {
                 const meta = bulletMatch[1].slice(arrowIdx + 3);
                 return (
                     <div key={i} className="flex gap-2.5 items-start">
-                        <span className="shrink-0 text-indigo-400/80 mt-1 leading-none text-[10px]">›</span>
-                        <span className="text-[11px] text-white/70 leading-relaxed">
+                        <span className="shrink-0 text-indigo-500 mt-1 leading-none text-[10px]">›</span>
+                        <span className="text-[11px] text-slate-600 leading-relaxed">
                             {renderInlineBold(main)}
-                            <span className="text-indigo-300/50 text-[10px]"> → {meta}</span>
+                            <span className="text-indigo-400/60 text-[10px]"> → {meta}</span>
                         </span>
                     </div>
                 );
             }
             return (
                 <div key={i} className="flex gap-2.5 items-start">
-                    <span className="shrink-0 text-indigo-400/80 mt-1 leading-none text-[10px]">›</span>
-                    <span className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(bulletMatch[1])}</span>
+                    <span className="shrink-0 text-indigo-500 mt-1 leading-none text-[10px]">›</span>
+                    <span className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(bulletMatch[1])}</span>
                 </div>
             );
         }
-        return <p key={i} className="text-[11px] text-white/70 leading-relaxed">{renderInlineBold(line)}</p>;
+        return <p key={i} className="text-[11px] text-slate-600 leading-relaxed">{renderInlineBold(line)}</p>;
     });
 }
 
@@ -480,7 +480,9 @@ export default function EncuestaView() {
             if (!map[k]) map[k] = [];
             map[k].push(row);
         });
-        return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+        return Object.entries(map)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([name, rows]) => [name, [...rows].sort((a, b) => (b.isJefe ? 1 : 0) - (a.isJefe ? 1 : 0))]);
     }, [filteredRows]);
 
     const bloquesScores = useMemo(() =>
@@ -607,7 +609,7 @@ export default function EncuestaView() {
                         title="Volver a Gestión de Encuesta">
                         <ArrowLeft size={15} strokeWidth={2.5} className="text-slate-500" />
                     </button>
-                    <span>{selectedSurvey?.nombre ?? 'Clima Organizacional'}</span>
+                    <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
                 </div>
             }
             subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}
@@ -1161,18 +1163,20 @@ export default function EncuestaView() {
                     <div className="space-y-4">
                         {/* Filtro de rol */}
                         <div className="flex items-center gap-3 flex-wrap">
-                            <LiquidSelect
-                                value={filterRol}
-                                onChange={setFilterRol}
-                                options={[
-                                    { value: 'jefe',  label: 'Solo jefes' },
-                                    { value: 'colab', label: 'Solo colaboradores' },
-                                ]}
-                                placeholder="Todos los roles"
-                                icon={Users}
-                                compact={true}
-                                clearable={true}
-                            />
+                            <div className="w-[190px]">
+                                <LiquidSelect
+                                    value={filterRol}
+                                    onChange={setFilterRol}
+                                    options={[
+                                        { value: 'jefe',  label: 'Solo jefes' },
+                                        { value: 'colab', label: 'Solo colaboradores' },
+                                    ]}
+                                    placeholder="Todos los roles"
+                                    icon={Users}
+                                    compact={true}
+                                    clearable={true}
+                                />
+                            </div>
                             <span className="text-[11px] text-slate-400">{filteredRows.length} personas</span>
                         </div>
 
@@ -1188,7 +1192,7 @@ export default function EncuestaView() {
                                         <thead>
                                             <tr className="bg-slate-50/60 border-b border-slate-100/80">
                                                 <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador</th>
-                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Rol</th>
+                                                <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-16">Rol</th>
                                                 {BLOQUES.map(b => (
                                                     <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-help">B{b.id}</th>
                                                 ))}
@@ -1216,8 +1220,8 @@ export default function EncuestaView() {
                                                                 <div className="font-black text-[12px] text-slate-800 leading-tight">{row.nombre}</div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-center">
-                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                        <td className="px-3 py-2.5 text-center w-16 whitespace-nowrap">
+                                                            <span className={`inline-flex items-center justify-center min-w-[44px] text-[9px] font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
                                                                 {row.isJefe ? 'Jefe/a' : 'Colab.'}
                                                             </span>
                                                         </td>
@@ -1347,39 +1351,45 @@ export default function EncuestaView() {
                             const summary = aiSummaries[seg.key];
                             const isLoading = loadingAi[seg.key];
                             const sections = summary ? parseAiSections(summary) : [];
+                            const canToggle = summary && !isLoading;
 
                             return (
-                            <div key={seg.key} className="rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-white/10">
+                            <div
+                                key={seg.key}
+                                onClick={() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
+                                className={`rounded-2xl overflow-hidden border border-indigo-200/40 shadow-[0_4px_20px_rgba(99,102,241,0.10)] backdrop-blur-2xl bg-gradient-to-br from-white/60 via-indigo-50/40 to-purple-50/30 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[0_6px_28px_rgba(99,102,241,0.18)] hover:border-indigo-300/50' : ''}`}
+                            >
                                 {/* Segment header bar */}
-                                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 to-[#1e1b4b] border-b border-white/10">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-indigo-100/60 bg-gradient-to-r from-indigo-50/70 to-purple-50/50">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.4)]">
+                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_8px_rgba(139,92,246,0.35)]">
                                             <Sparkles size={10} className="text-white" />
                                         </div>
-                                        <span className="text-[12px] font-black text-white/90 tracking-tight">
-                                            Resumen IA <span className="text-white/40 font-normal">·</span> <span className="text-indigo-300/80">{seg.label}</span>
+                                        <span className="text-[12px] font-black text-slate-700 tracking-tight">
+                                            Resumen IA <span className="text-slate-300 font-normal">·</span> <span className="text-indigo-600">{seg.label}</span>
                                         </span>
-                                        <span className="text-[10px] text-white/30 font-medium">{seg.comments.length} comentarios</span>
+                                        <span className="text-[10px] text-slate-400 font-medium">{seg.comments.length} comentarios</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {summary && !isLoading && (
                                             <button
-                                                onClick={() => {
+                                                onClick={e => {
+                                                    e.stopPropagation();
                                                     if (!aiAutoGenDone.current[selectedSurveyId]) aiAutoGenDone.current[selectedSurveyId] = new Set();
                                                     aiAutoGenDone.current[selectedSurveyId].delete(seg.key);
                                                     setAiSummaries(p => { const u = { ...p }; delete u[seg.key]; return u; });
                                                     generateAiSummary(seg.comments, seg.key);
                                                 }}
                                                 title="Regenerar"
-                                                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-all">
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 <RotateCcw size={11} strokeWidth={2.5} />
                                             </button>
                                         )}
                                         {summary && !isLoading && (
                                             <button
-                                                onClick={() => setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
+                                                onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}
                                                 title={isCollapsed ? 'Expandir' : 'Minimizar'}
-                                                className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-all">
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
                                             </button>
                                         )}
@@ -1388,21 +1398,21 @@ export default function EncuestaView() {
 
                                 {/* Content area */}
                                 {isLoading ? (
-                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-5">
+                                    <div className="p-5">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <Loader2 size={13} className="animate-spin text-indigo-400 shrink-0" />
-                                            <span className="text-[12px] text-indigo-300/70 font-medium">Analizando comentarios con IA…</span>
+                                            <Loader2 size={13} className="animate-spin text-indigo-500 shrink-0" />
+                                            <span className="text-[12px] text-indigo-500/80 font-medium">Analizando comentarios con IA…</span>
                                         </div>
                                         <div className="space-y-2.5">
                                             {[1, 0.8, 0.6, 0.75, 0.5].map((w, i) => (
-                                                <div key={i} className="h-1.5 rounded-full bg-white/10 animate-pulse" style={{ width: `${w * 100}%`, animationDelay: `${i * 0.1}s` }} />
+                                                <div key={i} className="h-1.5 rounded-full bg-indigo-100/80 animate-pulse" style={{ width: `${w * 100}%`, animationDelay: `${i * 0.1}s` }} />
                                             ))}
                                         </div>
                                     </div>
                                 ) : summary && !isCollapsed ? (
-                                    <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] p-5">
-                                        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-purple-500/8 blur-3xl pointer-events-none" />
-                                        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-500/8 blur-3xl pointer-events-none" />
+                                    <div className="relative overflow-hidden p-5">
+                                        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-purple-400/8 blur-3xl pointer-events-none" />
+                                        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-400/8 blur-3xl pointer-events-none" />
                                         <div className="relative space-y-4">
                                             {sections.map((sec, si) => {
                                                 const { Icon, color, dot } = getSectionStyle(sec.title);
@@ -1410,7 +1420,7 @@ export default function EncuestaView() {
                                                     <div key={si} className="space-y-2">
                                                         {sec.title && (
                                                             <div className="flex items-center gap-2">
-                                                                <div className={`w-1 h-4 rounded-full ${dot} opacity-70`} />
+                                                                <div className={`w-1 h-4 rounded-full ${dot}`} />
                                                                 <span className={`text-[10px] font-black uppercase tracking-widest ${color}`}>{sec.title}</span>
                                                             </div>
                                                         )}
@@ -1423,21 +1433,21 @@ export default function EncuestaView() {
                                         </div>
                                     </div>
                                 ) : summary && isCollapsed ? (
-                                    <div className="bg-gradient-to-r from-slate-900 to-[#1e1b4b] px-5 py-3">
-                                        <p className="text-[10px] text-white/40 truncate">
+                                    <div className="px-5 py-3">
+                                        <p className="text-[10px] text-slate-400 truncate">
                                             {sections[0]?.title
-                                                ? <><span className="text-indigo-300/60 font-black uppercase text-[9px]">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
+                                                ? <><span className="text-indigo-500 font-black uppercase text-[9px]">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
                                                 : summary.replace(/\*\*/g, '').slice(0, 140) + '…'
                                             }
                                         </p>
                                     </div>
                                 ) : seg.comments.length === 0 ? (
-                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] px-5 py-4">
-                                        <p className="text-[11px] text-white/30 italic">Sin comentarios en este segmento.</p>
+                                    <div className="px-5 py-4">
+                                        <p className="text-[11px] text-slate-400 italic">Sin comentarios en este segmento.</p>
                                     </div>
                                 ) : (
-                                    <div className="bg-gradient-to-br from-slate-900 via-[#1e1b4b] to-[#2e1065] px-5 py-4">
-                                        <p className="text-[11px] text-white/40 italic">Cargando resumen guardado…</p>
+                                    <div className="px-5 py-4">
+                                        <p className="text-[11px] text-slate-400 italic">Cargando resumen guardado…</p>
                                     </div>
                                 )}
                             </div>

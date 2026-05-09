@@ -2015,7 +2015,7 @@ export default function FacturacionView() {
     const [rawSearch, setRawSearch] = useState('');
     const searchInputRef = useRef(null);
     const [iframeKey, setIframeKey] = useState(0);
-    const OSS_PROXY = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oss-proxy/farma_salud/admin_factura_rangos.php`;
+    const OSS_PROXY = '/api/oss-proxy/farma_salud/admin_factura_rangos.php';
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]

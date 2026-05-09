@@ -6,6 +6,7 @@ const DROP = new Set([
   'content-security-policy',
   'content-security-policy-report-only',
   'transfer-encoding',
+  'content-encoding',
   'content-length',
 ]);
 

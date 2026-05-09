@@ -237,8 +237,10 @@ const TABS = [
 
 // ─── AI summary helpers ───────────────────────────────────────────────────────
 
-function parseAiSections(text) {
-    if (!text) return [];
+function parseAiSections(rawText) {
+    if (!rawText) return [];
+    // Normalize **Title**: (colon outside closing asterisks) → **Title:** so both formats parse
+    const text = rawText.replace(/\*\*([^*]+?)\*\*:/g, '**$1:**');
     const regex = /\*\*([^*]+?):\*\*/g;
     const rawParts = [];
     let lastEnd = 0;

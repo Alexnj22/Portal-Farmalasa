@@ -26,10 +26,13 @@ Deno.serve(async (req: Request) => {
   const subPath  = url.pathname.replace(new RegExp(`^${PROXY_PFX}`), "") || "/";
   const targetUrl = `${TARGET}${subPath}${url.search}`;
 
-  // Build forwarded headers
+  // Build forwarded headers — send browser-like headers so OSS doesn't reject
   const fwd = new Headers();
-  fwd.set("host", "clientesdte3.oss.com.sv");
-  fwd.set("user-agent", req.headers.get("user-agent") ?? "Mozilla/5.0");
+  fwd.set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+  fwd.set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+  fwd.set("accept-language", "es-SV,es;q=0.9,en;q=0.8");
+  fwd.set("accept-encoding", "gzip, deflate, br");
+  fwd.set("upgrade-insecure-requests", "1");
 
   const cookie = req.headers.get("cookie");
   if (cookie) fwd.set("cookie", cookie);

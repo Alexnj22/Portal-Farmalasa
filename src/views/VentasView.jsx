@@ -640,7 +640,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                         <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                                                                             {it.presentacion && <p className="text-[10px] text-slate-400">{it.presentacion}</p>}
                                                                                             {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">L: {it.lote}</span>}
-                                                                                            {it.fecha_vencimiento && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono ${new Date(it.fecha_vencimiento) < new Date(Date.now() + 90*24*60*60*1000) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50 text-emerald-600'}`}>Vence: {it.fecha_vencimiento}</span>}
+                                                                                            {it.fecha_vencimiento && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">Vence: {it.fecha_vencimiento}</span>}
                                                                                         </div>
                                                                                     </td>
                                                                                     <td className="py-2 text-right font-bold text-slate-600">{fmtQty(it.cantidad)}</td>

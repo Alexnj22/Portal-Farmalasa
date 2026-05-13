@@ -236,11 +236,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         catch { return new Set(); }
     });
 
-    const markVisited = (erpId) => {
+    const toggleVisited = (erpId) => {
         if (!erpId) return;
         setVisitedIds(prev => {
             const next = new Set(prev);
-            next.add(String(erpId));
+            const key = String(erpId);
+            if (next.has(key)) next.delete(key); else next.add(key);
             try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
             return next;
         });
@@ -344,10 +345,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
     const copyErpId = (erpId) => {
         if (!erpId) return;
-        navigator.clipboard.writeText(String(erpId));
-        markVisited(erpId);
-        setCopiedId(erpId);
-        setTimeout(() => setCopiedId(null), 1500);
+        if (!visitedIds.has(String(erpId))) {
+            navigator.clipboard.writeText(String(erpId));
+            setCopiedId(erpId);
+            setTimeout(() => setCopiedId(null), 1500);
+        }
+        toggleVisited(erpId);
     };
 
     const daysAgoLabel = (fechaStr) => {
@@ -372,6 +375,11 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         const rest = list.filter(r => r.tipo_documento !== 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
         return [...ccf, ...rest];
     }, [rows, resolvedIds, searchTerm]);
+
+    const activeVisitedCount = useMemo(() => {
+        const active = rows.filter(r => !resolvedIds.has(r.id));
+        return active.filter(r => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length;
+    }, [rows, resolvedIds, visitedIds]);
 
     const grouped = useMemo(() => {
         const g = {};
@@ -402,10 +410,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
-                {visitedIds.size > 0 && (
+                {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">
-                        <Check size={10} strokeWidth={3} /> {visitedIds.size} marcado{visitedIds.size !== 1 ? 's' : ''} · limpiar
+                        <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
                 {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
@@ -630,11 +638,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         catch { return new Set(); }
     });
 
-    const markVisited = (erpId) => {
+    const toggleVisited = (erpId) => {
         if (!erpId) return;
         setVisitedIds(prev => {
             const next = new Set(prev);
-            next.add(String(erpId));
+            const key = String(erpId);
+            if (next.has(key)) next.delete(key); else next.add(key);
             try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
             return next;
         });
@@ -651,10 +660,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const getBranch   = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const copyErpId   = (erpId) => {
         if (!erpId) return;
-        navigator.clipboard.writeText(String(erpId));
-        markVisited(erpId);
-        setCopiedId(erpId);
-        setTimeout(() => setCopiedId(null), 1500);
+        if (!visitedIds.has(String(erpId))) {
+            navigator.clipboard.writeText(String(erpId));
+            setCopiedId(erpId);
+            setTimeout(() => setCopiedId(null), 1500);
+        }
+        toggleVisited(erpId);
     };
     const daysAgoLabel = (fechaStr) => {
         const today = svNow();
@@ -811,6 +822,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         return [...ccf, ...rest];
     }, [rows, searchTerm]);
 
+    const activeVisitedCount = useMemo(() =>
+        rows.filter(r => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length,
+    [rows, visitedIds]);
+
     const ccfCount = filtered.filter(r => r.tipo_documento === 'CCF').length;
 
     // Group by branch_id → fecha (CCF rows always first within each fecha)
@@ -846,10 +861,10 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
-                {visitedIds.size > 0 && (
+                {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">
-                        <Check size={10} strokeWidth={3} /> {visitedIds.size} marcado{visitedIds.size !== 1 ? 's' : ''} · limpiar
+                        <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
                 {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}

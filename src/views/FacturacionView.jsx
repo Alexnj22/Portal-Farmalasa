@@ -2099,7 +2099,6 @@ export default function FacturacionView() {
             liveIndicator={activeTab === 'anuladas' || activeTab === 'pendiente_mh'}
             filtersContent={filtersContent}
             transparentBody={true}
-            fixedScrollMode={true}
         >
             <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>

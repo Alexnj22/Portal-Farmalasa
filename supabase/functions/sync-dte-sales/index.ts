@@ -229,8 +229,8 @@ async function syncBranch(
         id_presentacion:   presLookup.get(presKey) ?? null,
         precio_unitario:   p.precio_unitario,
         total_linea:       p.total_linea,
-        lote:              p.lote ?? null,
-        fecha_vencimiento: p.fecha_vencimiento ?? null,
+        lote:              p.lote || null,
+        fecha_vencimiento: (p.fecha_vencimiento && p.fecha_vencimiento !== '0000-00-00') ? p.fecha_vencimiento : null,
       });
     }
   }

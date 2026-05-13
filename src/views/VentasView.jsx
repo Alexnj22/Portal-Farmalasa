@@ -1052,6 +1052,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     .select('id')
                     .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
                     .gte('fecha', fini).lte('fecha', ffin)
+                    .order('id')
                     .range(invFrom, invFrom + 999);
                 if (filterBranch) qInv = qInv.eq('branch_id', filterBranch);
                 const { data: invoices, error: invErr } = await qInv;
@@ -1061,14 +1062,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 if (invoices.length < 1000) break;
                 invFrom += 1000;
             }
-            if (ids.length === 0) { setRows([]); invoiceIdsRef.current = []; setLoading(false); return; }
-            invoiceIdsRef.current = ids;
+            const uniqueIds = [...new Set(ids)];
+            if (uniqueIds.length === 0) { setRows([]); invoiceIdsRef.current = []; setLoading(false); return; }
+            invoiceIdsRef.current = uniqueIds;
 
             // Chunks pequeños de IDs + paginación de resultados para no chocar con el límite de 1000 filas de PostgREST
             const CHUNK = 200;
             const itemsAll = [];
-            for (let i = 0; i < ids.length; i += CHUNK) {
-                const sliceIds = ids.slice(i, i + CHUNK);
+            for (let i = 0; i < uniqueIds.length; i += CHUNK) {
+                const sliceIds = uniqueIds.slice(i, i + CHUNK);
                 let itemFrom = 0;
                 while (true) {
                     const { data: items, error: itemErr } = await supabase
@@ -1184,14 +1186,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             for (let i = 0; i < ids.length; i += CHUNK) {
                 const { data, error: e } = await supabase
                     .from('sales_invoice_items')
-                    .select('invoice_id, presentacion, cantidad, precio_unitario, total_linea')
+                    .select('id, invoice_id, presentacion, cantidad, precio_unitario, total_linea')
                     .eq('erp_product_id', productId)
                     .in('invoice_id', ids.slice(i, i + CHUNK));
                 if (e) throw e;
                 lines.push(...(data || []));
             }
             if (!lines.length) return;
-            const invIds = [...new Set(lines.map(l => l.invoice_id))];
+            // Deduplicar por item id (evita duplicados si invoice_id aparecía en múltiples chunks)
+            const seenItemIds = new Set();
+            const uniqueLines = lines.filter(l => {
+                if (seenItemIds.has(l.id)) return false;
+                seenItemIds.add(l.id);
+                return true;
+            });
+            const invIds = [...new Set(uniqueLines.map(l => l.invoice_id))];
             const invoiceMap = {};
             for (let i = 0; i < invIds.length; i += CHUNK) {
                 const { data } = await supabase
@@ -1200,7 +1209,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     .in('id', invIds.slice(i, i + CHUNK));
                 for (const inv of (data || [])) invoiceMap[inv.id] = inv;
             }
-            const result = lines
+            const result = uniqueLines
                 .filter(l => invoiceMap[l.invoice_id])
                 .map(l => ({ ...l, invoice: invoiceMap[l.invoice_id] }))
                 .sort((a, b) => {

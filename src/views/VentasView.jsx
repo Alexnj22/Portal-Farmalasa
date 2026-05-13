@@ -1091,6 +1091,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [drillSortDir, setDrillSortDir] = useState('desc');
     const [drillFilters, setDrillFilters] = useState({ tipodoc: '', tipopago: '', tier: '', changed: false });
     const [drillMonthly, setDrillMonthly] = useState([]);
+    const productsCache = useRef(new Map()); // keyed by `${fini}|${ffin}|${branch}`
+    const drillCache    = useRef(new Map()); // keyed by `${productId}|${fini}|${ffin}|${branch}`
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1105,8 +1107,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
 
-    // Close drill-down whenever filters change
-    useEffect(() => { setExpandedKey(null); setDrillData([]); }, [fini, ffin, filterBranch]);
+    // Close drill-down and clear drill cache whenever period/branch changes
+    useEffect(() => {
+        setExpandedKey(null);
+        setDrillData([]);
+        drillCache.current.clear();
+    }, [fini, ffin, filterBranch]);
 
     // Reset drill sort/filter when a new product is expanded
     useEffect(() => {
@@ -1116,10 +1122,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     }, [expandedKey]);
 
     const fetchProductos = useCallback(async () => {
+        const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
+        if (productsCache.current.has(cacheKey)) {
+            setRows(productsCache.current.get(cacheKey));
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         setError(null);
         try {
-            // Single RPC call — server-side join+aggregation replaces ~130 client queries
             const { data: presData, error: presErr } = await supabase
                 .rpc('get_product_sales_agg', {
                     p_fini:      fini,
@@ -1129,62 +1140,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             if (presErr) throw presErr;
             if (!presData?.length) { setRows([]); setLoading(false); return; }
 
-            // Fetch costs for the products returned (typically 300-800 products, well under 1000)
-            const productIds = presData.map(r => r.erp_product_id).filter(Boolean);
-            const costMap = new Map();
-            if (productIds.length > 0) {
-                const PCHUNK = 500;
-                for (let i = 0; i < productIds.length; i += PCHUNK) {
-                    const { data: precios, error: pErr } = await supabase
-                        .from('product_precios')
-                        .select('product_id, costo, vineta')
-                        .eq('activo', true)
-                        .in('product_id', productIds.slice(i, i + PCHUNK));
-                    if (pErr) throw pErr;
-                    for (const p of (precios || [])) {
-                        const arr = costMap.get(p.product_id) || [];
-                        arr.push({ costo: parseFloat(p.costo || 0), vineta: parseFloat(p.vineta || 0) });
-                        costMap.set(p.product_id, arr);
-                    }
-                }
-            }
-
-            // RPC returns one row per product — neto already computed per doc type (CCF vs COF)
+            // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {
-                const qty  = parseFloat(item.cantidad || 0);
-                const neto = parseFloat(item.neto     || 0);
-
+                const qty         = parseFloat(item.cantidad     || 0);
+                const neto        = parseFloat(item.neto         || 0);
+                const costo_total = item.costo_total != null ? parseFloat(item.costo_total) : null;
+                const utilidad    = costo_total != null ? neto - costo_total : null;
+                const margen      = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
+                const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
                 const presentaciones = (item.presentaciones || []).map(p => ({
                     presentacion: p.presentacion || '',
                     cantidad:     parseFloat(p.cantidad || 0),
                     neto:         parseFloat(p.neto     || 0),
                 }));
-
-                // Cost matching per presentation using its avg precio_unitario
-                let _costoAcum = 0, _costoLines = 0;
-                for (const pres of (item.presentaciones || [])) {
-                    const pqty = parseFloat(pres.cantidad            || 0);
-                    const ppu  = parseFloat(pres.precio_unitario_avg || 0);
-                    const allPrecios = costMap.get(item.erp_product_id) || [];
-                    const filtered   = allPrecios.filter(p => p.vineta === 0 || p.costo <= p.vineta);
-                    const candidates = filtered.length > 0 ? filtered : allPrecios;
-                    if (candidates.length === 1) {
-                        _costoAcum  += pqty * candidates[0].costo;
-                        _costoLines += 1;
-                    } else if (candidates.length > 1) {
-                        const best = candidates.reduce((a, b) =>
-                            Math.abs(b.vineta - ppu) < Math.abs(a.vineta - ppu) ? b : a
-                        );
-                        _costoAcum  += pqty * best.costo;
-                        _costoLines += 1;
-                    }
-                }
-
-                const costo_total    = _costoLines > 0 ? _costoAcum : null;
-                const utilidad       = costo_total != null ? neto - costo_total : null;
-                const margen         = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
-                const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
-
                 return {
                     erp_product_id: item.erp_product_id,
                     descripcion:    item.descripcion,
@@ -1192,6 +1160,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 };
             });
 
+            productsCache.current.set(cacheKey, allRows);
             setRows(allRows);
         } catch (err) {
             setError(err.message || 'Error al cargar productos');
@@ -1203,6 +1172,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 
     const fetchDrillDown = useCallback(async (productId) => {
+        const cacheKey = `${productId}|${fini}|${ffin}|${filterBranch ?? ''}`;
+        if (drillCache.current.has(cacheKey)) {
+            const c = drillCache.current.get(cacheKey);
+            setDrillData(c.data);
+            setDrillMonthly(c.monthly);
+            setDrillLoading(false);
+            return;
+        }
         setDrillLoading(true);
         setDrillData([]);
         try {
@@ -1243,22 +1220,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             }
             const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;
 
-            setDrillData((data || []).map(row => {
+            const mappedData = (data || []).map(row => {
                 const idPres    = row.id_presentacion;
                 const saleKey   = (row.presentacion || '').toUpperCase().replace(/\s+/g, ' ').trim();
-                // 1. Exact ID match; 2. Name match (ERP duplicate IDs); 3. Single-pres fallback
                 const currPrices = preciosMap.get(idPres) ?? preciosNameMap.get(saleKey) ?? fallbackCurr;
                 const histById   = findHistPrices(history || [], idPres, row.fecha);
                 const histByName = histById ? null : findHistFromList(histNameMap.get(saleKey) || [], row.fecha);
                 const histPrices = histById ?? histByName;
-                // Which id_presentacion was actually resolved for history (for change-date lookup)
                 const resolvedHistId = histById ? idPres
                     : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
                     : idPres;
-                // Tier at time of sale (historical if available, otherwise current)
                 const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices);
                 const currentTier = detectTier(row.precio_unitario, currPrices);
-                // Only flag a change when BOTH historical and current prices exist and differ
                 const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
                 const tierChangedAt = tierChanged
                     ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha)
@@ -1280,12 +1253,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     tipo_pago:       row.tipo_pago,
                     tier, currentTier, tierChanged, tierChangedAt,
                 };
-            }));
-            setDrillMonthly((monthly || []).map(m => ({
+            });
+            const mappedMonthly = (monthly || []).map(m => ({
                 month:    m.month,
                 neto:     parseFloat(m.neto     || 0),
                 cantidad: parseFloat(m.cantidad || 0),
-            })));
+            }));
+            drillCache.current.set(cacheKey, { data: mappedData, monthly: mappedMonthly });
+            setDrillData(mappedData);
+            setDrillMonthly(mappedMonthly);
         } catch (err) {
             console.error(err);
         } finally {

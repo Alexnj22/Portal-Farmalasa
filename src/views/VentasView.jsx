@@ -1172,13 +1172,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
-        const horaCorte = currentHoraCorte(ffin);
-        supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch || null, p_hora_corte: horaCorte })
-            .then(({ data }) => {
-                const s = data?.[0] || {};
-                // también sin IVA para comparar manzanas con manzanas
-                setPrevProdStats({ sum: parseFloat(s.total_sum || 0) / IVA });
-            });
+        // Use the same RPC as the current period so both totals come from
+        // the same source (sii.total_linea, erp_product_id IS NOT NULL).
+        // Using get_ventas_stats (si.total) caused a mismatch because it
+        // includes non-product lines (discounts, adjustments, etc.).
+        supabase.rpc('get_product_sales_agg', {
+            p_fini:      prevFini,
+            p_ffin:      prevFfin,
+            p_branch_id: filterBranch ? Number(filterBranch) : null,
+        }).then(({ data }) => {
+            const sum = (data || []).reduce((s, r) => s + parseFloat(r.total_linea || 0), 0);
+            setPrevProdStats({ sum: sum / IVA });
+        });
     }, [fini, ffin, filterBranch]);
 
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible

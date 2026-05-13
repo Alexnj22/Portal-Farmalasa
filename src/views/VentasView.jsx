@@ -1012,8 +1012,36 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
+const DRILL_TIERS = [
+    { key: 'vip',         label: 'VIP',     color: 'bg-violet-100 text-violet-700' },
+    { key: 'clinica',     label: 'Clínica', color: 'bg-sky-100 text-sky-700' },
+    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-orange-100 text-orange-700' },
+    { key: 'premium',     label: 'Premium', color: 'bg-amber-100 text-amber-700' },
+    { key: 'descuento_1', label: 'Desc.',   color: 'bg-emerald-100 text-emerald-700' },
+    { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700' },
+    { key: 'vineta',      label: 'Normal',  color: 'bg-slate-100 text-slate-500' },
+];
+const PAGO_STYLE = {
+    efectivo:      'bg-emerald-50 text-emerald-700',
+    tarjeta:       'bg-blue-50 text-blue-700',
+    credito:       'bg-amber-50 text-amber-700',
+    transferencia: 'bg-purple-50 text-purple-700',
+};
+function detectTier(precioUnitario, preciosRow) {
+    if (!preciosRow || !precioUnitario) return null;
+    // Tier prices in product_precios are stored with IVA; divide to compare with net precio_unitario.
+    const candidates = DRILL_TIERS
+        .map(t => ({ ...t, price: parseFloat(preciosRow[t.key] || 0) / 1.13 }))
+        .filter(t => t.price > 0);
+    if (!candidates.length) return null;
+    const best = candidates.reduce((a, b) =>
+        Math.abs(b.price - precioUnitario) < Math.abs(a.price - precioUnitario) ? b : a
+    );
+    return Math.abs(best.price - precioUnitario) / best.price <= 0.05 ? best : null;
+}
+
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
-    const { branches } = useStaff();
+    const { branches, employees } = useStaff();
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(null);
@@ -1129,33 +1157,43 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillLoading(true);
         setDrillData([]);
         try {
-            // Single RPC call with server-side join — replaces ~106 client queries
-            const { data, error: e } = await supabase
-                .rpc('get_product_drill_lines', {
+            const [{ data, error: e }, { data: precios }] = await Promise.all([
+                supabase.rpc('get_product_drill_lines', {
                     p_erp_product_id: productId,
                     p_fini:           fini,
                     p_ffin:           ffin,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
-                });
+                }),
+                supabase.from('product_precios')
+                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
+                    .eq('product_id', productId)
+                    .eq('activo', true),
+            ]);
             if (e) throw e;
+            const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
+            const fallbackPrices = (precios || []).length === 1 ? precios[0] : null;
             setDrillData((data || []).map(row => ({
                 id:              row.item_id,
-                invoice_id:      row.invoice_id,
+                fecha:           row.fecha,
+                erp_invoice_id:  row.erp_invoice_id,
+                correlativo:     row.correlativo,
                 presentacion:    row.presentacion,
+                id_presentacion: row.id_presentacion,
                 cantidad:        row.cantidad,
                 precio_unitario: row.precio_unitario,
                 neto:            row.neto,
-                invoice: {
-                    id:             row.invoice_id,
-                    fecha:          row.fecha,
-                    erp_invoice_id: row.erp_invoice_id,
-                    correlativo:    row.correlativo,
-                    cliente:        row.cliente,
-                    branch_id:      row.branch_id,
-                },
+                cliente:         row.cliente,
+                branch_id:       row.branch_id,
+                tipo_documento:  row.tipo_documento,
+                cod_vendedor:    row.cod_vendedor,
+                tipo_pago:       row.tipo_pago,
+                tier:            detectTier(
+                    row.precio_unitario,
+                    preciosMap.get(row.id_presentacion) ?? fallbackPrices
+                ),
             })));
-        } catch (e) {
-            console.error(e);
+        } catch (err) {
+            console.error(err);
         } finally {
             setDrillLoading(false);
         }
@@ -1316,10 +1354,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </td>
                                     </tr>
                                     {isExpanded && (
-                                        <tr className="bg-blue-50/20 border-t border-blue-100/60">
+                                        <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
                                             <td colSpan={7} className="px-4 py-4">
                                                 {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-[12px] text-slate-400 py-2">
+                                                    <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">
                                                         <Loader2 size={14} className="animate-spin" /> Cargando detalle...
                                                     </div>
                                                 ) : (
@@ -1339,43 +1377,62 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        {/* Individual sales */}
+
+                                                        {/* Individual sales — modern card list */}
                                                         {drillData.length > 0 && (
                                                             <div>
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Ventas individuales · {drillData.length}</p>
-                                                                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                                                                    <table className="min-w-full text-[11px]">
-                                                                        <thead>
-                                                                            <tr className="bg-slate-50 border-b border-slate-200">
-                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Fecha</th>
-                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Correlativo</th>
-                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden sm:table-cell">Cliente</th>
-                                                                                {!filterBranch && <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden md:table-cell">Sucursal</th>}
-                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden lg:table-cell">Presentación</th>
-                                                                                <th className="text-right px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Cant.</th>
-                                                                                <th className="text-right px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Total</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {drillData.map((line, li) => {
-                                                                                const branchName = branches.find(b => b.id === line.invoice.branch_id)?.name || `Suc. ${line.invoice.branch_id}`;
-                                                                                return (
-                                                                                    <tr key={li} className="border-t border-black/[0.04] hover:bg-slate-50/60">
-                                                                                        <td className="px-3 py-2 font-mono text-slate-600">{line.invoice.fecha}</td>
-                                                                                        <td className="px-3 py-2">
-                                                                                            <span className="font-mono text-slate-700">{line.invoice.correlativo || '—'}</span>
-                                                                                            {line.invoice.erp_invoice_id && <span className="text-slate-400 ml-1">#{line.invoice.erp_invoice_id}</span>}
-                                                                                        </td>
-                                                                                        <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate hidden sm:table-cell">{line.invoice.cliente || '—'}</td>
-                                                                                        {!filterBranch && <td className="px-3 py-2 text-slate-500 hidden md:table-cell">{branchName}</td>}
-                                                                                        <td className="px-3 py-2 text-slate-500 hidden lg:table-cell">{line.presentacion || '—'}</td>
-                                                                                        <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtQty(line.cantidad)}</td>
-                                                                                        <td className="px-3 py-2 text-right font-black text-slate-800">{fmt(parseFloat(line.neto || 0))}</td>
-                                                                                    </tr>
-                                                                                );
-                                                                            })}
-                                                                        </tbody>
-                                                                    </table>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                                                    Ventas individuales · {drillData.length}{drillData.length >= 300 ? '+' : ''}
+                                                                </p>
+                                                                <div className="rounded-2xl border border-slate-200/80 overflow-hidden bg-white shadow-sm divide-y divide-slate-100/80">
+                                                                    {drillData.map((line, li) => {
+                                                                        const emp       = employees?.find(e => e.code === line.cod_vendedor);
+                                                                        const empName   = emp
+                                                                            ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim())
+                                                                            : (line.cod_vendedor || '—');
+                                                                        const empShort  = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
+                                                                        const empInit   = empName[0]?.toUpperCase() || '?';
+                                                                        const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
+                                                                        const pagoStyle = PAGO_STYLE[line.tipo_pago] ?? 'bg-slate-100 text-slate-500';
+                                                                        const docStyle  = line.tipo_documento === 'CCF'
+                                                                            ? 'bg-blue-100 text-blue-700'
+                                                                            : 'bg-slate-100 text-slate-600';
+                                                                        return (
+                                                                            <div key={li} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50/70 transition-colors">
+                                                                                {/* Avatar */}
+                                                                                {emp?.photo_url
+                                                                                    ? <img src={emp.photo_url} alt={empShort} className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm shrink-0" />
+                                                                                    : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-[11px] font-black text-slate-600 ring-2 ring-white shadow-sm shrink-0">{empInit}</div>
+                                                                                }
+
+                                                                                {/* Content */}
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    {/* Row 1: fecha · correlativo · badges */}
+                                                                                    <div className="flex items-center flex-wrap gap-1 mb-[3px]">
+                                                                                        <span className="font-mono text-[10px] text-slate-500 shrink-0">{fmtShort(line.fecha)}</span>
+                                                                                        <span className="text-slate-200 text-[10px]">·</span>
+                                                                                        <span className="font-mono text-[10px] font-semibold text-slate-700 shrink-0">{line.correlativo || line.erp_invoice_id || '—'}</span>
+                                                                                        {line.tipo_documento && <span className={`text-[8px] font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
+                                                                                        {line.tipo_pago && <span className={`text-[8px] font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
+                                                                                        {line.tier && <span className={`text-[8px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>}
+                                                                                    </div>
+                                                                                    {/* Row 2: vendedor · cliente · sucursal */}
+                                                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                                                        <span className="text-[10px] font-semibold text-slate-500 shrink-0">{empShort}</span>
+                                                                                        <span className="text-slate-200 shrink-0">·</span>
+                                                                                        <span className="text-[10px] text-slate-500 truncate">{line.cliente || '—'}</span>
+                                                                                        {!filterBranch && <span className="text-[9px] text-slate-400 shrink-0 hidden md:block">· {branchName}</span>}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* Neto + qty */}
+                                                                                <div className="flex flex-col items-end shrink-0 gap-0.5">
+                                                                                    <span className="text-[13px] font-black text-slate-800">{fmt(line.neto)}</span>
+                                                                                    <span className="text-[9.5px] text-slate-400">{fmtQty(line.cantidad)} u</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             </div>
                                                         )}

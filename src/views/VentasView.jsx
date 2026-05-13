@@ -1044,23 +1044,32 @@ function detectTier(precioUnitario, preciosRow) {
     return best;
 }
 
-// Find the price record that was active on a given date (YYYY-MM-DD string).
-// valid_from/valid_until are UTC ISO timestamps — we compare date prefix only.
-function findHistPrices(history, idPresentacion, fechaStr) {
-    const matches = (history || []).filter(h => {
-        if (h.id_presentacion !== idPresentacion) return false;
+// Normalize a presentacion name for loose matching: "UNIDAD 1x1" → "UNIDAD 1X1"
+function presKey(tipo, descripcion) {
+    return `${tipo ?? ''} ${descripcion ?? ''}`.toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+// Find the price record active on a given date (YYYY-MM-DD) from a pre-filtered list.
+function findHistFromList(list, fechaStr) {
+    const matches = (list || []).filter(h => {
         const from  = h.valid_from.slice(0, 10);
         const until = h.valid_until ? h.valid_until.slice(0, 10) : null;
         return from <= fechaStr && (until === null || until > fechaStr);
     });
-    // Among all valid records, take the most recent one (latest valid_from ≤ fechaStr)
     return matches.sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0] ?? null;
 }
 
-// Find the earliest price change AFTER a given date for this presentation.
-function findFirstChangeSince(history, idPresentacion, fechaStr) {
+// Find the price record that was active on a given date (YYYY-MM-DD string).
+// valid_from/valid_until are UTC ISO timestamps — we compare date prefix only.
+function findHistPrices(history, idPresentacion, fechaStr) {
+    return findHistFromList((history || []).filter(h => h.id_presentacion === idPresentacion), fechaStr);
+}
+
+// Find the earliest price change AFTER a given date for a given id_presentacion list.
+function findFirstChangeSince(history, idPresentaciones, fechaStr) {
+    const ids = Array.isArray(idPresentaciones) ? idPresentaciones : [idPresentaciones];
     const later = (history || [])
-        .filter(h => h.id_presentacion === idPresentacion && h.valid_from.slice(0, 10) > fechaStr)
+        .filter(h => ids.includes(h.id_presentacion) && h.valid_from.slice(0, 10) > fechaStr)
         .sort((a, b) => a.valid_from.localeCompare(b.valid_from));
     return later[0]?.valid_from ?? null;
 }
@@ -1203,30 +1212,50 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
                 }),
                 supabase.from('product_precios')
-                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
+                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
                     .eq('product_id', productId)
                     .eq('activo', true),
                 supabase.from('product_precios_history')
-                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until')
+                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until, presentaciones(tipo, descripcion)')
                     .eq('product_id', productId)
                     .order('valid_from', { ascending: false }),
             ]);
             if (e) throw e;
-            const preciosMap   = new Map((precios || []).map(p => [p.id_presentacion, p]));
+            const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
+            // Secondary lookup by presentation name — handles ERP duplicate IDs
+            // (e.g. "UNIDAD 1x1" stored as id=1 in product_precios but id=102 in sales)
+            const preciosNameMap = new Map();
+            for (const p of (precios || [])) {
+                const k = presKey(p.presentaciones?.tipo, p.presentaciones?.descripcion);
+                if (k) preciosNameMap.set(k, p);
+            }
+            // Group history by name for the same reason
+            const histNameMap = new Map();
+            for (const h of (history || [])) {
+                const k = presKey(h.presentaciones?.tipo, h.presentaciones?.descripcion);
+                if (k) { if (!histNameMap.has(k)) histNameMap.set(k, []); histNameMap.get(k).push(h); }
+            }
             const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;
+
             setDrillData((data || []).map(row => {
-                const idPres = row.id_presentacion;
-                // Only use prices that match the exact id_presentacion — cross-presentation
-                // fallback causes false positives when ERP uses different IDs for the same name.
-                const currPrices  = preciosMap.get(idPres) ?? fallbackCurr;
-                const histPrices  = findHistPrices(history || [], idPres, row.fecha);
+                const idPres    = row.id_presentacion;
+                const saleKey   = (row.presentacion || '').toUpperCase().replace(/\s+/g, ' ').trim();
+                // 1. Exact ID match; 2. Name match (ERP duplicate IDs); 3. Single-pres fallback
+                const currPrices = preciosMap.get(idPres) ?? preciosNameMap.get(saleKey) ?? fallbackCurr;
+                const histById   = findHistPrices(history || [], idPres, row.fecha);
+                const histByName = histById ? null : findHistFromList(histNameMap.get(saleKey) || [], row.fecha);
+                const histPrices = histById ?? histByName;
+                // Which id_presentacion was actually resolved for history (for change-date lookup)
+                const resolvedHistId = histById ? idPres
+                    : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
+                    : idPres;
                 // Tier at time of sale (historical if available, otherwise current)
                 const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices);
                 const currentTier = detectTier(row.precio_unitario, currPrices);
                 // Only flag a change when BOTH historical and current prices exist and differ
                 const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
                 const tierChangedAt = tierChanged
-                    ? findFirstChangeSince(history || [], idPres, row.fecha)
+                    ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha)
                     : null;
                 return {
                     id:              row.item_id,

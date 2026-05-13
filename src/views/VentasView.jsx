@@ -1019,17 +1019,19 @@ const DRILL_TIERS = [
     { key: 'premium',     label: 'Premium', color: 'bg-amber-100 text-amber-700' },
     { key: 'descuento_1', label: 'Desc.',   color: 'bg-emerald-100 text-emerald-700' },
     { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700' },
-    { key: 'vineta',      label: 'Normal',  color: 'bg-slate-100 text-slate-500' },
+    { key: 'vineta',      label: 'Vineta',  color: 'bg-slate-100 text-slate-600' },
 ];
 const PAGO_STYLE = {
     efectivo:      'bg-emerald-50 text-emerald-700',
     tarjeta:       'bg-blue-50 text-blue-700',
     credito:       'bg-amber-50 text-amber-700',
     transferencia: 'bg-purple-50 text-purple-700',
+    cheque:        'bg-zinc-100 text-zinc-600',
+    bitcoin:       'bg-orange-50 text-orange-600',
 };
 function detectTier(precioUnitario, preciosRow) {
     if (!preciosRow || !precioUnitario) return null;
-    // Tier prices in product_precios are stored with IVA; divide to compare with net precio_unitario.
+    // Tier prices stored with IVA; normalize to net for comparison with net precio_unitario.
     const candidates = DRILL_TIERS
         .map(t => ({ ...t, price: parseFloat(preciosRow[t.key] || 0) / 1.13 }))
         .filter(t => t.price > 0);
@@ -1037,7 +1039,10 @@ function detectTier(precioUnitario, preciosRow) {
     const best = candidates.reduce((a, b) =>
         Math.abs(b.price - precioUnitario) < Math.abs(a.price - precioUnitario) ? b : a
     );
-    return Math.abs(best.price - precioUnitario) / best.price <= 0.05 ? best : null;
+    // Within 10% = matched tier; beyond = price was customized
+    if (Math.abs(best.price - precioUnitario) / best.price > 0.10)
+        return { label: 'Especial', color: 'bg-rose-100 text-rose-600' };
+    return best;
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
@@ -1053,6 +1058,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [expandedKey, setExpandedKey]   = useState(null);
     const [drillData,   setDrillData]     = useState([]);
     const [drillLoading, setDrillLoading] = useState(false);
+    const [drillSortCol, setDrillSortCol] = useState('fecha');
+    const [drillSortDir, setDrillSortDir] = useState('desc');
+    const [drillFilters, setDrillFilters] = useState({ tipodoc: '', tipopago: '', tier: '' });
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1060,11 +1068,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         else { setSortCol(col); setSortDir('desc'); }
         setPage(1);
     };
+    const handleDrillSort = (col) => {
+        if (drillSortCol === col) setDrillSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setDrillSortCol(col); setDrillSortDir('desc'); }
+    };
 
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
 
     // Close drill-down whenever filters change
     useEffect(() => { setExpandedKey(null); setDrillData([]); }, [fini, ffin, filterBranch]);
+
+    // Reset drill sort/filter when a new product is expanded
+    useEffect(() => {
+        setDrillSortCol('fecha'); setDrillSortDir('desc');
+        setDrillFilters({ tipodoc: '', tipopago: '', tier: '' });
+    }, [expandedKey]);
 
     const fetchProductos = useCallback(async () => {
         setLoading(true);
@@ -1204,6 +1222,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setExpandedKey(key);
         if (productId != null) fetchDrillDown(productId);
     };
+
+    const filteredDrill = useMemo(() => {
+        let list = drillData;
+        if (drillFilters.tipodoc)  list = list.filter(l => l.tipo_documento === drillFilters.tipodoc);
+        if (drillFilters.tipopago) list = list.filter(l => l.tipo_pago === drillFilters.tipopago);
+        if (drillFilters.tier)     list = list.filter(l => (l.tier?.label ?? '') === drillFilters.tier);
+        return [...list].sort((a, b) => {
+            const dir = drillSortDir === 'asc' ? 1 : -1;
+            const av = a[drillSortCol], bv = b[drillSortCol];
+            if (av == null && bv == null) return 0;
+            if (av == null) return 1;
+            if (bv == null) return -1;
+            return typeof av === 'string' ? av.localeCompare(bv) * dir : (av - bv) * dir;
+        });
+    }, [drillData, drillFilters, drillSortCol, drillSortDir]);
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
@@ -1378,64 +1411,140 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             </div>
                                                         )}
 
-                                                        {/* Individual sales — modern card list */}
-                                                        {drillData.length > 0 && (
-                                                            <div>
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                                                                    Ventas individuales · {drillData.length}{drillData.length >= 300 ? '+' : ''}
-                                                                </p>
-                                                                <div className="rounded-2xl border border-slate-200/80 overflow-hidden bg-white shadow-sm divide-y divide-slate-100/80">
-                                                                    {drillData.map((line, li) => {
-                                                                        const emp       = employees?.find(e => e.code === line.cod_vendedor);
-                                                                        const empName   = emp
-                                                                            ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim())
-                                                                            : (line.cod_vendedor || '—');
-                                                                        const empShort  = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
-                                                                        const empInit   = empName[0]?.toUpperCase() || '?';
-                                                                        const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
-                                                                        const pagoStyle = PAGO_STYLE[line.tipo_pago] ?? 'bg-slate-100 text-slate-500';
-                                                                        const docStyle  = line.tipo_documento === 'CCF'
-                                                                            ? 'bg-blue-100 text-blue-700'
-                                                                            : 'bg-slate-100 text-slate-600';
-                                                                        return (
-                                                                            <div key={li} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50/70 transition-colors">
-                                                                                {/* Avatar */}
-                                                                                {emp?.photo_url
-                                                                                    ? <img src={emp.photo_url} alt={empShort} className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm shrink-0" />
-                                                                                    : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-[11px] font-black text-slate-600 ring-2 ring-white shadow-sm shrink-0">{empInit}</div>
-                                                                                }
+                                                        {/* Individual sales table */}
+                                                        {drillData.length > 0 && (() => {
+                                                            const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
+                                                            const pagoOpts = [...new Set(drillData.map(l => l.tipo_pago).filter(Boolean))];
+                                                            const tierOpts = [...new Set(drillData.map(l => l.tier?.label).filter(Boolean))];
+                                                            const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0), 0);
+                                                            const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto || 0), 0);
+                                                            const DH = ({ col, label, right }) => {
+                                                                const active = drillSortCol === col;
+                                                                return (
+                                                                    <th onClick={() => handleDrillSort(col)}
+                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-slate-400'} hover:text-slate-700`}>
+                                                                        <span className="inline-flex items-center gap-0.5">
+                                                                            {label}
+                                                                            {active
+                                                                                ? (drillSortDir === 'asc' ? <ArrowUp size={9} /> : <ArrowDown size={9} />)
+                                                                                : <ChevronsUpDown size={9} className="opacity-30" />}
+                                                                        </span>
+                                                                    </th>
+                                                                );
+                                                            };
+                                                            const pill = (val, field, label) => {
+                                                                const active = drillFilters[field] === val;
+                                                                return (
+                                                                    <button key={val} onClick={() => setDrillFilters(f => ({ ...f, [field]: active ? '' : val }))}
+                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-all ${active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
+                                                                        {label ?? val}
+                                                                    </button>
+                                                                );
+                                                            };
+                                                            return (
+                                                                <div>
+                                                                    {/* Filter chips */}
+                                                                    {(docOpts.length > 1 || pagoOpts.length > 1 || tierOpts.length > 0) && (
+                                                                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                                                            {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
+                                                                            {docOpts.length > 1 && pagoOpts.length > 1 && <span className="text-slate-200">|</span>}
+                                                                            {pagoOpts.length > 1 && pagoOpts.map(v => pill(v, 'tipopago'))}
+                                                                            {tierOpts.length > 0 && <span className="text-slate-200">|</span>}
+                                                                            {tierOpts.map(v => pill(v, 'tier'))}
+                                                                            {(drillFilters.tipodoc || drillFilters.tipopago || drillFilters.tier) && (
+                                                                                <button onClick={() => setDrillFilters({ tipodoc: '', tipopago: '', tier: '' })}
+                                                                                    className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-all">
+                                                                                    ✕ limpiar
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
 
-                                                                                {/* Content */}
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    {/* Row 1: fecha · correlativo · badges */}
-                                                                                    <div className="flex items-center flex-wrap gap-1 mb-[3px]">
-                                                                                        <span className="font-mono text-[10px] text-slate-500 shrink-0">{fmtShort(line.fecha)}</span>
-                                                                                        <span className="text-slate-200 text-[10px]">·</span>
-                                                                                        <span className="font-mono text-[10px] font-semibold text-slate-700 shrink-0">{line.correlativo || line.erp_invoice_id || '—'}</span>
-                                                                                        {line.tipo_documento && <span className={`text-[8px] font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
-                                                                                        {line.tipo_pago && <span className={`text-[8px] font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
-                                                                                        {line.tier && <span className={`text-[8px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>}
-                                                                                    </div>
-                                                                                    {/* Row 2: vendedor · cliente · sucursal */}
-                                                                                    <div className="flex items-center gap-1.5 min-w-0">
-                                                                                        <span className="text-[10px] font-semibold text-slate-500 shrink-0">{empShort}</span>
-                                                                                        <span className="text-slate-200 shrink-0">·</span>
-                                                                                        <span className="text-[10px] text-slate-500 truncate">{line.cliente || '—'}</span>
-                                                                                        {!filterBranch && <span className="text-[9px] text-slate-400 shrink-0 hidden md:block">· {branchName}</span>}
-                                                                                    </div>
-                                                                                </div>
+                                                                    {/* Totals summary */}
+                                                                    <div className="flex items-center gap-3 mb-2">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                                            {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
+                                                                        </p>
+                                                                        <span className="text-slate-200">·</span>
+                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-normal text-slate-400">unidades</span></p>
+                                                                        <span className="text-slate-200">·</span>
+                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-normal text-slate-400">neto s/IVA</span></p>
+                                                                    </div>
 
-                                                                                {/* Neto + qty */}
-                                                                                <div className="flex flex-col items-end shrink-0 gap-0.5">
-                                                                                    <span className="text-[13px] font-black text-slate-800">{fmt(line.neto)}</span>
-                                                                                    <span className="text-[9.5px] text-slate-400">{fmtQty(line.cantidad)} u</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    })}
+                                                                    {/* Table */}
+                                                                    <div className="rounded-xl border border-slate-200/80 overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                                                        <table className="min-w-full text-[11px]">
+                                                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                                                <tr>
+                                                                                    <DH col="fecha"          label="Fecha" />
+                                                                                    <DH col="correlativo"    label="Correlativo" />
+                                                                                    <DH col="tipo_documento" label="Doc" />
+                                                                                    <DH col="tipo_pago"      label="Pago" />
+                                                                                    <DH col="cod_vendedor"   label="Vendedor" />
+                                                                                    <DH col="cliente"        label="Cliente" />
+                                                                                    {!filterBranch && <DH col="branch_id" label="Suc." />}
+                                                                                    <DH col="presentacion"   label="Presentación" />
+                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap">Precio</th>
+                                                                                    <DH col="cantidad"       label="Cant." right />
+                                                                                    <DH col="neto"           label="Neto" right />
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-slate-100">
+                                                                                {filteredDrill.map((line, li) => {
+                                                                                    const emp        = employees?.find(e => e.code === line.cod_vendedor);
+                                                                                    const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
+                                                                                    const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
+                                                                                    const empInit    = empName[0]?.toUpperCase() || '?';
+                                                                                    const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
+                                                                                    const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-slate-100 text-slate-500';
+                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';
+                                                                                    return (
+                                                                                        <tr key={li} className="hover:bg-blue-50/30 transition-colors">
+                                                                                            <td className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{fmtShort(line.fecha)}</td>
+                                                                                            <td className="px-3 py-2 font-mono text-slate-700 whitespace-nowrap">
+                                                                                                {line.correlativo || line.erp_invoice_id || '—'}
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                                {line.tipo_documento && <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                                {line.tipo_pago && <span className={`text-[9px] font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                                <div className="flex items-center gap-1.5">
+                                                                                                    {emp?.photo_url
+                                                                                                        ? <img src={emp.photo_url} alt={empShort} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                                                                                                        : <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-black text-slate-500 shrink-0">{empInit}</div>
+                                                                                                    }
+                                                                                                    <span className="text-slate-600 text-[11px]">{empShort}</span>
+                                                                                                </div>
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate">{line.cliente || '—'}</td>
+                                                                                            {!filterBranch && <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{branchName}</td>}
+                                                                                            <td className="px-3 py-2 text-slate-500 max-w-[120px] truncate">{line.presentacion || '—'}</td>
+                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                                {line.tier && <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>}
+                                                                                            </td>
+                                                                                            <td className="px-3 py-2 text-right font-semibold text-slate-700 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
+                                                                                            <td className="px-3 py-2 text-right font-black text-slate-800 whitespace-nowrap">{fmt(line.neto)}</td>
+                                                                                        </tr>
+                                                                                    );
+                                                                                })}
+                                                                            </tbody>
+                                                                            <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                                                                                <tr>
+                                                                                    <td colSpan={!filterBranch ? 9 : 8} className="px-3 py-2 text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                                                                                        Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
+                                                                                    </td>
+                                                                                    <td className="px-3 py-2 text-right font-black text-slate-700">{fmtQty(totCant)}</td>
+                                                                                    <td className="px-3 py-2 text-right font-black text-emerald-700">{fmt(totNeto)}</td>
+                                                                                </tr>
+                                                                            </tfoot>
+                                                                        </table>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
+                                                            );
+                                                        })()}
                                                     </div>
                                                 )}
                                             </td>

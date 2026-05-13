@@ -1212,19 +1212,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     .order('valid_from', { ascending: false }),
             ]);
             if (e) throw e;
-            const preciosMap    = new Map((precios  || []).map(p => [p.id_presentacion, p]));
-            const fallbackCurr  = (precios  || []).length === 1 ? precios[0]  : null;
-            const fallbackHist  = (history || []).length > 0    ? history      : null;
+            const preciosMap   = new Map((precios || []).map(p => [p.id_presentacion, p]));
+            const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;
             setDrillData((data || []).map(row => {
-                const idPres       = row.id_presentacion;
-                const currPrices   = preciosMap.get(idPres) ?? fallbackCurr;
-                const histPrices   = findHistPrices(history || [], idPres, row.fecha)
-                                  ?? findHistPrices(history || [], null, row.fecha)
-                                  ?? (fallbackHist ? findHistPrices(fallbackHist, fallbackHist[0]?.id_presentacion, row.fecha) : null);
-                // Tier at time of sale (historical), and tier today (current)
-                const tier         = detectTier(row.precio_unitario, histPrices ?? currPrices);
-                const currentTier  = detectTier(row.precio_unitario, currPrices);
-                const tierChanged  = !!(histPrices && tier?.label !== currentTier?.label);
+                const idPres = row.id_presentacion;
+                // Only use prices that match the exact id_presentacion — cross-presentation
+                // fallback causes false positives when ERP uses different IDs for the same name.
+                const currPrices  = preciosMap.get(idPres) ?? fallbackCurr;
+                const histPrices  = findHistPrices(history || [], idPres, row.fecha);
+                // Tier at time of sale (historical if available, otherwise current)
+                const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices);
+                const currentTier = detectTier(row.precio_unitario, currPrices);
+                // Only flag a change when BOTH historical and current prices exist and differ
+                const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
                 const tierChangedAt = tierChanged
                     ? findFirstChangeSince(history || [], idPres, row.fecha)
                     : null;

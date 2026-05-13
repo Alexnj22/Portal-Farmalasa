@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info, RotateCcw
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -2014,29 +2014,6 @@ export default function FacturacionView() {
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
     const searchInputRef = useRef(null);
-    const [iframeKey, setIframeKey] = useState(0);
-    const OSS_PROXY = '/api/oss-proxy/farma_salud/admin_factura_rangos.php';
-    const [rightWidth, setRightWidth] = useState(500);
-    const isDragging = useRef(false);
-    const dragStartX = useRef(0);
-    const dragStartW = useRef(0);
-
-    useEffect(() => {
-        const onMove = (e) => {
-            if (!isDragging.current) return;
-            const delta = dragStartX.current - e.clientX;
-            setRightWidth(Math.max(280, Math.min(900, dragStartW.current + delta)));
-        };
-        const onUp = () => {
-            if (!isDragging.current) return;
-            isDragging.current = false;
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-        return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-    }, []);
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
         [branches]
@@ -2115,8 +2092,6 @@ export default function FacturacionView() {
         </div>
     );
 
-    const showIframe = activeTab !== 'no_efectivo';
-
     return (
         <GlassViewLayout
             icon={FileText}
@@ -2126,83 +2101,19 @@ export default function FacturacionView() {
             transparentBody={true}
             fixedScrollMode={true}
         >
-            <div className="flex flex-col lg:flex-row items-start w-full">
-
-                {/* ── Left: tab panels ──────────────────────────────────────── */}
-                <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden
-                                lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pb-20 relative z-10">
-                    <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
-                        <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                            <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                            <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                            <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
-                        </div>
-                        <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                            <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
-                        </div>
-                    </div>
+            <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+                <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
+                    <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
                 </div>
-
-                {/* ── Drag handle ───────────────────────────────────────────── */}
-                {showIframe && (
-                    <div
-                        onMouseDown={e => {
-                            isDragging.current = true;
-                            dragStartX.current = e.clientX;
-                            dragStartW.current = rightWidth;
-                            document.body.style.cursor = 'col-resize';
-                            document.body.style.userSelect = 'none';
-                        }}
-                        className="hidden lg:flex w-4 shrink-0 items-center justify-center cursor-col-resize
-                                   lg:h-screen lg:-mt-[180px] xl:-mt-[200px] self-stretch relative z-20 group"
-                    >
-                        <div className="w-[3px] h-full rounded-full bg-white/30 group-hover:bg-indigo-300/60 transition-colors duration-200" />
-                        <div className="absolute flex flex-col gap-[5px] pointer-events-none">
-                            {[0,1,2,3,4].map(i => (
-                                <div key={i} className="w-[3px] h-[3px] rounded-full bg-slate-300/60 group-hover:bg-indigo-400/80 transition-colors duration-200" />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── Right: OSS proxy iframe (desktop only, not on no_efectivo) ── */}
-                {showIframe && (
-                    <div className="hidden lg:flex shrink-0
-                                    lg:h-screen lg:-mt-[180px] xl:-mt-[200px]
-                                    flex-col overflow-hidden relative z-10"
-                         style={{ width: `${rightWidth}px` }}>
-                        <div className="hidden lg:block h-[188px] xl:h-[208px] shrink-0" />
-                        <div className="flex flex-col flex-1 overflow-hidden mb-8
-                                        rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80
-                                        bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%]
-                                        shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)]">
-                            <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100/70 bg-white/30 shrink-0">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                                <span className="text-[12px] font-black text-slate-700 tracking-tight">Admin Facturas · OSS</span>
-                                <button onClick={() => setIframeKey(k => k + 1)} title="Recargar"
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all">
-                                    <RotateCcw size={12} strokeWidth={2.5} />
-                                </button>
-                                <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
-                                   target="_blank" rel="noopener noreferrer" title="Abrir en pestaña nueva"
-                                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 transition-all">
-                                    <ExternalLink size={12} strokeWidth={2.5} />
-                                </a>
-                            </div>
-                            <iframe
-                                key={iframeKey}
-                                src={OSS_PROXY}
-                                title="Admin Facturas OSS"
-                                className="flex-1 w-full border-0 min-h-0"
-                            />
-                        </div>
-                    </div>
-                )}
-
+                <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
+                    <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                </div>
+                <div className={activeTab === 'saltos' ? '' : 'hidden'}>
+                    <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
+                </div>
+                <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
+                    <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                </div>
             </div>
         </GlassViewLayout>
     );

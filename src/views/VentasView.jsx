@@ -406,7 +406,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         const uncached = fetched.map(r => r.id).filter(id => !itemsCache[id]);
         if (uncached.length > 0) {
             supabase.from('sales_invoice_items')
-                .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+                .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
                 .in('invoice_id', uncached)
                 .order('total_linea', { ascending: false })
                 .then(({ data: items }) => {
@@ -432,7 +432,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         setLoadingItems(true);
         const { data } = await supabase
             .from('sales_invoice_items')
-            .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
+            .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
             .eq('invoice_id', invoiceId)
             .order('total_linea', { ascending: false });
         setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
@@ -608,7 +608,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 // Deduplicate: exact same (erp_product_id/descripcion, presentacion, precio_unitario, total_linea) → keep one
                                                                 const seen = new Set();
                                                                 const deduped = (cachedItems || []).filter(it => {
-                                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}`;
+                                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
                                                                     if (seen.has(sig)) return false;
                                                                     seen.add(sig);
                                                                     return true;
@@ -637,7 +637,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                 <tr key={idx} className="hover:bg-white/50 transition-colors">
                                                                                     <td className="py-2 pr-4">
                                                                                         <p className="font-semibold text-slate-700 leading-tight">{it.descripcion}</p>
-                                                                                        {it.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{it.presentacion}</p>}
+                                                                                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                                                                            {it.presentacion && <p className="text-[10px] text-slate-400">{it.presentacion}</p>}
+                                                                                            {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">L: {it.lote}</span>}
+                                                                                            {it.fecha_vencimiento && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono ${new Date(it.fecha_vencimiento) < new Date(Date.now() + 90*24*60*60*1000) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50 text-emerald-600'}`}>Vence: {it.fecha_vencimiento}</span>}
+                                                                                        </div>
                                                                                     </td>
                                                                                     <td className="py-2 text-right font-bold text-slate-600">{fmtQty(it.cantidad)}</td>
                                                                                     <td className="py-2 text-right text-slate-500 hidden sm:table-cell">{fmt(it.precio_unitario)}</td>

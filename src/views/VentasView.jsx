@@ -315,6 +315,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingItems, setLoadingItems] = useState(false);
     const [loadingRows, setLoadingRows]   = useState(true);
+    const [antibioticIds, setAntibioticIds] = useState(new Set());
+
+    useEffect(() => {
+        supabase.from('products').select('id').eq('es_antibiotico', true)
+            .then(({ data }) => { if (data) setAntibioticIds(new Set(data.map(p => p.id))); });
+    }, []);
 
     const [fini, ffin] = monthRange.split('|');
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
@@ -627,6 +633,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             <div key={idx} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/70 transition-colors group">
                                                                                 <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                                                                                     <span className="text-[11px] font-semibold text-slate-700 leading-tight">{it.descripcion}</span>
+                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>}
                                                                                     {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono tracking-wide">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600 font-mono">↻{it.fecha_vencimiento}</span>}

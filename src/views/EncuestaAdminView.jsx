@@ -147,6 +147,15 @@ function SegmentControl({ options, value, onChange, compact = false }) {
     );
 }
 
+function computeTenureCategory(hireDateStr) {
+    if (!hireDateStr) return null;
+    const months = (Date.now() - new Date(hireDateStr).getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    if (months < 12) return 'A';
+    if (months < 36) return 'B';
+    if (months < 60) return 'C';
+    return 'D';
+}
+
 // ─── Main view ────────────────────────────────────────────────────────────────
 export default function EncuestaAdminView() {
     const navigate = useNavigate();
@@ -229,7 +238,7 @@ export default function EncuestaAdminView() {
 
     useEffect(() => {
         supabase.from('employees')
-            .select('id, first_names, last_names, photo_url, role_id, branch:branches(id, name)')
+            .select('id, first_names, last_names, photo_url, role_id, hire_date, branch:branches(id, name)')
             .order('first_names')
             .then(({ data }) => setEmployees(data || []));
     }, []);
@@ -253,7 +262,7 @@ export default function EncuestaAdminView() {
             return (a.employee?.branch?.name || '').localeCompare(b.employee?.branch?.name || '');
         });
         setRespuestas(sorted);
-        const open = {};
+        const open = { general: true };
         bData.forEach(b => { open[b.id] = false; });
         if (bData.length) open[bData[0].id] = true;
         setRfOpenBloques(open);
@@ -375,6 +384,23 @@ export default function EncuestaAdminView() {
 
     const setRfAnswer = (idx, val) =>
         setRfAnswers(prev => { const a = [...prev]; a[idx] = val; return a; });
+
+    // Auto-fill P1 (tiempo) and P2 (sucursal) from employee data for new responses
+    useEffect(() => {
+        if (!rfEmployeeId || editingResponse) return;
+        const emp = employees.find(e => e.id === rfEmployeeId);
+        if (!emp) return;
+        const p1q = preguntas.find(p => p.numero === 1);
+        const p2q = preguntas.find(p => p.numero === 2);
+        const tenure   = computeTenureCategory(emp.hire_date);
+        const branch   = emp.branch?.name || '';
+        setRfAnswers(prev => {
+            const a = [...prev];
+            if (p1q != null && tenure)  a[p1q.indice] = tenure;
+            if (p2q != null && branch)  a[p2q.indice] = branch;
+            return a;
+        });
+    }, [rfEmployeeId, preguntas, employees, editingResponse]);
 
     // ── Toggle expand survey card ─────────────────────────────────────────────
     const toggleExpand = (survey) => {
@@ -776,6 +802,58 @@ export default function EncuestaAdminView() {
                                     </div>
                                 )}
 
+                                {/* Preguntas generales (sin bloque) */}
+                                {(() => {
+                                    const gqs = preguntas.filter(p => p.bloque_id === null && p.tipo !== 'sucursal' && p.numero !== 1);
+                                    if (!gqs.length) return null;
+                                    const isOpen = rfOpenBloques['general'];
+                                    const answered = gqs.filter(p => rfAnswers[p.indice] !== null).length;
+                                    return (
+                                        <div className="rounded-2xl border border-white/70 bg-white/30 backdrop-blur-sm overflow-hidden">
+                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-white/30 transition-colors"
+                                                onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}>
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 bg-slate-500">
+                                                    G
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-[12px] font-black text-slate-800">Datos Generales</span>
+                                                    <span className="ml-2 text-[10px] text-slate-400 font-semibold">{answered}/{gqs.length}</span>
+                                                </div>
+                                                {answered === gqs.length && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={3} />}
+                                                {isOpen ? <ChevronUp size={13} className="text-slate-400 shrink-0" /> : <ChevronDown size={13} className="text-slate-400 shrink-0" />}
+                                            </button>
+                                            {isOpen && (
+                                                <div className="border-t border-white/50">
+                                                    {gqs.map((p, qi) => {
+                                                        const val = rfAnswers[p.indice];
+                                                        return (
+                                                            <div key={p.id}
+                                                                className={`flex items-start gap-3 px-4 py-3 ${qi < gqs.length - 1 ? 'border-b border-white/40' : ''}`}>
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-white/60 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">
+                                                                    {p.numero}
+                                                                </span>
+                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <div className="shrink-0 flex items-center gap-1 mt-0.5">
+                                                                    {['A','B','C','D'].map(opt => {
+                                                                        const oc = OPT_COLORS[opt];
+                                                                        return (
+                                                                            <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
+                                                                                onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
+                                                                                className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
+                                                                                {opt}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+
                                 {/* Questions by bloque */}
                                 {bloques.map(bloque => {
                                     const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
@@ -1154,6 +1232,36 @@ export default function EncuestaAdminView() {
                                                                                         <tr>
                                                                                             <td colSpan={bloques.length + 4} className="px-5 pb-5 pt-2 bg-[#007AFF]/[0.03]">
                                                                                                 <div className="space-y-2.5">
+                                                                                                    {/* Datos generales (P1 tiempo + P3 razón) */}
+                                                                                                    {(() => {
+                                                                                                        const gqs = preguntas.filter(p => p.bloque_id === null && p.tipo !== 'sucursal');
+                                                                                                        if (!gqs.length) return null;
+                                                                                                        return (
+                                                                                                            <div className="rounded-xl border border-white/70 bg-white/60 overflow-hidden">
+                                                                                                                <div className="flex items-center gap-2 px-4 py-2 border-b border-white/50 bg-slate-100/40">
+                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-black text-white shrink-0 bg-slate-500">G</div>
+                                                                                                                    <span className="text-[11px] font-black text-slate-700">Datos Generales</span>
+                                                                                                                </div>
+                                                                                                                <div className="divide-y divide-white/40">
+                                                                                                                    {gqs.map(p => {
+                                                                                                                        const ans = row.responses?.[p.indice];
+                                                                                                                        const optLabel = ans && p.opciones
+                                                                                                                            ? (p.opciones[['A','B','C','D'].indexOf(ans)] || ans)
+                                                                                                                            : ans;
+                                                                                                                        return (
+                                                                                                                            <div key={p.id} className="flex items-center gap-3 px-4 py-2">
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-white/60 flex items-center justify-center text-[7px] font-black text-slate-400">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-[11px] text-slate-600 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                {ans
+                                                                                                                                    ? <span className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{optLabel || ans}</span>
+                                                                                                                                    : <span className="shrink-0 text-[10px] text-slate-300">—</span>}
+                                                                                                                            </div>
+                                                                                                                        );
+                                                                                                                    })}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })()}
                                                                                                     {bloques.map(bloque => {
                                                                                                         const bqs = preguntas.filter(p => p.bloque_id === bloque.id && p.tipo !== 'sucursal');
                                                                                                         if (!bqs.length) return null;

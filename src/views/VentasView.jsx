@@ -1015,6 +1015,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 const IVA = 1.13; // precios en facturas incluyen IVA 13%; costos ERP son sin IVA
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
+    const { branches } = useStaff();
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(null);
@@ -1023,6 +1024,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
     const [page, setPage]           = useState(1);
     const [pageSize, setPageSize]   = useState(50);
+    const [expandedKey, setExpandedKey]   = useState(null);
+    const [drillData,   setDrillData]     = useState([]);
+    const [drillLoading, setDrillLoading] = useState(false);
+    const invoiceIdsRef = useRef([]);
 
     const [fini, ffin] = monthRange.split('|');
 
@@ -1056,7 +1061,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 if (invoices.length < 1000) break;
                 invFrom += 1000;
             }
-            if (ids.length === 0) { setRows([]); setLoading(false); return; }
+            if (ids.length === 0) { setRows([]); invoiceIdsRef.current = []; setLoading(false); return; }
+            invoiceIdsRef.current = ids;
 
             // Chunks pequeños de IDs + paginación de resultados para no chocar con el límite de 1000 filas de PostgREST
             const CHUNK = 200;
@@ -1099,17 +1105,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }
             }
 
-            // Per-line aggregation: each line contributes its own neto and cost
+            // Per-line aggregation grouped by product only (not by presentation)
             const agg = new Map();
             for (const item of itemsAll) {
-                const key = `${item.erp_product_id || item.descripcion}||${item.presentacion || ''}`;
+                const key = item.erp_product_id != null
+                    ? String(item.erp_product_id)
+                    : `desc::${item.descripcion || ''}`;
                 if (!agg.has(key)) {
                     agg.set(key, {
                         erp_product_id: item.erp_product_id,
                         descripcion:    item.descripcion,
-                        presentacion:   item.presentacion,
                         cantidad: 0, total: 0, lineas: 0,
                         _netoAcum: 0, _costoAcum: 0, _costoLines: 0,
+                        _pres: new Map(), // presentacion -> { cantidad, neto }
                     });
                 }
                 const cur  = agg.get(key);
@@ -1117,14 +1125,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 const tl   = parseFloat(item.total_linea || 0);
                 const pu   = parseFloat(item.precio_unitario || 0);
 
-                cur.cantidad     += qty;
-                cur.total        += tl;
-                cur.lineas       += 1;
-                cur._netoAcum    += tl / IVA;
+                cur.cantidad  += qty;
+                cur.total     += tl;
+                cur.lineas    += 1;
+                cur._netoAcum += tl / IVA;
 
-                // Match the right presentation using THIS line's actual precio_unitario.
-                // First filter out presentations where costo > vineta (impossible in real life,
-                // signals bad ERP data like $250 cost on a $5 product).
+                // Track per-presentation breakdown
+                const pk = item.presentacion || '';
+                if (!cur._pres.has(pk)) cur._pres.set(pk, { presentacion: item.presentacion || '', cantidad: 0, neto: 0 });
+                const pv = cur._pres.get(pk);
+                pv.cantidad += qty;
+                pv.neto     += tl / IVA;
+
                 const allPrecios = costMap.get(item.erp_product_id) || [];
                 const precios = allPrecios.filter(p => p.vineta === 0 || p.costo <= p.vineta);
                 const candidates = precios.length > 0 ? precios : allPrecios;
@@ -1141,13 +1153,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             }
 
             const allRows = [...agg.values()].map(v => {
-                const neto         = v._netoAcum;
-                const costo_total  = v._costoLines > 0 ? v._costoAcum : null;
-                const utilidad     = costo_total != null ? neto - costo_total : null;
-                const margen       = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
-                // costo_unitario ponderado para mostrar en tabla (costo_total / unidades vendidas)
+                const neto           = v._netoAcum;
+                const costo_total    = v._costoLines > 0 ? v._costoAcum : null;
+                const utilidad       = costo_total != null ? neto - costo_total : null;
+                const margen         = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
                 const costo_unitario = costo_total != null && v.cantidad > 0 ? costo_total / v.cantidad : null;
-                return { ...v, neto, costo_unitario, costo_total, utilidad, margen };
+                const presentaciones = [...v._pres.values()].sort((a, b) => b.neto - a.neto);
+                return { ...v, neto, costo_unitario, costo_total, utilidad, margen, presentaciones };
             });
 
             allRows.sort((a, b) => b.neto - a.neto);
@@ -1160,6 +1172,54 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     }, [fini, ffin, filterBranch]);
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
+
+    const fetchDrillDown = useCallback(async (productId) => {
+        setDrillLoading(true);
+        setDrillData([]);
+        try {
+            const ids = invoiceIdsRef.current;
+            if (!ids.length) return;
+            const CHUNK = 200;
+            const lines = [];
+            for (let i = 0; i < ids.length; i += CHUNK) {
+                const { data, error: e } = await supabase
+                    .from('sales_invoice_items')
+                    .select('invoice_id, presentacion, cantidad, precio_unitario, total_linea')
+                    .eq('erp_product_id', productId)
+                    .in('invoice_id', ids.slice(i, i + CHUNK));
+                if (e) throw e;
+                lines.push(...(data || []));
+            }
+            if (!lines.length) return;
+            const invIds = [...new Set(lines.map(l => l.invoice_id))];
+            const invoiceMap = {};
+            for (let i = 0; i < invIds.length; i += CHUNK) {
+                const { data } = await supabase
+                    .from('sales_invoices')
+                    .select('id, fecha, erp_invoice_id, correlativo, cliente, branch_id')
+                    .in('id', invIds.slice(i, i + CHUNK));
+                for (const inv of (data || [])) invoiceMap[inv.id] = inv;
+            }
+            const result = lines
+                .filter(l => invoiceMap[l.invoice_id])
+                .map(l => ({ ...l, invoice: invoiceMap[l.invoice_id] }))
+                .sort((a, b) => {
+                    const fd = b.invoice.fecha.localeCompare(a.invoice.fecha);
+                    return fd !== 0 ? fd : (b.invoice.erp_invoice_id || 0) - (a.invoice.erp_invoice_id || 0);
+                });
+            setDrillData(result);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setDrillLoading(false);
+        }
+    }, []);
+
+    const toggleExpand = (key, productId) => {
+        if (expandedKey === key) { setExpandedKey(null); return; }
+        setExpandedKey(key);
+        if (productId != null) fetchDrillDown(productId);
+    };
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
@@ -1251,24 +1311,41 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         </thead>
                         <tbody>
                             {paginated.map((r, i) => {
-                                const globalIdx = (page - 1) * pageSize + i;
-                                const pct    = (r.neto / maxNeto) * 100;
-                                const margin = r.margen;
+                                const globalIdx  = (page - 1) * pageSize + i;
+                                const rowKey     = r.erp_product_id != null ? String(r.erp_product_id) : `desc::${r.descripcion}`;
+                                const isExpanded = expandedKey === rowKey;
+                                const pct        = (r.neto / maxNeto) * 100;
+                                const margin     = r.margen;
                                 const marginColor = margin == null ? 'text-slate-300'
                                     : margin >= 25 ? 'text-emerald-600'
                                     : margin >= 10 ? 'text-amber-600'
                                     : 'text-red-600';
                                 return (
-                                    <tr key={`${r.erp_product_id}||${r.presentacion}`} className="border-t border-black/[0.04] hover:bg-slate-50/60 transition-colors">
+                                    <React.Fragment key={rowKey}>
+                                    <tr
+                                        className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/40' : 'hover:bg-slate-50/60'}`}
+                                        onClick={() => toggleExpand(rowKey, r.erp_product_id)}
+                                    >
                                         <td className="px-4 py-3">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
                                                 : <span className="text-[11px] text-slate-400 font-bold">{globalIdx + 1}</span>}
                                         </td>
                                         <td className="px-4 py-3 max-w-[220px]">
-                                            <p className="font-semibold text-slate-800 text-[12px] leading-tight">{r.descripcion}</p>
-                                            {r.presentacion && <p className="text-[10px] text-slate-400 mt-0.5">{r.presentacion}</p>}
-                                            <div className="mt-1.5 h-1 rounded-full bg-slate-100">
-                                                <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                            <div className="flex items-start gap-1.5">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-slate-800 text-[12px] leading-tight">{r.descripcion}</p>
+                                                    {r.presentaciones?.length > 0 && (
+                                                        <p className="text-[10px] text-slate-400 mt-0.5">
+                                                            {r.presentaciones.length === 1
+                                                                ? r.presentaciones[0].presentacion || 'sin presentación'
+                                                                : `${r.presentaciones.length} presentaciones`}
+                                                        </p>
+                                                    )}
+                                                    <div className="mt-1.5 h-1 rounded-full bg-slate-100">
+                                                        <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                </div>
+                                                <ChevronDown size={13} className={`text-slate-300 shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : ''}`} />
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-600 hidden md:table-cell">{fmtNum(r.cantidad)}</td>
@@ -1287,6 +1364,76 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 : <span className="text-slate-200 text-[12px]">—</span>}
                                         </td>
                                     </tr>
+                                    {isExpanded && (
+                                        <tr className="bg-blue-50/20 border-t border-blue-100/60">
+                                            <td colSpan={7} className="px-4 py-4">
+                                                {drillLoading ? (
+                                                    <div className="flex items-center gap-2 text-[12px] text-slate-400 py-2">
+                                                        <Loader2 size={14} className="animate-spin" /> Cargando detalle...
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {/* Presentaciones breakdown */}
+                                                        {r.presentaciones?.length > 1 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Por presentación</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {r.presentaciones.map(p => (
+                                                                        <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                                                            <span className="text-[11px] font-semibold text-slate-600">{p.presentacion || '(sin pres.)'}</span>
+                                                                            <span className="text-[11px] font-black text-slate-800">{fmtQty(p.cantidad)} u</span>
+                                                                            <span className="text-[10px] text-slate-400">{fmt(p.neto)}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {/* Individual sales */}
+                                                        {drillData.length > 0 && (
+                                                            <div>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Ventas individuales · {drillData.length}</p>
+                                                                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                                                                    <table className="min-w-full text-[11px]">
+                                                                        <thead>
+                                                                            <tr className="bg-slate-50 border-b border-slate-200">
+                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Fecha</th>
+                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Correlativo</th>
+                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden sm:table-cell">Cliente</th>
+                                                                                {!filterBranch && <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden md:table-cell">Sucursal</th>}
+                                                                                <th className="text-left px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px] hidden lg:table-cell">Presentación</th>
+                                                                                <th className="text-right px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Cant.</th>
+                                                                                <th className="text-right px-3 py-2 font-black text-slate-400 uppercase tracking-wide text-[9px]">Total</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {drillData.map((line, li) => {
+                                                                                const branchName = branches.find(b => b.id === line.invoice.branch_id)?.name || `Suc. ${line.invoice.branch_id}`;
+                                                                                return (
+                                                                                    <tr key={li} className="border-t border-black/[0.04] hover:bg-slate-50/60">
+                                                                                        <td className="px-3 py-2 font-mono text-slate-600">{line.invoice.fecha}</td>
+                                                                                        <td className="px-3 py-2">
+                                                                                            <span className="font-mono text-slate-700">{line.invoice.correlativo || '—'}</span>
+                                                                                            {line.invoice.erp_invoice_id && <span className="text-slate-400 ml-1">#{line.invoice.erp_invoice_id}</span>}
+                                                                                        </td>
+                                                                                        <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate hidden sm:table-cell">{line.invoice.cliente || '—'}</td>
+                                                                                        {!filterBranch && <td className="px-3 py-2 text-slate-500 hidden md:table-cell">{branchName}</td>}
+                                                                                        <td className="px-3 py-2 text-slate-500 hidden lg:table-cell">{line.presentacion || '—'}</td>
+                                                                                        <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtQty(line.cantidad)}</td>
+                                                                                        <td className="px-3 py-2 text-right font-black text-slate-800">{fmt(parseFloat(line.total_linea || 0) / IVA)}</td>
+                                                                                    </tr>
+                                                                                );
+                                                                            })}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>

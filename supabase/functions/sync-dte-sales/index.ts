@@ -220,15 +220,17 @@ async function syncBranch(
       if (p.id === 0) invoicesWithPuntos.add(invoiceId);
       const presKey = (p.presentacion ?? '').replace(/\s+/g, ' ').toUpperCase().trim();
       itemsToInsert.push({
-        invoice_id:      invoiceId,
-        linea_num:       lineIdx,
-        erp_product_id:  p.id ?? null,
-        descripcion:     p.descripcion,
-        cantidad:        p.cantidad,
-        presentacion:    p.presentacion,
-        id_presentacion: presLookup.get(presKey) ?? null,
-        precio_unitario: p.precio_unitario,
-        total_linea:     p.total_linea,
+        invoice_id:        invoiceId,
+        linea_num:         lineIdx,
+        erp_product_id:    p.id ?? null,
+        descripcion:       p.descripcion,
+        cantidad:          p.cantidad,
+        presentacion:      p.presentacion,
+        id_presentacion:   presLookup.get(presKey) ?? null,
+        precio_unitario:   p.precio_unitario,
+        total_linea:       p.total_linea,
+        lote:              p.lote ?? null,
+        fecha_vencimiento: p.fecha_vencimiento ?? null,
       });
     }
   }

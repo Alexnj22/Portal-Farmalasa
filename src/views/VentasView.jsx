@@ -316,11 +316,23 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [loadingItems, setLoadingItems] = useState(false);
     const [loadingRows, setLoadingRows]   = useState(true);
     const [antibioticIds, setAntibioticIds] = useState(new Set());
+    const [filterAntibiotico, setFilterAntibiotico] = useState(false);
+    const [abInvoiceIds, setAbInvoiceIds] = useState(null); // null=not loaded, []|[ids]=loaded
 
     useEffect(() => {
         supabase.from('products').select('id').eq('es_antibiotico', true)
             .then(({ data }) => { if (data) setAntibioticIds(new Set(data.map(p => p.id))); });
     }, []);
+
+    useEffect(() => {
+        if (!filterAntibiotico || antibioticIds.size === 0) { setAbInvoiceIds(null); return; }
+        const ids = [...antibioticIds];
+        supabase.from('sales_invoice_items').select('invoice_id').in('erp_product_id', ids)
+            .then(({ data }) => {
+                const uniq = [...new Set((data || []).map(i => i.invoice_id))];
+                setAbInvoiceIds(uniq);
+            });
+    }, [filterAntibiotico, antibioticIds]);
 
     const [fini, ffin] = monthRange.split('|');
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
@@ -395,6 +407,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 .order(sortCol, { ascending: asc });
             if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
             if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+            if (filterAntibiotico && abInvoiceIds !== null) {
+                if (abInvoiceIds.length === 0) { setRows([]); setLoadingRows(false); return; }
+                q = q.in('id', abInvoiceIds);
+            }
             if (isSearching) {
                 const s = searchTerm.trim();
                 q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
@@ -425,11 +441,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     setItemsCache(prev => ({ ...prev, ...grouped }));
                 });
         }
-    }, [fini, ffin, filterBranch, filterPuntos, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
+    }, [fini, ffin, filterBranch, filterPuntos, filterAntibiotico, abInvoiceIds, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, isSearching, pageSize]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAntibiotico, isSearching, pageSize]);
 
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
@@ -480,6 +496,22 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 </div>
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
+
+            {/* Active filter chips */}
+            {antibioticIds.size > 0 && (
+                <div className="flex items-center gap-2 flex-wrap -mt-2">
+                    <button onClick={() => setFilterAntibiotico(v => !v)}
+                        className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
+                            filterAntibiotico
+                            ? 'bg-rose-100 border-rose-300 text-rose-700 ring-1 ring-rose-200 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'
+                        }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterAntibiotico ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                        Contiene antibiótico
+                        {filterAntibiotico && <X size={9} className="text-rose-400 ml-0.5 shrink-0" />}
+                    </button>
+                </div>
+            )}
 
             {loadingRows && rows.length === 0 ? (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
@@ -628,30 +660,41 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
                                                                 return (
-                                                                    <div className="space-y-0.5">
+                                                                    <div>
+                                                                        {/* Column headers */}
+                                                                        <div className="grid gap-x-2 pb-1 mb-0.5 border-b border-slate-100/80" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 pl-2">Producto</span>
+                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Cant.</span>
+                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right hidden sm:block">P. Unit.</span>
+                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Total</span>
+                                                                        </div>
                                                                         {regularItems.map((it, idx) => (
-                                                                            <div key={idx} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/70 transition-colors group">
-                                                                                <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-                                                                                    <span className="text-[11px] font-semibold text-slate-700 leading-tight">{it.descripcion}</span>
-                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>}
-                                                                                    {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
-                                                                                    {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono tracking-wide">L:{it.lote}</span>}
-                                                                                    {it.fecha_vencimiento && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600 font-mono">↻{it.fecha_vencimiento}</span>}
+                                                                            <div key={idx} className="grid gap-x-2 items-start py-0.5 rounded-lg hover:bg-white/70 transition-colors" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                                                <div className="pl-2 py-0.5">
+                                                                                    <div className="text-[11px] font-semibold text-slate-700 leading-snug">{it.descripcion}</div>
+                                                                                    {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
+                                                                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>}
+                                                                                            {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
+                                                                                            {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
+                                                                                            {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono">Vence {it.fecha_vencimiento}</span>}
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
-                                                                                <div className="flex items-center gap-3 shrink-0">
-                                                                                    <span className="text-[10px] font-bold text-slate-500 min-w-[28px] text-right">{fmtQty(it.cantidad)}u</span>
-                                                                                    <span className="text-[10px] text-slate-400 hidden sm:block min-w-[48px] text-right">{fmt(it.precio_unitario)}</span>
-                                                                                    <span className="text-[11px] font-black text-slate-700 min-w-[52px] text-right">{fmt(it.total_linea)}</span>
-                                                                                </div>
+                                                                                <div className="py-0.5 pt-1 text-right text-[10px] font-bold text-slate-500">{fmtQty(it.cantidad)}u</div>
+                                                                                <div className="py-0.5 pt-1 text-right text-[10px] text-slate-400 hidden sm:block">{fmt(it.precio_unitario)}</div>
+                                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-slate-700">{fmt(it.total_linea)}</div>
                                                                             </div>
                                                                         ))}
                                                                         {finalDiscount > 0 && (
-                                                                            <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-amber-50/60">
-                                                                                <div className="flex-1 flex items-center gap-2">
+                                                                            <div className="grid gap-x-2 mt-1 pt-1 border-t border-amber-100" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                                                <div className="pl-2 py-0.5 flex items-center gap-1.5">
                                                                                     <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
                                                                                     <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
                                                                                 </div>
-                                                                                <span className="text-[11px] font-black text-amber-600 shrink-0">-{fmt(finalDiscount)}</span>
+                                                                                <div />
+                                                                                <div className="hidden sm:block" />
+                                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</div>
                                                                             </div>
                                                                         )}
                                                                     </div>

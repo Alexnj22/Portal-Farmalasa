@@ -1039,10 +1039,30 @@ function detectTier(precioUnitario, preciosRow) {
     const best = candidates.reduce((a, b) =>
         Math.abs(b.price - precioUnitario) < Math.abs(a.price - precioUnitario) ? b : a
     );
-    // Within 10% = matched tier; beyond = price was customized
     if (Math.abs(best.price - precioUnitario) / best.price > 0.10)
         return { label: 'Especial', color: 'bg-rose-100 text-rose-600' };
     return best;
+}
+
+// Find the price record that was active on a given date (YYYY-MM-DD string).
+// valid_from/valid_until are UTC ISO timestamps — we compare date prefix only.
+function findHistPrices(history, idPresentacion, fechaStr) {
+    const matches = (history || []).filter(h => {
+        if (h.id_presentacion !== idPresentacion) return false;
+        const from  = h.valid_from.slice(0, 10);
+        const until = h.valid_until ? h.valid_until.slice(0, 10) : null;
+        return from <= fechaStr && (until === null || until > fechaStr);
+    });
+    // Among all valid records, take the most recent one (latest valid_from ≤ fechaStr)
+    return matches.sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0] ?? null;
+}
+
+// Find the earliest price change AFTER a given date for this presentation.
+function findFirstChangeSince(history, idPresentacion, fechaStr) {
+    const later = (history || [])
+        .filter(h => h.id_presentacion === idPresentacion && h.valid_from.slice(0, 10) > fechaStr)
+        .sort((a, b) => a.valid_from.localeCompare(b.valid_from));
+    return later[0]?.valid_from ?? null;
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
@@ -1060,7 +1080,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [drillLoading, setDrillLoading] = useState(false);
     const [drillSortCol, setDrillSortCol] = useState('fecha');
     const [drillSortDir, setDrillSortDir] = useState('desc');
-    const [drillFilters, setDrillFilters] = useState({ tipodoc: '', tipopago: '', tier: '' });
+    const [drillFilters, setDrillFilters] = useState({ tipodoc: '', tipopago: '', tier: '', changed: false });
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1081,7 +1101,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     // Reset drill sort/filter when a new product is expanded
     useEffect(() => {
         setDrillSortCol('fecha'); setDrillSortDir('desc');
-        setDrillFilters({ tipodoc: '', tipopago: '', tier: '' });
+        setDrillFilters({ tipodoc: '', tipopago: '', tier: '', changed: false });
     }, [expandedKey]);
 
     const fetchProductos = useCallback(async () => {
@@ -1175,7 +1195,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillLoading(true);
         setDrillData([]);
         try {
-            const [{ data, error: e }, { data: precios }] = await Promise.all([
+            const [{ data, error: e }, { data: precios }, { data: history }] = await Promise.all([
                 supabase.rpc('get_product_drill_lines', {
                     p_erp_product_id: productId,
                     p_fini:           fini,
@@ -1186,30 +1206,46 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
                     .eq('product_id', productId)
                     .eq('activo', true),
+                supabase.from('product_precios_history')
+                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until')
+                    .eq('product_id', productId)
+                    .order('valid_from', { ascending: false }),
             ]);
             if (e) throw e;
-            const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
-            const fallbackPrices = (precios || []).length === 1 ? precios[0] : null;
-            setDrillData((data || []).map(row => ({
-                id:              row.item_id,
-                fecha:           row.fecha,
-                erp_invoice_id:  row.erp_invoice_id,
-                correlativo:     row.correlativo,
-                presentacion:    row.presentacion,
-                id_presentacion: row.id_presentacion,
-                cantidad:        row.cantidad,
-                precio_unitario: row.precio_unitario,
-                neto:            row.neto,
-                cliente:         row.cliente,
-                branch_id:       row.branch_id,
-                tipo_documento:  row.tipo_documento,
-                cod_vendedor:    row.cod_vendedor,
-                tipo_pago:       row.tipo_pago,
-                tier:            detectTier(
-                    row.precio_unitario,
-                    preciosMap.get(row.id_presentacion) ?? fallbackPrices
-                ),
-            })));
+            const preciosMap    = new Map((precios  || []).map(p => [p.id_presentacion, p]));
+            const fallbackCurr  = (precios  || []).length === 1 ? precios[0]  : null;
+            const fallbackHist  = (history || []).length > 0    ? history      : null;
+            setDrillData((data || []).map(row => {
+                const idPres       = row.id_presentacion;
+                const currPrices   = preciosMap.get(idPres) ?? fallbackCurr;
+                const histPrices   = findHistPrices(history || [], idPres, row.fecha)
+                                  ?? findHistPrices(history || [], null, row.fecha)
+                                  ?? (fallbackHist ? findHistPrices(fallbackHist, fallbackHist[0]?.id_presentacion, row.fecha) : null);
+                // Tier at time of sale (historical), and tier today (current)
+                const tier         = detectTier(row.precio_unitario, histPrices ?? currPrices);
+                const currentTier  = detectTier(row.precio_unitario, currPrices);
+                const tierChanged  = !!(histPrices && tier?.label !== currentTier?.label);
+                const tierChangedAt = tierChanged
+                    ? findFirstChangeSince(history || [], idPres, row.fecha)
+                    : null;
+                return {
+                    id:              row.item_id,
+                    fecha:           row.fecha,
+                    erp_invoice_id:  row.erp_invoice_id,
+                    correlativo:     row.correlativo,
+                    presentacion:    row.presentacion,
+                    id_presentacion: idPres,
+                    cantidad:        row.cantidad,
+                    precio_unitario: row.precio_unitario,
+                    neto:            row.neto,
+                    cliente:         row.cliente,
+                    branch_id:       row.branch_id,
+                    tipo_documento:  row.tipo_documento,
+                    cod_vendedor:    row.cod_vendedor,
+                    tipo_pago:       row.tipo_pago,
+                    tier, currentTier, tierChanged, tierChangedAt,
+                };
+            }));
         } catch (err) {
             console.error(err);
         } finally {
@@ -1228,6 +1264,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         if (drillFilters.tipodoc)  list = list.filter(l => l.tipo_documento === drillFilters.tipodoc);
         if (drillFilters.tipopago) list = list.filter(l => l.tipo_pago === drillFilters.tipopago);
         if (drillFilters.tier)     list = list.filter(l => (l.tier?.label ?? '') === drillFilters.tier);
+        if (drillFilters.changed)  list = list.filter(l => l.tierChanged);
         return [...list].sort((a, b) => {
             const dir = drillSortDir === 'asc' ? 1 : -1;
             const av = a[drillSortCol], bv = b[drillSortCol];
@@ -1444,21 +1481,34 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             return (
                                                                 <div>
                                                                     {/* Filter chips */}
-                                                                    {(docOpts.length > 1 || pagoOpts.length > 1 || tierOpts.length > 0) && (
-                                                                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                                                                            {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
-                                                                            {docOpts.length > 1 && pagoOpts.length > 1 && <span className="text-slate-200">|</span>}
-                                                                            {pagoOpts.length > 1 && pagoOpts.map(v => pill(v, 'tipopago'))}
-                                                                            {tierOpts.length > 0 && <span className="text-slate-200">|</span>}
-                                                                            {tierOpts.map(v => pill(v, 'tier'))}
-                                                                            {(drillFilters.tipodoc || drillFilters.tipopago || drillFilters.tier) && (
-                                                                                <button onClick={() => setDrillFilters({ tipodoc: '', tipopago: '', tier: '' })}
-                                                                                    className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-all">
-                                                                                    ✕ limpiar
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
+                                                                    {(() => {
+                                                                        const changedCount = drillData.filter(l => l.tierChanged).length;
+                                                                        const hasAnyFilter = drillFilters.tipodoc || drillFilters.tipopago || drillFilters.tier || drillFilters.changed;
+                                                                        return (docOpts.length > 1 || pagoOpts.length > 1 || tierOpts.length > 0 || changedCount > 0) && (
+                                                                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                                                                {docOpts.length > 1 && docOpts.map(v => pill(v, 'tipodoc'))}
+                                                                                {docOpts.length > 1 && pagoOpts.length > 1 && <span className="text-slate-200">|</span>}
+                                                                                {pagoOpts.length > 1 && pagoOpts.map(v => pill(v, 'tipopago'))}
+                                                                                {tierOpts.length > 0 && <span className="text-slate-200">|</span>}
+                                                                                {tierOpts.map(v => pill(v, 'tier'))}
+                                                                                {changedCount > 0 && (
+                                                                                    <>
+                                                                                        <span className="text-slate-200">|</span>
+                                                                                        <button onClick={() => setDrillFilters(f => ({ ...f, changed: !f.changed }))}
+                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-all flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:border-amber-500'}`}>
+                                                                                            ⚠ precio cambió ({changedCount})
+                                                                                        </button>
+                                                                                    </>
+                                                                                )}
+                                                                                {hasAnyFilter && (
+                                                                                    <button onClick={() => setDrillFilters({ tipodoc: '', tipopago: '', tier: '', changed: false })}
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-all">
+                                                                                        ✕ limpiar
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })()}
 
                                                                     {/* Totals summary */}
                                                                     <div className="flex items-center gap-3 mb-2">
@@ -1523,7 +1573,26 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             {!filterBranch && <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{branchName}</td>}
                                                                                             <td className="px-3 py-2 text-slate-500 max-w-[120px] truncate">{line.presentacion || '—'}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
-                                                                                                {line.tier && <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>}
+                                                                                                {line.tier && (
+                                                                                                    <div className="relative group/tier inline-flex items-center gap-1">
+                                                                                                        <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>
+                                                                                                        {line.tierChanged && (
+                                                                                                            <>
+                                                                                                                <span className="text-amber-500 text-[11px] cursor-help leading-none">⚠</span>
+                                                                                                                <div className="absolute bottom-full left-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
+                                                                                                                    <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
+                                                                                                                    {line.tierChangedAt && (
+                                                                                                                        <p className="text-slate-300">
+                                                                                                                            {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                                                                        </p>
+                                                                                                                    )}
+                                                                                                                    <p className="mt-1">Al vender: <strong className="text-white">{line.tier.label}</strong></p>
+                                                                                                                    <p>Hoy: <strong className="text-white">{line.currentTier?.label ?? '—'}</strong></p>
+                                                                                                                </div>
+                                                                                                            </>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                )}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right font-semibold text-slate-700 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
                                                                                             <td className="px-3 py-2 text-right font-black text-slate-800 whitespace-nowrap">{fmt(line.neto)}</td>

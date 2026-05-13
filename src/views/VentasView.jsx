@@ -1027,8 +1027,6 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [expandedKey, setExpandedKey]   = useState(null);
     const [drillData,   setDrillData]     = useState([]);
     const [drillLoading, setDrillLoading] = useState(false);
-    const invoiceIdsRef = useRef([]);
-
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1039,56 +1037,25 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
 
+    // Close drill-down whenever filters change
+    useEffect(() => { setExpandedKey(null); setDrillData([]); }, [fini, ffin, filterBranch]);
+
     const fetchProductos = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            // Paginar IDs de facturas — PostgREST corta a 1000 sin paginación explícita
-            const ids = [];
-            let invFrom = 0;
-            while (true) {
-                let qInv = supabase
-                    .from('sales_invoices')
-                    .select('id')
-                    .not('estado', 'in', '("NULA","DTE INVALIDADO EN MH")')
-                    .gte('fecha', fini).lte('fecha', ffin)
-                    .order('id')
-                    .range(invFrom, invFrom + 999);
-                if (filterBranch) qInv = qInv.eq('branch_id', filterBranch);
-                const { data: invoices, error: invErr } = await qInv;
-                if (invErr) throw invErr;
-                if (!invoices || invoices.length === 0) break;
-                invoices.forEach(i => ids.push(i.id));
-                if (invoices.length < 1000) break;
-                invFrom += 1000;
-            }
-            const uniqueIds = [...new Set(ids)];
-            if (uniqueIds.length === 0) { setRows([]); invoiceIdsRef.current = []; setLoading(false); return; }
-            invoiceIdsRef.current = uniqueIds;
+            // Single RPC call — server-side join+aggregation replaces ~130 client queries
+            const { data: presData, error: presErr } = await supabase
+                .rpc('get_product_sales_agg', {
+                    p_fini:      fini,
+                    p_ffin:      ffin,
+                    p_branch_id: filterBranch ? Number(filterBranch) : null,
+                });
+            if (presErr) throw presErr;
+            if (!presData?.length) { setRows([]); setLoading(false); return; }
 
-            // Chunks pequeños de IDs + paginación de resultados para no chocar con el límite de 1000 filas de PostgREST
-            const CHUNK = 200;
-            const itemsAll = [];
-            for (let i = 0; i < uniqueIds.length; i += CHUNK) {
-                const sliceIds = uniqueIds.slice(i, i + CHUNK);
-                let itemFrom = 0;
-                while (true) {
-                    const { data: items, error: itemErr } = await supabase
-                        .from('sales_invoice_items')
-                        .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea')
-                        .in('invoice_id', sliceIds)
-                        .range(itemFrom, itemFrom + 999);
-                    if (itemErr) throw itemErr;
-                    if (!items || items.length === 0) break;
-                    itemsAll.push(...items);
-                    if (items.length < 1000) break;
-                    itemFrom += 1000;
-                }
-            }
-            if (itemsAll.length === 0) { setRows([]); setLoading(false); return; }
-
-            // Fetch costs FIRST — before any aggregation, so each line can use its own precio
-            const productIds = [...new Set(itemsAll.map(i => i.erp_product_id).filter(Boolean))];
+            // Fetch costs for the products returned (typically 300-800 products, well under 1000)
+            const productIds = presData.map(r => r.erp_product_id).filter(Boolean);
             const costMap = new Map();
             if (productIds.length > 0) {
                 const PCHUNK = 500;
@@ -1107,64 +1074,50 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }
             }
 
-            // Per-line aggregation grouped by product only (not by presentation)
-            const agg = new Map();
-            for (const item of itemsAll) {
-                const key = item.erp_product_id != null
-                    ? String(item.erp_product_id)
-                    : `desc::${item.descripcion || ''}`;
-                if (!agg.has(key)) {
-                    agg.set(key, {
-                        erp_product_id: item.erp_product_id,
-                        descripcion:    item.descripcion,
-                        cantidad: 0, total: 0, lineas: 0,
-                        _netoAcum: 0, _costoAcum: 0, _costoLines: 0,
-                        _pres: new Map(), // presentacion -> { cantidad, neto }
-                    });
-                }
-                const cur  = agg.get(key);
+            // RPC returns one row per product — map directly, no JS re-aggregation needed
+            const allRows = presData.map(item => {
                 const qty  = parseFloat(item.cantidad    || 0);
                 const tl   = parseFloat(item.total_linea || 0);
-                const pu   = parseFloat(item.precio_unitario || 0);
+                const neto = tl / IVA;
 
-                cur.cantidad  += qty;
-                cur.total     += tl;
-                cur.lineas    += 1;
-                cur._netoAcum += tl / IVA;
+                const presentaciones = (item.presentaciones || []).map(p => ({
+                    presentacion: p.presentacion || '',
+                    cantidad:     parseFloat(p.cantidad    || 0),
+                    neto:         parseFloat(p.total_linea || 0) / IVA,
+                }));
 
-                // Track per-presentation breakdown
-                const pk = item.presentacion || '';
-                if (!cur._pres.has(pk)) cur._pres.set(pk, { presentacion: item.presentacion || '', cantidad: 0, neto: 0 });
-                const pv = cur._pres.get(pk);
-                pv.cantidad += qty;
-                pv.neto     += tl / IVA;
-
-                const allPrecios = costMap.get(item.erp_product_id) || [];
-                const precios = allPrecios.filter(p => p.vineta === 0 || p.costo <= p.vineta);
-                const candidates = precios.length > 0 ? precios : allPrecios;
-                if (candidates.length === 1) {
-                    cur._costoAcum  += qty * candidates[0].costo;
-                    cur._costoLines += 1;
-                } else if (candidates.length > 1) {
-                    const best = candidates.reduce((a, b) =>
-                        Math.abs(b.vineta - pu) < Math.abs(a.vineta - pu) ? b : a
-                    );
-                    cur._costoAcum  += qty * best.costo;
-                    cur._costoLines += 1;
+                // Cost matching per presentation using its avg precio_unitario
+                let _costoAcum = 0, _costoLines = 0;
+                for (const pres of (item.presentaciones || [])) {
+                    const pqty = parseFloat(pres.cantidad            || 0);
+                    const ppu  = parseFloat(pres.precio_unitario_avg || 0);
+                    const allPrecios = costMap.get(item.erp_product_id) || [];
+                    const filtered   = allPrecios.filter(p => p.vineta === 0 || p.costo <= p.vineta);
+                    const candidates = filtered.length > 0 ? filtered : allPrecios;
+                    if (candidates.length === 1) {
+                        _costoAcum  += pqty * candidates[0].costo;
+                        _costoLines += 1;
+                    } else if (candidates.length > 1) {
+                        const best = candidates.reduce((a, b) =>
+                            Math.abs(b.vineta - ppu) < Math.abs(a.vineta - ppu) ? b : a
+                        );
+                        _costoAcum  += pqty * best.costo;
+                        _costoLines += 1;
+                    }
                 }
-            }
 
-            const allRows = [...agg.values()].map(v => {
-                const neto           = v._netoAcum;
-                const costo_total    = v._costoLines > 0 ? v._costoAcum : null;
+                const costo_total    = _costoLines > 0 ? _costoAcum : null;
                 const utilidad       = costo_total != null ? neto - costo_total : null;
                 const margen         = utilidad != null && neto > 0 ? (utilidad / neto) * 100 : null;
-                const costo_unitario = costo_total != null && v.cantidad > 0 ? costo_total / v.cantidad : null;
-                const presentaciones = [...v._pres.values()].sort((a, b) => b.neto - a.neto);
-                return { ...v, neto, costo_unitario, costo_total, utilidad, margen, presentaciones };
+                const costo_unitario = costo_total != null && qty > 0 ? costo_total / qty : null;
+
+                return {
+                    erp_product_id: item.erp_product_id,
+                    descripcion:    item.descripcion,
+                    cantidad: qty, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
+                };
             });
 
-            allRows.sort((a, b) => b.neto - a.neto);
             setRows(allRows);
         } catch (err) {
             setError(err.message || 'Error al cargar productos');
@@ -1179,50 +1132,37 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillLoading(true);
         setDrillData([]);
         try {
-            const ids = invoiceIdsRef.current;
-            if (!ids.length) return;
-            const CHUNK = 200;
-            const lines = [];
-            for (let i = 0; i < ids.length; i += CHUNK) {
-                const { data, error: e } = await supabase
-                    .from('sales_invoice_items')
-                    .select('id, invoice_id, presentacion, cantidad, precio_unitario, total_linea')
-                    .eq('erp_product_id', productId)
-                    .in('invoice_id', ids.slice(i, i + CHUNK));
-                if (e) throw e;
-                lines.push(...(data || []));
-            }
-            if (!lines.length) return;
-            // Deduplicar por item id (evita duplicados si invoice_id aparecía en múltiples chunks)
-            const seenItemIds = new Set();
-            const uniqueLines = lines.filter(l => {
-                if (seenItemIds.has(l.id)) return false;
-                seenItemIds.add(l.id);
-                return true;
-            });
-            const invIds = [...new Set(uniqueLines.map(l => l.invoice_id))];
-            const invoiceMap = {};
-            for (let i = 0; i < invIds.length; i += CHUNK) {
-                const { data } = await supabase
-                    .from('sales_invoices')
-                    .select('id, fecha, erp_invoice_id, correlativo, cliente, branch_id')
-                    .in('id', invIds.slice(i, i + CHUNK));
-                for (const inv of (data || [])) invoiceMap[inv.id] = inv;
-            }
-            const result = uniqueLines
-                .filter(l => invoiceMap[l.invoice_id])
-                .map(l => ({ ...l, invoice: invoiceMap[l.invoice_id] }))
-                .sort((a, b) => {
-                    const fd = b.invoice.fecha.localeCompare(a.invoice.fecha);
-                    return fd !== 0 ? fd : (b.invoice.erp_invoice_id || 0) - (a.invoice.erp_invoice_id || 0);
+            // Single RPC call with server-side join — replaces ~106 client queries
+            const { data, error: e } = await supabase
+                .rpc('get_product_drill_lines', {
+                    p_erp_product_id: productId,
+                    p_fini:           fini,
+                    p_ffin:           ffin,
+                    p_branch_id:      filterBranch ? Number(filterBranch) : null,
                 });
-            setDrillData(result);
+            if (e) throw e;
+            setDrillData((data || []).map(row => ({
+                id:              row.item_id,
+                invoice_id:      row.invoice_id,
+                presentacion:    row.presentacion,
+                cantidad:        row.cantidad,
+                precio_unitario: row.precio_unitario,
+                total_linea:     row.total_linea,
+                invoice: {
+                    id:             row.invoice_id,
+                    fecha:          row.fecha,
+                    erp_invoice_id: row.erp_invoice_id,
+                    correlativo:    row.correlativo,
+                    cliente:        row.cliente,
+                    branch_id:      row.branch_id,
+                },
+            })));
         } catch (e) {
             console.error(e);
         } finally {
             setDrillLoading(false);
         }
-    }, []);
+    }, [fini, ffin, filterBranch]);
 
     const toggleExpand = (key, productId) => {
         if (expandedKey === key) { setExpandedKey(null); return; }

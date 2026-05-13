@@ -1090,6 +1090,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [drillSortCol, setDrillSortCol] = useState('fecha');
     const [drillSortDir, setDrillSortDir] = useState('desc');
     const [drillFilters, setDrillFilters] = useState({ tipodoc: '', tipopago: '', tier: '', changed: false });
+    const [drillMonthly, setDrillMonthly] = useState([]);
     const [fini, ffin] = monthRange.split('|');
 
     const handleSort = (col) => {
@@ -1111,6 +1112,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     useEffect(() => {
         setDrillSortCol('fecha'); setDrillSortDir('desc');
         setDrillFilters({ tipodoc: '', tipopago: '', tier: '', changed: false });
+        setDrillMonthly([]);
     }, [expandedKey]);
 
     const fetchProductos = useCallback(async () => {
@@ -1204,7 +1206,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillLoading(true);
         setDrillData([]);
         try {
-            const [{ data, error: e }, { data: precios }, { data: history }] = await Promise.all([
+            const [{ data, error: e }, { data: precios }, { data: history }, { data: monthly }] = await Promise.all([
                 supabase.rpc('get_product_drill_lines', {
                     p_erp_product_id: productId,
                     p_fini:           fini,
@@ -1219,6 +1221,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until, presentaciones(tipo, descripcion)')
                     .eq('product_id', productId)
                     .order('valid_from', { ascending: false }),
+                supabase.rpc('get_product_trend', {
+                    p_erp_product_id: productId,
+                    p_branch_id:      filterBranch ? Number(filterBranch) : null,
+                }),
             ]);
             if (e) throw e;
             const preciosMap = new Map((precios || []).map(p => [p.id_presentacion, p]));
@@ -1275,6 +1281,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     tier, currentTier, tierChanged, tierChangedAt,
                 };
             }));
+            setDrillMonthly((monthly || []).map(m => ({
+                month:    m.month,
+                neto:     parseFloat(m.neto     || 0),
+                cantidad: parseFloat(m.cantidad || 0),
+            })));
         } catch (err) {
             console.error(err);
         } finally {
@@ -1477,6 +1488,91 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             </div>
                                                         )}
 
+                                                        {/* Charts: branch rotation + 3-month trend */}
+                                                        {(() => {
+                                                            const showBranch = !filterBranch && drillData.length > 0;
+                                                            const showTrend  = drillMonthly.length > 0;
+                                                            if (!showBranch && !showTrend) return null;
+
+                                                            // Branch rotation aggregated from drill data
+                                                            const branchAgg = showBranch ? (() => {
+                                                                const map = {};
+                                                                for (const l of drillData) map[l.branch_id] = (map[l.branch_id] || 0) + l.neto;
+                                                                const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+                                                                const total   = entries.reduce((s, [, v]) => s + v, 0);
+                                                                return { entries, total };
+                                                            })() : null;
+
+                                                            // Trend bar heights
+                                                            const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
+
+                                                            return (
+                                                                <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                                                    {/* Branch rotation */}
+                                                                    {showBranch && (
+                                                                        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm">
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2.5">Rotación por sucursal</p>
+                                                                            <div className="space-y-2">
+                                                                                {branchAgg.entries.map(([bid, neto]) => {
+                                                                                    const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
+                                                                                    const name  = branches.find(b => b.id === Number(bid))?.name || `Suc. ${bid}`;
+                                                                                    return (
+                                                                                        <div key={bid}>
+                                                                                            <div className="flex justify-between items-baseline mb-0.5">
+                                                                                                <span className="text-[10px] text-slate-600 font-medium truncate max-w-[140px]">{name}</span>
+                                                                                                <div className="flex items-baseline gap-1.5 shrink-0 ml-1">
+                                                                                                    <span className="text-[9px] font-black text-indigo-600">{pct.toFixed(0)}%</span>
+                                                                                                    <span className="text-[9px] text-slate-400">{fmt(neto)}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="h-1.5 rounded-full bg-slate-100">
+                                                                                                <div className="h-1.5 rounded-full bg-indigo-400 transition-all duration-300" style={{ width: `${pct}%` }} />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* 3-month trend */}
+                                                                    {showTrend && (
+                                                                        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm">
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Tendencia 3 meses</p>
+                                                                            <div className="flex items-end gap-2" style={{ height: 72 }}>
+                                                                                {drillMonthly.map((m, i) => {
+                                                                                    const barPct = (m.neto / maxTrend) * 100;
+                                                                                    const prev   = drillMonthly[i - 1];
+                                                                                    const change = prev && prev.neto > 0 ? ((m.neto - prev.neto) / prev.neto) * 100 : null;
+                                                                                    const monthLabel = new Date(m.month + 'T12:00:00').toLocaleDateString('es-SV', { month: 'short' });
+                                                                                    const isLatest = i === drillMonthly.length - 1;
+                                                                                    return (
+                                                                                        <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full">
+                                                                                            {/* change % label above bar */}
+                                                                                            <div className="text-[8px] font-black h-3 flex items-center">
+                                                                                                {change !== null
+                                                                                                    ? <span className={change >= 0 ? 'text-emerald-500' : 'text-red-400'}>{change >= 0 ? '+' : ''}{change.toFixed(0)}%</span>
+                                                                                                    : <span />}
+                                                                                            </div>
+                                                                                            {/* bar */}
+                                                                                            <div className="w-full flex flex-col justify-end" style={{ height: 36 }}>
+                                                                                                <div
+                                                                                                    className={`w-full rounded-t-md transition-all duration-300 ${isLatest ? 'bg-blue-400' : 'bg-blue-200'}`}
+                                                                                                    style={{ height: `${Math.max(barPct, 4)}%` }}
+                                                                                                />
+                                                                                            </div>
+                                                                                            <span className="text-[9px] text-slate-500 capitalize leading-none mt-0.5">{monthLabel}</span>
+                                                                                            <span className="text-[8px] font-black text-slate-700 leading-none">{fmt(m.neto)}</span>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
+
                                                         {/* Individual sales table */}
                                                         {drillData.length > 0 && (() => {
                                                             const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
@@ -1580,8 +1676,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     return (
                                                                                         <tr key={li} className="hover:bg-blue-50/30 transition-colors">
                                                                                             <td className="px-3 py-2 font-mono text-slate-600 whitespace-nowrap">{fmtShort(line.fecha)}</td>
-                                                                                            <td className="px-3 py-2 font-mono text-slate-700 whitespace-nowrap">
-                                                                                                {line.correlativo || line.erp_invoice_id || '—'}
+                                                                                            <td className="px-3 py-2 whitespace-nowrap">
+                                                                                                <div className="flex flex-col leading-tight">
+                                                                                                    <span className="font-mono text-slate-700 text-[11px]">{line.correlativo || '—'}</span>
+                                                                                                    {line.erp_invoice_id && (
+                                                                                                        <span className="font-mono text-[9px] text-slate-400">#{line.erp_invoice_id}</span>
+                                                                                                    )}
+                                                                                                </div>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.tipo_documento && <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}

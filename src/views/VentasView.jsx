@@ -1012,8 +1012,6 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
-const IVA = 1.13; // precios en facturas incluyen IVA 13%; costos ERP son sin IVA
-
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const { branches } = useStaff();
     const [rows, setRows]           = useState([]);
@@ -1074,16 +1072,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 }
             }
 
-            // RPC returns one row per product — map directly, no JS re-aggregation needed
+            // RPC returns one row per product — neto already computed per doc type (CCF vs COF)
             const allRows = presData.map(item => {
-                const qty  = parseFloat(item.cantidad    || 0);
-                const tl   = parseFloat(item.total_linea || 0);
-                const neto = tl / IVA;
+                const qty  = parseFloat(item.cantidad || 0);
+                const neto = parseFloat(item.neto     || 0);
 
                 const presentaciones = (item.presentaciones || []).map(p => ({
                     presentacion: p.presentacion || '',
-                    cantidad:     parseFloat(p.cantidad    || 0),
-                    neto:         parseFloat(p.total_linea || 0) / IVA,
+                    cantidad:     parseFloat(p.cantidad || 0),
+                    neto:         parseFloat(p.neto     || 0),
                 }));
 
                 // Cost matching per presentation using its avg precio_unitario
@@ -1147,7 +1144,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 presentacion:    row.presentacion,
                 cantidad:        row.cantidad,
                 precio_unitario: row.precio_unitario,
-                total_linea:     row.total_linea,
+                neto:            row.neto,
                 invoice: {
                     id:             row.invoice_id,
                     fecha:          row.fecha,
@@ -1181,8 +1178,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             p_ffin:      prevFfin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
         }).then(({ data }) => {
-            const sum = (data || []).reduce((s, r) => s + parseFloat(r.total_linea || 0), 0);
-            setPrevProdStats({ sum: sum / IVA });
+            const sum = (data || []).reduce((s, r) => s + parseFloat(r.neto || 0), 0);
+            setPrevProdStats({ sum });
         });
     }, [fini, ffin, filterBranch]);
 
@@ -1373,7 +1370,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                         {!filterBranch && <td className="px-3 py-2 text-slate-500 hidden md:table-cell">{branchName}</td>}
                                                                                         <td className="px-3 py-2 text-slate-500 hidden lg:table-cell">{line.presentacion || '—'}</td>
                                                                                         <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtQty(line.cantidad)}</td>
-                                                                                        <td className="px-3 py-2 text-right font-black text-slate-800">{fmt(parseFloat(line.total_linea || 0) / IVA)}</td>
+                                                                                        <td className="px-3 py-2 text-right font-black text-slate-800">{fmt(parseFloat(line.neto || 0))}</td>
                                                                                     </tr>
                                                                                 );
                                                                             })}

@@ -321,6 +321,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [abInvoiceIds, setAbInvoiceIds] = useState(null); // null=not loaded, []|[ids]=loaded
     const [filterAnuladas, setFilterAnuladas] = useState(false);
     const [changelogCache, setChangelogCache] = useState({});
+    const [changeTooltip, setChangeTooltip] = useState(null); // { x, y, changes }
 
     useEffect(() => {
         supabase.from('products').select('id').eq('es_antibiotico', true)
@@ -657,22 +658,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         {changes.length > 0 && (
-                                                            <div className="relative group/chg shrink-0" onClick={e => e.stopPropagation()}>
+                                                            <div className="shrink-0" onClick={e => e.stopPropagation()}
+                                                                onMouseEnter={e => {
+                                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes });
+                                                                }}
+                                                                onMouseLeave={() => setChangeTooltip(null)}>
                                                                 <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
                                                                     <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
-                                                                </div>
-                                                                <div className="absolute bottom-full right-0 mb-2 z-50 opacity-0 group-hover/chg:opacity-100 transition-opacity duration-150 pointer-events-none">
-                                                                    <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3 py-2.5 shadow-xl w-max max-w-[260px] border border-white/10">
-                                                                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-300 mb-1.5">Cambios registrados</div>
-                                                                        {changes.map((c, ci) => (
-                                                                            <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-white/5 last:border-0">
-                                                                                <span className="text-[10px] font-bold text-slate-300 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                                                                <span className="text-[10px] text-slate-500 line-through">{c.valor_anterior ?? '—'}</span>
-                                                                                <span className="text-[10px] text-slate-200">→ {c.valor_nuevo ?? '—'}</span>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                    <div className="absolute right-1.5 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-slate-900/95" />
                                                                 </div>
                                                             </div>
                                                         )}
@@ -795,6 +788,24 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         </span>
                     </div>
                 </>
+            )}
+
+            {/* Change tooltip — fixed so it escapes overflow-hidden/overflow-x-auto containers */}
+            {changeTooltip && (
+                <div className="fixed z-[9999] pointer-events-none"
+                    style={{ left: changeTooltip.x, top: changeTooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
+                    <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3 py-2.5 shadow-xl w-max max-w-[260px] border border-white/10">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-300 mb-1.5">Cambios registrados</div>
+                        {changeTooltip.changes.map((c, ci) => (
+                            <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                                <span className="text-[10px] font-bold text-slate-300 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                <span className="text-[10px] text-slate-500 line-through">{c.valor_anterior ?? '—'}</span>
+                                <span className="text-[10px] text-slate-200">→ {c.valor_nuevo ?? '—'}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-slate-900/95" />
+                </div>
             )}
         </div>
     );

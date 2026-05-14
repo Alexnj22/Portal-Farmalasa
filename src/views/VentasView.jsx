@@ -23,7 +23,14 @@ const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
 const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
-const CAMPO_LABELS = { estado: 'Estado', tipo_pago: 'Pago', recibido_mh: 'Recib. MH', cliente: 'Cliente', total: 'Total' };
+// Only these changelog campos are surfaced in the row indicator
+const RELEVANT_CAMPOS = new Set(['tipo_pago', 'recibido_mh']);
+const CAMPO_LABELS = { tipo_pago: 'Forma de pago', recibido_mh: 'Sello MH' };
+const fmtCampoVal = (campo, val) => {
+    if (val == null) return 'Sin registro';
+    if (campo === 'recibido_mh') return val === true || val === 'true' ? 'Recibido' : `Recibido (${val})`;
+    return String(val);
+};
 
 function fmtQty(n) {
     const f = parseFloat(n || 0);
@@ -406,7 +413,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             const asc = sortDir === 'asc';
             let q = supabase
                 .from('sales_invoices')
-                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado')
+                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh')
                 .gte('fecha', fini).lte('fecha', ffin)
                 .order(sortCol, { ascending: asc });
             if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
@@ -598,6 +605,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     const noData = cachedItems && cachedItems.length === 0;
                                     const emp = empMap.get(r.cod_vendedor);
                                     const changes = changelogCache[r.id] ?? [];
+                                    const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
                                     const tipoBadgeColor = r.tipo_documento === 'CCF'
                                         ? 'bg-red-50 text-red-600'
                                         : r.tipo_documento === 'FCF'
@@ -611,7 +619,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 <td className="px-4 py-2.5">
                                                     <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
                                                     {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
-                                                    {isCancelled && <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>}
+                                                    {isCancelled
+                                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>
+                                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
                                                 </td>
                                                 {/* ID */}
                                                 <td className="px-4 py-2.5 hidden md:table-cell">
@@ -657,11 +667,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {changes.length > 0 && (
+                                                        {relevantChanges.length > 0 && (
                                                             <div className="shrink-0" onClick={e => e.stopPropagation()}
                                                                 onMouseEnter={e => {
                                                                     const rect = e.currentTarget.getBoundingClientRect();
-                                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes });
+                                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes: relevantChanges });
                                                                 }}
                                                                 onMouseLeave={() => setChangeTooltip(null)}>
                                                                 <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
@@ -799,8 +809,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         {changeTooltip.changes.map((c, ci) => (
                             <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-white/5 last:border-0">
                                 <span className="text-[10px] font-bold text-slate-300 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                <span className="text-[10px] text-slate-500 line-through">{c.valor_anterior ?? '—'}</span>
-                                <span className="text-[10px] text-slate-200">→ {c.valor_nuevo ?? '—'}</span>
+                                <span className="text-[10px] text-slate-500 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                <span className="text-[10px] text-slate-200">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
                             </div>
                         ))}
                     </div>

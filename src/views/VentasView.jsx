@@ -124,29 +124,46 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
         ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
         : 145;
 
+    const dateDirty = monthRange !== defaultRange;
+
     return (
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
 
-            {/* Branch select */}
-            <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>
-                <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                    options={branchOptions} placeholder="Todas" icon={Building2} compact />
+            {/* Branch select + individual clear */}
+            <div className="flex items-center">
+                <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>
+                    <LiquidSelect value={filterBranch} onChange={setFilterBranch}
+                        options={branchOptions} placeholder="Todas" icon={Building2} compact />
+                </div>
+                {filterBranch && (
+                    <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                        <X size={9} strokeWidth={3} />
+                    </button>
+                )}
             </div>
 
             <div className="h-5 w-px bg-slate-100 shrink-0" />
 
-            {/* Period picker */}
-            <div className="px-2 py-2 overflow-visible">
-                <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
+            {/* Period picker + individual clear */}
+            <div className="flex items-center">
+                <div className="px-2 py-2 overflow-visible">
+                    <PeriodPicker value={monthRange} onChange={handlePeriodChange} />
+                </div>
+                {dateDirty && (
+                    <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                        <X size={9} strokeWidth={3} />
+                    </button>
+                )}
             </div>
 
-            {/* Clear all filters */}
+            {/* Clear all — only when both filters active */}
             {hasActiveFilters && (
                 <>
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
-                    <button onClick={resetAll}
-                        title="Limpiar filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                    <button onClick={resetAll} title="Limpiar todos los filtros"
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>

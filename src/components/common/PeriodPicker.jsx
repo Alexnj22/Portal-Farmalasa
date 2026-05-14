@@ -163,9 +163,8 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const [isOpen,    setIsOpen]    = useState(false);
     const [selMode,   setSelMode]   = useState('month'); // 'month' | 'day'
 
-    // Month-mode picking state
-    const [monthPickStart, setMonthPickStart] = useState(null); // { y, m } | null
-    const [monthHovering,  setMonthHovering]  = useState(null);
+    // Month-mode hover highlight
+    const [monthHovering, setMonthHovering] = useState(null);
 
     // Day-mode picking state
     const [dayPhase,      setDayPhase]      = useState('idle'); // 'idle' | 'picking-end'
@@ -200,7 +199,6 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
         const m = fini ? parseInt(fini.split('-')[1]) - 1 : curM;
         setViewYear(y);
         setViewMonth(m);
-        setMonthPickStart(null);
         setMonthHovering(null);
         setDayPhase('idle');
         setDayHover(null);
@@ -222,7 +220,6 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     const close = useCallback(() => {
         setIsOpen(false);
-        setMonthPickStart(null);
         setMonthHovering(null);
         setDayPhase('idle');
         setDayHover(null);
@@ -233,28 +230,11 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const handlePreset = (s, e) => confirm(s, e);
 
     // ── Month-mode handlers ───────────────────────────────────────────────────
-    const handleMonthClick = (y, m) => {
-        if (!monthPickStart) {
-            setMonthPickStart({ y, m });
-        } else {
-            const sk = mKey(monthPickStart.y, monthPickStart.m);
-            const ek = mKey(y, m);
-            const [finalS, finalE] = sk <= ek
-                ? [{ y: monthPickStart.y, m: monthPickStart.m }, { y, m }]
-                : [{ y, m }, { y: monthPickStart.y, m: monthPickStart.m }];
-            confirm(mStart(finalS.y, finalS.m), mEnd(finalE.y, finalE.m));
-        }
-    };
+    // Single click = apply full month immediately
+    const handleMonthClick = (y, m) => confirm(mStart(y, m), mEnd(y, m));
 
     const getMonthState = (y, m) => {
         const k = mKey(y, m);
-        if (monthPickStart) {
-            const sk = mKey(monthPickStart.y, monthPickStart.m);
-            const hk = monthHovering ? mKey(monthHovering.y, monthHovering.m) : null;
-            const endK = hk ?? sk;
-            const [lo, hi] = sk <= endK ? [sk, endK] : [endK, sk];
-            return { isStart: k === lo, isEnd: k === hi, inRange: k > lo && k < hi, isSingle: lo === hi };
-        }
         if (fini && ffin) {
             const sY = parseInt(fini.substring(0, 4));
             const sM = parseInt(fini.substring(5, 7)) - 1;
@@ -312,11 +292,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     // Helper: header subtitle text
     const subtitle = () => {
-        if (selMode === 'month') {
-            if (monthPickStart) return `Desde ${MONTHS_SH[monthPickStart.m]} ${monthPickStart.y} — elige el mes final`;
-        } else {
-            if (dayPhase === 'picking-end') return `Desde ${formatDisplay(dayDraftStart)} — elige la fecha final`;
-        }
+        if (dayPhase === 'picking-end') return `Desde ${formatDisplay(dayDraftStart)} — elige la fecha final`;
         return rangeLabel || 'Elige un acceso rápido o selecciona manualmente';
     };
 
@@ -339,7 +315,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     Seleccionar período
                                 </p>
                                 <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
-                                    monthPickStart || dayPhase === 'picking-end' ? 'text-[#007AFF] animate-pulse' : 'text-slate-400'
+                                    dayPhase === 'picking-end' ? 'text-[#007AFF] animate-pulse' : 'text-slate-400'
                                 }`}>
                                     {subtitle()}
                                 </p>
@@ -379,7 +355,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <div className="flex items-center bg-white/50 rounded-full p-0.5 border border-white/60 shadow-sm">
                             {[{ key: 'month', label: 'Por mes' }, { key: 'day', label: 'Por días' }].map(opt => (
                                 <button key={opt.key} type="button"
-                                    onClick={() => { setSelMode(opt.key); setMonthPickStart(null); setDayPhase('idle'); setDayHover(null); }}
+                                    onClick={() => { setSelMode(opt.key); setDayPhase('idle'); setDayHover(null); }}
                                     className={`px-3 py-1 rounded-full text-[9.5px] font-black transition-all ${
                                         selMode === opt.key
                                             ? 'bg-[#007AFF] text-white shadow-sm'
@@ -435,8 +411,8 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                         <button key={mi} type="button"
                                             disabled={isFuture}
                                             onClick={() => !isFuture && handleMonthClick(viewYear, mi)}
-                                            onMouseEnter={() => monthPickStart && !isFuture && setMonthHovering({ y: viewYear, m: mi })}
-                                            onMouseLeave={() => monthPickStart && setMonthHovering(null)}
+                                            onMouseEnter={() => !isFuture && setMonthHovering({ y: viewYear, m: mi })}
+                                            onMouseLeave={() => setMonthHovering(null)}
                                             className={cellCls}>
                                             {stripCls && <div className={stripCls} />}
                                             <span className="relative z-10">{label}</span>
@@ -444,12 +420,6 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     );
                                 })}
                             </div>
-                            {monthPickStart && (
-                                <button type="button" onClick={() => { setMonthPickStart(null); setMonthHovering(null); }}
-                                    className="mt-3 w-full text-[9.5px] font-bold text-slate-400 hover:text-slate-600 transition-colors py-1">
-                                    Cancelar selección
-                                </button>
-                            )}
                         </div>
                     )}
 

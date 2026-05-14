@@ -1,71 +1,50 @@
 // src/components/common/PeriodPicker.jsx
-// Date range picker — click-based (click start, click end).
-// value format: "YYYY-MM-DD|YYYY-MM-DD"
+// Month-level range picker — presets + year/month grid
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 
-const MONTHS     = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const MONTHS_SH  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MONTHS_SH   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 const pad = n => String(n).padStart(2, '0');
 
-function svToday() {
+function svNow() {
     const sv = new Date(Date.now() - 6 * 3600_000);
-    return `${sv.getUTCFullYear()}-${pad(sv.getUTCMonth() + 1)}-${pad(sv.getUTCDate())}`;
+    return { y: sv.getUTCFullYear(), m: sv.getUTCMonth(), d: sv.getUTCDate() };
 }
 
+function svToday() {
+    const { y, m, d } = svNow();
+    return `${y}-${pad(m + 1)}-${pad(d)}`;
+}
+
+const mStart = (y, m) => `${y}-${pad(m + 1)}-01`;
+const mEnd   = (y, m) => `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+const mKey   = (y, m) => y * 12 + m;
+
 function buildPresets() {
-    const nowMs = Date.now() - 6 * 3600_000;
-    const sv = new Date(nowMs);
-    const y = sv.getUTCFullYear();
-    const m = sv.getUTCMonth();
-    const d = sv.getUTCDate();
-    const today = `${y}-${pad(m + 1)}-${pad(d)}`;
-
-    const daysFromMon = (sv.getUTCDay() + 6) % 7;
-    const mon = new Date(nowMs - daysFromMon * 86400_000);
-    const weekStart = `${mon.getUTCFullYear()}-${pad(mon.getUTCMonth() + 1)}-${pad(mon.getUTCDate())}`;
-
-    const monthStart   = `${y}-${pad(m + 1)}-01`;
-    const monthLastDay = new Date(y, m + 1, 0).getDate();
-    const monthEnd     = `${y}-${pad(m + 1)}-${pad(monthLastDay)}`;
+    const { y, m } = svNow();
+    const today = svToday();
 
     const pM = m === 0 ? 11 : m - 1;
     const pY = m === 0 ? y - 1 : y;
-    const prevStart   = `${pY}-${pad(pM + 1)}-01`;
-    const prevLastDay = new Date(pY, pM + 1, 0).getDate();
-    const prevEnd     = `${pY}-${pad(pM + 1)}-${pad(prevLastDay)}`;
 
     const m3 = ((m - 2) % 12 + 12) % 12;
     const y3 = m - 2 < 0 ? y - 1 : y;
-    const threeStart = `${y3}-${pad(m3 + 1)}-01`;
 
-    const quick = [
-        { label: 'Hoy',             start: today,      end: today },
-        { label: 'Esta semana',     start: weekStart,  end: today },
-        { label: 'Este mes',        start: monthStart, end: today },
-        { label: 'Mes completo',    start: monthStart, end: monthEnd },
-        { label: 'Mes anterior',    start: prevStart,  end: prevEnd },
-        { label: 'Últimos 3 meses', start: threeStart, end: today },
-        { label: 'Este año',        start: `${y}-01-01`, end: `${y}-12-31` },
+    const m6 = ((m - 5) % 12 + 12) % 12;
+    const y6 = m - 5 < 0 ? y - 1 : y;
+
+    return [
+        { label: 'Hoy',               start: today,           end: today           },
+        { label: 'Este mes',          start: mStart(y, m),    end: mEnd(y, m)      },
+        { label: 'Mes anterior',      start: mStart(pY, pM),  end: mEnd(pY, pM)    },
+        { label: 'Últimos 3 meses',   start: mStart(y3, m3),  end: mEnd(y, m)      },
+        { label: 'Últimos 6 meses',   start: mStart(y6, m6),  end: mEnd(y, m)      },
+        { label: 'Este año',          start: `${y}-01-01`,    end: `${y}-12-31`    },
     ];
-
-    const months = [];
-    for (let i = 0; i < 13; i++) {
-        const mi   = ((m - i) % 12 + 12) % 12;
-        const yi   = m - i < 0 ? y - 1 : y;
-        const last = new Date(yi, mi + 1, 0).getDate();
-        months.push({
-            label: `${MONTHS_SH[mi]} ${yi}`,
-            start: `${yi}-${pad(mi + 1)}-01`,
-            end:   `${yi}-${pad(mi + 1)}-${pad(last)}`,
-        });
-    }
-
-    return { quick, months };
 }
 
 function formatDisplay(dateStr) {
@@ -74,277 +53,175 @@ function formatDisplay(dateStr) {
     return `${d}/${m}/${y}`;
 }
 
-// ── MonthGrid ─────────────────────────────────────────────────────────────────
-
-function MonthGrid({ year, month, startDate, endDate, onDayClick, onDayHover, onPrev, onNext, pickingEnd }) {
-    const firstDay    = new Date(year, month, 1).getDay();
-    const offset      = (firstDay + 6) % 7;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const toStr = d => `${year}-${pad(month + 1)}-${pad(d)}`;
-    const todayStr = svToday();
-
-    return (
-        <div className="flex-1 min-w-[220px]">
-            <div className="flex items-center justify-between mb-3">
-                {onPrev ? (
-                    <button type="button" onClick={onPrev}
-                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
-                        <ChevronLeft size={14} strokeWidth={3} />
-                    </button>
-                ) : <div className="w-7" />}
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-700">
-                    {MONTHS[month]} {year}
-                </p>
-                {onNext ? (
-                    <button type="button" onClick={onNext}
-                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
-                        <ChevronRight size={14} strokeWidth={3} />
-                    </button>
-                ) : <div className="w-7" />}
-            </div>
-            <div className="grid grid-cols-7 mb-1">
-                {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[9px] font-black uppercase tracking-widest text-slate-400 py-1">{d}</div>
-                ))}
-            </div>
-            <div className="grid grid-cols-7">
-                {Array.from({ length: offset }).map((_, i) => <div key={`e-${i}`} />)}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day    = i + 1;
-                    const dayStr = toStr(day);
-                    const isStart = dayStr === startDate;
-                    const isEnd   = dayStr === endDate;
-                    const isToday = dayStr === todayStr;
-
-                    let inRange = false;
-                    let wrapBg  = '';
-                    if (startDate && endDate && startDate !== endDate) {
-                        const s = startDate < endDate ? startDate : endDate;
-                        const e = startDate < endDate ? endDate   : startDate;
-                        inRange = dayStr > s && dayStr < e;
-                        if (!isStart && !isEnd && inRange) wrapBg = 'bg-blue-100';
-                    }
-
-                    let btnCls = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 select-none ';
-                    if (isStart || isEnd) {
-                        btnCls += 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110 cursor-pointer';
-                    } else if (inRange) {
-                        btnCls += 'text-[#007AFF] font-black hover:bg-white hover:shadow-sm cursor-pointer';
-                    } else if (isToday) {
-                        btnCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 hover:bg-slate-100 cursor-pointer';
-                    } else {
-                        btnCls += `text-slate-600 hover:bg-slate-100 hover:text-[#007AFF] ${pickingEnd ? 'cursor-crosshair' : 'cursor-pointer'}`;
-                    }
-
-                    return (
-                        <div key={day}
-                            className={`h-9 flex items-center justify-center relative ${wrapBg}`}
-                            onMouseEnter={() => onDayHover(dayStr)}>
-                            <button type="button"
-                                onClick={() => onDayClick(dayStr)}
-                                className={btnCls}>
-                                {day}
-                            </button>
-                            {isToday && !isStart && !isEnd && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#007AFF] z-10" />
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
+function labelFromRange(s, e) {
+    if (!s || !e) return null;
+    const presets = buildPresets();
+    const hit = presets.find(p => p.start === s && p.end === e);
+    if (hit) return hit.label;
+    const [sy, sm] = s.split('-');
+    const [ey, em] = e.split('-');
+    const sLastDay = pad(new Date(+sy, +sm, 0).getDate());
+    const eLastDay = pad(new Date(+ey, +em, 0).getDate());
+    if (s.endsWith('-01') && e.endsWith(`-${eLastDay}`)) {
+        if (sy === ey && sm === em) return `${MONTHS_SH[+sm - 1]} ${sy}`;
+        if (sy === ey) return `${MONTHS_SH[+sm - 1]} – ${MONTHS_SH[+em - 1]} ${sy}`;
+        return `${MONTHS_SH[+sm - 1]} ${sy} – ${MONTHS_SH[+em - 1]} ${ey}`;
+    }
+    if (s === e) return formatDisplay(s);
+    return `${formatDisplay(s)} → ${formatDisplay(e)}`;
 }
-
-// ── PeriodPicker ──────────────────────────────────────────────────────────────
 
 export default function PeriodPicker({ value, onChange, placeholder = 'Período...' }) {
     const [fini, ffin] = value ? value.split('|') : ['', ''];
 
-    const [isOpen,     setIsOpen]     = useState(false);
-    const [draftStart, setDraftStart] = useState(fini  || null);
-    const [draftEnd,   setDraftEnd]   = useState(ffin  || null);
-    const [clickPhase, setClickPhase] = useState('idle'); // 'idle' | 'picking-end'
-    const [hoverDate,  setHoverDate]  = useState(null);
-    const [viewYear,   setViewYear]   = useState(() => fini ? parseInt(fini.split('-')[0]) : new Date().getFullYear());
-    const [viewMonth,  setViewMonth]  = useState(() => fini ? parseInt(fini.split('-')[1]) - 1 : new Date().getMonth());
-    const [popupStyle, setPopupStyle] = useState({});
+    const [isOpen,    setIsOpen]    = useState(false);
+    const [pickStart, setPickStart] = useState(null); // { y, m } | null
+    const [hovering,  setHovering]  = useState(null); // { y, m } | null
+    const [viewYear,  setViewYear]  = useState(() => fini ? parseInt(fini) : new Date().getFullYear());
+    const [popStyle,  setPopStyle]  = useState({});
 
     const triggerRef = useRef(null);
-    const popupRef   = useRef(null);
+    const popRef     = useRef(null);
 
-    const secondMonth = viewMonth === 11 ? 0  : viewMonth + 1;
-    const secondYear  = viewMonth === 11 ? viewYear + 1 : viewYear;
-
-    // During picking-end, show hover preview as end date
-    const previewEnd   = clickPhase === 'picking-end' && hoverDate
-        ? (hoverDate >= draftStart ? hoverDate : draftStart)
-        : draftEnd;
-    const previewStart = clickPhase === 'picking-end' && hoverDate && hoverDate < draftStart
-        ? hoverDate
-        : draftStart;
-
-    // Sync draft when value changes externally
+    // sync viewYear when value changes from outside
     useEffect(() => {
-        const [s, e] = value ? value.split('|') : ['', ''];
-        setDraftStart(s || null);
-        setDraftEnd(e || null);
-        setClickPhase('idle');
-        setHoverDate(null);
-    }, [value]);
+        if (fini) setViewYear(parseInt(fini));
+    }, [fini]);
+
+    const { y: curY, m: curM } = svNow();
 
     const open = () => {
-        const [s] = value ? value.split('|') : ['', ''];
-        if (s) {
-            const parts = s.split('-');
-            setViewYear(parseInt(parts[0]));
-            setViewMonth(parseInt(parts[1]) - 1);
-        } else {
-            const now = new Date();
-            setViewYear(now.getFullYear());
-            setViewMonth(now.getMonth());
-        }
+        const y = fini ? parseInt(fini) : curY;
+        setViewYear(y);
+        setPickStart(null);
+        setHovering(null);
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
-            const popH = 460;
-            const popW = 780;
+            const PH = 520, PW = 460;
             let top  = rect.bottom + window.scrollY + 8;
             let left = rect.left + window.scrollX;
-            if (rect.bottom + popH > window.innerHeight) top = rect.top + window.scrollY - popH - 8;
-            if (left + popW > window.innerWidth) left = window.innerWidth - popW - 16;
+            if (rect.bottom + PH > window.innerHeight) top = rect.top + window.scrollY - PH - 8;
+            if (left + PW > window.innerWidth) left = window.innerWidth - PW - 16;
             if (left < 8) left = 8;
-            setPopupStyle({ top, left });
+            setPopStyle({ top, left });
         }
-        setClickPhase('idle');
-        setHoverDate(null);
         setIsOpen(true);
     };
 
-    const close = () => {
-        setIsOpen(false);
-        setClickPhase('idle');
-        setHoverDate(null);
-    };
+    const close = () => { setIsOpen(false); setPickStart(null); setHovering(null); };
 
-    const confirm = (s, e) => {
-        onChange(`${s}|${e}`);
-        setIsOpen(false);
-        setClickPhase('idle');
-        setHoverDate(null);
-    };
+    const confirm = (s, e) => { onChange(`${s}|${e}`); close(); };
 
-    const handlePreset = (s, e) => {
-        setDraftStart(s);
-        setDraftEnd(e);
-        setClickPhase('idle');
-        setHoverDate(null);
-        confirm(s, e);
-    };
+    const handlePreset = (s, e) => confirm(s, e);
 
-    const handleDayClick = useCallback((dayStr) => {
-        if (clickPhase === 'idle') {
-            setDraftStart(dayStr);
-            setDraftEnd(null);
-            setClickPhase('picking-end');
-            setHoverDate(null);
+    const handleMonthClick = (y, m) => {
+        if (!pickStart) {
+            setPickStart({ y, m });
+            setHovering(null);
         } else {
-            const s = dayStr <= draftStart ? dayStr : draftStart;
-            const e = dayStr <= draftStart ? draftStart : dayStr;
-            setDraftStart(s);
-            setDraftEnd(e);
-            setClickPhase('idle');
-            setHoverDate(null);
+            const sk = mKey(pickStart.y, pickStart.m);
+            const ek = mKey(y, m);
+            const [finalS, finalE] = sk <= ek
+                ? [{ y: pickStart.y, m: pickStart.m }, { y, m }]
+                : [{ y, m }, { y: pickStart.y, m: pickStart.m }];
+            confirm(mStart(finalS.y, finalS.m), mEnd(finalE.y, finalE.m));
         }
-    }, [clickPhase, draftStart]);
-
-    const handleDayHover = useCallback((dayStr) => {
-        if (clickPhase === 'picking-end') setHoverDate(dayStr);
-    }, [clickPhase]);
-
-    const handlePrev = () => {
-        if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-        else setViewMonth(m => m - 1);
     };
-    const handleNext = () => {
-        if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-        else setViewMonth(m => m + 1);
+
+    // Compute highlight range for month cells
+    const getMonthState = (y, m) => {
+        const k = mKey(y, m);
+
+        if (pickStart) {
+            const sk = mKey(pickStart.y, pickStart.m);
+            const hk = hovering ? mKey(hovering.y, hovering.m) : null;
+            const endK = hk ?? sk;
+            const [lo, hi] = sk <= endK ? [sk, endK] : [endK, sk];
+            const isStart  = k === lo;
+            const isEnd    = k === hi;
+            const inRange  = k > lo && k < hi;
+            return { isStart, isEnd, inRange, isSingle: lo === hi };
+        }
+
+        if (fini && ffin) {
+            const sY = parseInt(fini.substring(0,4));
+            const sM = parseInt(fini.substring(5,7)) - 1;
+            const eY = parseInt(ffin.substring(0,4));
+            const eM = parseInt(ffin.substring(5,7)) - 1;
+            const sk = mKey(sY, sM);
+            const ek = mKey(eY, eM);
+            const isStart = k === sk;
+            const isEnd   = k === ek;
+            const inRange = k > sk && k < ek;
+            return { isStart, isEnd, inRange, isSingle: sk === ek };
+        }
+
+        return { isStart: false, isEnd: false, inRange: false, isSingle: false };
     };
 
     useEffect(() => {
         if (!isOpen) return;
-        const handler = e => {
-            if (popupRef.current && !popupRef.current.contains(e.target) &&
+        const h = e => {
+            if (popRef.current && !popRef.current.contains(e.target) &&
                 triggerRef.current && !triggerRef.current.contains(e.target)) close();
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('mousedown', h);
+        return () => document.removeEventListener('mousedown', h);
     }, [isOpen]);
 
-    const daysCount = draftStart && draftEnd
-        ? Math.round((new Date(draftEnd + 'T12:00:00') - new Date(draftStart + 'T12:00:00')) / 86400000) + 1
-        : 0;
-
-    const presets = isOpen ? buildPresets() : null;
+    const presets = buildPresets();
+    const rangeLabel = labelFromRange(fini, ffin);
 
     const popup = isOpen && createPortal(
         <>
             <div className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-[2px]" onClick={close} />
-            <div ref={popupRef}
-                className="fixed z-[9999] bg-white/85 backdrop-blur-md border border-white/60 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.14)] p-6"
-                style={{ ...popupStyle, width: '780px', maxWidth: 'calc(100vw - 32px)' }}>
+            <div ref={popRef}
+                className="fixed z-[9999] rounded-[2rem] shadow-[0_24px_64px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                style={{ ...popStyle, width: '460px', maxWidth: 'calc(100vw - 32px)' }}>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-xl">
-                            <CalendarDays size={16} strokeWidth={2.5} />
+                {/* Glass shell */}
+                <div className="bg-white/75 backdrop-blur-[32px] backdrop-saturate-[200%] border border-white/80 rounded-[2rem] overflow-hidden">
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-5 pt-5 pb-4">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-2xl bg-[#007AFF]/10 flex items-center justify-center">
+                                <CalendarDays size={15} className="text-[#007AFF]" strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-700 leading-tight">
+                                    Seleccionar período
+                                </p>
+                                <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
+                                    pickStart ? 'text-[#007AFF]' : 'text-slate-400'
+                                }`}>
+                                    {pickStart
+                                        ? `Desde ${MONTHS_SH[pickStart.m]} ${pickStart.y} — elige el mes final`
+                                        : rangeLabel || 'Elige un acceso rápido o selecciona meses'}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">Seleccionar período</p>
-                            <p className={`text-[10px] font-bold transition-colors ${clickPhase === 'picking-end' ? 'text-[#007AFF]' : 'text-slate-400'}`}>
-                                {clickPhase === 'picking-end'
-                                    ? `Inicio: ${formatDisplay(draftStart)} — ahora selecciona la fecha de fin`
-                                    : draftStart && draftEnd
-                                        ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)} · ${daysCount} día${daysCount !== 1 ? 's' : ''}`
-                                        : 'Elige un preset o haz clic en el día de inicio'}
-                            </p>
-                        </div>
+                        <button type="button" onClick={close}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-white/60 hover:bg-white/90 text-slate-400 hover:text-slate-600 transition-all shadow-sm">
+                            <X size={12} strokeWidth={2.5} />
+                        </button>
                     </div>
-                    <button type="button" onClick={close}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
-                        <X size={14} strokeWidth={2.5} />
-                    </button>
-                </div>
 
-                <div className="flex gap-5">
                     {/* Presets */}
-                    <div className="flex flex-col w-[148px] shrink-0 gap-0.5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 px-1">Accesos rápidos</p>
-                        {presets.quick.map(p => {
-                            const active = draftStart === p.start && draftEnd === p.end && clickPhase === 'idle';
-                            return (
-                                <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
-                                    className={`text-left px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                        active
-                                            ? 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.35)]'
-                                            : 'text-slate-600 hover:bg-white hover:text-[#007AFF] hover:shadow-sm'
-                                    }`}>
-                                    {p.label}
-                                </button>
-                            );
-                        })}
-
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-3 mb-1 px-1">Meses</p>
-                        <div className="flex flex-col gap-0.5 overflow-y-auto max-h-[176px] pr-0.5">
-                            {presets.months.map(p => {
-                                const active = draftStart === p.start && draftEnd === p.end && clickPhase === 'idle';
+                    <div className="px-5 pb-4">
+                        <p className="text-[8.5px] font-black uppercase tracking-[0.12em] text-slate-400 mb-2">
+                            Accesos rápidos
+                        </p>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {presets.map(p => {
+                                const active = !pickStart && fini === p.start && ffin === p.end;
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
-                                        className={`text-left px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                                            active
-                                                ? 'bg-[#007AFF] text-white'
-                                                : 'text-slate-500 hover:bg-white hover:text-[#007AFF]'
-                                        }`}>
+                                        className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight
+                                            ${active
+                                                ? 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.4)] scale-[1.03]'
+                                                : 'bg-white/50 text-slate-600 hover:bg-white hover:text-[#007AFF] hover:shadow-md hover:-translate-y-0.5 border border-white/60'
+                                            }`}>
                                         {p.label}
                                     </button>
                                 );
@@ -352,49 +229,84 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         </div>
                     </div>
 
-                    <div className="w-px bg-white/40 self-stretch shrink-0" />
-
-                    {/* Calendars */}
-                    <div className="flex gap-4 flex-1">
-                        <MonthGrid
-                            year={viewYear} month={viewMonth}
-                            startDate={previewStart} endDate={previewEnd}
-                            onDayClick={handleDayClick}
-                            onDayHover={handleDayHover}
-                            pickingEnd={clickPhase === 'picking-end'}
-                            onPrev={handlePrev}
-                        />
-                        <div className="w-px bg-white/30 self-stretch shrink-0" />
-                        <MonthGrid
-                            year={secondYear} month={secondMonth}
-                            startDate={previewStart} endDate={previewEnd}
-                            onDayClick={handleDayClick}
-                            onDayHover={handleDayHover}
-                            pickingEnd={clickPhase === 'picking-end'}
-                            onNext={handleNext}
-                        />
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 px-5 mb-4">
+                        <div className="flex-1 h-px bg-slate-200/60" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">
+                            por mes
+                        </span>
+                        <div className="flex-1 h-px bg-slate-200/60" />
                     </div>
-                </div>
 
-                {/* Footer */}
-                <div className="mt-5 pt-4 border-t border-white/30 flex items-center justify-between gap-3">
-                    {clickPhase === 'picking-end' ? (
-                        <p className="text-[11px] text-[#007AFF] font-bold animate-pulse">
-                            Haz clic en la fecha de fin...
-                        </p>
-                    ) : <div />}
-                    <div className="flex items-center gap-3">
-                        <button type="button" onClick={close}
-                            className="px-4 py-2 rounded-xl text-[11px] font-black text-slate-500 hover:bg-slate-100 transition-all uppercase tracking-widest">
-                            Cancelar
-                        </button>
-                        <button type="button"
-                            disabled={!draftStart || !draftEnd || clickPhase === 'picking-end'}
-                            onClick={() => confirm(draftStart, draftEnd)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
-                            <Check size={14} strokeWidth={3} /> Aplicar
-                        </button>
+                    {/* Month grid */}
+                    <div className="px-5 pb-5">
+                        {/* Year nav */}
+                        <div className="flex items-center justify-between mb-3">
+                            <button type="button" onClick={() => setViewYear(y => y - 1)}
+                                className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-500 hover:text-[#007AFF] transition-all shadow-sm">
+                                <ChevronLeft size={13} strokeWidth={3} />
+                            </button>
+                            <span className="text-[12px] font-black text-slate-700 tracking-wide">{viewYear}</span>
+                            <button type="button" onClick={() => setViewYear(y => y + 1)}
+                                className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-500 hover:text-[#007AFF] transition-all shadow-sm"
+                                disabled={viewYear >= curY + 1}>
+                                <ChevronRight size={13} strokeWidth={3} />
+                            </button>
+                        </div>
+
+                        {/* 4×3 month cells */}
+                        <div className="grid grid-cols-4 gap-1">
+                            {MONTHS_SH.map((label, mi) => {
+                                const { isStart, isEnd, inRange, isSingle } = getMonthState(viewYear, mi);
+                                const isCurrent = viewYear === curY && mi === curM;
+                                const isFuture  = mKey(viewYear, mi) > mKey(curY, curM);
+
+                                let cellCls = 'relative h-10 flex items-center justify-center rounded-2xl text-[11px] font-bold transition-all select-none ';
+
+                                if (isStart || isEnd) {
+                                    cellCls += 'bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.45)] scale-105 z-10 ';
+                                } else if (inRange) {
+                                    cellCls += 'bg-[#007AFF]/12 text-[#007AFF] font-black ';
+                                } else if (isFuture) {
+                                    cellCls += 'text-slate-300 cursor-not-allowed ';
+                                } else if (isCurrent) {
+                                    cellCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 cursor-pointer hover:bg-white hover:shadow-sm ';
+                                } else {
+                                    cellCls += 'text-slate-600 cursor-pointer hover:bg-white hover:text-[#007AFF] hover:shadow-sm ';
+                                }
+
+                                // range connector strip
+                                let stripCls = '';
+                                if (inRange) stripCls = 'absolute inset-y-0 inset-x-0 bg-[#007AFF]/10 rounded-none';
+                                if (isStart && !isSingle) stripCls = 'absolute inset-y-0 right-0 left-1/2 bg-[#007AFF]/10';
+                                if (isEnd   && !isSingle) stripCls = 'absolute inset-y-0 left-0 right-1/2 bg-[#007AFF]/10';
+
+                                return (
+                                    <button
+                                        key={mi}
+                                        type="button"
+                                        disabled={isFuture}
+                                        onClick={() => !isFuture && handleMonthClick(viewYear, mi)}
+                                        onMouseEnter={() => pickStart && !isFuture && setHovering({ y: viewYear, m: mi })}
+                                        onMouseLeave={() => pickStart && setHovering(null)}
+                                        className={cellCls}
+                                    >
+                                        {stripCls && <div className={stripCls} />}
+                                        <span className="relative z-10">{label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* cancel if mid-pick */}
+                        {pickStart && (
+                            <button type="button" onClick={() => { setPickStart(null); setHovering(null); }}
+                                className="mt-3 w-full text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors text-center py-1">
+                                Cancelar selección
+                            </button>
+                        )}
                     </div>
+
                 </div>
             </div>
         </>,
@@ -409,7 +321,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     className={fini ? 'text-[#007AFF]' : 'text-slate-400 group-hover:text-[#007AFF] transition-colors'}
                     strokeWidth={2.5} />
                 <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-slate-700' : 'text-slate-400'}`}>
-                    {fini && ffin ? `${formatDisplay(fini)} → ${formatDisplay(ffin)}` : placeholder}
+                    {fini && ffin ? (rangeLabel || `${formatDisplay(fini)} → ${formatDisplay(ffin)}`) : placeholder}
                 </span>
             </div>
             {popup}

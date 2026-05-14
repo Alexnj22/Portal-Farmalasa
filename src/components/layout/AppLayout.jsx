@@ -39,7 +39,7 @@ const MODULE_MAP = {
     promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
-    productos:         { path: '/productos',        label: 'Productos',                icon: Package,      comingSoon: true },
+    productos:         { path: '/productos',        label: 'Productos',                icon: Package      },
 };
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────

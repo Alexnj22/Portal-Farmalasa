@@ -5,7 +5,7 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock, Gift, DollarSign, FileText
+    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -59,6 +59,13 @@ const MODULE_GROUPS = [
         modules: [
             { key: 'ventas',       label: 'Ventas',       desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false },
             { key: 'facturacion',  label: 'Facturación',  desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false },
+        ],
+    },
+    {
+        group: 'Inventario',
+        color: 'text-teal-600',
+        modules: [
+            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false },
         ],
     },
     {

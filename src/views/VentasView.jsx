@@ -1427,7 +1427,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         let list = rows;
         if (searchTerm) {
             const s = searchTerm.toLowerCase();
-            list = list.filter(r => r.descripcion?.toLowerCase().includes(s) || r.presentacion?.toLowerCase().includes(s));
+            list = list.filter(r =>
+                r.descripcion?.toLowerCase().includes(s) ||
+                (r.presentaciones || []).some(p => p.presentacion?.toLowerCase().includes(s))
+            );
         }
         return [...list].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
@@ -1482,7 +1485,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             ) : filtered.length === 0 ? (
                 <div className="text-center py-16 text-slate-400">
                     <Package size={40} className="mx-auto mb-3" />
-                    <p className="font-medium">Sin datos para este período</p>
+                    <p className="font-medium">{searchTerm ? `Sin resultados para "${searchTerm}"` : 'Sin datos para este período'}</p>
                 </div>
             ) : (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
@@ -1853,7 +1856,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         </tbody>
                     </table>
                     </div>
-                    <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
+                    <div className="flex items-center justify-between px-4 py-2.5">
                         <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}
                                 onChange={v => { setPageSize(Number(v)); setPage(1); }}
@@ -1864,7 +1867,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                             {searchTerm ? `${filtered.length} de ${rows.length}` : `${fmtNum(rows.length)} productos`}
                         </span>
                     </div>
-                </div>
+                    </div>
             )}
         </div>
     );
@@ -1903,7 +1906,12 @@ export default function VentasView() {
         [salesBranches]
     );
 
-    const openSearch  = () => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); };
+    const openSearch  = () => {
+        setIsSearchMode(true);
+        // Double-rAF: fires after React paints the new state so the input
+        // is interactive regardless of how far the CSS transition has progressed.
+        requestAnimationFrame(() => requestAnimationFrame(() => searchInputRef.current?.focus()));
+    };
     const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
 
     const searchPlaceholder =

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -1251,7 +1251,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     p_fini:      fini,
                     p_ffin:      ffin,
                     p_branch_id: filterBranch ? Number(filterBranch) : null,
-                });
+                })
+                .limit(5000);
             if (presErr) throw presErr;
             if (!presData?.length) { setRows([]); setLoading(false); return; }
 
@@ -1416,7 +1417,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             p_fini:      prevFini,
             p_ffin:      prevFfin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
-        }).then(({ data }) => {
+        }).limit(5000).then(({ data }) => {
             const sum = (data || []).reduce((s, r) => s + parseFloat(r.neto || 0), 0);
             setPrevProdStats({ sum });
         });
@@ -1906,13 +1907,15 @@ export default function VentasView() {
         [salesBranches]
     );
 
-    const openSearch  = () => {
-        setIsSearchMode(true);
-        // Double-rAF: fires after React paints the new state so the input
-        // is interactive regardless of how far the CSS transition has progressed.
-        requestAnimationFrame(() => requestAnimationFrame(() => searchInputRef.current?.focus()));
-    };
+    const openSearch  = () => setIsSearchMode(true);
     const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
+
+    // useLayoutEffect fires synchronously after React's DOM update but BEFORE
+    // the browser paints — the CSS transition hasn't started yet so the input
+    // is fully interactive regardless of animation state.
+    useLayoutEffect(() => {
+        if (isSearchMode) searchInputRef.current?.focus();
+    }, [isSearchMode]);
 
     const searchPlaceholder =
         activeTab === 'ventas'     ? 'Buscar correlativo o cliente...' :

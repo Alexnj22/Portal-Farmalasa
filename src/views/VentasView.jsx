@@ -23,6 +23,7 @@ const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
 const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];
+const CAMPO_LABELS = { estado: 'Estado', tipo_pago: 'Pago', recibido_mh: 'Recib. MH', cliente: 'Cliente', total: 'Total' };
 
 function fmtQty(n) {
     const f = parseFloat(n || 0);
@@ -318,6 +319,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [antibioticIds, setAntibioticIds] = useState(new Set());
     const [filterAntibiotico, setFilterAntibiotico] = useState(false);
     const [abInvoiceIds, setAbInvoiceIds] = useState(null); // null=not loaded, []|[ids]=loaded
+    const [filterAnuladas, setFilterAnuladas] = useState(false);
+    const [changelogCache, setChangelogCache] = useState({});
 
     useEffect(() => {
         supabase.from('products').select('id').eq('es_antibiotico', true)
@@ -407,6 +410,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 .order(sortCol, { ascending: asc });
             if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
             if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+            if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
             if (filterAntibiotico && abInvoiceIds !== null) {
                 if (abInvoiceIds.length === 0) { setRows([]); setLoadingRows(false); return; }
                 q = q.in('id', abInvoiceIds);
@@ -424,8 +428,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         setRows(fetched);
         setLoadingRows(false);
 
+        const fetchedIds = fetched.map(r => r.id);
+
         // Prefetch items for visible rows in background
-        const uncached = fetched.map(r => r.id).filter(id => !itemsCache[id]);
+        const uncached = fetchedIds.filter(id => !itemsCache[id]);
         if (uncached.length > 0) {
             supabase.from('sales_invoice_items')
                 .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
@@ -441,11 +447,27 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     setItemsCache(prev => ({ ...prev, ...grouped }));
                 });
         }
-    }, [fini, ffin, filterBranch, filterPuntos, filterAntibiotico, abInvoiceIds, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
+
+        // Prefetch changelog for visible rows in background
+        const uncachedChg = fetchedIds.filter(id => !(id in changelogCache));
+        if (uncachedChg.length > 0) {
+            const init = Object.fromEntries(uncachedChg.map(id => [id, []]));
+            setChangelogCache(prev => ({ ...init, ...prev }));
+            supabase.from('sales_invoice_changelog')
+                .select('invoice_id, campo, valor_anterior, valor_nuevo')
+                .in('invoice_id', uncachedChg)
+                .then(({ data: logs }) => {
+                    if (!logs) return;
+                    const grouped = Object.fromEntries(uncachedChg.map(id => [id, []]));
+                    for (const c of logs) grouped[c.invoice_id].push(c);
+                    setChangelogCache(prev => ({ ...prev, ...grouped }));
+                });
+        }
+    }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, abInvoiceIds, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchRows(); }, [fetchRows]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAntibiotico, isSearching, pageSize]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]);
 
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
@@ -498,8 +520,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             </div>
 
             {/* Active filter chips */}
-            {antibioticIds.size > 0 && (
-                <div className="flex items-center gap-2 flex-wrap -mt-2">
+            <div className="flex items-center gap-2 flex-wrap -mt-2">
+                <button onClick={() => setFilterAnuladas(v => !v)}
+                    className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
+                        filterAnuladas
+                        ? 'bg-red-100 border-red-300 text-red-700 ring-1 ring-red-200 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterAnuladas ? 'bg-red-500' : 'bg-slate-300'}`} />
+                    Solo anuladas
+                    {filterAnuladas && <X size={9} className="text-red-400 ml-0.5 shrink-0" />}
+                </button>
+                {antibioticIds.size > 0 && (
                     <button onClick={() => setFilterAntibiotico(v => !v)}
                         className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
                             filterAntibiotico
@@ -510,8 +542,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         Contiene antibiótico
                         {filterAntibiotico && <X size={9} className="text-rose-400 ml-0.5 shrink-0" />}
                     </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {loadingRows && rows.length === 0 ? (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
@@ -564,6 +596,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     const cachedItems = itemsCache[r.id];
                                     const noData = cachedItems && cachedItems.length === 0;
                                     const emp = empMap.get(r.cod_vendedor);
+                                    const changes = changelogCache[r.id] ?? [];
                                     const tipoBadgeColor = r.tipo_documento === 'CCF'
                                         ? 'bg-red-50 text-red-600'
                                         : r.tipo_documento === 'FCF'
@@ -623,6 +656,26 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        {changes.length > 0 && (
+                                                            <div className="relative group/chg shrink-0" onClick={e => e.stopPropagation()}>
+                                                                <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
+                                                                    <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
+                                                                </div>
+                                                                <div className="absolute bottom-full right-0 mb-2 z-50 opacity-0 group-hover/chg:opacity-100 transition-opacity duration-150 pointer-events-none">
+                                                                    <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3 py-2.5 shadow-xl w-max max-w-[260px] border border-white/10">
+                                                                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-300 mb-1.5">Cambios registrados</div>
+                                                                        {changes.map((c, ci) => (
+                                                                            <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                                                                                <span className="text-[10px] font-bold text-slate-300 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                                                                <span className="text-[10px] text-slate-500 line-through">{c.valor_anterior ?? '—'}</span>
+                                                                                <span className="text-[10px] text-slate-200">→ {c.valor_nuevo ?? '—'}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                    <div className="absolute right-1.5 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-slate-900/95" />
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                         <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                                         <ChevronDown size={12}
                                                             className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />

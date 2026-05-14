@@ -787,7 +787,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         </table>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between px-3 py-1 border-t border-black/[0.04] bg-slate-50/50">
+                    <div className="flex items-center justify-between px-3 py-2 mt-1">
                         <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}
                                 onChange={v => { setPageSize(Number(v)); setPage(1); }}

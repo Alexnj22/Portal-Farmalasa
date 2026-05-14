@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -1246,15 +1246,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setLoading(true);
         setError(null);
         try {
-            const { data: presData, error: presErr } = await supabase
-                .rpc('get_product_sales_agg', {
-                    p_fini:      fini,
-                    p_ffin:      ffin,
-                    p_branch_id: filterBranch ? Number(filterBranch) : null,
-                })
-                .limit(5000);
-            if (presErr) throw presErr;
-            if (!presData?.length) { setRows([]); setLoading(false); return; }
+            // Paginate in 1000-row chunks — PostgREST caps single responses at 1000
+            const rpcParams = { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null };
+            let presData = [];
+            for (let offset = 0; ; offset += 1000) {
+                const { data: page, error: pageErr } = await supabase
+                    .rpc('get_product_sales_agg', rpcParams)
+                    .range(offset, offset + 999);
+                if (pageErr) throw pageErr;
+                presData = presData.concat(page || []);
+                if (!page || page.length < 1000) break;
+            }
+            if (!presData.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {
@@ -1413,14 +1416,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         // the same source (sii.total_linea, erp_product_id IS NOT NULL).
         // Using get_ventas_stats (si.total) caused a mismatch because it
         // includes non-product lines (discounts, adjustments, etc.).
-        supabase.rpc('get_product_sales_agg', {
-            p_fini:      prevFini,
-            p_ffin:      prevFfin,
-            p_branch_id: filterBranch ? Number(filterBranch) : null,
-        }).limit(5000).then(({ data }) => {
-            const sum = (data || []).reduce((s, r) => s + parseFloat(r.neto || 0), 0);
-            setPrevProdStats({ sum });
-        });
+        const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
+        (async () => {
+            let all = [];
+            for (let offset = 0; ; offset += 1000) {
+                const { data: page } = await supabase.rpc('get_product_sales_agg', prevParams).range(offset, offset + 999);
+                all = all.concat(page || []);
+                if (!page || page.length < 1000) break;
+            }
+            setPrevProdStats({ sum: all.reduce((s, r) => s + parseFloat(r.neto || 0), 0) });
+        })();
     }, [fini, ffin, filterBranch]);
 
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible
@@ -1895,7 +1900,6 @@ export default function VentasView() {
     });
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch]     = useState('');
-    const searchInputRef = useRef(null);
 
     const salesBranches = useMemo(() =>
         (branches || []).filter(b => SALES_BRANCH_IDS.includes(b.id)),
@@ -1910,13 +1914,6 @@ export default function VentasView() {
     const openSearch  = () => setIsSearchMode(true);
     const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
 
-    // useLayoutEffect fires synchronously after React's DOM update but BEFORE
-    // the browser paints — the CSS transition hasn't started yet so the input
-    // is fully interactive regardless of animation state.
-    useLayoutEffect(() => {
-        if (isSearchMode) searchInputRef.current?.focus();
-    }, [isSearchMode]);
-
     const searchPlaceholder =
         activeTab === 'ventas'     ? 'Buscar correlativo o cliente...' :
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
@@ -1929,7 +1926,7 @@ export default function VentasView() {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
-                <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
+                <input ref={(el) => { if (el && isSearchMode) setTimeout(() => el.focus(), 100) }} type="text" placeholder={searchPlaceholder}
                     className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (

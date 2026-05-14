@@ -191,7 +191,6 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
         setDayDraftStart(s || null);
         setDayDraftEnd(e || null);
         setDayPhase('idle');
-        setMonthPickStart(null);
     }, [value]);
 
     const open = () => {
@@ -334,7 +333,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         </p>
                         <div className="grid grid-cols-3 gap-1.5">
                             {presets.map(p => {
-                                const active = !monthPickStart && dayPhase === 'idle' && fini === p.start && ffin === p.end;
+                                const active = dayPhase === 'idle' && fini === p.start && ffin === p.end;
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                         className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight

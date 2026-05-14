@@ -14,8 +14,20 @@ const BRANCH_MAP = [
   { branchId: 2,  erpId: 5, username: 'documentop.supervisor', password: 'documento9999' }, // La Popular
 ];
 
+// Inventory branches: regular sucursales use id_ubicacion=0; bodega (erpId=6) has general (1) + vencidos (2)
+const INV_BRANCH_MAP = [
+  { erpId: 1, username: 'documento1.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 2, username: 'documento2.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 3, username: 'documento3.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 4, username: 'documento4.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 7, username: 'documento5.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 5, username: 'documentop.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
+  { erpId: 6, username: 'documentop.supervisor', password: 'documento9999', ubicaciones: [{ id: 1, isVencidos: false }, { id: 2, isVencidos: true }] }, // Bodega
+];
+
 const LOGIN_URL = 'https://clientesdte3.oss.com.sv/farma_salud/login.php';
 const DTE_BASE  = 'https://clientesdte3.oss.com.sv/farma_salud/descarga_dte_emitidos_json.php';
+const INV_BASE  = 'https://clientesdte3.oss.com.sv/farma_salud/reporte_inventario_json.php';
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
   let lastErr: any;
@@ -271,12 +283,84 @@ async function syncBranch(
   return { total: ventas.length, new: newErpIds.size, changes: changelogs.length, items: itemsToInsert.length, idMin, idMax };
 }
 
+async function syncInventoryBranch(
+  supabase: any,
+  erpId: number,
+  username: string,
+  password: string,
+  ubicacionId: number,
+  isVencidos: boolean,
+): Promise<{ items: number; rows: number }> {
+  const cookie = await withRetry(() => getSessionCookie(username, password));
+
+  const url = `${INV_BASE}?id_ubicacion=${ubicacionId}&id_sucursal=${erpId}`;
+  const res = await withRetry(() => fetch(url, {
+    headers: { Cookie: cookie },
+    signal: AbortSignal.timeout(30_000),
+  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }));
+
+  const payload = await res.json();
+  const productos: any[] = payload?.inventario ?? [];
+  if (productos.length === 0) return { items: 0, rows: 0 };
+
+  // Upsert products (nombre) encountered in inventory
+  const productUpserts: any[] = productos.map(p => ({
+    id:         parseInt(p.id_producto),
+    nombre:     p.producto,
+    updated_at: new Date().toISOString(),
+  })).filter(p => !isNaN(p.id) && p.id > 0);
+
+  if (productUpserts.length > 0) {
+    await supabase.from('products').upsert(productUpserts, { onConflict: 'id', ignoreDuplicates: false });
+  }
+
+  // Delete existing snapshot for this branch+ubicacion, then bulk insert fresh data
+  await supabase.from('inventory')
+    .delete()
+    .eq('erp_sucursal_id', erpId)
+    .eq('is_vencidos', isVencidos);
+
+  const rows: any[] = [];
+  const now = new Date().toISOString();
+
+  for (const p of productos) {
+    const productId = parseInt(p.id_producto);
+    if (isNaN(productId)) continue;
+
+    for (const det of (p.detalles ?? [])) {
+      const rawFecha = det.fecha_vencimiento;
+      const fechaVenc = (rawFecha && rawFecha !== '0000-00-00') ? rawFecha : null;
+
+      rows.push({
+        erp_sucursal_id:   erpId,
+        is_vencidos:       isVencidos,
+        erp_product_id:    productId > 0 ? productId : null,
+        descripcion:       p.producto ?? null,
+        presentacion:      det.presentacion ?? null,
+        detalle:           det.detalle ?? null,
+        lote:              det.lote ?? null,
+        fecha_vencimiento: fechaVenc,
+        cantidad:          parseInt(det.cantidad) || 0,
+        synced_at:         now,
+      });
+    }
+  }
+
+  const CHUNK = 500;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from('inventory').insert(rows.slice(i, i + CHUNK));
+    if (error) throw new Error(`inventory insert chunk ${i}: ${error.message}`);
+  }
+
+  return { items: productos.length, rows: rows.length };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { fini, ffin, branchId: onlyBranch, forceItems = false } = body;
+    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false } = body;
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
     const startDate = fini || hoy;
@@ -343,8 +427,38 @@ Deno.serve(async (req) => {
       await supabase.from('sync_log').insert(logRows);
     }
 
+    // Inventory sync (optional, triggered by syncInventory=true in body)
+    const invResults: any[] = [];
+    if (syncInventory) {
+      for (const { erpId: invErpId, username, password, ubicaciones } of INV_BRANCH_MAP) {
+        for (const { id: ubicacionId, isVencidos } of ubicaciones) {
+          try {
+            const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos);
+            invResults.push({ erpId: invErpId, ubicacionId, isVencidos, ...result });
+            await supabase.from('inventory_sync_log').insert({
+              erp_sucursal_id: invErpId,
+              is_vencidos:     isVencidos,
+              items_count:     result.items,
+              rows_upserted:   result.rows,
+              success:         true,
+            });
+          } catch (e: any) {
+            invResults.push({ erpId: invErpId, ubicacionId, isVencidos, error: e.message });
+            await supabase.from('inventory_sync_log').insert({
+              erp_sucursal_id: invErpId,
+              is_vencidos:     isVencidos,
+              items_count:     0,
+              rows_upserted:   0,
+              success:         false,
+              error_msg:       e.message,
+            });
+          }
+        }
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, range: { startDate, endDate }, results }),
+      JSON.stringify({ success: true, range: { startDate, endDate }, results, ...(syncInventory && { inventory: invResults }) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

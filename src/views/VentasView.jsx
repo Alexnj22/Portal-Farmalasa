@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
@@ -800,8 +801,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 </>
             )}
 
-            {/* Change tooltip — fixed so it escapes overflow-hidden/overflow-x-auto containers */}
-            {changeTooltip && (
+            {/* Change tooltip — portaled to document.body to escape transform-gpu containing block */}
+            {changeTooltip && ReactDOM.createPortal(
                 <div className="fixed z-[9999] pointer-events-none"
                     style={{ left: changeTooltip.x, top: changeTooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
                     <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3 py-2.5 shadow-xl w-max max-w-[260px] border border-white/10">
@@ -815,7 +816,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         ))}
                     </div>
                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-slate-900/95" />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

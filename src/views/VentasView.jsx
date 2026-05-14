@@ -786,8 +786,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             </tbody>
                         </table>
                         </div>
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-2 mt-1">
+                    <div className="flex items-center justify-between px-4 py-2.5">
                         <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}
                                 onChange={v => { setPageSize(Number(v)); setPage(1); }}
@@ -797,6 +796,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
                             {isSearching ? `${rows.length} resultados` : `${fmtNum(totalCount)} total`}
                         </span>
+                    </div>
                     </div>
                 </>
             )}

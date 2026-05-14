@@ -108,43 +108,17 @@ function currentHoraCorte(ffin) {
 }
 
 function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
-    const [activePill, setActivePill] = useState(null);
+    const defaultRange = (() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })();
 
-    const nowMs = Date.now() - 6 * 3600_000;
-    const sv    = new Date(nowMs);
-    const p     = n => String(n).padStart(2, '0');
-    const y = sv.getUTCFullYear(), m = sv.getUTCMonth(), d = sv.getUTCDate();
-    const todayStr   = `${y}-${p(m+1)}-${p(d)}`;
-    const dFromMon   = (sv.getUTCDay() + 6) % 7;
-    const mon        = new Date(nowMs - dFromMon * 86400_000);
-    const weekStart  = `${mon.getUTCFullYear()}-${p(mon.getUTCMonth()+1)}-${p(mon.getUTCDate())}`;
-    const monthStart = `${y}-${p(m+1)}-01`;
-    const quickTabs  = [
-        { label: 'Hoy',  value: `${todayStr}|${todayStr}` },
-        { label: 'Sem.', value: `${weekStart}|${todayStr}` },
-        { label: 'Mes',  value: `${monthStart}|${todayStr}` },
-    ];
-
-    const handleQuickTab = (label, value) => {
-        setActivePill(label);
-        setMonthRange(value);
-    };
-
-    const handlePeriodChange = (val) => {
-        setActivePill(null);
-        setMonthRange(val);
-    };
+    const handlePeriodChange = (val) => setMonthRange(val);
 
     const resetAll = () => {
-        const r = currentMonthRange();
-        setActivePill(null);
         setFilterBranch('');
-        setMonthRange(`${r.fini}|${r.ffin}`);
+        setMonthRange(defaultRange);
     };
 
-    const hasActiveFilters = !!filterBranch || activePill !== null;
+    const hasActiveFilters = !!filterBranch || monthRange !== defaultRange;
 
-    // compact mode: pl-10 pr-9 = 76px of internal padding; default 145px fits "Todas" with room
     const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
     const branchW = selectedBranch
         ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
@@ -152,24 +126,6 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
 
     return (
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
-
-            {/* Segmented period tabs */}
-            <div className="px-2.5 py-2">
-                <div className="flex items-center gap-0.5 bg-slate-100/80 rounded-xl p-[3px]">
-                    {quickTabs.map(qt => (
-                        <button key={qt.label} onClick={() => handleQuickTab(qt.label, qt.value)}
-                            className={`px-2.5 h-[22px] rounded-[9px] text-[9.5px] font-black uppercase tracking-wider transition-all duration-200 shrink-0 ${
-                                activePill === qt.label
-                                    ? 'bg-white text-slate-800 shadow-[0_1px_4px_rgba(0,0,0,0.12)] scale-[1.02]'
-                                    : 'text-slate-400 hover:text-slate-600'
-                            }`}>
-                            {qt.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
 
             {/* Branch select */}
             <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>

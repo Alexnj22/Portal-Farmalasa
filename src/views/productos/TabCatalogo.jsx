@@ -723,7 +723,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                     </div>
 
                     {/* ── Categoría | Cambios ── */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-5">
 
                         {/* Categoría */}
                         <div>
@@ -1063,9 +1063,6 @@ export default function TabCatalogo({
                         filterNuevos={filterNuevos}
                         onFilterNuevos={() => setFilterNuevos(v => !v)}
                     />
-                    {!loading && total > 0 && (
-                        <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>
-                    )}
                 </div>
 
                 {/* Filter pill — desktop only, same style as Ventas */}

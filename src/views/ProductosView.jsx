@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package, LayoutList, Boxes, Search, X, ChevronRight } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -20,6 +20,11 @@ export default function ProductosView() {
 
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch,    setRawSearch]    = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
+        return () => clearTimeout(t);
+    }, [rawSearch]);
     const openSearch  = () => setIsSearchMode(true);
     const closeSearch = () => { setIsSearchMode(false); setRawSearch(''); };
 
@@ -109,7 +114,7 @@ export default function ProductosView() {
         <GlassViewLayout icon={Package} title="Productos" filtersContent={filtersContent}>
             <div className={activeTab === 'catalogo' ? '' : 'hidden'}>
                 <TabCatalogo
-                    searchTerm={rawSearch}
+                    searchTerm={debouncedSearch}
                     filterActivo={filterActivo}
                     setFilterActivo={setFilterActivo}
                     filterLab={filterLab}
@@ -124,7 +129,7 @@ export default function ProductosView() {
                 />
             </div>
             <div className={activeTab === 'inventario' ? '' : 'hidden'}>
-                <TabInventario searchTerm={rawSearch} />
+                <TabInventario searchTerm={debouncedSearch} />
             </div>
         </GlassViewLayout>
     );

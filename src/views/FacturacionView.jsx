@@ -2028,6 +2028,11 @@ export default function FacturacionView() {
     const [filterBranch, setFilterBranch] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
+        return () => clearTimeout(t);
+    }, [rawSearch]);
     const searchInputRef = useRef(null);
     const salesBranches = useMemo(
         () => branches.filter(b => SALES_BRANCH_IDS.includes(b.id)),
@@ -2117,16 +2122,16 @@ export default function FacturacionView() {
         >
             <div className="bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                    <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                    <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                    <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                    <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'saltos' ? '' : 'hidden'}>
                     <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                    <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={rawSearch} currentUser={currentUser} />
+                    <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
             </div>
         </GlassViewLayout>

@@ -231,7 +231,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
     useEffect(() => {
         const t = setTimeout(() =>
-            loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 200);
+            loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 50);
         return () => clearTimeout(t);
     }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 

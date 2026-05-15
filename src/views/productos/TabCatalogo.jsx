@@ -976,7 +976,7 @@ export default function TabCatalogo({
 
         const t = setTimeout(() =>
             loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
-            200
+            50
         );
         return () => clearTimeout(t);
     }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);

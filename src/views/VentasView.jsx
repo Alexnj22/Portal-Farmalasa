@@ -1873,6 +1873,11 @@ export default function VentasView() {
     });
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch]     = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
+        return () => clearTimeout(t);
+    }, [rawSearch]);
 
     const salesBranches = useMemo(() =>
         (branches || []).filter(b => SALES_BRANCH_IDS.includes(b.id)),
@@ -1946,17 +1951,17 @@ export default function VentasView() {
         <GlassViewLayout icon={TrendingUp} title="Ventas" filtersContent={filtersContent}>
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
                 <TabVentas branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
-                    searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     employees={employees} branchOptions={branchOptions} />
             </div>
             <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
-                    employees={employees} searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    employees={employees} searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} />
             </div>
             <div className={activeTab === 'productos' ? '' : 'hidden'}>
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
-                    searchTerm={rawSearch} monthRange={monthRange} setMonthRange={setMonthRange}
+                    searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} />
             </div>
         </GlassViewLayout>

@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
-import { AlertTriangle, Calendar, Loader2, Package, RefreshCw, Boxes, Building2, X } from 'lucide-react';
+import {
+    AlertTriangle, Calendar, Loader2, Package, RefreshCw,
+    Boxes, Building2, X, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
     5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
-const ERP_ORDER = [1, 2, 3, 4, 5, 7, 6];
+const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
+const PAGE_SIZES = [25, 50, 100];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function expiryInfo(fecha) {
     if (!fecha) return null;
@@ -15,6 +21,16 @@ function expiryInfo(fecha) {
     today.setHours(0, 0, 0, 0);
     const days = Math.ceil((new Date(fecha) - today) / 86400000);
     return { days, expired: days < 0 };
+}
+
+function relativeTime(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 2)  return 'ahora mismo';
+    if (mins < 60) return `hace ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)  return `hace ${hrs}h`;
+    return new Date(iso).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' });
 }
 
 function ExpiryCell({ fecha }) {
@@ -35,15 +51,83 @@ function ExpiryCell({ fecha }) {
     return <span className="text-xs text-slate-400 whitespace-nowrap">{fecha}</span>;
 }
 
+// ── SmartPagination ───────────────────────────────────────────────────────────
+
+function SmartPagination({ page, total, onChange }) {
+    if (total <= 1) return null;
+    const buildPages = () => {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+        const pages = [1];
+        const left  = Math.max(2, page - 1);
+        const right = Math.min(total - 1, page + 1);
+        if (left > 2) pages.push('…');
+        for (let i = left; i <= right; i++) pages.push(i);
+        if (right < total - 1) pages.push('…');
+        pages.push(total);
+        return pages;
+    };
+    return (
+        <div className="flex items-center gap-1.5">
+            <button disabled={page <= 1} onClick={() => onChange(page - 1)}
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
+            </button>
+            <div className="flex items-center gap-1">
+                {buildPages().map((p, i) =>
+                    p === '…'
+                        ? <span key={`e${i}`} className="w-6 text-center text-slate-300 text-[12px] font-bold select-none">·</span>
+                        : <button key={p} onClick={() => onChange(p)}
+                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
+                                p === page
+                                    ? 'bg-[#007AFF] text-white shadow-md shadow-blue-200 scale-110'
+                                    : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
+                            }`}>{p}</button>
+                )}
+            </div>
+            <button disabled={page >= total} onClick={() => onChange(page + 1)}
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                Sig. <ChevronRight size={12} strokeWidth={2.5} />
+            </button>
+        </div>
+    );
+}
+
+// ── SortTh ────────────────────────────────────────────────────────────────────
+
+function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
+    const active = sortField === field;
+    return (
+        <th onClick={() => onSort(field)}
+            className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
+                active ? 'text-[#007AFF]' : 'text-slate-400 hover:text-slate-600'
+            } ${className}`}>
+            <span className="flex items-center gap-1">
+                {label}
+                <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
+                    {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                </span>
+            </span>
+        </th>
+    );
+}
+
+// ── TabInventario ─────────────────────────────────────────────────────────────
+
 export default function TabInventario({ searchTerm = '' }) {
-    const [selectedErp, setSelectedErp] = useState(null);
-    const [showVencidos, setShowVencidos] = useState(false);
-    const [items, setItems]              = useState([]);
-    const [loading, setLoading]          = useState(false);
-    const [syncLog, setSyncLog]          = useState([]);
+    const [selectedErp,    setSelectedErp]    = useState(null);
+    const [filterVencidos, setFilterVencidos] = useState(false);
+    const [items,          setItems]          = useState([]);
+    const [total,          setTotal]          = useState(0);
+    const [loading,        setLoading]        = useState(false);
+    const [page,           setPage]           = useState(1);
+    const [pageSize,       setPageSize]       = useState(25);
+    const [sortField,      setSortField]      = useState('descripcion');
+    const [sortDir,        setSortDir]        = useState('asc');
+    const [syncLog,        setSyncLog]        = useState([]);
+    const [labMap,         setLabMap]         = useState({});
+    const [expiredTotal,   setExpiredTotal]   = useState(0);
 
-    useEffect(() => { loadInventory(); }, [selectedErp, showVencidos]);
-
+    // Sync log (once)
     useEffect(() => {
         supabase.from('inventory_sync_log')
             .select('erp_sucursal_id, is_vencidos, synced_at, success, items_count')
@@ -52,52 +136,92 @@ export default function TabInventario({ searchTerm = '' }) {
             .then(({ data }) => setSyncLog(data || []));
     }, []);
 
-    const loadInventory = async () => {
+    // Reset page on filter changes
+    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, searchTerm, pageSize, sortField]);
+
+    // Load inventory (server-side)
+    const loadInventory = useCallback(async (erpId, fVenc, q, pg, ps, sf, sd) => {
         setLoading(true);
         try {
-            let q = supabase
+            const today = new Date().toISOString().split('T')[0];
+
+            let qb = supabase
                 .from('inventory')
-                .select('erp_sucursal_id, is_vencidos, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad')
-                .eq('is_vencidos', showVencidos)
-                .order('descripcion')
-                .limit(6000);
-            if (selectedErp !== null) q = q.eq('erp_sucursal_id', selectedErp);
-            const { data, error } = await q;
+                .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad', { count: 'exact' })
+                .eq('is_vencidos', false)
+                .range((pg - 1) * ps, pg * ps - 1);
+
+            if (erpId !== null)  qb = qb.eq('erp_sucursal_id', erpId);
+            if (q.trim())        qb = qb.ilike('descripcion', `%${q.trim()}%`);
+            if (fVenc)           qb = qb.lt('fecha_vencimiento', today);
+
+            const sortCol = sf === 'sucursal' ? 'erp_sucursal_id' : sf;
+            qb = qb.order(sortCol, { ascending: sd === 'asc', nullsFirst: false });
+            if (sortCol !== 'descripcion') qb = qb.order('descripcion');
+
+            const { data, count, error } = await qb;
             if (error) throw error;
+
             setItems(data || []);
+            setTotal(count || 0);
+
+            // Fetch laboratorio for this page
+            const ids = [...new Set((data || []).map(r => r.erp_product_id).filter(Boolean))];
+            if (ids.length) {
+                const { data: prods } = await supabase
+                    .from('products')
+                    .select('id, laboratorios(nombre)')
+                    .in('id', ids);
+                const map = {};
+                (prods || []).forEach(p => { map[p.id] = p.laboratorios?.nombre ?? null; });
+                setLabMap(map);
+            } else {
+                setLabMap({});
+            }
+
+            // Expired count for card
+            let cq = supabase
+                .from('inventory')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_vencidos', false)
+                .lt('fecha_vencimiento', today);
+            if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
+            const { count: ec } = await cq;
+            setExpiredTotal(ec ?? 0);
+
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const filtered = useMemo(() => {
-        const q = searchTerm.trim().toLowerCase();
-        if (!q) return items;
-        return items.filter(i =>
-            i.descripcion?.toLowerCase().includes(q) ||
-            i.presentacion?.toLowerCase().includes(q) ||
-            i.lote?.toLowerCase().includes(q)
+    useEffect(() => {
+        const t = setTimeout(() =>
+            loadInventory(selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir),
+            200
         );
-    }, [items, searchTerm]);
+        return () => clearTimeout(t);
+    }, [selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 
-    const totalUnits   = filtered.reduce((s, i) => s + (i.cantidad || 0), 0);
-    const expiredCount = filtered.filter(i => i.fecha_vencimiento && expiryInfo(i.fecha_vencimiento)?.expired).length;
+    const handleSort = useCallback((field) => {
+        if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortField(field); setSortDir('asc'); }
+    }, [sortField]);
 
-    const lastSync = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    const lastSync = (() => {
         const logs = syncLog.filter(l =>
-            l.is_vencidos === showVencidos &&
-            l.success &&
+            l.is_vencidos === false && l.success &&
             (selectedErp === null || l.erp_sucursal_id === selectedErp)
         );
         if (!logs.length) return null;
         return logs.sort((a, b) => new Date(b.synced_at) - new Date(a.synced_at))[0]?.synced_at;
-    }, [syncLog, selectedErp, showVencidos]);
+    })();
 
-    // LiquidSelect options for sucursal
     const erpOptions = ERP_ORDER.map(id => {
-        const log = syncLog.find(l => l.erp_sucursal_id === id && l.is_vencidos === showVencidos && l.success);
+        const log = syncLog.find(l => l.erp_sucursal_id === id && !l.is_vencidos && l.success);
         return {
             value: String(id),
             label: ERP_NAMES[id],
@@ -110,8 +234,6 @@ export default function TabInventario({ searchTerm = '' }) {
 
             {/* ── Stats + filter pill row ── */}
             <div className="flex items-start gap-3 flex-wrap">
-
-                {/* Stat cards */}
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
                     {/* Productos */}
@@ -121,7 +243,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                         <div className="text-left">
                             <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                                {loading ? <span className="text-slate-200">–</span> : filtered.length.toLocaleString()}
+                                {loading ? <span className="text-slate-200">–</span> : total.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Productos</div>
                             <div className="text-[9px] text-slate-400">
@@ -130,54 +252,40 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                     </div>
 
-                    {/* Unidades */}
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
-                            <Boxes size={15} className="text-emerald-500" />
+                    {/* Vencidos — clickable filter card */}
+                    <button
+                        onClick={() => setFilterVencidos(v => !v)}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
+                            filterVencidos
+                                ? 'bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
+                                : 'bg-white border-slate-100 hover:border-red-200 hover:bg-red-50/40'
+                        }`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-white' : 'bg-red-50'}`}>
+                            <AlertTriangle size={15} className="text-red-500" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-emerald-600">
-                                {loading ? <span className="text-slate-200">–</span> : totalUnits.toLocaleString()}
+                            <div className="text-[22px] font-black leading-none tabular-nums text-red-600">
+                                {loading ? <span className="text-slate-200">–</span> : expiredTotal.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600">Unidades</div>
-                            <div className="text-[9px] text-slate-400">
-                                {showVencidos ? 'vencidas en stock' : 'en stock'}
-                            </div>
+                            <div className="text-[10px] font-bold text-slate-600">Vencidos</div>
+                            <div className="text-[9px] text-slate-400">por fecha</div>
                         </div>
-                    </div>
-
-                    {/* Vencidos — solo cuando hay */}
-                    {!loading && expiredCount > 0 && (
-                        <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-red-100 bg-red-50/50 min-w-[130px]">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-red-100">
-                                <AlertTriangle size={15} className="text-red-500" />
-                            </div>
-                            <div className="text-left">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-red-600">
-                                    {expiredCount.toLocaleString()}
-                                </div>
-                                <div className="text-[10px] font-bold text-slate-600">Vencidos</div>
-                                <div className="text-[9px] text-slate-400">en esta vista</div>
-                            </div>
-                        </div>
-                    )}
+                        {filterVencidos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                    </button>
 
                     {/* Last sync */}
                     {lastSync && (
                         <span className="text-[10px] text-slate-400 flex items-center gap-1 self-center">
                             <RefreshCw size={9} />
-                            {new Date(lastSync).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}{' '}
-                            {new Date(lastSync).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}
+                            {relativeTime(lastSync)}
                         </span>
                     )}
                 </div>
 
                 {/* Filter pill */}
                 <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
-
-                    {/* Sucursal */}
                     <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: '180px' }}>
+                        <div className="px-2 py-2 overflow-visible" style={{ width: '190px' }}>
                             <LiquidSelect
                                 value={selectedErp !== null ? String(selectedErp) : ''}
                                 onChange={v => setSelectedErp(v ? parseInt(v) : null)}
@@ -188,28 +296,11 @@ export default function TabInventario({ searchTerm = '' }) {
                             />
                         </div>
                         {selectedErp !== null && (
-                            <button onClick={() => setSelectedErp(null)} title="Ver todas"
+                            <button onClick={() => setSelectedErp(null)}
                                 className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
-                    </div>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* Normal / Vencidos toggle */}
-                    <div className="flex items-center gap-0.5 px-2.5 py-2">
-                        {[
-                            { v: false, label: 'Normal',   active: 'bg-emerald-100 text-emerald-700 shadow-sm' },
-                            { v: true,  label: 'Vencidos', active: 'bg-red-100 text-red-700 shadow-sm'         },
-                        ].map(({ v, label, active }) => (
-                            <button key={label} onClick={() => setShowVencidos(v)}
-                                className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-                                    showVencidos === v ? active : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                                }`}>
-                                {label}
-                            </button>
-                        ))}
                     </div>
                 </div>
             </div>
@@ -219,18 +310,12 @@ export default function TabInventario({ searchTerm = '' }) {
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="min-w-full">
                         <tbody>
-                            {Array.from({ length: 8 }).map((_, i) => (
+                            {Array.from({ length: pageSize > 25 ? 10 : 8 }).map((_, i) => (
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="space-y-1.5">
-                                                <div className="h-3 w-48 rounded-full bg-slate-100 animate-pulse" />
-                                                <div className="h-2.5 w-28 rounded-full bg-slate-100 animate-pulse" />
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3"><div className="h-3 w-48 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
                                     <td className="px-4 py-3 text-right"><div className="h-3 w-10 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
                                     <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
                                 </tr>
@@ -238,38 +323,34 @@ export default function TabInventario({ searchTerm = '' }) {
                         </tbody>
                     </table>
                 </div>
-            ) : filtered.length === 0 ? (
+            ) : total === 0 ? (
                 <div className="rounded-2xl border border-black/[0.07] bg-white shadow-sm py-20 text-center text-slate-400">
                     <Package size={32} className="opacity-30 mx-auto mb-3" />
-                    <p className="text-sm">
-                        {items.length === 0
-                            ? 'Sin datos de inventario — ejecuta una sincronización primero'
-                            : 'No se encontraron productos con esa búsqueda'}
-                    </p>
+                    <p className="text-sm">No se encontraron productos</p>
                 </div>
             ) : (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-left">
+                        <table className="min-w-full text-sm">
                             <thead className="sticky top-0 z-10">
                                 <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
                                     {selectedErp === null && (
-                                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
-                                            Sucursal
-                                        </th>
+                                        <SortTh field="sucursal" label="Sucursal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     )}
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Producto</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Presentación</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell">Lote</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right whitespace-nowrap">Cant.</th>
-                                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Vence</th>
+                                    <SortTh field="descripcion"       label="Producto"      sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    <SortTh field="presentacion"      label="Presentación"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
+                                    <SortTh field="lote"              label="Lote"           sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell whitespace-nowrap">Laboratorio</th>
+                                    <SortTh field="cantidad"          label="Cant."          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                    <SortTh field="fecha_vencimiento" label="Vence"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filtered.map((item, i) => {
-                                    const inf        = item.fecha_vencimiento ? expiryInfo(item.fecha_vencimiento) : null;
-                                    const isExpired  = inf?.expired;
-                                    const isSoon     = inf && !inf.expired && inf.days <= 30;
+                                {items.map((item, i) => {
+                                    const inf       = item.fecha_vencimiento ? expiryInfo(item.fecha_vencimiento) : null;
+                                    const isExpired = inf?.expired;
+                                    const isSoon    = inf && !inf.expired && inf.days <= 30;
+                                    const lab       = labMap[item.erp_product_id] ?? null;
                                     return (
                                         <tr key={i} className={`transition-colors ${
                                             isExpired ? 'bg-red-50/40 hover:bg-red-50/60' :
@@ -296,6 +377,9 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     {[item.lote, item.detalle].filter(Boolean).join(' · ') || '—'}
                                                 </span>
                                             </td>
+                                            <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                <span className="text-[11px] text-slate-500">{lab || <span className="text-slate-200">—</span>}</span>
+                                            </td>
                                             <td className="px-4 py-2.5 text-right whitespace-nowrap">
                                                 <span className={`text-sm font-semibold ${
                                                     item.cantidad === 0 ? 'text-slate-300' :
@@ -314,6 +398,29 @@ export default function TabInventario({ searchTerm = '' }) {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* ── Pagination ── */}
+            {!loading && total > 0 && (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                        {PAGE_SIZES.map(size => (
+                            <button key={size}
+                                onClick={() => { setPageSize(size); setPage(1); }}
+                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                    pageSize === size
+                                        ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                }`}>
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                    <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                    <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
+                        {total.toLocaleString()} total
+                    </span>
                 </div>
             )}
         </div>

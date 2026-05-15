@@ -353,7 +353,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             <div className="text-[22px] font-black leading-none tabular-nums text-emerald-700">
                                 {loading
                                     ? <span className="text-slate-200">–</span>
-                                    : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                                    : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 }
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Inversión</div>

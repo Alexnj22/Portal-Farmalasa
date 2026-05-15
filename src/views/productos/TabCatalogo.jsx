@@ -1,18 +1,30 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import {
-    Package, Building2, FlaskConical, DollarSign,
-    TrendingUp, TrendingDown, AlertTriangle, Info,
-    MapPin, Check, Loader2, Plus, Trash2, X, Camera,
-    ChevronLeft, ChevronRight, Eye, EyeOff,
+    Package, Building2, FlaskConical, MapPin, Check, Loader2,
+    ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
+    Camera,
 } from 'lucide-react';
 
-const PAGE_SIZES = [20, 40, 80];
+const PAGE_SIZES = [25, 50, 100];
 
-// ── SmartPagination (same as VentasView) ─────────────────────────────────────
+const PRICE_FIELDS = [
+    { key: 'vineta',      label: 'Víneta'  },
+    { key: 'descuento_1', label: 'Desc. 1' },
+    { key: 'vip',         label: 'VIP'     },
+    { key: 'clinica',     label: 'Clínica' },
+    { key: 'mayoreo',     label: 'Mayoreo' },
+    { key: 'premium',     label: 'Premium' },
+];
+
+function fmtP(v) {
+    if (v == null || v === '' || parseFloat(v) === 0) return '—';
+    return `$${parseFloat(v).toFixed(2)}`;
+}
+
+// ── SmartPagination ───────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
     if (total <= 1) return null;
@@ -28,7 +40,7 @@ function SmartPagination({ page, total, onChange }) {
         return pages;
     };
     return (
-        <div className="flex items-center gap-1.5 py-2">
+        <div className="flex items-center gap-1.5">
             <button disabled={page <= 1} onClick={() => onChange(page - 1)}
                 className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
                 <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
@@ -53,87 +65,28 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function MarginBadge({ costo, precio }) {
-    const c = parseFloat(costo), p = parseFloat(precio);
-    if (!c || !p || p === 0) return <span className="text-slate-300 text-[9px]">—</span>;
-    const m = (p - c) / p * 100;
-    const cls = m < 5
-        ? 'bg-red-50 text-red-600 border-red-100'
-        : m < 15
-        ? 'bg-amber-50 text-amber-600 border-amber-100'
-        : 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    return <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${cls}`}>{m.toFixed(1)}%</span>;
-}
-
-function ProfitSuggestion({ costs }) {
-    const wd = (costs || []).filter(c => c.costo && c.precio_venta && parseFloat(c.precio_venta) > 0);
-    if (!costs?.length || !wd.length) return (
-        <div className="flex items-start gap-1.5 p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-[10px] text-blue-700">
-            <Info size={11} className="shrink-0 mt-0.5" />
-            <span>Agrega precio de venta para analizar la rentabilidad.</span>
-        </div>
-    );
-    const avg = wd.reduce((s, c) => s + (parseFloat(c.precio_venta) - parseFloat(c.costo)) / parseFloat(c.precio_venta) * 100, 0) / wd.length;
-    if (avg < 5) return (
-        <div className="flex items-start gap-1.5 p-2.5 bg-red-50 border border-red-100 rounded-xl text-[10px] text-red-700">
-            <AlertTriangle size={11} className="shrink-0 mt-0.5" />
-            <span><strong>Margen crítico ({avg.toFixed(1)}%).</strong> Probable pérdida neta.</span>
-        </div>
-    );
-    if (avg < 15) return (
-        <div className="flex items-start gap-1.5 p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-[10px] text-amber-700">
-            <TrendingDown size={11} className="shrink-0 mt-0.5" />
-            <span><strong>Margen bajo ({avg.toFixed(1)}%).</strong> Estándar: 20–35%.</span>
-        </div>
-    );
-    return (
-        <div className="flex items-start gap-1.5 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-[10px] text-emerald-700">
-            <TrendingUp size={11} className="shrink-0 mt-0.5" />
-            <span><strong>Margen {avg < 25 ? 'estándar' : 'excelente'} ({avg.toFixed(1)}%).</strong></span>
-        </div>
-    );
-}
-
-// ── ProductModal ──────────────────────────────────────────────────────────────
-
-function ProductModal({ p, onClose, onUpdated, branches }) {
-    const [editTab, setEditTab]           = useState('ubicacion');
-    const [locations, setLocations]       = useState([]);
-    const [costs, setCosts]               = useState([]);
-    const [saving, setSaving]             = useState(false);
+function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated }) {
+    const [locations, setLocations] = useState([]);
+    const [saving, setSaving]       = useState(false);
     const [photoLoading, setPhotoLoading] = useState(false);
-    const [showInactive, setShowInactive] = useState(false);
     const fileRef = useRef(null);
 
     useEffect(() => {
+        if (!data) return;
         const farmBranches = (branches || []).filter(b => ['FARMACIA', 'BODEGA'].includes(b.type));
-        Promise.all([
-            supabase.from('product_locations').select('branch_id, vitrina, estante, peldano').eq('product_id', p.id),
-            supabase.from('product_costs').select('presentacion, costo, precio_venta, activo').eq('product_id', p.id),
-            supabase.from('sales_invoice_items').select('presentacion').eq('erp_product_id', p.id).not('presentacion', 'is', null).limit(500),
-        ]).then(([{ data: locs }, { data: costData }, { data: salesPres }]) => {
-            setLocations(farmBranches.map(b => {
-                const saved = (locs || []).find(l => l.branch_id === b.id);
-                return {
-                    branch_id:   b.id,
-                    branch_name: b.name,
-                    vitrina:     saved?.vitrina  || '',
-                    estante:     saved?.estante  || '',
-                    peldano:     saved?.peldano  || '',
-                };
-            }));
-
-            const savedMap = new Map((costData || []).map(c => [c.presentacion, c]));
-            const salesUniq = [...new Set((salesPres || []).map(s => s.presentacion).filter(Boolean))];
-            const merged = [...savedMap.values()];
-            salesUniq.forEach(pres => {
-                if (!savedMap.has(pres)) merged.push({ presentacion: pres, costo: '', precio_venta: '', activo: true });
-            });
-            setCosts(merged);
-        });
-    }, [p.id, branches]);
+        setLocations(farmBranches.map(b => {
+            const saved = (data.locations || []).find(l => l.branch_id === b.id);
+            return {
+                branch_id:   b.id,
+                branch_name: b.name,
+                vitrina:  saved?.vitrina  || '',
+                estante:  saved?.estante  || '',
+                peldano:  saved?.peldano  || '',
+            };
+        }));
+    }, [data, branches]);
 
     const handlePhotoUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -141,20 +94,17 @@ function ProductModal({ p, onClose, onUpdated, branches }) {
         setPhotoLoading(true);
         try {
             const ext = file.name.split('.').pop().toLowerCase();
-            const path = `${p.id}.${ext}`;
+            const path = `${product.id}.${ext}`;
             const { error: upErr } = await supabase.storage.from('product-photos').upload(path, file, { upsert: true });
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
-            const { error: dbErr } = await supabase.from('products').update({ foto_url: publicUrl }).eq('id', p.id);
+            const { error: dbErr } = await supabase.from('products').update({ foto_url: publicUrl }).eq('id', product.id);
             if (dbErr) throw dbErr;
-            onUpdated({ ...p, foto_url: publicUrl });
+            onPhotoUpdated(product.id, publicUrl);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
         } catch (err) {
             useToastStore.getState().showToast('Error', err.message, 'error');
-        } finally {
-            setPhotoLoading(false);
-            e.target.value = '';
-        }
+        } finally { setPhotoLoading(false); e.target.value = ''; }
     };
 
     const saveLocations = async () => {
@@ -163,12 +113,11 @@ function ProductModal({ p, onClose, onUpdated, branches }) {
             const toUpsert = locations
                 .filter(l => l.vitrina.trim() || l.estante.trim() || l.peldano.trim())
                 .map(l => ({
-                    product_id:  p.id,
-                    branch_id:   l.branch_id,
-                    vitrina:     l.vitrina.trim() || null,
-                    estante:     l.estante.trim() || null,
-                    peldano:     l.peldano.trim() || null,
-                    updated_at:  new Date().toISOString(),
+                    product_id: product.id, branch_id: l.branch_id,
+                    vitrina:    l.vitrina.trim() || null,
+                    estante:    l.estante.trim() || null,
+                    peldano:    l.peldano.trim() || null,
+                    updated_at: new Date().toISOString(),
                 }));
             const toDelete = locations
                 .filter(l => !l.vitrina.trim() && !l.estante.trim() && !l.peldano.trim())
@@ -176,326 +125,197 @@ function ProductModal({ p, onClose, onUpdated, branches }) {
             if (toUpsert.length > 0)
                 await supabase.from('product_locations').upsert(toUpsert, { onConflict: 'product_id,branch_id' });
             if (toDelete.length > 0)
-                await supabase.from('product_locations').delete().eq('product_id', p.id).in('branch_id', toDelete);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(p.id), { branches: toUpsert.length });
+                await supabase.from('product_locations').delete().eq('product_id', product.id).in('branch_id', toDelete);
+            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(product.id), { branches: toUpsert.length });
             useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
         } finally { setSaving(false); }
     };
 
-    const saveCosts = async () => {
-        setSaving(true);
-        try {
-            const toSave = costs.filter(c => c.presentacion?.trim()).map(c => ({
-                product_id:   p.id,
-                presentacion: c.presentacion.trim(),
-                costo:        c.costo !== '' && c.costo != null ? parseFloat(c.costo) : null,
-                precio_venta: c.precio_venta !== '' && c.precio_venta != null ? parseFloat(c.precio_venta) : null,
-                activo:       c.activo !== false,
-                updated_at:   new Date().toISOString(),
-            }));
-            await supabase.from('product_costs').delete().eq('product_id', p.id);
-            if (toSave.length > 0) {
-                const { error } = await supabase.from('product_costs').insert(toSave);
-                if (error) throw error;
-            }
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_COSTS', String(p.id), { count: toSave.length });
-            useToastStore.getState().showToast('Guardado', 'Precios actualizados.', 'success');
-        } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
-        } finally { setSaving(false); }
-    };
-
-    const handleSave = editTab === 'ubicacion' ? saveLocations : saveCosts;
-
-    const visibleCosts = showInactive ? costs : costs.filter(c => c.activo !== false);
-
-    return createPortal(
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-
-            {/* Modal panel */}
-            <div
-                className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-[0_32px_80px_rgba(0,0,0,0.22)] overflow-hidden flex flex-col max-h-[90vh]"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* ── Header with photo ── */}
-                <div className="relative h-36 shrink-0 bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/40">
-                    {p.foto_url
-                        ? <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover" />
-                        : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
-                                <div className="w-12 h-12 rounded-2xl bg-white/60 border border-white/80 shadow-inner flex items-center justify-center">
-                                    <Package size={22} className="text-slate-300" />
-                                </div>
-                                <span className="text-[10px] text-slate-300 font-medium">Sin foto</span>
-                            </div>
-                        )
-                    }
-
-                    {/* Camera overlay */}
-                    <button
-                        onClick={() => fileRef.current?.click()}
-                        className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center gap-1.5 opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer">
-                        {photoLoading
-                            ? <Loader2 size={20} className="text-white animate-spin" />
-                            : <>
-                                <Camera size={18} className="text-white drop-shadow" />
-                                <span className="text-white text-[10px] font-bold drop-shadow">Cambiar foto</span>
-                              </>}
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
-
-                    {/* Close */}
-                    <button
-                        onClick={onClose}
-                        className="absolute top-3 right-3 w-7 h-7 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/65 transition-colors">
-                        <X size={13} strokeWidth={2.5} />
-                    </button>
-
-                    {/* Inactive badge */}
-                    {p.activo === false && (
-                        <span className="absolute top-3 left-3 text-[9px] font-black px-2 py-0.5 bg-black/50 text-white/80 rounded-full backdrop-blur-sm uppercase tracking-wide">
-                            Inactivo
-                        </span>
-                    )}
-                </div>
-
-                {/* ── Product info (read-only) ── */}
-                <div className="px-5 pt-4 pb-3 border-b border-slate-100">
-                    <h2 className="text-[15px] font-bold text-slate-800 leading-snug">{p.nombre}</h2>
-                    {p.laboratorios?.nombre && (
-                        <p className="mt-0.5 text-[11px] text-slate-400 flex items-center gap-1">
-                            <Building2 size={10} className="shrink-0" />{p.laboratorios.nombre}
-                        </p>
-                    )}
-                    {/* Read-only pills */}
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {p.tipo_medicamento && (
-                            <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full">
-                                {p.tipo_medicamento}
-                            </span>
-                        )}
-                        {p.principio_activo && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 bg-teal-50 text-teal-600 border border-teal-100 rounded-full max-w-[160px]">
-                                <FlaskConical size={8} className="shrink-0" />
-                                <span className="truncate">{p.principio_activo}</span>
-                            </span>
-                        )}
-                        {p.requiere_receta && (
-                            <span className="text-[10px] font-black px-2 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full uppercase tracking-wide">
-                                Requiere receta
-                            </span>
-                        )}
-                        {p.es_antibiotico && (
-                            <span className="text-[10px] font-black px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-full uppercase tracking-wide">
-                                Antibiótico
-                            </span>
-                        )}
-                        <span className="text-[9px] text-slate-300 italic self-center ml-1">Los datos del ERP no son editables</span>
+    if (loadingRow) {
+        return (
+            <tr className="border-t border-blue-100/60">
+                <td colSpan={5} className="px-6 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                        <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando detalle...
                     </div>
-                </div>
+                </td>
+            </tr>
+        );
+    }
 
-                {/* ── Tabs ── */}
-                <div className="flex border-b border-slate-100 shrink-0">
-                    {[
-                        { key: 'ubicacion', label: 'Ubicación', icon: MapPin     },
-                        { key: 'precios',   label: 'Precios',   icon: DollarSign },
-                    ].map(({ key, label, icon: Icon }) => (
-                        <button key={key} onClick={() => setEditTab(key)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[11px] font-bold transition-all border-b-2 -mb-px
-                                ${editTab === key ? 'border-[#007AFF] text-[#007AFF]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                            <Icon size={11} />{label}
-                        </button>
-                    ))}
-                </div>
+    // Build changes map: { [id_presentacion]: { [campo]: { anterior, nuevo } } }
+    const changesMap = {};
+    (data?.changelog || []).forEach(c => {
+        if (!changesMap[c.id_presentacion]) changesMap[c.id_presentacion] = {};
+        const existing = changesMap[c.id_presentacion][c.campo];
+        if (!existing || new Date(c.detected_at) > new Date(existing.detected_at)) {
+            changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, nuevo: c.valor_nuevo, detected_at: c.detected_at };
+        }
+    });
 
-                {/* ── Tab content ── */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-3">
+    const precios  = data?.precios  || [];
+    const prodLog  = data?.prodLog  || [];
+    const hasAnyChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
-                    {editTab === 'ubicacion' && (
-                        <>
-                            <p className="text-[11px] text-slate-400">Indica la ubicación física en cada sucursal.</p>
-                            {locations.length === 0
-                                ? <p className="text-xs text-slate-300 italic">Sin sucursales configuradas.</p>
-                                : locations.map((loc, i) => (
-                                    <div key={loc.branch_id}>
-                                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">{loc.branch_name}</p>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[
-                                                { field: 'vitrina', placeholder: 'Vitrina' },
-                                                { field: 'estante', placeholder: 'Estante' },
-                                                { field: 'peldano', placeholder: 'Peldaño' },
-                                            ].map(({ field, placeholder }) => (
-                                                <div key={field}>
-                                                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5 block">{placeholder}</label>
-                                                    <input
-                                                        value={loc[field]}
-                                                        onChange={e => setLocations(ls => ls.map((l, j) => j === i ? { ...l, [field]: e.target.value } : l))}
-                                                        placeholder={placeholder}
-                                                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 bg-slate-50" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                        </>
-                    )}
-
-                    {editTab === 'precios' && (
-                        <>
-                            <ProfitSuggestion costs={visibleCosts} />
-
-                            {/* Active/inactive toggle */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-semibold text-slate-500">Presentaciones</span>
-                                <button
-                                    onClick={() => setShowInactive(v => !v)}
-                                    className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
-                                        showInactive
-                                            ? 'bg-slate-100 text-slate-600 border-slate-200'
-                                            : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'
-                                    }`}>
-                                    {showInactive ? <Eye size={10} /> : <EyeOff size={10} />}
-                                    {showInactive ? 'Mostrando inactivas' : 'Ver inactivas'}
-                                </button>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <div className="grid grid-cols-[1fr_64px_64px_36px_20px] gap-1 px-1">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Presentación</span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 text-right">Costo</span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 text-right">Precio</span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 text-center">%</span>
-                                    <span />
-                                </div>
-                                {visibleCosts.map((c, i) => {
-                                    const realIdx = costs.indexOf(c);
-                                    const isInactive = c.activo === false;
-                                    return (
-                                        <div key={i} className={`grid grid-cols-[1fr_64px_64px_36px_20px] gap-1 items-center border rounded-xl px-2 py-1.5 ${
-                                            isInactive ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100'
-                                        }`}>
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <button
-                                                    onClick={() => setCosts(cs => cs.map((x, j) => j === realIdx ? { ...x, activo: !x.activo } : x))}
-                                                    className={`shrink-0 w-2.5 h-2.5 rounded-full transition-colors ${isInactive ? 'bg-slate-300' : 'bg-emerald-400'}`}
-                                                    title={isInactive ? 'Marcar activa' : 'Marcar inactiva'}
-                                                />
-                                                <input value={c.presentacion}
-                                                    onChange={e => setCosts(cs => cs.map((x, j) => j === realIdx ? { ...x, presentacion: e.target.value } : x))}
-                                                    placeholder="500mg x 10"
-                                                    className="text-[11px] text-slate-800 bg-transparent focus:outline-none min-w-0 truncate" />
-                                            </div>
-                                            <input type="number" step="0.01" min="0" value={c.costo ?? ''}
-                                                onChange={e => setCosts(cs => cs.map((x, j) => j === realIdx ? { ...x, costo: e.target.value } : x))}
-                                                placeholder="0.00"
-                                                className="text-[11px] text-right text-slate-700 bg-transparent focus:outline-none w-full" />
-                                            <input type="number" step="0.01" min="0" value={c.precio_venta ?? ''}
-                                                onChange={e => setCosts(cs => cs.map((x, j) => j === realIdx ? { ...x, precio_venta: e.target.value } : x))}
-                                                placeholder="0.00"
-                                                className="text-[11px] text-right text-slate-700 bg-transparent focus:outline-none w-full" />
-                                            <div className="flex justify-center">
-                                                <MarginBadge costo={c.costo} precio={c.precio_venta} />
-                                            </div>
-                                            <button onClick={() => setCosts(cs => cs.filter((_, j) => j !== realIdx))}
-                                                className="text-slate-300 hover:text-red-400 transition-colors flex items-center justify-center">
-                                                <Trash2 size={11} />
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                                <button onClick={() => setCosts(cs => [...cs, { presentacion: '', costo: '', precio_venta: '', activo: true }])}
-                                    className="flex items-center gap-1 text-[11px] text-[#007AFF] hover:text-[#0055CC] font-semibold py-0.5 transition-colors">
-                                    <Plus size={10} /> Agregar presentación
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* ── Footer ── */}
-                <div className="px-5 pb-5 pt-3 border-t border-slate-100 shrink-0">
-                    <button onClick={handleSave} disabled={saving}
-                        className="w-full py-2.5 rounded-2xl bg-[#007AFF] text-white text-[12px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#0055CC] transition-colors disabled:opacity-50 shadow-[0_4px_14px_rgba(0,122,255,0.3)]">
-                        {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                        {saving ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
-}
-
-// ── ProductCard ───────────────────────────────────────────────────────────────
-
-function ProductCard({ p, onOpen }) {
     return (
-        <div
-            onClick={() => onOpen(p)}
-            className="group/card flex flex-col bg-white/70 backdrop-blur-sm border border-white/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_24px_rgba(0,0,0,0.09)] hover:-translate-y-0.5 cursor-pointer transition-all duration-200 transform-gpu"
-        >
-            {/* Photo */}
-            <div className="relative h-36 shrink-0 overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/40">
-                {p.foto_url ? (
-                    <img src={p.foto_url} alt={p.nombre} className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-[1.04]" />
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 select-none">
-                        <div className="w-12 h-12 rounded-2xl bg-white/60 border border-white/80 shadow-inner flex items-center justify-center">
-                            <Package size={20} className="text-slate-300" />
+        <tr className="border-t border-blue-100/60">
+            <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/30 via-white/70 to-slate-50/20">
+                <div className="px-5 py-4">
+                    <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-5">
+
+                        {/* ── Left: precios + foto ── */}
+                        <div className="min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    Presentaciones y precios del ERP
+                                    {hasAnyChanges && (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                            <AlertTriangle size={8} /> cambios
+                                        </span>
+                                    )}
+                                </span>
+                                <button onClick={() => fileRef.current?.click()}
+                                    className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-[#007AFF] transition-colors font-semibold">
+                                    {photoLoading ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}
+                                    {product.foto_url ? 'Cambiar foto' : 'Agregar foto'}
+                                </button>
+                                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                            </div>
+
+                            {precios.length === 0 ? (
+                                <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
+                                    <Info size={12} className="text-slate-300 shrink-0" />
+                                    Sin presentaciones registradas en el ERP para este producto.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-slate-100/80">
+                                    <table className="w-full text-left min-w-[580px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap">Presentación</th>
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">Costo</th>
+                                                {PRICE_FIELDS.map(f => (
+                                                    <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
+                                                ))}
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {precios.map(pp => {
+                                                const pCh = changesMap[pp.id_presentacion] || {};
+                                                const rowChanged = Object.keys(pCh).length > 0;
+                                                return (
+                                                    <tr key={pp.id_presentacion} className={rowChanged ? 'bg-amber-50/60' : 'bg-white'}>
+                                                        <td className="px-3 py-2 whitespace-nowrap">
+                                                            <span className="text-[11px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
+                                                            {pp.presentaciones?.descripcion && (
+                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-center">
+                                                            <span className="text-[10px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</span>
+                                                        </td>
+                                                        {/* Costo (no changelog for it) */}
+                                                        <td className="px-3 py-2 text-right">
+                                                            <span className="text-[11px] text-slate-400">{fmtP(pp.costo)}</span>
+                                                        </td>
+                                                        {/* Price fields with change indicators */}
+                                                        {PRICE_FIELDS.map(f => {
+                                                            const ch = pCh[f.key];
+                                                            return (
+                                                                <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                                    <div className="flex flex-col items-end gap-0.5">
+                                                                        <span className={`text-[11px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
+                                                                            {fmtP(pp[f.key])}
+                                                                        </span>
+                                                                        {ch && (
+                                                                            <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
+                                                                                {fmtP(ch.anterior)}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            );
+                                                        })}
+                                                        <td className="px-3 py-2 text-center">
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Product-level changelog */}
+                            {prodLog.length > 0 && (
+                                <div className="mt-3 space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Cambios en el producto</p>
+                                    {prodLog.map((c, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
+                                            <span className="text-slate-400 shrink-0 font-mono text-[10px]">
+                                                {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className="font-semibold text-slate-600">{c.campo}</span>
+                                            <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
+                                            <span className="text-slate-300 text-[9px]">→</span>
+                                            <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <span className="text-[10px] text-slate-300 font-medium">Sin foto</span>
+
+                        {/* ── Right: ubicaciones ── */}
+                        <div className="shrink-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <MapPin size={9} /> Ubicación en sucursales
+                            </p>
+                            {locations.length === 0 ? (
+                                <p className="text-[11px] text-slate-300 italic">Sin sucursales configuradas.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {locations.map((loc, i) => (
+                                        <div key={loc.branch_id}>
+                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">{loc.branch_name}</p>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {[
+                                                    { field: 'vitrina', label: 'Vitrina'  },
+                                                    { field: 'estante', label: 'Estante'  },
+                                                    { field: 'peldano', label: 'Peldaño'  },
+                                                ].map(({ field, label }) => (
+                                                    <div key={field}>
+                                                        <label className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5 block">{label}</label>
+                                                        <input
+                                                            value={loc[field]}
+                                                            onChange={e => setLocations(ls => ls.map((l, j) => j === i ? { ...l, [field]: e.target.value } : l))}
+                                                            placeholder="—"
+                                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white/80"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button onClick={saveLocations} disabled={saving}
+                                        className="w-full py-2 rounded-xl bg-[#007AFF] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#0055CC] transition-colors disabled:opacity-50 shadow-sm">
+                                        {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                        {saving ? 'Guardando...' : 'Guardar ubicaciones'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                     </div>
-                )}
-                {p.activo === false && (
-                    <span className="absolute top-2 left-2 text-[9px] font-black px-2 py-0.5 bg-black/50 text-white/80 rounded-full backdrop-blur-sm uppercase tracking-wide">
-                        Inactivo
-                    </span>
-                )}
-            </div>
-
-            {/* Info */}
-            <div className="p-3">
-                <h3 className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">{p.nombre}</h3>
-                {p.laboratorios?.nombre && (
-                    <p className="mt-0.5 text-[10px] text-slate-400 flex items-center gap-0.5 truncate">
-                        <Building2 size={9} className="shrink-0 mr-0.5" />{p.laboratorios.nombre}
-                    </p>
-                )}
-
-                {/* Pills */}
-                <div className="mt-2 flex flex-wrap gap-1">
-                    {p.tipo_medicamento && (
-                        <span className="inline-flex items-center text-[9px] font-semibold px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full max-w-[100px] truncate">
-                            {p.tipo_medicamento}
-                        </span>
-                    )}
-                    {p.principio_activo && (
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 bg-teal-50 text-teal-600 border border-teal-100 rounded-full max-w-[100px]">
-                            <FlaskConical size={7} className="shrink-0" />
-                            <span className="truncate">{p.principio_activo}</span>
-                        </span>
-                    )}
-                    {p.requiere_receta && (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full">
-                            Receta
-                        </span>
-                    )}
-                    {p.es_antibiotico && (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-full">
-                            Antibiótico
-                        </span>
-                    )}
                 </div>
-            </div>
-        </div>
+            </td>
+        </tr>
     );
 }
 
@@ -503,109 +323,266 @@ function ProductCard({ p, onOpen }) {
 
 export default function TabCatalogo({ searchTerm = '' }) {
     const branches = useStaff(s => s.branches);
-    const [products, setProducts] = useState([]);
-    const [total, setTotal]       = useState(0);
-    const [loading, setLoading]   = useState(false);
-    const [page, setPage]         = useState(1);
-    const [pageSize, setPageSize] = useState(24);
-    const [selected, setSelected] = useState(null);
 
-    const loadProducts = useCallback(async (q, pg, ps) => {
+    const [products, setProducts]           = useState([]);
+    const [total, setTotal]                 = useState(0);
+    const [loading, setLoading]             = useState(false);
+    const [page, setPage]                   = useState(1);
+    const [pageSize, setPageSize]           = useState(25);
+    const [expandedId, setExpandedId]       = useState(null);
+    const [expandedCache, setExpandedCache] = useState({});
+    const [loadingExpandedId, setLoadingExpandedId] = useState(null);
+    const [filterActivo, setFilterActivo]   = useState('activos');
+    const [changedIds, setChangedIds]       = useState(new Set());
+
+    const loadProducts = useCallback(async (q, pg, ps, fa) => {
         setLoading(true);
         try {
             let qb = supabase
                 .from('products')
-                .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, laboratorio_id, foto_url, laboratorios(nombre)', { count: 'exact' })
+                .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, laboratorios(nombre)', { count: 'exact' })
                 .order('nombre')
                 .range((pg - 1) * ps, pg * ps - 1);
             if (q.trim()) qb = qb.ilike('nombre', `%${q.trim()}%`);
+            if (fa === 'activos') qb = qb.eq('activo', true);
             const { data, count, error } = await qb;
             if (error) throw error;
-            setProducts(data || []);
+            const rows = data || [];
+            setProducts(rows);
             setTotal(count || 0);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
+
+            if (rows.length > 0) {
+                const ids = rows.map(r => r.id);
+                const [{ data: priceChanges }, { data: prodChanges }] = await Promise.all([
+                    supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
+                    supabase.from('products_changelog').select('product_id').in('product_id', ids),
+                ]);
+                setChangedIds(new Set([
+                    ...(priceChanges || []).map(c => c.product_id),
+                    ...(prodChanges  || []).map(c => c.product_id),
+                ]));
+            } else {
+                setChangedIds(new Set());
+            }
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
     }, []);
 
-    // Reset to page 1 when search or pageSize changes
-    useEffect(() => {
-        setPage(1);
-    }, [searchTerm, pageSize]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo]);
 
     useEffect(() => {
-        const t = setTimeout(() => loadProducts(searchTerm, page, pageSize), 200);
+        const t = setTimeout(() => loadProducts(searchTerm, page, pageSize, filterActivo), 200);
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, loadProducts]);
 
-    const handleUpdated = useCallback((updated) => {
-        setProducts(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p));
-        setSelected(updated);
+    const toggleRow = useCallback(async (productId) => {
+        if (expandedId === productId) { setExpandedId(null); return; }
+        setExpandedId(productId);
+        if (expandedCache[productId]) return;
+        setLoadingExpandedId(productId);
+        try {
+            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }] = await Promise.all([
+                supabase.from('product_precios')
+                    .select('id_presentacion, activo, costo, vineta, descuento_1, vip, clinica, mayoreo, premium, updated_at, presentaciones(tipo, descripcion, factor)')
+                    .eq('product_id', productId)
+                    .order('activo', { ascending: false }),
+                supabase.from('product_precios_changelog')
+                    .select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at')
+                    .eq('product_id', productId)
+                    .order('detected_at', { ascending: false }),
+                supabase.from('products_changelog')
+                    .select('campo, valor_anterior, valor_nuevo, detected_at')
+                    .eq('product_id', productId)
+                    .order('detected_at', { ascending: false })
+                    .limit(20),
+                supabase.from('product_locations')
+                    .select('branch_id, vitrina, estante, peldano')
+                    .eq('product_id', productId),
+            ]);
+            setExpandedCache(c => ({ ...c, [productId]: {
+                precios:   precios   || [],
+                changelog: changelog || [],
+                prodLog:   prodLog   || [],
+                locations: locations || [],
+            }}));
+        } finally { setLoadingExpandedId(null); }
+    }, [expandedId, expandedCache]);
+
+    const handlePhotoUpdated = useCallback((productId, url) => {
+        setProducts(ps => ps.map(p => p.id === productId ? { ...p, foto_url: url } : p));
     }, []);
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     return (
-        <>
-            {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 size={24} className="animate-spin text-[#007AFF]" />
-                </div>
-            ) : products.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-                    <Package size={32} className="opacity-30" />
-                    <p className="text-sm">No se encontraron productos</p>
-                </div>
-            ) : (
-                <div className="flex flex-col h-full">
-                    {/* Grid */}
-                    <div className="flex-1 overflow-auto p-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                            {products.map(p => (
-                                <ProductCard
-                                    key={p.id}
-                                    p={p}
-                                    onOpen={setSelected}
-                                />
-                            ))}
-                        </div>
-                    </div>
+        <div className="flex flex-col h-full">
 
-                    {/* Pagination bar */}
-                    <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-slate-100">
-                        {/* Page size pills */}
-                        <div className="flex items-center gap-1">
-                            {PAGE_SIZES.map(size => (
-                                <button key={size}
-                                    onClick={() => { setPageSize(size); setPage(1); }}
-                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                        pageSize === size
-                                            ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
-                                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-                                    }`}>
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
-                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
-                            {total.toLocaleString()} total
-                        </span>
-                    </div>
+            {/* ── Filter bar ── */}
+            <div className="flex-shrink-0 px-4 py-2.5 flex items-center gap-2.5 border-b border-slate-100">
+                <div className="flex items-center bg-white/70 border border-slate-200 rounded-full p-0.5 gap-0.5">
+                    {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
+                        <button key={v} onClick={() => setFilterActivo(v)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+                                filterActivo === v ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                            }`}>{label}
+                        </button>
+                    ))}
                 </div>
-            )}
+                {!loading && (
+                    <span className="text-[10px] text-slate-400">{total.toLocaleString()} productos</span>
+                )}
+            </div>
 
-            {/* Edit modal — portaled to body */}
-            {selected && (
-                <ProductModal
-                    p={selected}
-                    onClose={() => setSelected(null)}
-                    onUpdated={handleUpdated}
-                    branches={branches}
-                />
-            )}
-        </>
+            {/* ── Table ── */}
+            <div className="flex-1 overflow-auto">
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 size={24} className="animate-spin text-[#007AFF]" />
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+                        <Package size={32} className="opacity-30" />
+                        <p className="text-sm">No se encontraron productos</p>
+                    </div>
+                ) : (
+                    <table className="w-full text-left">
+                        <thead className="sticky top-0 z-10">
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Producto</th>
+                                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Laboratorio</th>
+                                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell">Categoría</th>
+                                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Estado</th>
+                                <th className="px-4 py-3 w-10" />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products.map(p => {
+                                const isExpanded = expandedId === p.id;
+                                const isLoadingThis = loadingExpandedId === p.id;
+                                const hasChanges = changedIds.has(p.id);
+                                return (
+                                    <React.Fragment key={p.id}>
+                                        <tr
+                                            onClick={() => toggleRow(p.id)}
+                                            className={`border-t border-black/[0.04] cursor-pointer transition-colors ${
+                                                isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'
+                                            }`}>
+
+                                            {/* Producto */}
+                                            <td className="px-4 py-2.5">
+                                                <div className="flex items-center gap-3">
+                                                    {p.foto_url ? (
+                                                        <img src={p.foto_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                                                    ) : (
+                                                        <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                                                            <Package size={14} className="text-slate-300" />
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className="text-[13px] font-semibold text-slate-800 leading-tight">{p.nombre}</span>
+                                                            {hasChanges && (
+                                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
+                                                                    <AlertTriangle size={7} /> cambios
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {p.principio_activo && (
+                                                            <p className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
+                                                                <FlaskConical size={8} className="shrink-0" />
+                                                                <span className="truncate max-w-[220px]">{p.principio_activo}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            {/* Laboratorio */}
+                                            <td className="px-4 py-2.5 hidden md:table-cell">
+                                                <span className="text-[11px] text-slate-500">{p.laboratorios?.nombre || '—'}</span>
+                                            </td>
+
+                                            {/* Categoría */}
+                                            <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {p.tipo_medicamento && (
+                                                        <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full whitespace-nowrap">
+                                                            {p.tipo_medicamento}
+                                                        </span>
+                                                    )}
+                                                    {p.es_antibiotico && (
+                                                        <span className="text-[9px] font-bold px-1.5 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-full whitespace-nowrap">
+                                                            Antibiótico
+                                                        </span>
+                                                    )}
+                                                    {p.requiere_receta && (
+                                                        <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full whitespace-nowrap">
+                                                            Receta
+                                                        </span>
+                                                    )}
+                                                    {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && (
+                                                        <span className="text-slate-300 text-[11px]">—</span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Estado */}
+                                            <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${
+                                                    p.activo
+                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                        : 'bg-slate-100 text-slate-400 border-slate-200'
+                                                }`}>
+                                                    {p.activo ? 'Activo' : 'Inactivo'}
+                                                </span>
+                                            </td>
+
+                                            {/* Chevron */}
+                                            <td className="px-4 py-2.5 text-right">
+                                                {isLoadingThis
+                                                    ? <Loader2 size={13} className="animate-spin text-blue-400 ml-auto" />
+                                                    : <ChevronDown size={13} className={`text-slate-300 transition-transform duration-200 ml-auto ${isExpanded ? 'rotate-180 text-blue-400' : ''}`} />
+                                                }
+                                            </td>
+                                        </tr>
+
+                                        {isExpanded && (
+                                            <ExpandedProductRow
+                                                product={p}
+                                                data={expandedCache[p.id]}
+                                                loadingRow={isLoadingThis && !expandedCache[p.id]}
+                                                branches={branches}
+                                                onPhotoUpdated={handlePhotoUpdated}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {/* ── Pagination bar ── */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-slate-100">
+                <div className="flex items-center gap-1">
+                    {PAGE_SIZES.map(size => (
+                        <button key={size}
+                            onClick={() => { setPageSize(size); setPage(1); }}
+                            className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                pageSize === size
+                                    ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                            }`}>
+                            {size}
+                        </button>
+                    ))}
+                </div>
+                <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
+                    {total.toLocaleString()} total
+                </span>
+            </div>
+        </div>
     );
 }

@@ -50,7 +50,12 @@ function ExpiryCell({ fecha }) {
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
         </span>
     );
-    if (info.days <= 90) return <span className="text-xs text-amber-600 whitespace-nowrap">{fecha}</span>;
+    if (info.days <= 90)  return <span className="text-xs font-semibold text-amber-600 whitespace-nowrap">{fecha}</span>;
+    if (info.days <= 180) return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+            <Calendar size={9} /> {fecha}
+        </span>
+    );
     return <span className="text-xs text-slate-400 whitespace-nowrap">{fecha}</span>;
 }
 
@@ -113,6 +118,8 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,    setSelectedErp]    = useState(null);
     const [filterVencidos, setFilterVencidos] = useState(false);
+    const [filterLab,      setFilterLab]      = useState(null);
+    const [filterCat,      setFilterCat]      = useState(null);
     const [groups,         setGroups]         = useState([]);
     const [total,          setTotal]          = useState(0);
     const [loading,        setLoading]        = useState(false);
@@ -122,6 +129,8 @@ export default function TabInventario({ searchTerm = '' }) {
     const [sortDir,        setSortDir]        = useState('asc');
     const [syncLog,        setSyncLog]        = useState([]);
     const [labMap,         setLabMap]         = useState({});
+    const [labOptions,     setLabOptions]     = useState([]);
+    const [catOptions,     setCatOptions]     = useState([]);
     const [expiredTotal,   setExpiredTotal]   = useState(0);
     const [expandedKey,    setExpandedKey]    = useState(null);
     const [expandedData,   setExpandedData]   = useState({});
@@ -133,22 +142,28 @@ export default function TabInventario({ searchTerm = '' }) {
             .order('synced_at', { ascending: false })
             .limit(30)
             .then(({ data }) => setSyncLog(data || []));
+        supabase.from('laboratorios').select('id, nombre').order('nombre')
+            .then(({ data }) => setLabOptions((data || []).map(l => ({ value: String(l.id), label: l.nombre }))));
+        supabase.from('product_categories').select('nombre').order('nombre')
+            .then(({ data }) => setCatOptions((data || []).map(r => ({ value: r.nombre, label: r.nombre }))));
     }, []);
 
-    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, searchTerm, pageSize, sortField]);
+    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterLab, filterCat, searchTerm, pageSize, sortField]);
 
-    const loadInventory = useCallback(async (erpId, fVenc, q, pg, ps, sf, sd) => {
+    const loadInventory = useCallback(async (erpId, fVenc, labId, catId, q, pg, ps, sf, sd) => {
         setLoading(true);
         setExpandedKey(null);
         try {
             const { data, error } = await supabase.rpc('inventory_grouped', {
-                p_erp_id:   erpId,
-                p_vencidos: fVenc,
-                p_search:   q.trim() || null,
-                p_sort:     sf,
-                p_sort_dir: sd,
-                p_limit:    ps,
-                p_offset:   (pg - 1) * ps,
+                p_erp_id:    erpId,
+                p_vencidos:  fVenc,
+                p_lab_id:    labId,
+                p_categoria: catId,
+                p_search:    q.trim() || null,
+                p_sort:      sf,
+                p_sort_dir:  sd,
+                p_limit:     ps,
+                p_offset:    (pg - 1) * ps,
             });
             if (error) throw error;
 
@@ -187,9 +202,9 @@ export default function TabInventario({ searchTerm = '' }) {
 
     useEffect(() => {
         const t = setTimeout(() =>
-            loadInventory(selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir), 200);
+            loadInventory(selectedErp, filterVencidos, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 200);
         return () => clearTimeout(t);
-    }, [selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
+    }, [selectedErp, filterVencidos, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 
     const handleSort = useCallback((field) => {
         if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -289,26 +304,84 @@ export default function TabInventario({ searchTerm = '' }) {
                     )}
                 </div>
 
-                <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
-                    <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: '190px' }}>
-                            <LiquidSelect
-                                value={selectedErp !== null ? String(selectedErp) : ''}
-                                onChange={v => setSelectedErp(v ? parseInt(v) : null)}
-                                options={erpOptions}
-                                placeholder="Todas las sucursales"
-                                icon={Building2}
-                                compact
-                            />
+                {(() => {
+                    const anyFilter = selectedErp !== null || filterLab !== null || filterCat !== null;
+                    return (
+                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+
+                            {/* Sucursal */}
+                            <div className="flex items-center">
+                                <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
+                                    <LiquidSelect
+                                        value={selectedErp !== null ? String(selectedErp) : ''}
+                                        onChange={v => setSelectedErp(v ? parseInt(v) : null)}
+                                        options={erpOptions}
+                                        placeholder="Todas las sucursales"
+                                        icon={Building2}
+                                        compact
+                                    />
+                                </div>
+                                {selectedErp !== null && (
+                                    <button onClick={() => setSelectedErp(null)}
+                                        className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                        <X size={9} strokeWidth={3} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {labOptions.length > 0 && <>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="flex items-center">
+                                    <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
+                                        <LiquidSelect
+                                            value={filterLab !== null ? String(filterLab) : ''}
+                                            onChange={v => setFilterLab(v ? parseInt(v) : null)}
+                                            options={labOptions}
+                                            placeholder="Laboratorio"
+                                            compact
+                                        />
+                                    </div>
+                                    {filterLab !== null && (
+                                        <button onClick={() => setFilterLab(null)}
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                            <X size={9} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                </div>
+                            </>}
+
+                            {catOptions.length > 0 && <>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="flex items-center">
+                                    <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
+                                        <LiquidSelect
+                                            value={filterCat || ''}
+                                            onChange={v => setFilterCat(v || null)}
+                                            options={catOptions}
+                                            placeholder="Categoría"
+                                            compact
+                                        />
+                                    </div>
+                                    {filterCat !== null && (
+                                        <button onClick={() => setFilterCat(null)}
+                                            className="w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                            <X size={9} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                </div>
+                            </>}
+
+                            {anyFilter && <>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <button
+                                    onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all shrink-0">
+                                    <X size={11} strokeWidth={3} />
+                                </button>
+                            </>}
                         </div>
-                        {selectedErp !== null && (
-                            <button onClick={() => setSelectedErp(null)}
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        )}
-                    </div>
-                </div>
+                    );
+                })()}
             </div>
 
             {/* ── Table ── */}
@@ -362,9 +435,10 @@ export default function TabInventario({ searchTerm = '' }) {
                                         : 'VARIOS';
                                     const pres  = group.presentaciones || [];
                                     const units = Number(group.total_unidades);
-                                    const info  = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
+                                    const info       = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
                                     const hasExpired = info?.expired;
                                     const isSoon     = info && !info.expired && info.days <= 30;
+                                    const isSixMo    = info && !info.expired && info.days > 30 && info.days <= 180;
 
                                     return (
                                         <React.Fragment key={key}>
@@ -374,6 +448,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     isExpanded ? 'bg-blue-50/50' :
                                                     hasExpired ? 'bg-red-50/40 hover:bg-red-50/60' :
                                                     isSoon     ? 'bg-amber-50/30 hover:bg-amber-50/50' :
+                                                    isSixMo    ? 'bg-orange-50/20 hover:bg-orange-50/40' :
                                                     'hover:bg-slate-50/70'
                                                 }`}>
 
@@ -389,9 +464,16 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     <div className="flex items-center gap-2">
                                                         <ChevronDown size={12} strokeWidth={2.5}
                                                             className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
-                                                        <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
-                                                            {group.descripcion || '—'}
-                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
+                                                                {group.descripcion || '—'}
+                                                            </span>
+                                                            {group.es_antibiotico && (
+                                                                <span className="mt-0.5 inline-flex text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
+                                                                    ANTIBIÓTICO
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
 

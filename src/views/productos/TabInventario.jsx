@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     AlertTriangle, Calendar, CalendarClock, Loader2, Package, RefreshCw,
-    Building2, X, ChevronLeft, ChevronRight, ChevronDown,
+    Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -11,6 +11,15 @@ const ERP_NAMES = {
     5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
+const ERP_COLORS = {
+    1: 'text-blue-600 bg-blue-50 border-blue-100',
+    2: 'text-violet-600 bg-violet-50 border-violet-100',
+    3: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    4: 'text-sky-600 bg-sky-50 border-sky-100',
+    5: 'text-rose-600 bg-rose-50 border-rose-100',
+    6: 'text-amber-700 bg-amber-50 border-amber-100',
+    7: 'text-indigo-600 bg-indigo-50 border-indigo-100',
+};
 const PAGE_SIZES = [25, 50, 100];
 
 function parseFactor(detalle) {
@@ -134,6 +143,7 @@ export default function TabInventario({ searchTerm = '' }) {
     const [catOptions,     setCatOptions]     = useState([]);
     const [expiredTotal,    setExpiredTotal]    = useState(0);
     const [sixMonthsTotal,  setSixMonthsTotal]  = useState(0);
+    const [inversionTotal,  setInversionTotal]  = useState(0);
     const [expandedKey,    setExpandedKey]    = useState(null);
     const [expandedData,   setExpandedData]   = useState({});
     const [expandLoading,  setExpandLoading]  = useState(new Set());
@@ -156,7 +166,7 @@ export default function TabInventario({ searchTerm = '' }) {
         setLoading(true);
         setExpandedKey(null);
         try {
-            const [{ data, error }, smResult] = await Promise.all([
+            const [{ data, error }, smResult, invResult] = await Promise.all([
                 supabase.rpc('inventory_grouped', {
                     p_erp_id:    erpId,
                     p_vencidos:  fVenc,
@@ -178,10 +188,16 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_limit:     1,
                     p_offset:    0,
                 }),
+                supabase.rpc('inventory_inversion', {
+                    p_erp_id:    erpId,
+                    p_lab_id:    labId,
+                    p_categoria: catId,
+                    p_search:    q.trim() || null,
+                }),
             ]);
             if (error) throw error;
             setSixMonthsTotal(smResult.data?.[0]?.total ? Number(smResult.data[0].total) : 0);
-            if (error) throw error;
+            setInversionTotal(invResult.data != null ? Number(invResult.data) : 0);
 
             setGroups(data || []);
             setTotal(data?.length ? Number(data[0].total) : 0);
@@ -331,6 +347,22 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                         {filterSixMonths && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
+
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
+                            <DollarSign size={15} className="text-emerald-600" />
+                        </div>
+                        <div className="text-left">
+                            <div className="text-[22px] font-black leading-none tabular-nums text-emerald-700">
+                                {loading
+                                    ? <span className="text-slate-200">–</span>
+                                    : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                                }
+                            </div>
+                            <div className="text-[10px] font-bold text-slate-600">Inversión</div>
+                            <div className="text-[9px] text-slate-400">costo sin IVA</div>
+                        </div>
+                    </div>
 
                     {lastSync && (
                         <span className="text-[10px] text-slate-400 flex items-center gap-1 self-center">
@@ -490,7 +522,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                                 {selectedErp === null && (
                                                     <td className="px-4 py-2.5 whitespace-nowrap">
-                                                        <span className="text-[11px] font-bold text-[#007AFF] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                                                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-slate-600 bg-slate-50 border-slate-200'}`}>
                                                             {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
                                                         </span>
                                                     </td>

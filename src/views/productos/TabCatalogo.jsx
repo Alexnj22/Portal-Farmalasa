@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -225,9 +225,8 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 // ── PrincipiosEditor ──────────────────────────────────────────────────────────
 
-function PrincipiosEditor({ productId, initial, onSaved }) {
+const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initial, onSaved }, ref) {
     const [items, setItems] = useState([]);
-    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (initial && initial.length > 0) {
@@ -244,30 +243,32 @@ function PrincipiosEditor({ productId, initial, onSaved }) {
     const updateItem = (key, field, value) =>
         setItems(prev => prev.map(p => p._key === key ? { ...p, [field]: value } : p));
 
-    const save = async () => {
-        setSaving(true);
+    const save = async ({ quiet = false } = {}) => {
         try {
             const toSave = items.filter(p => p.nombre.trim());
             await supabase.from('product_active_principles').delete().eq('product_id', productId);
             if (toSave.length > 0) {
                 await supabase.from('product_active_principles').insert(
                     toSave.map((p, i) => ({
-                        product_id:   productId,
-                        nombre:       p.nombre.trim(),
+                        product_id:    productId,
+                        nombre:        p.nombre.trim(),
                         concentracion: p.concentracion?.trim() || null,
-                        orden:        i,
+                        orden:         i,
                     }))
                 );
             }
             const text = toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ');
             await supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_PRINCIPLES', String(productId), { count: toSave.length });
-            useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
+            if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
             if (onSaved) onSaved(toSave, text || null);
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
-        } finally { setSaving(false); }
+            throw e;
+        }
     };
+
+    useImperativeHandle(ref, () => ({ save }));
 
     return (
         <div className="space-y-2">
@@ -292,26 +293,18 @@ function PrincipiosEditor({ productId, initial, onSaved }) {
                     </button>
                 </div>
             ))}
-            <div className="flex items-center gap-2 pt-1">
-                <button onClick={addItem}
-                    className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors">
-                    <Plus size={10} /> Agregar principio
-                </button>
-                <button onClick={save} disabled={saving}
-                    className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold hover:bg-[#0055CC] transition-colors disabled:opacity-50">
-                    {saving ? <Loader2 size={9} className="animate-spin" /> : <Check size={9} />}
-                    {saving ? 'Guardando…' : 'Guardar'}
-                </button>
-            </div>
+            <button onClick={addItem}
+                className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors pt-1">
+                <Plus size={10} /> Agregar principio
+            </button>
         </div>
     );
-}
+});
 
 // ── LocationGrid ──────────────────────────────────────────────────────────────
 
-function LocationGrid({ productId, initial, branches }) {
-    const [locs, setLocs]     = useState([]);
-    const [saving, setSaving] = useState(false);
+const LocationGrid = forwardRef(function LocationGrid({ productId, initial, branches }, ref) {
+    const [locs, setLocs] = useState([]);
 
     useEffect(() => {
         if (!branches) return;
@@ -341,8 +334,7 @@ function LocationGrid({ productId, initial, branches }) {
     const hasAnyData = l =>
         l.numero.trim() || l.peldano.trim() || l.bodega_numero.trim() || l.bodega_peldano.trim();
 
-    const save = async () => {
-        setSaving(true);
+    const save = async ({ quiet = false } = {}) => {
         try {
             const toUpsert = locs.filter(hasAnyData).map(l => ({
                 product_id:     productId,
@@ -360,113 +352,126 @@ function LocationGrid({ productId, initial, branches }) {
             if (toDelete.length > 0)
                 await supabase.from('product_locations').delete().eq('product_id', productId).in('branch_id', toDelete);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(productId), { branches: toUpsert.length });
-            useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
+            if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
-        } finally { setSaving(false); }
+            throw e;
+        }
     };
+
+    useImperativeHandle(ref, () => ({ save }));
 
     if (!locs.length) return <p className="text-[11px] text-slate-300 italic">Sin sucursales.</p>;
 
     return (
-        <div>
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
-                {locs.map((loc, i) => {
-                    const isSala   = loc.view === 'sala';
-                    const isMainBodega = loc.branch_type === 'BODEGA';
-                    const hasSala  = loc.numero.trim() || loc.peldano.trim();
-                    const hasBodega = loc.bodega_numero.trim() || loc.bodega_peldano.trim();
-                    const hasData  = hasSala || hasBodega;
-                    const dotColor = isSala
-                        ? (hasBodega ? 'bg-amber-400' : 'bg-transparent')
-                        : (hasSala   ? 'bg-[#007AFF]' : 'bg-transparent');
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
+            {locs.map((loc, i) => {
+                const isSala       = loc.view === 'sala';
+                const isMainBodega = loc.branch_type === 'BODEGA';
+                const hasSala      = loc.numero.trim() || loc.peldano.trim();
+                const hasBodega    = loc.bodega_numero.trim() || loc.bodega_peldano.trim();
+                const hasData      = hasSala || hasBodega;
 
-                    return (
-                        <div key={loc.branch_id} className={`rounded-lg border p-2 transition-colors min-w-0 ${hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
+                return (
+                    <div key={loc.branch_id} className={`rounded-xl border p-2.5 transition-colors min-w-0 ${hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
 
-                            {/* Header: name + sala/bodega toggle */}
-                            <div className="flex items-start justify-between gap-0.5 mb-1.5">
-                                <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 truncate leading-tight mt-0.5">{loc.branch_name}</p>
-                                {!isMainBodega && (
-                                    <div className="flex bg-slate-100 rounded-full p-0.5 shrink-0">
-                                        <button onClick={() => setField(i, 'view', 'sala')}
-                                            className={`px-1 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
-                                                isSala ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                                            }`}>Sala</button>
-                                        <button onClick={() => setField(i, 'view', 'bodega')}
-                                            className={`px-1 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
-                                                !isSala ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                                            }`}>Int.</button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Vit/Est toggle — only for sala view */}
-                            {isSala && (
-                                <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1.5">
-                                    {['vitrina', 'estante'].map(t => (
-                                        <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                            className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
-                                                loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
-                                            }`}>
-                                            {t === 'vitrina' ? 'Vit.' : 'Est.'}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            {!isSala && <div className="mb-1.5 h-[18px]" />}
-
-                            {/* N° and Peld inputs */}
-                            <div className="flex gap-1">
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">N°</p>
-                                    <input
-                                        value={isSala ? loc.numero : loc.bodega_numero}
-                                        onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
-                                        maxLength={2}
-                                        className={`w-full px-0.5 py-1 border rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                            isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
-                                        }`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">Peld.</p>
-                                    <input
-                                        value={isSala ? loc.peldano : loc.bodega_peldano}
-                                        onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
-                                        maxLength={2}
-                                        className={`w-full px-0.5 py-1 border rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                            isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
-                                        }`} />
-                                </div>
-                            </div>
-
-                            {/* Dot indicator: other view has data */}
-                            {!isMainBodega && (hasSala || hasBodega) && (
-                                <div className="mt-1.5 flex justify-center gap-1">
-                                    <span className={`w-1 h-1 rounded-full ${isSala && hasBodega ? 'bg-amber-400' : (!isSala && hasSala ? 'bg-[#007AFF]' : 'bg-transparent')}`} />
+                        {/* Header: name + Sala/Bodega toggle */}
+                        <div className="flex items-start justify-between gap-0.5 mb-2">
+                            <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 truncate leading-tight mt-0.5">{loc.branch_name}</p>
+                            {!isMainBodega && (
+                                <div className="flex bg-slate-100 rounded-full p-0.5 shrink-0">
+                                    <button onClick={() => setField(i, 'view', 'sala')}
+                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
+                                            isSala ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                        }`}>Sala</button>
+                                    <button onClick={() => setField(i, 'view', 'bodega')}
+                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
+                                            !isSala ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                        }`}>Bodega</button>
                                 </div>
                             )}
                         </div>
-                    );
-                })}
-            </div>
-            <div className="mt-2 flex justify-end">
-                <button onClick={save} disabled={saving}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold hover:bg-[#0055CC] transition-colors disabled:opacity-50">
-                    {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-                    {saving ? 'Guardando…' : 'Guardar ubicaciones'}
-                </button>
-            </div>
+
+                        {/* Vit/Est toggle */}
+                        {isSala ? (
+                            <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-2">
+                                {['vitrina', 'estante'].map(t => (
+                                    <button key={t} onClick={() => setField(i, 'tipo', t)}
+                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
+                                            loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
+                                        }`}>
+                                        {t === 'vitrina' ? 'Vit.' : 'Est.'}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mb-2 h-[18px] flex items-center justify-center">
+                                <span className="text-[7px] font-bold text-amber-500 uppercase tracking-wide">Bodega interna</span>
+                            </div>
+                        )}
+
+                        {/* N° and Peld inputs */}
+                        <div className="flex gap-1">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[6px] text-slate-400 font-semibold leading-none mb-1">N°</p>
+                                <input
+                                    value={isSala ? loc.numero : loc.bodega_numero}
+                                    onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
+                                    maxLength={2}
+                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
+                                        isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                    }`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[6px] text-slate-400 font-semibold leading-none mb-1">Peld.</p>
+                                <input
+                                    value={isSala ? loc.peldano : loc.bodega_peldano}
+                                    onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
+                                    maxLength={2}
+                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
+                                        isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                    }`} />
+                            </div>
+                        </div>
+
+                        {/* Dot: other view has data */}
+                        {!isMainBodega && (
+                            <div className="mt-1.5 flex justify-center">
+                                <span className={`w-1 h-1 rounded-full transition-all ${
+                                    isSala && hasBodega ? 'bg-amber-400' :
+                                    !isSala && hasSala  ? 'bg-[#007AFF]' : 'bg-transparent'
+                                }`} />
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
-}
+});
 
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated }) {
+function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onClose }) {
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
-    const fileRef = useRef(null);
+    const [saving, setSaving]             = useState(false);
+    const fileRef       = useRef(null);
+    const principiosRef = useRef(null);
+    const locationRef   = useRef(null);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await Promise.all([
+                principiosRef.current?.save({ quiet: true }),
+                locationRef.current?.save({ quiet: true }),
+            ]);
+            useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
+            if (onClose) onClose();
+        } catch (_) {}
+        finally { setSaving(false); }
+    };
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
 
@@ -695,6 +700,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <FlaskConical size={9} /> Principios activos
                             </p>
                             <PrincipiosEditor
+                                ref={principiosRef}
                                 productId={product.id}
                                 initial={principles}
                                 onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
@@ -709,11 +715,25 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <MapPin size={9} /> Ubicaciones por sucursal
                             </p>
                             <LocationGrid
+                                ref={locationRef}
                                 productId={product.id}
                                 initial={data?.locations}
                                 branches={branches}
                             />
                         </div>
+                    </div>
+
+                    {/* ── Guardar / Cancelar ── */}
+                    <div className="border-t border-slate-100/80 pt-4 flex items-center justify-end gap-2">
+                        <button onClick={onClose}
+                            className="px-4 h-9 rounded-full text-[11px] font-bold text-slate-500 border border-slate-200 hover:border-slate-300 hover:text-slate-700 transition-all bg-white">
+                            Cancelar
+                        </button>
+                        <button onClick={handleSave} disabled={saving}
+                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#007AFF] text-white shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
+                            {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                            Guardar
+                        </button>
                     </div>
 
                 </div>
@@ -1214,6 +1234,7 @@ export default function TabCatalogo({
                                                     branches={branches}
                                                     onPhotoUpdated={handlePhotoUpdated}
                                                     onPrinciplesUpdated={handlePrinciplesUpdated}
+                                                    onClose={() => setExpandedId(null)}
                                                 />
                                             )}
                                         </React.Fragment>

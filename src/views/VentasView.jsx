@@ -303,6 +303,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [filterAnuladas, setFilterAnuladas] = useState(false);
     const [changelogCache, setChangelogCache] = useState({});
     const [changeTooltip, setChangeTooltip] = useState(null); // { x, y, changes }
+    const fetchRowsRef = useRef(0);
 
     useEffect(() => {
         supabase.from('products').select('id').eq('es_antibiotico', true)
@@ -368,6 +369,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
     // Rows: paginado con sort o búsqueda en BD sin paginación
     const fetchRows = useCallback(async () => {
+        const rid = ++fetchRowsRef.current;
         setLoadingRows(true);
         let fetched = [];
 
@@ -394,7 +396,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
             if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
             if (filterAntibiotico && abInvoiceIds !== null) {
-                if (abInvoiceIds.length === 0) { setRows([]); setLoadingRows(false); return; }
+                if (abInvoiceIds.length === 0) {
+                    if (rid === fetchRowsRef.current) { setRows([]); setLoadingRows(false); }
+                    return;
+                }
                 q = q.in('id', abInvoiceIds);
             }
             if (isSearching) {
@@ -407,10 +412,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             fetched = data || [];
         }
 
+        if (rid !== fetchRowsRef.current) return;
         setRows(fetched);
         setLoadingRows(false);
 
         const fetchedIds = fetched.map(r => r.id);
+        const currentRid = rid;
 
         // Prefetch items for visible rows in background
         const uncached = fetchedIds.filter(id => !itemsCache[id]);
@@ -420,7 +427,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 .in('invoice_id', uncached)
                 .order('total_linea', { ascending: false })
                 .then(({ data: items }) => {
-                    if (!items) return;
+                    if (!items || fetchRowsRef.current !== currentRid) return;
                     const grouped = {};
                     for (const it of items) {
                         if (!grouped[it.invoice_id]) grouped[it.invoice_id] = [];
@@ -439,7 +446,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 .select('invoice_id, campo, valor_anterior, valor_nuevo')
                 .in('invoice_id', uncachedChg)
                 .then(({ data: logs }) => {
-                    if (!logs) return;
+                    if (!logs || fetchRowsRef.current !== currentRid) return;
                     const grouped = Object.fromEntries(uncachedChg.map(id => [id, []]));
                     for (const c of logs) grouped[c.invoice_id].push(c);
                     setChangelogCache(prev => ({ ...prev, ...grouped }));

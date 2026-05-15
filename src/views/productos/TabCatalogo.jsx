@@ -838,6 +838,8 @@ export default function TabCatalogo({
     const [products, setProducts]     = useState([]);
     const [total, setTotal]           = useState(0);
     const [loading, setLoading]       = useState(false);
+    const [loadError, setLoadError]   = useState(null);
+    const loadRef = useRef(0);
     const [page, setPage]             = useState(1);
     const [pageSize, setPageSize]     = useState(25);
     const [expandedId, setExpandedId] = useState(null);
@@ -905,14 +907,15 @@ export default function TabCatalogo({
 
     // ── loadProducts ────────────────────────────────────────────────────────
     const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir, fNuevos) => {
+        const rid = ++loadRef.current;
         setLoading(true);
+        setLoadError(null);
         try {
             let qb = supabase
                 .from('products')
                 .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, laboratorios(nombre)', { count: 'exact' })
                 .range((pg - 1) * ps, pg * ps - 1);
 
-            // Filters
             if (q.trim()) qb = qb.ilike('nombre', `%${q.trim()}%`);
             if (fa === 'activos') qb = qb.eq('activo', true);
             if (lab)  qb = qb.eq('laboratorio_id', lab);
@@ -923,17 +926,20 @@ export default function TabCatalogo({
                 qb = qb.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
             }
             if (bids !== null) {
-                if (bids.length === 0) { setProducts([]); setTotal(0); setLoading(false); return; }
+                if (bids.length === 0) {
+                    if (rid === loadRef.current) { setProducts([]); setTotal(0); setLoading(false); }
+                    return;
+                }
                 qb = qb.in('id', bids);
             }
 
-            // Sort
             if (sField === 'nombre')          qb = qb.order('nombre', { ascending: sDir === 'asc' });
             else if (sField === 'activo')      qb = qb.order('activo', { ascending: sDir === 'asc' }).order('nombre');
             else if (sField === 'categoria')   qb = qb.order('tipo_medicamento', { ascending: sDir === 'asc', nullsFirst: false }).order('nombre');
             else                               qb = qb.order('nombre');
 
             const { data, count, error } = await qb;
+            if (rid !== loadRef.current) return;
             if (error) throw error;
             const rows = data || [];
             setProducts(rows);
@@ -946,6 +952,7 @@ export default function TabCatalogo({
                     supabase.from('products_changelog').select('product_id').in('product_id', ids),
                     supabase.from('product_precios').select(`product_id, costo, ${PRICE_SELECT}`).in('product_id', ids).eq('activo', true).gt('costo', 0),
                 ]);
+                if (rid !== loadRef.current) return;
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
                 const mm = {};
                 (pp || []).forEach(row => {
@@ -958,8 +965,13 @@ export default function TabCatalogo({
                 setChangedIds(new Set());
                 setMarginMap({});
             }
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+        } catch (e) {
+            if (rid !== loadRef.current) return;
+            console.error(e);
+            setLoadError(e?.message || 'Error al cargar productos');
+        } finally {
+            if (rid === loadRef.current) setLoading(false);
+        }
     }, []);
 
     // Reset page on filter/sort changes
@@ -1162,7 +1174,17 @@ export default function TabCatalogo({
             </div>
 
             {/* ── Table ── */}
-            {loading ? (
+            {loadError ? (
+                <div className="rounded-2xl border border-red-100 bg-red-50 shadow-sm py-16 text-center">
+                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-red-400" />
+                    <p className="text-sm font-semibold text-red-600 mb-1">Error al cargar productos</p>
+                    <p className="text-[11px] text-red-400 mb-4">{loadError}</p>
+                    <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos); }}
+                        className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
+                        Reintentar
+                    </button>
+                </div>
+            ) : loading ? (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="min-w-full">
                         <tbody>

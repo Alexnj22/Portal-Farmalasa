@@ -226,6 +226,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [solvingId, setSolvingId] = useState(null);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
+    const pollingRef = useRef(false);
     const [showHistorial, setShowHistorial] = useState(false);
     const [showAllResolved, setShowAllResolved] = useState(false);
     const resolvedSectionRef = useRef(null);
@@ -252,6 +253,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     };
 
     const loadData = useCallback(async () => {
+        if (pollingRef.current) return;
+        pollingRef.current = true;
         setLoading(true);
         let q = supabase
             .from('sales_invoices')
@@ -285,6 +288,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         setResolved((historialRes.data || []).map(r => ({ ...r, invoice: invMap[r.invoice_id] || null })));
         setLastRefresh(new Date());
         setLoading(false);
+        pollingRef.current = false;
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]);
@@ -624,6 +628,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [showResolved, setShowResolved] = useState(false);
     const [showAllResolved, setShowAllResolved] = useState(false);
     const resolvedSectionRef = useRef(null);
+    const pollingRef2 = useRef(false);
     const [loading, setLoading]         = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
     const [solvingId, setSolvingId]     = useState(null);
@@ -711,6 +716,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     }, [searchTerm]);
 
     const loadData = useCallback(async () => {
+        if (pollingRef2.current) return;
+        pollingRef2.current = true;
         setLoading(true);
         const n = svNow();
         const y = n.getFullYear(), m = String(n.getMonth() + 1).padStart(2, '0');
@@ -783,6 +790,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         setResolved(allResolved);
         setLastRefresh(new Date());
         setLoading(false);
+        pollingRef2.current = false;
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]);

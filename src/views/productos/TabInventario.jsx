@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     AlertTriangle, Calendar, CalendarClock, Loader2, Package, RefreshCw,
@@ -147,6 +147,8 @@ export default function TabInventario({ searchTerm = '' }) {
     const [expandedKey,    setExpandedKey]    = useState(null);
     const [expandedData,   setExpandedData]   = useState({});
     const [expandLoading,  setExpandLoading]  = useState(new Set());
+    const [loadError,      setLoadError]      = useState(null);
+    const loadRef = useRef(0);
 
     useEffect(() => {
         supabase.from('inventory_sync_log')
@@ -163,7 +165,9 @@ export default function TabInventario({ searchTerm = '' }) {
     useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, pageSize, sortField]);
 
     const loadInventory = useCallback(async (erpId, fVenc, fSix, labId, catId, q, pg, ps, sf, sd) => {
+        const rid = ++loadRef.current;
         setLoading(true);
+        setLoadError(null);
         setExpandedKey(null);
         try {
             const [{ data, error }, smResult, invResult] = await Promise.all([
@@ -192,6 +196,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_search:    q.trim() || null,
                 }),
             ]);
+            if (rid !== loadRef.current) return;
             if (error) throw error;
             setSixMonthsTotal(smResult.data != null ? Number(smResult.data) : 0);
             setInversionTotal(invResult.data != null ? Number(invResult.data) : 0);
@@ -201,31 +206,39 @@ export default function TabInventario({ searchTerm = '' }) {
 
             const ids = [...new Set((data || []).map(r => r.erp_product_id).filter(Boolean))];
             if (ids.length) {
-                const { data: prods } = await supabase
-                    .from('products')
-                    .select('id, laboratorios(nombre)')
-                    .in('id', ids);
+                const [{ data: prods }, { count: ec }] = await Promise.all([
+                    supabase.from('products').select('id, laboratorios(nombre)').in('id', ids),
+                    (() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        let cq = supabase.from('inventory')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('is_vencidos', false).lt('fecha_vencimiento', today);
+                        if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
+                        return cq;
+                    })(),
+                ]);
+                if (rid !== loadRef.current) return;
                 const map = {};
                 (prods || []).forEach(p => { map[p.id] = p.laboratorios?.nombre ?? null; });
                 setLabMap(map);
+                setExpiredTotal(ec ?? 0);
             } else {
+                const today = new Date().toISOString().split('T')[0];
+                let cq = supabase.from('inventory')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_vencidos', false).lt('fecha_vencimiento', today);
+                if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
+                const { count: ec } = await cq;
+                if (rid !== loadRef.current) return;
                 setLabMap({});
+                setExpiredTotal(ec ?? 0);
             }
-
-            const today = new Date().toISOString().split('T')[0];
-            let cq = supabase
-                .from('inventory')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_vencidos', false)
-                .lt('fecha_vencimiento', today);
-            if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
-            const { count: ec } = await cq;
-            setExpiredTotal(ec ?? 0);
-
         } catch (e) {
+            if (rid !== loadRef.current) return;
             console.error(e);
+            setLoadError(e?.message || 'Error al cargar inventario');
         } finally {
-            setLoading(false);
+            if (rid === loadRef.current) setLoading(false);
         }
     }, []);
 
@@ -453,7 +466,17 @@ export default function TabInventario({ searchTerm = '' }) {
             </div>
 
             {/* ── Table ── */}
-            {loading ? (
+            {loadError ? (
+                <div className="rounded-2xl border border-red-100 bg-red-50 shadow-sm py-16 text-center">
+                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-red-400" />
+                    <p className="text-sm font-semibold text-red-600 mb-1">Error al cargar inventario</p>
+                    <p className="text-[11px] text-red-400 mb-4">{loadError}</p>
+                    <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
+                        className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
+                        Reintentar
+                    </button>
+                </div>
+            ) : loading ? (
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="min-w-full">
                         <tbody>

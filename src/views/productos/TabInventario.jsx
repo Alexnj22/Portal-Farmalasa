@@ -179,14 +179,11 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_limit:     ps,
                     p_offset:    (pg - 1) * ps,
                 }),
-                supabase.rpc('inventory_grouped', {
+                supabase.rpc('inventory_proximos_count', {
                     p_erp_id:    erpId,
-                    p_proximos:  true,
                     p_lab_id:    labId,
                     p_categoria: catId,
                     p_search:    q.trim() || null,
-                    p_limit:     1,
-                    p_offset:    0,
                 }),
                 supabase.rpc('inventory_inversion', {
                     p_erp_id:    erpId,
@@ -196,7 +193,7 @@ export default function TabInventario({ searchTerm = '' }) {
                 }),
             ]);
             if (error) throw error;
-            setSixMonthsTotal(smResult.data?.[0]?.total ? Number(smResult.data[0].total) : 0);
+            setSixMonthsTotal(smResult.data != null ? Number(smResult.data) : 0);
             setInversionTotal(invResult.data != null ? Number(invResult.data) : 0);
 
             setGroups(data || []);

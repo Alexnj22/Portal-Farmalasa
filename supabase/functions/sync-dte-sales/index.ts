@@ -457,6 +457,13 @@ Deno.serve(async (req) => {
           }
         }
       }
+
+      // Refresh materialized view after all branches are synced
+      try {
+        await supabase.rpc('refresh_inventory_grouped_mv');
+      } catch (_e) {
+        // Non-fatal: stale MV is better than a failed sync response
+      }
     }
 
     return new Response(

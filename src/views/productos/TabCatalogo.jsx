@@ -149,10 +149,14 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 </div>
                 <div className="text-left min-w-0">
                     <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.total ?? 0).toLocaleString()}
+                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.activos ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Total productos</div>
-                    <div className="text-[9px] text-slate-400">en catálogo</div>
+                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Productos activos</div>
+                    {!productStatsLoading && (productStats?.inactivos ?? 0) > 0 && (
+                        <div className="text-[9px] text-slate-400 tabular-nums">
+                            {(productStats.inactivos).toLocaleString()} inactivos
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -728,16 +732,17 @@ export default function TabCatalogo({
             });
     }, []);
 
-    // ── Load product counts (total + nuevos este mes) ───────────────────────
+    // ── Load product counts (activos + inactivos + nuevos este mes) ───────────
     useEffect(() => {
         setProductStatsLoading(true);
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         Promise.all([
-            supabase.from('products').select('*', { count: 'exact', head: true }),
+            supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true),
+            supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', false),
             supabase.from('products').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
-        ]).then(([{ count: total }, { count: nuevos }]) => {
-            setProductStats({ total: total ?? 0, nuevos: nuevos ?? 0 });
+        ]).then(([{ count: activos }, { count: inactivos }, { count: nuevos }]) => {
+            setProductStats({ activos: activos ?? 0, inactivos: inactivos ?? 0, nuevos: nuevos ?? 0 });
             setProductStatsLoading(false);
         });
     }, []);

@@ -357,11 +357,11 @@ function LocationGrid({ productId, initial, branches }) {
 
     return (
         <div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
                 {locs.map((loc, i) => {
                     const hasData = loc.numero.trim() || loc.peldano.trim();
                     return (
-                        <div key={loc.branch_id} className={`rounded-lg border p-1.5 transition-colors w-[72px] shrink-0 ${hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-white border-slate-100'}`}>
+                        <div key={loc.branch_id} className={`rounded-lg border p-1.5 transition-colors min-w-0 ${hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-white border-slate-100'}`}>
                             <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 mb-1 truncate">{loc.branch_name}</p>
                             <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1">
                                 {['vitrina', 'estante'].map(t => (

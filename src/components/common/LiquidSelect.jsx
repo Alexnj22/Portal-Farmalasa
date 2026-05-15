@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, X, Plus } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
+const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 const LiquidSelect = ({
     value,
     onChange,
@@ -160,11 +162,11 @@ const LiquidSelect = ({
 
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return options;
-        const lower = searchTerm.toLowerCase();
+        const q = normalize(searchTerm);
         return options.filter(opt =>
             !opt.isSeparator &&
-            (opt.label.toLowerCase().includes(lower) ||
-            (opt.sublabel && opt.sublabel.toLowerCase().includes(lower)))
+            (normalize(opt.label).includes(q) ||
+            (opt.sublabel && normalize(opt.sublabel).includes(q)))
         );
     }, [options, searchTerm]);
 

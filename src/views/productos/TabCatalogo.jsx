@@ -311,7 +311,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
 // ── CategoryEditor ────────────────────────────────────────────────────────
 
-const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated }, ref) {
+const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated, onSaved }, ref) {
     const [selected, setSelected] = useState(initial || '');
 
     useEffect(() => { setSelected(initial || ''); }, [initial]);
@@ -333,6 +333,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
             await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
+            if (onSaved) onSaved(selected || null);
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
             throw e;
@@ -505,7 +506,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onClose, categories, onCategoryCreated }) {
+function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
     const [saving, setSaving]             = useState(false);
@@ -736,6 +737,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 initial={product.tipo_medicamento}
                                 categories={categories}
                                 onCategoryCreated={onCategoryCreated}
+                                onSaved={(cat) => onCategoryUpdated?.(product.id, cat)}
                             />
                         </div>
 
@@ -1034,6 +1036,10 @@ export default function TabCatalogo({
         setProducts(ps => ps.map(p => p.id === productId ? { ...p, principio_activo: text } : p));
     }, []);
 
+    const handleCategoryUpdated = useCallback((productId, cat) => {
+        setProducts(ps => ps.map(p => p.id === productId ? { ...p, tipo_medicamento: cat } : p));
+    }, []);
+
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     const selectedLab = labOptions.find(o => o.value === String(filterLab));
@@ -1312,6 +1318,7 @@ export default function TabCatalogo({
                                                     branches={branches}
                                                     onPhotoUpdated={handlePhotoUpdated}
                                                     onPrinciplesUpdated={handlePrinciplesUpdated}
+                                                    onCategoryUpdated={handleCategoryUpdated}
                                                     onClose={() => setExpandedId(null)}
                                                     categories={catOptions.map(o => o.value)}
                                                     onCategoryCreated={onCategoryCreated}

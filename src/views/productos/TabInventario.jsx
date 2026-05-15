@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-    AlertTriangle, Calendar, Loader2, Package, RefreshCw,
+    AlertTriangle, Calendar, CalendarClock, Loader2, Package, RefreshCw,
     Building2, X, ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -117,8 +117,9 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,    setSelectedErp]    = useState(null);
-    const [filterVencidos, setFilterVencidos] = useState(false);
-    const [filterLab,      setFilterLab]      = useState(null);
+    const [filterVencidos,  setFilterVencidos]  = useState(false);
+    const [filterSixMonths, setFilterSixMonths] = useState(false);
+    const [filterLab,       setFilterLab]       = useState(null);
     const [filterCat,      setFilterCat]      = useState(null);
     const [groups,         setGroups]         = useState([]);
     const [total,          setTotal]          = useState(0);
@@ -131,7 +132,8 @@ export default function TabInventario({ searchTerm = '' }) {
     const [labMap,         setLabMap]         = useState({});
     const [labOptions,     setLabOptions]     = useState([]);
     const [catOptions,     setCatOptions]     = useState([]);
-    const [expiredTotal,   setExpiredTotal]   = useState(0);
+    const [expiredTotal,    setExpiredTotal]    = useState(0);
+    const [sixMonthsTotal,  setSixMonthsTotal]  = useState(0);
     const [expandedKey,    setExpandedKey]    = useState(null);
     const [expandedData,   setExpandedData]   = useState({});
     const [expandLoading,  setExpandLoading]  = useState(new Set());
@@ -148,23 +150,37 @@ export default function TabInventario({ searchTerm = '' }) {
             .then(({ data }) => setCatOptions((data || []).map(r => ({ value: r.nombre, label: r.nombre }))));
     }, []);
 
-    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterLab, filterCat, searchTerm, pageSize, sortField]);
+    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, pageSize, sortField]);
 
-    const loadInventory = useCallback(async (erpId, fVenc, labId, catId, q, pg, ps, sf, sd) => {
+    const loadInventory = useCallback(async (erpId, fVenc, fSix, labId, catId, q, pg, ps, sf, sd) => {
         setLoading(true);
         setExpandedKey(null);
         try {
-            const { data, error } = await supabase.rpc('inventory_grouped', {
-                p_erp_id:    erpId,
-                p_vencidos:  fVenc,
-                p_lab_id:    labId,
-                p_categoria: catId,
-                p_search:    q.trim() || null,
-                p_sort:      sf,
-                p_sort_dir:  sd,
-                p_limit:     ps,
-                p_offset:    (pg - 1) * ps,
-            });
+            const [{ data, error }, smResult] = await Promise.all([
+                supabase.rpc('inventory_grouped', {
+                    p_erp_id:    erpId,
+                    p_vencidos:  fVenc,
+                    p_proximos:  fSix,
+                    p_lab_id:    labId,
+                    p_categoria: catId,
+                    p_search:    q.trim() || null,
+                    p_sort:      sf,
+                    p_sort_dir:  sd,
+                    p_limit:     ps,
+                    p_offset:    (pg - 1) * ps,
+                }),
+                supabase.rpc('inventory_grouped', {
+                    p_erp_id:    erpId,
+                    p_proximos:  true,
+                    p_lab_id:    labId,
+                    p_categoria: catId,
+                    p_search:    q.trim() || null,
+                    p_limit:     1,
+                    p_offset:    0,
+                }),
+            ]);
+            if (error) throw error;
+            setSixMonthsTotal(smResult.data?.[0]?.total ? Number(smResult.data[0].total) : 0);
             if (error) throw error;
 
             setGroups(data || []);
@@ -202,9 +218,9 @@ export default function TabInventario({ searchTerm = '' }) {
 
     useEffect(() => {
         const t = setTimeout(() =>
-            loadInventory(selectedErp, filterVencidos, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 200);
+            loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 200);
         return () => clearTimeout(t);
-    }, [selectedErp, filterVencidos, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
+    }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 
     const handleSort = useCallback((field) => {
         if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -277,7 +293,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     </div>
 
                     <button
-                        onClick={() => setFilterVencidos(v => !v)}
+                        onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
                                 ? 'bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
@@ -294,6 +310,26 @@ export default function TabInventario({ searchTerm = '' }) {
                             <div className="text-[9px] text-slate-400">por fecha</div>
                         </div>
                         {filterVencidos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                    </button>
+
+                    <button
+                        onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); }}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
+                            filterSixMonths
+                                ? 'bg-orange-50 border-orange-300 shadow-md shadow-orange-100/80 -translate-y-px'
+                                : 'bg-white border-slate-100 hover:border-orange-200 hover:bg-orange-50/40'
+                        }`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-white' : 'bg-orange-50'}`}>
+                            <CalendarClock size={15} className="text-orange-500" />
+                        </div>
+                        <div className="text-left">
+                            <div className="text-[22px] font-black leading-none tabular-nums text-orange-500">
+                                {loading ? <span className="text-slate-200">–</span> : sixMonthsTotal.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-bold text-slate-600">Próx. a vencer</div>
+                            <div className="text-[9px] text-slate-400">en 6 meses</div>
+                        </div>
+                        {filterSixMonths && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
 
                     {lastSync && (

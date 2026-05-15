@@ -109,7 +109,7 @@ function SmartPagination({ page, total, onChange }) {
 
 // ── MarginStatCards ───────────────────────────────────────────────────────────
 
-function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading }) {
+function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos }) {
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
 
@@ -160,8 +160,15 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[140px]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
+            <button
+                onClick={onFilterNuevos}
+                disabled={productStatsLoading}
+                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
+                    filterNuevos
+                        ? 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
+                        : 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40'
+                }`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterNuevos ? 'bg-white' : 'bg-emerald-50'}`}>
                     <Sparkles size={15} className="text-emerald-500" />
                 </div>
                 <div className="text-left min-w-0">
@@ -171,7 +178,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <div className="text-[10px] font-bold text-slate-600 leading-tight">Nuevos este mes</div>
                     <div className="text-[9px] text-slate-400">agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
                 </div>
-            </div>
+                {filterNuevos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+            </button>
 
             {/* Divider */}
             <div className="w-px h-14 bg-slate-100 self-center hidden sm:block" />
@@ -770,6 +778,7 @@ export default function TabCatalogo({
 
     // Margin filter (controlled by stat cards in body)
     const [filterMargin, setFilterMargin] = useState('all');
+    const [filterNuevos, setFilterNuevos] = useState(false);
 
     // Sort
     const [sortField, setSortField] = useState('nombre');
@@ -827,7 +836,7 @@ export default function TabCatalogo({
     }, []);
 
     // ── loadProducts ────────────────────────────────────────────────────────
-    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir) => {
+    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir, fNuevos) => {
         setLoading(true);
         try {
             let qb = supabase
@@ -841,6 +850,10 @@ export default function TabCatalogo({
             if (lab)  qb = qb.eq('laboratorio_id', lab);
             if (cat)  qb = qb.eq('tipo_medicamento', cat);
             if (anti !== null) qb = qb.eq('es_antibiotico', anti);
+            if (fNuevos) {
+                const now = new Date();
+                qb = qb.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
+            }
             if (bids !== null) {
                 if (bids.length === 0) { setProducts([]); setTotal(0); setLoading(false); return; }
                 qb = qb.in('id', bids);
@@ -882,7 +895,7 @@ export default function TabCatalogo({
     }, []);
 
     // Reset page on filter/sort changes
-    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterLab, filterCategoria, filterAntibiotico, sortField]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField]);
 
     // Trigger load
     useEffect(() => {
@@ -894,11 +907,11 @@ export default function TabCatalogo({
                    :                              [...(marginStats?.bajoIds    || [])];
 
         const t = setTimeout(() =>
-            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir),
+            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
             200
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
 
     // ── Sort handler ────────────────────────────────────────────────────────
     const handleSort = useCallback((field) => {
@@ -981,6 +994,8 @@ export default function TabCatalogo({
                         onFilter={(id) => setFilterMargin(prev => prev === id ? 'all' : id)}
                         productStats={productStats}
                         productStatsLoading={productStatsLoading}
+                        filterNuevos={filterNuevos}
+                        onFilterNuevos={() => setFilterNuevos(v => !v)}
                     />
                     {!loading && total > 0 && (
                         <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>

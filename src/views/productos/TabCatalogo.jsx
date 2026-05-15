@@ -6,6 +6,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
+    Sparkles, History, MapPin,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -108,11 +109,11 @@ function SmartPagination({ page, total, onChange }) {
 
 // ── MarginStatCards ───────────────────────────────────────────────────────────
 
-function MarginStatCards({ stats, loading, filterMargin, onFilter }) {
+function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading }) {
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
 
-    const cards = [
+    const filterCards = [
         {
             id: 'perdida',
             Icon: ShieldAlert,
@@ -141,7 +142,38 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter }) {
 
     return (
         <div className="flex gap-3 flex-wrap">
-            {cards.map(c => {
+            {/* Informational cards — total & nuevos */}
+            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[140px]">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
+                    <Package size={15} className="text-[#007AFF]" />
+                </div>
+                <div className="text-left min-w-0">
+                    <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
+                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.total ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Total productos</div>
+                    <div className="text-[9px] text-slate-400">en catálogo</div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[140px]">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
+                    <Sparkles size={15} className="text-emerald-500" />
+                </div>
+                <div className="text-left min-w-0">
+                    <div className="text-[22px] font-black leading-none tabular-nums text-emerald-600">
+                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Nuevos este mes</div>
+                    <div className="text-[9px] text-slate-400">agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
+                </div>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-14 bg-slate-100 self-center hidden sm:block" />
+
+            {/* Filter cards */}
+            {filterCards.map(c => {
                 const active = filterMargin === c.id;
                 return (
                     <button key={c.id}
@@ -425,12 +457,12 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     return (
         <tr className="border-t border-blue-100/60">
-            <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30">
-                <div className="px-5 py-4 space-y-4">
+            <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/30 via-white/70 to-slate-50/20">
+                <div className="px-5 py-5 space-y-5">
 
                     {/* ── Alert banner ── */}
                     {worstOverall !== null && worstOverall < 15 && (
-                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] ${
+                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium ${
                             worstOverall < 0
                                 ? 'bg-red-50 border-red-200 text-red-700'
                                 : 'bg-amber-50 border-amber-200 text-amber-700'
@@ -444,154 +476,50 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         </div>
                     )}
 
-                    {/* ── Prices section ── */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                Presentaciones y precios
-                                {hasChanges && (
-                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                        <AlertTriangle size={8} /> cambios
-                                    </span>
-                                )}
-                            </span>
-                        </div>
+                    {/* ── Main layout: two columns ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">
 
-                        {precios.length === 0 ? (
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
-                                <Info size={12} className="text-slate-300 shrink-0" />
-                                Sin presentaciones en el ERP.
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto rounded-xl border border-slate-100">
-                                <table className="min-w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-slate-50/95 border-b border-slate-200/60">
-                                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
-                                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
-                                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
-                                            {PRICE_FIELDS.map(f => (
-                                                <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
-                                            ))}
-                                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {precios.map(pp => {
-                                            const pCh = changesMap[pp.id_presentacion] || {};
-                                            const rowChanged = Object.keys(pCh).length > 0;
-                                            const worst = worstMarginOf(pp);
-                                            return (
-                                                <tr key={pp.id_presentacion} className={
-                                                    rowChanged ? 'bg-amber-50/60' :
-                                                    worst !== null && worst < 0 ? 'bg-red-50/30' :
-                                                    'bg-white'
-                                                }>
-                                                    <td className="px-3 py-2 whitespace-nowrap">
-                                                        <span className="text-[11px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
-                                                        {pp.presentaciones?.descripcion && (
-                                                            <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 py-2 text-center text-[10px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
-                                                    <td className="px-3 py-2 text-right text-[11px] text-slate-400">{fmtP(pp.costo)}</td>
-                                                    {PRICE_FIELDS.map(f => {
-                                                        const ch = pCh[f.key];
-                                                        const m  = calcMargin(pp[f.key], pp.costo);
-                                                        return (
-                                                            <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-50' : ''}`}>
-                                                                <div className="flex flex-col items-end gap-0.5">
-                                                                    <span className={`text-[11px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
-                                                                        {fmtP(pp[f.key])}
-                                                                    </span>
-                                                                    {ch && (
-                                                                        <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
-                                                                            {fmtP(ch.anterior)}
-                                                                        </span>
-                                                                    )}
-                                                                    <MarginPct pct={m} />
-                                                                </div>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                    <td className="px-3 py-2 text-center">
-                                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                            {pp.activo !== false ? 'Activa' : 'Inactiva'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                        {/* ── LEFT: Foto + Principios activos ── */}
+                        <div className="space-y-4">
 
-                    {/* ── Changelog ── */}
-                    {prodLog.length > 0 && (
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Cambios en el producto</p>
-                            {prodLog.map((c, i) => (
-                                <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
-                                    <span className="font-mono text-[10px] text-slate-400 shrink-0">
-                                        {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                    <span className="font-semibold text-slate-600">{c.campo}</span>
-                                    <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
-                                    <span className="text-slate-300 text-[9px]">→</span>
-                                    <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* ── Bottom row: foto + principios | ubicaciones ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-5">
-
-                        {/* Left: foto + principios activos */}
-                        <div className="space-y-3">
                             {/* Foto */}
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Foto del producto</p>
-                                <div className="flex items-center gap-3">
-                                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
-                                    <button onClick={() => fileRef.current?.click()}
-                                        className="relative w-20 h-20 rounded-xl border-2 border-dashed overflow-hidden shrink-0 transition-all group
-                                            border-slate-200 hover:border-[#007AFF]/60 bg-slate-50 hover:bg-blue-50/20">
-                                        {localFoto ? (
-                                            <>
-                                                <img src={localFoto} alt="" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all">
-                                                    {photoLoading
-                                                        ? <Loader2 size={18} className="text-white animate-spin" />
-                                                        : <Camera size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                    <Camera size={9} /> Foto del producto
+                                </p>
+                                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                                <button onClick={() => fileRef.current?.click()}
+                                    className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
+                                        border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">
+                                    {localFoto ? (
+                                        <>
+                                            <img src={localFoto} alt="" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
                                                 {photoLoading
-                                                    ? <Loader2 size={18} className="text-[#007AFF] animate-spin" />
+                                                    ? <Loader2 size={22} className="text-white animate-spin" />
                                                     : <>
-                                                        <Camera size={18} className="text-slate-300 group-hover:text-[#007AFF] transition-colors" />
-                                                        <span className="text-[8px] text-slate-400 font-semibold group-hover:text-[#007AFF] transition-colors">Subir foto</span>
+                                                        <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
                                                     </>}
                                             </div>
-                                        )}
-                                    </button>
-                                    <div className="text-[10px] text-slate-400 leading-relaxed">
-                                        {localFoto ? (
-                                            <><strong className="text-slate-600">Foto cargada.</strong><br />Haz clic en la imagen<br />para reemplazarla.</>
-                                        ) : (
-                                            <><strong className="text-slate-500">Sin foto.</strong><br />Haz clic para subir<br />JPG, PNG o WebP.</>
-                                        )}
-                                    </div>
-                                </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                                            {photoLoading
+                                                ? <Loader2 size={24} className="text-[#007AFF] animate-spin" />
+                                                : <>
+                                                    <Camera size={24} className="text-slate-300 group-hover:text-[#007AFF] transition-colors" />
+                                                    <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#007AFF] transition-colors">Subir foto</span>
+                                                    <span className="text-[8px] text-slate-300">JPG, PNG o WebP</span>
+                                                </>}
+                                        </div>
+                                    )}
+                                </button>
                             </div>
 
                             {/* Principios activos */}
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
                                     <FlaskConical size={9} /> Principios activos
                                 </p>
                                 <PrincipiosEditor
@@ -602,15 +530,123 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             </div>
                         </div>
 
-                        {/* Right: ubicaciones */}
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Ubicaciones por sucursal</p>
-                            <LocationGrid
-                                productId={product.id}
-                                initial={data?.locations}
-                                branches={branches}
-                            />
+                        {/* ── RIGHT: Precios + Changelog ── */}
+                        <div className="space-y-4 min-w-0">
+
+                            {/* Prices */}
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-2">
+                                    Presentaciones y precios
+                                    {hasChanges && (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                            <AlertTriangle size={8} /> cambios
+                                        </span>
+                                    )}
+                                </p>
+
+                                {precios.length === 0 ? (
+                                    <div className="flex items-center gap-2 text-[11px] text-slate-400 py-3 px-3 rounded-xl bg-slate-50 border border-slate-100">
+                                        <Info size={12} className="text-slate-300 shrink-0" />
+                                        Sin presentaciones en el ERP.
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-slate-50/95 border-b border-slate-200/60">
+                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
+                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
+                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
+                                                    {PRICE_FIELDS.map(f => (
+                                                        <th key={f.key} className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
+                                                    ))}
+                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50">
+                                                {precios.map(pp => {
+                                                    const pCh = changesMap[pp.id_presentacion] || {};
+                                                    const rowChanged = Object.keys(pCh).length > 0;
+                                                    const worst = worstMarginOf(pp);
+                                                    return (
+                                                        <tr key={pp.id_presentacion} className={
+                                                            rowChanged ? 'bg-amber-50/60' :
+                                                            worst !== null && worst < 0 ? 'bg-red-50/30' :
+                                                            'bg-white'
+                                                        }>
+                                                            <td className="px-3 py-2.5 whitespace-nowrap">
+                                                                <span className="text-[12px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
+                                                                {pp.presentaciones?.descripcion && (
+                                                                    <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
+                                                            <td className="px-3 py-2.5 text-right text-[11px] font-medium text-slate-500">{fmtP(pp.costo)}</td>
+                                                            {PRICE_FIELDS.map(f => {
+                                                                const ch = pCh[f.key];
+                                                                const m  = calcMargin(pp[f.key], pp.costo);
+                                                                return (
+                                                                    <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                                        <div className="flex flex-col items-end gap-0.5">
+                                                                            <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
+                                                                                {fmtP(pp[f.key])}
+                                                                            </span>
+                                                                            {ch && (
+                                                                                <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
+                                                                                    {fmtP(ch.anterior)}
+                                                                                </span>
+                                                                            )}
+                                                                            <MarginPct pct={m} />
+                                                                        </div>
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                            <td className="px-3 py-2.5 text-center">
+                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
+                                                                    {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Changelog */}
+                            {prodLog.length > 0 && (
+                                <div className="rounded-xl bg-amber-50/50 border border-amber-100 px-3.5 py-3 space-y-1.5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2 flex items-center gap-1.5">
+                                        <History size={9} /> Cambios en el producto
+                                    </p>
+                                    {prodLog.map((c, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
+                                            <span className="font-mono text-[10px] text-slate-400 shrink-0 bg-white border border-slate-100 px-1.5 py-0.5 rounded">
+                                                {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className="font-semibold text-slate-600">{c.campo}</span>
+                                            <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
+                                            <span className="text-slate-300 text-[9px] font-bold">→</span>
+                                            <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
+                    </div>
+
+                    {/* ── Ubicaciones: full-width bottom section ── */}
+                    <div className="border-t border-slate-100/80 pt-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                            <MapPin size={9} /> Ubicaciones por sucursal
+                        </p>
+                        <LocationGrid
+                            productId={product.id}
+                            initial={data?.locations}
+                            branches={branches}
+                        />
                     </div>
 
                 </div>
@@ -657,8 +693,10 @@ export default function TabCatalogo({
     const [marginMap,  setMarginMap]  = useState({});
 
     // Margin stats (loaded once, used for stat cards)
-    const [marginStats,  setMarginStats]  = useState(null);
-    const [statsLoading, setStatsLoading] = useState(false);
+    const [marginStats,       setMarginStats]       = useState(null);
+    const [statsLoading,      setStatsLoading]      = useState(false);
+    const [productStats,      setProductStats]      = useState(null);
+    const [productStatsLoading, setProductStatsLoading] = useState(false);
 
     // Prefetch
     const prefetchTimerRef = useRef(null);
@@ -684,6 +722,20 @@ export default function TabCatalogo({
                 setMarginStats({ perdidaIds, bajoIds });
                 setStatsLoading(false);
             });
+    }, []);
+
+    // ── Load product counts (total + nuevos este mes) ───────────────────────
+    useEffect(() => {
+        setProductStatsLoading(true);
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        Promise.all([
+            supabase.from('products').select('*', { count: 'exact', head: true }),
+            supabase.from('products').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
+        ]).then(([{ count: total }, { count: nuevos }]) => {
+            setProductStats({ total: total ?? 0, nuevos: nuevos ?? 0 });
+            setProductStatsLoading(false);
+        });
     }, []);
 
     // ── loadProducts ────────────────────────────────────────────────────────
@@ -839,6 +891,8 @@ export default function TabCatalogo({
                         loading={statsLoading}
                         filterMargin={filterMargin}
                         onFilter={(id) => setFilterMargin(prev => prev === id ? 'all' : id)}
+                        productStats={productStats}
+                        productStatsLoading={productStatsLoading}
                     />
                     {!loading && total > 0 && (
                         <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>

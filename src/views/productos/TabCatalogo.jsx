@@ -310,7 +310,7 @@ function PrincipiosEditor({ productId, initial, onSaved }) {
 // ── LocationGrid ──────────────────────────────────────────────────────────────
 
 function LocationGrid({ productId, initial, branches }) {
-    const [locs, setLocs]   = useState([]);
+    const [locs, setLocs]     = useState([]);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -319,11 +319,18 @@ function LocationGrid({ productId, initial, branches }) {
         setLocs(farm.map(b => {
             const saved = (initial || []).find(l => l.branch_id === b.id);
             return {
-                branch_id:   b.id,
-                branch_name: b.name,
-                tipo:    saved?.estante ? 'estante' : 'vitrina',
-                numero:  saved?.estante || saved?.vitrina || '',
-                peldano: saved?.peldano || '',
+                branch_id:      b.id,
+                branch_name:    b.name,
+                branch_type:    b.type,
+                // Sala de ventas
+                tipo:           saved?.estante ? 'estante' : 'vitrina',
+                numero:         saved?.estante || saved?.vitrina || '',
+                peldano:        saved?.peldano || '',
+                // Bodega interna
+                bodega_numero:  saved?.bodega_numero  || '',
+                bodega_peldano: saved?.bodega_peldano || '',
+                // Active view (UI only)
+                view: 'sala',
             };
         }));
     }, [initial, branches]);
@@ -331,17 +338,23 @@ function LocationGrid({ productId, initial, branches }) {
     const setField = (i, field, value) =>
         setLocs(ls => ls.map((l, j) => j === i ? { ...l, [field]: value } : l));
 
+    const hasAnyData = l =>
+        l.numero.trim() || l.peldano.trim() || l.bodega_numero.trim() || l.bodega_peldano.trim();
+
     const save = async () => {
         setSaving(true);
         try {
-            const toUpsert = locs.filter(l => l.numero.trim() || l.peldano.trim()).map(l => ({
-                product_id: productId, branch_id: l.branch_id,
-                vitrina:  l.tipo === 'vitrina' ? (l.numero.trim() || null) : null,
-                estante:  l.tipo === 'estante' ? (l.numero.trim() || null) : null,
-                peldano:  l.peldano.trim() || null,
-                updated_at: new Date().toISOString(),
+            const toUpsert = locs.filter(hasAnyData).map(l => ({
+                product_id:     productId,
+                branch_id:      l.branch_id,
+                vitrina:        l.tipo === 'vitrina' ? (l.numero.trim() || null) : null,
+                estante:        l.tipo === 'estante' ? (l.numero.trim() || null) : null,
+                peldano:        l.peldano.trim()        || null,
+                bodega_numero:  l.bodega_numero.trim()  || null,
+                bodega_peldano: l.bodega_peldano.trim() || null,
+                updated_at:     new Date().toISOString(),
             }));
-            const toDelete = locs.filter(l => !l.numero.trim() && !l.peldano.trim()).map(l => l.branch_id);
+            const toDelete = locs.filter(l => !hasAnyData(l)).map(l => l.branch_id);
             if (toUpsert.length > 0)
                 await supabase.from('product_locations').upsert(toUpsert, { onConflict: 'product_id,branch_id' });
             if (toDelete.length > 0)
@@ -359,34 +372,80 @@ function LocationGrid({ productId, initial, branches }) {
         <div>
             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
                 {locs.map((loc, i) => {
-                    const hasData = loc.numero.trim() || loc.peldano.trim();
+                    const isSala   = loc.view === 'sala';
+                    const isMainBodega = loc.branch_type === 'BODEGA';
+                    const hasSala  = loc.numero.trim() || loc.peldano.trim();
+                    const hasBodega = loc.bodega_numero.trim() || loc.bodega_peldano.trim();
+                    const hasData  = hasSala || hasBodega;
+                    const dotColor = isSala
+                        ? (hasBodega ? 'bg-amber-400' : 'bg-transparent')
+                        : (hasSala   ? 'bg-[#007AFF]' : 'bg-transparent');
+
                     return (
-                        <div key={loc.branch_id} className={`rounded-lg border p-1.5 transition-colors min-w-0 ${hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-white border-slate-100'}`}>
-                            <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 mb-1 truncate">{loc.branch_name}</p>
-                            <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1">
-                                {['vitrina', 'estante'].map(t => (
-                                    <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
-                                            loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
-                                        }`}>
-                                        {t === 'vitrina' ? 'Vit.' : 'Est.'}
-                                    </button>
-                                ))}
+                        <div key={loc.branch_id} className={`rounded-lg border p-2 transition-colors min-w-0 ${hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
+
+                            {/* Header: name + sala/bodega toggle */}
+                            <div className="flex items-start justify-between gap-0.5 mb-1.5">
+                                <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 truncate leading-tight mt-0.5">{loc.branch_name}</p>
+                                {!isMainBodega && (
+                                    <div className="flex bg-slate-100 rounded-full p-0.5 shrink-0">
+                                        <button onClick={() => setField(i, 'view', 'sala')}
+                                            className={`px-1 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
+                                                isSala ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                            }`}>Sala</button>
+                                        <button onClick={() => setField(i, 'view', 'bodega')}
+                                            className={`px-1 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
+                                                !isSala ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                            }`}>Int.</button>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Vit/Est toggle — only for sala view */}
+                            {isSala && (
+                                <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1.5">
+                                    {['vitrina', 'estante'].map(t => (
+                                        <button key={t} onClick={() => setField(i, 'tipo', t)}
+                                            className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
+                                                loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
+                                            }`}>
+                                            {t === 'vitrina' ? 'Vit.' : 'Est.'}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {!isSala && <div className="mb-1.5 h-[18px]" />}
+
+                            {/* N° and Peld inputs */}
                             <div className="flex gap-1">
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">N°</p>
-                                    <input value={loc.numero} onChange={e => setField(i, 'numero', e.target.value)}
+                                    <input
+                                        value={isSala ? loc.numero : loc.bodega_numero}
+                                        onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                         maxLength={2}
-                                        className="w-full px-0.5 py-0.5 border border-slate-200 rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
+                                        className={`w-full px-0.5 py-1 border rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
+                                            isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                        }`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">Peld.</p>
-                                    <input value={loc.peldano} onChange={e => setField(i, 'peldano', e.target.value)}
+                                    <input
+                                        value={isSala ? loc.peldano : loc.bodega_peldano}
+                                        onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                         maxLength={2}
-                                        className="w-full px-0.5 py-0.5 border border-slate-200 rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
+                                        className={`w-full px-0.5 py-1 border rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
+                                            isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                        }`} />
                                 </div>
                             </div>
+
+                            {/* Dot indicator: other view has data */}
+                            {!isMainBodega && (hasSala || hasBodega) && (
+                                <div className="mt-1.5 flex justify-center gap-1">
+                                    <span className={`w-1 h-1 rounded-full ${isSala && hasBodega ? 'bg-amber-400' : (!isSala && hasSala ? 'bg-[#007AFF]' : 'bg-transparent')}`} />
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -838,7 +897,7 @@ export default function TabCatalogo({
                     supabase.from('product_precios').select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
-                    supabase.from('product_locations').select('branch_id, vitrina, estante, peldano').eq('product_id', productId),
+                    supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                     supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
                 ]);
                 setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [], principles: principles || [] } }));
@@ -860,7 +919,7 @@ export default function TabCatalogo({
                 supabase.from('product_precios').select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
-                supabase.from('product_locations').select('branch_id, vitrina, estante, peldano').eq('product_id', productId),
+                supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                 supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
             ]);
             setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [], principles: principles || [] } }));

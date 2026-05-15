@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef, createPortal } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import LiquidSelect from '../../components/common/LiquidSelect';
 import {
     Package, Building2, FlaskConical, DollarSign,
     TrendingUp, TrendingDown, AlertTriangle, Info,
@@ -10,11 +10,7 @@ import {
     ChevronLeft, ChevronRight, Eye, EyeOff,
 } from 'lucide-react';
 
-const PAGE_SIZE_OPTIONS = [
-    { value: '24', label: '24 cards' },
-    { value: '48', label: '48 cards' },
-    { value: '96', label: '96 cards' },
-];
+const PAGE_SIZES = [20, 40, 80];
 
 // ── SmartPagination (same as VentasView) ─────────────────────────────────────
 
@@ -579,18 +575,23 @@ export default function TabCatalogo({ searchTerm = '' }) {
 
                     {/* Pagination bar */}
                     <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-slate-100">
-                        <div className="w-[130px]">
-                            <LiquidSelect
-                                value={String(pageSize)}
-                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                                options={PAGE_SIZE_OPTIONS}
-                                clearable={false}
-                                compact
-                            />
+                        {/* Page size pills */}
+                        <div className="flex items-center gap-1">
+                            {PAGE_SIZES.map(size => (
+                                <button key={size}
+                                    onClick={() => { setPageSize(size); setPage(1); }}
+                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                        pageSize === size
+                                            ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                    }`}>
+                                    {size}
+                                </button>
+                            ))}
                         </div>
                         <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
-                            {total.toLocaleString()} productos
+                        <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
+                            {total.toLocaleString()} total
                         </span>
                     </div>
                 </div>

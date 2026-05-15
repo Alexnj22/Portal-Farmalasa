@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
-    Camera, TrendingDown, ShieldAlert, Plus, X,
+    Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
 } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
@@ -821,6 +822,15 @@ export default function TabCatalogo({ searchTerm = '' }) {
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+    // Filter bar derived values
+    const labOptions = labs.map(l => ({ value: String(l.id), label: l.nombre }));
+    const catOptions = categorias.map(c => ({ value: c, label: c }));
+    const selectedLab = labs.find(l => l.id === filterLab);
+    const labW = selectedLab ? Math.max(150, Math.min(260, 90 + selectedLab.nombre.length * 7)) : 150;
+    const catW = filterCategoria ? Math.max(140, Math.min(220, 90 + filterCategoria.length * 7)) : 140;
+    const hasActiveFilters = filterLab !== null || filterCategoria !== null || filterAntibiotico !== null || filterActivo === 'todos';
+    const resetFilters = () => { setFilterLab(null); setFilterCategoria(null); setFilterAntibiotico(null); setFilterActivo('activos'); };
+
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
@@ -832,60 +842,100 @@ export default function TabCatalogo({ searchTerm = '' }) {
                 onFilter={(id) => setFilterMargin(prev => prev === id ? 'all' : id)}
             />
 
-            {/* ── Filter bar ── */}
-            <div className="flex items-center gap-2 flex-wrap">
-                {/* Activo toggle */}
-                <div className="flex items-center bg-white/70 border border-slate-200 rounded-full p-0.5 gap-0.5">
-                    {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
-                        <button key={v} onClick={() => setFilterActivo(v)}
-                            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
-                                filterActivo === v ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                            }`}>{label}
+            {/* ── Filter bar (Ventas standard) ── */}
+            <div className="flex items-center gap-3 flex-wrap">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+
+                    {/* Activos / Todos */}
+                    <div className="flex items-center gap-0.5 px-2.5 py-2">
+                        {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
+                            <button key={v} onClick={() => setFilterActivo(v)}
+                                className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                    filterActivo === v
+                                        ? 'bg-emerald-100 text-emerald-700 shadow-sm'
+                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                }`}>{label}</button>
+                        ))}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Laboratorio */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
+                            <LiquidSelect
+                                value={filterLab ? String(filterLab) : ''}
+                                onChange={v => setFilterLab(v ? parseInt(v) : null)}
+                                options={labOptions}
+                                placeholder="Laboratorio"
+                                icon={Building2}
+                                compact
+                            />
+                        </div>
+                        {filterLab && (
+                            <button onClick={() => setFilterLab(null)} title="Quitar laboratorio"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Categoría */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
+                            <LiquidSelect
+                                value={filterCategoria || ''}
+                                onChange={v => setFilterCategoria(v || null)}
+                                options={catOptions}
+                                placeholder="Categoría"
+                                icon={Tag}
+                                compact
+                            />
+                        </div>
+                        {filterCategoria && (
+                            <button onClick={() => setFilterCategoria(null)} title="Quitar categoría"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Antibiótico toggle */}
+                    <div className="flex items-center">
+                        <button onClick={() => setFilterAntibiotico(v => v === true ? null : true)}
+                            className={`mx-3 my-2 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                filterAntibiotico === true
+                                    ? 'bg-orange-100 text-orange-700 shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                            }`}>
+                            Antibiótico
                         </button>
-                    ))}
-                </div>
+                        {filterAntibiotico && (
+                            <button onClick={() => setFilterAntibiotico(null)} title="Quitar filtro"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
 
-                {/* Laboratorio */}
-                <div className="relative">
-                    <select
-                        value={filterLab ?? ''}
-                        onChange={e => setFilterLab(e.target.value ? parseInt(e.target.value) : null)}
-                        className={`appearance-none pl-3 pr-7 py-1.5 rounded-full text-[11px] font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 transition-all ${
-                            filterLab ? 'bg-[#007AFF] text-white border-[#007AFF]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                        }`}>
-                        <option value="">Laboratorio</option>
-                        {labs.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-                    </select>
-                    <ChevronDown size={10} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filterLab ? 'text-white/70' : 'text-slate-400'}`} />
+                    {/* Clear all */}
+                    {hasActiveFilters && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <button onClick={resetFilters} title="Limpiar todos los filtros"
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                <X size={11} strokeWidth={3} />
+                            </button>
+                        </>
+                    )}
                 </div>
-
-                {/* Categoría */}
-                <div className="relative">
-                    <select
-                        value={filterCategoria ?? ''}
-                        onChange={e => setFilterCategoria(e.target.value || null)}
-                        className={`appearance-none pl-3 pr-7 py-1.5 rounded-full text-[11px] font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 transition-all ${
-                            filterCategoria ? 'bg-[#007AFF] text-white border-[#007AFF]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                        }`}>
-                        <option value="">Categoría</option>
-                        {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <ChevronDown size={10} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filterCategoria ? 'text-white/70' : 'text-slate-400'}`} />
-                </div>
-
-                {/* Antibiótico */}
-                <button
-                    onClick={() => setFilterAntibiotico(v => v === true ? null : true)}
-                    className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all ${
-                        filterAntibiotico === true
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                            : 'bg-white text-slate-500 border-slate-200 hover:border-orange-200 hover:text-orange-600'
-                    }`}>
-                    Antibiótico
-                </button>
 
                 {!loading && total > 0 && (
-                    <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>
+                    <span className="text-[10px] text-slate-400">{total.toLocaleString()} productos</span>
                 )}
             </div>
 

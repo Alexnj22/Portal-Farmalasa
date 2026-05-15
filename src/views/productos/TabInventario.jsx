@@ -386,6 +386,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         options={erpOptions}
                                         placeholder="Todas las sucursales"
                                         icon={Building2}
+                                        clearable={false}
                                         compact
                                     />
                                 </div>
@@ -406,6 +407,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             onChange={v => setFilterLab(v ? parseInt(v) : null)}
                                             options={labOptions}
                                             placeholder="Laboratorio"
+                                            clearable={false}
                                             compact
                                         />
                                     </div>
@@ -427,6 +429,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             onChange={v => setFilterCat(v || null)}
                                             options={catOptions}
                                             placeholder="Categoría"
+                                            clearable={false}
                                             compact
                                         />
                                     </div>

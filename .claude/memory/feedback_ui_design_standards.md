@@ -6,36 +6,39 @@ type: feedback
 
 ## Filter Bar Standard (Ventas pattern — use everywhere)
 
-### Architecture rule: filter state lives in the VIEW, renders in `filtersContent`
+### Architecture rule: TWO separate elements, different positions
 
-Filter state must be lifted to the **View-level component** (e.g. `ProductosView`, `VentasView`) and passed as `filtersContent` to `GlassViewLayout` so it renders in the **floating header** — NOT inside the tab/body component. The body component receives filter values as **props**.
+The Ventas pattern has TWO distinct elements — do NOT merge them into one:
 
-- `VentasView` → `FilterControls` component passed as `filtersContent`
-- `ProductosView` → filter pill built inline, passed as `filtersContent`, filter state lifted out of `TabCatalogo`
+1. **`filtersContent` (floating glass header)** = ONE glass pill containing ONLY tabs + search button. Nothing else.
+   - Class: `relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 ... rounded-[2.5rem] h-[4rem] md:h-[4.5rem] overflow-hidden`
+   - See `VentasView.jsx` lines 1895–1943 or `ProductosView.jsx`
 
-### Filter pill JSX (exact class string):
+2. **White filter pill (tab body top)** = `hidden lg:flex` pill with `bg-white/80 backdrop-blur-sm` — rendered at the TOP of the tab body, in a `flex items-start gap-3 flex-wrap` row alongside stat cards (stat cards left, filter pill right).
+   - See `VentasView.jsx` line 501 (`FilterControls`) inside `TabVentas`'s return
+   - See `TabCatalogo.jsx` — filter pill at the top of the return block
+
+Filter state IS lifted to the View level (e.g. `ProductosView`, `VentasView`), passed as props to tab components, and the tab renders the pill itself.
+
+### White filter pill JSX (exact class string):
 
 ```jsx
-<div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+<div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
     {/* Sections separated by: */}
     <div className="h-5 w-px bg-slate-100 shrink-0" />
 </div>
 ```
 
-- **Filter pill is `hidden lg:flex`** — only visible on desktop. Mobile gets the stats/content without the filter pill in the header.
 - Use **`LiquidSelect`** (`src/components/common/LiquidSelect.jsx`) for ALL dropdowns — never native `<select>`
 - Each filter section gets its own individual **X clear button**: `w-[18px] h-[18px] rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white`
 - Add a **global "clear all"** button (red circle X) only when any filter is non-default
 - Sections separated by `h-5 w-px bg-slate-100` dividers
 - Dynamic width for LiquidSelect: `Math.max(150, Math.min(260, 90 + label.length * 7))`
+- Stat cards (e.g. "Pérdida N / Margen bajo N") live in the SAME `flex items-start gap-3 flex-wrap` row, on the left
 
-### What stays in the body (not the header):
-- **Stat cards** (e.g. "Pérdida N / Margen bajo N") — these are content-level metric cards that also act as filters. They stay in the body of the tab component.
-- Sortable column headers — in the table, not the header.
+**Why:** User was frustrated that having TWO different-style pills in the glass header was visually inconsistent. The real Ventas pattern has one glass pill in the header, and the white filter pill is inside the tab body.
 
-**Why:** User explicitly said filters must be in the same position as Ventas — in the floating glass header. Filters inside the body content area break the standard.
-
-**How to apply:** Before implementing any filter bar in a new module, look at `ProductosView.jsx` (filter pill pattern) and `VentasView.jsx` lines 110–173. Import `LiquidSelect` from `src/components/common/`.
+**How to apply:** Check `VentasView.jsx` line 501 and `TabCatalogo.jsx` body start for the exact tab-body pattern. `filtersContent` must only contain the glass tabs+search pill.
 
 ---
 

@@ -5,8 +5,9 @@ import { useToastStore } from '../../store/toastStore';
 import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
-    Camera, TrendingDown, ShieldAlert, Plus, X,
+    Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
 } from 'lucide-react';
+import LiquidSelect from '../../components/common/LiquidSelect';
 
 const PAGE_SIZES = [25, 50, 100];
 
@@ -623,9 +624,15 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 export default function TabCatalogo({
     searchTerm        = '',
     filterActivo      = 'activos',
+    setFilterActivo,
     filterLab         = null,
+    setFilterLab,
     filterCategoria   = null,
+    setFilterCategoria,
     filterAntibiotico = null,
+    setFilterAntibiotico,
+    labOptions        = [],
+    catOptions        = [],
 }) {
     const branches = useStaff(s => s.branches);
 
@@ -810,20 +817,122 @@ export default function TabCatalogo({
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+    const selectedLab = labOptions.find(o => o.value === String(filterLab));
+    const labW = selectedLab ? Math.max(150, Math.min(260, 90 + selectedLab.label.length * 7)) : 150;
+    const catW = filterCategoria ? Math.max(140, Math.min(220, 90 + filterCategoria.length * 7)) : 140;
+    const hasActiveFilters = filterLab !== null || filterCategoria !== null
+                           || filterAntibiotico !== null || filterActivo === 'todos';
+    const resetFilters = () => {
+        setFilterLab?.(null); setFilterCategoria?.(null);
+        setFilterAntibiotico?.(null); setFilterActivo?.('activos');
+    };
+
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Stat cards (margin filter — stays in body) ── */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <MarginStatCards
-                    stats={marginStats}
-                    loading={statsLoading}
-                    filterMargin={filterMargin}
-                    onFilter={(id) => setFilterMargin(prev => prev === id ? 'all' : id)}
-                />
-                {!loading && total > 0 && (
-                    <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>
-                )}
+            {/* ── Stats + filter pill row ── */}
+            <div className="flex items-start gap-3 flex-wrap">
+                {/* Stat cards */}
+                <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+                    <MarginStatCards
+                        stats={marginStats}
+                        loading={statsLoading}
+                        filterMargin={filterMargin}
+                        onFilter={(id) => setFilterMargin(prev => prev === id ? 'all' : id)}
+                    />
+                    {!loading && total > 0 && (
+                        <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>
+                    )}
+                </div>
+
+                {/* Filter pill — desktop only, same style as Ventas */}
+                <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+
+                    {/* Activos / Todos */}
+                    <div className="flex items-center gap-0.5 px-2.5 py-2">
+                        {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
+                            <button key={v} onClick={() => setFilterActivo?.(v)}
+                                className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                    filterActivo === v
+                                        ? 'bg-emerald-100 text-emerald-700 shadow-sm'
+                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                }`}>{label}</button>
+                        ))}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Laboratorio */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
+                            <LiquidSelect
+                                value={filterLab ? String(filterLab) : ''}
+                                onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
+                                options={labOptions}
+                                placeholder="Laboratorio"
+                                icon={Building2}
+                                compact
+                            />
+                        </div>
+                        {filterLab && (
+                            <button onClick={() => setFilterLab?.(null)} title="Quitar laboratorio"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Categoría */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
+                            <LiquidSelect
+                                value={filterCategoria || ''}
+                                onChange={v => setFilterCategoria?.(v || null)}
+                                options={catOptions}
+                                placeholder="Categoría"
+                                icon={Tag}
+                                compact
+                            />
+                        </div>
+                        {filterCategoria && (
+                            <button onClick={() => setFilterCategoria?.(null)} title="Quitar categoría"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Antibiótico */}
+                    <div className="flex items-center">
+                        <button onClick={() => setFilterAntibiotico?.(v => v === true ? null : true)}
+                            className={`mx-3 my-2 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                filterAntibiotico === true
+                                    ? 'bg-orange-100 text-orange-700 shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                            }`}>Antibiótico</button>
+                        {filterAntibiotico && (
+                            <button onClick={() => setFilterAntibiotico?.(null)} title="Quitar filtro"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Clear all */}
+                    {hasActiveFilters && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <button onClick={resetFilters} title="Limpiar todos los filtros"
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                <X size={11} strokeWidth={3} />
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* ── Table ── */}

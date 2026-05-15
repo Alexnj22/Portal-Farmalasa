@@ -360,7 +360,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false } = body;
+    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false } = body;
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
     const startDate = fini || hoy;
@@ -371,60 +371,62 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const branches = onlyBranch
-      ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
-      : BRANCH_MAP;
-
-    // Lookup de presentaciones: "TIPO DESCRIPCION" → id (cargado una sola vez)
-    const { data: presData } = await supabase
-      .from('presentaciones')
-      .select('id, tipo, descripcion');
-    const presLookup = new Map<string, number>();
-    for (const p of (presData ?? [])) {
-      const key = `${p.tipo ?? ''} ${p.descripcion ?? ''}`.replace(/\s+/g, ' ').toUpperCase().trim();
-      presLookup.set(key, p.id);
-    }
-
     const results: any[] = [];
     const logRows: any[] = [];
 
-    for (const { branchId, erpId, username, password } of branches) {
-      let attempts = 0;
-      let lastErr: string | null = null;
-      let branchResult: any = null;
+    if (!skipDte) {
+      const branches = onlyBranch
+        ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
+        : BRANCH_MAP;
 
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        attempts = attempt;
-        try {
-          branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup);
-          lastErr = null;
-          break;
-        } catch (e: any) {
-          lastErr = e.message;
-          if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+      // Lookup de presentaciones: "TIPO DESCRIPCION" → id (cargado una sola vez)
+      const { data: presData } = await supabase
+        .from('presentaciones')
+        .select('id, tipo, descripcion');
+      const presLookup = new Map<string, number>();
+      for (const p of (presData ?? [])) {
+        const key = `${p.tipo ?? ''} ${p.descripcion ?? ''}`.replace(/\s+/g, ' ').toUpperCase().trim();
+        presLookup.set(key, p.id);
+      }
+
+      for (const { branchId, erpId, username, password } of branches) {
+        let attempts = 0;
+        let lastErr: string | null = null;
+        let branchResult: any = null;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          attempts = attempt;
+          try {
+            branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup);
+            lastErr = null;
+            break;
+          } catch (e: any) {
+            lastErr = e.message;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+          }
+        }
+
+        if (branchResult) {
+          results.push({ branchId, erpId, ...branchResult });
+          logRows.push({
+            branch_id: branchId, fini: startDate, ffin: endDate,
+            invoices_total: branchResult.total, invoices_new: branchResult.new,
+            items_inserted: branchResult.items, success: true,
+            attempts, id_min: branchResult.idMin, id_max: branchResult.idMax,
+          });
+        } else {
+          results.push({ branchId, erpId, error: lastErr, attempts });
+          logRows.push({
+            branch_id: branchId, fini: startDate, ffin: endDate,
+            invoices_total: 0, invoices_new: 0, items_inserted: 0,
+            success: false, attempts, error_msg: lastErr,
+          });
         }
       }
 
-      if (branchResult) {
-        results.push({ branchId, erpId, ...branchResult });
-        logRows.push({
-          branch_id: branchId, fini: startDate, ffin: endDate,
-          invoices_total: branchResult.total, invoices_new: branchResult.new,
-          items_inserted: branchResult.items, success: true,
-          attempts, id_min: branchResult.idMin, id_max: branchResult.idMax,
-        });
-      } else {
-        results.push({ branchId, erpId, error: lastErr, attempts });
-        logRows.push({
-          branch_id: branchId, fini: startDate, ffin: endDate,
-          invoices_total: 0, invoices_new: 0, items_inserted: 0,
-          success: false, attempts, error_msg: lastErr,
-        });
+      if (logRows.length > 0) {
+        await supabase.from('sync_log').insert(logRows);
       }
-    }
-
-    if (logRows.length > 0) {
-      await supabase.from('sync_log').insert(logRows);
     }
 
     // Inventory sync (optional, triggered by syncInventory=true in body)

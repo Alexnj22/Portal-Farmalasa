@@ -311,7 +311,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
 // ── CategoryEditor ────────────────────────────────────────────────────────
 
-const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated, onSaved }, ref) {
+const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated }, ref) {
     const [selected, setSelected] = useState(initial || '');
 
     useEffect(() => { setSelected(initial || ''); }, [initial]);
@@ -333,14 +333,13 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
             await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
-            if (onSaved) onSaved(selected || null);
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
             throw e;
         }
     };
 
-    useImperativeHandle(ref, () => ({ save }));
+    useImperativeHandle(ref, () => ({ save, getValue: () => selected }));
 
     return (
         <LiquidSelect
@@ -517,6 +516,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     const handleSave = async () => {
         setSaving(true);
+        const newCat = categoryRef.current?.getValue() ?? null;
         try {
             await Promise.all([
                 principiosRef.current?.save({ quiet: true }),
@@ -524,6 +524,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                 categoryRef.current?.save({ quiet: true }),
             ]);
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
+            onCategoryUpdated?.(product.id, newCat || null);
             if (onClose) onClose();
         } catch (_) {}
         finally { setSaving(false); }
@@ -737,7 +738,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 initial={product.tipo_medicamento}
                                 categories={categories}
                                 onCategoryCreated={onCategoryCreated}
-                                onSaved={(cat) => onCategoryUpdated?.(product.id, cat)}
                             />
                         </div>
 

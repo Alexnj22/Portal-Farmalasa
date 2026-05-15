@@ -5,7 +5,7 @@ import { useToastStore } from '../../store/toastStore';
 import {
     Package, FlaskConical, MapPin, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
-    Camera, TrendingDown, TrendingUp, ShieldAlert,
+    Camera, TrendingDown, ShieldAlert,
 } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
@@ -26,32 +26,40 @@ function fmtP(v) {
     return `$${parseFloat(v).toFixed(2)}`;
 }
 
-function calcMargin(vineta, costo) {
-    const v = parseFloat(vineta), c = parseFloat(costo);
-    if (!v || !c || v === 0) return null;
-    return (v - c) / v * 100;
+function calcMargin(price, costo) {
+    const p = parseFloat(price), c = parseFloat(costo);
+    if (!p || !c || p <= 0 || c <= 0) return null;
+    return (p - c) / p * 100;
+}
+
+// Returns { vineta: %, vip: %, … } — only fields with a valid margin
+function allMargins(pp) {
+    const costo = parseFloat(pp.costo);
+    if (!costo || costo <= 0) return {};
+    const out = {};
+    PRICE_FIELDS.forEach(f => {
+        const price = parseFloat(pp[f.key]);
+        if (price > 0) out[f.key] = (price - costo) / price * 100;
+    });
+    return out;
+}
+
+function worstMarginOf(pp) {
+    const vals = Object.values(allMargins(pp));
+    return vals.length ? Math.min(...vals) : null;
 }
 
 function marginLabel(m) {
     if (m === null) return null;
-    if (m < 0)  return { label: 'Pérdida',    cls: 'bg-red-100 text-red-700 border-red-200'    };
-    if (m < 15) return { label: 'Margen bajo', cls: 'bg-amber-100 text-amber-700 border-amber-200' };
+    if (m < 0)  return { label: 'Pérdida',     cls: 'bg-red-100 text-red-700 border-red-200'      };
+    if (m < 15) return { label: 'Margen bajo',  cls: 'bg-amber-100 text-amber-700 border-amber-200' };
     return null;
 }
 
-function MarginBar({ pct }) {
-    const w = Math.min(Math.max(pct, 0), 50);
-    const color = pct < 0 ? 'bg-red-400' : pct < 15 ? 'bg-amber-400' : pct < 25 ? 'bg-emerald-400' : 'bg-emerald-500';
-    return (
-        <div className="flex items-center gap-1.5 w-full">
-            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden min-w-[40px]">
-                <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${w * 2}%` }} />
-            </div>
-            <span className={`text-[10px] font-bold tabular-nums shrink-0 ${pct < 0 ? 'text-red-600' : pct < 15 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {pct.toFixed(1)}%
-            </span>
-        </div>
-    );
+function MarginPct({ pct }) {
+    if (pct === null) return <span className="text-[9px] text-slate-300">—</span>;
+    const cls = pct < 0 ? 'text-red-500' : pct < 15 ? 'text-amber-500' : 'text-emerald-600';
+    return <span className={`text-[9px] font-bold tabular-nums ${cls}`}>{pct.toFixed(1)}%</span>;
 }
 
 // ── SmartPagination ───────────────────────────────────────────────────────────
@@ -95,68 +103,13 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-// ── MarginAnalysis (inside expanded row) ─────────────────────────────────────
-
-function MarginAnalysis({ precios }) {
-    if (!precios?.length) return null;
-
-    const withMargin = precios
-        .map(pp => {
-            const m = calcMargin(pp.vineta, pp.costo);
-            return { tipo: pp.presentaciones?.tipo || '—', margin: m, vineta: pp.vineta, costo: pp.costo };
-        })
-        .filter(p => p.margin !== null);
-
-    if (!withMargin.length) return null;
-
-    const worst  = withMargin.reduce((a, b) => a.margin < b.margin ? a : b);
-    const best   = withMargin.reduce((a, b) => a.margin > b.margin ? a : b);
-    const hasIssues = worst.margin < 15;
-
-    return (
-        <div className="mb-3">
-            {/* Alert banner */}
-            {worst.margin < 0 ? (
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl mb-3 text-[11px] text-red-700">
-                    <ShieldAlert size={14} className="shrink-0 mt-0.5 text-red-500" />
-                    <div>
-                        <span className="font-black">Pérdida detectada — </span>
-                        <span>{worst.tipo}: margen {worst.margin.toFixed(1)}%. El precio de víneta ({fmtP(worst.vineta)}) no cubre el costo ({fmtP(worst.costo)}).</span>
-                    </div>
-                </div>
-            ) : worst.margin < 15 ? (
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl mb-3 text-[11px] text-amber-700">
-                    <AlertTriangle size={13} className="shrink-0 mt-0.5 text-amber-500" />
-                    <div>
-                        <span className="font-black">Margen bajo — </span>
-                        <span>{worst.tipo}: {worst.margin.toFixed(1)}%. Estándar farmacéutico: 20–35%.</span>
-                    </div>
-                </div>
-            ) : null}
-
-            {/* Mini cards row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                {withMargin.slice(0, 4).map((p, i) => (
-                    <div key={i} className={`px-2.5 py-2 rounded-xl border ${p.margin < 0 ? 'bg-red-50 border-red-100' : p.margin < 15 ? 'bg-amber-50 border-amber-100' : 'bg-white border-slate-100'}`}>
-                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate mb-1">{p.tipo}</p>
-                        <MarginBar pct={p.margin} />
-                        <div className="flex justify-between mt-1">
-                            <span className="text-[9px] text-slate-400">Costo {fmtP(p.costo)}</span>
-                            <span className="text-[9px] text-slate-500 font-semibold">Víneta {fmtP(p.vineta)}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated }) {
-    const [locations, setLocations] = useState([]);
-    const [saving, setSaving]       = useState(false);
+    const [locations, setLocations]       = useState([]);
+    const [saving, setSaving]             = useState(false);
     const [photoLoading, setPhotoLoading] = useState(false);
+    const [showLocations, setShowLocations] = useState(false);
     const fileRef = useRef(null);
 
     useEffect(() => {
@@ -167,11 +120,13 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             return {
                 branch_id:   b.id,
                 branch_name: b.name,
-                tipo:   saved?.estante ? 'estante' : 'vitrina',
-                numero: saved?.estante || saved?.vitrina || '',
+                tipo:    saved?.estante ? 'estante' : 'vitrina',
+                numero:  saved?.estante || saved?.vitrina || '',
                 peldano: saved?.peldano || '',
             };
         }));
+        // auto-open if any branch already has a location saved
+        if ((data.locations || []).length > 0) setShowLocations(true);
     }, [data, branches]);
 
     const setLocField = (i, field, value) =>
@@ -242,191 +197,208 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, detected_at: c.detected_at };
     });
 
-    const precios = data?.precios  || [];
-    const prodLog = data?.prodLog  || [];
+    const precios    = data?.precios  || [];
+    const prodLog    = data?.prodLog  || [];
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
+
+    // Worst margin across all active precios
+    const worstOverall = precios.length
+        ? precios.reduce((min, pp) => {
+            const w = worstMarginOf(pp);
+            if (w === null) return min;
+            return min === null ? w : Math.min(min, w);
+        }, null)
+        : null;
 
     return (
         <tr className="border-t border-blue-100/60">
             <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
-                <div className="px-5 py-4">
-                    <div className="grid grid-cols-1 xl:grid-cols-[1fr_220px] gap-5">
+                <div className="px-5 py-4 space-y-4">
 
-                        {/* ── Left: margin analysis + prices ── */}
-                        <div className="min-w-0">
-
-                            {/* Top row: foto + section header */}
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                    Presentaciones y precios
-                                    {hasChanges && (
-                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                            <AlertTriangle size={8} /> cambios
-                                        </span>
-                                    )}
-                                </span>
-                                <button onClick={() => fileRef.current?.click()}
-                                    className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-[#007AFF] transition-colors font-semibold">
-                                    {photoLoading ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}
-                                    {product.foto_url ? 'Cambiar foto' : 'Agregar foto'}
-                                </button>
-                                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
-                            </div>
-
-                            {/* Margin analysis cards */}
-                            <MarginAnalysis precios={precios} />
-
-                            {/* Price table */}
-                            {precios.length === 0 ? (
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
-                                    <Info size={12} className="text-slate-300 shrink-0" />
-                                    Sin presentaciones en el ERP.
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto rounded-xl border border-slate-100">
-                                    <table className="min-w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-slate-50/95 border-b border-slate-200/60">
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
-                                                {PRICE_FIELDS.map(f => (
-                                                    <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
-                                                ))}
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center whitespace-nowrap">Margen</th>
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {precios.map(pp => {
-                                                const pCh = changesMap[pp.id_presentacion] || {};
-                                                const rowChanged = Object.keys(pCh).length > 0;
-                                                const margin = calcMargin(pp.vineta, pp.costo);
-                                                return (
-                                                    <tr key={pp.id_presentacion} className={rowChanged ? 'bg-amber-50/60' : margin !== null && margin < 0 ? 'bg-red-50/30' : 'bg-white'}>
-                                                        <td className="px-3 py-2 whitespace-nowrap">
-                                                            <span className="text-[11px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
-                                                            {pp.presentaciones?.descripcion && (
-                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center text-[10px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
-                                                        <td className="px-3 py-2 text-right text-[11px] text-slate-400">{fmtP(pp.costo)}</td>
-                                                        {PRICE_FIELDS.map(f => {
-                                                            const ch = pCh[f.key];
-                                                            return (
-                                                                <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-50' : ''}`}>
-                                                                    <div className="flex flex-col items-end gap-0.5">
-                                                                        <span className={`text-[11px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
-                                                                            {fmtP(pp[f.key])}
-                                                                        </span>
-                                                                        {ch && (
-                                                                            <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
-                                                                                {fmtP(ch.anterior)}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                            );
-                                                        })}
-                                                        {/* Margin column */}
-                                                        <td className="px-3 py-2 min-w-[100px]">
-                                                            {margin !== null
-                                                                ? <MarginBar pct={margin} />
-                                                                : <span className="text-slate-300 text-[10px]">—</span>}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center">
-                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                                {pp.activo !== false ? 'Activa' : 'Inactiva'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-
-                            {/* Product-level changelog */}
-                            {prodLog.length > 0 && (
-                                <div className="mt-3 space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Cambios en el producto</p>
-                                    {prodLog.map((c, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
-                                            <span className="font-mono text-[10px] text-slate-400 shrink-0">
-                                                {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
-                                            </span>
-                                            <span className="font-semibold text-slate-600">{c.campo}</span>
-                                            <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
-                                            <span className="text-slate-300 text-[9px]">→</span>
-                                            <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                    {/* ── Alert banner ── */}
+                    {worstOverall !== null && worstOverall < 15 && (
+                        <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl border text-[11px] ${
+                            worstOverall < 0
+                                ? 'bg-red-50 border-red-200 text-red-700'
+                                : 'bg-amber-50 border-amber-200 text-amber-700'
+                        }`}>
+                            {worstOverall < 0 ? <ShieldAlert size={14} className="shrink-0 mt-0.5 text-red-500" /> : <AlertTriangle size={13} className="shrink-0 mt-0.5 text-amber-500" />}
+                            <span>
+                                {worstOverall < 0
+                                    ? <><strong>Pérdida detectada</strong> — alguna presentación tiene precio de venta por debajo del costo.</>
+                                    : <><strong>Margen bajo</strong> — alguna presentación tiene margen inferior al 15%. Estándar farmacéutico: 20–35%.</>}
+                            </span>
                         </div>
+                    )}
 
-                        {/* ── Right: ubicaciones ── */}
-                        <div className="shrink-0">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                    <MapPin size={9} /> Ubicación
-                                </p>
-                            </div>
+                    {/* ── Header: section label + photo button ── */}
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                            Presentaciones y precios
+                            {hasChanges && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                    <AlertTriangle size={8} /> cambios
+                                </span>
+                            )}
+                        </span>
+                        <button onClick={() => fileRef.current?.click()}
+                            className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-[#007AFF] transition-colors font-semibold">
+                            {photoLoading ? <Loader2 size={10} className="animate-spin" /> : <Camera size={10} />}
+                            {product.foto_url ? 'Cambiar foto' : 'Agregar foto'}
+                        </button>
+                        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                    </div>
 
-                            {locations.length === 0 ? (
-                                <p className="text-[11px] text-slate-300 italic">Sin sucursales.</p>
-                            ) : (
-                                <div className="rounded-xl border border-slate-100 bg-white overflow-hidden">
-                                    {locations.map((loc, i) => {
-                                        const hasData = loc.numero.trim() || loc.peldano.trim();
+                    {/* ── Price table ── */}
+                    {precios.length === 0 ? (
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
+                            <Info size={12} className="text-slate-300 shrink-0" />
+                            Sin presentaciones en el ERP.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto rounded-xl border border-slate-100">
+                            <table className="min-w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-50/95 border-b border-slate-200/60">
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
+                                        {PRICE_FIELDS.map(f => (
+                                            <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
+                                        ))}
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {precios.map(pp => {
+                                        const pCh = changesMap[pp.id_presentacion] || {};
+                                        const rowChanged = Object.keys(pCh).length > 0;
+                                        const worst = worstMarginOf(pp);
                                         return (
-                                            <div key={loc.branch_id} className={`flex items-center gap-2 px-3 py-2 ${i > 0 ? 'border-t border-slate-50' : ''} ${hasData ? '' : 'opacity-50'}`}>
-                                                {/* Branch name */}
-                                                <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 w-[54px] shrink-0">{loc.branch_name}</span>
-                                                {/* Toggle */}
-                                                <div className="flex items-center bg-slate-100 rounded-full p-0.5 shrink-0">
-                                                    {['vitrina', 'estante'].map(t => (
-                                                        <button key={t}
-                                                            onClick={() => setLocField(i, 'tipo', t)}
-                                                            className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wide transition-all ${
-                                                                loc.tipo === t
-                                                                    ? 'bg-white text-[#007AFF] shadow-sm'
-                                                                    : 'text-slate-400'
-                                                            }`}>
-                                                            {t.charAt(0).toUpperCase() + t.slice(1)}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                {/* Número */}
-                                                <input value={loc.numero}
-                                                    onChange={e => setLocField(i, 'numero', e.target.value)}
-                                                    placeholder="N°"
-                                                    className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center"
-                                                />
-                                                <span className="text-[8px] text-slate-300 shrink-0">Peld.</span>
-                                                {/* Peldaño */}
-                                                <input value={loc.peldano}
-                                                    onChange={e => setLocField(i, 'peldano', e.target.value)}
-                                                    placeholder="—"
-                                                    className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center"
-                                                />
-                                            </div>
+                                            <tr key={pp.id_presentacion} className={
+                                                rowChanged ? 'bg-amber-50/60' :
+                                                worst !== null && worst < 0 ? 'bg-red-50/30' :
+                                                'bg-white'
+                                            }>
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <span className="text-[11px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
+                                                    {pp.presentaciones?.descripcion && (
+                                                        <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-2 text-center text-[10px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
+                                                <td className="px-3 py-2 text-right text-[11px] text-slate-400">{fmtP(pp.costo)}</td>
+                                                {PRICE_FIELDS.map(f => {
+                                                    const ch = pCh[f.key];
+                                                    const m = calcMargin(pp[f.key], pp.costo);
+                                                    return (
+                                                        <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                <span className={`text-[11px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
+                                                                    {fmtP(pp[f.key])}
+                                                                </span>
+                                                                {ch && (
+                                                                    <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
+                                                                        {fmtP(ch.anterior)}
+                                                                    </span>
+                                                                )}
+                                                                <MarginPct pct={m} />
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td className="px-3 py-2 text-center">
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                        {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                    </span>
+                                                </td>
+                                            </tr>
                                         );
                                     })}
-                                    <div className="px-3 py-2 border-t border-slate-50">
-                                        <button onClick={saveLocations} disabled={saving}
-                                            className="w-full py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-[#0055CC] transition-colors disabled:opacity-50">
-                                            {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-                                            {saving ? 'Guardando...' : 'Guardar'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                                </tbody>
+                            </table>
                         </div>
+                    )}
 
+                    {/* ── Product-level changelog ── */}
+                    {prodLog.length > 0 && (
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Cambios en el producto</p>
+                            {prodLog.map((c, i) => (
+                                <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
+                                    <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                                        {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <span className="font-semibold text-slate-600">{c.campo}</span>
+                                    <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
+                                    <span className="text-slate-300 text-[9px]">→</span>
+                                    <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* ── Ubicación ── */}
+                    <div>
+                        <button
+                            onClick={() => setShowLocations(v => !v)}
+                            className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all ${
+                                showLocations
+                                    ? 'bg-blue-50 border-blue-200 text-[#007AFF]'
+                                    : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-[#007AFF]'
+                            }`}>
+                            <MapPin size={10} />
+                            {showLocations ? 'Ocultar ubicación' : 'Ver / agregar ubicación'}
+                            <ChevronDown size={10} className={`transition-transform duration-200 ${showLocations ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showLocations && (
+                            <div className="mt-3 rounded-xl border border-slate-100 bg-white overflow-hidden w-full max-w-sm">
+                                {locations.length === 0 ? (
+                                    <p className="text-[11px] text-slate-300 italic px-3 py-3">Sin sucursales configuradas.</p>
+                                ) : (
+                                    <>
+                                        {locations.map((loc, i) => {
+                                            const hasData = loc.numero.trim() || loc.peldano.trim();
+                                            return (
+                                                <div key={loc.branch_id} className={`flex items-center gap-2 px-3 py-2.5 ${i > 0 ? 'border-t border-slate-50' : ''} ${hasData ? '' : 'opacity-60'}`}>
+                                                    <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 w-[54px] shrink-0">{loc.branch_name}</span>
+                                                    <div className="flex items-center bg-slate-100 rounded-full p-0.5 shrink-0">
+                                                        {['vitrina', 'estante'].map(t => (
+                                                            <button key={t}
+                                                                onClick={() => setLocField(i, 'tipo', t)}
+                                                                className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wide transition-all ${
+                                                                    loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
+                                                                }`}>
+                                                                {t.charAt(0).toUpperCase() + t.slice(1)}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <input value={loc.numero}
+                                                        onChange={e => setLocField(i, 'numero', e.target.value)}
+                                                        placeholder="N°"
+                                                        className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center" />
+                                                    <span className="text-[8px] text-slate-300 shrink-0">Peld.</span>
+                                                    <input value={loc.peldano}
+                                                        onChange={e => setLocField(i, 'peldano', e.target.value)}
+                                                        placeholder="—"
+                                                        className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center" />
+                                                </div>
+                                            );
+                                        })}
+                                        <div className="px-3 py-2.5 border-t border-slate-50">
+                                            <button onClick={saveLocations} disabled={saving}
+                                                className="w-full py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-[#0055CC] transition-colors disabled:opacity-50">
+                                                {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                                                {saving ? 'Guardando...' : 'Guardar ubicaciones'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
+
                 </div>
             </td>
         </tr>
@@ -434,6 +406,8 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 }
 
 // ── TabCatalogo ───────────────────────────────────────────────────────────────
+
+const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
 
 export default function TabCatalogo({ searchTerm = '' }) {
     const branches = useStaff(s => s.branches);
@@ -450,11 +424,9 @@ export default function TabCatalogo({ searchTerm = '' }) {
     const [filterMargin, setFilterMargin]   = useState('all'); // 'all' | 'perdida' | 'bajo'
     const [changedIds, setChangedIds]       = useState(new Set());
     const [marginMap, setMarginMap]         = useState({});
-    // bad margin IDs for filtering (all pages)
     const [badMarginIds, setBadMarginIds]   = useState(null);
     const [loadingBadIds, setLoadingBadIds] = useState(false);
 
-    // Prefetch refs
     const prefetchTimerRef = useRef(null);
     const prefetchingRef   = useRef(new Set());
 
@@ -462,18 +434,19 @@ export default function TabCatalogo({ searchTerm = '' }) {
     useEffect(() => {
         if (filterMargin === 'all') { setBadMarginIds(null); return; }
         setLoadingBadIds(true);
+        // Fetch ALL product_precios rows (limit 10000 to bypass Supabase 1000 default)
         supabase.from('product_precios')
-            .select('product_id, vineta, costo')
+            .select(`product_id, costo, ${PRICE_SELECT}`)
             .eq('activo', true)
-            .gt('vineta', 0)
             .gt('costo', 0)
+            .limit(10000)
             .then(({ data }) => {
                 const seen = new Map();
                 (data || []).forEach(pp => {
-                    const m = calcMargin(pp.vineta, pp.costo);
-                    if (m === null) return;
+                    const w = worstMarginOf(pp);
+                    if (w === null) return;
                     const prev = seen.get(pp.product_id);
-                    if (prev === undefined || m < prev) seen.set(pp.product_id, m);
+                    if (prev === undefined || w < prev) seen.set(pp.product_id, w);
                 });
                 const ids = [];
                 seen.forEach((m, pid) => {
@@ -510,17 +483,20 @@ export default function TabCatalogo({ searchTerm = '' }) {
                 const [{ data: pc }, { data: prc }, { data: pp }] = await Promise.all([
                     supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
                     supabase.from('products_changelog').select('product_id').in('product_id', ids),
-                    supabase.from('product_precios').select('product_id, vineta, costo').in('product_id', ids).eq('activo', true).gt('vineta', 0).gt('costo', 0),
+                    supabase.from('product_precios')
+                        .select(`product_id, costo, ${PRICE_SELECT}`)
+                        .in('product_id', ids)
+                        .eq('activo', true)
+                        .gt('costo', 0),
                 ]);
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
 
-                // Build margin map
                 const newMarginMap = {};
                 (pp || []).forEach(row => {
-                    const m = calcMargin(row.vineta, row.costo);
-                    if (m === null) return;
-                    if (newMarginMap[row.product_id] === undefined || m < newMarginMap[row.product_id])
-                        newMarginMap[row.product_id] = m;
+                    const w = worstMarginOf(row);
+                    if (w === null) return;
+                    if (newMarginMap[row.product_id] === undefined || w < newMarginMap[row.product_id])
+                        newMarginMap[row.product_id] = w;
                 });
                 setMarginMap(newMarginMap);
             } else {
@@ -540,7 +516,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
         return () => clearTimeout(t);
     }, [searchTerm, page, pageSize, filterActivo, filterMargin, badMarginIds, loadingBadIds, loadProducts]);
 
-    // Prefetch on hover
     const prefetchRow = useCallback((productId) => {
         if (expandedCache[productId] || prefetchingRef.current.has(productId)) return;
         prefetchTimerRef.current = setTimeout(async () => {
@@ -548,7 +523,7 @@ export default function TabCatalogo({ searchTerm = '' }) {
             try {
                 const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }] = await Promise.all([
                     supabase.from('product_precios')
-                        .select('id_presentacion, activo, costo, vineta, descuento_1, vip, clinica, mayoreo, premium, presentaciones(tipo, descripcion, factor)')
+                        .select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`)
                         .eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog')
                         .select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at')
@@ -579,7 +554,7 @@ export default function TabCatalogo({ searchTerm = '' }) {
         try {
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }] = await Promise.all([
                 supabase.from('product_precios')
-                    .select('id_presentacion, activo, costo, vineta, descuento_1, vip, clinica, mayoreo, premium, presentaciones(tipo, descripcion, factor)')
+                    .select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`)
                     .eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog')
                     .select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at')
@@ -606,7 +581,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
 
             {/* ── Filter chips ── */}
             <div className="flex items-center gap-2 flex-wrap">
-                {/* Activo filter */}
                 <div className="flex items-center bg-white/70 border border-slate-200 rounded-full p-0.5 gap-0.5">
                     {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
                         <button key={v} onClick={() => setFilterActivo(v)}
@@ -617,7 +591,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
                     ))}
                 </div>
 
-                {/* Margin filters */}
                 <button onClick={() => setFilterMargin(v => v === 'perdida' ? 'all' : 'perdida')}
                     className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
                         filterMargin === 'perdida'
@@ -695,8 +668,8 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                     const isExpanded    = expandedId === p.id;
                                     const isLoadingThis = loadingExpandedId === p.id;
                                     const hasChanges    = changedIds.has(p.id);
-                                    const worstMargin   = marginMap[p.id];
-                                    const marginInfo    = worstMargin !== undefined ? marginLabel(worstMargin) : null;
+                                    const worstM        = marginMap[p.id];
+                                    const mInfo         = worstM !== undefined ? marginLabel(worstM) : null;
                                     return (
                                         <React.Fragment key={p.id}>
                                             <tr
@@ -707,7 +680,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                     isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'
                                                 }`}>
 
-                                                {/* Producto */}
                                                 <td className="px-4 py-2.5">
                                                     <div className="flex items-center gap-3">
                                                         {p.foto_url ? (
@@ -720,12 +692,10 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                                 <span className="text-[12px] font-bold text-slate-700 leading-tight">{p.nombre}</span>
-                                                                {marginInfo && (
-                                                                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${marginInfo.cls}`}>
-                                                                        {worstMargin < 0
-                                                                            ? <ShieldAlert size={7} />
-                                                                            : <TrendingDown size={7} />}
-                                                                        {marginInfo.label}
+                                                                {mInfo && (
+                                                                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>
+                                                                        {worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}
+                                                                        {mInfo.label}
                                                                     </span>
                                                                 )}
                                                                 {hasChanges && (
@@ -744,12 +714,10 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                     </div>
                                                 </td>
 
-                                                {/* Laboratorio */}
                                                 <td className="px-4 py-2.5 hidden md:table-cell">
                                                     <span className="text-[11px] text-slate-500">{p.laboratorios?.nombre || '—'}</span>
                                                 </td>
 
-                                                {/* Categoría */}
                                                 <td className="px-4 py-2.5 hidden lg:table-cell">
                                                     <div className="flex flex-wrap gap-1">
                                                         {p.tipo_medicamento && (
@@ -773,7 +741,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                     </div>
                                                 </td>
 
-                                                {/* Estado */}
                                                 <td className="px-4 py-2.5 hidden sm:table-cell">
                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${
                                                         p.activo
@@ -784,7 +751,6 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                     </span>
                                                 </td>
 
-                                                {/* Chevron */}
                                                 <td className="px-4 py-2.5">
                                                     {isLoadingThis
                                                         ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />

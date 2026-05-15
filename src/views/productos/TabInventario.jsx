@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     AlertTriangle, Calendar, Loader2, Package, RefreshCw,
-    Boxes, Building2, X, ChevronLeft, ChevronRight,
+    Building2, X, ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -13,12 +13,15 @@ const ERP_NAMES = {
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
 const PAGE_SIZES = [25, 50, 100];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function parseFactor(detalle) {
+    if (!detalle) return 1;
+    const m = detalle.match(/[Xx](\d+)/);
+    return m ? parseInt(m[1], 10) : 1;
+}
 
 function expiryInfo(fecha) {
     if (!fecha) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const days = Math.ceil((new Date(fecha) - today) / 86400000);
     return { days, expired: days < 0 };
 }
@@ -50,8 +53,6 @@ function ExpiryCell({ fecha }) {
     if (info.days <= 90) return <span className="text-xs text-amber-600 whitespace-nowrap">{fecha}</span>;
     return <span className="text-xs text-slate-400 whitespace-nowrap">{fecha}</span>;
 }
-
-// ── SmartPagination ───────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
     if (total <= 1) return null;
@@ -92,8 +93,6 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-// ── SortTh ────────────────────────────────────────────────────────────────────
-
 function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     const active = sortField === field;
     return (
@@ -111,12 +110,10 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     );
 }
 
-// ── TabInventario ─────────────────────────────────────────────────────────────
-
 export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,    setSelectedErp]    = useState(null);
     const [filterVencidos, setFilterVencidos] = useState(false);
-    const [items,          setItems]          = useState([]);
+    const [groups,         setGroups]         = useState([]);
     const [total,          setTotal]          = useState(0);
     const [loading,        setLoading]        = useState(false);
     const [page,           setPage]           = useState(1);
@@ -126,8 +123,10 @@ export default function TabInventario({ searchTerm = '' }) {
     const [syncLog,        setSyncLog]        = useState([]);
     const [labMap,         setLabMap]         = useState({});
     const [expiredTotal,   setExpiredTotal]   = useState(0);
+    const [expandedKey,    setExpandedKey]    = useState(null);
+    const [expandedData,   setExpandedData]   = useState({});
+    const [expandLoading,  setExpandLoading]  = useState(new Set());
 
-    // Sync log (once)
     useEffect(() => {
         supabase.from('inventory_sync_log')
             .select('erp_sucursal_id, is_vencidos, synced_at, success, items_count')
@@ -136,36 +135,26 @@ export default function TabInventario({ searchTerm = '' }) {
             .then(({ data }) => setSyncLog(data || []));
     }, []);
 
-    // Reset page on filter changes
     useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, searchTerm, pageSize, sortField]);
 
-    // Load inventory (server-side)
     const loadInventory = useCallback(async (erpId, fVenc, q, pg, ps, sf, sd) => {
         setLoading(true);
+        setExpandedKey(null);
         try {
-            const today = new Date().toISOString().split('T')[0];
-
-            let qb = supabase
-                .from('inventory')
-                .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, detalle, lote, fecha_vencimiento, cantidad', { count: 'exact' })
-                .eq('is_vencidos', false)
-                .range((pg - 1) * ps, pg * ps - 1);
-
-            if (erpId !== null)  qb = qb.eq('erp_sucursal_id', erpId);
-            if (q.trim())        qb = qb.ilike('descripcion', `%${q.trim()}%`);
-            if (fVenc)           qb = qb.lt('fecha_vencimiento', today);
-
-            const sortCol = sf === 'sucursal' ? 'erp_sucursal_id' : sf;
-            qb = qb.order(sortCol, { ascending: sd === 'asc', nullsFirst: false });
-            if (sortCol !== 'descripcion') qb = qb.order('descripcion');
-
-            const { data, count, error } = await qb;
+            const { data, error } = await supabase.rpc('inventory_grouped', {
+                p_erp_id:   erpId,
+                p_vencidos: fVenc,
+                p_search:   q.trim() || null,
+                p_sort:     sf,
+                p_sort_dir: sd,
+                p_limit:    ps,
+                p_offset:   (pg - 1) * ps,
+            });
             if (error) throw error;
 
-            setItems(data || []);
-            setTotal(count || 0);
+            setGroups(data || []);
+            setTotal(data?.length ? Number(data[0].total) : 0);
 
-            // Fetch laboratorio for this page
             const ids = [...new Set((data || []).map(r => r.erp_product_id).filter(Boolean))];
             if (ids.length) {
                 const { data: prods } = await supabase
@@ -179,7 +168,7 @@ export default function TabInventario({ searchTerm = '' }) {
                 setLabMap({});
             }
 
-            // Expired count for card
+            const today = new Date().toISOString().split('T')[0];
             let cq = supabase
                 .from('inventory')
                 .select('*', { count: 'exact', head: true })
@@ -198,9 +187,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
     useEffect(() => {
         const t = setTimeout(() =>
-            loadInventory(selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir),
-            200
-        );
+            loadInventory(selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir), 200);
         return () => clearTimeout(t);
     }, [selectedErp, filterVencidos, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 
@@ -209,7 +196,30 @@ export default function TabInventario({ searchTerm = '' }) {
         else { setSortField(field); setSortDir('asc'); }
     }, [sortField]);
 
+    const handleExpand = useCallback(async (erpId, productId) => {
+        const key = `${erpId}_${productId}`;
+        if (expandedKey === key) { setExpandedKey(null); return; }
+        setExpandedKey(key);
+        if (expandedData[key]) return;
+
+        setExpandLoading(prev => new Set([...prev, key]));
+        try {
+            const { data } = await supabase
+                .from('inventory')
+                .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
+                .eq('erp_sucursal_id', erpId)
+                .eq('erp_product_id', productId)
+                .eq('is_vencidos', false)
+                .order('presentacion')
+                .order('lote');
+            setExpandedData(prev => ({ ...prev, [key]: data || [] }));
+        } finally {
+            setExpandLoading(prev => { const s = new Set(prev); s.delete(key); return s; });
+        }
+    }, [expandedKey, expandedData]);
+
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const colCount   = selectedErp === null ? 7 : 6;
 
     const lastSync = (() => {
         const logs = syncLog.filter(l =>
@@ -232,11 +242,10 @@ export default function TabInventario({ searchTerm = '' }) {
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Stats + filter pill row ── */}
+            {/* ── Stats + filter pill ── */}
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
-                    {/* Productos */}
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
                             <Package size={15} className="text-[#007AFF]" />
@@ -252,7 +261,6 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                     </div>
 
-                    {/* Vencidos — clickable filter card */}
                     <button
                         onClick={() => setFilterVencidos(v => !v)}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
@@ -273,7 +281,6 @@ export default function TabInventario({ searchTerm = '' }) {
                         {filterVencidos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
 
-                    {/* Last sync */}
                     {lastSync && (
                         <span className="text-[10px] text-slate-400 flex items-center gap-1 self-center">
                             <RefreshCw size={9} />
@@ -282,7 +289,6 @@ export default function TabInventario({ searchTerm = '' }) {
                     )}
                 </div>
 
-                {/* Filter pill */}
                 <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
                     <div className="flex items-center">
                         <div className="px-2 py-2 overflow-visible" style={{ width: '190px' }}>
@@ -310,11 +316,11 @@ export default function TabInventario({ searchTerm = '' }) {
                 <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                     <table className="min-w-full">
                         <tbody>
-                            {Array.from({ length: pageSize > 25 ? 10 : 8 }).map((_, i) => (
+                            {Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
                                     <td className="px-4 py-3"><div className="h-3 w-48 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
                                     <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
                                     <td className="px-4 py-3 text-right"><div className="h-3 w-10 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
                                     <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
@@ -337,62 +343,164 @@ export default function TabInventario({ searchTerm = '' }) {
                                     {selectedErp === null && (
                                         <SortTh field="sucursal" label="Sucursal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     )}
-                                    <SortTh field="descripcion"       label="Producto"      sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                                    <SortTh field="presentacion"      label="Presentación"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
-                                    <SortTh field="lote"              label="Lote"           sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                                    <SortTh field="descripcion" label="Producto" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Presentación</th>
+                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell whitespace-nowrap">Lote</th>
                                     <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell whitespace-nowrap">Laboratorio</th>
-                                    <SortTh field="cantidad"          label="Cant."          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                    <SortTh field="fecha_vencimiento" label="Vence"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                                    <SortTh field="unidades" label="Und." sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                    <SortTh field="vence" label="Vence" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {items.map((item, i) => {
-                                    const inf       = item.fecha_vencimiento ? expiryInfo(item.fecha_vencimiento) : null;
-                                    const isExpired = inf?.expired;
-                                    const isSoon    = inf && !inf.expired && inf.days <= 30;
-                                    const lab       = labMap[item.erp_product_id] ?? null;
+                                {groups.map((group) => {
+                                    const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
+                                    const isExpanded = expandedKey === key;
+                                    const lab        = labMap[group.erp_product_id] ?? null;
+                                    const numLotes   = Number(group.num_lotes);
+                                    const loteDisplay = numLotes === 0 ? '—'
+                                        : numLotes === 1 ? (group.lote_sample || '—')
+                                        : 'VARIOS';
+                                    const pres  = group.presentaciones || [];
+                                    const units = Number(group.total_unidades);
+                                    const info  = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
+                                    const hasExpired = info?.expired;
+                                    const isSoon     = info && !info.expired && info.days <= 30;
+
                                     return (
-                                        <tr key={i} className={`transition-colors ${
-                                            isExpired ? 'bg-red-50/40 hover:bg-red-50/60' :
-                                            isSoon    ? 'bg-amber-50/30 hover:bg-amber-50/50' :
-                                            'hover:bg-slate-50/70'
-                                        }`}>
-                                            {selectedErp === null && (
-                                                <td className="px-4 py-2.5 whitespace-nowrap">
-                                                    <span className="text-[11px] font-bold text-[#007AFF] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
-                                                        {ERP_NAMES[item.erp_sucursal_id] ?? `S${item.erp_sucursal_id}`}
+                                        <React.Fragment key={key}>
+                                            <tr
+                                                onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
+                                                className={`cursor-pointer transition-colors ${
+                                                    isExpanded ? 'bg-blue-50/50' :
+                                                    hasExpired ? 'bg-red-50/40 hover:bg-red-50/60' :
+                                                    isSoon     ? 'bg-amber-50/30 hover:bg-amber-50/50' :
+                                                    'hover:bg-slate-50/70'
+                                                }`}>
+
+                                                {selectedErp === null && (
+                                                    <td className="px-4 py-2.5 whitespace-nowrap">
+                                                        <span className="text-[11px] font-bold text-[#007AFF] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                                                            {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
+                                                        </span>
+                                                    </td>
+                                                )}
+
+                                                <td className="px-4 py-2.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <ChevronDown size={12} strokeWidth={2.5}
+                                                            className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
+                                                        <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
+                                                            {group.descripcion || '—'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-4 py-2.5 hidden md:table-cell">
+                                                    {pres.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {pres.map(p => (
+                                                                <span key={p} className="text-[10px] font-bold text-slate-500 bg-slate-100/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
+                                                                    {p}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : <span className="text-slate-300 text-xs">—</span>}
+                                                </td>
+
+                                                <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                    <span className={`text-[11px] font-mono ${numLotes > 1 ? 'text-slate-400 italic' : 'text-slate-500'}`}>
+                                                        {loteDisplay}
                                                     </span>
                                                 </td>
+
+                                                <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                    <span className="text-[11px] text-slate-500">
+                                                        {lab || <span className="text-slate-200">—</span>}
+                                                    </span>
+                                                </td>
+
+                                                <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                                                    <span className={`text-sm font-semibold tabular-nums ${
+                                                        units === 0   ? 'text-slate-300' :
+                                                        hasExpired    ? 'text-red-600'   : 'text-slate-700'
+                                                    }`}>
+                                                        {units.toLocaleString()}
+                                                    </span>
+                                                    <span className="text-[9px] text-slate-300 ml-0.5">und</span>
+                                                </td>
+
+                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                    <ExpiryCell fecha={group.earliest_venc} />
+                                                </td>
+                                            </tr>
+
+                                            {isExpanded && (
+                                                <tr>
+                                                    <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
+                                                        <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
+                                                            {expandLoading.has(key) ? (
+                                                                <div className="flex items-center gap-2 text-slate-400 py-2">
+                                                                    <Loader2 size={14} className="animate-spin" />
+                                                                    <span className="text-xs">Cargando...</span>
+                                                                </div>
+                                                            ) : (expandedData[key] || []).length === 0 ? (
+                                                                <p className="text-xs text-slate-400 py-2">Sin datos</p>
+                                                            ) : (
+                                                                <table className="w-full">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
+                                                                                <th key={h}
+                                                                                    className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-400 pr-6 last:pr-0 ${
+                                                                                        h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
+                                                                                    }`}>
+                                                                                    {h}
+                                                                                </th>
+                                                                            ))}
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {(expandedData[key] || []).map((row, i) => {
+                                                                            const factor   = parseFactor(row.detalle);
+                                                                            const rowUnits = (row.cantidad || 0) * factor;
+                                                                            return (
+                                                                                <tr key={i} className="border-t border-slate-100/60">
+                                                                                    <td className="py-1.5 pr-6">
+                                                                                        <span className="text-[12px] font-semibold text-slate-700">
+                                                                                            {row.presentacion || '—'}
+                                                                                        </span>
+                                                                                        {row.detalle && (
+                                                                                            <span className="text-[10px] text-slate-400 font-mono ml-1.5">
+                                                                                                {row.detalle}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </td>
+                                                                                    <td className="py-1.5 pr-6 text-[11px] font-mono text-slate-500">
+                                                                                        {row.lote || '—'}
+                                                                                    </td>
+                                                                                    <td className="py-1.5 pr-6">
+                                                                                        <ExpiryCell fecha={row.fecha_vencimiento} />
+                                                                                    </td>
+                                                                                    <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-slate-600 tabular-nums">
+                                                                                        {(row.cantidad || 0).toLocaleString()}
+                                                                                    </td>
+                                                                                    <td className="py-1.5 text-right">
+                                                                                        <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                                                            {rowUnits.toLocaleString()}
+                                                                                        </span>
+                                                                                        <span className="text-[9px] text-slate-300 ml-0.5">und</span>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            );
+                                                                        })}
+                                                                    </tbody>
+                                                                </table>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                             )}
-                                            <td className="px-4 py-2.5 max-w-[200px]">
-                                                <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight" title={item.descripcion}>
-                                                    {item.descripcion || '—'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden md:table-cell">
-                                                <span className="text-xs text-slate-500">{item.presentacion || '—'}</span>
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                <span className="text-[11px] text-slate-400 font-mono">
-                                                    {[item.lote, item.detalle].filter(Boolean).join(' · ') || '—'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                <span className="text-[11px] text-slate-500">{lab || <span className="text-slate-200">—</span>}</span>
-                                            </td>
-                                            <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                                <span className={`text-sm font-semibold ${
-                                                    item.cantidad === 0 ? 'text-slate-300' :
-                                                    isExpired ? 'text-red-600' :
-                                                    'text-slate-700'
-                                                }`}>
-                                                    {item.cantidad?.toLocaleString() ?? 0}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                <ExpiryCell fecha={item.fecha_vencimiento} />
-                                            </td>
-                                        </tr>
+                                        </React.Fragment>
                                     );
                                 })}
                             </tbody>
@@ -419,7 +527,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     </div>
                     <SmartPagination page={page} total={totalPages} onChange={setPage} />
                     <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
-                        {total.toLocaleString()} total
+                        {total.toLocaleString()} grupos
                     </span>
                 </div>
             )}

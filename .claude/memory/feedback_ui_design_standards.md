@@ -6,23 +6,36 @@ type: feedback
 
 ## Filter Bar Standard (Ventas pattern — use everywhere)
 
-Every module's filter bar must use the **pill container** pattern from `VentasView > FilterControls`:
+### Architecture rule: filter state lives in the VIEW, renders in `filtersContent`
+
+Filter state must be lifted to the **View-level component** (e.g. `ProductosView`, `VentasView`) and passed as `filtersContent` to `GlassViewLayout` so it renders in the **floating header** — NOT inside the tab/body component. The body component receives filter values as **props**.
+
+- `VentasView` → `FilterControls` component passed as `filtersContent`
+- `ProductosView` → filter pill built inline, passed as `filtersContent`, filter state lifted out of `TabCatalogo`
+
+### Filter pill JSX (exact class string):
 
 ```jsx
-<div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+<div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
     {/* Sections separated by: */}
     <div className="h-5 w-px bg-slate-100 shrink-0" />
 </div>
 ```
 
+- **Filter pill is `hidden lg:flex`** — only visible on desktop. Mobile gets the stats/content without the filter pill in the header.
 - Use **`LiquidSelect`** (`src/components/common/LiquidSelect.jsx`) for ALL dropdowns — never native `<select>`
 - Each filter section gets its own individual **X clear button**: `w-[18px] h-[18px] rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white`
-- Add a **global "clear all"** button (red circle X) only when 2+ filters are active
+- Add a **global "clear all"** button (red circle X) only when any filter is non-default
 - Sections separated by `h-5 w-px bg-slate-100` dividers
+- Dynamic width for LiquidSelect: `Math.max(150, Math.min(260, 90 + label.length * 7))`
 
-**Why:** User explicitly said all modules must share this standard. Inconsistent filter bars break visual cohesion.
+### What stays in the body (not the header):
+- **Stat cards** (e.g. "Pérdida N / Margen bajo N") — these are content-level metric cards that also act as filters. They stay in the body of the tab component.
+- Sortable column headers — in the table, not the header.
 
-**How to apply:** Before implementing any filter bar in a new module, look at `VentasView.jsx` lines 110–173 for the exact JSX pattern. Import `LiquidSelect` and `PeriodPicker` (if date filters needed) from `src/components/common/`.
+**Why:** User explicitly said filters must be in the same position as Ventas — in the floating glass header. Filters inside the body content area break the standard.
+
+**How to apply:** Before implementing any filter bar in a new module, look at `ProductosView.jsx` (filter pill pattern) and `VentasView.jsx` lines 110–173. Import `LiquidSelect` from `src/components/common/`.
 
 ---
 

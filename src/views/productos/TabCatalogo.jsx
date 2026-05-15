@@ -279,8 +279,8 @@ function PrincipiosEditor({ productId, initial, onSaved }) {
                     <input
                         value={item.concentracion || ''}
                         onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
-                        placeholder="Concentración"
-                        className="w-[90px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 placeholder:text-slate-300"
+                        placeholder="Cant."
+                        className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 placeholder:text-slate-300 text-center"
                     />
                     <button onClick={() => removeItem(item._key)}
                         className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
@@ -353,16 +353,16 @@ function LocationGrid({ productId, initial, branches }) {
 
     return (
         <div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div className="flex flex-wrap gap-1.5">
                 {locs.map((loc, i) => {
                     const hasData = loc.numero.trim() || loc.peldano.trim();
                     return (
-                        <div key={loc.branch_id} className={`rounded-xl border p-2 transition-colors ${hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
-                            <p className="text-[8px] font-black uppercase tracking-wide text-slate-500 mb-1.5 truncate">{loc.branch_name}</p>
-                            <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1.5">
+                        <div key={loc.branch_id} className={`rounded-lg border p-1.5 transition-colors w-[72px] shrink-0 ${hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-white border-slate-100'}`}>
+                            <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 mb-1 truncate">{loc.branch_name}</p>
+                            <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-1">
                                 {['vitrina', 'estante'].map(t => (
                                     <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                        className={`flex-1 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wide transition-all ${
+                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
                                             loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
                                         }`}>
                                         {t === 'vitrina' ? 'Vit.' : 'Est.'}
@@ -371,14 +371,16 @@ function LocationGrid({ productId, initial, branches }) {
                             </div>
                             <div className="flex gap-1">
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[7px] text-slate-400 font-semibold leading-none mb-0.5">N°</p>
+                                    <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">N°</p>
                                     <input value={loc.numero} onChange={e => setField(i, 'numero', e.target.value)}
-                                        className="w-full px-1 py-0.5 border border-slate-200 rounded text-[10px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
+                                        maxLength={2}
+                                        className="w-full px-0.5 py-0.5 border border-slate-200 rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[7px] text-slate-400 font-semibold leading-none mb-0.5">Peld.</p>
+                                    <p className="text-[6px] text-slate-400 font-semibold leading-none mb-0.5">Peld.</p>
                                     <input value={loc.peldano} onChange={e => setField(i, 'peldano', e.target.value)}
-                                        className="w-full px-1 py-0.5 border border-slate-200 rounded text-[10px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
+                                        maxLength={2}
+                                        className="w-full px-0.5 py-0.5 border border-slate-200 rounded text-[10px] font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#007AFF]/30 bg-slate-50 text-center min-w-0" />
                                 </div>
                             </div>
                         </div>
@@ -387,7 +389,7 @@ function LocationGrid({ productId, initial, branches }) {
             </div>
             <div className="mt-2 flex justify-end">
                 <button onClick={save} disabled={saving}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold hover:bg-[#0055CC] transition-colors disabled:opacity-50">
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold hover:bg-[#0055CC] transition-colors disabled:opacity-50">
                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
                     {saving ? 'Guardando…' : 'Guardar ubicaciones'}
                 </button>
@@ -479,55 +481,39 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                     {/* ── Main layout: two columns ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">
 
-                        {/* ── LEFT: Foto + Principios activos ── */}
-                        <div className="space-y-4">
-
-                            {/* Foto */}
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
-                                    <Camera size={9} /> Foto del producto
-                                </p>
-                                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
-                                <button onClick={() => fileRef.current?.click()}
-                                    className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
-                                        border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">
-                                    {localFoto ? (
-                                        <>
-                                            <img src={localFoto} alt="" className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
-                                                {photoLoading
-                                                    ? <Loader2 size={22} className="text-white animate-spin" />
-                                                    : <>
-                                                        <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
-                                                    </>}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        {/* ── LEFT: Foto ── */}
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <Camera size={9} /> Foto del producto
+                            </p>
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                            <button onClick={() => fileRef.current?.click()}
+                                className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
+                                    border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">
+                                {localFoto ? (
+                                    <>
+                                        <img src={localFoto} alt="" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
                                             {photoLoading
-                                                ? <Loader2 size={24} className="text-[#007AFF] animate-spin" />
+                                                ? <Loader2 size={22} className="text-white animate-spin" />
                                                 : <>
-                                                    <Camera size={24} className="text-slate-300 group-hover:text-[#007AFF] transition-colors" />
-                                                    <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#007AFF] transition-colors">Subir foto</span>
-                                                    <span className="text-[8px] text-slate-300">JPG, PNG o WebP</span>
+                                                    <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
                                                 </>}
                                         </div>
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Principios activos */}
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
-                                    <FlaskConical size={9} /> Principios activos
-                                </p>
-                                <PrincipiosEditor
-                                    productId={product.id}
-                                    initial={principles}
-                                    onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
-                                />
-                            </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                                        {photoLoading
+                                            ? <Loader2 size={24} className="text-[#007AFF] animate-spin" />
+                                            : <>
+                                                <Camera size={24} className="text-slate-300 group-hover:text-[#007AFF] transition-colors" />
+                                                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#007AFF] transition-colors">Subir foto</span>
+                                                <span className="text-[8px] text-slate-300">JPG, PNG o WebP</span>
+                                            </>}
+                                    </div>
+                                )}
+                            </button>
                         </div>
 
                         {/* ── RIGHT: Precios + Changelog ── */}
@@ -637,16 +623,34 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         </div>
                     </div>
 
-                    {/* ── Ubicaciones: full-width bottom section ── */}
-                    <div className="border-t border-slate-100/80 pt-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-                            <MapPin size={9} /> Ubicaciones por sucursal
-                        </p>
-                        <LocationGrid
-                            productId={product.id}
-                            initial={data?.locations}
-                            branches={branches}
-                        />
+                    {/* ── Principios activos + Ubicaciones side by side ── */}
+                    <div className="border-t border-slate-100/80 pt-4 flex flex-col md:flex-row gap-5 items-start">
+
+                        {/* Principios activos */}
+                        <div className="shrink-0 min-w-[220px]">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <FlaskConical size={9} /> Principios activos
+                            </p>
+                            <PrincipiosEditor
+                                productId={product.id}
+                                initial={principles}
+                                onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
+                            />
+                        </div>
+
+                        <div className="w-px self-stretch bg-slate-100 hidden md:block shrink-0" />
+
+                        {/* Ubicaciones */}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <MapPin size={9} /> Ubicaciones por sucursal
+                            </p>
+                            <LocationGrid
+                                productId={product.id}
+                                initial={data?.locations}
+                                branches={branches}
+                            />
+                        </div>
                     </div>
 
                 </div>

@@ -34,15 +34,16 @@ export default function ProductosView() {
     useEffect(() => {
         supabase.from('laboratorios').select('id, nombre').order('nombre')
             .then(({ data }) => setLabs(data || []));
-        supabase.from('products').select('tipo_medicamento').not('tipo_medicamento', 'is', null)
-            .then(({ data }) => {
-                const unique = [...new Set((data || []).map(r => r.tipo_medicamento).filter(Boolean))].sort();
-                setCategorias(unique);
-            });
+        supabase.from('product_categories').select('nombre').order('nombre')
+            .then(({ data }) => setCategorias((data || []).map(r => r.nombre)));
     }, []);
 
     const labOptions = labs.map(l => ({ value: String(l.id), label: l.nombre }));
     const catOptions = categorias.map(c => ({ value: c, label: c }));
+
+    const handleCategoryCreated = (nombre) => {
+        setCategorias(prev => [...prev, nombre].sort());
+    };
 
     const searchPlaceholder = activeTab === 'catalogo'
         ? 'Buscar producto o principio activo...'
@@ -119,6 +120,7 @@ export default function ProductosView() {
                     setFilterAntibiotico={setFilterAntibiotico}
                     labOptions={labOptions}
                     catOptions={catOptions}
+                    onCategoryCreated={handleCategoryCreated}
                 />
             </div>
             <div className={activeTab === 'inventario' ? '' : 'hidden'}>

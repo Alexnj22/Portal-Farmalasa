@@ -309,6 +309,51 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     );
 });
 
+// ── CategoryEditor ────────────────────────────────────────────────────────
+
+const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated }, ref) {
+    const [selected, setSelected] = useState(initial || '');
+
+    useEffect(() => { setSelected(initial || ''); }, [initial]);
+
+    const catOpts = categories.map(c => ({ value: c, label: c }));
+
+    const handleCreate = async (nombre) => {
+        try {
+            await supabase.from('product_categories').insert({ nombre });
+            setSelected(nombre);
+            if (onCategoryCreated) onCategoryCreated(nombre);
+        } catch (e) {
+            useToastStore.getState().showToast('Error', e.message, 'error');
+        }
+    };
+
+    const save = async ({ quiet = false } = {}) => {
+        try {
+            await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
+            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
+            if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
+        } catch (e) {
+            useToastStore.getState().showToast('Error', e.message, 'error');
+            throw e;
+        }
+    };
+
+    useImperativeHandle(ref, () => ({ save }));
+
+    return (
+        <LiquidSelect
+            value={selected}
+            onChange={setSelected}
+            options={catOpts}
+            placeholder="Sin categoría"
+            icon={Tag}
+            creatable
+            onCreateOption={handleCreate}
+        />
+    );
+});
+
 // ── LocationGrid ──────────────────────────────────────────────────────────────
 
 const LocationGrid = forwardRef(function LocationGrid({ productId, initial, branches }, ref) {
@@ -460,13 +505,14 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onClose }) {
+function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onClose, categories, onCategoryCreated }) {
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
     const [saving, setSaving]             = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
+    const categoryRef   = useRef(null);
 
     const handleSave = async () => {
         setSaving(true);
@@ -474,6 +520,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             await Promise.all([
                 principiosRef.current?.save({ quiet: true }),
                 locationRef.current?.save({ quiet: true }),
+                categoryRef.current?.save({ quiet: true }),
             ]);
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
             if (onClose) onClose();
@@ -592,97 +639,115 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             </button>
                         </div>
 
-                        {/* ── RIGHT: Precios + Changelog ── */}
-                        <div className="space-y-4 min-w-0">
-
-                            {/* Prices */}
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-2">
-                                    Presentaciones y precios
-                                    {hasChanges && (
-                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                            <AlertTriangle size={8} /> cambios
-                                        </span>
-                                    )}
-                                </p>
-
-                                {precios.length === 0 ? (
-                                    <div className="flex items-center gap-2 text-[11px] text-slate-400 py-3 px-3 rounded-xl bg-slate-50 border border-slate-100">
-                                        <Info size={12} className="text-slate-300 shrink-0" />
-                                        Sin presentaciones en el ERP.
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
-                                        <table className="min-w-full text-sm">
-                                            <thead>
-                                                <tr className="bg-slate-50/95 border-b border-slate-200/60">
-                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
-                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
-                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
-                                                    {PRICE_FIELDS.map(f => (
-                                                        <th key={f.key} className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
-                                                    ))}
-                                                    <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {precios.map(pp => {
-                                                    const pCh = changesMap[pp.id_presentacion] || {};
-                                                    const rowChanged = Object.keys(pCh).length > 0;
-                                                    const worst = worstMarginOf(pp);
-                                                    return (
-                                                        <tr key={pp.id_presentacion} className={
-                                                            rowChanged ? 'bg-amber-50/60' :
-                                                            worst !== null && worst < 0 ? 'bg-red-50/30' :
-                                                            'bg-white'
-                                                        }>
-                                                            <td className="px-3 py-2.5 whitespace-nowrap">
-                                                                <span className="text-[12px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
-                                                                {pp.presentaciones?.descripcion && (
-                                                                    <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
-                                                            <td className="px-3 py-2.5 text-right text-[11px] font-medium text-slate-500">{fmtP(pp.costo)}</td>
-                                                            {PRICE_FIELDS.map(f => {
-                                                                const ch = pCh[f.key];
-                                                                const m  = calcMargin(pp[f.key], pp.costo);
-                                                                return (
-                                                                    <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? 'bg-amber-50' : ''}`}>
-                                                                        <div className="flex flex-col items-end gap-0.5">
-                                                                            <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
-                                                                                {fmtP(pp[f.key])}
-                                                                            </span>
-                                                                            {ch && (
-                                                                                <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
-                                                                                    {fmtP(ch.anterior)}
-                                                                                </span>
-                                                                            )}
-                                                                            <MarginPct pct={m} />
-                                                                        </div>
-                                                                    </td>
-                                                                );
-                                                            })}
-                                                            <td className="px-3 py-2.5 text-center">
-                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
-                                                                    {pp.activo !== false ? 'Activa' : 'Inactiva'}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                        {/* ── RIGHT: Precios ── */}
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-2">
+                                Presentaciones y precios
+                                {hasChanges && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                        <AlertTriangle size={8} /> cambios
+                                    </span>
                                 )}
-                            </div>
+                            </p>
 
-                            {/* Changelog */}
-                            {prodLog.length > 0 && (
+                            {precios.length === 0 ? (
+                                <div className="flex items-center gap-2 text-[11px] text-slate-400 py-3 px-3 rounded-xl bg-slate-50 border border-slate-100">
+                                    <Info size={12} className="text-slate-300 shrink-0" />
+                                    Sin presentaciones en el ERP.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                                    <table className="min-w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-slate-50/95 border-b border-slate-200/60">
+                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
+                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
+                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
+                                                {PRICE_FIELDS.map(f => (
+                                                    <th key={f.key} className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
+                                                ))}
+                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {precios.map(pp => {
+                                                const pCh = changesMap[pp.id_presentacion] || {};
+                                                const rowChanged = Object.keys(pCh).length > 0;
+                                                const worst = worstMarginOf(pp);
+                                                return (
+                                                    <tr key={pp.id_presentacion} className={
+                                                        rowChanged ? 'bg-amber-50/60' :
+                                                        worst !== null && worst < 0 ? 'bg-red-50/30' :
+                                                        'bg-white'
+                                                    }>
+                                                        <td className="px-3 py-2.5 whitespace-nowrap">
+                                                            <span className="text-[12px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
+                                                            {pp.presentaciones?.descripcion && (
+                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
+                                                        <td className="px-3 py-2.5 text-right text-[11px] font-medium text-slate-500">{fmtP(pp.costo)}</td>
+                                                        {PRICE_FIELDS.map(f => {
+                                                            const ch = pCh[f.key];
+                                                            const m  = calcMargin(pp[f.key], pp.costo);
+                                                            return (
+                                                                <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                                    <div className="flex flex-col items-end gap-0.5">
+                                                                        <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
+                                                                            {fmtP(pp[f.key])}
+                                                                        </span>
+                                                                        {ch && (
+                                                                            <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
+                                                                                {fmtP(ch.anterior)}
+                                                                            </span>
+                                                                        )}
+                                                                        <MarginPct pct={m} />
+                                                                    </div>
+                                                                </td>
+                                                            );
+                                                        })}
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Categoría | Cambios ── */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                        {/* Categoría */}
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <Tag size={9} /> Categoría
+                            </p>
+                            <CategoryEditor
+                                ref={categoryRef}
+                                productId={product.id}
+                                initial={product.tipo_medicamento}
+                                categories={categories}
+                                onCategoryCreated={onCategoryCreated}
+                            />
+                        </div>
+
+                        {/* Cambios en el producto */}
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                <History size={9} /> Cambios en el producto
+                            </p>
+                            {prodLog.length === 0 ? (
+                                <p className="text-[11px] text-slate-300 italic">Sin cambios registrados.</p>
+                            ) : (
                                 <div className="rounded-xl bg-amber-50/50 border border-amber-100 px-3.5 py-3 space-y-1.5">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2 flex items-center gap-1.5">
-                                        <History size={9} /> Cambios en el producto
-                                    </p>
                                     {prodLog.map((c, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
                                             <span className="font-mono text-[10px] text-slate-400 shrink-0 bg-white border border-slate-100 px-1.5 py-0.5 rounded">
@@ -764,6 +829,7 @@ export default function TabCatalogo({
     setFilterAntibiotico,
     labOptions        = [],
     catOptions        = [],
+    onCategoryCreated = null,
 }) {
     const branches = useStaff(s => s.branches);
 
@@ -1250,6 +1316,8 @@ export default function TabCatalogo({
                                                     onPhotoUpdated={handlePhotoUpdated}
                                                     onPrinciplesUpdated={handlePrinciplesUpdated}
                                                     onClose={() => setExpandedId(null)}
+                                                    categories={catOptions.map(o => o.value)}
+                                                    onCategoryCreated={onCategoryCreated}
                                                 />
                                             )}
                                         </React.Fragment>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, Search, X, Plus } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 const LiquidSelect = ({
@@ -11,7 +11,9 @@ const LiquidSelect = ({
     disabled = false,
     clearable = true,
     theme = 'light',
-    compact = false
+    compact = false,
+    creatable = false,
+    onCreateOption,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -251,6 +253,25 @@ const LiquidSelect = ({
                         </div>
                         Sin resultados
                     </div>
+                )}
+                {creatable && onCreateOption && searchTerm.trim() &&
+                    !filteredOptions.some(o => o.label.toLowerCase() === searchTerm.trim().toLowerCase()) && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onCreateOption(searchTerm.trim());
+                            setIsOpen(false);
+                            setSearchTerm('');
+                        }}
+                        className={`w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-all border border-transparent flex items-center gap-2 mt-1 ${
+                            isDark
+                                ? 'text-emerald-400 hover:bg-emerald-500/10'
+                                : 'text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                    >
+                        <Plus size={12} strokeWidth={3} className="shrink-0" />
+                        Agregar: <span className="font-black ml-0.5">{searchTerm.trim()}</span>
+                    </button>
                 )}
             </div>
         </div>

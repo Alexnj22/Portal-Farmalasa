@@ -5,7 +5,7 @@ import { useToastStore } from '../../store/toastStore';
 import {
     Package, FlaskConical, MapPin, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
-    Camera,
+    Camera, TrendingDown, TrendingUp, ShieldAlert,
 } from 'lucide-react';
 
 const PAGE_SIZES = [25, 50, 100];
@@ -19,9 +19,39 @@ const PRICE_FIELDS = [
     { key: 'premium',     label: 'Premium' },
 ];
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function fmtP(v) {
     if (v == null || v === '' || parseFloat(v) === 0) return '—';
     return `$${parseFloat(v).toFixed(2)}`;
+}
+
+function calcMargin(vineta, costo) {
+    const v = parseFloat(vineta), c = parseFloat(costo);
+    if (!v || !c || v === 0) return null;
+    return (v - c) / v * 100;
+}
+
+function marginLabel(m) {
+    if (m === null) return null;
+    if (m < 0)  return { label: 'Pérdida',    cls: 'bg-red-100 text-red-700 border-red-200'    };
+    if (m < 15) return { label: 'Margen bajo', cls: 'bg-amber-100 text-amber-700 border-amber-200' };
+    return null;
+}
+
+function MarginBar({ pct }) {
+    const w = Math.min(Math.max(pct, 0), 50);
+    const color = pct < 0 ? 'bg-red-400' : pct < 15 ? 'bg-amber-400' : pct < 25 ? 'bg-emerald-400' : 'bg-emerald-500';
+    return (
+        <div className="flex items-center gap-1.5 w-full">
+            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden min-w-[40px]">
+                <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${w * 2}%` }} />
+            </div>
+            <span className={`text-[10px] font-bold tabular-nums shrink-0 ${pct < 0 ? 'text-red-600' : pct < 15 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {pct.toFixed(1)}%
+            </span>
+        </div>
+    );
 }
 
 // ── SmartPagination ───────────────────────────────────────────────────────────
@@ -65,6 +95,62 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
+// ── MarginAnalysis (inside expanded row) ─────────────────────────────────────
+
+function MarginAnalysis({ precios }) {
+    if (!precios?.length) return null;
+
+    const withMargin = precios
+        .map(pp => {
+            const m = calcMargin(pp.vineta, pp.costo);
+            return { tipo: pp.presentaciones?.tipo || '—', margin: m, vineta: pp.vineta, costo: pp.costo };
+        })
+        .filter(p => p.margin !== null);
+
+    if (!withMargin.length) return null;
+
+    const worst  = withMargin.reduce((a, b) => a.margin < b.margin ? a : b);
+    const best   = withMargin.reduce((a, b) => a.margin > b.margin ? a : b);
+    const hasIssues = worst.margin < 15;
+
+    return (
+        <div className="mb-3">
+            {/* Alert banner */}
+            {worst.margin < 0 ? (
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl mb-3 text-[11px] text-red-700">
+                    <ShieldAlert size={14} className="shrink-0 mt-0.5 text-red-500" />
+                    <div>
+                        <span className="font-black">Pérdida detectada — </span>
+                        <span>{worst.tipo}: margen {worst.margin.toFixed(1)}%. El precio de víneta ({fmtP(worst.vineta)}) no cubre el costo ({fmtP(worst.costo)}).</span>
+                    </div>
+                </div>
+            ) : worst.margin < 15 ? (
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl mb-3 text-[11px] text-amber-700">
+                    <AlertTriangle size={13} className="shrink-0 mt-0.5 text-amber-500" />
+                    <div>
+                        <span className="font-black">Margen bajo — </span>
+                        <span>{worst.tipo}: {worst.margin.toFixed(1)}%. Estándar farmacéutico: 20–35%.</span>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* Mini cards row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                {withMargin.slice(0, 4).map((p, i) => (
+                    <div key={i} className={`px-2.5 py-2 rounded-xl border ${p.margin < 0 ? 'bg-red-50 border-red-100' : p.margin < 15 ? 'bg-amber-50 border-amber-100' : 'bg-white border-slate-100'}`}>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate mb-1">{p.tipo}</p>
+                        <MarginBar pct={p.margin} />
+                        <div className="flex justify-between mt-1">
+                            <span className="text-[9px] text-slate-400">Costo {fmtP(p.costo)}</span>
+                            <span className="text-[9px] text-slate-500 font-semibold">Víneta {fmtP(p.vineta)}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated }) {
@@ -78,11 +164,10 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         const farmBranches = (branches || []).filter(b => ['FARMACIA', 'BODEGA'].includes(b.type));
         setLocations(farmBranches.map(b => {
             const saved = (data.locations || []).find(l => l.branch_id === b.id);
-            const hasEstante = !!(saved?.estante);
             return {
                 branch_id:   b.id,
                 branch_name: b.name,
-                tipo:   hasEstante ? 'estante' : 'vitrina',
+                tipo:   saved?.estante ? 'estante' : 'vitrina',
                 numero: saved?.estante || saved?.vitrina || '',
                 peldano: saved?.peldano || '',
             };
@@ -102,8 +187,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             const { error: upErr } = await supabase.storage.from('product-photos').upload(path, file, { upsert: true });
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
-            const { error: dbErr } = await supabase.from('products').update({ foto_url: publicUrl }).eq('id', product.id);
-            if (dbErr) throw dbErr;
+            await supabase.from('products').update({ foto_url: publicUrl }).eq('id', product.id);
             onPhotoUpdated(product.id, publicUrl);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
         } catch (err) {
@@ -117,8 +201,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             const toUpsert = locations
                 .filter(l => l.numero.trim() || l.peldano.trim())
                 .map(l => ({
-                    product_id: product.id,
-                    branch_id:  l.branch_id,
+                    product_id: product.id, branch_id: l.branch_id,
                     vitrina:    l.tipo === 'vitrina' ? (l.numero.trim() || null) : null,
                     estante:    l.tipo === 'estante' ? (l.numero.trim() || null) : null,
                     peldano:    l.peldano.trim() || null,
@@ -150,7 +233,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         );
     }
 
-    // Build changes map: { [id_presentacion]: { [campo]: { anterior, nuevo } } }
+    // Price changelog map: { [id_presentacion]: { [campo]: { anterior } } }
     const changesMap = {};
     (data?.changelog || []).forEach(c => {
         if (!changesMap[c.id_presentacion]) changesMap[c.id_presentacion] = {};
@@ -159,22 +242,24 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, detected_at: c.detected_at };
     });
 
-    const precios = data?.precios || [];
-    const prodLog = data?.prodLog || [];
-    const hasAnyChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
+    const precios = data?.precios  || [];
+    const prodLog = data?.prodLog  || [];
+    const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
     return (
         <tr className="border-t border-blue-100/60">
             <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
                 <div className="px-5 py-4">
-                    <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-5">
+                    <div className="grid grid-cols-1 xl:grid-cols-[1fr_220px] gap-5">
 
-                        {/* ── Left: precios table ── */}
+                        {/* ── Left: margin analysis + prices ── */}
                         <div className="min-w-0">
-                            <div className="flex items-center justify-between mb-2.5">
+
+                            {/* Top row: foto + section header */}
+                            <div className="flex items-center justify-between mb-2">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                    Presentaciones y precios del ERP
-                                    {hasAnyChanges && (
+                                    Presentaciones y precios
+                                    {hasChanges && (
                                         <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
                                             <AlertTriangle size={8} /> cambios
                                         </span>
@@ -188,22 +273,27 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
                             </div>
 
+                            {/* Margin analysis cards */}
+                            <MarginAnalysis precios={precios} />
+
+                            {/* Price table */}
                             {precios.length === 0 ? (
                                 <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
                                     <Info size={12} className="text-slate-300 shrink-0" />
-                                    Sin presentaciones registradas en el ERP.
+                                    Sin presentaciones en el ERP.
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto rounded-xl border border-slate-100">
                                     <table className="min-w-full text-sm">
                                         <thead>
                                             <tr className="bg-slate-50/95 border-b border-slate-200/60">
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap text-left">Presentación</th>
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
                                                 <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
-                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">Costo</th>
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
                                                 {PRICE_FIELDS.map(f => (
                                                     <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
                                                 ))}
+                                                <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center whitespace-nowrap">Margen</th>
                                                 <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
                                             </tr>
                                         </thead>
@@ -211,8 +301,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                             {precios.map(pp => {
                                                 const pCh = changesMap[pp.id_presentacion] || {};
                                                 const rowChanged = Object.keys(pCh).length > 0;
+                                                const margin = calcMargin(pp.vineta, pp.costo);
                                                 return (
-                                                    <tr key={pp.id_presentacion} className={rowChanged ? 'bg-amber-50/60' : 'bg-white'}>
+                                                    <tr key={pp.id_presentacion} className={rowChanged ? 'bg-amber-50/60' : margin !== null && margin < 0 ? 'bg-red-50/30' : 'bg-white'}>
                                                         <td className="px-3 py-2 whitespace-nowrap">
                                                             <span className="text-[11px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
                                                             {pp.presentaciones?.descripcion && (
@@ -238,6 +329,12 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                                 </td>
                                                             );
                                                         })}
+                                                        {/* Margin column */}
+                                                        <td className="px-3 py-2 min-w-[100px]">
+                                                            {margin !== null
+                                                                ? <MarginBar pct={margin} />
+                                                                : <span className="text-slate-300 text-[10px]">—</span>}
+                                                        </td>
                                                         <td className="px-3 py-2 text-center">
                                                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
                                                                 {pp.activo !== false ? 'Activa' : 'Inactiva'}
@@ -251,6 +348,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 </div>
                             )}
 
+                            {/* Product-level changelog */}
                             {prodLog.length > 0 && (
                                 <div className="mt-3 space-y-1">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Cambios en el producto</p>
@@ -271,59 +369,59 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* ── Right: ubicaciones ── */}
                         <div className="shrink-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-                                <MapPin size={9} /> Ubicación en sucursales
-                            </p>
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <MapPin size={9} /> Ubicación
+                                </p>
+                            </div>
+
                             {locations.length === 0 ? (
                                 <p className="text-[11px] text-slate-300 italic">Sin sucursales.</p>
                             ) : (
-                                <div>
-                                    <div className="space-y-0 divide-y divide-slate-50">
-                                        {locations.map((loc, i) => (
-                                            <div key={loc.branch_id} className="py-2.5 first:pt-0">
-                                                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">{loc.branch_name}</p>
-                                                <div className="flex items-center gap-2">
-                                                    {/* Vitrina / Estante toggle */}
-                                                    <div className="flex items-center bg-slate-100 rounded-full p-0.5">
-                                                        {['vitrina', 'estante'].map(t => (
-                                                            <button key={t}
-                                                                onClick={() => setLocField(i, 'tipo', t)}
-                                                                className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide transition-all ${
-                                                                    loc.tipo === t
-                                                                        ? 'bg-white text-slate-700 shadow-sm'
-                                                                        : 'text-slate-400 hover:text-slate-500'
-                                                                }`}>
-                                                                {t.charAt(0).toUpperCase() + t.slice(1)}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                    {/* Número */}
-                                                    <div className="flex-1">
-                                                        <input
-                                                            value={loc.numero}
-                                                            onChange={e => setLocField(i, 'numero', e.target.value)}
-                                                            placeholder="N°"
-                                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white/80"
-                                                        />
-                                                    </div>
-                                                    {/* Peldaño */}
-                                                    <div className="w-[60px]">
-                                                        <input
-                                                            value={loc.peldano}
-                                                            onChange={e => setLocField(i, 'peldano', e.target.value)}
-                                                            placeholder="Peld."
-                                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white/80"
-                                                        />
-                                                    </div>
+                                <div className="rounded-xl border border-slate-100 bg-white overflow-hidden">
+                                    {locations.map((loc, i) => {
+                                        const hasData = loc.numero.trim() || loc.peldano.trim();
+                                        return (
+                                            <div key={loc.branch_id} className={`flex items-center gap-2 px-3 py-2 ${i > 0 ? 'border-t border-slate-50' : ''} ${hasData ? '' : 'opacity-50'}`}>
+                                                {/* Branch name */}
+                                                <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 w-[54px] shrink-0">{loc.branch_name}</span>
+                                                {/* Toggle */}
+                                                <div className="flex items-center bg-slate-100 rounded-full p-0.5 shrink-0">
+                                                    {['vitrina', 'estante'].map(t => (
+                                                        <button key={t}
+                                                            onClick={() => setLocField(i, 'tipo', t)}
+                                                            className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wide transition-all ${
+                                                                loc.tipo === t
+                                                                    ? 'bg-white text-[#007AFF] shadow-sm'
+                                                                    : 'text-slate-400'
+                                                            }`}>
+                                                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                                                        </button>
+                                                    ))}
                                                 </div>
+                                                {/* Número */}
+                                                <input value={loc.numero}
+                                                    onChange={e => setLocField(i, 'numero', e.target.value)}
+                                                    placeholder="N°"
+                                                    className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center"
+                                                />
+                                                <span className="text-[8px] text-slate-300 shrink-0">Peld.</span>
+                                                {/* Peldaño */}
+                                                <input value={loc.peldano}
+                                                    onChange={e => setLocField(i, 'peldano', e.target.value)}
+                                                    placeholder="—"
+                                                    className="w-[34px] px-1.5 py-1 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 text-center"
+                                                />
                                             </div>
-                                        ))}
+                                        );
+                                    })}
+                                    <div className="px-3 py-2 border-t border-slate-50">
+                                        <button onClick={saveLocations} disabled={saving}
+                                            className="w-full py-1.5 rounded-lg bg-[#007AFF] text-white text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-[#0055CC] transition-colors disabled:opacity-50">
+                                            {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                                            {saving ? 'Guardando...' : 'Guardar'}
+                                        </button>
                                     </div>
-                                    <button onClick={saveLocations} disabled={saving}
-                                        className="w-full mt-3 py-2 rounded-xl bg-[#007AFF] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-[#0055CC] transition-colors disabled:opacity-50 shadow-sm">
-                                        {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                                        {saving ? 'Guardando...' : 'Guardar ubicaciones'}
-                                    </button>
                                 </div>
                             )}
                         </div>
@@ -349,9 +447,45 @@ export default function TabCatalogo({ searchTerm = '' }) {
     const [expandedCache, setExpandedCache] = useState({});
     const [loadingExpandedId, setLoadingExpandedId] = useState(null);
     const [filterActivo, setFilterActivo]   = useState('activos');
+    const [filterMargin, setFilterMargin]   = useState('all'); // 'all' | 'perdida' | 'bajo'
     const [changedIds, setChangedIds]       = useState(new Set());
+    const [marginMap, setMarginMap]         = useState({});
+    // bad margin IDs for filtering (all pages)
+    const [badMarginIds, setBadMarginIds]   = useState(null);
+    const [loadingBadIds, setLoadingBadIds] = useState(false);
 
-    const loadProducts = useCallback(async (q, pg, ps, fa) => {
+    // Prefetch refs
+    const prefetchTimerRef = useRef(null);
+    const prefetchingRef   = useRef(new Set());
+
+    // Load bad margin IDs when filter changes
+    useEffect(() => {
+        if (filterMargin === 'all') { setBadMarginIds(null); return; }
+        setLoadingBadIds(true);
+        supabase.from('product_precios')
+            .select('product_id, vineta, costo')
+            .eq('activo', true)
+            .gt('vineta', 0)
+            .gt('costo', 0)
+            .then(({ data }) => {
+                const seen = new Map();
+                (data || []).forEach(pp => {
+                    const m = calcMargin(pp.vineta, pp.costo);
+                    if (m === null) return;
+                    const prev = seen.get(pp.product_id);
+                    if (prev === undefined || m < prev) seen.set(pp.product_id, m);
+                });
+                const ids = [];
+                seen.forEach((m, pid) => {
+                    const isBad = filterMargin === 'perdida' ? m < 0 : m < 15;
+                    if (isBad) ids.push(pid);
+                });
+                setBadMarginIds(ids);
+                setLoadingBadIds(false);
+            });
+    }, [filterMargin]);
+
+    const loadProducts = useCallback(async (q, pg, ps, fa, bids) => {
         setLoading(true);
         try {
             let qb = supabase
@@ -361,6 +495,10 @@ export default function TabCatalogo({ searchTerm = '' }) {
                 .range((pg - 1) * ps, pg * ps - 1);
             if (q.trim()) qb = qb.ilike('nombre', `%${q.trim()}%`);
             if (fa === 'activos') qb = qb.eq('activo', true);
+            if (bids !== null) {
+                if (bids.length === 0) { setProducts([]); setTotal(0); setLoading(false); return; }
+                qb = qb.in('id', bids);
+            }
             const { data, count, error } = await qb;
             if (error) throw error;
             const rows = data || [];
@@ -369,57 +507,93 @@ export default function TabCatalogo({ searchTerm = '' }) {
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
-                const [{ data: pc }, { data: prc }] = await Promise.all([
+                const [{ data: pc }, { data: prc }, { data: pp }] = await Promise.all([
                     supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
                     supabase.from('products_changelog').select('product_id').in('product_id', ids),
+                    supabase.from('product_precios').select('product_id, vineta, costo').in('product_id', ids).eq('activo', true).gt('vineta', 0).gt('costo', 0),
                 ]);
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
+
+                // Build margin map
+                const newMarginMap = {};
+                (pp || []).forEach(row => {
+                    const m = calcMargin(row.vineta, row.costo);
+                    if (m === null) return;
+                    if (newMarginMap[row.product_id] === undefined || m < newMarginMap[row.product_id])
+                        newMarginMap[row.product_id] = m;
+                });
+                setMarginMap(newMarginMap);
             } else {
                 setChangedIds(new Set());
+                setMarginMap({});
             }
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
     }, []);
 
-    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin]);
 
     useEffect(() => {
-        const t = setTimeout(() => loadProducts(searchTerm, page, pageSize, filterActivo), 200);
+        if (filterMargin !== 'all' && badMarginIds === null && !loadingBadIds) return;
+        if (filterMargin !== 'all' && loadingBadIds) return;
+        const t = setTimeout(() => loadProducts(searchTerm, page, pageSize, filterActivo, filterMargin === 'all' ? null : (badMarginIds || null)), 200);
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, badMarginIds, loadingBadIds, loadProducts]);
+
+    // Prefetch on hover
+    const prefetchRow = useCallback((productId) => {
+        if (expandedCache[productId] || prefetchingRef.current.has(productId)) return;
+        prefetchTimerRef.current = setTimeout(async () => {
+            prefetchingRef.current.add(productId);
+            try {
+                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }] = await Promise.all([
+                    supabase.from('product_precios')
+                        .select('id_presentacion, activo, costo, vineta, descuento_1, vip, clinica, mayoreo, premium, presentaciones(tipo, descripcion, factor)')
+                        .eq('product_id', productId).order('activo', { ascending: false }),
+                    supabase.from('product_precios_changelog')
+                        .select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at')
+                        .eq('product_id', productId).order('detected_at', { ascending: false }),
+                    supabase.from('products_changelog')
+                        .select('campo, valor_anterior, valor_nuevo, detected_at')
+                        .eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
+                    supabase.from('product_locations')
+                        .select('branch_id, vitrina, estante, peldano')
+                        .eq('product_id', productId),
+                ]);
+                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [] } }));
+            } catch { /* silent */ }
+        }, 120);
+    }, [expandedCache]);
+
+    const cancelPrefetch = useCallback(() => {
+        clearTimeout(prefetchTimerRef.current);
+    }, []);
 
     const toggleRow = useCallback(async (productId) => {
+        cancelPrefetch();
         if (expandedId === productId) { setExpandedId(null); return; }
         setExpandedId(productId);
         if (expandedCache[productId]) return;
         setLoadingExpandedId(productId);
+        prefetchingRef.current.add(productId);
         try {
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }] = await Promise.all([
                 supabase.from('product_precios')
                     .select('id_presentacion, activo, costo, vineta, descuento_1, vip, clinica, mayoreo, premium, presentaciones(tipo, descripcion, factor)')
-                    .eq('product_id', productId)
-                    .order('activo', { ascending: false }),
+                    .eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog')
                     .select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at')
-                    .eq('product_id', productId)
-                    .order('detected_at', { ascending: false }),
+                    .eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog')
                     .select('campo, valor_anterior, valor_nuevo, detected_at')
-                    .eq('product_id', productId)
-                    .order('detected_at', { ascending: false })
-                    .limit(20),
+                    .eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
                 supabase.from('product_locations')
                     .select('branch_id, vitrina, estante, peldano')
                     .eq('product_id', productId),
             ]);
-            setExpandedCache(c => ({ ...c, [productId]: {
-                precios:   precios   || [],
-                changelog: changelog || [],
-                prodLog:   prodLog   || [],
-                locations: locations || [],
-            }}));
+            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [] } }));
         } finally { setLoadingExpandedId(null); }
-    }, [expandedId, expandedCache]);
+    }, [expandedId, expandedCache, cancelPrefetch]);
 
     const handlePhotoUpdated = useCallback((productId, url) => {
         setProducts(ps => ps.map(p => p.id === productId ? { ...p, foto_url: url } : p));
@@ -432,6 +606,7 @@ export default function TabCatalogo({ searchTerm = '' }) {
 
             {/* ── Filter chips ── */}
             <div className="flex items-center gap-2 flex-wrap">
+                {/* Activo filter */}
                 <div className="flex items-center bg-white/70 border border-slate-200 rounded-full p-0.5 gap-0.5">
                     {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
                         <button key={v} onClick={() => setFilterActivo(v)}
@@ -441,8 +616,32 @@ export default function TabCatalogo({ searchTerm = '' }) {
                         </button>
                     ))}
                 </div>
+
+                {/* Margin filters */}
+                <button onClick={() => setFilterMargin(v => v === 'perdida' ? 'all' : 'perdida')}
+                    className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
+                        filterMargin === 'perdida'
+                            ? 'bg-red-100 border-red-300 text-red-700 ring-1 ring-red-200 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterMargin === 'perdida' ? 'bg-red-500' : 'bg-slate-300'}`} />
+                    {loadingBadIds && filterMargin === 'perdida' ? <Loader2 size={9} className="animate-spin" /> : <ShieldAlert size={9} />}
+                    Pérdida
+                </button>
+
+                <button onClick={() => setFilterMargin(v => v === 'bajo' ? 'all' : 'bajo')}
+                    className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
+                        filterMargin === 'bajo'
+                            ? 'bg-amber-100 border-amber-300 text-amber-700 ring-1 ring-amber-200 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600'
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterMargin === 'bajo' ? 'bg-amber-500' : 'bg-slate-300'}`} />
+                    {loadingBadIds && filterMargin === 'bajo' ? <Loader2 size={9} className="animate-spin" /> : <TrendingDown size={9} />}
+                    Margen bajo
+                </button>
+
                 {!loading && total > 0 && (
-                    <span className="text-[10px] text-slate-400">{total.toLocaleString()} productos</span>
+                    <span className="text-[10px] text-slate-400 ml-1">{total.toLocaleString()} productos</span>
                 )}
             </div>
 
@@ -454,7 +653,15 @@ export default function TabCatalogo({ searchTerm = '' }) {
                             <tbody>
                                 {Array.from({ length: 8 }).map((_, i) => (
                                     <tr key={i} className="border-b border-slate-50 last:border-0">
-                                        <td className="px-4 py-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-slate-100 animate-pulse shrink-0" /><div className="space-y-1.5"><div className="h-3 w-40 rounded-full bg-slate-100 animate-pulse" /><div className="h-2.5 w-24 rounded-full bg-slate-100 animate-pulse" /></div></div></td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-slate-100 animate-pulse shrink-0" />
+                                                <div className="space-y-1.5">
+                                                    <div className="h-3 w-40 rounded-full bg-slate-100 animate-pulse" />
+                                                    <div className="h-2.5 w-24 rounded-full bg-slate-100 animate-pulse" />
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-28 rounded-full bg-slate-100 animate-pulse" /></td>
                                         <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
                                         <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-14 rounded-full bg-slate-100 animate-pulse" /></td>
@@ -485,13 +692,17 @@ export default function TabCatalogo({ searchTerm = '' }) {
                             </thead>
                             <tbody>
                                 {products.map(p => {
-                                    const isExpanded   = expandedId === p.id;
+                                    const isExpanded    = expandedId === p.id;
                                     const isLoadingThis = loadingExpandedId === p.id;
-                                    const hasChanges   = changedIds.has(p.id);
+                                    const hasChanges    = changedIds.has(p.id);
+                                    const worstMargin   = marginMap[p.id];
+                                    const marginInfo    = worstMargin !== undefined ? marginLabel(worstMargin) : null;
                                     return (
                                         <React.Fragment key={p.id}>
                                             <tr
                                                 onClick={() => toggleRow(p.id)}
+                                                onMouseEnter={() => prefetchRow(p.id)}
+                                                onMouseLeave={cancelPrefetch}
                                                 className={`border-t border-black/[0.04] cursor-pointer transition-colors ${
                                                     isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'
                                                 }`}>
@@ -509,6 +720,14 @@ export default function TabCatalogo({ searchTerm = '' }) {
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                                 <span className="text-[12px] font-bold text-slate-700 leading-tight">{p.nombre}</span>
+                                                                {marginInfo && (
+                                                                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${marginInfo.cls}`}>
+                                                                        {worstMargin < 0
+                                                                            ? <ShieldAlert size={7} />
+                                                                            : <TrendingDown size={7} />}
+                                                                        {marginInfo.label}
+                                                                    </span>
+                                                                )}
                                                                 {hasChanges && (
                                                                     <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
                                                                         <AlertTriangle size={7} /> cambios

@@ -328,10 +328,10 @@ export const AuthProvider = ({ children }) => {
         body: { code: cleanId },
       });
 
-      if (fnErr || !ensured?.ok || !ensured?.user) return false;
+      // Pre-login call returns only {email, isKiosk} — full profile comes after auth via onAuthStateChange
+      if (fnErr || !ensured?.ok || !ensured?.user?.email) return false;
 
-      const u = ensured.user;
-      const email = u.email || `${cleanId}@staff.local`;
+      const email = ensured.user.email;
       const password = cleanId;
 
       const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
@@ -341,14 +341,9 @@ export const AuthProvider = ({ children }) => {
 
       if (authErr || !authData?.session) return false;
 
-      // 🚨 FLUIDEZ: Limpiamos caché viejo, guardamos nuevo, actualizamos el state y devolvemos true INMEDIATAMENTE
+      // Full profile will arrive via onAuthStateChange → ensure_user_by_code (authenticated)
       clearErpCache();
-      localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
-
-      setPermsLoading(true);
-      setUser(u);
-      startIdleWatcher(u);
 
       return true;
     } catch (e) {

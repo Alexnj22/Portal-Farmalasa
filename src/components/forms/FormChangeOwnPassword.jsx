@@ -11,7 +11,9 @@ const FormChangeOwnPassword = ({ onClose }) => {
     const [done, setDone]       = useState(false);
 
     const save = async () => {
-        if (newPass.length < 6) { useToastStore.getState().showToast('Error', 'Mínimo 6 caracteres.', 'error'); return; }
+        if (newPass.length < 8) { useToastStore.getState().showToast('Error', 'Mínimo 8 caracteres.', 'error'); return; }
+        if (!/[A-Z]/.test(newPass)) { useToastStore.getState().showToast('Error', 'Debe incluir al menos una mayúscula.', 'error'); return; }
+        if (!/[0-9]/.test(newPass)) { useToastStore.getState().showToast('Error', 'Debe incluir al menos un número.', 'error'); return; }
         if (newPass !== confirm) { useToastStore.getState().showToast('Error', 'Las contraseñas no coinciden.', 'error'); return; }
         setLoading(true);
         const { error } = await supabase.auth.updateUser({ password: newPass });
@@ -38,7 +40,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                         <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
                         <input
                             type={showPw ? 'text' : 'password'}
-                            placeholder="Mínimo 6 caracteres"
+                            placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
                             value={val}
                             onChange={e => setter(e.target.value)}
                             className="w-full pl-10 pr-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"

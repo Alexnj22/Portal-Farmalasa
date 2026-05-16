@@ -16,7 +16,9 @@ const FormSetPassword = ({ formData, onClose }) => {
         e.preventDefault();
         setError('');
 
-        if (password.length < 6) { setError('Mínimo 6 caracteres.'); return; }
+        if (password.length < 8) { setError('Mínimo 8 caracteres.'); return; }
+        if (!/[A-Z]/.test(password)) { setError('Debe incluir al menos una letra mayúscula.'); return; }
+        if (!/[0-9]/.test(password)) { setError('Debe incluir al menos un número.'); return; }
         if (password !== confirm) { setError('Las contraseñas no coinciden.'); return; }
 
         setLoading(true);
@@ -70,7 +72,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                     <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-slate-400 pointer-events-none" />
                     <input
                         type="password"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                         value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
                         className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"

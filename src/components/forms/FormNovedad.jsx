@@ -573,6 +573,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <button type="button" disabled={!!codeConflict}
                                 onClick={() => {
                                     const win = window.open('', '_blank');
+                                    const safeName = (activeEmployee?.name || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                                    const safePin  = (formData.newKioskPin || '').replace(/[^A-Z0-9]/g, '');
                                     win.document.write(`
                                         <html>
                                         <head>
@@ -584,10 +586,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         </style>
                                         </head>
                                         <body>
-                                            <h3>${activeEmployee?.name || ''}</h3>
+                                            <h3>${safeName}</h3>
                                             <svg id="barcode"></svg>
                                             <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3/dist/JsBarcode.all.min.js"></script>
-                                            <script>JsBarcode("#barcode","${formData.newKioskPin}",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})</script>
+                                            <script>JsBarcode("#barcode","${safePin}",{format:"CODE128",width:2,height:50,displayValue:false,margin:0})</script>
                                         </body>
                                         </html>
                                     `);
@@ -683,7 +685,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     <XCircle size={14} strokeWidth={3}/>
                                 </div>
                             )}
-                            <input type="file" className="hidden" accept=".pdf, image/*" onChange={(e) => setFormData(prev => ({ ...prev, file: e.target.files?.[0] }))} />
+                            <input type="file" className="hidden" accept=".pdf,image/jpeg,image/png,image/webp" onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
+                                if (!ALLOWED.includes(f.type)) { alert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
+                                if (f.size > 10 * 1024 * 1024) { alert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
+                                setFormData(prev => ({ ...prev, file: f }));
+                            }} />
                         </label>
                     </div>
                 </>

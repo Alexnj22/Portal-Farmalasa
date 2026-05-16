@@ -172,18 +172,8 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     const [progress, setProgress] = useState(0);
     const [log, setLog] = useState('');
 
-    const getCredentials = (branchName) => {
-        const normalizedName = branchName?.trim();
-        const map = {
-            "La Popular": { username: "documentop.supervisor", password: "documento9999" },
-            "Salud 1": { username: "documento1.supervisor", password: "documento9999" },
-            "Salud 2": { username: "documento2.supervisor", password: "documento9999" },
-            "Salud 3": { username: "documento3.supervisor", password: "documento9999" },
-            "Salud 4": { username: "documento4.supervisor", password: "documento9999" },
-            "Salud 5": { username: "documento5.supervisor", password: "documento9999" }
-        };
-        return map[normalizedName] || null;
-    };
+    // Credentials are resolved server-side from Supabase Secrets (ERP_BRANCH_MAP).
+    // The client only passes branchId — never username/password.
 
     const generateChunks = (startStr, endStr, daysPerChunk) => {
         let chunks = [];
@@ -204,12 +194,6 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     };
 
     const startHistoricalSync = async () => {
-        const creds = getCredentials(liveBranch?.name);
-        if (!creds) {
-            alert(`No hay credenciales configuradas en el script para la sucursal: ${liveBranch?.name}`);
-            return;
-        }
-
         const confirmSync = window.confirm(`¿Iniciar descarga histórica para ${liveBranch?.name}?\nEl sistema descargará los datos en bloques mensuales para mayor velocidad.`);
         if (!confirmSync) return;
 
@@ -228,10 +212,8 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             try {
                 const payload = {
                     branchId: liveBranch.id,
-                    username: creds.username,
-                    password: creds.password,
                     fechaI: chunk.i,
-                    fechaF: chunk.f
+                    fechaF: chunk.f,
                 };
 
                 const { data, error } = await supabase.functions.invoke('sync-wfm-sales', { body: payload });

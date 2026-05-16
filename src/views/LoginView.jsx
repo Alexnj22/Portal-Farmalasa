@@ -265,7 +265,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const handleChangePassword = async () => {
         setChangePassError('');
-        if (newPassword.length < 6) { setChangePassError('Mínimo 6 caracteres.'); return; }
+        if (newPassword.length < 8) { setChangePassError('Mínimo 8 caracteres.'); return; }
+        if (!/[A-Z]/.test(newPassword)) { setChangePassError('Debe incluir al menos una letra mayúscula.'); return; }
+        if (!/[0-9]/.test(newPassword)) { setChangePassError('Debe incluir al menos un número.'); return; }
         if (newPassword !== confirmPassword) { setChangePassError('Las contraseñas no coinciden.'); return; }
         setChangePassLoading(true);
         try {

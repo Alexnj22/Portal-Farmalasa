@@ -1,11 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders } from "../_shared/security.ts"
 
 // SALY — Asistente de Operaciones
 const SALY_PERSONA = `Eres Saly, asistente ejecutiva de operaciones de "Farmacia La Salud" y "La Popular". Tienes un perfil de consultora senior: analítica, precisa y orientada a decisiones. Tu comunicación es formal, moderna y sin adornos — vas directo al dato y a la acción.
@@ -17,8 +12,9 @@ Reglas Universales:
 4. Formato de hora 12h (am/pm) siempre.`;
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders, status: 200 }) 
+    return new Response('ok', { headers: corsHeaders, status: 200 })
   }
 
   try {
@@ -40,8 +36,14 @@ Deno.serve(async (req) => {
 
     const payloadReq = await req.json();
     const { action, payload, userContext } = payloadReq;
-    
+
     if (!action) throw new Error("No se especificó la 'action' en el body.")
+
+    // Sanitize free-text user input to prevent prompt injection
+    const MAX_QUESTION_LEN = 600;
+    if (payload?.question && typeof payload.question === 'string') {
+      payload.question = payload.question.slice(0, MAX_QUESTION_LEN).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+    }
 
     const supabase = createClient(supabaseUrl, supabaseAdminKey)
 

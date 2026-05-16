@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
+import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
@@ -363,6 +364,8 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 const PayrollView = ({ openModal }) => {
+    const { rolePerms }          = useAuth();
+    const canApprove             = rolePerms === 'ALL' || !!rolePerms?.['payroll']?.can_approve;
     const branches               = useStaffStore(s => s.branches);
     const payrollPeriods         = useStaffStore(s => s.payrollPeriods);
     const payrollEntries         = useStaffStore(s => s.payrollEntries);
@@ -439,7 +442,8 @@ const PayrollView = ({ openModal }) => {
     const downloadCSV = () => {
         const rows = filteredEntries.map(e => {
             const emp = e.employee || {};
-            return `${emp.name||''},${emp.bank_name||''},${emp.account_number||''},${emp.account_type||''},${round2(e.net_pay).toFixed(2)}`;
+            const acct = canApprove ? (emp.account_number || '') : '****';
+            return `${emp.name||''},${emp.bank_name||''},${acct},${emp.account_type||''},${round2(e.net_pay).toFixed(2)}`;
         }).join('\n');
         const blob = new Blob([`Nombre,Banco,Cuenta,Tipo,Monto\n${rows}`], { type: 'text/csv' });
         const url  = URL.createObjectURL(blob);

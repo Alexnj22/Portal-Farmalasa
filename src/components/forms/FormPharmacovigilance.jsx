@@ -109,10 +109,18 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     </label>
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-purple-50/50 border-purple-300 hover:bg-purple-50/80' : 'bg-slate-50/50 border-slate-300 hover:bg-purple-50/30 hover:border-purple-300/60'}`}>
                         <input 
-                            type="file" 
-                            accept="application/pdf,image/*" 
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-                            onChange={(e) => updateLegalField('farmacovigilanciaAuthFile', e.target.files?.[0] || null)} 
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/png,image/webp"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            onChange={(e) => {
+                                const f = e.target.files?.[0] || null;
+                                if (f) {
+                                    const ALLOWED = ['application/pdf','image/jpeg','image/png','image/webp'];
+                                    if (!ALLOWED.includes(f.type)) { alert('Solo se permiten PDF, JPG o PNG.'); e.target.value = ''; return; }
+                                    if (f.size > 10 * 1024 * 1024) { alert('El archivo no debe superar 10 MB.'); e.target.value = ''; return; }
+                                }
+                                updateLegalField('farmacovigilanciaAuthFile', f);
+                            }}
                         />
                         
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-white text-purple-600 border border-purple-200' : 'bg-white text-slate-400 border border-slate-100 group-hover:text-purple-500 group-hover:border-purple-200'}`}>

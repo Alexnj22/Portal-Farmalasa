@@ -1,22 +1,19 @@
 // supabase/functions/ensure_user_by_code/index.ts
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const json = (body: unknown) =>
-  new Response(JSON.stringify(body), {
-    status: 200, 
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+import { getCorsHeaders, requireAuthUser } from "../_shared/security.ts";
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" });
+  if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
+
+  // Check if caller has a valid session (present for rehydration/onAuthStateChange calls).
+  // Pre-login calls (kiosk/portal login flow) have no session yet — that's intentional.
+  const authenticatedUser = await requireAuthUser(req);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -120,7 +117,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Respuesta limpia — igual en ambos flujos
+    // If caller is authenticated (rehydration / onAuthStateChange), return full profile.
+    // If unauthenticated (pre-login flow), return only the minimum needed to complete sign-in.
+    if (!authenticatedUser) {
+      return json({ ok: true, isNewUser, user: { email, isKiosk: matchedByKioskPin } });
+    }
+
     return json({
       ok: true,
       isNewUser,

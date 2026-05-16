@@ -1,29 +1,33 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, requireAuthUser, getErpCredsByBranch } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const user = await requireAuthUser(req);
+  if (!user) {
+    return new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
-    const { branchId, username, password, fechaI, fechaF } = await req.json();
+    const { branchId, fechaI, fechaF } = await req.json();
 
-    // --- LÓGICA DE TIEMPO REAL ---
-    // Si no se envían fechas (desde el Cron), usamos el día de hoy
-    // Usamos el offset de El Salvador (UTC-6)
+    if (!branchId) throw new Error("branchId es obligatorio.");
+
+    // Credentials come from Supabase Secrets (ERP_BRANCH_MAP), never from the client
+    const creds = getErpCredsByBranch(Number(branchId));
+    if (!creds) throw new Error(`No hay credenciales ERP configuradas para branchId ${branchId}.`);
+
+    const { username, password } = creds;
+
+    // Usar offset de El Salvador (UTC-6)
     const tzOffset = -6 * 60 * 60 * 1000;
-    const hoyCST = new Date(Date.now() + tzOffset).toISOString().split('T')[0];
-    
+    const hoyCST = new Date(Date.now() + tzOffset).toISOString().split("T")[0];
     const startDate = fechaI || hoyCST;
     const endDate = fechaF || hoyCST;
-    // -----------------------------
-
-    if (!branchId || !username || !password) {
-      throw new Error("Faltan parámetros obligatorios.");
-    }
 
     // 1. LOGIN
     const loginForm = new URLSearchParams();

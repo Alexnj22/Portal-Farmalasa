@@ -292,13 +292,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const handlePhotoUpload = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, file: file, photoPreview: reader.result }));
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            useToastStore.getState().showToast('Archivo inválido', 'Solo se permiten imágenes JPG, PNG o WEBP.', 'error');
+            return;
         }
+        if (file.size > MAX_SIZE) {
+            useToastStore.getState().showToast('Archivo muy grande', 'La foto no debe superar 5 MB.', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData(prev => ({ ...prev, file: file, photoPreview: reader.result }));
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleKeyDown = (e) => {

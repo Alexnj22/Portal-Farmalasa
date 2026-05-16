@@ -1,33 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getCorsHeaders, getErpBranchMap, getErpInvMap, requireInvokeSecret } from "../_shared/security.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// ERP credentials are loaded from Supabase Secret ERP_BRANCH_MAP and ERP_INV_BRANCH_MAP (JSON arrays).
+// Never hardcode credentials here — set the secrets in the Supabase Dashboard → Edge Functions → Secrets.
 
-const BRANCH_MAP = [
-  { branchId: 4,  erpId: 1, username: 'documento1.supervisor', password: 'documento9999' }, // Salud 1
-  { branchId: 25, erpId: 2, username: 'documento2.supervisor', password: 'documento9999' }, // Salud 2
-  { branchId: 27, erpId: 3, username: 'documento3.supervisor', password: 'documento9999' }, // Salud 3
-  { branchId: 28, erpId: 4, username: 'documento4.supervisor', password: 'documento9999' }, // Salud 4
-  { branchId: 29, erpId: 7, username: 'documento5.supervisor', password: 'documento9999' }, // Salud 5
-  { branchId: 2,  erpId: 5, username: 'documentop.supervisor', password: 'documento9999' }, // La Popular
-];
-
-// Inventory branches: regular sucursales use id_ubicacion=0; bodega (erpId=6) has general (1) + vencidos (2)
-const INV_BRANCH_MAP = [
-  { erpId: 1, username: 'documento1.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 2, username: 'documento2.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 3, username: 'documento3.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 4, username: 'documento4.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 7, username: 'documento5.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 5, username: 'documentop.supervisor', password: 'documento9999', ubicaciones: [{ id: 0, isVencidos: false }] },
-  { erpId: 6, username: 'documentop.supervisor', password: 'documento9999', ubicaciones: [{ id: 1, isVencidos: false }, { id: 2, isVencidos: true }] }, // Bodega
-];
-
-const LOGIN_URL = 'https://clientesdte3.oss.com.sv/farma_salud/login.php';
-const DTE_BASE  = 'https://clientesdte3.oss.com.sv/farma_salud/descarga_dte_emitidos_json.php';
-const INV_BASE  = 'https://clientesdte3.oss.com.sv/farma_salud/reporte_inventario_json.php';
+const LOGIN_URL = "https://clientesdte3.oss.com.sv/farma_salud/login.php";
+const DTE_BASE  = "https://clientesdte3.oss.com.sv/farma_salud/descarga_dte_emitidos_json.php";
+const INV_BASE  = "https://clientesdte3.oss.com.sv/farma_salud/reporte_inventario_json.php";
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
   let lastErr: any;
@@ -356,9 +335,19 @@ async function syncInventoryBranch(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  if (!requireInvokeSecret(req)) {
+    return new Response(JSON.stringify({ ok: false, error: "UNAUTHORIZED" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
+    const BRANCH_MAP = getErpBranchMap();
+    const INV_BRANCH_MAP = getErpInvMap();
+
     const body = await req.json().catch(() => ({}));
     const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false } = body;
 

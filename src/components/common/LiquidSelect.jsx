@@ -141,16 +141,6 @@ const LiquidSelect = ({
         };
     }, [isOpen]);
 
-    // Reset highlight when options change or dropdown closes
-    useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]);
-
-    // Scroll highlighted item into view
-    useEffect(() => {
-        if (highlightedIndex >= 0 && itemRefs.current[highlightedIndex]) {
-            itemRefs.current[highlightedIndex].scrollIntoView({ block: 'nearest' });
-        }
-    }, [highlightedIndex]);
-
     const handleOpen = () => {
         if (disabled) return;
         updateCoords(); // Calculamos el espacio antes de abrir
@@ -205,6 +195,16 @@ const LiquidSelect = ({
     const selectableOptions = useMemo(() =>
         filteredOptions.filter(o => !o.isSeparator && !o.disabled),
     [filteredOptions]);
+
+    // Reset highlight when options change or dropdown closes
+    useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]);
+
+    // Scroll highlighted item into view
+    useEffect(() => {
+        if (highlightedIndex >= 0 && itemRefs.current[highlightedIndex]) {
+            itemRefs.current[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }, [highlightedIndex]);
 
     const dropdownContent = isOpen && (
         <div

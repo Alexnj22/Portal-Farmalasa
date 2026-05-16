@@ -16,6 +16,10 @@ const LiquidSelect = ({
     compact = false,
     creatable = false,
     onCreateOption,
+    // When options count exceeds this, require the user to type before showing results
+    searchThreshold = 80,
+    // Max options to render in the dropdown (applied after filtering)
+    maxOptions = 100,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -160,15 +164,20 @@ const LiquidSelect = ({
         setSearchTerm('');
     };
 
+    const isLargeList = options.length > searchThreshold;
+
     const filteredOptions = useMemo(() => {
-        if (!searchTerm) return options;
+        // Large lists: require at least 1 char before showing results
+        if (isLargeList && !searchTerm) return [];
+        if (!searchTerm) return options.slice(0, maxOptions);
         const q = normalize(searchTerm);
-        return options.filter(opt =>
+        const matched = options.filter(opt =>
             !opt.isSeparator &&
             (normalize(opt.label).includes(q) ||
             (opt.sublabel && normalize(opt.sublabel).includes(q)))
         );
-    }, [options, searchTerm]);
+        return matched.slice(0, maxOptions);
+    }, [options, searchTerm, isLargeList, maxOptions]);
 
     const dropdownContent = isOpen && (
         <div
@@ -203,7 +212,14 @@ const LiquidSelect = ({
                         {placeholder}
                     </button>
                 )}
-                {filteredOptions.length > 0 ? (
+                {isLargeList && !searchTerm ? (
+                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
+                            <Search size={20} strokeWidth={2} />
+                        </div>
+                        Escribe para buscar
+                    </div>
+                ) : filteredOptions.length > 0 ? (
                     filteredOptions.map((opt) => (
                         opt.isSeparator ? (
                             <div

@@ -537,7 +537,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             : 'bg-white border-slate-200 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'
                         }`}>
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterAntibiotico ? 'bg-rose-500' : 'bg-slate-300'}`} />
-                        Contiene antibiótico
+                        Receta Médica
                         {filterAntibiotico && <X size={9} className="text-rose-400 ml-0.5 shrink-0" />}
                     </button>
                 )}
@@ -653,7 +653,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700">Puntos</span>
                                                             )}
                                                             {abInvoicesSet.has(r.id) && (
-                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>
+                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>
                                                             )}
                                                         </div>
                                                     )}
@@ -730,7 +730,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                     <div className="text-[11px] font-semibold text-slate-700 leading-snug">{it.descripcion}</div>
                                                                                     {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                         <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>}
+                                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
                                                                                             {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
                                                                                             {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
                                                                                             {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono">Vence {it.fecha_vencimiento}</span>}

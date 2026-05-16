@@ -123,6 +123,18 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, isNewUser, user: { email, isKiosk: matchedByKioskPin } });
     }
 
+    // Update JWT user_metadata so RLS policies (role_permissions, etc.) can validate role
+    await admin.auth.admin.updateUserById(authenticatedUser.id, {
+      user_metadata: {
+        ...(authenticatedUser.user_metadata || {}),
+        roleId: employee.role_id ?? null,
+        systemRole: (employee.system_role as string | null) || "EMPLEADO",
+        isAdmin: employee.is_admin === true,
+        branchId: employee.branch_id ?? null,
+        must_change_password: false,
+      },
+    });
+
     return json({
       ok: true,
       isNewUser,
@@ -131,6 +143,7 @@ Deno.serve(async (req: Request) => {
         name: employee.name,
         code: employee.code,
         role: (employee.role as { name?: string } | null)?.name || "Sin Cargo",
+        roleId: employee.role_id ?? null,
         branchId: employee.branch_id,
         photo: employee.photo_url,
         email,

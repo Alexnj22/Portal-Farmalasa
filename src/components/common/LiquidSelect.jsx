@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, Search, X, Plus } from 'lucide-react';
+import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -20,6 +20,12 @@ const LiquidSelect = ({
     searchThreshold = 80,
     // Max options to render in the dropdown (applied after filtering)
     maxOptions = 100,
+    // Server-side search: parent handles filtering, just display options as-is
+    serverSearch = false,
+    // Called (debounced 300ms) when user types — use to run server queries
+    onSearchChange = null,
+    // Show loading spinner inside dropdown
+    isLoading = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +33,7 @@ const LiquidSelect = ({
     const selectRef = useRef(null);
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
+    const searchDebounceRef = useRef(null);
 
     // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
     const [coords, setCoords] = useState({ 
@@ -164,9 +171,13 @@ const LiquidSelect = ({
         setSearchTerm('');
     };
 
-    const isLargeList = options.length > searchThreshold;
+    const isLargeList = !serverSearch && options.length > searchThreshold;
 
     const filteredOptions = useMemo(() => {
+        if (serverSearch) {
+            // Parent controls data — show everything except separator and empty-value (handled by clearable button)
+            return options.filter(opt => !opt.isSeparator && opt.value !== '');
+        }
         // Large lists: require typing before showing anything
         if (isLargeList && !searchTerm) return [];
         if (!searchTerm) return options.slice(0, maxOptions);
@@ -177,7 +188,7 @@ const LiquidSelect = ({
             (normalize(opt.label).includes(q) ||
             (opt.sublabel && normalize(opt.sublabel).includes(q)))
         );
-    }, [options, searchTerm, isLargeList, maxOptions]);
+    }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
 
     const dropdownContent = isOpen && (
         <div
@@ -212,7 +223,12 @@ const LiquidSelect = ({
                         {placeholder}
                     </button>
                 )}
-                {isLargeList && !searchTerm ? (
+                {isLoading ? (
+                    <div className={`px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                        <Loader2 size={15} strokeWidth={2.5} className="animate-spin" />
+                        Buscando...
+                    </div>
+                ) : isLargeList && !searchTerm ? (
                     <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
                             <Search size={20} strokeWidth={2} />
@@ -270,6 +286,11 @@ const LiquidSelect = ({
                             <Search size={20} strokeWidth={2} />
                         </div>
                         Sin resultados
+                    </div>
+                )}
+                {serverSearch && !searchTerm && !isLoading && (
+                    <div className={`px-4 pt-1 pb-2 text-[10px] font-bold text-center ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+                        Escribe para buscar
                     </div>
                 )}
                 {creatable && onCreateOption && searchTerm.trim() &&
@@ -332,7 +353,14 @@ const LiquidSelect = ({
                         ref={inputRef}
                         type="text"
                         className={`w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSearchTerm(val);
+                            if (onSearchChange) {
+                                clearTimeout(searchDebounceRef.current);
+                                searchDebounceRef.current = setTimeout(() => onSearchChange(val), 300);
+                            }
+                        }}
                         value={searchTerm}
                         placeholder="Buscar..."
                     />

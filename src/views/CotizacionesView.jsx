@@ -217,9 +217,7 @@ const Row = ({ label, val, className = 'text-slate-600' }) => (
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user, rolePerms } = useAuth();
-    // scope ALL → puede elegir cualquier sucursal; BRANCH → bloqueado a la suya
-    const canChooseBranch = rolePerms === 'ALL' || rolePerms?.['cotizaciones']?.scope === 'ALL';
+    const { user } = useAuth();
 
     // modo: 'list' | 'new' | 'edit' | 'view'
     const [mode, setMode]       = useState('list');
@@ -228,9 +226,13 @@ export default function CotizacionesView() {
     // Datos maestros
     const [products,    setProducts]    = useState([]);
     const [pricesMap,   setPricesMap]   = useState({});
-    const [customers,   setCustomers]   = useState([]);
     const [branches,    setBranches]    = useState([]);
     const [loadingData, setLoadingData] = useState(true);
+
+    // Búsqueda de clientes (server-side — 22 k+ registros)
+    const [customerResults,   setCustomerResults]   = useState([]);
+    const [customerSearching, setCustomerSearching] = useState(false);
+    const [selectedCustomer,  setSelectedCustomer]  = useState(null);
 
     // Lista
     const [cotizaciones, setCotizaciones] = useState([]);
@@ -262,14 +264,17 @@ export default function CotizacionesView() {
     // ── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
         const load = async () => {
-            const [prodsRes, pricesData, custRes, branchRes] = await Promise.all([
+            // Fast path: products + branches first — UI is usable immediately
+            const [prodsRes, branchRes] = await Promise.all([
                 supabase.from('products').select('id, nombre').eq('activo', true).order('nombre').limit(8000),
-                loadAllPrices(),
-                supabase.from('customers').select('id, name, nit').order('name').limit(3000),
                 supabase.from('branches').select('id, name').order('name'),
             ]);
             setProducts(prodsRes.data || []);
+            setBranches(branchRes.data || []);
+            setLoadingData(false);
 
+            // Prices load in background — doesn't block the form
+            const pricesData = await loadAllPrices();
             const map = {};
             pricesData.forEach(p => {
                 const pid = String(p.product_id);
@@ -287,12 +292,32 @@ export default function CotizacionesView() {
                 });
             });
             setPricesMap(map);
-            setCustomers(custRes.data || []);
-            setBranches(branchRes.data || []);
-            setLoadingData(false);
         };
         load();
     }, []);
+
+    // ── Búsqueda de clientes (server-side) ───────────────────────────────────
+    const searchCustomers = useCallback(async (term) => {
+        if (!term || !term.trim()) { setCustomerResults([]); return; }
+        setCustomerSearching(true);
+        const { data } = await supabase
+            .from('customers')
+            .select('id, name, nit')
+            .ilike('name', `%${term.trim()}%`)
+            .order('name')
+            .limit(60);
+        setCustomerResults(data || []);
+        setCustomerSearching(false);
+    }, []);
+
+    const handleCustomerChange = useCallback((v) => {
+        setCustomerId(v);
+        if (!v) { setSelectedCustomer(null); return; }
+        const found = customerResults.find(c => String(c.id) === String(v))
+            || (selectedCustomer && String(selectedCustomer.id) === String(v) ? selectedCustomer : null);
+        setSelectedCustomer(found || null);
+        if (found?.nit) setDocType('CCF');
+    }, [customerResults, selectedCustomer]);
 
     // ── Carga lista ───────────────────────────────────────────────────────────
     const loadList = useCallback(async () => {
@@ -316,16 +341,21 @@ export default function CotizacionesView() {
     const productOptions = useMemo(() =>
         products.map(p => ({ value: String(p.id), label: p.nombre })), [products]);
 
-    const customerOptions = useMemo(() => [
-        { value: '', label: 'Consumidor Final' },
-        ...customers.map(c => ({
+    const customerOptions = useMemo(() => {
+        const results = customerResults.map(c => ({
             value: String(c.id), label: c.name,
             sublabel: c.nit ? `NIT: ${c.nit}` : undefined,
-        })),
-    ], [customers]);
-
-    const branchOptions = useMemo(() =>
-        branches.map(b => ({ value: String(b.id), label: b.name })), [branches]);
+        }));
+        // Keep selected customer visible even when not in current search results
+        if (selectedCustomer && !results.find(r => r.value === String(selectedCustomer.id))) {
+            results.unshift({
+                value: String(selectedCustomer.id),
+                label: selectedCustomer.name,
+                sublabel: selectedCustomer.nit ? `NIT: ${selectedCustomer.nit}` : undefined,
+            });
+        }
+        return [{ value: '', label: 'Consumidor Final' }, ...results];
+    }, [customerResults, selectedCustomer]);
 
     // ── Helpers de líneas ─────────────────────────────────────────────────────
     const addProduct = useCallback((productId) => {
@@ -385,16 +415,17 @@ export default function CotizacionesView() {
         setNotes(''); setItems([]); setAddProdId(''); setSaveError('');
         setEditingId(null);
         setFormBranchId(user?.branchId ? String(user.branchId) : '');
+        setSelectedCustomer(null);
+        setCustomerResults([]);
     };
 
     // ── Shared payload builder ────────────────────────────────────────────────
     const buildPayload = () => {
-        const selCustomer = customers.find(c => String(c.id) === String(customerId));
         return {
             fecha,
             customer_id:       customerId || null,
-            customer_name:     selCustomer?.name || 'Consumidor Final',
-            customer_nit:      selCustomer?.nit  || null,
+            customer_name:     selectedCustomer?.name || 'Consumidor Final',
+            customer_nit:      selectedCustomer?.nit  || null,
             document_type:     docType,
             payment_type:      paymentType,
             applies_retention: appliesRetention,
@@ -475,6 +506,8 @@ export default function CotizacionesView() {
         const { data: itemsData } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
         setFecha(cot.fecha);
         setCustomerId(cot.customer_id ? String(cot.customer_id) : '');
+        setSelectedCustomer(cot.customer_id ? { id: cot.customer_id, name: cot.customer_name, nit: cot.customer_nit } : null);
+        setCustomerResults([]);
         setDocType(cot.document_type);
         setPaymentType(cot.payment_type);
         setAppliesRetention(cot.applies_retention || false);
@@ -628,7 +661,10 @@ export default function CotizacionesView() {
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Cliente</label>
                             <LiquidSelect value={customerId}
-                                onChange={v => { setCustomerId(v); const c = customers.find(c => String(c.id) === String(v)); if (c?.nit) setDocType('CCF'); }}
+                                onChange={handleCustomerChange}
+                                onSearchChange={searchCustomers}
+                                serverSearch
+                                isLoading={customerSearching}
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
@@ -649,17 +685,12 @@ export default function CotizacionesView() {
                         {/* Sucursal */}
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Sucursal</label>
-                            {canChooseBranch ? (
-                                <LiquidSelect value={formBranchId} onChange={setFormBranchId}
-                                    options={branchOptions} placeholder="Seleccionar sucursal..." icon={Building2} compact clearable={false} />
-                            ) : (
-                                <div className="flex items-center gap-2 bg-white/40 border border-white/60 rounded-2xl px-4 py-3">
-                                    <Building2 size={13} className="text-slate-400 shrink-0" />
-                                    <span className="text-[12px] font-bold text-slate-600 truncate">
-                                        {branches.find(b => String(b.id) === String(formBranchId))?.name || '—'}
-                                    </span>
-                                </div>
-                            )}
+                            <div className="flex items-center gap-2 bg-white/40 border border-white/60 rounded-2xl px-4 py-3 min-h-[46px]">
+                                <Building2 size={13} className="text-slate-400 shrink-0" />
+                                <span className="text-[12px] font-bold text-slate-600 truncate">
+                                    {branches.find(b => String(b.id) === String(formBranchId))?.name || '—'}
+                                </span>
+                            </div>
                         </div>
 
                         {/* Retención */}

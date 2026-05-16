@@ -167,16 +167,16 @@ const LiquidSelect = ({
     const isLargeList = options.length > searchThreshold;
 
     const filteredOptions = useMemo(() => {
-        // Large lists: require at least 1 char before showing results
+        // Large lists: require typing before showing anything
         if (isLargeList && !searchTerm) return [];
         if (!searchTerm) return options.slice(0, maxOptions);
         const q = normalize(searchTerm);
-        const matched = options.filter(opt =>
+        // When searching, show ALL matches — no cap, user knows what they want
+        return options.filter(opt =>
             !opt.isSeparator &&
             (normalize(opt.label).includes(q) ||
             (opt.sublabel && normalize(opt.sublabel).includes(q)))
         );
-        return matched.slice(0, maxOptions);
     }, [options, searchTerm, isLargeList, maxOptions]);
 
     const dropdownContent = isOpen && (

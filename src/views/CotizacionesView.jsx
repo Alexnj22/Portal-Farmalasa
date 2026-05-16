@@ -254,8 +254,10 @@ export default function CotizacionesView() {
     const [addProdId,        setAddProdId]        = useState('');
     const [saving,           setSaving]           = useState(false);
     const [saveError,        setSaveError]        = useState('');
-    // Sucursal seleccionada en el formulario (admin puede cambiar)
-    const [formBranchId,     setFormBranchId]     = useState('');
+    // Sucursal seleccionada en el formulario — inicia con la rama del usuario
+    const [formBranchId, setFormBranchId] = useState(() =>
+        user?.branchId ? String(user.branchId) : ''
+    );
 
     // ── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -291,13 +293,6 @@ export default function CotizacionesView() {
         };
         load();
     }, []);
-
-    // Inicializar sucursal del formulario según el usuario
-    useEffect(() => {
-        if (!loadingData) {
-            setFormBranchId(user?.branchId ? String(user.branchId) : (branches[0] ? String(branches[0].id) : ''));
-        }
-    }, [loadingData, user?.branchId]);
 
     // ── Carga lista ───────────────────────────────────────────────────────────
     const loadList = useCallback(async () => {
@@ -389,7 +384,7 @@ export default function CotizacionesView() {
         setPaymentType('EFECTIVO'); setAppliesRetention(false);
         setNotes(''); setItems([]); setAddProdId(''); setSaveError('');
         setEditingId(null);
-        setFormBranchId(user?.branchId ? String(user.branchId) : (branches[0] ? String(branches[0].id) : ''));
+        setFormBranchId(user?.branchId ? String(user.branchId) : '');
     };
 
     // ── Shared payload builder ────────────────────────────────────────────────

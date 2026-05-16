@@ -198,6 +198,8 @@ const loadAllPrices = async () => {
             .from('product_precios')
             .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(descripcion)')
             .eq('activo', true)
+            .order('product_id', { ascending: true })
+            .order('id_presentacion', { ascending: true })
             .range(from, from + size - 1);
         if (error || !data || data.length === 0) break;
         all.push(...data);

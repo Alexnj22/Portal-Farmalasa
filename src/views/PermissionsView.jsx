@@ -59,7 +59,7 @@ const MODULE_GROUPS = [
         modules: [
             { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false },
             { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false },
-            { key: 'cotizaciones',  label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt, hasApprove: false },
+            { key: 'cotizaciones',  label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt, hasApprove: false, hasScope: true },
         ],
     },
     {

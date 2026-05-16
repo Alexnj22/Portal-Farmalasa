@@ -216,7 +216,9 @@ const Row = ({ label, val, className = 'text-slate-600' }) => (
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user, isAdmin } = useAuth();
+    const { user, rolePerms } = useAuth();
+    // scope ALL → puede elegir cualquier sucursal; BRANCH → bloqueado a la suya
+    const canChooseBranch = rolePerms === 'ALL' || rolePerms?.['cotizaciones']?.scope === 'ALL';
 
     // modo: 'list' | 'new' | 'edit' | 'view'
     const [mode, setMode]       = useState('list');
@@ -644,7 +646,7 @@ export default function CotizacionesView() {
                         {/* Sucursal */}
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Sucursal</label>
-                            {isAdmin ? (
+                            {canChooseBranch ? (
                                 <LiquidSelect value={formBranchId} onChange={setFormBranchId}
                                     options={branchOptions} placeholder="Seleccionar sucursal..." icon={Building2} compact clearable={false} />
                             ) : (

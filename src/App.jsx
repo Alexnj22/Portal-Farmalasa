@@ -36,6 +36,7 @@ import PayrollView from "./views/PayrollView";
 import VentasView from "./views/VentasView";
 import ProductosView from "./views/ProductosView";
 import FacturacionView from "./views/FacturacionView";
+import CotizacionesView from "./views/CotizacionesView";
 import EncuestaView from "./views/EncuestaView";
 import EncuestaAdminView from "./views/EncuestaAdminView";
 import NoAccessView from "./views/NoAccessView";
@@ -474,6 +475,7 @@ function MainApp() {
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
+                                    <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />

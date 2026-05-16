@@ -107,7 +107,14 @@ function currentHoraCorte(ffin) {
     return `${pad(nowSV.getUTCHours())}:${pad(nowSV.getUTCMinutes())}:00`;
 }
 
-function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBranch, branchOptions }) {
+function FilterControls({
+    monthRange, setMonthRange,
+    filterBranch, setFilterBranch,
+    branchOptions,
+    filterAnuladas, setFilterAnuladas,
+    filterAntibiotico, setFilterAntibiotico,
+    showAntibiotico,
+}) {
     const defaultRange = (() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })();
 
     const handlePeriodChange = (val) => setMonthRange(val);
@@ -115,9 +122,11 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
     const resetAll = () => {
         setFilterBranch('');
         setMonthRange(defaultRange);
+        setFilterAnuladas(false);
+        setFilterAntibiotico(false);
     };
 
-    const hasActiveFilters = !!filterBranch || monthRange !== defaultRange;
+    const hasActiveFilters = !!filterBranch || monthRange !== defaultRange || filterAnuladas || filterAntibiotico;
 
     const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
     const branchW = selectedBranch
@@ -158,7 +167,34 @@ function FilterControls({ monthRange, setMonthRange, filterBranch, setFilterBran
                 )}
             </div>
 
-            {/* Clear all — only when both filters active */}
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Toggle filters */}
+            <div className="flex items-center gap-1 px-2">
+                <button onClick={() => setFilterAnuladas(v => !v)}
+                    className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
+                        filterAnuladas
+                            ? 'bg-red-100 border-red-200 text-red-700 shadow-sm'
+                            : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                    }`}>
+                    Anuladas
+                    {filterAnuladas && <X size={9} strokeWidth={3} />}
+                </button>
+
+                {showAntibiotico && (
+                    <button onClick={() => setFilterAntibiotico(v => !v)}
+                        className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
+                            filterAntibiotico
+                                ? 'bg-rose-100 border-rose-200 text-rose-700 shadow-sm'
+                                : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                        }`}>
+                        Receta Médica
+                        {filterAntibiotico && <X size={9} strokeWidth={3} />}
+                    </button>
+                )}
+            </div>
+
+            {/* Clear all */}
             {hasActiveFilters && (
                 <>
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
@@ -514,33 +550,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     ].map(card => <StatCard key={card.label} {...card} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
-            </div>
-
-            {/* Active filter chips */}
-            <div className="flex items-center gap-2 flex-wrap -mt-2">
-                <button onClick={() => setFilterAnuladas(v => !v)}
-                    className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
-                        filterAnuladas
-                        ? 'bg-red-100 border-red-300 text-red-700 ring-1 ring-red-200 shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                    }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterAnuladas ? 'bg-red-500' : 'bg-slate-300'}`} />
-                    Solo anuladas
-                    {filterAnuladas && <X size={9} className="text-red-400 ml-0.5 shrink-0" />}
-                </button>
-                {antibioticIds.size > 0 && (
-                    <button onClick={() => setFilterAntibiotico(v => !v)}
-                        className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all select-none ${
-                            filterAntibiotico
-                            ? 'bg-rose-100 border-rose-300 text-rose-700 ring-1 ring-rose-200 shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'
-                        }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterAntibiotico ? 'bg-rose-500' : 'bg-slate-300'}`} />
-                        Receta Médica
-                        {filterAntibiotico && <X size={9} className="text-rose-400 ml-0.5 shrink-0" />}
-                    </button>
-                )}
+                <FilterControls
+                    monthRange={monthRange} setMonthRange={setMonthRange}
+                    filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                    branchOptions={branchOptions}
+                    filterAnuladas={filterAnuladas} setFilterAnuladas={setFilterAnuladas}
+                    filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
+                    showAntibiotico={antibioticIds.size > 0}
+                />
             </div>
 
             {loadingRows && rows.length === 0 ? (

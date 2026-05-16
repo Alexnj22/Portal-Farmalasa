@@ -358,7 +358,7 @@ export default function CotizacionesView() {
 
             // Prices load in background — doesn't block the form
             const pricesData = await loadAllPrices();
-            const TIPO_ORDER = { UNIDAD: 0, BLISTER: 1, CAJA: 2 };
+            const tipoOrder = t => t.startsWith('UNIDAD') ? 0 : t.startsWith('BLISTER') ? 1 : t.startsWith('CAJA') ? 2 : 99;
             const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
             const map = {};
             pricesData.forEach(p => {
@@ -386,8 +386,8 @@ export default function CotizacionesView() {
             // Sort presentations per product: UNIDAD < BLISTER < CAJA, then by pack qty
             Object.values(map).forEach(arr => {
                 arr.sort((a, b) => {
-                    const ta = TIPO_ORDER[a.tipoRaw] ?? 99;
-                    const tb = TIPO_ORDER[b.tipoRaw] ?? 99;
+                    const ta = tipoOrder(a.tipoRaw);
+                    const tb = tipoOrder(b.tipoRaw);
                     if (ta !== tb) return ta - tb;
                     const qa = parseInt((a.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');
                     const qb = parseInt((b.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');

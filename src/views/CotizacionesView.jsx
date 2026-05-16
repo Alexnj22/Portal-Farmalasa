@@ -358,19 +358,16 @@ export default function CotizacionesView() {
 
             // Prices load in background — doesn't block the form
             const pricesData = await loadAllPrices();
-            const tipoOrder = t => t.startsWith('UNIDAD') ? 0 : t.startsWith('BLISTER') ? 1 : t.startsWith('CAJA') ? 2 : 99;
             const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
             const map = {};
             pricesData.forEach(p => {
                 const pid = String(p.product_id);
                 if (!map[pid]) map[pid] = [];
-                const tipoRaw   = (p.presentaciones?.tipo || '').toUpperCase();
-                const tipoLabel = capFirst(tipoRaw) || `Pres. ${p.id_presentacion}`;
+                const tipoLabel = capFirst(p.presentaciones?.tipo || '') || `Pres. ${p.id_presentacion}`;
                 const subdesc   = p.presentaciones?.descripcion || '';
                 const desc      = subdesc ? `${tipoLabel} (${subdesc})` : tipoLabel;
                 map[pid].push({
                     presentacion_id: p.id_presentacion,
-                    tipoRaw,
                     tipoLabel,
                     subdesc,
                     desc,
@@ -383,17 +380,7 @@ export default function CotizacionesView() {
                     precio_7:    p.precio_7,
                 });
             });
-            // Sort presentations per product: UNIDAD < BLISTER < CAJA, then by pack qty
-            Object.values(map).forEach(arr => {
-                arr.sort((a, b) => {
-                    const ta = tipoOrder(a.tipoRaw);
-                    const tb = tipoOrder(b.tipoRaw);
-                    if (ta !== tb) return ta - tb;
-                    const qa = parseInt((a.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');
-                    const qb = parseInt((b.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');
-                    return qa - qb;
-                });
-            });
+            // Order comes from the DB query (id_presentacion ASC) — no custom sort
             setPricesMap(map);
         };
         load();

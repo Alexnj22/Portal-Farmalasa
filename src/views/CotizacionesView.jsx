@@ -303,10 +303,12 @@ export default function CotizacionesView() {
     const [editingId, setEditingId] = useState(null);
 
     // Datos maestros
-    const [products,    setProducts]    = useState([]);
-    const [pricesMap,   setPricesMap]   = useState({});
-    const [branches,    setBranches]    = useState([]);
-    const [loadingData, setLoadingData] = useState(true);
+    const [pricesMap, setPricesMap] = useState({});
+    const [branches,  setBranches]  = useState([]);
+
+    // Búsqueda de productos (server-side — PostgREST limita a 1000 filas)
+    const [productResults,   setProductResults]   = useState([]);
+    const [productSearching, setProductSearching] = useState(false);
 
     // Búsqueda de clientes (server-side — 22 k+ registros)
     const [customerResults,   setCustomerResults]   = useState([]);
@@ -343,14 +345,10 @@ export default function CotizacionesView() {
     // ── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
         const load = async () => {
-            // Fast path: products + branches first — UI is usable immediately
-            const [prodsRes, branchRes] = await Promise.all([
-                supabase.from('products').select('id, nombre').eq('activo', true).order('nombre').limit(8000),
-                supabase.from('branches').select('id, name').order('name'),
-            ]);
-            setProducts(prodsRes.data || []);
-            setBranches(branchRes.data || []);
-            setLoadingData(false);
+            // Branches: tabla pequeña, carga rápida
+            const { data: branchData } = await supabase
+                .from('branches').select('id, name').order('name');
+            setBranches(branchData || []);
 
             // Prices load in background — doesn't block the form
             const pricesData = await loadAllPrices();
@@ -373,6 +371,21 @@ export default function CotizacionesView() {
             setPricesMap(map);
         };
         load();
+    }, []);
+
+    // ── Búsqueda de productos (server-side) ──────────────────────────────────
+    const searchProducts = useCallback(async (term) => {
+        if (!term || !term.trim()) { setProductResults([]); return; }
+        setProductSearching(true);
+        const { data } = await supabase
+            .from('products')
+            .select('id, nombre')
+            .eq('activo', true)
+            .ilike('nombre', `%${term.trim()}%`)
+            .order('nombre')
+            .limit(20);
+        setProductResults(data || []);
+        setProductSearching(false);
     }, []);
 
     // ── Búsqueda de clientes (server-side) ───────────────────────────────────
@@ -418,7 +431,7 @@ export default function CotizacionesView() {
 
     // ── Opciones ──────────────────────────────────────────────────────────────
     const productOptions = useMemo(() =>
-        products.map(p => ({ value: String(p.id), label: p.nombre })), [products]);
+        productResults.map(p => ({ value: String(p.id), label: p.nombre })), [productResults]);
 
     const customerOptions = useMemo(() => {
         const results = customerResults.map(c => ({
@@ -439,7 +452,7 @@ export default function CotizacionesView() {
     // ── Helpers de líneas ─────────────────────────────────────────────────────
     const addProduct = useCallback((productId) => {
         if (!productId) return;
-        const product = products.find(p => String(p.id) === String(productId));
+        const product = productResults.find(p => String(p.id) === String(productId));
         if (!product) return;
         const presArr   = pricesMap[String(productId)] || [];
         const firstPres = presArr[0];
@@ -456,7 +469,7 @@ export default function CotizacionesView() {
             subtotal:         unitPrice,
         }]);
         setAddProdId('');
-    }, [products, pricesMap]);
+    }, [productResults, pricesMap]);
 
     const updateItem = useCallback((id, field, value) => {
         setItems(prev => prev.map(item => {
@@ -496,6 +509,7 @@ export default function CotizacionesView() {
         setFormBranchId(user?.branchId ? String(user.branchId) : '');
         setSelectedCustomer(null);
         setCustomerResults([]);
+        setProductResults([]);
     };
 
     // ── Shared payload builder ────────────────────────────────────────────────
@@ -742,12 +756,12 @@ export default function CotizacionesView() {
                             )}
                         </div>
                         <div className="w-full sm:w-[320px]">
-                            {loadingData ? (
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 font-bold"><Loader2 size={13} className="animate-spin" />Cargando catálogo...</div>
-                            ) : (
-                                <LiquidSelect value={addProdId} onChange={addProduct} options={productOptions}
-                                    placeholder="Buscar y agregar producto..." icon={Package} compact clearable={false} />
-                            )}
+                            <LiquidSelect value={addProdId} onChange={addProduct}
+                                options={productOptions}
+                                onSearchChange={searchProducts}
+                                serverSearch
+                                isLoading={productSearching}
+                                placeholder="Buscar y agregar producto..." icon={Package} compact clearable={false} />
                         </div>
                     </div>
 

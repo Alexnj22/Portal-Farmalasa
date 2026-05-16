@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     FileText, Plus, Printer, Save, Trash2, X,
-    ChevronLeft, User, CreditCard, Banknote, Building2,
+    ChevronLeft, User, CreditCard, Building2,
     Package, Hash, Receipt, Tag, Percent, CheckCircle2,
     Loader2, AlertCircle, ShoppingCart, Calculator,
-    Edit2, Info, AlertTriangle,
+    Edit2, Info, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidAvatar from '../components/common/LiquidAvatar';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
 const RETENTION_RATE = 0.01;
-// Retención aplica en El Salvador cuando:
-//  · El documento es CCF (Crédito Fiscal)
-//  · El comprador es agente de retención inscrito en el MH
-//  · La base gravada supera los $100
 const RETENTION_THRESHOLD = 100;
 
 const PRICE_COLS = [
@@ -42,17 +39,11 @@ const DOC_OPTS = [
     { value: 'CCF', label: 'CCF — Crédito Fiscal'   },
 ];
 
-const STATUS_STYLE = {
-    ACTIVA:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-    ANULADA: 'bg-red-50 text-red-700 border-red-200',
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtD   = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-// Precios del catálogo incluyen IVA → descomponemos
 const desglose = (precioConIva, cantidad = 1) => {
     const unitSinIva = precioConIva / (1 + IVA_RATE);
     const unitIva    = precioConIva - unitSinIva;
@@ -82,8 +73,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
     const iva     = gross - base;
     const ret     = applies ? base * 0.01 : 0;
     const total   = gross - ret;
-
-    const isCCF  = cot.document_type === 'CCF';
+    const isCCF   = cot.document_type === 'CCF';
 
     const lineRows = itemsArr.map((it, i) => {
         const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
@@ -216,13 +206,21 @@ const loadAllPrices = async () => {
     return all;
 };
 
+// ─── Fila de totales helper ────────────────────────────────────────────────────
+const Row = ({ label, val, className = 'text-slate-600' }) => (
+    <div className="flex justify-between items-center">
+        <span className="text-[11px] font-bold text-slate-500">{label}</span>
+        <span className={`text-[12px] font-bold ${className}`}>{val}</span>
+    </div>
+);
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
 
     // modo: 'list' | 'new' | 'edit' | 'view'
-    const [mode, setMode] = useState('list');
-    const [editingId, setEditingId] = useState(null); // id de la cotización que se edita
+    const [mode, setMode]       = useState('list');
+    const [editingId, setEditingId] = useState(null);
 
     // Datos maestros
     const [products,    setProducts]    = useState([]);
@@ -235,7 +233,7 @@ export default function CotizacionesView() {
     const [cotizaciones, setCotizaciones] = useState([]);
     const [loadingList,  setLoadingList]  = useState(true);
 
-    // Cotización seleccionada para ver
+    // Vista detalle
     const [selectedCot, setSelectedCot] = useState(null);
 
     // Formulario
@@ -249,6 +247,8 @@ export default function CotizacionesView() {
     const [addProdId,        setAddProdId]        = useState('');
     const [saving,           setSaving]           = useState(false);
     const [saveError,        setSaveError]        = useState('');
+    // Sucursal seleccionada en el formulario (admin puede cambiar)
+    const [formBranchId,     setFormBranchId]     = useState('');
 
     // ── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -285,12 +285,19 @@ export default function CotizacionesView() {
         load();
     }, []);
 
+    // Inicializar sucursal del formulario según el usuario
+    useEffect(() => {
+        if (!loadingData) {
+            setFormBranchId(user?.branchId ? String(user.branchId) : (branches[0] ? String(branches[0].id) : ''));
+        }
+    }, [loadingData, user?.branchId]);
+
     // ── Carga lista ───────────────────────────────────────────────────────────
     const loadList = useCallback(async () => {
         setLoadingList(true);
         const { data } = await supabase
             .from('cotizaciones')
-            .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by_name')
+            .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by_name, created_by_photo, branch_id')
             .order('created_at', { ascending: false })
             .limit(300);
         setCotizaciones(data || []);
@@ -301,8 +308,6 @@ export default function CotizacionesView() {
 
     // ── Totales ───────────────────────────────────────────────────────────────
     const totals = useMemo(() => calcTotals(items, appliesRetention), [items, appliesRetention]);
-
-    // Sugerir retención automáticamente
     const suggestRetention = docType === 'CCF' && totals.base > RETENTION_THRESHOLD && !appliesRetention;
 
     // ── Opciones ──────────────────────────────────────────────────────────────
@@ -317,24 +322,27 @@ export default function CotizacionesView() {
         })),
     ], [customers]);
 
+    const branchOptions = useMemo(() =>
+        branches.map(b => ({ value: String(b.id), label: b.name })), [branches]);
+
     // ── Helpers de líneas ─────────────────────────────────────────────────────
     const addProduct = useCallback((productId) => {
         if (!productId) return;
         const product = products.find(p => String(p.id) === String(productId));
         if (!product) return;
-        const presArr  = pricesMap[String(productId)] || [];
+        const presArr   = pricesMap[String(productId)] || [];
         const firstPres = presArr[0];
         const unitPrice = firstPres ? parseFloat(firstPres['vineta'] || 0) : 0;
         setItems(prev => [...prev, {
-            _id:             Date.now() + Math.random(),
-            productId:       String(productId),
-            productName:     product.nombre,
-            presentacionId:  firstPres ? String(firstPres.presentacion_id) : '',
+            _id:              Date.now() + Math.random(),
+            productId:        String(productId),
+            productName:      product.nombre,
+            presentacionId:   firstPres ? String(firstPres.presentacion_id) : '',
             presentacionDesc: firstPres?.desc || '',
-            priceType:       'vineta',
-            cantidad:        1,
-            precioUnitario:  unitPrice,
-            subtotal:        unitPrice,
+            priceType:        'vineta',
+            cantidad:         1,
+            precioUnitario:   unitPrice,
+            subtotal:         unitPrice,
         }]);
         setAddProdId('');
     }, [products, pricesMap]);
@@ -374,6 +382,48 @@ export default function CotizacionesView() {
         setPaymentType('EFECTIVO'); setAppliesRetention(false);
         setNotes(''); setItems([]); setAddProdId(''); setSaveError('');
         setEditingId(null);
+        setFormBranchId(user?.branchId ? String(user.branchId) : (branches[0] ? String(branches[0].id) : ''));
+    };
+
+    // ── Shared payload builder ────────────────────────────────────────────────
+    const buildPayload = () => {
+        const selCustomer = customers.find(c => String(c.id) === String(customerId));
+        return {
+            fecha,
+            customer_id:       customerId || null,
+            customer_name:     selCustomer?.name || 'Consumidor Final',
+            customer_nit:      selCustomer?.nit  || null,
+            document_type:     docType,
+            payment_type:      paymentType,
+            applies_retention: appliesRetention,
+            subtotal_gravado:  totals.base,
+            iva_amount:        totals.iva,
+            retention_amount:  totals.retention,
+            total:             totals.total,
+            notes:             notes || null,
+            branch_id:         formBranchId ? parseInt(formBranchId) : (user?.branchId || null),
+            created_by:        user?.id    || null,
+            created_by_name:   user?.name  || null,
+            created_by_photo:  user?.photo || null,
+        };
+    };
+
+    const buildItemRows = (cotId) => items.map((it, idx) => ({
+        cotizacion_id:     cotId,
+        product_id:        parseInt(it.productId),
+        product_nombre:    it.productName,
+        presentacion_id:   it.presentacionId ? parseInt(it.presentacionId) : null,
+        presentacion_desc: it.presentacionDesc || null,
+        price_type:        it.priceType,
+        cantidad:          it.cantidad,
+        precio_unitario:   it.precioUnitario,
+        subtotal:          it.subtotal,
+        sort_order:        idx,
+    }));
+
+    const insertItems = async (cotId) => {
+        const { error } = await supabase.from('cotizacion_items').insert(buildItemRows(cotId));
+        if (error) throw error;
     };
 
     // ── Guardar nueva ─────────────────────────────────────────────────────────
@@ -383,24 +433,12 @@ export default function CotizacionesView() {
         try {
             const { data: numData, error: numErr } = await supabase.rpc('next_cotizacion_numero');
             if (numErr) throw numErr;
-            const selCustomer = customers.find(c => String(c.id) === String(customerId));
-            const payload = {
-                numero: numData, fecha,
-                customer_id: customerId || null,
-                customer_name: selCustomer?.name || 'Consumidor Final',
-                customer_nit: selCustomer?.nit || null,
-                document_type: docType, payment_type: paymentType,
-                applies_retention: appliesRetention,
-                subtotal_gravado: totals.base, iva_amount: totals.iva,
-                retention_amount: totals.retention, total: totals.total,
-                notes: notes || null,
-                branch_id: user?.branchId || null,
-                created_by: user?.id || null, created_by_name: user?.name || null,
-            };
-            const { data: cotData, error: cotErr } = await supabase.from('cotizaciones').insert(payload).select().single();
+            const { data: cotData, error: cotErr } = await supabase
+                .from('cotizaciones').insert({ numero: numData, ...buildPayload() }).select().single();
             if (cotErr) throw cotErr;
             await insertItems(cotData.id);
-            setSelectedCot({ ...cotData, cotizacion_items: buildItemRows(cotData.id) });
+            const { data: freshItems } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cotData.id).order('sort_order');
+            setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
         } catch (e) { setSaveError(e.message || 'Error al guardar.'); }
         setSaving(false);
@@ -411,20 +449,9 @@ export default function CotizacionesView() {
         if (items.length === 0) { setSaveError('Agrega al menos un producto.'); return; }
         setSaveError(''); setSaving(true);
         try {
-            const selCustomer = customers.find(c => String(c.id) === String(customerId));
-            const payload = {
-                fecha,
-                customer_id: customerId || null,
-                customer_name: selCustomer?.name || 'Consumidor Final',
-                customer_nit: selCustomer?.nit || null,
-                document_type: docType, payment_type: paymentType,
-                applies_retention: appliesRetention,
-                subtotal_gravado: totals.base, iva_amount: totals.iva,
-                retention_amount: totals.retention, total: totals.total,
-                notes: notes || null,
-                updated_at: new Date().toISOString(),
-            };
-            const { data: cotData, error: cotErr } = await supabase.from('cotizaciones').update(payload).eq('id', editingId).select().single();
+            const { data: cotData, error: cotErr } = await supabase
+                .from('cotizaciones').update({ ...buildPayload(), updated_at: new Date().toISOString() })
+                .eq('id', editingId).select().single();
             if (cotErr) throw cotErr;
             await supabase.from('cotizacion_items').delete().eq('cotizacion_id', editingId);
             await insertItems(editingId);
@@ -435,28 +462,13 @@ export default function CotizacionesView() {
         setSaving(false);
     };
 
-    const buildItemRows = (cotId) => items.map((it, idx) => ({
-        cotizacion_id: cotId, product_id: parseInt(it.productId),
-        product_nombre: it.productName,
-        presentacion_id: it.presentacionId ? parseInt(it.presentacionId) : null,
-        presentacion_desc: it.presentacionDesc || null,
-        price_type: it.priceType, cantidad: it.cantidad,
-        precio_unitario: it.precioUnitario, subtotal: it.subtotal, sort_order: idx,
-    }));
-
-    const insertItems = async (cotId) => {
-        const { error } = await supabase.from('cotizacion_items').insert(buildItemRows(cotId));
-        if (error) throw error;
-    };
-
-    // ── Abrir cotización ──────────────────────────────────────────────────────
+    // ── Abrir / Editar / Anular ───────────────────────────────────────────────
     const openCot = async (cot) => {
         const { data } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
         setSelectedCot({ ...cot, cotizacion_items: data || [] });
         setMode('view');
     };
 
-    // ── Editar cotización ─────────────────────────────────────────────────────
     const startEdit = async (cot) => {
         const { data: itemsData } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
         setFecha(cot.fecha);
@@ -465,17 +477,18 @@ export default function CotizacionesView() {
         setPaymentType(cot.payment_type);
         setAppliesRetention(cot.applies_retention || false);
         setNotes(cot.notes || '');
+        setFormBranchId(cot.branch_id ? String(cot.branch_id) : '');
         setEditingId(cot.id);
         setItems((itemsData || []).map(it => ({
-            _id:             Date.now() + Math.random() + it.id,
-            productId:       String(it.product_id),
-            productName:     it.product_nombre,
-            presentacionId:  it.presentacion_id ? String(it.presentacion_id) : '',
+            _id:              Date.now() + Math.random() + it.id,
+            productId:        String(it.product_id),
+            productName:      it.product_nombre,
+            presentacionId:   it.presentacion_id ? String(it.presentacion_id) : '',
             presentacionDesc: it.presentacion_desc || '',
-            priceType:       it.price_type || 'vineta',
-            cantidad:        parseFloat(it.cantidad),
-            precioUnitario:  parseFloat(it.precio_unitario),
-            subtotal:        parseFloat(it.subtotal),
+            priceType:        it.price_type || 'vineta',
+            cantidad:         parseFloat(it.cantidad),
+            precioUnitario:   parseFloat(it.precio_unitario),
+            subtotal:         parseFloat(it.subtotal),
         })));
         setMode('edit');
     };
@@ -496,7 +509,7 @@ export default function CotizacionesView() {
     };
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SUB-COMPONENTE: Fila de ítem (card layout, evita el bug de LiquidSelect en tabla)
+    // SUB-COMPONENTE: ItemCard
     // ─────────────────────────────────────────────────────────────────────────
     const ItemCard = ({ item, idx, isCCF }) => {
         const presArr     = pricesMap[item.productId] || [];
@@ -505,80 +518,48 @@ export default function CotizacionesView() {
         const priceOptions = PRICE_COLS
             .filter(pc => selPres && parseFloat(selPres[pc.key] || 0) > 0)
             .map(pc => ({ value: pc.key, label: `${pc.label} — ${fmt(selPres[pc.key])}` }));
-
         const dsg = desglose(item.precioUnitario, item.cantidad);
 
         return (
             <div className="bg-white/60 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm space-y-3">
-                {/* Fila 1: nombre + eliminar */}
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                         <span className="text-[9px] font-black text-slate-400 bg-slate-100 rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
                         <p className="text-[12px] font-black text-slate-800 leading-tight truncate">{item.productName}</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => removeItem(item._id)}
-                        className="w-7 h-7 shrink-0 rounded-xl bg-red-50 text-red-400 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center"
-                    >
+                    <button type="button" onClick={() => removeItem(item._id)}
+                        className="w-7 h-7 shrink-0 rounded-xl bg-red-50 text-red-400 border border-red-100 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center">
                         <X size={12} strokeWidth={3} />
                     </button>
                 </div>
-
-                {/* Fila 2: controles */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* Presentación */}
                     <div className="col-span-1">
                         <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Presentación</label>
-                        <LiquidSelect
-                            value={item.presentacionId}
-                            onChange={v => updateItem(item._id, 'presentacionId', v)}
-                            options={presOptions}
-                            placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
-                            icon={Tag}
-                            compact
-                            clearable={false}
-                        />
+                        <LiquidSelect value={item.presentacionId} onChange={v => updateItem(item._id, 'presentacionId', v)}
+                            options={presOptions} placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
+                            icon={Tag} compact clearable={false} />
                     </div>
-                    {/* Tipo precio */}
                     <div className="col-span-1">
                         <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Tipo Precio</label>
-                        <LiquidSelect
-                            value={item.priceType}
-                            onChange={v => updateItem(item._id, 'priceType', v)}
-                            options={priceOptions}
-                            placeholder="Precio..."
-                            icon={Percent}
-                            compact
-                            clearable={false}
-                        />
+                        <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
+                            options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                     </div>
-                    {/* Cantidad */}
                     <div>
                         <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Cantidad</label>
-                        <input
-                            type="number" min="0" step="0.001"
-                            value={item.cantidad}
+                        <input type="number" min="0" step="0.001" value={item.cantidad}
                             onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
-                            className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 text-center outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all"
-                        />
+                            className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 text-center outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
                     </div>
-                    {/* Precio unitario */}
                     <div>
                         <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">$</span>
-                            <input
-                                type="number" min="0" step="0.01"
-                                value={item.precioUnitario}
+                            <input type="number" min="0" step="0.01" value={item.precioUnitario}
                                 onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
-                                className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[12px] font-bold text-slate-800 text-right outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all"
-                            />
+                                className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[12px] font-bold text-slate-800 text-right outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
                         </div>
                     </div>
                 </div>
-
-                {/* Fila 3: desglose */}
                 <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pt-2 border-t border-dashed border-slate-100 ${isCCF ? '' : 'justify-end'}`}>
                     {isCCF ? (
                         <>
@@ -609,17 +590,16 @@ export default function CotizacionesView() {
     };
 
     // ─────────────────────────────────────────────────────────────────────────
-    // FORMULARIO (usado por 'new' y 'edit')
+    // FORMULARIO (new / edit)
     // ─────────────────────────────────────────────────────────────────────────
     const isEdit    = mode === 'edit';
     const isCCFMode = docType === 'CCF';
 
     const FormView = () => (
-        <GlassViewLayout
-            icon={Receipt}
-            title={isEdit ? 'Editar Cotización' : 'Nueva Cotización'}
+        <GlassViewLayout icon={Receipt} title={isEdit ? 'Editar Cotización' : 'Nueva Cotización'}
             filtersContent={
-                <button onClick={() => { resetForm(); setMode('list'); }} className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                <button onClick={() => { resetForm(); setMode('list'); }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
                     <ChevronLeft size={14} strokeWidth={3} /> Lista
                 </button>
             }
@@ -642,18 +622,41 @@ export default function CotizacionesView() {
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Cliente</label>
-                            <LiquidSelect value={customerId} onChange={v => { setCustomerId(v); const c = customers.find(c => String(c.id) === String(v)); if (c?.nit) setDocType('CCF'); }} options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
+                            <LiquidSelect value={customerId}
+                                onChange={v => { setCustomerId(v); const c = customers.find(c => String(c.id) === String(v)); if (c?.nit) setDocType('CCF'); }}
+                                options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
-                            <LiquidSelect value={docType} onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }} options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
+                            <LiquidSelect value={docType}
+                                onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }}
+                                options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
-                            <LiquidSelect value={paymentType} onChange={setPaymentType} options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
+                            <LiquidSelect value={paymentType} onChange={setPaymentType}
+                                options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 pt-1">
+
+                    {/* Sucursal + Retención + Notas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                        {/* Sucursal */}
+                        <div>
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Sucursal</label>
+                            {isAdmin ? (
+                                <LiquidSelect value={formBranchId} onChange={setFormBranchId}
+                                    options={branchOptions} placeholder="Seleccionar sucursal..." icon={Building2} compact clearable={false} />
+                            ) : (
+                                <div className="flex items-center gap-2 bg-white/40 border border-white/60 rounded-2xl px-4 py-3">
+                                    <Building2 size={13} className="text-slate-400 shrink-0" />
+                                    <span className="text-[12px] font-bold text-slate-600 truncate">
+                                        {branches.find(b => String(b.id) === String(formBranchId))?.name || '—'}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Retención */}
                         <div className="flex flex-col gap-2">
                             <div onClick={() => isCCFMode && setAppliesRetention(p => !p)}
@@ -665,19 +668,23 @@ export default function CotizacionesView() {
                                     <p className="text-[11px] font-black text-slate-700 leading-none">Retención 1%</p>
                                     <p className="text-[9px] font-bold text-slate-400 mt-0.5">Solo CCF — agente de retención</p>
                                 </div>
-                                {appliesRetention && <span className="ml-2 text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">ACTIVA</span>}
+                                {appliesRetention && <span className="ml-auto text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">ACTIVA</span>}
                             </div>
-                            {/* Sugerencia automática */}
                             {suggestRetention && (
-                                <div onClick={() => setAppliesRetention(true)} className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-all">
+                                <div onClick={() => setAppliesRetention(true)}
+                                    className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-all">
                                     <AlertTriangle size={12} className="text-amber-500 shrink-0" />
                                     <span className="text-[10px] font-bold text-amber-700">Base &gt; $100 en CCF. ¿Aplicar retención?</span>
                                 </div>
                             )}
                         </div>
-                        <div className="flex-1">
-                            <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas u observaciones (opcional)..."
-                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[12px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all h-full min-h-[46px]" />
+
+                        {/* Notas */}
+                        <div>
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
+                            <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
+                                placeholder="Observaciones..."
+                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[12px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
                         </div>
                     </div>
                 </div>
@@ -695,7 +702,7 @@ export default function CotizacionesView() {
                             </h3>
                             {isCCFMode && (
                                 <span className="flex items-center gap-1 text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
-                                    <Info size={10} strokeWidth={3} /> Mostrando desglose CCF por línea
+                                    <Info size={10} strokeWidth={3} /> Desglose CCF por línea
                                 </span>
                             )}
                         </div>
@@ -703,7 +710,8 @@ export default function CotizacionesView() {
                             {loadingData ? (
                                 <div className="flex items-center gap-2 text-[11px] text-slate-400 font-bold"><Loader2 size={13} className="animate-spin" />Cargando catálogo...</div>
                             ) : (
-                                <LiquidSelect value={addProdId} onChange={addProduct} options={productOptions} placeholder="Buscar y agregar producto..." icon={Package} compact clearable={false} />
+                                <LiquidSelect value={addProdId} onChange={addProduct} options={productOptions}
+                                    placeholder="Buscar y agregar producto..." icon={Package} compact clearable={false} />
                             )}
                         </div>
                     </div>
@@ -715,9 +723,7 @@ export default function CotizacionesView() {
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            {items.map((item, idx) => (
-                                <ItemCard key={item._id} item={item} idx={idx} isCCF={isCCFMode} />
-                            ))}
+                            {items.map((item, idx) => <ItemCard key={item._id} item={item} idx={idx} isCCF={isCCFMode} />)}
                         </div>
                     )}
                 </div>
@@ -748,7 +754,8 @@ export default function CotizacionesView() {
                 )}
 
                 <div className="flex items-center justify-end gap-3 pb-4">
-                    <button onClick={() => { resetForm(); setMode('list'); }} className="px-6 py-3 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                    <button onClick={() => { resetForm(); setMode('list'); }}
+                        className="px-6 py-3 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
                         Cancelar
                     </button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
@@ -762,7 +769,7 @@ export default function CotizacionesView() {
     );
 
     // ─────────────────────────────────────────────────────────────────────────
-    // RENDER
+    // VISTA DETALLE
     // ─────────────────────────────────────────────────────────────────────────
     if (mode === 'new' || mode === 'edit') return <FormView />;
 
@@ -771,23 +778,28 @@ export default function CotizacionesView() {
         const itemsData = cot.cotizacion_items || [];
         const vTotals   = calcTotals(itemsData.map(i => ({ subtotal: i.subtotal })), cot.applies_retention);
         const isCCF     = cot.document_type === 'CCF';
+        const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
 
         return (
             <GlassViewLayout icon={Receipt} title={cot.numero}
                 filtersContent={
                     <div className="flex items-center gap-2 flex-wrap">
-                        <button onClick={() => setMode('list')} className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                        <button onClick={() => setMode('list')}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
                             <ChevronLeft size={14} strokeWidth={3} /> Lista
                         </button>
                         {cot.status === 'ACTIVA' && (
                             <>
-                                <button onClick={() => startEdit(cot)} className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 transition-all">
+                                <button onClick={() => startEdit(cot)}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 transition-all">
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
-                                <button onClick={() => handleAnular(cot.id)} className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-95 transition-all">
+                                <button onClick={() => handleAnular(cot.id)}
+                                    className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-95 transition-all">
                                     Anular
                                 </button>
-                                <button onClick={() => handlePrint(cot, itemsData)} className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
+                                <button onClick={() => handlePrint(cot, itemsData)}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
                                     <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
                                 </button>
                             </>
@@ -801,13 +813,14 @@ export default function CotizacionesView() {
                             <X size={16} strokeWidth={3} /> Esta cotización fue anulada.
                         </div>
                     )}
+
                     {/* Meta info */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
                             { icon: User,       label: 'Cliente',       val: cot.customer_name, sub: cot.customer_nit ? `NIT: ${cot.customer_nit}` : '' },
                             { icon: FileText,   label: 'Documento',     val: isCCF ? 'Crédito Fiscal (CCF)' : 'Consumidor Final (COF)' },
                             { icon: CreditCard, label: 'Forma de Pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
-                            { icon: Hash,       label: 'Fecha',         val: fmtD(cot.fecha), sub: cot.created_by_name ? `Por: ${cot.created_by_name}` : '' },
+                            { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (
                             <div key={c.label} className="bg-white/50 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm">
                                 <div className="flex items-center gap-1.5 mb-1.5">
@@ -820,16 +833,24 @@ export default function CotizacionesView() {
                         ))}
                     </div>
 
-                    {/* Items */}
-                    <div className="bg-white/50 backdrop-blur-xl border border-white/80 rounded-[2rem] overflow-hidden shadow-sm">
-                        <div className="px-5 pt-4 pb-3 border-b border-white/60 flex items-center gap-2">
-                            <ShoppingCart size={14} className="text-emerald-600" />
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Productos ({itemsData.length})</h3>
+                    {/* Creador */}
+                    {cot.created_by_name && (
+                        <div className="flex items-center gap-3 bg-white/40 border border-white/60 rounded-2xl px-4 py-3">
+                            <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
+                                className="w-8 h-8 rounded-full shrink-0" />
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Preparada por</p>
+                                <p className="text-[13px] font-black text-slate-700">{cot.created_by_name}</p>
+                            </div>
                         </div>
+                    )}
+
+                    {/* Items */}
+                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full">
+                            <table className="min-w-full text-sm">
                                 <thead>
-                                    <tr className="bg-slate-50/80">
+                                    <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">#</th>
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Producto</th>
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Pres.</th>
@@ -853,22 +874,22 @@ export default function CotizacionesView() {
                                     {itemsData.map((it, i) => {
                                         const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
                                         return (
-                                            <tr key={it.id || i} className="border-t border-slate-50">
-                                                <td className="px-4 py-3 text-[11px] font-black text-slate-400">{i + 1}</td>
-                                                <td className="px-4 py-3 text-[12px] font-bold text-slate-800 max-w-[200px] truncate">{it.product_nombre}</td>
-                                                <td className="px-4 py-3 text-[11px] text-slate-500">{it.presentacion_desc || '—'}</td>
-                                                <td className="px-4 py-3 text-center text-[12px] font-bold text-slate-700">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+                                            <tr key={it.id || i} className="border-t border-black/[0.04]">
+                                                <td className="px-4 py-2.5 text-[11px] font-black text-slate-400">{i + 1}</td>
+                                                <td className="px-4 py-2.5 text-[12px] font-bold text-slate-800 max-w-[200px] truncate">{it.product_nombre}</td>
+                                                <td className="px-4 py-2.5 text-[11px] text-slate-500">{it.presentacion_desc || '—'}</td>
+                                                <td className="px-4 py-2.5 text-center text-[12px] font-bold text-slate-700">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
                                                 {isCCF ? (
                                                     <>
-                                                        <td className="px-4 py-3 text-right text-[11px] text-slate-600">{fmt(dsg.unitSinIva)}</td>
-                                                        <td className="px-4 py-3 text-right text-[11px] text-slate-600">{fmt(dsg.subtotalSinIva)}</td>
-                                                        <td className="px-4 py-3 text-right text-[11px] text-blue-600">{fmt(dsg.subtotalIva)}</td>
-                                                        <td className="px-4 py-3 text-right text-[13px] font-black text-slate-800">{fmt(dsg.total)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-slate-600">{fmt(dsg.unitSinIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-slate-600">{fmt(dsg.subtotalSinIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[11px] text-blue-600">{fmt(dsg.subtotalIva)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-slate-800">{fmt(dsg.total)}</td>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <td className="px-4 py-3 text-right text-[12px] text-slate-600">{fmt(it.precio_unitario)}</td>
-                                                        <td className="px-4 py-3 text-right text-[13px] font-black text-slate-800">{fmt(it.subtotal)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[12px] text-slate-600">{fmt(it.precio_unitario)}</td>
+                                                        <td className="px-4 py-2.5 text-right text-[13px] font-black text-slate-800">{fmt(it.subtotal)}</td>
                                                     </>
                                                 )}
                                             </tr>
@@ -905,7 +926,8 @@ export default function CotizacionesView() {
 
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
-                            <button onClick={() => handlePrint(cot, itemsData)} className="flex items-center gap-2 px-7 py-3.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
+                            <button onClick={() => handlePrint(cot, itemsData)}
+                                className="flex items-center gap-2 px-7 py-3.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
                                 <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
                             </button>
                         </div>
@@ -915,21 +937,25 @@ export default function CotizacionesView() {
         );
     }
 
-    // ── Lista ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // LISTA
+    // ─────────────────────────────────────────────────────────────────────────
     return (
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={
-                <button onClick={() => { resetForm(); setMode('new'); }} className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-95 transition-all">
+                <button onClick={() => { resetForm(); setMode('new'); }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-95 transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             }
         >
+            {/* Stats */}
             <div className="px-5 pt-5 pb-4 flex flex-wrap gap-3">
                 {[
-                    { label: 'Total',    val: cotizaciones.length,                                                             color: 'text-slate-700' },
-                    { label: 'Activas',  val: cotizaciones.filter(c => c.status === 'ACTIVA').length,                          color: 'text-emerald-600' },
-                    { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                         color: 'text-red-500' },
-                    { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)), color: 'text-blue-600' },
+                    { label: 'Total',    val: cotizaciones.length,                                                                                      color: 'text-slate-700' },
+                    { label: 'Activas',  val: cotizaciones.filter(c => c.status === 'ACTIVA').length,                                                    color: 'text-emerald-600' },
+                    { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                                                   color: 'text-red-500' },
+                    { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-blue-600' },
                 ].map(s => (
                     <div key={s.label} className="flex items-center gap-2 bg-white/60 border border-white/80 px-4 py-2.5 rounded-2xl shadow-sm">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{s.label}</span>
@@ -938,54 +964,106 @@ export default function CotizacionesView() {
                 ))}
             </div>
 
+            {/* Tabla */}
             {loadingList ? (
-                <div className="flex items-center justify-center py-20"><Loader2 size={28} className="animate-spin text-[#007AFF]" /></div>
+                <div className="px-5 pb-5">
+                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                        <table className="min-w-full text-sm">
+                            <tbody>
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <tr key={i} className="border-b border-slate-50 last:border-0">
+                                        <td className="px-4 py-3"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                        <td className="px-4 py-3"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                        <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-32 rounded-full bg-slate-100 animate-pulse" /></td>
+                                        <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
+                                        <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
+                                        <td className="px-4 py-3 text-right"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             ) : cotizaciones.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
                     <div className="w-16 h-16 rounded-[1.5rem] bg-slate-100 flex items-center justify-center"><Receipt size={28} strokeWidth={1.5} /></div>
                     <p className="text-[13px] font-bold">Aún no hay cotizaciones</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-slate-100">
-                                {['Número','Fecha','Cliente','Tipo','Pago','Total','Estado',''].map(h => (
-                                    <th key={h} className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {cotizaciones.map(cot => (
-                                <tr key={cot.id} onClick={() => openCot(cot)} className="border-b border-slate-50 hover:bg-white/70 cursor-pointer transition-colors group">
-                                    <td className="px-5 py-3.5"><span className="text-[12px] font-black text-[#007AFF]">{cot.numero}</span></td>
-                                    <td className="px-5 py-3.5 text-[12px] font-bold text-slate-600">{fmtD(cot.fecha)}</td>
-                                    <td className="px-5 py-3.5 text-[12px] font-bold text-slate-700 max-w-[180px] truncate">{cot.customer_name}</td>
-                                    <td className="px-5 py-3.5">
-                                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>{cot.document_type}</span>
-                                    </td>
-                                    <td className="px-5 py-3.5 text-[11px] font-bold text-slate-500 capitalize">{cot.payment_type?.toLowerCase()}</td>
-                                    <td className="px-5 py-3.5 text-[13px] font-black text-slate-800">{fmt(cot.total)}</td>
-                                    <td className="px-5 py-3.5">
-                                        <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${STATUS_STYLE[cot.status] || ''}`}>{cot.status}</span>
-                                    </td>
-                                    <td className="pr-4 py-3.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-[10px] font-black text-[#007AFF] uppercase tracking-wider">Ver →</span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="px-5 pb-5">
+                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Número</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Cliente</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Tipo</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell">Sucursal</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Creado por</th>
+                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Estado</th>
+                                        <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {cotizaciones.map(cot => {
+                                        const isAnulada = cot.status === 'ANULADA';
+                                        const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
+                                        return (
+                                            <tr key={cot.id} onClick={() => openCot(cot)}
+                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isAnulada ? 'opacity-50 bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
+                                                {/* Número */}
+                                                <td className="px-4 py-2.5">
+                                                    <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#007AFF]'}`}>{cot.numero}</span>
+                                                </td>
+                                                {/* Fecha */}
+                                                <td className="px-4 py-2.5">
+                                                    <p className="text-[12px] font-bold text-slate-700">{fmtD(cot.fecha)}</p>
+                                                </td>
+                                                {/* Cliente */}
+                                                <td className="px-4 py-2.5">
+                                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{cot.customer_name}</p>
+                                                </td>
+                                                {/* Tipo */}
+                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                        {cot.document_type}
+                                                    </span>
+                                                </td>
+                                                {/* Sucursal */}
+                                                <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                    <span className="text-[11px] text-slate-600">{branchName}</span>
+                                                </td>
+                                                {/* Creado por */}
+                                                <td className="px-4 py-2.5 hidden md:table-cell">
+                                                    {cot.created_by_name ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
+                                                                className="w-6 h-6 rounded-full shrink-0" />
+                                                            <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{cot.created_by_name}</span>
+                                                        </div>
+                                                    ) : <span className="text-slate-300">—</span>}
+                                                </td>
+                                                {/* Estado */}
+                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                    <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                                        {cot.status}
+                                                    </span>
+                                                </td>
+                                                {/* Total */}
+                                                <td className="px-4 py-2.5 text-right">
+                                                    <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
         </GlassViewLayout>
     );
 }
-
-// ── Fila de totales helper ─────────────────────────────────────────────────────
-const Row = ({ label, val, className = 'text-slate-600' }) => (
-    <div className="flex justify-between items-center">
-        <span className="text-[11px] font-bold text-slate-500">{label}</span>
-        <span className={`text-[12px] font-bold ${className}`}>{val}</span>
-    </div>
-);

@@ -3,7 +3,7 @@ import {
     FileText, Plus, Printer, Save, Trash2, X,
     ChevronLeft, User, CreditCard, Banknote, Building2,
     Package, Hash, Receipt, Tag, Percent, CheckCircle2,
-    Clock, Loader2, AlertCircle, ShoppingCart, Landmark,
+    Clock, Loader2, AlertCircle, ShoppingCart, Calculator,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';

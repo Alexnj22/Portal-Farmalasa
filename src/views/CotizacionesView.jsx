@@ -196,7 +196,7 @@ const loadAllPrices = async () => {
     while (true) {
         const { data, error } = await supabase
             .from('product_precios')
-            .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(descripcion)')
+            .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(tipo, descripcion)')
             .eq('activo', true)
             .order('product_id', { ascending: true })
             .order('id_presentacion', { ascending: true })
@@ -360,7 +360,7 @@ export default function CotizacionesView() {
                 if (!map[pid]) map[pid] = [];
                 map[pid].push({
                     presentacion_id: p.id_presentacion,
-                    desc:            p.presentaciones?.descripcion || `Pres. ${p.id_presentacion}`,
+                    desc:            p.presentaciones?.tipo || p.presentaciones?.descripcion || `Pres. ${p.id_presentacion}`,
                     vineta:      p.vineta,
                     descuento_1: p.descuento_1,
                     vip:         p.vip,

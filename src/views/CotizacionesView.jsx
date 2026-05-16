@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -237,6 +238,10 @@ export default function CotizacionesView() {
 
     // Vista detalle
     const [selectedCot, setSelectedCot] = useState(null);
+
+    // Confirm anular
+    const [confirmAnular, setConfirmAnular] = useState(null); // id | null
+    const [anulando,      setAnulando]      = useState(false);
 
     // Formulario
     const [fecha,            setFecha]            = useState(todayStr());
@@ -495,11 +500,14 @@ export default function CotizacionesView() {
         setMode('edit');
     };
 
-    const handleAnular = async (cotId) => {
-        if (!window.confirm('¿Anular esta cotización?')) return;
-        await supabase.from('cotizaciones').update({ status: 'ANULADA' }).eq('id', cotId);
+    const handleAnular = async () => {
+        if (!confirmAnular) return;
+        setAnulando(true);
+        await supabase.from('cotizaciones').update({ status: 'ANULADA' }).eq('id', confirmAnular);
+        setAnulando(false);
+        setConfirmAnular(null);
         loadList();
-        if (selectedCot?.id === cotId) setSelectedCot(prev => ({ ...prev, status: 'ANULADA' }));
+        if (selectedCot?.id === confirmAnular) setSelectedCot(prev => ({ ...prev, status: 'ANULADA' }));
     };
 
     const handlePrint = (cot, itemsData) => {
@@ -782,7 +790,7 @@ export default function CotizacionesView() {
         const isCCF     = cot.document_type === 'CCF';
         const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
 
-        return (
+        return (<>
             <GlassViewLayout icon={Receipt} title={cot.numero}
                 filtersContent={
                     <div className="flex items-center gap-2 flex-wrap">
@@ -796,7 +804,7 @@ export default function CotizacionesView() {
                                     className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 transition-all">
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
-                                <button onClick={() => handleAnular(cot.id)}
+                                <button onClick={() => setConfirmAnular(cot.id)}
                                     className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-95 transition-all">
                                     Anular
                                 </button>
@@ -936,13 +944,35 @@ export default function CotizacionesView() {
                     )}
                 </div>
             </GlassViewLayout>
-        );
+            <ConfirmModal
+                isOpen={!!confirmAnular}
+                onClose={() => !anulando && setConfirmAnular(null)}
+                onConfirm={handleAnular}
+                title="Anular cotización"
+                message="Esta acción marcará la cotización como ANULADA y no se podrá reactivar. ¿Deseas continuar?"
+                confirmText="Sí, anular"
+                cancelText="Cancelar"
+                isDestructive
+                isProcessing={anulando}
+            />
+        </>);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // LISTA
     // ─────────────────────────────────────────────────────────────────────────
-    return (
+    return (<>
+        <ConfirmModal
+            isOpen={!!confirmAnular}
+            onClose={() => !anulando && setConfirmAnular(null)}
+            onConfirm={handleAnular}
+            title="Anular cotización"
+            message="Esta acción marcará la cotización como ANULADA y no se podrá reactivar. ¿Deseas continuar?"
+            confirmText="Sí, anular"
+            cancelText="Cancelar"
+            isDestructive
+            isProcessing={anulando}
+        />
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={
                 <button onClick={() => { resetForm(); setMode('new'); }}
@@ -1067,5 +1097,5 @@ export default function CotizacionesView() {
                 </div>
             )}
         </GlassViewLayout>
-    );
+    </>);
 }

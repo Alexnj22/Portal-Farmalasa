@@ -574,6 +574,20 @@ const AppWithToast = () => {
     const location = useLocation();
     const isKioskMode = location.pathname.startsWith('/kiosk');
 
+    // Deshabilitar corrección ortográfica y autocorrección en todos los campos
+    useEffect(() => {
+        const disable = (e) => {
+            const el = e.target;
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.spellcheck = false;
+                el.setAttribute('autocorrect', 'off');
+                el.setAttribute('autocapitalize', 'off');
+            }
+        };
+        document.addEventListener('focusin', disable, true);
+        return () => document.removeEventListener('focusin', disable, true);
+    }, []);
+
     return (
         <>
             <MobileConstructionScreen />

@@ -330,6 +330,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         return m;
     }, [employees]);
 
+    const abInvoicesSet = useMemo(() => {
+        const s = new Set();
+        Object.entries(itemsCache).forEach(([invoiceId, items]) => {
+            if ((items || []).some(it => antibioticIds.has(it.erp_product_id)))
+                s.add(Number(invoiceId));
+        });
+        return s;
+    }, [itemsCache, antibioticIds]);
+
     const handleSort = (col) => {
         if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setSortCol(col); setSortDir('desc'); }
@@ -389,7 +398,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             const asc = sortDir === 'asc';
             let q = supabase
                 .from('sales_invoices')
-                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh')
+                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh, has_puntos')
                 .gte('fecha', fini).lte('fecha', ffin)
                 .order(sortCol, { ascending: asc });
             if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
@@ -638,6 +647,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 {/* Cliente */}
                                                 <td className="px-4 py-2.5">
                                                     <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{r.cliente || '—'}</p>
+                                                    {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
+                                                        <div className="flex gap-1 flex-wrap mt-0.5">
+                                                            {(r.has_puntos || filterPuntos) && (
+                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700">Puntos</span>
+                                                            )}
+                                                            {abInvoicesSet.has(r.id) && (
+                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Antibiótico</span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 {/* Método pago */}
                                                 <td className="px-4 py-2.5 hidden sm:table-cell">

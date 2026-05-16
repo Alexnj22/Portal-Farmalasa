@@ -19,7 +19,7 @@ const LiquidSelect = ({
     // When options count exceeds this, require the user to type before showing results
     searchThreshold = 80,
     // Max options to render in the dropdown (applied after filtering)
-    maxOptions = 100,
+    maxOptions = 20,
     // Server-side search: parent handles filtering, just display options as-is
     serverSearch = false,
     // Called (debounced 300ms) when user types — use to run server queries
@@ -182,12 +182,11 @@ const LiquidSelect = ({
         if (isLargeList && !searchTerm) return [];
         if (!searchTerm) return options.slice(0, maxOptions);
         const q = normalize(searchTerm);
-        // When searching, show ALL matches — no cap, user knows what they want
         return options.filter(opt =>
             !opt.isSeparator &&
             (normalize(opt.label).includes(q) ||
             (opt.sublabel && normalize(opt.sublabel).includes(q)))
-        );
+        ).slice(0, maxOptions);
     }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
 
     const dropdownContent = isOpen && (

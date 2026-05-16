@@ -1036,6 +1036,7 @@ export default function CotizacionesView() {
                                         <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Creado por</th>
                                         <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Estado</th>
                                         <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                                        <th className="px-3 py-2.5 w-8" />
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1044,7 +1045,7 @@ export default function CotizacionesView() {
                                         const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
                                         return (
                                             <tr key={cot.id} onClick={() => openCot(cot)}
-                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isAnulada ? 'opacity-50 bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
+                                                className={`group border-t border-black/[0.04] cursor-pointer transition-colors ${isAnulada ? 'opacity-50 bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
                                                 {/* Número */}
                                                 <td className="px-4 py-2.5">
                                                     <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#007AFF]'}`}>{cot.numero}</span>
@@ -1086,6 +1087,39 @@ export default function CotizacionesView() {
                                                 {/* Total */}
                                                 <td className="px-4 py-2.5 text-right">
                                                     <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
+                                                </td>
+                                                {/* Acciones en hover */}
+                                                <td className="pr-3 py-2.5" onClick={e => e.stopPropagation()}>
+                                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                                        {!isAnulada && (
+                                                            <>
+                                                                <button
+                                                                    title="Editar"
+                                                                    onClick={() => startEdit(cot)}
+                                                                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors"
+                                                                >
+                                                                    <Edit2 size={12} strokeWidth={2.5} />
+                                                                </button>
+                                                                <button
+                                                                    title="Imprimir / PDF"
+                                                                    onClick={async () => {
+                                                                        const { data } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
+                                                                        handlePrint(cot, data || []);
+                                                                    }}
+                                                                    className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-700 flex items-center justify-center transition-colors"
+                                                                >
+                                                                    <Printer size={12} strokeWidth={2.5} />
+                                                                </button>
+                                                                <button
+                                                                    title="Anular"
+                                                                    onClick={() => setConfirmAnular(cot.id)}
+                                                                    className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors"
+                                                                >
+                                                                    <Trash2 size={12} strokeWidth={2.5} />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

@@ -220,7 +220,11 @@ const Row = ({ label, val, className = 'text-slate-600' }) => (
 // ─── ItemCard (fuera del componente para que React no lo desmonte en re-renders) ──
 const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateItem }) => {
     const presArr     = pricesMap[item.productId] || [];
-    const presOptions = presArr.map(p => ({ value: String(p.presentacion_id), label: p.desc }));
+    const presOptions = presArr.map(p => ({
+        value: String(p.presentacion_id),
+        label: p.tipoLabel || p.desc,
+        ...(p.subdesc ? { sublabel: p.subdesc } : {}),
+    }));
     const selPres     = presArr.find(p => String(p.presentacion_id) === String(item.presentacionId));
     const priceOptions = PRICE_COLS
         .filter(pc => selPres && parseFloat(selPres[pc.key] || 0) > 0)
@@ -354,13 +358,22 @@ export default function CotizacionesView() {
 
             // Prices load in background — doesn't block the form
             const pricesData = await loadAllPrices();
+            const TIPO_ORDER = { UNIDAD: 0, BLISTER: 1, CAJA: 2 };
+            const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
             const map = {};
             pricesData.forEach(p => {
                 const pid = String(p.product_id);
                 if (!map[pid]) map[pid] = [];
+                const tipoRaw   = (p.presentaciones?.tipo || '').toUpperCase();
+                const tipoLabel = capFirst(tipoRaw) || `Pres. ${p.id_presentacion}`;
+                const subdesc   = p.presentaciones?.descripcion || '';
+                const desc      = subdesc ? `${tipoLabel} (${subdesc})` : tipoLabel;
                 map[pid].push({
                     presentacion_id: p.id_presentacion,
-                    desc:            p.presentaciones?.tipo || p.presentaciones?.descripcion || `Pres. ${p.id_presentacion}`,
+                    tipoRaw,
+                    tipoLabel,
+                    subdesc,
+                    desc,
                     vineta:      p.vineta,
                     descuento_1: p.descuento_1,
                     vip:         p.vip,
@@ -368,6 +381,17 @@ export default function CotizacionesView() {
                     mayoreo:     p.mayoreo,
                     premium:     p.premium,
                     precio_7:    p.precio_7,
+                });
+            });
+            // Sort presentations per product: UNIDAD < BLISTER < CAJA, then by pack qty
+            Object.values(map).forEach(arr => {
+                arr.sort((a, b) => {
+                    const ta = TIPO_ORDER[a.tipoRaw] ?? 99;
+                    const tb = TIPO_ORDER[b.tipoRaw] ?? 99;
+                    if (ta !== tb) return ta - tb;
+                    const qa = parseInt((a.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');
+                    const qb = parseInt((b.subdesc || '').match(/\d+[xX](\d+)/)?.[1] ?? '1');
+                    return qa - qb;
                 });
             });
             setPricesMap(map);

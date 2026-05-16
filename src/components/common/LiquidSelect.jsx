@@ -29,11 +29,13 @@ const LiquidSelect = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
     const selectRef = useRef(null);
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
     const searchDebounceRef = useRef(null);
+    const itemRefs = useRef([]);
 
     // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
     const [coords, setCoords] = useState({ 
@@ -139,6 +141,16 @@ const LiquidSelect = ({
         };
     }, [isOpen]);
 
+    // Reset highlight when options change or dropdown closes
+    useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]);
+
+    // Scroll highlighted item into view
+    useEffect(() => {
+        if (highlightedIndex >= 0 && itemRefs.current[highlightedIndex]) {
+            itemRefs.current[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }, [highlightedIndex]);
+
     const handleOpen = () => {
         if (disabled) return;
         updateCoords(); // Calculamos el espacio antes de abrir
@@ -189,6 +201,11 @@ const LiquidSelect = ({
         ).slice(0, maxOptions);
     }, [options, searchTerm, isLargeList, maxOptions, serverSearch]);
 
+    // Navigable (non-separator, non-disabled) options — used for keyboard nav
+    const selectableOptions = useMemo(() =>
+        filteredOptions.filter(o => !o.isSeparator && !o.disabled),
+    [filteredOptions]);
+
     const dropdownContent = isOpen && (
         <div
             ref={dropdownRef}
@@ -235,8 +252,10 @@ const LiquidSelect = ({
                         Escribe para buscar
                     </div>
                 ) : filteredOptions.length > 0 ? (
-                    filteredOptions.map((opt) => (
-                        opt.isSeparator ? (
+                    filteredOptions.map((opt) => {
+                        const sIdx = selectableOptions.indexOf(opt);
+                        const isHighlighted = sIdx >= 0 && sIdx === highlightedIndex;
+                        return opt.isSeparator ? (
                             <div
                                 key={opt.value}
                                 className={`px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t first:border-t-0 first:pt-1 ${isDark ? 'text-white/30 border-white/10' : 'text-slate-400 border-slate-100'}`}
@@ -246,6 +265,7 @@ const LiquidSelect = ({
                         ) : (
                             <button
                                 key={opt.value}
+                                ref={sIdx >= 0 ? el => { itemRefs.current[sIdx] = el; } : undefined}
                                 type="button"
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
                                 className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border flex items-center gap-2.5 ${
@@ -253,9 +273,13 @@ const LiquidSelect = ({
                                         ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
                                         : String(value) === String(opt.value)
                                             ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
-                                            : isDark
-                                                ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
-                                                : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
+                                            : isHighlighted
+                                                ? isDark
+                                                    ? 'bg-white/10 text-white border-white/20'
+                                                    : 'bg-[#007AFF]/8 text-slate-900 border-[#007AFF]/20'
+                                                : isDark
+                                                    ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
+                                                    : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
                                 }`}
                             >
                                 {opt.avatar !== undefined && (
@@ -277,8 +301,8 @@ const LiquidSelect = ({
                                     )}
                                 </span>
                             </button>
-                        )
-                    ))
+                        );
+                    })
                 ) : (
                     <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
@@ -358,6 +382,26 @@ const LiquidSelect = ({
                             if (onSearchChange) {
                                 clearTimeout(searchDebounceRef.current);
                                 searchDebounceRef.current = setTimeout(() => onSearchChange(val), 300);
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                setHighlightedIndex(i => {
+                                    const next = i + 1;
+                                    return next >= selectableOptions.length ? 0 : next;
+                                });
+                            } else if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                setHighlightedIndex(i => {
+                                    const next = i - 1;
+                                    return next < 0 ? selectableOptions.length - 1 : next;
+                                });
+                            } else if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (highlightedIndex >= 0 && selectableOptions[highlightedIndex]) {
+                                    handleSelect(selectableOptions[highlightedIndex].value);
+                                }
                             }
                         }}
                         value={searchTerm}

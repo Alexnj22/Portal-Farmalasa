@@ -34,30 +34,21 @@ Deno.serve(async (req: Request) => {
     const { data: { user: caller }, error: authErr } = await admin.auth.getUser(token);
     if (authErr || !caller) return json({ ok: false, error: "INVALID_TOKEN", details: "El token expiró o es inválido." });
 
-    // Buscar por id primero
-    let { data: callerData } = await admin.from("employees")
-      .select("is_admin, id, username, code")
-      .eq("id", caller.id).single();
+    // Verificar permiso: SUPERADMIN tiene acceso total; los demás necesitan staff_list → can_edit
+    const meta = caller.user_metadata || {};
+    const isSuperAdmin = meta.systemRole === 'SUPERADMIN';
+    let canSetPassword = isSuperAdmin;
 
-    // Fallback 1: buscar por username (para login con username@farmalasa.app)
-    if (!callerData) {
-      const callerUsername = caller.email?.split('@')[0].toLowerCase();
-      const { data: f1 } = await admin.from("employees")
-        .select("is_admin")
-        .eq("username", callerUsername).single();
-      callerData = f1;
+    if (!canSetPassword && meta.roleId) {
+      const { data: perm } = await admin.from('role_permissions')
+        .select('can_edit')
+        .eq('role_id', meta.roleId)
+        .eq('module_key', 'staff_list')
+        .single();
+      canSetPassword = perm?.can_edit === true;
     }
 
-    // Fallback 2: buscar por code (para login con carné: EMP001@staff.local)
-    if (!callerData) {
-      const callerCode = caller.email?.split('@')[0].toUpperCase();
-      const { data: f2 } = await admin.from("employees")
-        .select("is_admin")
-        .eq("code", callerCode).single();
-      callerData = f2;
-    }
-
-    if (!callerData?.is_admin)
+    if (!canSetPassword)
       return json({ ok: false, error: "INSUFFICIENT_PERMISSIONS", details: `Acceso denegado para: ${caller.email}` });
 
     // 2. Procesar datos

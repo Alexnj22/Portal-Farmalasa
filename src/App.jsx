@@ -138,7 +138,7 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
 function MainApp() {
-    const { user, logout, isAuthenticated, isAdmin, isJefe, isSupervisor, hasPermission, loading, permsLoading } = useAuth();
+    const { user, logout, isAuthenticated, isJefe, isSupervisor, hasPermission, loading, permsLoading } = useAuth();
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);

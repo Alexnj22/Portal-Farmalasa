@@ -42,7 +42,6 @@ Deno.serve(async (req: Request) => {
         photo_url,
         username,
         phone,
-        is_admin,
         status,
         system_role,
         role:roles!employees_role_id_fkey ( name )
@@ -129,7 +128,6 @@ Deno.serve(async (req: Request) => {
         ...(authenticatedUser.user_metadata || {}),
         roleId: employee.role_id ?? null,
         systemRole: (employee.system_role as string | null) || "EMPLEADO",
-        isAdmin: employee.is_admin === true,
         branchId: employee.branch_id ?? null,
         must_change_password: false,
       },
@@ -148,8 +146,6 @@ Deno.serve(async (req: Request) => {
         photo: employee.photo_url,
         email,
         phone: employee.phone,
-        isAdmin: employee.is_admin === true,
-        userType: employee.is_admin ? "admin" : "employee",
         systemRole: (employee.system_role as string | null) || "EMPLEADO",
       },
     });

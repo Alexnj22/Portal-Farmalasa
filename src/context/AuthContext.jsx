@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   // Helpers de Inactividad
   // -------------------------
-  const getIdleLimitMs = (u) => (u?.isAdmin || u?.is_admin ? IDLE_ADMIN_MS : IDLE_EMP_MS);
+  const getIdleLimitMs = (u) => (['ADMIN','SUPERADMIN','JEFE','SUBJEFE','SUPERVISOR'].includes(u?.systemRole) ? IDLE_ADMIN_MS : IDLE_EMP_MS);
 
   const writeLastActivity = (force = false) => {
     const now = Date.now();
@@ -424,9 +424,7 @@ export const AuthProvider = ({ children }) => {
         username: emp.username,
         branchId: emp.branch_id,
         photo: emp.photo_url,
-        isAdmin: emp.is_admin === true,
-        userType: emp.is_admin ? 'admin' : 'employee',
-        role: emp.role_id,
+          role: emp.role_id,
         roleId: emp.role_id ?? null,
         systemRole: emp.system_role || 'EMPLEADO',
       };
@@ -480,8 +478,7 @@ export const AuthProvider = ({ children }) => {
   // ✅ Exposición de valores
   const value = useMemo(() => {
     const systemRole = user?.systemRole || 'EMPLEADO';
-    const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(systemRole)
-      || user?.isAdmin === true || user?.is_admin === true || user?.userType === 'admin';
+    const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(systemRole);
     const isJefe = ['JEFE', 'SUBJEFE'].includes(systemRole);
     const isSupervisor = systemRole === 'SUPERVISOR';
     const canApprove = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR', 'JEFE', 'SUBJEFE'].includes(systemRole);

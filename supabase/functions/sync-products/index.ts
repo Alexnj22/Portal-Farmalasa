@@ -10,7 +10,6 @@ const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_prod
 const CREDENTIALS  = { username: 'documento1.supervisor', password: 'documento9999' };
 const CHUNK        = 500;
 
-// Numeric price fields — compared with tolerance
 const PRICE_FIELDS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'] as const;
 
 async function getSessionCookie(): Promise<string> {
@@ -18,7 +17,6 @@ async function getSessionCookie(): Promise<string> {
   form.append('username', CREDENTIALS.username);
   form.append('password', CREDENTIALS.password);
   form.append('m', '1');
-
   const res = await fetch(LOGIN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -26,7 +24,6 @@ async function getSessionCookie(): Promise<string> {
     redirect: 'manual',
     signal: AbortSignal.timeout(15_000),
   });
-
   const cookie = res.headers.get('set-cookie')?.split(';')[0];
   if (!cookie) throw new Error('Login failed: no session cookie');
   return cookie;
@@ -41,6 +38,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Debug mode: ?debug_product=CETRAM returns raw ERP JSON for matching products
+    const url         = new URL(req.url);
+    const debugFilter = url.searchParams.get('debug_product')?.toLowerCase() ?? null;
+
     // 1. Login + fetch products
     const cookie = await getSessionCookie();
     const res = await fetch(PRODUCTS_URL, {
@@ -53,6 +54,15 @@ Deno.serve(async (req) => {
     const productos: any[] = payload?.productos ?? [];
     if (productos.length === 0) throw new Error('Empty products payload');
 
+    if (debugFilter) {
+      const matches = productos.filter((p: any) =>
+        (p.nombre ?? '').toLowerCase().includes(debugFilter)
+      );
+      return new Response(JSON.stringify({ debug: true, filter: debugFilter, results: matches }, null, 2), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const now = new Date().toISOString();
 
     // 2. Upsert laboratorios
@@ -64,7 +74,7 @@ Deno.serve(async (req) => {
     const { error: labErr } = await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
     if (labErr) throw new Error(`Laboratorios upsert: ${labErr.message}`);
 
-    // 3. Upsert presentaciones catalog (tipo only — descripcion lives in product_precios per product)
+    // 3. Upsert presentaciones catalog (tipo only — descripcion and factor live in product_precios per product)
     const presMap = new Map<number, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
@@ -81,7 +91,7 @@ Deno.serve(async (req) => {
     const { error: presErr } = await supabase.from('presentaciones').upsert([...presMap.values()], { onConflict: 'id' });
     if (presErr) throw new Error(`Presentaciones upsert: ${presErr.message}`);
 
-    // 4. Build product rows — deduplicate by id (ERP may send duplicates)
+    // 4. Build product rows
     const productRowsRaw = productos.map((p: any) => ({
       id:             p.id,
       nombre:         p.nombre,
@@ -96,13 +106,12 @@ Deno.serve(async (req) => {
     for (const p of productRowsRaw) productRowsDeduped.set(p.id, p);
     const productRows = [...productRowsDeduped.values()];
 
-    // Load ALL existing products from DB via pagination
     const existingProductsAll: any[] = [];
     let epFrom = 0;
     while (true) {
       const { data: batch, error: epErr } = await supabase
         .from('products')
-        .select('id, nombre, laboratorio_id')
+        .select('id, nombre, laboratorio_id, activo')
         .range(epFrom, epFrom + CHUNK - 1);
       if (epErr) throw new Error(`Load products: ${epErr.message}`);
       if (!batch || batch.length === 0) break;
@@ -126,6 +135,10 @@ Deno.serve(async (req) => {
           });
         }
       }
+      // activo change — trigger upsert without logging to changelog
+      if ((ep.activo ?? true) !== (np.activo ?? true)) {
+        productChangelogs.push({ product_id: np.id, _activoOnly: true });
+      }
     }
 
     const changedProductIds = new Set(productChangelogs.map((c: any) => c.product_id));
@@ -137,11 +150,12 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from('products').upsert(productRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'id' });
       if (error) upsertErrors.push(`products[${i}]: ${error.message}`);
     }
-    if (productChangelogs.length > 0) {
-      await supabase.from('products_changelog').insert(productChangelogs);
+    const realProductChangelogs = productChangelogs.filter((c: any) => !c._activoOnly);
+    if (realProductChangelogs.length > 0) {
+      await supabase.from('products_changelog').insert(realProductChangelogs);
     }
 
-    // 5. Build precio rows — descripcion is per product+presentacion
+    // 5. Build precio rows — descripcion and factor are per product+presentacion
     const precioRowsMap = new Map<string, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
@@ -151,6 +165,7 @@ Deno.serve(async (req) => {
           product_id:      p.id,
           id_presentacion: pres.id_presentacion,
           descripcion:     pres.descripcion ?? null,
+          factor:          pres.factor ?? null,
           activo:          pres.activo ?? true,
           costo:           pres.costo ?? null,
           vineta:          precios.vineta ?? null,
@@ -166,13 +181,13 @@ Deno.serve(async (req) => {
     }
     const precioRows = [...precioRowsMap.values()];
 
-    // 5a. Fetch all existing precios (including descripcion for change detection)
+    // 5a. Fetch all existing precios
     const existingPreciosAll: any[] = [];
     let pFrom = 0;
     while (true) {
       const { data: batch } = await supabase
         .from('product_precios')
-        .select('product_id, id_presentacion, descripcion, activo, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
+        .select('product_id, id_presentacion, descripcion, factor, activo, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
         .range(pFrom, pFrom + CHUNK - 1);
       if (!batch || batch.length === 0) break;
       existingPreciosAll.push(...batch);
@@ -185,7 +200,8 @@ Deno.serve(async (req) => {
     );
 
     const precioChangelogs: any[] = [];
-    const changedKeys  = new Set<string>();
+    const changedKeys      = new Set<string>(); // any change → upsert
+    const priceChangedKeys = new Set<string>(); // price/desc change only → history
     const newCombos: any[] = [];
 
     for (const nr of precioRows) {
@@ -197,7 +213,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      let hasChange = false;
+      let hasPriceChange      = false;
+      let hasStructuralChange = false;
 
       // Check numeric price fields
       for (const campo of PRICE_FIELDS) {
@@ -214,11 +231,11 @@ Deno.serve(async (req) => {
             valor_nuevo:     newVal != null ? String(newVal) : null,
             detected_at:     now,
           });
-          hasChange = true;
+          hasPriceChange = true;
         }
       }
 
-      // Check descripcion (text field — exact match)
+      // Check descripcion
       const oldDesc = er.descripcion ?? null;
       const newDesc = nr.descripcion ?? null;
       if (oldDesc !== newDesc) {
@@ -230,20 +247,24 @@ Deno.serve(async (req) => {
           valor_nuevo:     newDesc,
           detected_at:     now,
         });
-        hasChange = true;
+        hasPriceChange = true;
       }
 
-      // Check activo (presentation enabled/disabled in ERP)
-      const oldActivo = er.activo ?? true;
-      const newActivo = nr.activo ?? true;
-      if (oldActivo !== newActivo) hasChange = true;
+      // activo and factor are structural — upsert but skip price history
+      if ((er.activo ?? true) !== (nr.activo ?? true)) hasStructuralChange = true;
+      if ((er.factor ?? null) !== (nr.factor ?? null)) hasStructuralChange = true;
 
-      if (hasChange) changedKeys.add(key);
+      if (hasPriceChange) {
+        changedKeys.add(key);
+        priceChangedKeys.add(key);
+      } else if (hasStructuralChange) {
+        changedKeys.add(key);
+      }
     }
 
-    // 5b. Close active history entries for changed prices & open new ones
-    if (changedKeys.size > 0) {
-      for (const key of changedKeys) {
+    // 5b. Close active history entries and open new ones — only for price/desc changes
+    if (priceChangedKeys.size > 0) {
+      for (const key of priceChangedKeys) {
         const [pid, presId] = key.split('_').map(Number);
         await supabase.from('product_precios_history')
           .update({ valid_until: now })
@@ -251,8 +272,7 @@ Deno.serve(async (req) => {
           .eq('id_presentacion', presId)
           .is('valid_until', null);
       }
-
-      const newHistoryRows = [...changedKeys].map(key => {
+      const newHistoryRows = [...priceChangedKeys].map(key => {
         const r = precioRowsMap.get(key)!;
         return {
           product_id: r.product_id, id_presentacion: r.id_presentacion,
@@ -293,11 +313,9 @@ Deno.serve(async (req) => {
       if (error) upsertErrors.push(`precios[${i}]: ${error.message}`);
     }
 
-    // 5e. Mark as inactive any presentation the ERP no longer includes for a product.
-    // Since the ERP payload is always a full dump, a (product_id, id_presentacion) combo
-    // present in our DB but absent from the ERP means it was removed or disabled there.
-    const erpComboKeys   = new Set(precioRows.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
-    const erpProductIds  = new Set(precioRows.map((r: any) => r.product_id));
+    // 5e. Mark as inactive any presentation the ERP no longer includes for a product
+    const erpComboKeys  = new Set(precioRows.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
+    const erpProductIds = new Set(precioRows.map((r: any) => r.product_id));
     const orphaned = existingPreciosAll.filter((r: any) =>
       erpProductIds.has(r.product_id) &&
       !erpComboKeys.has(`${r.product_id}_${r.id_presentacion}`) &&
@@ -321,7 +339,7 @@ Deno.serve(async (req) => {
         precios_total:    precioRows.length,
         precios_written:  precioRowsToUpsert.length,
         price_changes:    precioChangelogs.length,
-        product_changes:  productChangelogs.length,
+        product_changes:  realProductChangelogs.length,
         new_combos:       newCombos.length,
         deactivated:      orphaned.length,
         errors:           upsertErrors,

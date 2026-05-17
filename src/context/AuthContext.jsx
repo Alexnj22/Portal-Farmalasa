@@ -55,11 +55,10 @@ export const AuthProvider = ({ children }) => {
   const refreshPermissions = useCallback((currentUser) => {
     const u = currentUser ?? userRef.current;
     if (!u) { setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null); return; }
-    const systemRole = u.systemRole || 'EMPLEADO';
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
     const permsQuery = roleId
       ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
-      : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('system_role', systemRole);
+      : Promise.resolve({ data: [] });
     const priceLevelQuery = roleId
       ? supabase.from('roles').select('max_price_level').eq('id', roleId).single()
       : Promise.resolve({ data: null });

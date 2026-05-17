@@ -137,10 +137,8 @@ export const createEmployeeSlice = (set, get) => ({
                 account_type: formData.account_type || 'AHORRO',
                 
                 kiosk_pin: formData.kiosk_pin || null,
-                is_admin: formData.is_admin || false,
                 status: 'ACTIVO',
                 photo_url: null,
-                assigned_branch_ids: Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number) : [],
             };
 
             // Validar headcount del cargo seleccionado
@@ -184,6 +182,14 @@ export const createEmployeeSlice = (set, get) => ({
                     await supabase.from("employees").update({ photo_url: publicPhotoUrl }).eq("id", newEmp.id);
                     newEmp.photo_url = publicPhotoUrl;
                 }
+            }
+
+            // Asignar sucursales adicionales si aplica (empleados externos)
+            const assignedBranches = Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number).filter(Boolean) : [];
+            if (assignedBranches.length > 0) {
+                await supabase.from('employee_branches').insert(
+                    assignedBranches.map(branch_id => ({ employee_id: newEmp.id, branch_id }))
+                );
             }
 
             // Crear usuario Auth automáticamente (no bloquea la creación si falla)
@@ -294,14 +300,23 @@ export const createEmployeeSlice = (set, get) => ({
             delete dbPayload.hireDate;
             delete dbPayload.weeklySchedule;
 
-            if (dbPayload.assigned_branch_ids !== undefined) {
-                dbPayload.assigned_branch_ids = Array.isArray(dbPayload.assigned_branch_ids)
-                    ? dbPayload.assigned_branch_ids.map(Number)
-                    : [];
-            }
+            const newAssignedBranches = Array.isArray(dbPayload.assigned_branch_ids)
+                ? dbPayload.assigned_branch_ids.map(Number).filter(Boolean)
+                : null;
+            delete dbPayload.assigned_branch_ids;
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
+
+            // Sync branch assignments to junction table if provided
+            if (newAssignedBranches !== null) {
+                await supabase.from('employee_branches').delete().eq('employee_id', id);
+                if (newAssignedBranches.length > 0) {
+                    await supabase.from('employee_branches').insert(
+                        newAssignedBranches.map(branch_id => ({ employee_id: id, branch_id }))
+                    );
+                }
+            }
 
             const empEditado = get().employees.find(e => String(e.id) === String(id));
             await get().appendAuditLog('EDITAR_EMPLEADO', id, {

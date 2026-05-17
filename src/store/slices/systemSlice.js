@@ -85,6 +85,7 @@ export const createSystemSlice = (set, get) => ({
                     { data: eventsData },
                     { data: docsData },
                     { data: annData },
+                    { data: branchAssignData },
                 ] = await Promise.all([
                     supabase.from('holidays').select('*').order('holiday_date', { ascending: true }),
                     supabase.from('branches').select('*').order('id', { ascending: true }),
@@ -95,6 +96,7 @@ export const createSystemSlice = (set, get) => ({
                     supabase.from('employee_events').select('*'),
                     supabase.from('employee_documents').select('*'),
                     supabase.from('announcements').select('*').order('created_at', { ascending: false }),
+                    supabase.from('employee_branches').select('employee_id, branch_id'),
                 ]);
 
                 // Holidays
@@ -162,6 +164,12 @@ export const createSystemSlice = (set, get) => ({
                 (rostersData || []).forEach((r) => { rosterMap[r.employee_id] = r.schedule_data; });
 
                 if (empData) {
+                    const branchMap = {};
+                    (branchAssignData || []).forEach(({ employee_id, branch_id }) => {
+                        if (!branchMap[employee_id]) branchMap[employee_id] = [];
+                        branchMap[employee_id].push(branch_id);
+                    });
+
                     const mappedEmployees = empData.map((e) => {
                         const myHistory = eventsData ? eventsData.filter((ev) => String(ev.employee_id) === String(e.id)) : [];
                         const myDocs = docsData ? docsData.filter((d) => String(d.employee_id) === String(e.id)) : [];
@@ -181,6 +189,7 @@ export const createSystemSlice = (set, get) => ({
                             secondary_role_id: e.secondary_role_id,
                             role: e.main_role?.name || null,
                             secondary_role: e.sec_role?.name || null,
+                            assigned_branch_ids: branchMap[e.id] || [],
                         };
                     });
 

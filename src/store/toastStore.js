@@ -6,14 +6,16 @@ export const useToastStore = create((set, get) => ({
     message: '',
     type: 'success',
     theme: 'light',
+    _timer: null,
     showToast: (title, message, type = 'success', theme = 'light') => {
-        set({ isOpen: true, title, message, type, theme });
-        
-        setTimeout(() => {
-            if (get().isOpen) {
-                set({ isOpen: false });
-            }
-        }, 3500);
+        const prev = get()._timer;
+        if (prev) clearTimeout(prev);
+        const timer = setTimeout(() => set({ isOpen: false, _timer: null }), 3500);
+        set({ isOpen: true, title, message, type, theme, _timer: timer });
     },
-    hideToast: () => set({ isOpen: false })
+    hideToast: () => {
+        const prev = get()._timer;
+        if (prev) clearTimeout(prev);
+        set({ isOpen: false, _timer: null });
+    },
 }));

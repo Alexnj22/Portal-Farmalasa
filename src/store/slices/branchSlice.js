@@ -471,12 +471,13 @@ export const createBranchSlice = (set, get) => ({
             };
 
             // 1. Verificamos si ya existe un registro en BD para este mes y servicio
-            const { data: existingRecord } = await supabase.from('branch_expenses')
+            const { data: existingRecord, error: checkError } = await supabase.from('branch_expenses')
                 .select('id')
                 .eq('branch_id', branchId)
                 .eq('expense_type', expenseData.expense_type)
                 .eq('billing_month', expenseData.billing_month)
-                .single();
+                .maybeSingle();
+            if (checkError) throw checkError;
 
             if (existingRecord) {
                 const { error: updError } = await supabase.from('branch_expenses').update(dbExpense).eq('id', existingRecord.id);

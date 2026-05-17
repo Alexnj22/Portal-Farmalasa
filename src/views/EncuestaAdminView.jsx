@@ -451,7 +451,8 @@ export default function EncuestaAdminView() {
     const pendingEmployees = useMemo(() => {
         if (!selectedSurvey) return [];
         let pool = employees;
-        if (selectedSurvey.scope_tipo === 'roles') pool = pool.filter(e => e.role_id === 3 || e.role_id === 11);
+        if (selectedSurvey.scope_tipo === 'roles' && selectedSurvey.scope_ids?.length)
+            pool = pool.filter(e => selectedSurvey.scope_ids.includes(e.role_id));
         else if (selectedSurvey.scope_tipo === 'branches' && selectedSurvey.scope_ids?.length)
             pool = pool.filter(e => selectedSurvey.scope_ids.some(id => e.branch?.id === id));
         else if (selectedSurvey.scope_tipo === 'employees' && selectedSurvey.scope_ids?.length)

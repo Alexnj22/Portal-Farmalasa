@@ -699,7 +699,7 @@ export const createRequestsSlice = (set, get) => ({
 
             // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ─────────────────
             if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
-                const { data: peerEmp } = await supabase.from('employees').select('system_role').eq('id', approverId).single();
+                const { data: peerEmp } = await supabase.from('employees').select('system_role').eq('id', approverId).maybeSingle();
                 const peerIsJefe = ['JEFE', 'SUBJEFE'].includes(peerEmp?.system_role);
                 const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
 

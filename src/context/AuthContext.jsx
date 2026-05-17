@@ -141,7 +141,8 @@ export const AuthProvider = ({ children }) => {
     setPermsLoading(false);
     setMaxPriceLevel(null);
 
-    // 4. Supabase signOut en background — no bloqueamos la UI
+    // 4. Supabase signOut + cerrar todos los canales realtime
+    supabase.removeAllChannels();
     supabase.auth.signOut().catch(() => {});
   };
 
@@ -483,8 +484,8 @@ export const AuthProvider = ({ children }) => {
     const canApprove = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR', 'JEFE', 'SUBJEFE'].includes(systemRole);
     // hasPermission('requests', 'can_approve') → true/false
     const hasPermission = (moduleKey, action = 'can_view') => {
-      if (rolePerms === 'ALL') return true;
-      if (!rolePerms) return false; // mientras carga, negar todo
+      if (systemRole === 'SUPERADMIN') return true;
+      if (!rolePerms) return false;
       return !!(rolePerms[moduleKey]?.[action]);
     };
 

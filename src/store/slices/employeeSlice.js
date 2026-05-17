@@ -232,6 +232,7 @@ export const createEmployeeSlice = (set, get) => ({
                 photo: newEmp.photo_url,
                 role: mainRoleName,
                 secondary_role: secRoleName,
+                assigned_branch_ids: assignedBranches,
                 attendance: [],
                 history: [],
                 documents: []

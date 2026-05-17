@@ -304,7 +304,9 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user, maxPriceLevel } = useAuth();
+    const { user, maxPriceLevel, rolePerms } = useAuth();
+    const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['cotizaciones']?.can_edit;
+    const cotScope  = rolePerms === 'ALL' ? 'ALL' : (rolePerms?.['cotizaciones']?.scope ?? 'ALL');
 
     // Filtrar columnas de precio según el nivel máximo permitido al cargo
     const allowedPriceCols = useMemo(() => {
@@ -437,14 +439,16 @@ export default function CotizacionesView() {
     // ── Carga lista ───────────────────────────────────────────────────────────
     const loadList = useCallback(async () => {
         setLoadingList(true);
-        const { data } = await supabase
+        let q = supabase
             .from('cotizaciones')
             .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by_name, created_by_photo, branch_id')
             .order('created_at', { ascending: false })
             .limit(300);
+        if (cotScope === 'BRANCH' && user?.branchId) q = q.eq('branch_id', user.branchId);
+        const { data } = await q;
         setCotizaciones(data || []);
         setLoadingList(false);
-    }, []);
+    }, [cotScope, user?.branchId]);
 
     useEffect(() => { loadList(); }, [loadList]);
 
@@ -858,7 +862,7 @@ export default function CotizacionesView() {
                             className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
                             <ChevronLeft size={14} strokeWidth={3} /> Lista
                         </button>
-                        {cot.status === 'ACTIVA' && (
+                        {cot.status === 'ACTIVA' && canEdit && (
                             <>
                                 <button onClick={() => startEdit(cot)}
                                     className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 transition-all">
@@ -1034,12 +1038,12 @@ export default function CotizacionesView() {
             isProcessing={anulando}
         />
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
-            filtersContent={
+            filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
                     className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-95 transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
-            }
+            ) : undefined}
         >
             {/* Stats */}
             <div className="px-5 pt-5 pb-4 flex flex-wrap gap-3">
@@ -1151,7 +1155,7 @@ export default function CotizacionesView() {
                                                 {/* Acciones en hover */}
                                                 <td className="pr-3 py-2.5" onClick={e => e.stopPropagation()}>
                                                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                                        {!isAnulada && (
+                                                        {!isAnulada && canEdit && (
                                                             <>
                                                                 <button
                                                                     title="Editar"

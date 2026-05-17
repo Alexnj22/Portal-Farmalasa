@@ -509,6 +509,14 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
+    const { maxPriceLevel } = useAuth();
+    const allowedPriceFields = useMemo(() => {
+        if (!maxPriceLevel) return PRICE_FIELDS;
+        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
+        if (maxIdx === -1) return PRICE_FIELDS;
+        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
+    }, [maxPriceLevel]);
+
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
     const [saving, setSaving]             = useState(false);
@@ -836,14 +844,6 @@ export default function TabCatalogo({
     catOptions        = [],
     onCategoryCreated = null,
 }) {
-    const { maxPriceLevel } = useAuth();
-    const allowedPriceFields = useMemo(() => {
-        if (!maxPriceLevel) return PRICE_FIELDS;
-        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
-        if (maxIdx === -1) return PRICE_FIELDS;
-        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
-    }, [maxPriceLevel]);
-
     const branches = useStaff(s => s.branches);
 
     const [products, setProducts]     = useState([]);

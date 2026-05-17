@@ -38,19 +38,19 @@ function calcMargin(price, costo) {
     return (p - c) / p * 100;
 }
 
-function allMargins(pp) {
+function allMargins(pp, fields = PRICE_FIELDS) {
     const costo = parseFloat(pp.costo);
     if (!costo || costo <= 0) return {};
     const out = {};
-    PRICE_FIELDS.forEach(f => {
+    fields.forEach(f => {
         const price = parseFloat(pp[f.key]);
         if (price > 0) out[f.key] = (price - costo) / price * 100;
     });
     return out;
 }
 
-function worstMarginOf(pp) {
-    const vals = Object.values(allMargins(pp));
+function worstMarginOf(pp, fields = PRICE_FIELDS) {
+    const vals = Object.values(allMargins(pp, fields));
     return vals.length ? Math.min(...vals) : null;
 }
 
@@ -588,7 +588,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
     const worstOverall = precios.reduce((min, pp) => {
-        const w = worstMarginOf(pp);
+        const w = worstMarginOf(pp, allowedPriceFields);
         if (w === null) return min;
         return min === null ? w : Math.min(min, w);
     }, null);
@@ -686,7 +686,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                             {precios.map(pp => {
                                                 const pCh = changesMap[pp.id_presentacion] || {};
                                                 const rowChanged = Object.keys(pCh).length > 0;
-                                                const worst = worstMarginOf(pp);
+                                                const worst = worstMarginOf(pp, allowedPriceFields);
                                                 return (
                                                     <tr key={pp.id_presentacion} className={
                                                         rowChanged ? 'bg-amber-50/60' :
@@ -844,6 +844,14 @@ export default function TabCatalogo({
     catOptions        = [],
     onCategoryCreated = null,
 }) {
+    const { maxPriceLevel } = useAuth();
+    const allowedPriceFields = useMemo(() => {
+        if (!maxPriceLevel) return PRICE_FIELDS;
+        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
+        if (maxIdx === -1) return PRICE_FIELDS;
+        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
+    }, [maxPriceLevel]);
+
     const branches = useStaff(s => s.branches);
 
     const [products, setProducts]     = useState([]);
@@ -879,7 +887,7 @@ export default function TabCatalogo({
     const prefetchTimerRef = useRef(null);
     const prefetchingRef   = useRef(new Set());
 
-    // ── Load margin stats once ──────────────────────────────────────────────
+    // ── Load margin stats (re-runs when price level access changes) ────────
     useEffect(() => {
         setStatsLoading(true);
         supabase.from('product_precios')
@@ -891,7 +899,7 @@ export default function TabCatalogo({
                 const perdidaIds = new Set();
                 const bajoIds    = new Set();
                 (data || []).forEach(pp => {
-                    const w = worstMarginOf(pp);
+                    const w = worstMarginOf(pp, allowedPriceFields);
                     if (w === null) return;
                     if (w < 0)  perdidaIds.add(pp.product_id);
                     if (w < 15) bajoIds.add(pp.product_id);
@@ -899,7 +907,7 @@ export default function TabCatalogo({
                 setMarginStats({ perdidaIds, bajoIds });
                 setStatsLoading(false);
             });
-    }, []);
+    }, [allowedPriceFields]);
 
     // ── Load product counts (activos + inactivos + nuevos este mes) ───────────
     useEffect(() => {
@@ -967,7 +975,7 @@ export default function TabCatalogo({
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
                 const mm = {};
                 (pp || []).forEach(row => {
-                    const w = worstMarginOf(row);
+                    const w = worstMarginOf(row, allowedPriceFields);
                     if (w === null) return;
                     if (mm[row.product_id] === undefined || w < mm[row.product_id]) mm[row.product_id] = w;
                 });

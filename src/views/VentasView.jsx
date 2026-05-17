@@ -1152,6 +1152,7 @@ const DRILL_TIERS = [
     { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700' },
     { key: 'vineta',      label: 'Vineta',  color: 'bg-slate-100 text-slate-600' },
 ];
+const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PAGO_STYLE = {
     efectivo:      'bg-emerald-50 text-emerald-700',
     tarjeta:       'bg-blue-50 text-blue-700',
@@ -1160,10 +1161,10 @@ const PAGO_STYLE = {
     cheque:        'bg-zinc-100 text-zinc-600',
     bitcoin:       'bg-orange-50 text-orange-600',
 };
-function detectTier(precioUnitario, preciosRow) {
+function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
     if (!preciosRow || !precioUnitario) return null;
     // Tier prices stored with IVA; normalize to net for comparison with net precio_unitario.
-    const candidates = DRILL_TIERS
+    const candidates = tiers
         .map(t => ({ ...t, price: parseFloat(preciosRow[t.key] || 0) / 1.13 }))
         .filter(t => t.price > 0);
     if (!candidates.length) return null;
@@ -1206,6 +1207,13 @@ function findFirstChangeSince(history, idPresentaciones, fechaStr) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
+    const { maxPriceLevel } = useAuth();
+    const allowedDrillTiers = useMemo(() => {
+        if (!maxPriceLevel) return DRILL_TIERS;
+        const maxIdx = DRILL_TIER_ORDER.indexOf(maxPriceLevel);
+        if (maxIdx === -1) return DRILL_TIERS;
+        return DRILL_TIERS.filter(t => DRILL_TIER_ORDER.indexOf(t.key) <= maxIdx);
+    }, [maxPriceLevel]);
     const { branches, employees } = useStaff();
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
@@ -1365,8 +1373,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 const resolvedHistId = histById ? idPres
                     : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
                     : idPres;
-                const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices);
-                const currentTier = detectTier(row.precio_unitario, currPrices);
+                const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices, allowedDrillTiers);
+                const currentTier = detectTier(row.precio_unitario, currPrices, allowedDrillTiers);
                 const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
                 const tierChangedAt = tierChanged
                     ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha)

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import { useAuth } from '../../context/AuthContext';
 import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
@@ -13,13 +14,15 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 const PAGE_SIZES = [25, 50, 100];
 
 const PRICE_FIELDS = [
-    { key: 'vineta',      label: 'Víneta'  },
-    { key: 'descuento_1', label: 'Desc. 1' },
-    { key: 'vip',         label: 'VIP'     },
-    { key: 'clinica',     label: 'Clínica' },
-    { key: 'mayoreo',     label: 'Mayoreo' },
-    { key: 'premium',     label: 'Premium' },
+    { key: 'vineta',      label: 'Víneta'   },
+    { key: 'descuento_1', label: 'Desc. 1'  },
+    { key: 'vip',         label: 'VIP'      },
+    { key: 'clinica',     label: 'Clínica'  },
+    { key: 'mayoreo',     label: 'Mayoreo'  },
+    { key: 'premium',     label: 'Premium'  },
+    { key: 'precio_7',    label: 'Precio 7' },
 ];
+const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -665,7 +668,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
-                                                {PRICE_FIELDS.map(f => (
+                                                {allowedPriceFields.map(f => (
                                                     <th key={f.key} className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
                                                 ))}
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
@@ -690,7 +693,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                         </td>
                                                         <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
                                                         <td className="px-3 py-2.5 text-right text-[11px] font-medium text-slate-500">{fmtP(pp.costo)}</td>
-                                                        {PRICE_FIELDS.map(f => {
+                                                        {allowedPriceFields.map(f => {
                                                             const ch = pCh[f.key];
                                                             const m  = calcMargin(pp[f.key], pp.costo);
                                                             return (
@@ -833,6 +836,14 @@ export default function TabCatalogo({
     catOptions        = [],
     onCategoryCreated = null,
 }) {
+    const { maxPriceLevel } = useAuth();
+    const allowedPriceFields = useMemo(() => {
+        if (!maxPriceLevel) return PRICE_FIELDS;
+        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
+        if (maxIdx === -1) return PRICE_FIELDS;
+        return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
+    }, [maxPriceLevel]);
+
     const branches = useStaff(s => s.branches);
 
     const [products, setProducts]     = useState([]);

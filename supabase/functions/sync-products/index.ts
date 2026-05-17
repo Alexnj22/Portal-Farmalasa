@@ -92,16 +92,24 @@ Deno.serve(async (req) => {
     if (presErr) throw new Error(`Presentaciones upsert: ${presErr.message}`);
 
     // 4. Build product rows
-    const productRowsRaw = productos.map((p: any) => ({
-      id:             p.id,
-      nombre:         p.nombre,
-      codigo_barras:  p.codigo_barras ?? null,
-      laboratorio_id: p.laboratorio?.id ?? null,
-      es_antibiotico: p.es_antibiotico ?? false,
-      activo:         p.activo ?? true,
-      perecedero:     p.perecedero ?? false,
-      updated_at:     now,
-    }));
+    // activo is derived from whether any presentation is active — the ERP product-level flag
+    // is unreliable (ERP UI shows a product as active when it has ≥1 active presentation).
+    const productRowsRaw = productos.map((p: any) => {
+      const pres: any[] = p.presentaciones ?? [];
+      const activo = pres.length > 0
+        ? pres.some((pr: any) => pr.activo !== false)
+        : (p.activo ?? true);
+      return {
+        id:             p.id,
+        nombre:         p.nombre,
+        codigo_barras:  p.codigo_barras ?? null,
+        laboratorio_id: p.laboratorio?.id ?? null,
+        es_antibiotico: p.es_antibiotico ?? false,
+        activo,
+        perecedero:     p.perecedero ?? false,
+        updated_at:     now,
+      };
+    });
     const productRowsDeduped = new Map<number, any>();
     for (const p of productRowsRaw) productRowsDeduped.set(p.id, p);
     const productRows = [...productRowsDeduped.values()];

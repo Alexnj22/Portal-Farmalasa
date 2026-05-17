@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
     while (true) {
       const { data: batch } = await supabase
         .from('product_precios')
-        .select('product_id, id_presentacion, descripcion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
+        .select('product_id, id_presentacion, descripcion, activo, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
         .range(pFrom, pFrom + CHUNK - 1);
       if (!batch || batch.length === 0) break;
       existingPreciosAll.push(...batch);
@@ -232,6 +232,11 @@ Deno.serve(async (req) => {
         });
         hasChange = true;
       }
+
+      // Check activo (presentation enabled/disabled in ERP)
+      const oldActivo = er.activo ?? true;
+      const newActivo = nr.activo ?? true;
+      if (oldActivo !== newActivo) hasChange = true;
 
       if (hasChange) changedKeys.add(key);
     }

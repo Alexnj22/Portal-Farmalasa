@@ -695,8 +695,8 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                     }>
                                                         <td className="px-3 py-2.5 whitespace-nowrap">
                                                             <span className="text-[12px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
-                                                            {pp.presentaciones?.descripcion && (
-                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.presentaciones.descripcion}</span>
+                                                            {pp.descripcion && (
+                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.descripcion}</span>
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.presentaciones?.factor ?? '—'}</td>
@@ -1026,7 +1026,7 @@ export default function TabCatalogo({
             prefetchingRef.current.add(productId);
             try {
                 const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
-                    supabase.from('product_precios').select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
+                    supabase.from('product_precios').select(`id_presentacion, activo, descripcion, costo, ${PRICE_SELECT}, presentaciones(tipo, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
                     supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
@@ -1048,7 +1048,7 @@ export default function TabCatalogo({
         prefetchingRef.current.add(productId);
         try {
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
-                supabase.from('product_precios').select(`id_presentacion, activo, costo, ${PRICE_SELECT}, presentaciones(tipo, descripcion, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
+                supabase.from('product_precios').select(`id_presentacion, activo, descripcion, costo, ${PRICE_SELECT}, presentaciones(tipo, factor)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
                 supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),

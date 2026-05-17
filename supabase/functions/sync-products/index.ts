@@ -10,6 +10,7 @@ const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_prod
 const CREDENTIALS  = { username: 'documento1.supervisor', password: 'documento9999' };
 const CHUNK        = 500;
 
+// Numeric price fields — compared with tolerance
 const PRICE_FIELDS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'] as const;
 
 async function getSessionCookie(): Promise<string> {
@@ -63,17 +64,16 @@ Deno.serve(async (req) => {
     const { error: labErr } = await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
     if (labErr) throw new Error(`Laboratorios upsert: ${labErr.message}`);
 
-    // 3. Upsert presentaciones catalog
+    // 3. Upsert presentaciones catalog (tipo only — descripcion lives in product_precios per product)
     const presMap = new Map<number, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
         if (!presMap.has(pres.id_presentacion)) {
           presMap.set(pres.id_presentacion, {
-            id:          pres.id_presentacion,
-            tipo:        pres.tipo?.trim() ?? null,
-            descripcion: pres.descripcion ?? null,
-            factor:      pres.factor ?? 1,
-            updated_at:  now,
+            id:         pres.id_presentacion,
+            tipo:       pres.tipo?.trim() ?? null,
+            factor:     pres.factor ?? 1,
+            updated_at: now,
           });
         }
       }
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     for (const p of productRowsRaw) productRowsDeduped.set(p.id, p);
     const productRows = [...productRowsDeduped.values()];
 
-    // Load ALL existing products from DB via pagination (avoids URL-length limit of .in())
+    // Load ALL existing products from DB via pagination
     const existingProductsAll: any[] = [];
     let epFrom = 0;
     while (true) {
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       await supabase.from('products_changelog').insert(productChangelogs);
     }
 
-    // 5. Build precio rows — deduplicate by (product_id, id_presentacion)
+    // 5. Build precio rows — descripcion is per product+presentacion
     const precioRowsMap = new Map<string, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
         precioRowsMap.set(key, {
           product_id:      p.id,
           id_presentacion: pres.id_presentacion,
+          descripcion:     pres.descripcion ?? null,
           activo:          pres.activo ?? true,
           costo:           pres.costo ?? null,
           vineta:          precios.vineta ?? null,
@@ -165,13 +166,13 @@ Deno.serve(async (req) => {
     }
     const precioRows = [...precioRowsMap.values()];
 
-    // 5a. Detect price changes vs current product_precios — fetch ALL rows in chunks
+    // 5a. Fetch all existing precios (including descripcion for change detection)
     const existingPreciosAll: any[] = [];
     let pFrom = 0;
     while (true) {
       const { data: batch } = await supabase
         .from('product_precios')
-        .select('product_id, id_presentacion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
+        .select('product_id, id_presentacion, descripcion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
         .range(pFrom, pFrom + CHUNK - 1);
       if (!batch || batch.length === 0) break;
       existingPreciosAll.push(...batch);
@@ -197,6 +198,8 @@ Deno.serve(async (req) => {
       }
 
       let hasChange = false;
+
+      // Check numeric price fields
       for (const campo of PRICE_FIELDS) {
         const oldVal = er[campo];
         const newVal = nr[campo];
@@ -207,13 +210,29 @@ Deno.serve(async (req) => {
             product_id:      nr.product_id,
             id_presentacion: nr.id_presentacion,
             campo,
-            valor_anterior:  oldVal,
-            valor_nuevo:     newVal,
+            valor_anterior:  oldVal != null ? String(oldVal) : null,
+            valor_nuevo:     newVal != null ? String(newVal) : null,
             detected_at:     now,
           });
           hasChange = true;
         }
       }
+
+      // Check descripcion (text field — exact match)
+      const oldDesc = er.descripcion ?? null;
+      const newDesc = nr.descripcion ?? null;
+      if (oldDesc !== newDesc) {
+        precioChangelogs.push({
+          product_id:      nr.product_id,
+          id_presentacion: nr.id_presentacion,
+          campo:           'descripcion',
+          valor_anterior:  oldDesc,
+          valor_nuevo:     newDesc,
+          detected_at:     now,
+        });
+        hasChange = true;
+      }
+
       if (hasChange) changedKeys.add(key);
     }
 

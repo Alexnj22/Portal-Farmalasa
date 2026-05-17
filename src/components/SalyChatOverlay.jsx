@@ -27,7 +27,11 @@ const SalyChatOverlay = () => {
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
     useEffect(() => { if (isOpen) scrollToBottom(); }, [messages, isOpen, isTyping]);
-    useEffect(() => { if (isOpen) setTimeout(() => inputRef.current?.focus(), 300); }, [isOpen]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const t = setTimeout(() => inputRef.current?.focus(), 300);
+        return () => clearTimeout(t);
+    }, [isOpen]);
 
     // 🧬 Mensaje de Bienvenida
     useEffect(() => {

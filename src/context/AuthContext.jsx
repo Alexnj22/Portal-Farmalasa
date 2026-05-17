@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
+import { useStaffStore } from "../store/staffStore";
 
 const AuthContext = createContext(null);
 
@@ -141,8 +142,8 @@ export const AuthProvider = ({ children }) => {
     setPermsLoading(false);
     setMaxPriceLevel(null);
 
-    // 4. Supabase signOut + cerrar todos los canales realtime
-    supabase.removeAllChannels();
+    // 4. Reset boot state (cierra canal realtime + limpia bootStatus/_announcementsChannel)
+    useStaffStore.getState().resetBootState();
     supabase.auth.signOut().catch(() => {});
   };
 

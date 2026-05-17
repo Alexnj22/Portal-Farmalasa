@@ -889,24 +889,36 @@ export default function TabCatalogo({
 
     // ── Load margin stats (re-runs when price level access changes) ────────
     useEffect(() => {
+        let cancelled = false;
         setStatsLoading(true);
-        supabase.from('product_precios')
-            .select(`product_id, costo, ${PRICE_SELECT}`)
-            .eq('activo', true)
-            .gt('costo', 0)
-            .limit(10000)
-            .then(({ data }) => {
-                const perdidaIds = new Set();
-                const bajoIds    = new Set();
-                (data || []).forEach(pp => {
-                    const w = worstMarginOf(pp, allowedPriceFields);
-                    if (w === null) return;
-                    if (w < 0)  perdidaIds.add(pp.product_id);
-                    if (w < 15) bajoIds.add(pp.product_id);
-                });
+
+        const PAGE = 1000;
+        const perdidaIds = new Set();
+        const bajoIds    = new Set();
+
+        const fetchPage = async (from) => {
+            const { data } = await supabase.from('product_precios')
+                .select(`product_id, costo, ${PRICE_SELECT}`)
+                .eq('activo', true)
+                .gt('costo', 0)
+                .range(from, from + PAGE - 1);
+            if (cancelled || !data) return;
+            data.forEach(pp => {
+                const w = worstMarginOf(pp, allowedPriceFields);
+                if (w === null) return;
+                if (w < 0)  perdidaIds.add(pp.product_id);
+                if (w < 15) bajoIds.add(pp.product_id);
+            });
+            if (data.length === PAGE) {
+                await fetchPage(from + PAGE);
+            } else {
                 setMarginStats({ perdidaIds, bajoIds });
                 setStatsLoading(false);
-            });
+            }
+        };
+
+        fetchPage(0);
+        return () => { cancelled = true; };
     }, [allowedPriceFields]);
 
     // ── Load product counts (activos + inactivos + nuevos este mes) ───────────

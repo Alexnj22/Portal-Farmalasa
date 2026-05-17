@@ -99,17 +99,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
 
-    // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
-    if (!emp) return (
-        <div className="w-full h-[100dvh] flex items-center justify-center bg-[#F2F2F7]">
-            <div className="flex flex-col items-center gap-4 text-slate-400 animate-pulse">
-                <div className="w-16 h-16 border-4 border-slate-200 border-t-[#007AFF] rounded-full animate-spin"></div>
-                <p className="text-[10px] font-black uppercase tracking-widest">Cargando Perfil...</p>
-            </div>
-        </div>
-    );
-
-    const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
+    const branch = branches.find(b => String(b.id) === String(emp?.branchId || emp?.branch_id));
 
     const [ausenciasSearch, setAusenciasSearch]           = useState('');
     const [ausenciasSearchOpen, setAusenciasSearchOpen]   = useState(false);
@@ -117,6 +107,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [ausenciasCalMonth, setAusenciasCalMonth]       = useState(() => new Date());
 
     const timeline = useMemo(() => {
+        if (!emp) return [];
         const rawHistory = Array.isArray(emp.history) ? emp.history : [];
         const syntheticEvents = [];
 
@@ -144,7 +135,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         });
 
         return [...mappedHistory, ...syntheticEvents].sort((a, b) => new Date(b.date) - new Date(a.date));
-    }, [emp.history, emp.hireDate, emp.hire_date, branch]);
+    }, [emp?.history, emp?.hireDate, emp?.hire_date, branch]);
 
     const ausenciasData = useMemo(() => {
         let list = timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY');
@@ -217,7 +208,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             map[wd.name] = Math.round(mins / 6) / 10;
         });
         return map;
-    }, [emp.weeklySchedule, shifts]);
+    }, [emp?.weeklySchedule, shifts]);
 
     const ausenciasCalDays = useMemo(() => {
         const y = ausenciasCalMonth.getFullYear(), m = ausenciasCalMonth.getMonth();
@@ -229,17 +220,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         return { cells, year: y, month: m };
     }, [ausenciasCalMonth]);
 
-    const fallbackInitials = emp.name ? emp.name.charAt(0).toUpperCase() : '👤';
+    const fallbackInitials = emp?.name ? emp.name.charAt(0).toUpperCase() : '👤';
 
     const age = useMemo(() => {
-        if (!emp.birth_date && !emp.birthDate) return null;
+        if (!emp?.birth_date && !emp?.birthDate) return null;
         const bDate = new Date((emp.birth_date || emp.birthDate) + 'T12:00:00');
         const diff = Date.now() - bDate.getTime();
         return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-    }, [emp.birth_date, emp.birthDate]);
+    }, [emp?.birth_date, emp?.birthDate]);
 
     const tenure = useMemo(() => {
-        if (!emp.hire_date && !emp.hireDate) return 'Sin fecha';
+        if (!emp?.hire_date && !emp?.hireDate) return 'Sin fecha';
         const hDate = new Date((emp.hire_date || emp.hireDate) + 'T12:00:00');
         const now = new Date();
         let years = now.getFullYear() - hDate.getFullYear();
@@ -247,14 +238,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (months < 0) { years--; months += 12; }
         if (years === 0 && months === 0) return 'Nuevo Ingreso';
         return `${years > 0 ? `${years} Año${years > 1 ? 's' : ''} ` : ''}${months > 0 ? `${months} Mes${months > 1 ? 'es' : ''}` : ''}`;
-    }, [emp.hire_date, emp.hireDate]);
+    }, [emp?.hire_date, emp?.hireDate]);
 
     const latePunches = useMemo(() => {
-        return (emp.attendance || []).filter(a => a.type === 'LATE').length;
-    }, [emp.attendance]);
+        return (emp?.attendance || []).filter(a => a.type === 'LATE').length;
+    }, [emp?.attendance]);
 
     const scheduleData = useMemo(() => {
-        const scheduleMap = emp.weeklySchedule || {};
+        const scheduleMap = emp?.weeklySchedule || {};
         return WEEK_DAYS.map(wd => {
             const shiftId = scheduleMap[wd.id];
             if (!shiftId || shiftId === 'LIBRE') {
@@ -264,12 +255,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             if (!assignedShift) {
                 return { day: wd.name, active: false, start: '-', end: '-', break: '-' };
             }
-            return { 
-                day: wd.name, active: true, start: formatTime12h(assignedShift.start), 
-                end: formatTime12h(assignedShift.end), break: 'Definido por Ley' 
+            return {
+                day: wd.name, active: true, start: formatTime12h(assignedShift.start),
+                end: formatTime12h(assignedShift.end), break: 'Definido por Ley'
             };
         });
-    }, [emp.weeklySchedule, shifts]);
+    }, [emp?.weeklySchedule, shifts]);
 
     const todayName = useMemo(() => {
         const days = { 0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
@@ -285,8 +276,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const handleNewHRAction = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (typeof openModal === 'function') openModal('newEvent', { type: 'TRANSFER', employeeId: emp.id });
-    }, [openModal, emp.id]);
+        if (typeof openModal === 'function') openModal('newEvent', { type: 'TRANSFER', employeeId: emp?.id });
+    }, [openModal, emp?.id]);
 
     const handleVacationRecall = useCallback((e) => {
         e.preventDefault();
@@ -297,8 +288,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const handleUploadConstancia = useCallback((e, punchTimestamp) => {
         e.preventDefault();
         e.stopPropagation();
-        if (typeof openModal === 'function') openModal('uploadConstancia', { employeeId: emp.id, punchTimestamp });
-    }, [openModal, emp.id]);
+        if (typeof openModal === 'function') openModal('uploadConstancia', { employeeId: emp?.id, punchTimestamp });
+    }, [openModal, emp?.id]);
+
+    // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
+    if (!emp) return (
+        <div className="w-full h-[100dvh] flex items-center justify-center bg-[#F2F2F7]">
+            <div className="flex flex-col items-center gap-4 text-slate-400 animate-pulse">
+                <div className="w-16 h-16 border-4 border-slate-200 border-t-[#007AFF] rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest">Cargando Perfil...</p>
+            </div>
+        </div>
+    );
 
     const handleResetPassword = () => setShowResetConfirm(true);
 

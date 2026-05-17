@@ -3,22 +3,22 @@ import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight,
 
 const FormAnnouncements = ({ data }) => {
   const readersModal = data?.announcement;
-  
-  if (!readersModal) return null;
 
-  // 1. Separar los empleados en dos listas (Lo movemos arriba para evaluar los estados iniciales)
-  const confirmedList = readersModal.audience?.filter((emp) => readersModal.readSet?.has(String(emp.id))) || [];
-  const pendingList = readersModal.audience?.filter((emp) => !readersModal.readSet?.has(String(emp.id))) || [];
+  // 1. Separar los empleados en dos listas
+  const confirmedList = readersModal?.audience?.filter((emp) => readersModal.readSet?.has(String(emp.id))) || [];
+  const pendingList = readersModal?.audience?.filter((emp) => !readersModal.readSet?.has(String(emp.id))) || [];
 
-  // 🚨 ESTADOS DE PAGINACIÓN LOCAL
+  // ESTADOS DE PAGINACIÓN LOCAL — deben estar antes del early return
   const [confirmedPage, setConfirmedPage] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
-  const ITEMS_PER_PAGE = 24; 
+  const ITEMS_PER_PAGE = 24;
 
-  // 🚨 ESTADOS DE COLAPSO (Inteligentes)
+  // ESTADOS DE COLAPSO — lazy initializers para leer confirmedList de forma segura
   // Confirmados abierto SOLO si hay lecturas. Pendientes CERRADO por defecto.
-  const [isConfirmedOpen, setIsConfirmedOpen] = useState(confirmedList.length > 0);
+  const [isConfirmedOpen, setIsConfirmedOpen] = useState(() => confirmedList.length > 0);
   const [isPendingOpen, setIsPendingOpen] = useState(false);
+
+  if (!readersModal) return null;
 
   // 2. Calcular las porciones a mostrar según la página actual
   const paginatedConfirmed = confirmedList.slice((confirmedPage - 1) * ITEMS_PER_PAGE, confirmedPage * ITEMS_PER_PAGE);

@@ -2028,10 +2028,15 @@ const TABS = [
 
 export default function FacturacionView() {
     const branches = useStaff((state) => state.branches);
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+
+    // Pestañas filtradas según permisos
     const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo']);
-    const activeTab = VALID_TABS.has(searchParams.get('tab')) ? searchParams.get('tab') : 'anuladas';
+    const allowedTabs = TABS.filter(t => hasPermission(`facturacion_tab_${t.key}`));
+    const defaultTab  = allowedTabs[0]?.key ?? 'anuladas';
+    const rawTab      = searchParams.get('tab');
+    const activeTab   = VALID_TABS.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
     const [filterBranch, setFilterBranch] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
@@ -2083,7 +2088,7 @@ export default function FacturacionView() {
             {/* Normal mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
-                {TABS.map(tab => (
+                {allowedTabs.map(tab => (
                     <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             activeTab === tab.key

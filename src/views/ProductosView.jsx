@@ -5,6 +5,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import TabCatalogo     from './productos/TabCatalogo';
 import TabInventario   from './productos/TabInventario';
 import { supabase }    from '../supabaseClient';
+import { useAuth }     from '../context/AuthContext';
 
 const TABS = [
     { key: 'catalogo',   label: 'Catálogo',   icon: LayoutList },
@@ -13,9 +14,13 @@ const TABS = [
 
 export default function ProductosView() {
     // ── Tab + search ────────────────────────────────────────────────────────
+    const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
-    const VALID      = new Set(['catalogo', 'inventario']);
-    const activeTab  = VALID.has(searchParams.get('tab')) ? searchParams.get('tab') : 'catalogo';
+    const VALID        = new Set(['catalogo', 'inventario']);
+    const allowedTabs  = TABS.filter(t => hasPermission(`productos_tab_${t.key}`));
+    const defaultTab   = allowedTabs[0]?.key ?? 'catalogo';
+    const rawTab       = searchParams.get('tab');
+    const activeTab    = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     const [isSearchMode, setIsSearchMode] = useState(false);
@@ -85,7 +90,7 @@ export default function ProductosView() {
                 <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
                     ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
-                    {TABS.map(tab => {
+                    {allowedTabs.map(tab => {
                         const Icon = tab.icon;
                         return (
                             <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}

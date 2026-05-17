@@ -57,8 +57,17 @@ const MODULE_GROUPS = [
         group: 'Comercial',
         color: 'text-emerald-600',
         modules: [
-            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false },
-            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false },
+            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, tabs: [
+                { key: 'ventas_tab_ventas',     label: 'Ventas'     },
+                { key: 'ventas_tab_vendedores', label: 'Vendedores' },
+                { key: 'ventas_tab_productos',  label: 'Productos'  },
+            ]},
+            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false, tabs: [
+                { key: 'facturacion_tab_anuladas',     label: 'Anuladas'     },
+                { key: 'facturacion_tab_pendiente_mh', label: 'Pendiente MH' },
+                { key: 'facturacion_tab_saltos',       label: 'Saltos'       },
+                { key: 'facturacion_tab_no_efectivo',  label: 'No Efectivo'  },
+            ]},
             { key: 'cotizaciones',  label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt, hasApprove: false, hasScope: true },
         ],
     },
@@ -66,7 +75,10 @@ const MODULE_GROUPS = [
         group: 'Inventario',
         color: 'text-teal-600',
         modules: [
-            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false },
+            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
+                { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
+                { key: 'productos_tab_inventario', label: 'Inventario' },
+            ]},
         ],
     },
     {
@@ -122,8 +134,12 @@ const MODULE_GROUPS = [
     },
 ];
 
-// Lista plana para iteraciones que la necesiten
-const MODULES = MODULE_GROUPS.flatMap(g => g.modules);
+// Lista plana completa (incluye sub-tabs) para operaciones bulk (activate all, copy from)
+const MODULES = MODULE_GROUPS.flatMap(g =>
+    g.modules.flatMap(m => [m, ...(m.tabs || []).map(t => ({ key: t.key, hasApprove: false, isTab: true }))])
+);
+// Solo módulos principales (sin sub-tabs) para estadísticas y conteos
+const MAIN_MODULES = MODULES.filter(m => !m.isTab);
 
 // ─── Metadatos de roles (solo display — la lista real viene de la DB) ────────
 const ROLE_META = {
@@ -220,7 +236,7 @@ const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false }) =>
 );
 
 // ─── Módulo card ────────────────────────────────────────────────────────────
-const ModuleCard = ({ module, perms, onChange, locked, saving }) => {
+const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, tabSaving, onTabChange }) => {
     const ModIcon = module.icon;
     const hasAnyPerm = perms.can_view || perms.can_edit || perms.can_approve;
     const currentScope = perms.scope || 'ALL';
@@ -297,6 +313,34 @@ const ModuleCard = ({ module, perms, onChange, locked, saving }) => {
                         </div>
                     </div>
                 )}
+
+                {/* Sub-tabs — solo visible cuando can_view está activo */}
+                {tabs && perms.can_view && tabPerms && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pestañas visibles</p>
+                        <div className="space-y-2">
+                            {tabs.map(tab => {
+                                const tabPerm = tabPerms[tab.key] || { can_view: false };
+                                return (
+                                    <div key={tab.key} className="flex items-center justify-between gap-3">
+                                        <span className={`text-[10px] font-semibold ${tabPerm.can_view ? 'text-slate-600' : 'text-slate-300'}`}>
+                                            {tab.label}
+                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            {tabSaving?.[tab.key] && <Loader2 size={10} className="text-slate-400 animate-spin" />}
+                                            <Toggle
+                                                value={!!tabPerm.can_view}
+                                                onChange={v => onTabChange(tab.key, 'can_view', v)}
+                                                color="bg-blue-500"
+                                                disabled={locked}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -310,6 +354,7 @@ const PermissionsView = () => {
     const [selectedRoleId, setSelectedRoleId] = useState(null); // integer (roles.id)
     const [orgRoles, setOrgRoles] = useState([]);               // [{ id, name, parent_role_id }] sorted hierarchically
     const [permissions, setPermissions] = useState({});         // { 'role_id:module_key': { can_view, can_edit, can_approve } }
+    const [rolePriceLevels, setRolePriceLevels] = useState({}); // { [roleId]: string | null }
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState({});
     const [savedFlash, setSavedFlash] = useState({});
@@ -325,7 +370,7 @@ const PermissionsView = () => {
     useEffect(() => {
         setLoading(true);
         Promise.all([
-            supabase.from('roles').select('id, name, parent_role_id').order('id'),
+            supabase.from('roles').select('id, name, parent_role_id, max_price_level').order('id'),
             supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve, scope').not('role_id', 'is', null),
         ]).then(([{ data: rolesData }, { data: permsData }]) => {
             // Ordenar jerárquicamente: raíz → hijos → nietos...
@@ -346,7 +391,11 @@ const PermissionsView = () => {
             }
             const loadedRoles = sorted;
             setOrgRoles(loadedRoles);
-            // No auto-select: usuario debe elegir un cargo
+
+            // Niveles de precio por cargo
+            const levels = {};
+            rawRoles.forEach(r => { levels[r.id] = r.max_price_level ?? null; });
+            setRolePriceLevels(levels);
 
             const map = {};
             (permsData || []).forEach(p => {
@@ -406,6 +455,13 @@ const PermissionsView = () => {
         }
     }, [selectedRoleId, permissions]);
 
+    // ── Nivel de precio por cargo ────────────────────────────────────────────
+    const handlePriceLevelChange = useCallback(async (level) => {
+        if (!selectedRoleId) return;
+        setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: level }));
+        await supabase.from('roles').update({ max_price_level: level }).eq('id', selectedRoleId);
+    }, [selectedRoleId]);
+
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
     const handleActivateAll = useCallback(async () => {
         if (!selectedRoleId) return;
@@ -415,30 +471,32 @@ const PermissionsView = () => {
             system_role: null,
             module_key: m.key,
             can_view: true,
-            can_edit: true,
+            can_edit: m.isTab ? false : true,
             can_approve: m.hasApprove ? true : false,
             scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
-        const { error } = await supabase
-            .from('role_permissions')
-            .upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false });
+        const [{ error }] = await Promise.all([
+            supabase.from('role_permissions').upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false }),
+            supabase.from('roles').update({ max_price_level: null }).eq('id', selectedRoleId),
+        ]);
         if (!error) {
             setPermissions(prev => {
                 const next = { ...prev };
                 MODULES.forEach(m => {
                     next[`${selectedRoleId}:${m.key}`] = {
                         can_view: true,
-                        can_edit: true,
+                        can_edit: m.isTab ? false : true,
                         can_approve: m.hasApprove ? true : false,
                         scope: prev[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
                     };
                 });
                 return next;
             });
+            setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: null }));
         }
         setActivatingAll(false);
-    }, [selectedRoleId]);
+    }, [selectedRoleId, permissions]);
 
     // ── Copiar permisos de otro cargo ────────────────────────────────────────
     const handleCopyFrom = useCallback(async (sourceRoleId) => {
@@ -457,9 +515,11 @@ const PermissionsView = () => {
                 updated_at: new Date().toISOString(),
             };
         });
-        const { error } = await supabase
-            .from('role_permissions')
-            .upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false });
+        const srcLevel = rolePriceLevels[sourceRoleId] ?? null;
+        const [{ error }] = await Promise.all([
+            supabase.from('role_permissions').upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false }),
+            supabase.from('roles').update({ max_price_level: srcLevel }).eq('id', selectedRoleId),
+        ]);
         if (!error) {
             setPermissions(prev => {
                 const next = { ...prev };
@@ -474,9 +534,10 @@ const PermissionsView = () => {
                 });
                 return next;
             });
+            setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: srcLevel }));
         }
         setCopyingFrom(false);
-    }, [selectedRoleId, permissions]);
+    }, [selectedRoleId, permissions, rolePriceLevels]);
 
     // ── Toggle de sección completa ────────────────────────────────────────────
     const handleGroupToggle = useCallback(async (groupModules, activate) => {
@@ -515,12 +576,12 @@ const PermissionsView = () => {
     const selectedOrgRoleIdx = orgRoles.findIndex(r => r.id === selectedRoleId);
     const roleStyle = ROLE_COLORS[selectedOrgRoleIdx >= 0 ? selectedOrgRoleIdx % ROLE_COLORS.length : 0];
 
-    // Stats for selected role
+    // Stats for selected role (solo módulos principales, sin sub-tabs)
     const roleStats = useMemo(() => {
-        const total = MODULES.length;
-        const withView = MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view).length;
-        const withEdit = MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_edit).length;
-        const withApprove = MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_approve && m.hasApprove).length;
+        const total = MAIN_MODULES.length;
+        const withView = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view).length;
+        const withEdit = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_edit).length;
+        const withApprove = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_approve && m.hasApprove).length;
         return { total, withView, withEdit, withApprove };
     }, [selectedRoleId, permissions]);
 
@@ -667,7 +728,7 @@ const PermissionsView = () => {
                         {filteredRoles.map((r, idx) => {
                             const isActive = selectedRoleId === r.id;
                             const cs = ROLE_COLORS[idx % ROLE_COLORS.length];
-                            const viewCount = MODULES.filter(m => permissions[`${r.id}:${m.key}`]?.can_view).length;
+                            const viewCount = MAIN_MODULES.filter(m => permissions[`${r.id}:${m.key}`]?.can_view).length;
                             return (
                                 <button
                                     key={r.id}
@@ -685,7 +746,7 @@ const PermissionsView = () => {
                                         <div className="flex-1 min-w-0">
                                             <p className={`text-[12px] font-black leading-tight ${isActive ? cs.textColor : 'text-slate-700'}`}>{r.name}</p>
                                             <p className={`text-[10px] font-medium mt-0.5 ${isActive ? cs.textColor + ' opacity-70' : 'text-slate-400'}`}>
-                                                {viewCount} de {MODULES.length} módulos
+                                                {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
                                         {isActive && <ChevronRight size={14} className={cs.textColor} strokeWidth={2.5} />}
@@ -720,9 +781,50 @@ const PermissionsView = () => {
                         ) : (
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">
+
+                            {/* ── Card: Acceso a Niveles de Precio ── */}
+                            <div className={`rounded-[1.5rem] border p-4 transition-all duration-300 ${rolePriceLevels[selectedRoleId] ? 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]' : 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]'}`}>
+                                <div className="flex items-start gap-3 mb-4">
+                                    <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0">
+                                        <DollarSign size={16} className="text-white" strokeWidth={1.8} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] font-black text-slate-800 leading-tight">Acceso a Niveles de Precio</p>
+                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">Precio máximo que este cargo puede ver en cualquier módulo</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {[
+                                        { value: null,          label: 'Sin límite (todos)' },
+                                        { value: 'vineta',      label: 'Viñeta'      },
+                                        { value: 'descuento_1', label: 'Descuento 1' },
+                                        { value: 'vip',         label: 'VIP'         },
+                                        { value: 'clinica',     label: 'Clínica'     },
+                                        { value: 'mayoreo',     label: 'Mayoreo'     },
+                                        { value: 'premium',     label: 'Premium'     },
+                                        { value: 'precio_7',    label: 'Precio 7'    },
+                                    ].map(opt => {
+                                        const current = rolePriceLevels[selectedRoleId] ?? null;
+                                        const isActive = current === opt.value;
+                                        return (
+                                            <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
+                                                onClick={() => canEdit && handlePriceLevelChange(opt.value)}
+                                                className={`py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${
+                                                    isActive ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                                } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             {MODULE_GROUPS.map((g, gi) => {
+                                // groupActive/groupPartial solo considera módulos principales (sin tabs)
                                 const groupActive = g.modules.every(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
                                 const groupPartial = !groupActive && g.modules.some(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view);
+                                // Para el toggle de sección, incluir también los tabs de cada módulo
+                                const allGroupModules = g.modules.flatMap(m => [m, ...(m.tabs || []).map(t => ({ key: t.key, hasApprove: false }))]);
                                 return (
                                 <div key={g.group}>
                                     <div className={`flex items-center gap-2 mb-3 ${g.color}`}>
@@ -732,7 +834,7 @@ const PermissionsView = () => {
                                         <button
                                             type="button"
                                             disabled={!canEdit}
-                                            onClick={() => canEdit && handleGroupToggle(g.modules, !groupActive)}
+                                            onClick={() => canEdit && handleGroupToggle(allGroupModules, !groupActive)}
                                             title={groupActive ? 'Desactivar sección' : 'Activar sección'}
                                             className={`relative w-8 h-4 rounded-full transition-all duration-300 flex-shrink-0 ${
                                                 !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
@@ -745,6 +847,12 @@ const PermissionsView = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((m, i) => {
                                             const k = `${selectedRoleId}:${m.key}`;
+                                            const tabPerms = m.tabs
+                                                ? Object.fromEntries(m.tabs.map(t => [t.key, permissions[`${selectedRoleId}:${t.key}`] || { can_view: false }]))
+                                                : null;
+                                            const tabSaving = m.tabs
+                                                ? Object.fromEntries(m.tabs.map(t => [t.key, !!saving[`${selectedRoleId}:${t.key}`]]))
+                                                : null;
                                             return (
                                                 <div
                                                     key={m.key}
@@ -757,6 +865,10 @@ const PermissionsView = () => {
                                                         onChange={handleToggle}
                                                         locked={!canEdit}
                                                         saving={saving[k]}
+                                                        tabs={m.tabs}
+                                                        tabPerms={tabPerms}
+                                                        tabSaving={tabSaving}
+                                                        onTabChange={handleToggle}
                                                     />
                                                 </div>
                                             );

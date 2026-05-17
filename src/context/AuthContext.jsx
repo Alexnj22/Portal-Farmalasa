@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [rolePerms, setRolePerms] = useState(null); // { module_key: { can_view, can_edit, can_approve } }
   const [permsLoading, setPermsLoading] = useState(false);
+  const [maxPriceLevel, setMaxPriceLevel] = useState(null); // null = sin límite
 
   const idleIntervalRef = useRef(null);
   const lastWriteRef = useRef(0);
@@ -53,16 +54,20 @@ export const AuthProvider = ({ children }) => {
   // Carga permisos del rol cuando el usuario cambia
   const refreshPermissions = useCallback((currentUser) => {
     const u = currentUser ?? userRef.current;
-    if (!u) { setRolePerms(null); setPermsLoading(false); return; }
+    if (!u) { setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null); return; }
     const systemRole = u.systemRole || 'EMPLEADO';
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
-    const query = roleId
+    const permsQuery = roleId
       ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
       : supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('system_role', systemRole);
-    query.then(({ data }) => {
+    const priceLevelQuery = roleId
+      ? supabase.from('roles').select('max_price_level').eq('id', roleId).single()
+      : Promise.resolve({ data: null });
+    Promise.all([permsQuery, priceLevelQuery]).then(([{ data }, { data: roleData }]) => {
       const map = {};
       (data || []).forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' }; });
       setRolePerms(map);
+      setMaxPriceLevel(roleData?.max_price_level ?? null);
       setPermsLoading(false);
     });
   }, []);
@@ -135,6 +140,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setRolePerms(null);
     setPermsLoading(false);
+    setMaxPriceLevel(null);
 
     // 4. Supabase signOut en background — no bloqueamos la UI
     supabase.auth.signOut().catch(() => {});
@@ -497,6 +503,7 @@ export const AuthProvider = ({ children }) => {
       rolePerms,
       permsLoading,
       hasPermission,
+      maxPriceLevel,
       loading,
       completeLogin,
       completePasswordChange,

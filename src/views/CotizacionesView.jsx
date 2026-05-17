@@ -21,12 +21,14 @@ const RETENTION_THRESHOLD = 100;
 const PRICE_COLS = [
     { key: 'vineta',      label: 'Viñeta'     },
     { key: 'descuento_1', label: 'Descuento 1' },
-    { key: 'clinica',     label: 'Clínica'    },
     { key: 'vip',         label: 'VIP'        },
+    { key: 'clinica',     label: 'Clínica'    },
     { key: 'mayoreo',     label: 'Mayoreo'    },
     { key: 'premium',     label: 'Premium'    },
     { key: 'precio_7',    label: 'Precio 7'   },
 ];
+// Orden canónico para control de acceso por nivel
+const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 
 const PAY_OPTS = [
     { value: 'EFECTIVO',      label: 'Efectivo'      },
@@ -226,7 +228,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
         ...(p.subdesc ? { sublabel: p.subdesc } : {}),
     }));
     const selPres     = presArr.find(p => String(p.presentacion_id) === String(item.presentacionId));
-    const priceOptions = PRICE_COLS
+    const priceOptions = allowedPriceCols
         .filter(pc => selPres && parseFloat(selPres[pc.key] || 0) > 0)
         .map(pc => ({ value: pc.key, label: `${pc.label} — ${fmt(selPres[pc.key])}` }));
     const dsg = desglose(item.precioUnitario, item.cantidad);
@@ -302,7 +304,15 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user } = useAuth();
+    const { user, maxPriceLevel } = useAuth();
+
+    // Filtrar columnas de precio según el nivel máximo permitido al cargo
+    const allowedPriceCols = useMemo(() => {
+        if (!maxPriceLevel) return PRICE_COLS;
+        const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
+        if (maxIdx === -1) return PRICE_COLS;
+        return PRICE_COLS.filter(c => PRICE_LEVEL_ORDER.indexOf(c.key) <= maxIdx);
+    }, [maxPriceLevel]);
 
     // modo: 'list' | 'new' | 'edit' | 'view'
     const [mode, setMode]       = useState('list');

@@ -293,6 +293,24 @@ Deno.serve(async (req) => {
       if (error) upsertErrors.push(`precios[${i}]: ${error.message}`);
     }
 
+    // 5e. Mark as inactive any presentation the ERP no longer includes for a product.
+    // Since the ERP payload is always a full dump, a (product_id, id_presentacion) combo
+    // present in our DB but absent from the ERP means it was removed or disabled there.
+    const erpComboKeys   = new Set(precioRows.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
+    const erpProductIds  = new Set(precioRows.map((r: any) => r.product_id));
+    const orphaned = existingPreciosAll.filter((r: any) =>
+      erpProductIds.has(r.product_id) &&
+      !erpComboKeys.has(`${r.product_id}_${r.id_presentacion}`) &&
+      r.activo !== false
+    );
+    for (const r of orphaned) {
+      const { error } = await supabase.from('product_precios')
+        .update({ activo: false })
+        .eq('product_id', r.product_id)
+        .eq('id_presentacion', r.id_presentacion);
+      if (error) upsertErrors.push(`deactivate[${r.product_id}_${r.id_presentacion}]: ${error.message}`);
+    }
+
     return new Response(
       JSON.stringify({
         success:          upsertErrors.length === 0,
@@ -305,6 +323,7 @@ Deno.serve(async (req) => {
         price_changes:    precioChangelogs.length,
         product_changes:  productChangelogs.length,
         new_combos:       newCombos.length,
+        deactivated:      orphaned.length,
         errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

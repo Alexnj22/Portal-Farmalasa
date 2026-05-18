@@ -1620,11 +1620,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                             // Branch rotation aggregated from drill data
                                                             const branchAgg = showBranch ? (() => {
-                                                                const map = {};
-                                                                for (const l of drillData) map[l.branch_id] = (map[l.branch_id] || 0) + l.neto;
-                                                                const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+                                                                const netoMap = {}, cantMap = {};
+                                                                for (const l of drillData) {
+                                                                    netoMap[l.branch_id] = (netoMap[l.branch_id] || 0) + l.neto;
+                                                                    cantMap[l.branch_id] = (cantMap[l.branch_id] || 0) + parseFloat(l.cantidad || 0);
+                                                                }
+                                                                const entries = Object.entries(netoMap).sort((a, b) => b[1] - a[1]);
                                                                 const total   = entries.reduce((s, [, v]) => s + v, 0);
-                                                                return { entries, total };
+                                                                return { entries, total, cantMap };
                                                             })() : null;
 
                                                             // Trend bar heights
@@ -1642,11 +1645,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
                                                                                     const name  = branches.find(b => b.id === Number(bid))?.name || `Suc. ${bid}`;
                                                                                     const color = BRANCH_COLORS[ci % BRANCH_COLORS.length];
+                                                                                    const cant  = branchAgg.cantMap[bid] || 0;
                                                                                     return (
                                                                                         <div key={bid}>
                                                                                             <div className="flex justify-between items-center mb-1">
                                                                                                 <span className="text-[10px] text-slate-600 font-semibold truncate max-w-[150px]">{name}</span>
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                                                    <span className="text-[9px] text-slate-400 font-semibold tabular-nums">{fmtQty(cant)} und</span>
                                                                                                     <span className="text-[10px] font-black text-slate-700">{fmt(neto)}</span>
                                                                                                     <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-indigo-500">{pct.toFixed(0)}%</span>
                                                                                                 </div>

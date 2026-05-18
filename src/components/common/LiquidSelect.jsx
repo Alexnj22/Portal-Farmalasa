@@ -225,18 +225,17 @@ const LiquidSelect = ({
         >
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
             <div className="flex flex-col gap-1 w-full">
-                {!searchTerm && clearable && (
+                {!searchTerm && clearable && value !== '' && (
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className={`w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${value === ''
-                                ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-[#007AFF]'
-                                : isDark
-                                    ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
-                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white/80 hover:text-slate-800'
-                            }`}
+                        className={`w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${
+                            isDark
+                                ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
+                                : 'bg-transparent text-slate-400 border-transparent hover:bg-white/80 hover:text-slate-700'
+                        }`}
                     >
-                        {placeholder}
+                        Todos
                     </button>
                 )}
                 {isLoading ? (

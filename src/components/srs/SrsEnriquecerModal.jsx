@@ -56,14 +56,57 @@ function getTokens(str) {
     return clean.split(' ').filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
 }
 
-// Build a clean search query for the SRS API: keep drug name + dosage, strip everything else
-function buildSearchQuery(nombre) {
-    const norm = normalize(nombre);
-    const clean = norm.replace(/\bX\s*\d+\b/g, ' ');   // remove "X 100", "X 30" etc.
-    const tokens = clean.split(/\s+/)
-        .filter(t => t.length >= 2)
-        .filter(t => !SKIP_TOKENS.has(t));
-    return tokens.slice(0, 5).join(' ').trim();
+// Returns array of clean drug-name tokens (no lab, no form, no quantity)
+function buildQueryTokens(nombre) {
+    const clean = normalize(nombre).replace(/\bX\s*\d+\b/g, ' ');
+    return clean.split(/\s+/).filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
+}
+
+// Extracts the short identifier word from a lab name ("Laboratorios MK S.A." → "MK")
+const CORP_WORDS = new Set([
+    'LABORATORIO','LABORATORIOS','FARMACEUTICA','FARMACEUTICOS','FARMACEUTICO',
+    'INDUSTRIA','INDUSTRIAS','PRODUCTOS','COMERCIAL','INTERNACIONAL',
+    'SA','SL','SRL','SAS','CIA','CO','CV','NV','INC','LTD','LLC','CORP',
+    'DE','LA','EL','LOS','Y','DEL',
+]);
+function getLabToken(labNombre = '') {
+    if (!labNombre) return '';
+    return normalize(labNombre).split(' ')
+        .find(w => w.length >= 2 && w.length <= 12 && !CORP_WORDS.has(w) && !/^\d+$/.test(w)) || '';
+}
+
+// Try up to 3 search strategies, return first that has SRS results
+async function srsFetchMulti(product) {
+    const tokens   = buildQueryTokens(product.nombre);
+    const labToken = getLabToken(product.laboratorios?.nombre);
+
+    const strategies = [];
+
+    // 1. drug + dosage + lab  →  "ACETAMINOFEN 500 MK"
+    if (tokens.length > 0 && labToken) {
+        strategies.push([...tokens.slice(0, 4), labToken].join(' '));
+    }
+
+    // 2. drug + dosage only  →  "ACETAMINOFEN 500"
+    if (tokens.length > 0) {
+        strategies.push(tokens.slice(0, 4).join(' '));
+    }
+
+    // 3. concatenated non-numeric short tokens  →  "ACI TIP" → "ACITIP" (finds "ACI-TIP")
+    const brandParts = tokens.filter(t => !/^\d+$/.test(t)).slice(0, 2);
+    if (brandParts.length === 2 && brandParts.every(t => t.length <= 6)) {
+        strategies.push(brandParts.join(''));
+    }
+
+    // Deduplicate, try each until results are found
+    const seen = new Set();
+    for (const q of strategies) {
+        if (seen.has(q) || !q.trim()) continue;
+        seen.add(q);
+        const json = await srsFetch(q, 1, 15);
+        if ((json.data || []).length > 0) return json;
+    }
+    return { data: [], total: 0 };
 }
 
 function scoreMatch(dbName, srsName) {
@@ -181,7 +224,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         // Fetch products without principio_activo
         const { data: products, error } = await supabase
             .from('products')
-            .select('id, nombre')
+            .select('id, nombre, laboratorios(nombre)')
             .eq('activo', true)
             .eq('sin_principio_activo', false)
             .or('principio_activo.is.null,principio_activo.eq.')
@@ -210,32 +253,25 @@ export default function SrsEnriquecerModal({ onClose }) {
                 await new Promise(r => setTimeout(r, DELAY_MS));
 
                 try {
-                    const searchQ = buildSearchQuery(product.nombre);
-                    if (!searchQ) {
+                    const json    = await srsFetchMulti(product);
+                    const results = json.data || [];
+
+                    const scored = results
+                        .map(r => ({ srs: r, score: scoreMatch(product.nombre, r.nombre_comercial || r.nombreComercial || '') }))
+                        .filter(r => r.score >= REVIEW_MIN)
+                        .sort((a, b) => b.score - a.score)
+                        .slice(0, TOP_CANDIDATES);
+
+                    const best = scored[0];
+                    if (!best) {
                         setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]);
                     } else {
-                        const json = await srsFetch(searchQ, 1, 15);
-                        const results = json.data || [];
-
-                        // Score all results, take top candidates
-                        const scored = results
-                            .map(r => ({ srs: r, score: scoreMatch(product.nombre, r.nombre_comercial || r.nombreComercial || '') }))
-                            .filter(r => r.score >= REVIEW_MIN)
-                            .sort((a, b) => b.score - a.score)
-                            .slice(0, TOP_CANDIDATES);
-
-                        const best = scored[0];
-                        if (!best) {
-                            setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]);
+                        const principios = parsePrincipios(best.srs);
+                        const entry = { product, srs: best.srs, score: best.score, principios, candidates: scored };
+                        if (best.score >= AUTO_MIN) {
+                            setAutoQueue(q => [...q, entry]);
                         } else {
-                            const principios = parsePrincipios(best.srs);
-                            const entry = { product, srs: best.srs, score: best.score, principios, candidates: scored };
-
-                            if (best.score >= AUTO_MIN) {
-                                setAutoQueue(q => [...q, entry]);
-                            } else {
-                                setReviewQueue(q => [...q, entry]);
-                            }
+                            setReviewQueue(q => [...q, entry]);
                         }
                     }
                 } catch { setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]); }

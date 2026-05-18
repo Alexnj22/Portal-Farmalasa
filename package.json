@@ -13,6 +13,7 @@
     "@capacitor/android": "^8.2.0",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
+    "@imgly/background-removal": "^1.7.0",
     "@supabase/supabase-js": "^2.97.0",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
@@ -20,6 +21,7 @@
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-easy-crop": "^5.5.7",
     "react-router-dom": "^7.13.2",
     "recharts": "^3.8.0",
     "zustand": "^5.0.11"

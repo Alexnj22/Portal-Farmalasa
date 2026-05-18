@@ -10,6 +10,7 @@ import {
     Sparkles, History, MapPin,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 
 const PAGE_SIZES = [25, 50, 100];
 
@@ -546,6 +547,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
+    const [pendingFile, setPendingFile]   = useState(null);
     const [saving, setSaving]             = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
@@ -570,14 +572,20 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
 
-    const handlePhotoUpload = async (e) => {
+    const handlePhotoSelect = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        setPendingFile(file);
+        e.target.value = '';
+    };
+
+    const handlePhotoConfirm = async (blob) => {
+        setPendingFile(null);
         setPhotoLoading(true);
         try {
-            const blob = await resizeImage(file, 800, 0.85);
+            const resized = await resizeImage(blob, 800, 0.85);
             const path = `${product.id}.jpg`;
-            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
@@ -587,7 +595,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
         } catch (err) {
             useToastStore.getState().showToast('Error', err.message, 'error');
-        } finally { setPhotoLoading(false); e.target.value = ''; }
+        } finally { setPhotoLoading(false); }
     };
 
     if (loadingRow) {
@@ -650,7 +658,14 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
                                 <Camera size={9} /> Foto del producto
                             </p>
-                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
+                            {pendingFile && (
+                                <PhotoEditorModal
+                                    file={pendingFile}
+                                    onConfirm={handlePhotoConfirm}
+                                    onCancel={() => setPendingFile(null)}
+                                />
+                            )}
                             <button onClick={() => fileRef.current?.click()}
                                 className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
                                     border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">

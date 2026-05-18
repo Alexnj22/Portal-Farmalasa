@@ -7,10 +7,11 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin,
+    Sparkles, History, MapPin, Search,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
+import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 
 const PAGE_SIZES = [25, 50, 100];
 
@@ -549,6 +550,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
     const [pendingFile, setPendingFile]   = useState(null);
     const [saving, setSaving]             = useState(false);
+    const [showSrs, setShowSrs]           = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -825,15 +827,32 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* Principios activos */}
                         <div className="shrink-0 min-w-[220px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
-                                <FlaskConical size={9} /> Principios activos
-                            </p>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <FlaskConical size={9} /> Principios activos
+                                </p>
+                                <button
+                                    onClick={() => setShowSrs(v => !v)}
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                                        showSrs
+                                            ? 'bg-violet-100 text-violet-700 border-violet-200'
+                                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200'
+                                    }`}
+                                >
+                                    <Search size={9} strokeWidth={2.5} /> SRS
+                                </button>
+                            </div>
                             <PrincipiosEditor
                                 ref={principiosRef}
                                 productId={product.id}
                                 initial={principles}
                                 onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
                             />
+                            {showSrs && (
+                                <div className="mt-3 border-t border-slate-100 pt-3">
+                                    <SrsBuscadorWidget initialQuery={product.nombre} />
+                                </div>
+                            )}
                         </div>
 
                         <div className="w-px self-stretch bg-slate-100 hidden md:block shrink-0" />

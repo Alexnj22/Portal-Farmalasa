@@ -130,7 +130,7 @@ export default function SrsEnriquecerModal({ onClose }) {
     const [total, setTotal]           = useState(0);
     const [autoQueue, setAutoQueue]   = useState([]);   // {product, srs, score, principios}
     const [reviewQueue, setReviewQueue] = useState([]); // same + candidates[]
-    const [noMatch, setNoMatch]       = useState(0);
+    const [noMatchList, setNoMatchList] = useState([]);  // {id, nombre}
     const [applied, setApplied]       = useState(0);
     const [skipped, setSkipped]       = useState(0);
     const [applying, setApplying]     = useState(false);
@@ -146,7 +146,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         cancelRef.current = false;
         setPhase(PHASE.SCANNING);
         setScanned(0); setAutoQueue([]); setReviewQueue([]);
-        setNoMatch(0); setApplied(0); setSkipped(0); setReviewIdx(0);
+        setNoMatchList([]); setApplied(0); setSkipped(0); setReviewIdx(0);
 
         // Fetch products without principio_activo
         const { data: products, error } = await supabase
@@ -192,7 +192,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                     const best = scored[0];
                     if (!best) {
-                        setNoMatch(n => n + 1);
+                        setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]);
                     } else {
                         const principios = parsePrincipios(best.srs);
                         const entry = { product, srs: best.srs, score: best.score, principios, candidates: scored };
@@ -203,7 +203,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                             setReviewQueue(q => [...q, entry]);
                         }
                     }
-                } catch { setNoMatch(n => n + 1); }
+                } catch { setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]); }
 
                 done++;
                 active--;
@@ -337,7 +337,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 {[
                                     { label: 'Auto-aplica', count: autoQueue.length, cls: 'text-emerald-600', bg: 'bg-emerald-50' },
                                     { label: 'Para revisar', count: reviewQueue.length, cls: 'text-amber-600', bg: 'bg-amber-50' },
-                                    { label: 'Sin coincidencia', count: noMatch, cls: 'text-slate-500', bg: 'bg-slate-50' },
+                                    { label: 'Sin coincidencia', count: noMatchList.length, cls: 'text-slate-500', bg: 'bg-slate-50' },
                                 ].map(c => (
                                     <div key={c.label} className={`${c.bg} rounded-2xl p-3 text-center`}>
                                         <p className={`text-[22px] font-black tabular-nums ${c.cls}`}>{c.count}</p>
@@ -471,12 +471,32 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                             {/* Done / close */}
                             {(isDone || allDone) && (
-                                <div className="flex flex-col items-center gap-3 py-4 text-center">
-                                    <p className="text-[13px] font-black text-slate-700">
-                                        ✓ {applied} principios aplicados · {skipped} saltados · {noMatch} sin coincidencia
+                                <div className="flex flex-col gap-3 pt-2">
+                                    <p className="text-[13px] font-black text-slate-700 text-center">
+                                        ✓ {applied} aplicados · {skipped} saltados · {noMatchList.length} sin coincidencia en SRS
                                     </p>
+
+                                    {noMatchList.length > 0 && (
+                                        <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                                            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                                    Sin resultado en SRS ({noMatchList.length})
+                                                </p>
+                                                <p className="text-[10px] text-slate-400">SRS no devolvió ningún candidato</p>
+                                            </div>
+                                            <div className="max-h-48 overflow-y-auto divide-y divide-slate-50">
+                                                {noMatchList.map(p => (
+                                                    <div key={p.id} className="px-4 py-2 flex items-center gap-2">
+                                                        <span className="text-[10px] text-slate-300 font-mono shrink-0">#{p.id}</span>
+                                                        <span className="text-[12px] text-slate-600 font-medium truncate">{p.nombre}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <button onClick={onClose}
-                                        className="px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-[#007AFF] hover:bg-[#006AEF] transition-colors">
+                                        className="self-center px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-[#007AFF] hover:bg-[#006AEF] transition-colors">
                                         Cerrar
                                     </button>
                                 </div>

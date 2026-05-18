@@ -12,7 +12,6 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
-const makeId = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()));
 
 // ============================================================================
 // 🚀 COMPONENTE DE TARJETA OPTIMIZADO (Liquidglass DNA)
@@ -367,7 +366,6 @@ const AnnouncementsView = ({ openModal }) => {
 
     try {
       if (editingAnnId) {
-        const originalAnn = announcements.find(a => a.id === editingAnnId);
         const updatePayload = {
           title: title.trim(),
           message: message.trim(),
@@ -403,7 +401,7 @@ const AnnouncementsView = ({ openModal }) => {
         }
       }
       handleCancelEdit();
-    } catch (err) {
+    } catch {
       setError(`Hubo un error al ${editingAnnId ? 'actualizar' : 'publicar'} el aviso.`);
     } finally {
       setIsSubmitting(false);
@@ -421,7 +419,7 @@ const AnnouncementsView = ({ openModal }) => {
       await archiveAnnouncement(archiveDialog.annId);
       setArchiveDialog({ isOpen: false, annId: null });
       useToastStore.getState().showToast('Aviso Archivado', 'El aviso ya no será visible.', 'success');
-    } catch (err) {
+    } catch {
       setError('No se pudo archivar el aviso.');
       setArchiveDialog({ isOpen: false, annId: null });
     } finally { setIsSubmitting(false); }
@@ -444,7 +442,7 @@ const AnnouncementsView = ({ openModal }) => {
       if (editingAnnId === confirmDialog.annId) handleCancelEdit();
       setConfirmDialog({ isOpen: false, annId: null });
       useToastStore.getState().showToast('Aviso Eliminado', 'El aviso fue borrado permanentemente.', 'success');
-    } catch (err) {
+    } catch {
       setError('No se pudo eliminar el aviso. Intenta de nuevo.');
       setConfirmDialog({ isOpen: false, annId: null });
     } finally { setIsSubmitting(false); }

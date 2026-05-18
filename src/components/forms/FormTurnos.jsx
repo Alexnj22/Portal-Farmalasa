@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     BookOpen, Building2, Trash2, ListTodo, Plus, Pencil, Check, X,
     Save, Package, ListFilter, AlertTriangle, Eye, EyeOff, Loader2
@@ -58,7 +58,7 @@ const FormTurnos = ({ branches }) => {
                 updated_at: new Date().toISOString()
             };
 
-            const { data, error } = await supabase
+            const { error } = await supabase
                 .from('shifts')
                 .upsert(shiftObject)
                 .select();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { X, Send, Sparkles, CircleUserRound, Loader2, Bot, Hexagon, Activity, CheckCircle2, Megaphone, Flame, Globe, Building2, Users } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +19,6 @@ const SalyChatOverlay = () => {
     const inputRef = useRef(null);
 
     const { user } = useAuth();
-    const location = useLocation();
     const navigate = useNavigate();
     const employees = useStaff((state) => state.employees);
     const branches = useStaff((state) => state.branches);

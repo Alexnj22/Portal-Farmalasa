@@ -164,7 +164,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const [selMode,   setSelMode]   = useState('month'); // 'month' | 'day'
 
     // Month-mode hover highlight
-    const [monthHovering, setMonthHovering] = useState(null);
+    const [, setMonthHovering] = useState(null);
 
     // Day-mode picking state
     const [dayPhase,      setDayPhase]      = useState('idle'); // 'idle' | 'picking-end'

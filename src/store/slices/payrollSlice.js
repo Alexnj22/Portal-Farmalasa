@@ -125,7 +125,7 @@ export const createPayrollSlice = (set, get) => ({
         return data;
     },
 
-    updatePayrollPeriodStatus: async (periodId, status, meta = {}) => {
+    updatePayrollPeriodStatus: async (periodId, status, _meta = {}) => {
         const user = get().user;
         const updatePayload = { status, updated_at: new Date().toISOString() };
         if (status === 'APPROVED') {

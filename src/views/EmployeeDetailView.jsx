@@ -285,12 +285,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (typeof openModal === 'function') openModal('vacationRecall', { employee: emp });
     }, [openModal, emp]);
 
-    const handleUploadConstancia = useCallback((e, punchTimestamp) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof openModal === 'function') openModal('uploadConstancia', { employeeId: emp?.id, punchTimestamp });
-    }, [openModal, emp?.id]);
-
     // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
     if (!emp) return (
         <div className="w-full h-[100dvh] flex items-center justify-center bg-[#F2F2F7]">
@@ -1111,7 +1105,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             { key: 'OVERTIME',    icon: Coffee },
                                                             { key: 'ADVANCE',     icon: DollarSign },
                                                             { key: 'CERTIFICATE', icon: FileCheck },
-                                                        ].map(({ key, icon: Icon }) => {
+                                                        ].map(({ key, icon: Icon }) => { // eslint-disable-line no-unused-vars
                                                             const conf = REQUEST_TYPES[key];
                                                             return (
                                                                 <button

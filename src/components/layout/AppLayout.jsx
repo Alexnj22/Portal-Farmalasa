@@ -860,7 +860,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             {hasSelfOnly && (
                 <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 transition-all duration-500 ${blurClasses}`}>
                     <div className="flex items-center justify-around bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[1.75rem] shadow-[0_-4px_30px_rgba(0,0,0,0.06)] px-2 py-2">
-                        {selfItems.map(({ key, path, label, icon: Icon }) => {
+                        {selfItems.map(({ key, path, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                             const pathSeg = path.replace(/^\//, '').split('/')[0];
                             const isActive = activeId === pathSeg;
                             const badge = getBadge(key);

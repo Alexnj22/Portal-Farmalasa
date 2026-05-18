@@ -7,8 +7,6 @@ const ScheduleChart = ({
     setChartView,
     isLoadingSales,
     currentChartData,
-    filterBranch,
-    branches,
     openModal
 }) => {
     return (

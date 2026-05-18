@@ -5,7 +5,7 @@ import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePo
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
-import { parseTimeFlexible, timeToMins } from '../../utils/scheduleHelpers';
+import { timeToMins } from '../../utils/scheduleHelpers';
 
 const DAYS_MAP = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -95,7 +95,7 @@ const FormWfmAnalytics = ({ branches }) => {
         if (currentBranch) {
             let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
             if (typeof sch === 'string') {
-                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+                try { sch = JSON.parse(sch); } catch { sch = null; }
             }
 
             if (sch && typeof sch === 'object') {

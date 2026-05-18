@@ -213,8 +213,6 @@ const notifyEmployee = async (employeeId, approverId, requestType, status, appro
     try {
         const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
         const isApproved = status === 'APPROVED';
-        const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
-
         await supabase.from('announcements').insert([{
             title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
             message: isApproved

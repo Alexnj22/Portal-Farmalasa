@@ -138,7 +138,7 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
 function MainApp() {
-    const { user, logout, isAuthenticated, isJefe, isSupervisor, hasPermission, loading, permsLoading } = useAuth();
+    const { user, logout, isAuthenticated, hasPermission, loading, permsLoading } = useAuth();
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
@@ -157,8 +157,6 @@ function MainApp() {
     const location = useLocation();
 
     useEffect(() => {
-        let isSubscribed = true;
-
         const loadData = async () => {
             if (isAuthenticated) {
                 await fetchBoot();
@@ -168,7 +166,6 @@ function MainApp() {
         };
 
         loadData();
-        return () => { isSubscribed = false; };
     }, [isAuthenticated, location.pathname, fetchBoot, fetchKioskBoot]);
 
     const setView = (targetView) => {
@@ -206,7 +203,6 @@ function MainApp() {
     const [formData, setFormData] = useState({});
     const [targetEventId, setTargetEventId] = useState(null);
     const [isAuditOverlayActive, setIsAuditOverlayActive] = useState(false);
-    const [activeBranch, setActiveBranch] = useState(null);
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
     const showAlert = (title, message, type = 'info') => {
@@ -336,7 +332,7 @@ function MainApp() {
                 }
                 case "uploadDocument": if (targetId && targetEventId && dataToSave.file) await addDocumentToEvent(targetId, targetEventId, dataToSave.file); break;
                 case "newBranch": await addBranch(dataToSave); break;
-                case "editBranch": const bId = dataToSave.branchId || dataToSave.id; if (bId) await updateBranch(bId, dataToSave); break;
+                case "editBranch": { const bId = dataToSave.branchId || dataToSave.id; if (bId) await updateBranch(bId, dataToSave); break; }
                 case "uploadConstancia":
                     if (dataToSave.file) {
                         showAlert("¡Documento Subido!", "Constancia médica adjuntada con éxito.", "success");
@@ -486,7 +482,7 @@ function MainApp() {
                                             <PermissionGuard moduleKey="branches">
                                                 <BranchesView
                                                     setView={setView}
-                                                    setActiveBranch={(b) => { setActiveBranch(b); navigate(`/branches/${b.id}`); }}
+                                                    setActiveBranch={(b) => navigate(`/branches/${b.id}`)}
                                                     openModal={openModal}
                                                 />
                                             </PermissionGuard>

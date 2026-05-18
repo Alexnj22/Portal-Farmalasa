@@ -114,7 +114,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                             <div className="absolute inset-0 bg-gradient-to-r from-[#1D7AFC]/15 via-transparent to-transparent rounded-[1rem]" />
                         </div>
 
-                        {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+                        {NAV_ITEMS.map(({ id, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                             const isActive = active === id;
                             return (
                                 <button
@@ -192,7 +192,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
             {/* ── Nav inferior móvil ── */}
             <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 <div className="flex items-center justify-around bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[1.75rem] shadow-[0_-4px_30px_rgba(0,0,0,0.06)] px-2 py-2">
-                    {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
+                    {NAV_ITEMS.map(({ id, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                         const isActive = active === id;
                         return (
                             <button key={id} onClick={() => navigate(`/${id}`)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#007AFF]/10' : 'hover:bg-slate-100/60'}`}>

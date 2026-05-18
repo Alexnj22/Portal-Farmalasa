@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 🚨 LOGOUT FLUIDO (OPTIMISTIC UI)
-  const doLogout = (reason = "LOGOUT") => {
+  const doLogout = () => {
     // 1. Detenemos los relojes de inmediato
     stopIdleWatcher();
 
@@ -353,7 +353,7 @@ export const AuthProvider = ({ children }) => {
       writeLastActivity(true);
 
       return true;
-    } catch (e) {
+    } catch {
         return false;
     }
   };
@@ -447,7 +447,7 @@ export const AuthProvider = ({ children }) => {
       setUser(u);
       startIdleWatcher(u);
       return { ok: true };
-    } catch (err) {
+    } catch {
       skipAuthListener.current = false;
       return { ok: false, error: 'Error de conexión con el servidor.' };
     }

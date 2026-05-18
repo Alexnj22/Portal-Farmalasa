@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Calendar as CalendarIcon, Clock, Save, ShieldAlert, Utensils, Baby, Info } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 

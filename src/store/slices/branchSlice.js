@@ -1,5 +1,5 @@
 import { supabase } from '../../supabaseClient';
-import { safeJsonParse, CACHE_KEYS, makeId } from '../utils';
+import { safeJsonParse, CACHE_KEYS } from '../utils';
 
 const persistBranches = (branches) => {
     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -58,9 +58,9 @@ export const createBranchSlice = (set, get) => ({
     addBranch: async (data) => {
         try {
             const payload = { ...data };
-            if (typeof payload.settings === 'string') { try { payload.settings = JSON.parse(payload.settings); } catch (e) { payload.settings = {}; } }
-            if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch (e) { payload.weeklyHours = {}; } }
-            if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch (e) { payload.weekly_hours = {}; } }
+            if (typeof payload.settings === 'string') { try { payload.settings = JSON.parse(payload.settings); } catch { payload.settings = {}; } }
+            if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch { payload.weeklyHours = {}; } }
+            if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch { payload.weekly_hours = {}; } }
 
             let pendingRentFile = null;
             if (payload.settings?.rent?.contract?.documentFile instanceof File) {
@@ -129,9 +129,9 @@ export const createBranchSlice = (set, get) => ({
 
             const payload = { ...data };
 
-            if (typeof payload.settings === 'string') { try { payload.settings = JSON.parse(payload.settings); } catch (e) { payload.settings = {}; } }
-            if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch (e) { payload.weeklyHours = {}; } }
-            if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch (e) { payload.weekly_hours = {}; } }
+            if (typeof payload.settings === 'string') { try { payload.settings = JSON.parse(payload.settings); } catch { payload.settings = {}; } }
+            if (typeof payload.weeklyHours === 'string') { try { payload.weeklyHours = JSON.parse(payload.weeklyHours); } catch { payload.weeklyHours = {}; } }
+            if (typeof payload.weekly_hours === 'string') { try { payload.weekly_hours = JSON.parse(payload.weekly_hours); } catch { payload.weekly_hours = {}; } }
 
             const oldBranch = get().branches.find(b => String(b.id) === String(id));
             if (!oldBranch) throw new Error("Sucursal no encontrada en la memoria para editar.");

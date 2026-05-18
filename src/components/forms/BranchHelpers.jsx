@@ -36,7 +36,7 @@ export const formatPhoneMask = (value) => {
 
 export const safeParse = (obj) => {
     if (typeof obj === 'string') {
-        try { return JSON.parse(obj); } catch (e) { return {}; }
+        try { return JSON.parse(obj); } catch { return {}; }
     }
     return obj || {};
 };

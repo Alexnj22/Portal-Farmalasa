@@ -8,12 +8,6 @@ import { useToastStore } from '../../store/toastStore';
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DAYS_SHORT = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 
-const addDays = (dateStr, days) => {
-    const d = new Date(dateStr + 'T12:00:00');
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split('T')[0];
-};
-
 const formatDisplay = (dateStr) => {
     if (!dateStr) return null;
     const [y, m, d] = dateStr.split('-');
@@ -177,7 +171,7 @@ const RangeDatePicker = ({
     const [rangeConfirmed, setRangeConfirmed] = useState(false);
     const [draftStart, setDraftStart] = useState(startDate || null);
     const [draftEnd, setDraftEnd] = useState(endDate || null);
-    const [hoverDate, setHoverDate] = useState(null);
+    const [, setHoverDate] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState(null);
     const [selectedRanges, setSelectedRanges] = useState(initialRanges);

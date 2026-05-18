@@ -92,10 +92,8 @@ export const createEmployeeSlice = (set, get) => ({
 
     addEmployee: async (formData) => {
         try {
-            // 🚨 CREAMOS LA VARIABLE NAME COMBINADA
             const fNames = (formData.first_names || '').trim();
             const lNames = (formData.last_names || '').trim();
-            const fullName = `${fNames} ${lNames}`.trim() || 'Sin Nombre';
 
             const dbPayload = {
                 first_names: fNames,
@@ -254,12 +252,6 @@ export const createEmployeeSlice = (set, get) => ({
         try {
             const dbPayload = { ...updatedData };
 
-            if (updatedData.first_names !== undefined || updatedData.last_names !== undefined) {
-                const fNames = (updatedData.first_names ?? '').trim();
-                const lNames = (updatedData.last_names ?? '').trim();
-                // name es columna GENERATED en BD, no se envía en UPDATE
-            }
-
             if (updatedData.branch_id) dbPayload.branch_id = parseInt(updatedData.branch_id, 10);
             else if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);
             
@@ -319,7 +311,6 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            const empEditado = get().employees.find(e => String(e.id) === String(id));
             await get().appendAuditLog('EDITAR_EMPLEADO', id, {
                 timeline_title: `Actualización de Personal: ${updated.name}`,
                 dimension: 'HR',
@@ -596,7 +587,7 @@ export const createEmployeeSlice = (set, get) => ({
                 return { employees: next, attendanceLoaded: true };
             });
             return true;
-        } catch (e) { return false; }
+        } catch { return false; }
     },
 
     getAllAttendance: () => {

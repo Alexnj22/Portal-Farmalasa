@@ -1,6 +1,51 @@
 import React, { useState } from 'react';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
 
+// 3. Componente de Controles de Paginación (Liquidglass)
+const PaginationControls = ({ currentPage, totalPages, setPage }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-300">
+      <button
+        type="button"
+        onClick={() => setPage(p => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
+      >
+        <ChevronLeft size={16} strokeWidth={2.5} />
+      </button>
+      <div className="px-3 py-1 bg-white/40 border border-white/60 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+          Pág {currentPage} de {totalPages}
+          </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+        disabled={currentPage === totalPages}
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
+      >
+        <ChevronRight size={16} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+};
+
+// 4. Componente de Avatar (Squircle con Imagen o Inicial)
+const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-emerald-500' }) => {
+  return (
+    <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center shrink-0 border border-white/20 transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
+      {photoUrl ? (
+        <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-white font-black text-[12px] uppercase">
+          {name?.charAt(0) || '?'}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const FormAnnouncements = ({ data }) => {
   const readersModal = data?.announcement;
 
@@ -26,51 +71,6 @@ const FormAnnouncements = ({ data }) => {
 
   const paginatedPending = pendingList.slice((pendingPage - 1) * ITEMS_PER_PAGE, pendingPage * ITEMS_PER_PAGE);
   const totalPendingPages = Math.ceil(pendingList.length / ITEMS_PER_PAGE);
-
-  // 3. Componente de Controles de Paginación (Liquidglass)
-  const PaginationControls = ({ currentPage, totalPages, setPage }) => {
-    if (totalPages <= 1) return null;
-    return (
-      <div className="flex items-center justify-center gap-4 mt-5 animate-in fade-in duration-300">
-        <button
-          type="button"
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
-        >
-          <ChevronLeft size={16} strokeWidth={2.5} />
-        </button>
-        <div className="px-3 py-1 bg-white/40 border border-white/60 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            Pág {currentPage} de {totalPages}
-            </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
-        >
-          <ChevronRight size={16} strokeWidth={2.5} />
-        </button>
-      </div>
-    );
-  };
-
-  // 4. Componente de Avatar (Squircle con Imagen o Inicial)
-  const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-emerald-500' }) => {
-    return (
-      <div className={`w-10 h-10 rounded-[0.8rem] flex items-center justify-center shrink-0 border border-white/20 transition-all overflow-hidden ${photoUrl ? '' : fallbackColor}`}>
-        {photoUrl ? (
-          <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-white font-black text-[12px] uppercase">
-            {name?.charAt(0) || '?'}
-          </span>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="w-full flex flex-col p-6 pt-14 md:p-10 md:pt-16 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] h-full">

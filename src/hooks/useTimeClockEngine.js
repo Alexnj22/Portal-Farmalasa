@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import {
-    buildDateFromTime,
     findLastPunchOfTypes,
     format12hNoSeconds,
     formatDuration,
@@ -20,7 +19,7 @@ import {
     getBirthdayAnnouncement,
 } from '../utils/timeClock.audit';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
-import { getHourlyCode, getSuPinSuffix, getTodayScheduleConfig, toLocalISO } from '../utils/helpers';
+import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 
@@ -35,7 +34,6 @@ export function useTimeClockEngine(props = {}) {
     const registerAttendance = props.registerAttendance ?? useStaff((s) => s.registerAttendance);
     const markAnnouncementAsRead = props.markAnnouncementAsRead ?? useStaff((s) => s.markAnnouncementAsRead);
     const registerKioskDevice = props.registerKioskDevice ?? useStaff((s) => s.registerKioskDevice);
-    const validateKioskToken = props.validateKioskToken ?? useStaff((s) => s.validateKioskToken);
     const appendAuditLog = props.appendAuditLog ?? useStaff((s) => s.appendAuditLog);
     const revokeKioskDevice = props.revokeKioskDevice ?? useStaff((s) => s.revokeKioskDevice);
 
@@ -472,7 +470,7 @@ export function useTimeClockEngine(props = {}) {
 
         try {
             await markAnnouncementAsRead(feedback.announcement.id, feedback.employee.id);
-        } catch (error) {
+        } catch {
         } finally {
             closeFeedback();
         }

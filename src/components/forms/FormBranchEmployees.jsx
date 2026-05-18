@@ -123,7 +123,6 @@ const hasInjections = legal.injections === true;
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {plantSlots.map((slot) => {
                         const emp = slot.employee;
-                        const isMissing = !emp && slot.required;
                         const photoUrl = emp?.photo || emp?.avatar || emp?.profilePicture || null;
                         
                         // Si no hay fecha, usa un valor de muestra elegante

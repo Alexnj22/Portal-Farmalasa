@@ -35,7 +35,4 @@ export const WEEK_DAYS = [
 
 
 
-// ---------- Helpers demo (marcajes de HOY) ----------
-const isoToday = () => new Date().toISOString().slice(0, 10);
-
 

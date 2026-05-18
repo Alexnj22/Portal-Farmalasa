@@ -499,9 +499,8 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
     const allSchedulesArray = useMemo(() => {
         return employeesInView.map(emp => {
             let rawSchedule = weeklyRosters[emp.id] || {}; 
-            let parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
-            parsed.name = emp.name; 
-            return parsed;
+            const parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
+            return { ...parsed, name: emp.name };
         });
     }, [employeesInView, weeklyRosters]);
 

@@ -53,7 +53,7 @@ const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
 
-    const { branches, roles, shifts, saveWeeklyRoster, addShift, deleteShift, updateBranch, addBranch } = useStaff();
+    const { branches, roles, shifts, saveWeeklyRoster, updateBranch, addBranch } = useStaff();
 
     const [validationError, setValidationError] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -422,9 +422,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
             setIsSaving(true);
             try {
-                const { updateEmployee, appendAuditLog, employees, branches, roles } = useStaff.getState();
+                const { updateEmployee, employees, roles } = useStaff.getState();
                 const selectedEmp = employees.find(e => e.id === formData.selectedEmpId);
-                const currentEmpObj = employees.find(e => e.id === formData.currentAssignee);
 
                 const actualBranchId = formData.branch?.id || formData.branchId || formData.id;
                 const actualBranchName = formData.branch?.name || formData.name || 'Sucursal';
@@ -434,7 +433,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
                     if (formData.outgoingAction === 'REASSIGN') {
-                        const newBranchName = branches.find(b => String(b.id) === String(formData.outgoingBranch))?.name || 'otra sucursal';
                         const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
 
                         await updateEmployee(formData.currentAssignee, {
@@ -520,11 +518,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 const { uploadDocument, registerBranchExpense } = useStaff.getState();
-                let fileUrl = null;
 
                 if (_paymentData.receiptFile) {
                     const path = `expenses/${id}/${_currentService}/${_paymentData.billing_month}_${Date.now()}`;
-                    if (uploadDocument) fileUrl = await uploadDocument(path, _paymentData.receiptFile);
+                    if (uploadDocument) await uploadDocument(path, _paymentData.receiptFile);
                 }
 
                 const serviceData = _currentService === 'rent' ? (settings?.rent || {}) : ((settings?.services || {})[_currentService] || {});
@@ -547,7 +544,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
                 onClose();
-            } catch (err) {
+            } catch {
                 setValidationError("No se pudo procesar el pago.");
             } finally {
                 setIsSaving(false);
@@ -592,7 +589,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 const { vacationRecallEmployee } = useStaff.getState();
-                const { user } = useAuth.getState ? useAuth.getState() : {};
+                const user = JSON.parse(localStorage.getItem('sb_user') || 'null');
                 const result = await vacationRecallEmployee(formData.employee.id, {
                     date: formData.recall_date,
                     shift_id: formData.recall_shift_id,
@@ -634,7 +631,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (showToast) showToast("Turnos Asignados", `Horario de ${employee.name} actualizado con éxito.`, "success");
 
                 onClose();
-            } catch (err) {
+            } catch {
                 setValidationError("Ocurrió un error al intentar guardar la programación.");
             } finally {
                 setIsSaving(false);
@@ -813,8 +810,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
                     const prevStep = isEmpForm && empIdx > 0 ? EMP_STEP_KEYS[empIdx - 1] : null;
                     const nextStep = isEmpForm && empIdx < EMP_STEP_KEYS.length - 1 ? EMP_STEP_KEYS[empIdx + 1] : null;
-                    const isLastStep = isEmpForm && empIdx === EMP_STEP_KEYS.length - 1;
-
                     if (isEmpForm) {
                         return (
                             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">

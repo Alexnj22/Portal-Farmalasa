@@ -390,7 +390,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
     // El cálculo base corre silenciosamente, siempre garantizando el mínimo operativo.
     const wfmData = calculateMinimumStaff(liveBranch?.weekly_hours || liveBranch?.weeklyHours, historicalSales, MIN_CONCURRENT_STAFF, 80, 0.15, branchCreationDate);
-    const { minStaff, totalOpenHours, baseStaffHours, extraVolumeHours, wfmApplied, peakHour, shrinkageHours, totalLaborHoursNeeded, isNewBranch } = wfmData;
+    const { minStaff, baseStaffHours, extraVolumeHours, wfmApplied, peakHour, shrinkageHours, totalLaborHoursNeeded, isNewBranch } = wfmData;
 
     const coverageStaffCount = (jefeEmp ? 1 : 0) + (subjefeEmp ? 1 : 0) + generalStaff.length + (hasInjections ? nursingRegents.length : 0);
     const isStaffDeficit = coverageStaffCount < minStaff;

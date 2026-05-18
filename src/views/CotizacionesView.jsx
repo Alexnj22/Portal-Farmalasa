@@ -220,7 +220,7 @@ const Row = ({ label, val, className = 'text-slate-600' }) => (
 );
 
 // ─── ItemCard (fuera del componente para que React no lo desmonte en re-renders) ──
-const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateItem }) => {
+const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateItem, allowedPriceCols }) => {
     const presArr     = pricesMap[item.productId] || [];
     const presOptions = presArr.map(p => ({
         value: String(p.presentacion_id),
@@ -801,7 +801,7 @@ export default function CotizacionesView() {
                         <div className="space-y-2">
                             {items.map((item, idx) => (
                                 <ItemCard key={item._id} item={item} idx={idx} isCCF={isCCFMode}
-                                    pricesMap={pricesMap} removeItem={removeItem} updateItem={updateItem} />
+                                    pricesMap={pricesMap} removeItem={removeItem} updateItem={updateItem} allowedPriceCols={allowedPriceCols} />
                             ))}
                         </div>
                     )}

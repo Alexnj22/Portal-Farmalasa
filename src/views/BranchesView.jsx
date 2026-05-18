@@ -193,7 +193,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 // 🚀 COMPONENTE DE TARJETA (CON ESTILO IA FUTURISTA)
 // ============================================================================
 const BranchCard = memo(({
-    branch, branchEmployees, count, activeKiosks, currentTime, isMobile,
+    branch, branchEmployees, count, activeKiosks, currentTime,
     handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
     canEdit = false
 }) => {
@@ -532,7 +532,7 @@ const BranchCard = memo(({
 // ============================================================================
 // 🚀 VISTA PRINCIPAL
 // ============================================================================
-const BranchesView = ({ openModal, setView, setActiveBranch }) => {
+const BranchesView = ({ openModal, setActiveBranch }) => {
     const navigate = useNavigate();
     const { rolePerms } = useAuth();
     const canEdit = rolePerms === 'ALL' || !!rolePerms?.['branches']?.can_edit;
@@ -665,7 +665,7 @@ const BranchesView = ({ openModal, setView, setActiveBranch }) => {
         try {
             await deleteBranch(confirmDialog.branch.id);
             useToastStore.getState().showToast('Sucursal Eliminada', `La sucursal ${confirmDialog.branch.name} ha sido borrada del sistema.`, 'success');
-        } catch (err) {
+        } catch {
             useToastStore.getState().showToast('Error de Sistema', 'No se pudo eliminar la sucursal. Intenta nuevamente.', 'error');
         } finally {
             setConfirmDialog({ isOpen: false, branch: null });

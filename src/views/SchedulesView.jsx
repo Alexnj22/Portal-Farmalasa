@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft
@@ -13,7 +13,7 @@ import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
 
 // 🚀 HELPERS
-import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, parseTimeFlexible, formatHourAMPM } from '../utils/scheduleHelpers';
+import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
 
 // 🚀 COMPONENTES EXTRAÍDOS
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';

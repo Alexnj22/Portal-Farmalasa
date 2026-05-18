@@ -898,7 +898,7 @@ export const createSystemSlice = (set, get) => ({
                 return { shifts: next };
             });
             return true;
-        } catch (err) {
+        } catch {
             throw new Error("Error al archivar el turno");
         }
     },
@@ -916,7 +916,7 @@ export const createSystemSlice = (set, get) => ({
                 return { shifts: next };
             });
             return true;
-        } catch (err) {
+        } catch {
             throw new Error("Error al reactivar el turno");
         }
     },
@@ -930,7 +930,7 @@ export const createSystemSlice = (set, get) => ({
             (data || []).forEach(r => {
                 let parsedSchedule = r.schedule_data;
                 if (typeof parsedSchedule === 'string') {
-                    try { parsedSchedule = JSON.parse(parsedSchedule); } catch (e) { parsedSchedule = {}; }
+                    try { parsedSchedule = JSON.parse(parsedSchedule); } catch { parsedSchedule = {}; }
                 }
                 rosterMap[r.employee_id] = parsedSchedule;
             });

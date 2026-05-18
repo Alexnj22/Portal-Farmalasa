@@ -13,7 +13,7 @@ const purifySettings = (raw) => {
     let s = raw;
     for (let i = 0; i < 3; i++) {
         if (typeof s === 'string') {
-            try { s = JSON.parse(s); } catch (e) { break; }
+            try { s = JSON.parse(s); } catch { break; }
         }
     }
     if (!s || typeof s !== 'object') s = {};
@@ -24,7 +24,7 @@ const purifyHours = (raw) => {
     let h = raw;
     for (let i = 0; i < 3; i++) {
         if (typeof h === 'string') {
-            try { h = JSON.parse(h); } catch (e) { break; }
+            try { h = JSON.parse(h); } catch { break; }
         }
     }
     if (!h || typeof h !== 'object') h = {};

@@ -45,7 +45,7 @@ const FormDispositivos = ({ formData }) => {
             } else {
                 setErrorMsg('No se pudo revocar el Kiosco.');
             }
-        } catch (err) {
+        } catch {
             setErrorMsg('Ocurrió un error en el servidor.');
         } finally {
             setIsRevoking(false);

@@ -29,7 +29,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const isSupport = type === 'SUPPORT';
     const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion;
     const isTemporalRange = ['VACATION', 'DISABILITY', 'SUPPORT'].includes(type); // Rango continuo
-    const isSingleDate = ['TERMINATION', 'SALARY', 'PROMOTION', 'TRANSFER'].includes(type);
 
     // ============================================================================
     // 🚧 AUDITORÍA DE ORGANIGRAMA (¿LA PLAZA ESTÁ OCUPADA?)

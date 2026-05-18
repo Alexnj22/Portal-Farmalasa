@@ -92,6 +92,7 @@ const safeDetails = (raw) => {
   const details = raw && typeof raw === 'object' ? raw : {};
 
   // Extraemos las propiedades que ya tienen su propia columna para no duplicarlas en el JSONB
+  // eslint-disable-next-line no-unused-vars
   const { source, severity, branch_id, branch_name, device_name, input_method, ...rest } = details;
 
   try {
@@ -102,7 +103,7 @@ const safeDetails = (raw) => {
       __size: json.length,
       note: 'details excedía el límite, se truncó',
     };
-  } catch (e) {
+  } catch {
     return {
       __invalid: true,
       note: 'details no serializable (cíclico u objeto inválido)',
@@ -112,7 +113,7 @@ const safeDetails = (raw) => {
 
 let lastAuditFetchTime = 0;
 
-export const createAuditSlice = (set, get) => ({
+export const createAuditSlice = (set) => ({
   auditLog: safeJsonParse(localStorage.getItem(CACHE_KEYS.AUDIT), []) || [],
 
   setAuditLog: (updater) =>

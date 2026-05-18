@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     FolderOpen, FileText, CheckCircle2, AlertTriangle, Eye, UploadCloud,
     Calendar, ShieldCheck, Building2, Users, Clock, AlertCircle, Plus, Tags, Search, X, Edit3, Trash2, Layers, Sparkles

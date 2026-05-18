@@ -163,7 +163,7 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
+const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div onClick={onClick} className={`relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-5 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     <div className="relative flex items-center justify-between">
@@ -180,7 +180,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
 );
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
-const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => (
+const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => ( // eslint-disable-line no-unused-vars
   <div className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
     {/* Glass shine */}
     <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
@@ -608,8 +608,6 @@ const DashboardView = ({ openModal }) => {
       const ids = salesBranches.map(b => `sales_branch_${b.id}`);
       const missing = ids.filter(id => !(id in prev));
       if (!missing.length) return prev;
-      // Find the 'sales' widget position to anchor near it
-      const salesPos = prev['sales'];
       // Build a temporary order to auto-place the missing ones after existing widgets
       const existingOrder = Object.keys(prev);
       const extended = [...existingOrder, ...missing];
@@ -1016,7 +1014,7 @@ const DashboardView = ({ openModal }) => {
       const openH=dc?.start?parseInt(dc.start):(dH[0]??8), closeH=dc?.end?parseInt(dc.end):(dH[dH.length-1]??18);
       const allH=Array.from(new Set([...Array.from({length:Math.max(closeH-openH+1,1)},(_,i)=>openH+i),...dH])).sort((a,z)=>a-z);
       const aV=dH.map(h=>hourMap[h]).filter(v=>v>0).sort((a,b)=>a-b);
-      const q3v=aV[Math.floor(aV.length*0.75)]??0, q90v=aV[Math.floor(aV.length*0.9)]??0, maxV=aV[aV.length-1]??1;
+      const maxV=aV[aV.length-1]??1;
       const bC=v=>{if(!v)return'#64748b'; if(v>18)return'#FF2D55'; if(v>12)return'#FF9500'; if(v>4)return'#007AFF'; return'#64748b';};
       const fS=v=>v>0?`$${v.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`:null;
       const hourSalesMap=bd?.hourSales||{};

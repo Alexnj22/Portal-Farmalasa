@@ -353,8 +353,12 @@ const SkeletonRow = () => (
   </tr>
 );
 
+const SortIcon = ({ columnKey, sortConfig }) => {
+  if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} strokeWidth={3} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
+  return sortConfig.direction === 'asc' ? <ArrowUp size={12} strokeWidth={3} className="text-[#007AFF]" /> : <ArrowDown size={12} strokeWidth={3} className="text-[#007AFF]" />;
+};
+
 const StaffManagementView = ({
-  setView, // 💡 Lo mantenemos por retrocompatibilidad con modales viejos, pero ya no se usa para navegar
   setActiveEmployee,
   openModal,
   searchTerm,
@@ -575,11 +579,6 @@ const StaffManagementView = ({
     document.body.removeChild(link);
   };
 
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} strokeWidth={3} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
-    return sortConfig.direction === 'asc' ? <ArrowUp size={12} strokeWidth={3} className="text-[#007AFF]" /> : <ArrowDown size={12} strokeWidth={3} className="text-[#007AFF]" />;
-  };
-
   const filtersContent = (
     <div className={`flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
@@ -715,16 +714,16 @@ const StaffManagementView = ({
               <thead className="bg-white/40 sticky top-0 z-10 backdrop-blur-md border-b border-white/60 shadow-sm">
                 <tr>
                   <th onClick={() => handleSort('name')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Colaborador <SortIcon columnKey="name" /></div>
+                    <div className="flex items-center gap-2">Colaborador <SortIcon columnKey="name" sortConfig={sortConfig} /></div>
                   </th>
                   <th onClick={() => handleSort('branch')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Sucursal <SortIcon columnKey="branch" /></div>
+                    <div className="flex items-center gap-2">Sucursal <SortIcon columnKey="branch" sortConfig={sortConfig} /></div>
                   </th>
                   <th onClick={() => handleSort('role')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Cargos Asignados <SortIcon columnKey="role" /></div>
+                    <div className="flex items-center gap-2">Cargos Asignados <SortIcon columnKey="role" sortConfig={sortConfig} /></div>
                   </th>
                   <th onClick={() => handleSort('status')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Estado Operativo <SortIcon columnKey="status" /></div>
+                    <div className="flex items-center gap-2">Estado Operativo <SortIcon columnKey="status" sortConfig={sortConfig} /></div>
                   </th>
                   <th className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] text-right">
                     Acciones

@@ -26,7 +26,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
     
     const [activeTab, setActiveTab] = useState('history');
-    const [kioskCount, setKioskCount] = useState(0);
+    const [, setKioskCount] = useState(0);
 
     const [history, setHistory] = useState([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -37,10 +37,9 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const [showProfile, setShowProfile] = useState(false);
     const hoverTimeoutRef = useRef(null);
 
-    const [showSideNav, setShowSideNav] = useState(false);
+    const [, setShowSideNav] = useState(false);
     const sentinelRef = useRef(null);
 
-    const isMobile = useMemo(() => /Mobi|Android|iPhone/i.test(navigator.userAgent), []);
 
     const liveBranch = useMemo(() => {
         return branches.find(b => String(b.id) === String(branch?.id)) || branch;
@@ -49,7 +48,6 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const branchType = liveBranch?.type || 'FARMACIA';
     const isFarmacia = branchType === 'FARMACIA';
     const isBodega   = branchType === 'BODEGA';
-    const isAdmin    = branchType === 'ADMINISTRATIVA';
     const hasKiosk   = isFarmacia || isBodega;
     const hasLegal   = isFarmacia;
     const hasServices = isFarmacia;
@@ -161,7 +159,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const groupedSchedule = useMemo(() => {
         let raw = liveBranch?.weekly_hours || liveBranch?.weeklyHours || {};
-        if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e) { raw = {}; } }
+        if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = {}; } }
 
         const grouped = [];
         let currentGroup = null;

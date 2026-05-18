@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import { useStaffStore as useStaff } from '../../store/staffStore';
-
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -61,7 +59,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
     const openDateStr = liveBranch?.opening_date || liveBranch?.openingDate;
 
     const safeJsonParse = (str, fallback) => {
-        try { return JSON.parse(str); } catch (e) { return fallback; }
+        try { return JSON.parse(str); } catch { return fallback; }
     };
 
     // COMBINAR CON EVENTO SINTÉTICO

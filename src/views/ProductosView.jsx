@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package, LayoutList, Boxes, Search, X, ChevronRight } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';

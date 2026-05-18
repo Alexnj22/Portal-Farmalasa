@@ -53,16 +53,6 @@ const TIPO_PAGO_THEME = {
 // SV time
 function svNow() { return new Date(Date.now() - 6 * 3600_000); }
 
-function timeAgo(fecha, hora) {
-    const horaStr = hora?.length === 5 ? `${hora}:00` : hora;
-    const dt = new Date(`${fecha}T${horaStr}-06:00`);
-    const mins = Math.floor((Date.now() - dt.getTime()) / 60000);
-    if (mins < 0) return '—';
-    if (mins < 60) return `${mins}m`;
-    if (mins < 1440) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
-    return `${Math.floor(mins / 1440)}d`;
-}
-
 function monthOptions() {
     const opts = [];
     const now = svNow();

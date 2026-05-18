@@ -16,7 +16,7 @@ const formatTime12hStr = (time24) => {
     return `${hour}:${m} ${ampm}`;
 };
 
-const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect }) => {
+const InlineDayEditor = memo(({ dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect }) => {
     const { branches } = useStaffStore(); 
 
     const [shiftId, setShiftId] = useState(() => {

@@ -4,6 +4,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker'; 
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
 import { useStaffStore } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -148,12 +149,11 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     </div>
 );
 
-const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, setActiveTab: setActiveTabProp }) => {
+const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp }) => {
 
     const employees = useStaffStore(state => state.employees);
     const [localActiveTab, setLocalActiveTab] = useState('personal');
     const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
-    const setActiveTab = setActiveTabProp || setLocalActiveTab;
     const [hasDraft, setHasDraft] = useState(false);
 
     // Skip draft logic in edit mode

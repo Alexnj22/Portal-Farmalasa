@@ -108,6 +108,11 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
 // ============================================================================
 // VISTA PRINCIPAL
 // ============================================================================
+const SortIcon = ({ columnKey, sortConfig }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
+    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-[#007AFF]" /> : <ArrowDown size={14} className="text-[#007AFF]" />;
+};
+
 const AuditView = ({ openModal }) => {
     const storeAuditLog = useStaff(state => state.auditLog);
     const auditLog = storeAuditLog || [];
@@ -274,11 +279,6 @@ const AuditView = ({ openModal }) => {
     }, [processedLogs, currentPage, itemsPerPage]);
 
     const hasActiveFilters = debouncedSearchTerm !== '' || startDate !== '' || endDate !== '' || actionFilter !== 'ALL';
-
-    const SortIcon = ({ columnKey }) => {
-        if (sortConfig.key !== columnKey) return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
-        return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-[#007AFF]" /> : <ArrowDown size={14} className="text-[#007AFF]" />;
-    };
 
 const filtersContent = (
         <div
@@ -484,13 +484,13 @@ const filtersContent = (
                     <thead className="bg-white/40">
                         <tr>
                             <th onClick={() => handleSort('created_at')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
-                                <div className="flex items-center gap-2">Origen / Hora <SortIcon columnKey="created_at" /></div>
+                                <div className="flex items-center gap-2">Origen / Hora <SortIcon columnKey="created_at" sortConfig={sortConfig} /></div>
                             </th>
                             <th onClick={() => handleSort('user_name')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
-                                <div className="flex items-center gap-2">Usuario <SortIcon columnKey="user_name" /></div>
+                                <div className="flex items-center gap-2">Usuario <SortIcon columnKey="user_name" sortConfig={sortConfig} /></div>
                             </th>
                             <th onClick={() => handleSort('action')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
-                                <div className="flex items-center gap-2">Acción <SortIcon columnKey="action" /></div>
+                                <div className="flex items-center gap-2">Acción <SortIcon columnKey="action" sortConfig={sortConfig} /></div>
                             </th>
                             <th className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] text-right border-b border-white/40">
                                 Detalles

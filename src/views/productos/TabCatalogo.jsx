@@ -897,12 +897,17 @@ export default function TabCatalogo({
         const bajoIds    = new Set();
 
         const fetchPage = async (from) => {
-            const { data } = await supabase.from('product_precios')
+            const { data, error } = await supabase.from('product_precios')
                 .select(`product_id, costo, ${PRICE_SELECT}`)
                 .eq('activo', true)
                 .gt('costo', 0)
                 .range(from, from + PAGE - 1);
-            if (cancelled || !data) return;
+            if (cancelled) return;
+            if (error || !data) {
+                setMarginStats({ perdidaIds, bajoIds });
+                setStatsLoading(false);
+                return;
+            }
             data.forEach(pp => {
                 const w = worstMarginOf(pp, allowedPriceFields);
                 if (w === null) return;
@@ -917,7 +922,9 @@ export default function TabCatalogo({
             }
         };
 
-        fetchPage(0);
+        fetchPage(0).catch(() => {
+            if (!cancelled) { setMarginStats({ perdidaIds: new Set(), bajoIds: new Set() }); setStatsLoading(false); }
+        });
         return () => { cancelled = true; };
     }, [allowedPriceFields]);
 

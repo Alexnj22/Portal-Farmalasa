@@ -954,7 +954,11 @@ export default function TabCatalogo({
                 .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, laboratorios(nombre)', { count: 'exact' })
                 .range((pg - 1) * ps, pg * ps - 1);
 
-            if (q.trim()) qb = qb.ilike('nombre', `%${q.trim()}%`);
+            if (q.trim()) {
+                // PostgREST uses comma as OR separator — strip it to avoid parse error
+                const term = q.trim().replace(/,/g, ' ');
+                qb = qb.or(`nombre.ilike.%${term}%,principio_activo.ilike.%${term}%`);
+            }
             if (fa === 'activos') qb = qb.eq('activo', true);
             if (lab)  qb = qb.eq('laboratorio_id', lab);
             if (cat)  qb = qb.eq('tipo_medicamento', cat);
@@ -1005,12 +1009,12 @@ export default function TabCatalogo({
             }
         } catch (e) {
             if (rid !== loadRef.current) return;
-            console.error(e);
+            console.error('loadProducts error:', JSON.stringify(e));
             setLoadError(e?.message || 'Error al cargar productos');
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }
-    }, []);
+    }, [allowedPriceFields]);
 
     // Reset page on filter/sort changes
     useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField]);

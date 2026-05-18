@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import {
     X, FlaskConical, Loader2, Check, SkipForward,
-    ChevronRight, AlertTriangle, Zap, Search, Package,
+    ChevronRight, AlertTriangle, Zap, Search, Package, Plus,
 } from 'lucide-react';
 import SrsBuscadorWidget from './SrsBuscadorWidget';
 
@@ -213,7 +213,7 @@ export default function SrsEnriquecerModal({ onClose }) {
     const [reviewIdx, setReviewIdx]       = useState(0);
     const [reviewApplying, setRevApplying] = useState(false);
     const [reviewPanel, setReviewPanel]   = useState(null); // null | 'srs' | 'manual'
-    const [manualPaText, setManualPaText] = useState('');
+    const [manualItems, setManualItems]   = useState([{ nombre: '', concentracion: '', _key: 0 }]);
 
     const cancelRef = useRef(false);
 
@@ -224,7 +224,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         setScanned(0); setAutoQueue([]); setAutoRejected(new Set()); setReviewQueue([]);
         setNoMatchList([]); setMarkedSinPA(new Set());
         setApplied(0); setSkipped(0); setReviewIdx(0);
-        setReviewPanel(null); setManualPaText('');
+        setReviewPanel(null); setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
 
         // Fetch products without principio_activo
         const { data: products, error } = await supabase
@@ -321,14 +321,14 @@ export default function SrsEnriquecerModal({ onClose }) {
             setApplied(a => a + 1);
         } catch { /* continue */ }
         setReviewIdx(i => i + 1);
-        setReviewPanel(null); setManualPaText('');
+        setReviewPanel(null); setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
         setRevApplying(false);
     }, []);
 
     const handleReviewSkip = useCallback(() => {
         setSkipped(s => s + 1);
         setReviewIdx(i => i + 1);
-        setReviewPanel(null); setManualPaText('');
+        setReviewPanel(null); setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
     }, []);
 
     // Mark a product as sin_principio_activo (insumos, equipos, cosméticos…)
@@ -355,7 +355,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         } catch { /* ignore */ }
         setSkipped(s => s + 1);
         setReviewIdx(i => i + 1);
-        setReviewPanel(null); setManualPaText('');
+        setReviewPanel(null); setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
         setRevApplying(false);
     }, []);
 
@@ -639,45 +639,55 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {reviewPanel === 'manual' && (
                                             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 flex flex-col gap-2">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    Principio activo — usa + para separar varios
+                                                    Principio activo manual
                                                 </p>
-                                                <p className="text-[10px] text-slate-400">
-                                                    Ej: <span className="font-mono text-slate-500">ACETAMINOFEN 500 MG</span> · <span className="font-mono text-slate-500">AMOXICILINA 500 MG + CLAVULANATO 125 MG</span>
-                                                </p>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={manualPaText}
-                                                        onChange={e => setManualPaText(e.target.value)}
-                                                        placeholder="PRINCIPIO ACTIVO + CONCENTRACIÓN"
-                                                        spellCheck={false}
-                                                        autoComplete="off"
-                                                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-300 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all"
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter' && manualPaText.trim()) {
-                                                                const principios = manualPaText.trim().split(/\s*\+\s*/).filter(Boolean)
-                                                                    .map((nombre, i) => ({ nombre: nombre.trim(), concentracion: '', orden: i }));
-                                                                setReviewQueue(q => q.map((e, i) =>
-                                                                    i === reviewIdx ? { ...e, srs: null, score: 1, principios } : e
-                                                                ));
-                                                                setReviewPanel(null); setManualPaText('');
-                                                            }
-                                                        }}
-                                                    />
-                                                    <button
-                                                        disabled={!manualPaText.trim()}
-                                                        onClick={() => {
-                                                            const principios = manualPaText.trim().split(/\s*\+\s*/).filter(Boolean)
-                                                                .map((nombre, i) => ({ nombre: nombre.trim(), concentracion: '', orden: i }));
-                                                            setReviewQueue(q => q.map((e, i) =>
-                                                                i === reviewIdx ? { ...e, srs: null, score: 1, principios } : e
-                                                            ));
-                                                            setReviewPanel(null); setManualPaText('');
-                                                        }}
-                                                        className="px-3 py-2 rounded-xl bg-[#007AFF] text-white text-[12px] font-black disabled:opacity-40 hover:bg-[#006AEF] transition-colors">
-                                                        Usar
+                                                <div className="space-y-1.5">
+                                                    {manualItems.map((item, idx) => (
+                                                        <div key={item._key} className="flex items-center gap-1.5">
+                                                            <span className="text-[9px] text-slate-300 font-bold w-3 text-right shrink-0">{idx + 1}</span>
+                                                            <input
+                                                                value={item.nombre}
+                                                                onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
+                                                                placeholder="Nombre del principio"
+                                                                spellCheck={false} autoComplete="off"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white placeholder:text-slate-300"
+                                                            />
+                                                            <input
+                                                                value={item.concentracion}
+                                                                onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
+                                                                placeholder="Cant."
+                                                                spellCheck={false} autoComplete="off"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white placeholder:text-slate-300 text-center"
+                                                            />
+                                                            <button onClick={() => setManualItems(prev =>
+                                                                prev.length > 1
+                                                                    ? prev.filter(p => p._key !== item._key)
+                                                                    : [{ nombre: '', concentracion: '', _key: Date.now() }]
+                                                            )} className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+                                                                <X size={10} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <button onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}
+                                                        className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors pt-0.5">
+                                                        <Plus size={10} /> Agregar principio
                                                     </button>
                                                 </div>
+                                                <button
+                                                    disabled={!manualItems.some(p => p.nombre.trim())}
+                                                    onClick={() => {
+                                                        const principios = manualItems
+                                                            .filter(p => p.nombre.trim())
+                                                            .map((p, i) => ({ nombre: p.nombre.trim(), concentracion: p.concentracion.trim(), orden: i }));
+                                                        setReviewQueue(q => q.map((e, i) =>
+                                                            i === reviewIdx ? { ...e, srs: null, score: 1, principios } : e
+                                                        ));
+                                                        setReviewPanel(null);
+                                                        setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
+                                                    }}
+                                                    className="self-end px-4 py-1.5 rounded-full bg-[#007AFF] text-white text-[11px] font-black disabled:opacity-40 hover:bg-[#006AEF] transition-colors">
+                                                    Usar estos principios
+                                                </button>
                                             </div>
                                         )}
                                     </div>

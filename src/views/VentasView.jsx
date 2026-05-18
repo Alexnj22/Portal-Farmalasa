@@ -1290,18 +1290,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setLoading(true);
         setError(null);
         try {
-            // Paginate in 1000-row chunks — PostgREST caps single responses at 1000
+            // Single call — the hybrid function (agg table + live current month) returns
+            // all rows fast regardless of date range. range(0,9999) bypasses PostgREST's
+            // default 1000-row cap without the N sequential re-executions of the old loop.
             const rpcParams = { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null };
-            let presData = [];
-            for (let offset = 0; ; offset += 1000) {
-                const { data: page, error: pageErr } = await supabase
-                    .rpc('get_product_sales_agg', rpcParams)
-                    .range(offset, offset + 999);
-                if (pageErr) throw pageErr;
-                presData = presData.concat(page || []);
-                if (!page || page.length < 1000) break;
-            }
-            if (!presData.length) { setRows([]); setLoading(false); return; }
+            const { data: presData, error: fetchErr } = await supabase
+                .rpc('get_product_sales_agg', rpcParams)
+                .range(0, 9999);
+            if (fetchErr) throw fetchErr;
+            if (!presData?.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {
@@ -2046,21 +2043,26 @@ export default function VentasView() {
 
     return (
         <GlassViewLayout icon={TrendingUp} title="Ventas" filtersContent={filtersContent}>
+            {/* Ventas: always mounted — it owns the PeriodPicker and stats cards */}
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
                 <TabVentas branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     employees={employees} branchOptions={branchOptions} />
             </div>
-            <div className={activeTab === 'vendedores' ? '' : 'hidden'}>
+
+            {/* Vendedores + Productos: unmount when not active so their useEffects don't
+                fire on every filter change while the user is on a different tab.
+                localStorage cache in TabProductos ensures instant return on re-visit. */}
+            {activeTab === 'vendedores' && (
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     employees={employees} searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} />
-            </div>
-            <div className={activeTab === 'productos' ? '' : 'hidden'}>
+            )}
+            {activeTab === 'productos' && (
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
                     branchOptions={branchOptions} />
-            </div>
+            )}
         </GlassViewLayout>
     );
 }

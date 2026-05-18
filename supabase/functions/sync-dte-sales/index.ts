@@ -349,7 +349,16 @@ Deno.serve(async (req) => {
     const INV_BRANCH_MAP = getErpInvMap();
 
     const body = await req.json().catch(() => ({}));
-    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false, onlyInvErpId = null } = body;
+    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false, onlyInvErpId = null, refreshMvOnly = false } = body;
+
+    // Dedicated MV refresh call — runs on its own cron to avoid race conditions
+    if (refreshMvOnly) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+      await supabase.rpc('refresh_inventory_grouped_mv');
+      return new Response(JSON.stringify({ ok: true, refreshed: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
     const startDate = fini || hoy;
@@ -454,12 +463,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Refresh materialized view after all branches are synced
-      try {
-        await supabase.rpc('refresh_inventory_grouped_mv');
-      } catch (_e) {
-        // Non-fatal: stale MV is better than a failed sync response
-      }
+      // MV refresh is handled by a dedicated cron (refresh-inv-mv) to avoid
+      // race conditions when multiple per-sucursal syncs run simultaneously.
     }
 
     return new Response(

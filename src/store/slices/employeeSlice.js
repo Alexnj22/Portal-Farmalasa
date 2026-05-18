@@ -202,7 +202,6 @@ export const createEmployeeSlice = (set, get) => ({
                     } else if (!authResult?.ok) {
                         console.warn('Auth creation failed:', authResult);
                     } else {
-                        console.log('Usuario Auth creado:', dbPayload.username);
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);

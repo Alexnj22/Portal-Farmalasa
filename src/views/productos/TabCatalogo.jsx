@@ -518,6 +518,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         if (maxIdx === -1) return PRICE_FIELDS;
         return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
     }, [maxPriceLevel]);
+    const marginCheckFields = useMemo(() => allowedPriceFields.filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
@@ -590,7 +591,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
     const worstOverall = precios.reduce((min, pp) => {
-        const w = worstMarginOf(pp, allowedPriceFields);
+        const w = worstMarginOf(pp, marginCheckFields);
         if (w === null) return min;
         return min === null ? w : Math.min(min, w);
     }, null);
@@ -688,7 +689,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                             {precios.map(pp => {
                                                 const pCh = changesMap[pp.id_presentacion] || {};
                                                 const rowChanged = Object.keys(pCh).length > 0;
-                                                const worst = worstMarginOf(pp, allowedPriceFields);
+                                                const worst = worstMarginOf(pp, marginCheckFields);
                                                 return (
                                                     <tr key={pp.id_presentacion} className={
                                                         rowChanged ? 'bg-amber-50/60' :

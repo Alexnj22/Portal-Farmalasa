@@ -157,7 +157,6 @@ export default function SrsEnriquecerModal({ onClose }) {
             .eq('activo', true)
             .eq('sin_principio_activo', false)
             .or('principio_activo.is.null,principio_activo.eq.')
-            .not('id', 'in', `(select product_id from product_active_principles)`)
             .limit(BATCH_SIZE)
             .order('nombre');
 

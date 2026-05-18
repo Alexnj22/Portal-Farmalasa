@@ -508,6 +508,30 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     );
 });
 
+// Resize + compress an image File to a JPEG Blob (max side = maxPx)
+function resizeImage(file, maxPx, quality) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
+            const w = Math.round(img.width  * ratio);
+            const h = Math.round(img.height * ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width  = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+        img.src = url;
+    });
+}
+
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
@@ -551,14 +575,15 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         if (!file) return;
         setPhotoLoading(true);
         try {
-            const ext  = file.name.split('.').pop().toLowerCase();
-            const path = `${product.id}.${ext}`;
-            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, file, { upsert: true });
+            const blob = await resizeImage(file, 800, 0.85);
+            const path = `${product.id}.jpg`;
+            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
-            await supabase.from('products').update({ foto_url: publicUrl }).eq('id', product.id);
-            setLocalFoto(publicUrl);
-            onPhotoUpdated(product.id, publicUrl);
+            const cacheBust = `${publicUrl}?t=${Date.now()}`;
+            await supabase.from('products').update({ foto_url: cacheBust }).eq('id', product.id);
+            setLocalFoto(cacheBust);
+            onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
         } catch (err) {
             useToastStore.getState().showToast('Error', err.message, 'error');
@@ -631,7 +656,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                     border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">
                                 {localFoto ? (
                                     <>
-                                        <img src={localFoto} alt="" className="w-full h-full object-cover" />
+                                        <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
                                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/45 transition-all">
                                             {photoLoading
                                                 ? <Loader2 size={22} className="text-white animate-spin" />

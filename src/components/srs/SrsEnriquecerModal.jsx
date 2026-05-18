@@ -18,24 +18,49 @@ const TOP_CANDIDATES   = 3;     // SRS candidates shown per review card
 // ── Matching helpers ──────────────────────────────────────────────────────────
 
 const SKIP_TOKENS = new Set([
-    'MG','ML','MCG','UG','G','UI','IU','GR',
-    'X','CX','DE','Y','CON','POR','EL','LA','LOS','LAS',
+    // Dose units
+    'MG','ML','MCG','UG','G','UI','IU','GR','MEQ',
+    // Prepositions / articles
+    'X','CX','DE','Y','CON','POR','EL','LA','LOS','LAS','AL',
+    // Lab / brand names
     'MK','SAIMED','MEGALAB','GENFAR','LAFRANCOL','PFIZER','NOVARTIS',
     'ROCHE','BAYER','MERCK','SYNTOFARMA','ROEMMERS','SIEGFRIED','LIOMONT',
-    'DENMARK','PISA','ULTRA','FORTE','PLUS','MAX','MINI',
+    'DENMARK','PISA',
+    // Modifiers
+    'ULTRA','FORTE','PLUS','MAX','MINI',
+    // Pharma forms & descriptors — add no identity info, inflate union only
+    'TAB','TABS','CAP','CAPS','COMP','AMP','INY','SOL','SUS','JAR','GTS','SUSP',
+    'TABLETA','TABLETAS','CAPSULA','CAPSULAS','COMPRIMIDO','COMPRIMIDOS',
+    'AMPOLLA','AMPOLLAS','INYECTABLE','SOLUCION','SUSPENSION','JARABE',
+    'GOTAS','CREMA','UNGUENTO','OVULO','OVULOS','SUPOSITORIO','SUPOSITORIOS',
+    'BLANDA','BLANDAS','DURA','DURAS','GELATINA','RECUBIERTA','RECUBIERTO',
+    'MASTICABLE','EFERVESCENTE','SUBLINGUAL','RETARD','LIBERACION',
 ]);
 
 function normalize(str = '') {
     return str
         .toUpperCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/(\d+)([A-Z]+)/g, '$1 $2')   // split fused "500MG" → "500 MG"
         .replace(/[^\w\s]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 }
 
 function getTokens(str) {
-    return normalize(str).split(' ').filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
+    // Strip "X NNN" quantity patterns before scoring so "X 30 TAB" doesn't penalise Jaccard
+    const clean = normalize(str).replace(/\bX\s*\d+\b/g, ' ');
+    return clean.split(' ').filter(t => t.length >= 2 && !SKIP_TOKENS.has(t));
+}
+
+// Build a clean search query for the SRS API: keep drug name + dosage, strip everything else
+function buildSearchQuery(nombre) {
+    const norm = normalize(nombre);
+    const clean = norm.replace(/\bX\s*\d+\b/g, ' ');   // remove "X 100", "X 30" etc.
+    const tokens = clean.split(/\s+/)
+        .filter(t => t.length >= 2)
+        .filter(t => !SKIP_TOKENS.has(t));
+    return tokens.slice(0, 5).join(' ').trim();
 }
 
 function scoreMatch(dbName, srsName) {
@@ -182,27 +207,32 @@ export default function SrsEnriquecerModal({ onClose }) {
                 await new Promise(r => setTimeout(r, DELAY_MS));
 
                 try {
-                    const json = await srsFetch(product.nombre, 1, 15);
-                    const results = json.data || [];
-
-                    // Score all results, take top candidates
-                    const scored = results
-                        .map(r => ({ srs: r, score: scoreMatch(product.nombre, r.nombre_comercial || r.nombreComercial || '') }))
-                        .filter(r => r.score >= REVIEW_MIN)
-                        .sort((a, b) => b.score - a.score)
-                        .slice(0, TOP_CANDIDATES);
-
-                    const best = scored[0];
-                    if (!best) {
+                    const searchQ = buildSearchQuery(product.nombre);
+                    if (!searchQ) {
                         setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]);
                     } else {
-                        const principios = parsePrincipios(best.srs);
-                        const entry = { product, srs: best.srs, score: best.score, principios, candidates: scored };
+                        const json = await srsFetch(searchQ, 1, 15);
+                        const results = json.data || [];
 
-                        if (best.score >= AUTO_MIN) {
-                            setAutoQueue(q => [...q, entry]);
+                        // Score all results, take top candidates
+                        const scored = results
+                            .map(r => ({ srs: r, score: scoreMatch(product.nombre, r.nombre_comercial || r.nombreComercial || '') }))
+                            .filter(r => r.score >= REVIEW_MIN)
+                            .sort((a, b) => b.score - a.score)
+                            .slice(0, TOP_CANDIDATES);
+
+                        const best = scored[0];
+                        if (!best) {
+                            setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]);
                         } else {
-                            setReviewQueue(q => [...q, entry]);
+                            const principios = parsePrincipios(best.srs);
+                            const entry = { product, srs: best.srs, score: best.score, principios, candidates: scored };
+
+                            if (best.score >= AUTO_MIN) {
+                                setAutoQueue(q => [...q, entry]);
+                            } else {
+                                setReviewQueue(q => [...q, entry]);
+                            }
                         }
                     }
                 } catch { setNoMatchList(l => [...l, { id: product.id, nombre: product.nombre }]); }

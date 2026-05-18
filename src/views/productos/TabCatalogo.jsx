@@ -12,6 +12,7 @@ import {
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
+import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 
 const PAGE_SIZES = [25, 50, 100];
 
@@ -939,6 +940,8 @@ export default function TabCatalogo({
     const [changedIds, setChangedIds] = useState(new Set());
     const [marginMap,  setMarginMap]  = useState({});
 
+    const [showEnriquecer, setShowEnriquecer] = useState(false);
+
     // Margin stats (loaded once, used for stat cards)
     const [marginStats,       setMarginStats]       = useState(null);
     const [statsLoading,      setStatsLoading]      = useState(false);
@@ -1181,6 +1184,10 @@ export default function TabCatalogo({
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
+            {showEnriquecer && (
+                <SrsEnriquecerModal onClose={() => setShowEnriquecer(false)} />
+            )}
+
             {/* ── Stats + filter pill row ── */}
             <div className="flex items-start gap-3 flex-wrap">
                 {/* Stat cards */}
@@ -1261,6 +1268,12 @@ export default function TabCatalogo({
                         </>
                     )}
                 </div>
+
+                {/* Enriquecer desde SRS */}
+                <button onClick={() => setShowEnriquecer(true)}
+                    className="hidden lg:flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-2xl text-[11px] font-bold text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all">
+                    <FlaskConical size={12} strokeWidth={2.5} /> Enriquecer SRS
+                </button>
             </div>
 
             {/* ── Table ── */}

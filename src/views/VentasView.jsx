@@ -1260,13 +1260,33 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillMonthly([]);
     }, [expandedKey]);
 
-    const fetchProductos = useCallback(async () => {
+    const fetchProductos = useCallback(async (isRetry = false) => {
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
+        const lsKey    = `pp_${cacheKey}`;
+        const TTL_MS   = 20 * 60 * 1000; // 20 minutes
+
+        // 1. In-memory cache (survives filter changes within same session)
         if (productsCache.current.has(cacheKey)) {
             setRows(productsCache.current.get(cacheKey));
             setLoading(false);
             return;
         }
+
+        // 2. localStorage cache (survives navigation away and back)
+        try {
+            const stored = localStorage.getItem(lsKey);
+            if (stored) {
+                const { data, ts } = JSON.parse(stored);
+                if (Date.now() - ts < TTL_MS) {
+                    productsCache.current.set(cacheKey, data);
+                    setRows(data);
+                    setLoading(false);
+                    return;
+                }
+                localStorage.removeItem(lsKey);
+            }
+        } catch (_) { /* localStorage unavailable or corrupted — proceed to fetch */ }
+
         setLoading(true);
         setError(null);
         try {
@@ -1304,13 +1324,29 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             });
 
             productsCache.current.set(cacheKey, allRows);
+            // Persist to localStorage, evicting stale entries first
+            try {
+                Object.keys(localStorage)
+                    .filter(k => k.startsWith('pp_') && k !== lsKey)
+                    .forEach(k => {
+                        try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
+                    });
+                localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
+            } catch (_) { /* quota exceeded or unavailable — in-memory cache still works */ }
+
             setRows(allRows);
-        } catch (err) {
-            setError(err.message || 'Error al cargar productos');
-        } finally {
             setLoading(false);
+        } catch (err) {
+            if (!isRetry) {
+                // Auto-retry once after 1.5 s — handles transient network/PostgREST blips
+                // Keep spinner running so the user sees continuous loading, not a flash of error
+                setTimeout(() => fetchProductos(true), 1500);
+            } else {
+                setError(err.message || 'Error al cargar productos');
+                setLoading(false);
+            }
         }
-    }, [fini, ffin, filterBranch]);
+    }, [fini, ffin, filterBranch]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 

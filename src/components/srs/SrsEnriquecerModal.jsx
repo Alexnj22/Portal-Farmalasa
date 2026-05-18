@@ -12,7 +12,7 @@ const CONCURRENCY      = 5;
 const BATCH_SIZE       = 300;   // products per run
 const DELAY_MS         = 80;    // ms between launches (polite rate limiting)
 const AUTO_MIN         = 0.70;  // >= auto-apply (high confidence)
-const REVIEW_MIN       = 0.25;  // >= show for review, else discard
+const REVIEW_MIN       = 0;     // everything with any SRS result goes to review
 const TOP_CANDIDATES   = 3;     // SRS candidates shown per review card
 
 // ── Matching helpers ──────────────────────────────────────────────────────────
@@ -305,8 +305,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                             </div>
                             <div className="flex gap-4 text-[11px] font-bold">
                                 <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"/> ≥ 70% — auto-aplica</span>
-                                <span className="flex items-center gap-1.5 text-amber-600"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> 25–69% — te consulta</span>
-                                <span className="flex items-center gap-1.5 text-slate-400"><span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"/> {'< 25%'} — descarta</span>
+                                <span className="flex items-center gap-1.5 text-amber-600"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"/> {'< 70%'} — te consulta</span>
+                                <span className="flex items-center gap-1.5 text-slate-400"><span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"/> Sin resultados SRS — descarta</span>
                             </div>
                             <button onClick={handleStart}
                                 className="mt-2 px-8 py-3 rounded-full text-[13px] font-black text-white bg-violet-600 hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">

@@ -1290,15 +1290,23 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setLoading(true);
         setError(null);
         try {
-            // Single call — the hybrid function (agg table + live current month) returns
-            // all rows fast regardless of date range. range(0,9999) bypasses PostgREST's
-            // default 1000-row cap without the N sequential re-executions of the old loop.
+            // Paginate in chunks of 1000 — PostgREST caps RPC results at 1000 rows
+            // regardless of range(). The function is fast (pre-agg) so each chunk is cheap.
             const rpcParams = { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null };
-            const { data: presData, error: fetchErr } = await supabase
-                .rpc('get_product_sales_agg', rpcParams)
-                .range(0, 9999);
-            if (fetchErr) throw fetchErr;
-            if (!presData?.length) { setRows([]); setLoading(false); return; }
+            const CHUNK = 1000;
+            let presData = [];
+            let offset = 0;
+            while (true) {
+                const { data: chunk, error: fetchErr } = await supabase
+                    .rpc('get_product_sales_agg', rpcParams)
+                    .range(offset, offset + CHUNK - 1);
+                if (fetchErr) throw fetchErr;
+                if (!chunk?.length) break;
+                presData = presData.concat(chunk);
+                if (chunk.length < CHUNK) break;
+                offset += CHUNK;
+            }
+            if (!presData.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {

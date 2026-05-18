@@ -422,9 +422,13 @@ Deno.serve(async (req) => {
     const invResults: any[] = [];
     if (syncInventory) {
       const INV_MAP_FILTERED = onlyInvErpId != null
-        ? INV_BRANCH_MAP.filter((b: any) => b.erpId === onlyInvErpId)
+        ? INV_BRANCH_MAP.filter((b: any) => Number(b.erpId) === Number(onlyInvErpId))
         : INV_BRANCH_MAP;
-      for (const { erpId: invErpId, username, password, ubicaciones } of INV_MAP_FILTERED) {
+      for (const { erpId: invErpId, username, password, ubicaciones: rawUbicaciones } of INV_MAP_FILTERED) {
+        // Fallback: if ubicaciones is missing/null in the secret, default to [{id:0, isVencidos:false}]
+        const ubicaciones = (Array.isArray(rawUbicaciones) && rawUbicaciones.length > 0)
+          ? rawUbicaciones
+          : [{ id: 0, isVencidos: false }];
         for (const { id: ubicacionId, isVencidos } of ubicaciones) {
           try {
             const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos);

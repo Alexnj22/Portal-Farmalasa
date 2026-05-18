@@ -407,7 +407,7 @@ const LiquidSelect = ({
                         placeholder="Buscar..."
                     />
                 ) : (
-                    <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight flex items-center gap-2 ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
+                    <div className={`w-full text-left ${textStyle} ${paddingStyle} overflow-hidden leading-tight flex items-center gap-2 ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
                         {selectedOption ? (
                             <>
                                 {selectedOption.avatar !== undefined && (
@@ -427,7 +427,7 @@ const LiquidSelect = ({
                                     )}
                                 </span>
                             </>
-                        ) : placeholder}
+                        ) : <span className="block truncate">{placeholder}</span>}
                     </div>
                 )}
             </div>

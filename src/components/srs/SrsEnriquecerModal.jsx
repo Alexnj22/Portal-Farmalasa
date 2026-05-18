@@ -5,6 +5,7 @@ import {
     X, FlaskConical, Loader2, Check, SkipForward,
     ChevronRight, AlertTriangle, Zap, Search, Package,
 } from 'lucide-react';
+import SrsBuscadorWidget from './SrsBuscadorWidget';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -200,6 +201,7 @@ export default function SrsEnriquecerModal({ onClose }) {
     const [scanned, setScanned]       = useState(0);
     const [total, setTotal]           = useState(0);
     const [autoQueue, setAutoQueue]   = useState([]);   // {product, srs, score, principios}
+    const [autoRejected, setAutoRejected] = useState(new Set()); // product IDs to skip in auto batch
     const [reviewQueue, setReviewQueue] = useState([]); // same + candidates[]
     const [noMatchList, setNoMatchList]   = useState([]);        // {id, nombre}
     const [markedSinPA, setMarkedSinPA]   = useState(new Set()); // ids marcados como sin PA
@@ -208,8 +210,10 @@ export default function SrsEnriquecerModal({ onClose }) {
     const [applying, setApplying]     = useState(false);
 
     // Review state
-    const [reviewIdx, setReviewIdx]   = useState(0);
+    const [reviewIdx, setReviewIdx]       = useState(0);
     const [reviewApplying, setRevApplying] = useState(false);
+    const [reviewPanel, setReviewPanel]   = useState(null); // null | 'srs' | 'manual'
+    const [manualPaText, setManualPaText] = useState('');
 
     const cancelRef = useRef(false);
 
@@ -217,9 +221,10 @@ export default function SrsEnriquecerModal({ onClose }) {
     const handleStart = useCallback(async () => {
         cancelRef.current = false;
         setPhase(PHASE.SCANNING);
-        setScanned(0); setAutoQueue([]); setReviewQueue([]);
+        setScanned(0); setAutoQueue([]); setAutoRejected(new Set()); setReviewQueue([]);
         setNoMatchList([]); setMarkedSinPA(new Set());
         setApplied(0); setSkipped(0); setReviewIdx(0);
+        setReviewPanel(null); setManualPaText('');
 
         // Fetch products without principio_activo
         const { data: products, error } = await supabase
@@ -295,15 +300,18 @@ export default function SrsEnriquecerModal({ onClose }) {
         let count = 0;
         for (const entry of autoQueue) {
             if (cancelRef.current) break;
+            if (autoRejected.has(entry.product.id)) continue;
             try {
                 await applyPrincipios(entry.product.id, entry.principios);
                 count++;
             } catch { /* continue */ }
         }
         setApplied(a => a + count);
+        setSkipped(s => s + autoRejected.size);
         setAutoQueue([]);
+        setAutoRejected(new Set());
         setApplying(false);
-    }, [autoQueue]);
+    }, [autoQueue, autoRejected]);
 
     // ── Review actions ─────────────────────────────────────────────────────────
     const handleReviewApply = useCallback(async (entry) => {
@@ -313,12 +321,14 @@ export default function SrsEnriquecerModal({ onClose }) {
             setApplied(a => a + 1);
         } catch { /* continue */ }
         setReviewIdx(i => i + 1);
+        setReviewPanel(null); setManualPaText('');
         setRevApplying(false);
     }, []);
 
     const handleReviewSkip = useCallback(() => {
         setSkipped(s => s + 1);
         setReviewIdx(i => i + 1);
+        setReviewPanel(null); setManualPaText('');
     }, []);
 
     // Mark a product as sin_principio_activo (insumos, equipos, cosméticos…)
@@ -345,6 +355,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         } catch { /* ignore */ }
         setSkipped(s => s + 1);
         setReviewIdx(i => i + 1);
+        setReviewPanel(null); setManualPaText('');
         setRevApplying(false);
     }, []);
 
@@ -470,20 +481,52 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 ))}
                             </div>
 
-                            {/* Auto-apply block */}
+                            {/* Auto-apply list — reviewable */}
                             {autoQueue.length > 0 && (
-                                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-[13px] font-black text-emerald-800">
-                                            {autoQueue.length} coincidencias con alta confianza
-                                        </p>
-                                        <p className="text-[11px] text-emerald-600 mt-0.5">Se aplicarán sin confirmación individual.</p>
+                                <div className="rounded-2xl border border-emerald-200 overflow-hidden">
+                                    <div className="bg-emerald-50 px-4 py-2.5 border-b border-emerald-100 flex items-center justify-between gap-3 shrink-0">
+                                        <div>
+                                            <p className="text-[12px] font-black text-emerald-800">Alta confianza</p>
+                                            <p className="text-[10px] text-emerald-600">
+                                                {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
+                                            </p>
+                                        </div>
+                                        <button onClick={handleApplyAuto}
+                                            disabled={applying || autoQueue.length === autoRejected.size}
+                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                                            {applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                            Aplicar {autoQueue.length - autoRejected.size}
+                                        </button>
                                     </div>
-                                    <button onClick={handleApplyAuto} disabled={applying}
-                                        className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-[12px] font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50">
-                                        {applying ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                                        Aplicar {autoQueue.length}
-                                    </button>
+                                    <div className="max-h-52 overflow-y-auto divide-y divide-slate-50 bg-white">
+                                        {autoQueue.map(entry => {
+                                            const rejected = autoRejected.has(entry.product.id);
+                                            return (
+                                                <div key={entry.product.id} className={`px-4 py-2.5 flex items-center gap-2.5 transition-opacity ${rejected ? 'opacity-30' : ''}`}>
+                                                    <ConfBadge score={entry.score} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[11px] font-bold text-slate-700 truncate">{entry.product.nombre}</p>
+                                                        {entry.principios.length > 0 && (
+                                                            <p className="text-[10px] text-violet-600 truncate">
+                                                                {entry.principios.map(p => [p.nombre, p.concentracion].filter(Boolean).join(' ')).join(' + ')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <button onClick={() => setAutoRejected(s => {
+                                                        const n = new Set(s);
+                                                        n.has(entry.product.id) ? n.delete(entry.product.id) : n.add(entry.product.id);
+                                                        return n;
+                                                    })} className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-full border transition-all ${
+                                                        rejected
+                                                            ? 'border-emerald-200 text-emerald-500 bg-emerald-50 hover:bg-emerald-100'
+                                                            : 'border-red-100 text-red-400 hover:bg-red-50 hover:border-red-200'
+                                                    }`}>
+                                                        {rejected ? <Check size={10} strokeWidth={3}/> : <X size={10} strokeWidth={2.5}/>}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
@@ -562,6 +605,81 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 <SkipForward size={12} /> Saltar
                                             </button>
                                         </div>
+
+                                        {/* Toggle panel buttons */}
+                                        <div className="flex items-center gap-3 pt-1 border-t border-slate-100">
+                                            <button onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-[#007AFF]' : 'text-slate-400 hover:text-[#007AFF]'}`}>
+                                                <Search size={12} /> Buscar en SRS
+                                            </button>
+                                            <span className="text-slate-200">|</span>
+                                            <button onClick={() => setReviewPanel(p => p === 'manual' ? null : 'manual')}
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'manual' ? 'text-[#007AFF]' : 'text-slate-400 hover:text-[#007AFF]'}`}>
+                                                <FlaskConical size={12} /> Ingresar manualmente
+                                            </button>
+                                        </div>
+
+                                        {/* SRS search panel */}
+                                        {reviewPanel === 'srs' && (
+                                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                                <SrsBuscadorWidget
+                                                    initialQuery={currentReview.product.nombre}
+                                                    onSelectResult={(srsProduct) => {
+                                                        const principios = parsePrincipios(srsProduct);
+                                                        setReviewQueue(q => q.map((e, i) =>
+                                                            i === reviewIdx ? { ...e, srs: srsProduct, score: 1, principios } : e
+                                                        ));
+                                                        setReviewPanel(null);
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Manual entry panel */}
+                                        {reviewPanel === 'manual' && (
+                                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 flex flex-col gap-2">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                    Principio activo — usa + para separar varios
+                                                </p>
+                                                <p className="text-[10px] text-slate-400">
+                                                    Ej: <span className="font-mono text-slate-500">ACETAMINOFEN 500 MG</span> · <span className="font-mono text-slate-500">AMOXICILINA 500 MG + CLAVULANATO 125 MG</span>
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={manualPaText}
+                                                        onChange={e => setManualPaText(e.target.value)}
+                                                        placeholder="PRINCIPIO ACTIVO + CONCENTRACIÓN"
+                                                        spellCheck={false}
+                                                        autoComplete="off"
+                                                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-300 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all"
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter' && manualPaText.trim()) {
+                                                                const principios = manualPaText.trim().split(/\s*\+\s*/).filter(Boolean)
+                                                                    .map((nombre, i) => ({ nombre: nombre.trim(), concentracion: '', orden: i }));
+                                                                setReviewQueue(q => q.map((e, i) =>
+                                                                    i === reviewIdx ? { ...e, srs: null, score: 1, principios } : e
+                                                                ));
+                                                                setReviewPanel(null); setManualPaText('');
+                                                            }
+                                                        }}
+                                                    />
+                                                    <button
+                                                        disabled={!manualPaText.trim()}
+                                                        onClick={() => {
+                                                            const principios = manualPaText.trim().split(/\s*\+\s*/).filter(Boolean)
+                                                                .map((nombre, i) => ({ nombre: nombre.trim(), concentracion: '', orden: i }));
+                                                            setReviewQueue(q => q.map((e, i) =>
+                                                                i === reviewIdx ? { ...e, srs: null, score: 1, principios } : e
+                                                            ));
+                                                            setReviewPanel(null); setManualPaText('');
+                                                        }}
+                                                        className="px-3 py-2 rounded-xl bg-[#007AFF] text-white text-[12px] font-black disabled:opacity-40 hover:bg-[#006AEF] transition-colors">
+                                                        Usar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : reviewDone && (

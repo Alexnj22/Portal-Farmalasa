@@ -325,7 +325,7 @@ async function syncInventoryBranch(
     }
   }
 
-  const CHUNK = 500;
+  const CHUNK = 200;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const { error } = await supabase.from('inventory').insert(rows.slice(i, i + CHUNK));
     if (error) throw new Error(`inventory insert chunk ${i}: ${error.message}`);
@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
     const INV_BRANCH_MAP = getErpInvMap();
 
     const body = await req.json().catch(() => ({}));
-    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false } = body;
+    const { fini, ffin, branchId: onlyBranch, forceItems = false, syncInventory = false, skipDte = false, onlyInvErpId = null } = body;
 
     const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
     const startDate = fini || hoy;
@@ -421,7 +421,10 @@ Deno.serve(async (req) => {
     // Inventory sync (optional, triggered by syncInventory=true in body)
     const invResults: any[] = [];
     if (syncInventory) {
-      for (const { erpId: invErpId, username, password, ubicaciones } of INV_BRANCH_MAP) {
+      const INV_MAP_FILTERED = onlyInvErpId != null
+        ? INV_BRANCH_MAP.filter((b: any) => b.erpId === onlyInvErpId)
+        : INV_BRANCH_MAP;
+      for (const { erpId: invErpId, username, password, ubicaciones } of INV_MAP_FILTERED) {
         for (const { id: ubicacionId, isVencidos } of ubicaciones) {
           try {
             const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos);

@@ -38,12 +38,24 @@ SECURITY DEFINER
 SET search_path TO ''
 AS $function$
 DECLARE
-    v_from_date date;
-    v_today     date;
-    v_inserted  integer;
+    v_from_date   date;
+    v_today       date;
+    v_inserted    integer;
+    v_has_history boolean;
 BEGIN
-    v_today     := CURRENT_DATE;
-    v_from_date := v_today - p_days_back;
+    v_today := CURRENT_DATE;
+
+    -- On first run (table lacks data going back 30+ days): do full 365-day backfill.
+    -- On subsequent runs: only refresh the requested window (handles late corrections).
+    SELECT EXISTS(
+        SELECT 1 FROM public.sales_daily_stats WHERE date <= v_today - 30
+    ) INTO v_has_history;
+
+    IF v_has_history THEN
+        v_from_date := v_today - p_days_back;
+    ELSE
+        v_from_date := v_today - 365;
+    END IF;
 
     DELETE FROM public.sales_daily_stats
     WHERE date >= v_from_date AND date < v_today;
@@ -91,8 +103,11 @@ ON CONFLICT (date, branch_id) DO UPDATE
 DROP FUNCTION IF EXISTS public.get_ventas_stats(date, date, integer);
 
 -- ── Hybrid get_ventas_stats ───────────────────────────────────────────────────
--- past days → sales_daily_stats (sub-millisecond, tiny table always in cache)
--- current day → raw sales_invoices (real-time, supports hora_corte filter)
+-- 3-path query:
+--   from_stats → sales_daily_stats for covered past days (instant after backfill)
+--   from_raw   → raw sales_invoices for uncovered past days (bootstrap fallback;
+--                becomes a 0-row index range scan once daily_stats is fully seeded)
+--   live       → raw sales_invoices for today (real-time, supports hora_corte)
 
 CREATE OR REPLACE FUNCTION public.get_ventas_stats(
     p_fini       date,
@@ -106,19 +121,37 @@ STABLE PARALLEL SAFE
 SET search_path TO ''
 AS $function$
 WITH
--- Past days from pre-aggregated table (never includes today)
-past AS (
+-- Earliest date in sales_daily_stats for this branch (NULL = table empty)
+coverage AS (
+    SELECT MIN(date) AS since
+    FROM public.sales_daily_stats
+    WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
+),
+-- Fast path: past days already in daily_stats
+from_stats AS (
     SELECT
         COALESCE(SUM(count_valid), 0)::bigint AS cnt,
         COALESCE(SUM(sum_total), 0)           AS total
     FROM public.sales_daily_stats
-    WHERE date >= p_fini
+    WHERE date >= GREATEST(p_fini, COALESCE((SELECT since FROM coverage), CURRENT_DATE))
       AND date < CURRENT_DATE
       AND date <= p_ffin
       AND (p_branch_id IS NULL OR branch_id = p_branch_id)
 ),
--- Current day from raw table — real-time, supports hora_corte
--- p_ffin >= CURRENT_DATE check prevents scanning when range is entirely in the past
+-- Fallback: raw scan for dates before daily_stats coverage.
+-- After full backfill LEAST(since, CURRENT_DATE) <= p_fini → 0-row index range → free.
+from_raw AS (
+    SELECT
+        COUNT(*)::bigint                 AS cnt,
+        COALESCE(SUM(total::numeric), 0) AS total
+    FROM public.sales_invoices
+    WHERE fecha >= p_fini
+      AND fecha <  LEAST(COALESCE((SELECT since FROM coverage), CURRENT_DATE), CURRENT_DATE)
+      AND fecha <= p_ffin
+      AND estado NOT IN ('NULA', 'DTE INVALIDADO EN MH')
+      AND (p_branch_id IS NULL OR branch_id = p_branch_id)
+),
+-- Today from raw tables (always live, supports hora_corte)
 live AS (
     SELECT
         COUNT(*)                         AS cnt,
@@ -130,6 +163,6 @@ live AS (
       AND estado NOT IN ('NULA', 'DTE INVALIDADO EN MH')
       AND (p_branch_id IS NULL OR branch_id = p_branch_id)
 )
-SELECT (p.cnt + l.cnt), (p.total + l.total)
-FROM past p, live l;
+SELECT (s.cnt + r.cnt + l.cnt), (s.total + r.total + l.total)
+FROM from_stats s, from_raw r, live l;
 $function$;

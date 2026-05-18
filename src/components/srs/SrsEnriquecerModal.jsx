@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import {
     X, FlaskConical, Loader2, Check, SkipForward,
-    ChevronRight, AlertTriangle, Zap, Search,
+    ChevronRight, AlertTriangle, Zap, Search, Package,
 } from 'lucide-react';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -130,7 +130,8 @@ export default function SrsEnriquecerModal({ onClose }) {
     const [total, setTotal]           = useState(0);
     const [autoQueue, setAutoQueue]   = useState([]);   // {product, srs, score, principios}
     const [reviewQueue, setReviewQueue] = useState([]); // same + candidates[]
-    const [noMatchList, setNoMatchList] = useState([]);  // {id, nombre}
+    const [noMatchList, setNoMatchList]   = useState([]);        // {id, nombre}
+    const [markedSinPA, setMarkedSinPA]   = useState(new Set()); // ids marcados como sin PA
     const [applied, setApplied]       = useState(0);
     const [skipped, setSkipped]       = useState(0);
     const [applying, setApplying]     = useState(false);
@@ -146,13 +147,15 @@ export default function SrsEnriquecerModal({ onClose }) {
         cancelRef.current = false;
         setPhase(PHASE.SCANNING);
         setScanned(0); setAutoQueue([]); setReviewQueue([]);
-        setNoMatchList([]); setApplied(0); setSkipped(0); setReviewIdx(0);
+        setNoMatchList([]); setMarkedSinPA(new Set());
+        setApplied(0); setSkipped(0); setReviewIdx(0);
 
         // Fetch products without principio_activo
         const { data: products, error } = await supabase
             .from('products')
             .select('id, nombre')
             .eq('activo', true)
+            .eq('sin_principio_activo', false)
             .or('principio_activo.is.null,principio_activo.eq.')
             .not('id', 'in', `(select product_id from product_active_principles)`)
             .limit(BATCH_SIZE)
@@ -248,6 +251,33 @@ export default function SrsEnriquecerModal({ onClose }) {
     const handleReviewSkip = useCallback(() => {
         setSkipped(s => s + 1);
         setReviewIdx(i => i + 1);
+    }, []);
+
+    // Mark a product as sin_principio_activo (insumos, equipos, cosméticos…)
+    const handleMarkSinPA = useCallback(async (productId) => {
+        try {
+            await supabase.from('products').update({ sin_principio_activo: true }).eq('id', productId);
+            setMarkedSinPA(s => new Set([...s, productId]));
+        } catch { /* ignore */ }
+    }, []);
+
+    const handleUnmarkSinPA = useCallback(async (productId) => {
+        try {
+            await supabase.from('products').update({ sin_principio_activo: false }).eq('id', productId);
+            setMarkedSinPA(s => { const n = new Set(s); n.delete(productId); return n; });
+        } catch { /* ignore */ }
+    }, []);
+
+    // Mark as sin PA and advance review
+    const handleReviewMarkSinPA = useCallback(async (entry) => {
+        setRevApplying(true);
+        try {
+            await supabase.from('products').update({ sin_principio_activo: true }).eq('id', entry.product.id);
+            setMarkedSinPA(s => new Set([...s, entry.product.id]));
+        } catch { /* ignore */ }
+        setSkipped(s => s + 1);
+        setReviewIdx(i => i + 1);
+        setRevApplying(false);
     }, []);
 
     // Pick a different candidate
@@ -449,14 +479,18 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         )}
 
                                         {/* Actions */}
-                                        <div className="flex items-center gap-2 pt-1">
+                                        <div className="flex items-center gap-2 pt-1 flex-wrap">
                                             <button onClick={() => handleReviewApply(currentReview)} disabled={reviewApplying || currentReview.principios.length === 0}
                                                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black text-white bg-violet-600 hover:bg-violet-700 transition-colors disabled:opacity-50">
                                                 {reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                                                 Aplicar
                                             </button>
+                                            <button onClick={() => handleReviewMarkSinPA(currentReview)} disabled={reviewApplying}
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                <Package size={12} /> Insumo/Equipo
+                                            </button>
                                             <button onClick={handleReviewSkip} disabled={reviewApplying}
-                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors">
+                                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold text-slate-400 border border-slate-200 hover:bg-slate-50 transition-colors">
                                                 <SkipForward size={12} /> Saltar
                                             </button>
                                         </div>
@@ -486,9 +520,20 @@ export default function SrsEnriquecerModal({ onClose }) {
                                             </div>
                                             <div className="max-h-48 overflow-y-auto divide-y divide-slate-50">
                                                 {noMatchList.map(p => (
-                                                    <div key={p.id} className="px-4 py-2 flex items-center gap-2">
+                                                    <div key={p.id} className="px-4 py-2.5 flex items-center gap-2">
                                                         <span className="text-[10px] text-slate-300 font-mono shrink-0">#{p.id}</span>
-                                                        <span className="text-[12px] text-slate-600 font-medium truncate">{p.nombre}</span>
+                                                        <span className="text-[12px] text-slate-600 font-medium truncate flex-1">{p.nombre}</span>
+                                                        {markedSinPA.has(p.id) ? (
+                                                            <button onClick={() => handleUnmarkSinPA(p.id)}
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                                                <Check size={9} strokeWidth={3} /> Insumo
+                                                            </button>
+                                                        ) : (
+                                                            <button onClick={() => handleMarkSinPA(p.id)}
+                                                                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50 transition-colors">
+                                                                <Package size={9} /> Insumo
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

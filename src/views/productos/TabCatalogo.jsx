@@ -24,6 +24,8 @@ const PRICE_FIELDS = [
 ];
 const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
+// precio_7 is excluded from loss/margin checks (it's a special price tier)
+const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -895,6 +897,7 @@ export default function TabCatalogo({
         const PAGE = 1000;
         const perdidaIds = new Set();
         const bajoIds    = new Set();
+        const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7');
 
         const fetchPage = async (from) => {
             const { data, error } = await supabase.from('product_precios')
@@ -909,7 +912,7 @@ export default function TabCatalogo({
                 return;
             }
             data.forEach(pp => {
-                const w = worstMarginOf(pp, allowedPriceFields);
+                const w = worstMarginOf(pp, marginCheckFields);
                 if (w === null) return;
                 if (w < 0)  perdidaIds.add(pp.product_id);
                 if (w < 15) bajoIds.add(pp.product_id);
@@ -997,8 +1000,9 @@ export default function TabCatalogo({
                 if (rid !== loadRef.current) return;
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
                 const mm = {};
+                const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7');
                 (pp || []).forEach(row => {
-                    const w = worstMarginOf(row, allowedPriceFields);
+                    const w = worstMarginOf(row, marginCheckFields);
                     if (w === null) return;
                     if (mm[row.product_id] === undefined || w < mm[row.product_id]) mm[row.product_id] = w;
                 });
@@ -1019,15 +1023,23 @@ export default function TabCatalogo({
     // Reset page on filter/sort changes
     useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField]);
 
-    // Trigger load
+    // Trigger load — normal (no margin filter). marginStats/statsLoading intentionally
+    // excluded from deps to prevent reloading the list when stats finish loading.
     useEffect(() => {
-        if (filterMargin !== 'all' && marginStats === null && !statsLoading) return;
-        if (filterMargin !== 'all' && statsLoading) return;
+        if (filterMargin !== 'all') return;
+        const t = setTimeout(() =>
+            loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
+            50
+        );
+        return () => clearTimeout(t);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
 
-        const bids = filterMargin === 'all'    ? null
-                   : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds || [])]
-                   :                              [...(marginStats?.bajoIds    || [])];
-
+    // Trigger load — margin filter active. Waits for stats to be ready.
+    useEffect(() => {
+        if (filterMargin === 'all') return;
+        if (statsLoading || marginStats === null) return;
+        const bids = filterMargin === 'perdida' ? [...(marginStats.perdidaIds || [])]
+                                                : [...(marginStats.bajoIds    || [])];
         const t = setTimeout(() =>
             loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
             50

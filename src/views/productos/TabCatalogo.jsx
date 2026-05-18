@@ -717,7 +717,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                                                 {fmtP(ch.anterior)}
                                                                             </span>
                                                                         )}
-                                                                        <MarginPct pct={m} />
+                                                                        {f.key !== 'precio_7' && <MarginPct pct={m} />}
                                                                     </div>
                                                                 </td>
                                                             );

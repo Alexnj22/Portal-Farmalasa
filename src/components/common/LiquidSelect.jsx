@@ -51,7 +51,7 @@ const LiquidSelect = ({
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO ---
     const textStyle = `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
-    const paddingStyle = compact ? 'pl-10 pr-9 py-2.5' : 'pl-[3.5rem] pr-10 py-3.5';
+    const paddingStyle = compact ? 'pl-10 pr-11 py-2.5' : 'pl-[3.5rem] pr-12 py-3.5';
     const leftIconPos = compact ? 'left-1.5 w-7 h-7' : 'left-4 w-8 h-8';
     const rightIconPos = compact ? 'right-1.5 w-6 h-6' : 'right-4 w-6 h-6';
     const iconSize = compact ? 13 : 14;

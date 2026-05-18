@@ -1110,8 +1110,8 @@ export default function TabCatalogo({
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     const selectedLab = labOptions.find(o => o.value === String(filterLab));
-    const labW = selectedLab ? Math.max(150, Math.min(260, 90 + selectedLab.label.length * 7)) : 150;
-    const catW = filterCategoria ? Math.max(140, Math.min(220, 90 + filterCategoria.length * 7)) : 140;
+    const labW = selectedLab ? Math.max(185, Math.min(260, 90 + selectedLab.label.length * 7)) : 185;
+    const catW = filterCategoria ? Math.max(165, Math.min(220, 90 + filterCategoria.length * 7)) : 165;
     const hasActiveFilters = filterLab !== null || filterCategoria !== null
                            || filterAntibiotico !== null || filterActivo === 'todos';
     const resetFilters = () => {

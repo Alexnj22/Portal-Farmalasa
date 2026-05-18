@@ -1265,48 +1265,47 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         const lsKey    = `pp_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
-        // 1. In-memory cache (survives filter changes within same session)
-        if (productsCache.current.has(cacheKey)) {
-            setRows(productsCache.current.get(cacheKey));
-            setLoading(false);
-            return;
-        }
-
-        // 2. localStorage cache (survives navigation away and back)
-        try {
-            const stored = localStorage.getItem(lsKey);
-            if (stored) {
-                const { data, ts } = JSON.parse(stored);
-                if (Date.now() - ts < TTL_MS) {
-                    productsCache.current.set(cacheKey, data);
-                    setRows(data);
-                    setLoading(false);
-                    return;
-                }
-                localStorage.removeItem(lsKey);
+        // Cache only applies when not searching — search results are never cached
+        if (!searchTerm) {
+            // 1. In-memory cache (survives filter changes within same session)
+            if (productsCache.current.has(cacheKey)) {
+                setRows(productsCache.current.get(cacheKey));
+                setLoading(false);
+                return;
             }
-        } catch (_) { /* localStorage unavailable or corrupted — proceed to fetch */ }
+            // 2. localStorage cache (survives navigation away and back)
+            try {
+                const stored = localStorage.getItem(lsKey);
+                if (stored) {
+                    const { data, ts } = JSON.parse(stored);
+                    if (Date.now() - ts < TTL_MS) {
+                        productsCache.current.set(cacheKey, data);
+                        setRows(data);
+                        setLoading(false);
+                        return;
+                    }
+                    localStorage.removeItem(lsKey);
+                }
+            } catch (_) { /* localStorage unavailable or corrupted — proceed to fetch */ }
+        }
 
         setLoading(true);
         setError(null);
         try {
-            // Paginate in chunks of 1000 — PostgREST caps RPC results at 1000 rows
-            // regardless of range(). The function is fast (pre-agg) so each chunk is cheap.
-            const rpcParams = { p_fini: fini, p_ffin: ffin, p_branch_id: filterBranch ? Number(filterBranch) : null };
-            const CHUNK = 1000;
-            let presData = [];
-            let offset = 0;
-            while (true) {
-                const { data: chunk, error: fetchErr } = await supabase
-                    .rpc('get_product_sales_agg', rpcParams)
-                    .range(offset, offset + CHUNK - 1);
-                if (fetchErr) throw fetchErr;
-                if (!chunk?.length) break;
-                presData = presData.concat(chunk);
-                if (chunk.length < CHUNK) break;
-                offset += CHUNK;
-            }
-            if (!presData.length) { setRows([]); setLoading(false); return; }
+            // When searching: pass p_search so the DB filters server-side — bypasses the
+            // PostgREST 1000-row RPC cap that hides low-revenue products (e.g. rank 1403/3491).
+            // When browsing: no p_search, returns top 1000 products by neto (cacheable).
+            const rpcParams = {
+                p_fini:      fini,
+                p_ffin:      ffin,
+                p_branch_id: filterBranch ? Number(filterBranch) : null,
+                ...(searchTerm ? { p_search: searchTerm } : {}),
+            };
+            const { data: presData, error: fetchErr } = await supabase
+                .rpc('get_product_sales_agg', rpcParams)
+                .range(0, 999);
+            if (fetchErr) throw fetchErr;
+            if (!presData?.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {
@@ -1328,16 +1327,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 };
             });
 
-            productsCache.current.set(cacheKey, allRows);
-            // Persist to localStorage, evicting stale entries first
-            try {
-                Object.keys(localStorage)
-                    .filter(k => k.startsWith('pp_') && k !== lsKey)
-                    .forEach(k => {
-                        try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
-                    });
-                localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
-            } catch (_) { /* quota exceeded or unavailable — in-memory cache still works */ }
+            // Only persist browse results to cache (not search results)
+            if (!searchTerm) {
+                productsCache.current.set(cacheKey, allRows);
+                try {
+                    Object.keys(localStorage)
+                        .filter(k => k.startsWith('pp_') && k !== lsKey)
+                        .forEach(k => {
+                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
+                        });
+                    localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
+                } catch (_) { /* quota exceeded or unavailable — in-memory cache still works */ }
+            }
 
             setRows(allRows);
             setLoading(false);
@@ -1351,7 +1352,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 setLoading(false);
             }
         }
-    }, [fini, ffin, filterBranch]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [fini, ffin, filterBranch, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 

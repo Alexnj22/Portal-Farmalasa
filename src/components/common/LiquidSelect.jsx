@@ -19,7 +19,7 @@ const LiquidSelect = ({
     // When options count exceeds this, require the user to type before showing results
     searchThreshold = 80,
     // Max options to render in the dropdown (applied after filtering)
-    maxOptions = 20,
+    maxOptions = 100,
     // Server-side search: parent handles filtering, just display options as-is
     serverSearch = false,
     // Called (debounced 300ms) when user types — use to run server queries

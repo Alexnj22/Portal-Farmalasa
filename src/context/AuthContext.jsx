@@ -410,12 +410,13 @@ export const AuthProvider = ({ children }) => {
 
       if (!data?.session) return { ok: false, error: 'Error de sesión. Intenta de nuevo.' };
 
-      const { data: emp } = await supabase
+      const { data: emp, error: empError } = await supabase
         .from('employees_safe')
         .select('*')
         .eq('username', cleanUsername)
         .single();
 
+      if (empError && empError.code !== 'PGRST116') return { ok: false, error: 'Error de conexión. Intenta de nuevo.' };
       if (!emp) return { ok: false, error: 'Usuario no encontrado en el sistema.' };
 
       const u = {

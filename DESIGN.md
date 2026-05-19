@@ -20,41 +20,44 @@ Diseño corporativo sin transparencias. Para navegadores / computadoras que no s
 
 ## Color Palette
 
-### Marca
+### Marca — Cobalt
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--brand` | `#007AFF` | Acciones primarias, selección activa, CTA |
-| `--brand-dark` | `#005CE6` | Hover sobre brand |
-| `--brand-purple` | `#5856D6` | Gradiente del logo / icono de app |
+| `--brand` | `#0052CC` | Acciones primarias, selección activa, CTA |
+| `--brand-dark` | `#003D99` | Hover sobre brand |
+| `--brand-purple` | `#6929C4` | Gradiente del logo / icono de app |
+| Sidebar accent | `#4D94FF` | Texto/icono activo en sidebar oscuro |
 
 ### Semánticos
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--success` | `#34C759` | Confirmación, presente, activo |
-| `--warning` | `#FF9500` | Alerta, pendiente, atención |
-| `--danger` | `#FF3B30` | Error, ausente, crítico |
-| `--info` | `#007AFF` | Mismo que brand |
+| `--success` | `#12B76A` | Confirmación, presente, activo |
+| `--warning` | `#F79009` | Alerta, pendiente, atención |
+| `--danger` | `#F04438` | Error, ausente, crítico |
+| `--info` | `#0052CC` | Mismo que brand |
 
 ### Superficies — LiquidGlass
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--surface-card` | `rgba(255,255,255,0.55)` | Cards de contenido |
-| `--surface-card-hover` | `rgba(255,255,255,0.70)` | Cards on hover |
-| `--surface-header` | `rgba(255,255,255,0.20)` | Header flotante de vistas — glass translúcido |
-| `--surface-modal` | `rgba(255,255,255,0.88)` | Modales y drawers |
-| `--surface-input` | `rgba(255,255,255,0.60)` | Inputs, selects |
-| `--surface-sidebar` | Gradient `from-[#0A2A5E] to-[#041636]` | Barra lateral |
-| `--surface-page` | `#F2F2F7` | Fondo de página |
+| `--surface-page` | `#E6F0FF` | Fondo de página — azul cobalto muy suave |
+| `--surface-card` | `rgba(230,245,255,0.52)` | Cards de contenido — glass azul-tinted |
+| `--surface-card-hover` | `rgba(230,245,255,0.70)` | Cards on hover |
+| `--surface-header` | `rgba(210,235,255,0.18)` | Header flotante — glass translúcido |
+| `--surface-modal` | `rgba(240,248,255,0.90)` | Modales y drawers |
+| `--surface-input` | `rgba(230,245,255,0.60)` | Inputs, selects |
+| `--surface-sidebar` | Gradient `from-[#030B1C] via-[#071528] to-[#010610]` | Barra lateral |
 
 ### Superficies — Compat
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--surface-page` | `#EEF2F7` | Gris azulado frío — no blanco puro |
+| `--surface-page` | `#C8DCED` | Azul-pizarra con peso de color real — no blanco |
 | `--surface-card` | `#FFFFFF` | Card blanca con sombra dimensional |
 | `--surface-header` | `#FFFFFF` | Header sólido, `border-radius: 1.25rem` |
 | `--surface-modal` | `#FFFFFF` | Modal sólido |
-| `--surface-input` | `#F7F9FC` | Input levemente grisado |
-| `--surface-sidebar` | `#111E35` | Sidebar navy sólido — mismo registro marca |
+| `--surface-input` | `#F0F6FF` | Input levemente azulado |
+| `--surface-sidebar` | `#03080F` | Sidebar near-black — máximo contraste |
+| `--surface-tab-track` | `#B3D0E8` | Track de tabs — azul-slate |
+| `--border-card` | `#8BAEC8` | Bordes con crispness para monitores no-retina |
 
 **Nota compat:** Sin animaciones de entrada, sin hover lifts (evita blurriness en monitores no-retina). Se usa `subpixel-antialiased` para texto más nítido en monitores viejos.
 
@@ -248,10 +251,10 @@ Nunca: N botones con background propio que se togglean.
 
 ### Botón primario
 ```jsx
-className="px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] text-white
+className="px-5 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white
            rounded-full font-black text-[11px] uppercase tracking-widest
-           shadow-[0_4px_14px_rgba(0,122,255,0.25)]
-           hover:shadow-[0_8px_20px_rgba(0,122,255,0.35)]
+           shadow-[0_4px_14px_rgba(0,82,204,0.28)]
+           hover:shadow-[0_8px_20px_rgba(0,82,204,0.40)]
            hover:-translate-y-0.5
            transition-[transform,box-shadow,background-color] duration-150
            ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
@@ -288,8 +291,8 @@ className="w-full bg-white/60 backdrop-blur-sm border border-white/80
 
 ### Ícono badge en header de widget
 ```jsx
-className="w-8 h-8 rounded-[0.875rem] bg-gradient-to-tr from-[#007AFF] to-[#5856D6]
-           flex items-center justify-center shadow-[0_4px_12px_rgba(0,122,255,0.3)]"
+className="w-8 h-8 rounded-[0.875rem] bg-gradient-to-tr from-[#0052CC] to-[#6929C4]
+           flex items-center justify-center shadow-[0_4px_12px_rgba(0,82,204,0.3)]"
 ```
 
 ---

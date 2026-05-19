@@ -775,7 +775,37 @@ const VacationPlanView = () => {
                                 <User size={10} /> Detalle de asignaciones
                             </p>
 
-                            {filtered.length === 0 ? (
+                            {isLoadingVacationPlans ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[600px] text-[12px]">
+                                        <thead>
+                                            <tr className="border-b border-slate-100">
+                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
+                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <tr key={i} className="border-b border-black/[0.04]">
+                                                    <td className="py-3 pr-4">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-7 h-7 skeleton rounded-full shrink-0" />
+                                                            <div className="h-3 w-28 skeleton rounded-full" />
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3 pr-4"><div className="h-3 w-20 skeleton rounded-full" /></td>
+                                                    <td className="py-3 pr-4"><div className="h-3 w-24 skeleton rounded-full" /></td>
+                                                    <td className="py-3 pr-4"><div className="h-3 w-8 skeleton rounded-full" /></td>
+                                                    <td className="py-3 pr-4"><div className="h-3 w-20 skeleton rounded-full" /></td>
+                                                    <td className="py-3 pr-4"><div className="h-5 w-16 skeleton rounded-md" /></td>
+                                                    <td className="py-3" />
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : filtered.length === 0 ? (
                                 <div className="flex flex-col items-center py-12 gap-3 text-slate-400">
                                     <Palmtree size={36} strokeWidth={1} />
                                     <p className="text-[13px] font-bold text-slate-500">Sin asignaciones en este período</p>

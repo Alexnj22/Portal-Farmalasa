@@ -118,6 +118,11 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+/* Solidify inline glass cards in compat (backdrop-blur + rounded = card pattern) */
+[data-theme="compat"] [class*="backdrop-blur-"][class*="rounded-"] {
+  background-color: rgba(255,255,255,0.96) !important;
+  border-color: var(--border-card) !important;
+}
 
 /* Surface tokens — applied via data-surface attribute */
 [data-surface="card"] {

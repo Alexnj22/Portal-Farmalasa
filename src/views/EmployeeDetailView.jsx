@@ -288,9 +288,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
     if (!emp) return (
         <div className="w-full h-[100dvh] flex items-center justify-center bg-[#E6F0FF]">
-            <div className="flex flex-col items-center gap-4 text-slate-400 animate-pulse">
-                <div className="w-16 h-16 border-4 border-slate-200 border-t-[#0052CC] rounded-full animate-spin"></div>
-                <p className="text-[10px] font-black uppercase tracking-widest">Cargando Perfil...</p>
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-24 h-24 skeleton rounded-full" />
+                <div className="h-4 w-40 skeleton rounded-full" />
+                <div className="h-3 w-24 skeleton rounded-full" />
             </div>
         </div>
     );
@@ -1199,9 +1200,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         {/* Lista */}
                                         {isLoadingEmpReqs ? (
-                                            <div className="flex justify-center py-10 text-slate-400 gap-2">
-                                                <Loader2 size={18} className="animate-spin" />
-                                                <span className="text-[12px]">Cargando…</span>
+                                            <div className="space-y-3">
+                                                {Array.from({ length: 4 }).map((_, i) => (
+                                                    <div key={i} className="flex items-start gap-4 p-4 rounded-[1.5rem] border border-black/[0.06] bg-white/60">
+                                                        <div className="w-9 h-9 skeleton rounded-[1rem] shrink-0" />
+                                                        <div className="flex-1 space-y-2">
+                                                            <div className="flex gap-2">
+                                                                <div className="h-5 w-20 skeleton rounded-md" />
+                                                                <div className="h-5 w-16 skeleton rounded-md" />
+                                                            </div>
+                                                            <div className="h-3 w-40 skeleton rounded-full" />
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         ) : empRequests.length === 0 ? (
                                             <div className="flex flex-col items-center py-12 gap-2 text-slate-400">

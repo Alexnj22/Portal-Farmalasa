@@ -243,8 +243,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b-2 border-slate-800 text-[9px] text-slate-600 uppercase tracking-widest">
+                    <thead className="bg-[#0052CC]/5">
+                        <tr className="border-b border-[#0052CC]/10 text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
                             <th className="py-2 px-2 w-[120px]">Fecha / Hora</th><th className="py-2 px-2 w-[140px]">Acción</th><th className="py-2 px-2">Descripción del Evento</th><th className="py-2 px-2 w-[200px]">Realizado Por / Doc</th>
                         </tr>
                     </thead>

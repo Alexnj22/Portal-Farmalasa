@@ -622,7 +622,41 @@ const PayrollView = ({ openModal }) => {
 
                                 {/* Entries */}
                                 {isLoadingPayroll ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px]">Cargando planilla…</div>
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] bg-white/40 border border-white/80 overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-white/60 bg-white/20 flex items-center gap-3">
+                                            <div className="w-8 h-8 skeleton rounded-xl" />
+                                            <div className="space-y-1.5">
+                                                <div className="h-3 w-28 skeleton rounded-full" />
+                                                <div className="h-2 w-16 skeleton rounded-full" />
+                                            </div>
+                                        </div>
+                                        <table className="w-full text-[10px]">
+                                            <tbody className="divide-y divide-white/30">
+                                                {Array.from({ length: 6 }).map((_, i) => (
+                                                    <tr key={i} className="border-b border-black/[0.04]">
+                                                        <td className="px-6 py-3.5">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 skeleton rounded-xl shrink-0" />
+                                                                <div className="space-y-1.5">
+                                                                    <div className="h-3 w-28 skeleton rounded-full" />
+                                                                    <div className="h-2 w-16 skeleton rounded-full" />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-8 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-14 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-10 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-4 py-3.5"><div className="h-3 w-14 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-6 py-3.5"><div className="h-3 w-16 skeleton rounded-full ml-auto" /></td>
+                                                        <td className="px-6 py-3.5" />
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 ) : filteredEntries.length === 0 ? (
                                     <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px] animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}

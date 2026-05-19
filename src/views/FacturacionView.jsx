@@ -407,7 +407,21 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+                <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/60">
+                                <div className="h-3 w-28 skeleton rounded-full" />
+                                <div className="h-3 w-12 skeleton rounded-full" />
+                            </div>
+                            <div className="px-4 py-3 flex flex-wrap gap-1.5">
+                                {Array.from({ length: 3 }).map((_, j) => (
+                                    <div key={j} className="h-7 w-20 skeleton rounded-xl" />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-emerald-500" glowClass="bg-emerald-500"
                     title="Todo está al día" subtitle="No hay anulaciones pendientes por atender en este momento." />
@@ -863,7 +877,21 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 
             {/* Pending list */}
             {loading ? (
-                <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+                <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl border border-black/[0.07] bg-white shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/60">
+                                <div className="h-3 w-28 skeleton rounded-full" />
+                                <div className="h-3 w-12 skeleton rounded-full" />
+                            </div>
+                            <div className="px-4 py-3 flex flex-wrap gap-1.5">
+                                {Array.from({ length: 3 }).map((_, j) => (
+                                    <div key={j} className="h-7 w-20 skeleton rounded-xl" />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             ) : filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-violet-500" glowClass="bg-violet-500"
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
@@ -1711,7 +1739,22 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-24"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
+                <div className="p-4 md:p-6 space-y-5">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl border-2 border-slate-200 overflow-hidden">
+                            <div className="h-14 skeleton w-full rounded-none" />
+                            <div className="p-4 space-y-2">
+                                {Array.from({ length: 4 }).map((_, j) => (
+                                    <div key={j} className="flex items-center gap-3 py-2 border-b border-black/[0.04]">
+                                        <div className="h-3 w-32 skeleton rounded-full" />
+                                        <div className="h-3 w-20 skeleton rounded-full ml-auto" />
+                                        <div className="h-3 w-16 skeleton rounded-full" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             ) : pendingFiltered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-blue-500" glowClass="bg-blue-500"
                     title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />

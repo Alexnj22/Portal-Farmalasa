@@ -481,18 +481,18 @@ const filtersContent = (
 
             <div className="w-full overflow-x-auto scrollbar-hide">
                 <table className="min-w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
-                    <thead className="bg-white/40">
+                    <thead className="bg-[#0052CC]/5 sticky top-0 z-10 backdrop-blur-xl">
                         <tr>
-                            <th onClick={() => handleSort('created_at')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
+                            <th onClick={() => handleSort('created_at')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
                                 <div className="flex items-center gap-2">Origen / Hora <SortIcon columnKey="created_at" sortConfig={sortConfig} /></div>
                             </th>
-                            <th onClick={() => handleSort('user_name')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
+                            <th onClick={() => handleSort('user_name')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
                                 <div className="flex items-center gap-2">Usuario <SortIcon columnKey="user_name" sortConfig={sortConfig} /></div>
                             </th>
-                            <th onClick={() => handleSort('action')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-white/40">
+                            <th onClick={() => handleSort('action')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
                                 <div className="flex items-center gap-2">Acción <SortIcon columnKey="action" sortConfig={sortConfig} /></div>
                             </th>
-                            <th className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] text-right border-b border-white/40">
+                            <th className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] text-right border-b border-[#0052CC]/10">
                                 Detalles
                             </th>
                         </tr>

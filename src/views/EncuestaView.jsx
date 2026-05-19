@@ -619,9 +619,27 @@ export default function EncuestaView() {
             <div className="p-5 md:p-6 space-y-5">
 
                 {loading ? (
-                    <div className="flex items-center justify-center h-48 gap-2 text-slate-400">
-                        <Loader2 size={18} className="animate-spin" />
-                        <span className="text-[12px] font-semibold">Cargando encuesta…</span>
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
+                                    <div className="w-8 h-8 skeleton rounded-lg shrink-0" />
+                                    <div className="space-y-1.5 flex-1">
+                                        <div className="h-5 w-10 skeleton rounded-full" />
+                                        <div className="h-2.5 w-20 skeleton rounded-full" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="rounded-[1.5rem] border border-slate-100 bg-white shadow-sm p-5 space-y-3">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
+                                    <div className="h-3 w-8 skeleton rounded-full" />
+                                    <div className="flex-1 h-2.5 skeleton rounded-full" style={{ width: `${60 + i * 8}%` }} />
+                                    <div className="h-2.5 w-8 skeleton rounded-full" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 ) : (<>
 
@@ -1037,7 +1055,7 @@ export default function EncuestaView() {
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[480px] text-sm">
                                     <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                        <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
                                             <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Bloque</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-purple-600">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
@@ -1117,7 +1135,7 @@ export default function EncuestaView() {
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-3">Desglose por Sucursal × Bloque</h3>
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                    <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
                                         <th className="text-left px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap">Sucursal</th>
                                         {BLOQUES.map(b => (
                                             <th key={b.id} className="text-center px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap">
@@ -1192,7 +1210,7 @@ export default function EncuestaView() {
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[560px] text-sm">
                                         <thead>
-                                            <tr className="bg-slate-50/60 border-b border-slate-100/80">
+                                            <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
                                                 <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador</th>
                                                 <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-16">Rol</th>
                                                 {BLOQUES.map(b => (

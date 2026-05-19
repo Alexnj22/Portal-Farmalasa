@@ -458,9 +458,27 @@ const RequestsView = () => {
             <div className="pt-4 px-2 md:px-0 pb-8 space-y-6">
 
                 {isLoadingReqs ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-                        <Loader2 size={28} className="animate-spin text-[#0052CC]/60" strokeWidth={1.5} />
-                        <span className="text-[13px] font-medium">Cargando solicitudes…</span>
+                    <div className="space-y-6">
+                        {Array.from({ length: 2 }).map((_, si) => (
+                            <section key={si}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-6 h-6 skeleton rounded-lg" />
+                                    <div className="h-3 w-24 skeleton rounded-full" />
+                                    <div className="flex-1 h-px bg-slate-200/50 mx-1" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={i} className="rounded-[2rem] border border-black/[0.06] bg-white/60 p-4 flex items-center gap-3">
+                                            <div className="w-9 h-9 skeleton rounded-full shrink-0" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-3 w-28 skeleton rounded-full" />
+                                                <div className="h-2.5 w-20 skeleton rounded-full" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        ))}
                     </div>
                 ) : baseFiltered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">

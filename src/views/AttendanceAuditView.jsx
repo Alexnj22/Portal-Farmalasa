@@ -23,6 +23,7 @@ import { useToastStore } from "../store/toastStore";
 import BranchChips from "../components/common/BranchChips";
 import ModalShell from "../components/common/ModalShell";
 import ConfirmModal from "../components/common/ConfirmModal";
+import GlassViewLayout from "../components/GlassViewLayout";
 
 const PUNCH_TYPE_LABELS = {
   IN: 'Entrada',
@@ -498,11 +499,13 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     ? branchNameById.get(String(selectedEmp.branchId)) || "Sucursal"
     : "";
 
+  const filtersContent = (
+    <BranchChips branches={branches} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
+  );
+
   return (
-    <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto h-full relative animate-view-enter">
-      
-      {/* NUEVO: MODAL DE CONFIRMACIÓN DE INASISTENCIA */}
-      <ConfirmModal 
+    <GlassViewLayout icon={AlertTriangle} title="Auditoría de Tiempos" filtersContent={filtersContent}>
+      <ConfirmModal
         isOpen={isAbsentModalOpen}
         onClose={() => setIsAbsentModalOpen(false)}
         onConfirm={executeMarkAbsent}
@@ -510,22 +513,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         message="Se borrarán todos los marcajes existentes de este día y quedará registrado oficialmente como una inasistencia (falta)."
         confirmText="Sí, reportar falta"
       />
-
-      <header className="space-y-4 mb-6">
-        <div>
-          <h1 className="text-[22px] md:text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl shadow-md shrink-0">
-              <AlertTriangle className="text-white" size={22} strokeWidth={1.5} />
-            </div>
-            Auditoría de Tiempos
-          </h1>
-          <p className="text-slate-500 text-[13px] font-medium mt-2">
-            Detección automática de omisiones y ajustes manuales de marcajes.
-          </p>
-        </div>
-
-        <BranchChips branches={branches} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
-      </header>
+      <div className="px-4 md:px-6 pb-8 space-y-6">
 
       {/* SECCIÓN: MARCAJES PENDIENTES DE REVISIÓN TH */}
       {pendingReviewPunches.length > 0 && (
@@ -1003,7 +991,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           </div>
         </div>
       </ModalShell>
-    </div>
+      </div>
+    </GlassViewLayout>
   );
 };
 

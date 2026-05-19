@@ -23,6 +23,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
+import GlassViewLayout from "../components/GlassViewLayout";
 import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
 
@@ -382,57 +383,35 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     setView?.("employee-detail");
   };
 
-  return (
-    <div className="p-4 md:p-8 space-y-6 font-sans animate-view-enter max-w-7xl mx-auto">
-      {/* HEADER */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
-        <div>
-          <h1 className="text-[22px] md:text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight flex-wrap">
-            <div className="p-2.5 bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl shadow-[0_10px_20px_rgba(0,82,204,0.25)] shrink-0">
-              <Clock className="text-white" size={22} strokeWidth={1.5} />
-            </div>
-            Monitor en Tiempo Real
-          </h1>
-          <p className="text-slate-500 text-[13px] font-medium mt-2">
-            Control de asistencia, atrasos y extras en vivo.
-          </p>
-        </div>
-
-        <div className="glass-surface px-5 py-3 rounded-[1.5rem] border border-white/70 shadow-[0_14px_30px_rgba(0,0,0,0.08)] flex items-center gap-3">
-          <Clock size={18} className="text-[#0052CC]" />
-          <span className="text-[18px] font-black tracking-[0.15em] font-mono text-slate-900">
-            {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-          </span>
-        </div>
-      </header>
-
-      {/* FILTROS */}
-      <div className="flex items-center gap-3 relative z-20">
-        <div className="flex-1 min-w-0">
-          <BranchChips
-            branches={branches || []}
-            selectedBranch={filterBranch}
-            onSelect={setFilterBranch}
-            allowAll
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setSearchOpen((v) => !v)}
-          className={[
-            "w-12 h-12 flex-shrink-0",
-            "rounded-[1.2rem] border border-white/60 bg-white/40 backdrop-blur-md shadow-sm",
-            "flex items-center justify-center",
-            "transition-all duration-300 ease-out",
-            "hover:bg-white hover:shadow-md active:scale-[0.97]",
-            searchOpen ? "ring-2 ring-[#0052CC] bg-white text-[#0052CC]" : "text-slate-500 hover:text-[#0052CC]",
-          ].join(" ")}
-          title="Buscar empleado"
-        >
-          {searchOpen ? <X size={20} strokeWidth={2.5} /> : <Search size={20} strokeWidth={2.5} />}
-        </button>
+  const filtersContent = (
+    <div className="flex items-center gap-2 md:gap-3">
+      <div className="hidden md:flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-white/70 px-4 py-2 rounded-2xl">
+        <Clock size={15} className="text-[#0052CC]" />
+        <span className="text-[14px] font-black tracking-[0.12em] font-mono text-slate-900">
+          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        </span>
       </div>
+      <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
+      <button
+        type="button"
+        onClick={() => setSearchOpen((v) => !v)}
+        className={[
+          "w-10 h-10 flex-shrink-0 rounded-[0.875rem] border flex items-center justify-center",
+          "transition-all duration-200 hover:shadow-md active:scale-[0.97]",
+          searchOpen
+            ? "ring-2 ring-[#0052CC] bg-white border-[#0052CC]/30 text-[#0052CC]"
+            : "border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC]",
+        ].join(" ")}
+        title="Buscar empleado"
+      >
+        {searchOpen ? <X size={17} strokeWidth={2.5} /> : <Search size={17} strokeWidth={2.5} />}
+      </button>
+    </div>
+  );
+
+  return (
+    <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent}>
+      <div className="px-4 md:px-6 pb-8 space-y-5">
 
       {/* BUSCADOR */}
       <div
@@ -682,7 +661,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           })}
         </div>
       )}
-    </div>
+      </div>
+    </GlassViewLayout>
   );
 };
 

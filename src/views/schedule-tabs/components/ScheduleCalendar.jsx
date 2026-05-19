@@ -542,7 +542,7 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                                 const dayOverallStat = salesStats?.days?.find(d => d.day === dNum);
                                 const dayColor = dayOverallStat?.color;
 
-                                let headerBg = "bg-slate-50/50 border-slate-200 shadow-sm";
+                                let headerBg = "bg-[#0052CC]/5 border-[#0052CC]/10 shadow-sm";
                                 let headerTextColor = "text-slate-500";
                                 let dayTextColor = "text-slate-400";
                                 

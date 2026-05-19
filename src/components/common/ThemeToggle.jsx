@@ -15,15 +15,14 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
       <button
         onClick={toggleTheme}
         title={isCompat ? 'Cambiar a LiquidGlass' : 'Cambiar a modo compatible'}
-        className={`relative w-8 h-8 flex items-center justify-center rounded-[0.875rem]
+        className={`relative w-11 h-11 flex items-center justify-center rounded-[1.1rem]
           border transition-[background-color,border-color,transform,box-shadow]
           duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]
-          ${isCompat
-            ? 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
-            : 'bg-white/10 border-white/15 text-white/60 hover:bg-white/20 hover:text-white'
-          } ${className}`}
+          hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(0,0,0,0.3)]
+          bg-white/6 border-white/12 text-white/60 hover:bg-white/14 hover:text-white
+          ${className}`}
       >
-        {isCompat ? <Layers size={14} strokeWidth={2} /> : <Monitor size={14} strokeWidth={2} />}
+        {isCompat ? <Layers size={16} strokeWidth={2} /> : <Monitor size={16} strokeWidth={2} />}
       </button>
     );
   }

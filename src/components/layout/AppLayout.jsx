@@ -739,6 +739,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </button>
                                 )}
+                                <ThemeToggle variant="compact" />
+
                                 <button onClick={() => navigate('/profile')} type="button"
                                     onMouseEnter={(e) => {
                                         const rect = e.currentTarget.getBoundingClientRect();

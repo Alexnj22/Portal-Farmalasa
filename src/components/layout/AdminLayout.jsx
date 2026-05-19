@@ -291,6 +291,8 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                     )}
                                 </button>
 
+                                <ThemeToggle variant="compact" />
+
                                 <button onClick={() => setView('profile')} type="button" title="Perfil" className="w-11 h-11 rounded-[1.25rem] bg-white/10 border border-white/10 shadow-[0_12px_28px_rgba(0,0,0,0.22)] hover:bg-white/20 hover:border-white/20 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center text-white/75">
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover rounded-[1.25rem]" alt="Foto" /> : <User size={18} strokeWidth={1.5} />}
                                 </button>

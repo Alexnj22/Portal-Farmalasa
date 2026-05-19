@@ -10,7 +10,8 @@ import {
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
-  BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2
+  BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
+  FileText, Package, Receipt, ShoppingCart
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -72,6 +73,9 @@ const WIDGET_SIZES = {
   calendar:      { minCols: 2, minRows: 3, label: 'Calendario'   },
   announcements: { minCols: 1, minRows: 2, label: 'Avisos'       },
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
+  cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
+  facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
+  top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
 };
 
 const getWidgetSize = (id) => {
@@ -79,7 +83,20 @@ const getWidgetSize = (id) => {
   return WIDGET_SIZES[id] || { minCols: 1, minRows: 1, label: id };
 };
 
-const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements', 'birthdays'];
+const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements', 'birthdays', 'cotizaciones', 'facturacion', 'top_productos'];
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'general',   label: 'General',   icon: LayoutDashboard },
+  { id: 'comercial', label: 'Comercial', icon: ShoppingCart    },
+  { id: 'rrhh',      label: 'RRHH',      icon: Users           },
+];
+
+const TAB_WIDGETS = {
+  general:   ['kpi', 'sales', 'branches'],   // + sales_branch_* handled dynamically
+  comercial: ['cotizaciones', 'facturacion', 'top_productos'],
+  rrhh:      ['trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
+};
 
 // Resolve collisions after a drop: dragged widget wins its target position,
 // displaced widgets find their next free slot (top-left priority, no cascades).
@@ -156,7 +173,10 @@ const WIDGET_DEFS = [
   { id: 'branches',      label: 'Alertas de sucursales',   permission: 'dash_branches',      icon: Building2     },
   { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays  },
   { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone     },
-  { id: 'birthdays',    label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift          },
+  { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift          },
+  { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'cotizaciones',       icon: Receipt       },
+  { id: 'facturacion',   label: 'Facturación hoy',         permission: 'facturacion',        icon: FileText      },
+  { id: 'top_productos', label: 'Top productos del mes',   permission: 'ventas',             icon: Package       },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -269,8 +289,20 @@ const DashboardView = ({ openModal }) => {
   const loadAttendance   = useStaff(s => s.loadAttendanceLastDays);
 
   // ── Config & order ─────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general';
+  });
+
   const [widgetConfig, setWidgetConfig] = useState(() => {
-    try { const s = localStorage.getItem(`portal_dashboard_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
+    try {
+      const s = localStorage.getItem(`portal_dashboard_${user?.id||'guest'}`);
+      if (s) {
+        const stored = JSON.parse(s);
+        const storedIds = new Set(stored.map(w => w.id));
+        // Merge: add any new widgets not yet in stored config
+        return [...stored, ...WIDGET_DEFS.filter(w => !storedIds.has(w.id)).map(w => ({ id: w.id, enabled: true }))];
+      }
+    } catch {}
     return WIDGET_DEFS.map(w => ({ id: w.id, enabled: true }));
   });
   const [showConfig, setShowConfig] = useState(false);
@@ -593,6 +625,12 @@ const DashboardView = ({ openModal }) => {
   const [todayLoading,   setTodayLoading]   = useState(false);
   const [salesBranchIds, setSalesBranchIds] = useState(new Set());
 
+  // ── Comercial tab data ─────────────────────────────────────────────────────
+  const [cotizStats,     setCotizStats]     = useState({ activas: 0, total: 0, recent: [] });
+  const [factStats,      setFactStats]      = useState({ count: 0, total: 0, ccf: 0, fcf: 0 });
+  const [topProductos,   setTopProductos]   = useState([]);
+  const [topProdLoading, setTopProdLoading] = useState(false);
+
   // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const since = new Date(); since.setDate(since.getDate()-7);
@@ -723,6 +761,52 @@ const DashboardView = ({ openModal }) => {
       });
   }, [salesBranch, branches]);
 
+  // ── Comercial data effects ─────────────────────────────────────────────────
+  useEffect(() => {
+    const since = new Date(); since.setDate(since.getDate() - 30);
+    supabase.from('cotizaciones')
+      .select('id, numero, fecha, customer_name, total, status')
+      .gte('fecha', localDateStr(since))
+      .order('fecha', { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        const rows    = data || [];
+        const activas = rows.filter(c => c.status === 'ACTIVA');
+        setCotizStats({
+          activas: activas.length,
+          total:   activas.reduce((s, c) => s + (parseFloat(c.total) || 0), 0),
+          recent:  activas.slice(0, 6),
+        });
+      });
+  }, []);
+
+  useEffect(() => {
+    supabase.from('sales_invoices')
+      .select('id, tipo_documento, total')
+      .eq('fecha', localDateStr())
+      .neq('estado', 'NULA')
+      .then(({ data }) => {
+        const rows = data || [];
+        setFactStats({
+          count: rows.length,
+          total: rows.reduce((s, r) => s + (parseFloat(r.total) || 0), 0),
+          ccf:   rows.filter(r => r.tipo_documento === 'CCF').length,
+          fcf:   rows.filter(r => r.tipo_documento !== 'CCF').length,
+        });
+      });
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'comercial' || topProductos.length > 0) return;
+    const now  = new Date();
+    const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const ffin = localDateStr();
+    setTopProdLoading(true);
+    supabase.rpc('get_product_sales_agg', { p_fini: fini, p_ffin: ffin })
+      .range(0, 9)
+      .then(({ data }) => { setTopProductos(data || []); setTopProdLoading(false); });
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Widget helpers ─────────────────────────────────────────────────────────
   const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;
   const canSee     = p  => !p || hasPermission(p,'can_view');
@@ -795,6 +879,16 @@ const DashboardView = ({ openModal }) => {
       .sort((a,b)=>a.day-b.day);
   },[activeEmployees,bdMonth,branches]);
   const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
+
+  const switchTab = (tabId) => {
+    setActiveTab(tabId);
+    try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch {}
+  };
+
+  const isWidgetInTab = (id) => {
+    if (id.startsWith('sales_branch_')) return activeTab === 'general';
+    return TAB_WIDGETS[activeTab]?.includes(id) ?? false;
+  };
 
   const resetAll = () => {
     const defaultLayout = autoPlaceOrder(DEFAULT_WIDGET_ORDER, {});
@@ -1290,16 +1384,129 @@ const DashboardView = ({ openModal }) => {
       );
     }
 
+    /* ── COTIZACIONES ── */
+    if (wid === 'cotizaciones') {
+      if (!showWidget('cotizaciones', 'cotizaciones')) return null;
+      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return wrapWidget('cotizaciones',
+        <WidgetCard title="Cotizaciones Activas" icon={Receipt}
+          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          <div className="flex flex-col h-full">
+            <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
+              <div>
+                <p className="text-[32px] font-black text-slate-900 leading-none">{cotizStats.activas}</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">últ. 30 días</p>
+              </div>
+              <div className="mb-1">
+                <p className="text-[13px] font-black text-emerald-600">{fmt(cotizStats.total)}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">monto total</p>
+              </div>
+            </div>
+            <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-slate-50">
+              {cotizStats.recent.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-slate-300"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
+              ) : cotizStats.recent.map(c => (
+                <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    <Receipt size={11} className="text-[#007AFF]"/>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-slate-800 truncate">{c.customer_name || '—'}</p>
+                    <p className="text-[9px] text-slate-400">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
+                  </div>
+                  <span className="text-[11px] font-black text-slate-700 shrink-0">{fmt(c.total)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </WidgetCard>
+      );
+    }
+
+    /* ── FACTURACION HOY ── */
+    if (wid === 'facturacion') {
+      if (!showWidget('facturacion', 'facturacion')) return null;
+      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return wrapWidget('facturacion',
+        <WidgetCard title="Facturación Hoy" icon={FileText}
+          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          <div className="flex flex-col h-full px-4 py-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50/80 rounded-2xl p-3">
+                <p className="text-[28px] font-black text-slate-900 leading-none">{factStats.count}</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-1">documentos</p>
+              </div>
+              <div className="bg-emerald-50 rounded-2xl p-3">
+                <p className="text-[16px] font-black text-emerald-700 leading-none">{fmt(factStats.total)}</p>
+                <p className="text-[10px] font-semibold text-emerald-500 mt-1">total emitido</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 bg-red-50 rounded-xl px-3 py-2">
+                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0"/>
+                <div>
+                  <p className="text-[14px] font-black text-red-700">{factStats.ccf}</p>
+                  <p className="text-[9px] font-bold text-red-400 uppercase tracking-wide">CCF</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
+                <div>
+                  <p className="text-[14px] font-black text-slate-700">{factStats.fcf}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">FCF / otros</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </WidgetCard>
+      );
+    }
+
+    /* ── TOP PRODUCTOS ── */
+    if (wid === 'top_productos') {
+      if (!showWidget('top_productos', 'ventas')) return null;
+      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      const maxNeto = topProductos[0]?.neto ?? 1;
+      return wrapWidget('top_productos',
+        <WidgetCard title="Top Productos · Mes Actual" icon={Package}
+          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
+            {topProdLoading ? (
+              <div className="flex items-center justify-center py-10"><Loader2 size={20} className="animate-spin text-[#007AFF]"/></div>
+            ) : topProductos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Package size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin datos este mes</p></div>
+            ) : topProductos.map((p, i) => {
+              const pct = Math.max(Math.round((p.neto / maxNeto) * 100), 4);
+              return (
+                <div key={p.erp_product_id} className="flex items-center gap-2.5 py-1.5">
+                  <span className="text-[9px] font-black text-slate-300 w-4 shrink-0 text-right">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{p.descripcion}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-[#007AFF]" style={{ width: `${pct}%` }}/>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-500 shrink-0">{fmt(p.neto)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </WidgetCard>
+      );
+    }
+
     return null;
   };
 
   // ── Build widget list from explicit positions ──────────────────────────────
-  const buildWidgetList = () => Object.keys(activeLayout).map(renderWidget);
+  const buildWidgetList = () => Object.keys(activeLayout).filter(isWidgetInTab).map(renderWidget);
 
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
-<button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
+      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
         <Settings2 size={14}/> Personalizar
       </button>
     </div>
@@ -1309,6 +1516,26 @@ const DashboardView = ({ openModal }) => {
   return (
     <GlassViewLayout icon={LayoutDashboard} title="Dashboard" filtersContent={filtersContent} transparentBody={true}>
       <div className="space-y-5 pb-10 px-2">
+
+        {/* Tab selector */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-white/60 border border-white/80 rounded-[1.1rem] p-1 backdrop-blur-sm shadow-sm">
+            {TABS.map(tab => {
+              const TabIcon = tab.icon;
+              return (
+                <button key={tab.id} onClick={() => switchTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-[0.75rem] text-[12px] font-bold transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-[#007AFF] text-white shadow-[0_2px_10px_rgba(0,122,255,0.35)]'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+                  }`}>
+                  <TabIcon size={13} strokeWidth={2.2}/>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Config panel */}
         {showConfig && (
@@ -1337,13 +1564,29 @@ const DashboardView = ({ openModal }) => {
           </div>
         )}
 
-        {/* KPI row */}
-        {showWidget('kpi','dash_kpi') && (
+        {/* KPI row — content varies by tab */}
+        {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" onClick={canManage('dash_kpi')?()=>navigate('/employees'):undefined}/>
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
             <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
             <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
             <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#FF3B30':'#34C759'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+          </div>
+        )}
+        {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#007AFF" onClick={() => navigate('/cotizaciones')}/>
+            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#34C759"/>
+            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#5856D6" onClick={() => navigate('/facturacion')}/>
+            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#FF9500"/>
+          </div>
+        )}
+        {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF"/>
+            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
+            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#FF3B30" onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
           </div>
         )}
 

@@ -1020,7 +1020,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock}
-          action={activeBranches.length>1&&(<select value={currentShiftBranch} onChange={e=>setShiftBranch(e.target.value)} className="text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer">{activeBranches.map(b=><option key={b.id} value={String(b.id)}>{b.name}</option>)}</select>)}>
+          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {shiftStatusData.length===0?(
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>

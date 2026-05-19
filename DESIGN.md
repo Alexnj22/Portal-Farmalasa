@@ -40,7 +40,7 @@ Diseño corporativo sin transparencias. Para navegadores / computadoras que no s
 |-------|-------|-----|
 | `--surface-card` | `rgba(255,255,255,0.55)` | Cards de contenido |
 | `--surface-card-hover` | `rgba(255,255,255,0.70)` | Cards on hover |
-| `--surface-header` | `rgba(255,255,255,0.85)` | Header flotante de vistas |
+| `--surface-header` | `rgba(255,255,255,0.20)` | Header flotante de vistas — glass translúcido |
 | `--surface-modal` | `rgba(255,255,255,0.88)` | Modales y drawers |
 | `--surface-input` | `rgba(255,255,255,0.60)` | Inputs, selects |
 | `--surface-sidebar` | Gradient `from-[#0A2A5E] to-[#041636]` | Barra lateral |

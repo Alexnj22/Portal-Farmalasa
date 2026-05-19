@@ -183,20 +183,21 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const KpiCard = ({ icon: Icon, label, value, sub, color, onClick, animDelay }) => ( // eslint-disable-line no-unused-vars
+const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div onClick={onClick}
-    style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
-    className={`animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-5 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    className={`animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
-    <div className="relative flex items-center justify-between">
-      <div className="w-10 h-10 rounded-[0.875rem] flex items-center justify-center shadow-sm" style={{ background: color + '18', border: `1px solid ${color}20` }}>
-        <Icon size={20} strokeWidth={1.8} style={{ color }} />
+    {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
+    <div className="relative flex items-center gap-2">
+      <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0" style={{ background: color + '18', border: `1px solid ${color}20` }}>
+        <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
-      {sub && <span className="text-[11px] font-semibold text-slate-400">{sub}</span>}
+      <p className="text-[11px] font-semibold text-slate-500 leading-snug">{label}</p>
     </div>
-    <div className="relative">
-      <p className="text-[28px] font-black text-slate-900 leading-none">{value}</p>
-      <p className="text-[12px] font-medium text-slate-500 mt-1">{label}</p>
+    {/* Value + sub as context pair */}
+    <div className="relative flex items-end justify-between gap-1">
+      <p className="text-[24px] font-black text-slate-900 leading-none">{value}</p>
+      {sub && <span className="text-[11px] font-bold text-slate-500 pb-0.5">{sub}</span>}
     </div>
   </div>
 );
@@ -918,7 +919,7 @@ const DashboardView = ({ openModal }) => {
       <div
         key={id}
         data-widget-id={id}
-        className={`relative group/drag animate-widget-enter ${isBouncing ? 'animate-widget-settle' : ''}`}
+        className={`relative group/drag ${isBouncing ? 'animate-widget-settle' : ''}`}
         style={{
           gridColumnStart: pos.col,
           gridRowStart:    pos.row,
@@ -1269,17 +1270,6 @@ const DashboardView = ({ openModal }) => {
                 })}
               </div>
             </div>
-            {/* Upcoming birthdays — moved to dedicated birthday widget */}
-            {false&&upcomingBirthdays.length>0&&(
-              <div className="mt-2 pt-2 border-t border-white/50 flex flex-wrap gap-1 shrink-0">
-                {upcomingBirthdays.slice(0,6).map((item,idx)=>(
-                  <div key={idx} className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold cursor-default ${item.isToday?'bg-purple-100 text-purple-700':'bg-slate-50/80 text-slate-400'}`}>
-                    <Gift size={8} className={item.isToday?'text-purple-500':'text-slate-300'}/>
-                    <span>{item.employees[0]?.name?.split(' ')[0]||'?'}{item.isToday?' 🎂':''}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </WidgetCard>
       );
@@ -1314,22 +1304,19 @@ const DashboardView = ({ openModal }) => {
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
         <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
-          {/* Festive header */}
-          <div className="relative px-4 py-3 border-b border-white/50 shrink-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-400/10 via-pink-400/8 to-amber-400/10"/>
-            <div className="absolute -top-4 -right-4 text-[60px] opacity-[0.06] select-none pointer-events-none">🎂</div>
+          {/* Header */}
+          <div className="relative px-4 py-3 border-b border-white/50 shrink-0">
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-[0.6rem] bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-[0_4px_10px_rgba(168,85,247,0.35)]">
-                  <Gift size={13} className="text-white" strokeWidth={2.5}/>
+                <div className="w-7 h-7 rounded-[0.6rem] bg-[#007AFF]/10 border border-[#007AFF]/15 flex items-center justify-center">
+                  <Gift size={13} className="text-[#007AFF]" strokeWidth={2.2}/>
                 </div>
                 <h3 className="text-[12px] font-black text-slate-800 tracking-tight">Cumpleaños</h3>
-                <span className="text-[13px] leading-none">🎉</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={11} strokeWidth={2.5}/></button>
-                <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <span className="text-[10px] font-black text-[#007AFF] uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-[#007AFF]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={11} strokeWidth={2.5}/></button>
               </div>
             </div>
           </div>
@@ -1346,9 +1333,9 @@ const DashboardView = ({ openModal }) => {
                   const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
                   const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
                   const cardCls = e.isToday
-                    ? 'bg-gradient-to-r from-violet-50 via-pink-50 to-amber-50 border-violet-200/70 shadow-[0_4px_16px_rgba(168,85,247,0.12)]'
+                    ? 'bg-[#007AFF]/5 border-[#007AFF]/20 shadow-[0_4px_16px_rgba(0,122,255,0.1)]'
                     : e.isTomorrow
-                    ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200/70 shadow-[0_4px_12px_rgba(251,146,60,0.12)]'
+                    ? 'bg-amber-50 border-amber-200/60 shadow-[0_4px_12px_rgba(245,158,11,0.1)]'
                     : e.isPast
                     ? 'bg-white/30 border-white/40 opacity-40'
                     : 'bg-white/50 border-white/60 hover:bg-white/80 hover:border-slate-200/60 hover:shadow-sm';
@@ -1357,24 +1344,24 @@ const DashboardView = ({ openModal }) => {
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
-                          ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-violet-300':e.isTomorrow?'border-orange-300':'border-white'}`}/>
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-gradient-to-br from-violet-500 to-pink-500 text-white border-violet-300':e.isTomorrow?'bg-gradient-to-br from-orange-400 to-amber-400 text-white border-orange-300':'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500 border-white'}`}>{initials}</div>
+                          ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-[#007AFF]/30':e.isTomorrow?'border-amber-300':'border-white'}`}/>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-[#007AFF] text-white border-[#007AFF]/30':e.isTomorrow?'bg-amber-500 text-white border-amber-300':'bg-slate-100 text-slate-500 border-white'}`}>{initials}</div>
                         }
                         {e.isToday&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">🎂</span>}
                         {e.isTomorrow&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">⏰</span>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-violet-700':e.isTomorrow?'text-orange-700':'text-slate-800'}`}>{e.name}</p>
+                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-[#007AFF]':e.isTomorrow?'text-amber-700':'text-slate-800'}`}>{e.name}</p>
                         <p className="text-[9px] text-slate-400 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className={`text-[10px] font-black ${e.isToday?'text-violet-600':e.isTomorrow?'text-orange-600':'text-slate-600'}`}>{dayLabel}</span>
+                        <span className={`text-[10px] font-black ${e.isToday?'text-[#007AFF]':e.isTomorrow?'text-amber-600':'text-slate-600'}`}>{dayLabel}</span>
                         {e.isToday
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-600">🎉 Hoy</span>
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-[#007AFF]/10 text-[#007AFF]">Hoy</span>
                           :e.isTomorrow
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 animate-pulse">¡Mañana!</span>
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600">Mañana</span>
                           :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-slate-100 text-slate-300':'bg-slate-100 text-slate-400'}`}>{e.age} años</span>
                         }
                       </div>
@@ -1597,26 +1584,26 @@ const DashboardView = ({ openModal }) => {
         {/* KPI row — content varies by tab */}
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
           <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" animDelay={0}   onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" animDelay={60}  sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" animDelay={120} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#FF3B30':'#34C759'} animDelay={180} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
+            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#FF3B30':'#34C759'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#007AFF" animDelay={0}   onClick={() => navigate('/cotizaciones')}/>
-            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#34C759" animDelay={60}/>
-            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#5856D6" animDelay={120} onClick={() => navigate('/facturacion')}/>
-            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#FF9500" animDelay={180}/>
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#007AFF" sub="últ. 30 días" onClick={() => navigate('/cotizaciones')}/>
+            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#34C759" sub="en cotizaciones"/>
+            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#5856D6" sub={factStats.count===1?'documento':'documentos'} onClick={() => navigate('/facturacion')}/>
+            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#FF9500" sub="total del día"/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (
           <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" animDelay={0}/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" animDelay={60}  sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
-            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#FF3B30" animDelay={120} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" animDelay={180} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF"/>
+            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
+            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#FF3B30" sub={absences.length===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
           </div>
         )}
 

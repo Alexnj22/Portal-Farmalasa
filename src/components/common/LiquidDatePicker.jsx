@@ -258,7 +258,7 @@ const LiquidDatePicker = ({
             style={{ top: coords.top, left: coords.left, transform: coords.transform }}
             className={`absolute z-[99999] animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
         >
-            <div className="p-4 md:p-5 w-[280px] bg-white/70 backdrop-blur-[25px] backdrop-saturate-[200%] border border-white/90 shadow-[0_24px_50px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.7)] rounded-[2rem] font-sans transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu hover:scale-[1.04] hover:-translate-y-1">
+            <div className="p-4 md:p-5 w-[280px] bg-white/70 backdrop-blur-[25px] backdrop-saturate-[200%] border border-white/90 shadow-[0_24px_50px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.7)] rounded-[2rem] font-sans">
                 
                 <div className="flex justify-between items-center mb-5 px-1">
                     <button type="button" onClick={handlePrev} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>

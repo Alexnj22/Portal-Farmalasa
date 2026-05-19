@@ -26,13 +26,6 @@ const TIPO_PAGO_COLORS = {
     cheque:        'bg-teal-50 text-teal-700 border-teal-200',
 };
 
-const TIPO_PAGO_HOVER = {
-    tarjeta:       'hover:border-l-blue-400/50',
-    credito:       'hover:border-l-purple-400/50',
-    transferencia: 'hover:border-l-cyan-400/50',
-    bitcoin:       'hover:border-l-orange-400/50',
-    cheque:        'hover:border-l-teal-400/50',
-};
 
 const TIPO_PAGO_LABELS = {
     tarjeta:       'Tarjeta',
@@ -43,11 +36,11 @@ const TIPO_PAGO_LABELS = {
 };
 
 const TIPO_PAGO_THEME = {
-    tarjeta:       { card: 'border-blue-200',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-blue-50/40 hover:border-l-blue-500',   expand: 'bg-blue-50/60 border-blue-100',   input: 'border-blue-200 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
-    credito:       { card: 'border-purple-200',  header: 'from-purple-600 to-purple-500', rowHover: 'hover:bg-purple-50/40 hover:border-l-purple-500', expand: 'bg-purple-50/60 border-purple-100', input: 'border-purple-200 focus:ring-purple-300', btn: 'bg-purple-600 hover:bg-purple-700' },
-    transferencia: { card: 'border-cyan-200',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-cyan-50/40 hover:border-l-cyan-500',    expand: 'bg-cyan-50/60 border-cyan-100',    input: 'border-cyan-200 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
-    cheque:        { card: 'border-teal-200',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-teal-50/40 hover:border-l-teal-500',    expand: 'bg-teal-50/60 border-teal-100',    input: 'border-teal-200 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
-    bitcoin:       { card: 'border-orange-200',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-orange-50/40 hover:border-l-orange-500', expand: 'bg-orange-50/60 border-orange-100', input: 'border-orange-200 focus:ring-orange-300', btn: 'bg-orange-500 hover:bg-orange-600' },
+    tarjeta:       { card: 'border-blue-200',   header: 'from-blue-600 to-blue-500',     rowHover: 'hover:bg-blue-50/40',   expand: 'bg-blue-50/60 border-blue-100',   input: 'border-blue-200 focus:ring-blue-300',   btn: 'bg-blue-600 hover:bg-blue-700'   },
+    credito:       { card: 'border-indigo-200',  header: 'from-indigo-600 to-indigo-500', rowHover: 'hover:bg-indigo-50/40', expand: 'bg-indigo-50/60 border-indigo-100', input: 'border-indigo-200 focus:ring-indigo-300', btn: 'bg-indigo-600 hover:bg-indigo-700' },
+    transferencia: { card: 'border-cyan-200',    header: 'from-cyan-600 to-cyan-500',     rowHover: 'hover:bg-cyan-50/40',    expand: 'bg-cyan-50/60 border-cyan-100',    input: 'border-cyan-200 focus:ring-cyan-300',    btn: 'bg-cyan-600 hover:bg-cyan-700'    },
+    cheque:        { card: 'border-teal-200',    header: 'from-teal-600 to-teal-500',     rowHover: 'hover:bg-teal-50/40',    expand: 'bg-teal-50/60 border-teal-100',    input: 'border-teal-200 focus:ring-teal-300',    btn: 'bg-teal-600 hover:bg-teal-700'    },
+    bitcoin:       { card: 'border-orange-200',  header: 'from-orange-500 to-orange-400', rowHover: 'hover:bg-orange-50/40', expand: 'bg-orange-50/60 border-orange-100', input: 'border-orange-200 focus:ring-orange-300', btn: 'bg-orange-500 hover:bg-orange-600' },
 };
 
 // SV time
@@ -847,7 +840,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Stats strip */}
             <div className="flex items-center gap-2 flex-wrap">
                 {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-violet-500 to-purple-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-violet-700' : 'text-slate-500', bg: filtered.length > 0 ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200' },
+                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-amber-500 to-orange-400' : 'from-slate-400 to-slate-300', text: filtered.length > 0 ? 'text-amber-700' : 'text-slate-500', bg: filtered.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200' },
                     { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-red-500 to-orange-400' : 'from-slate-400 to-slate-300',           text: ccfCount > 0 ? 'text-red-700' : 'text-slate-500',           bg: ccfCount > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200' },
                     { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
                 ].map(({ label, value, icon: Icon, grad, text, bg }) => (

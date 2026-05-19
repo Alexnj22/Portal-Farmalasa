@@ -243,10 +243,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Check descripcion
+      // Check descripcion — skip null→value (first-time population is not a real change)
       const oldDesc = er.descripcion ?? null;
       const newDesc = nr.descripcion ?? null;
-      if (oldDesc !== newDesc) {
+      if (oldDesc !== null && oldDesc !== newDesc) {
         precioChangelogs.push({
           product_id:      nr.product_id,
           id_presentacion: nr.id_presentacion,

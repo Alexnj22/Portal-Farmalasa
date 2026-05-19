@@ -566,9 +566,48 @@ const MobileConstructionScreen = () => (
     </div>
 );
 
+const ROUTE_TITLES = {
+    '/overview':          'Resumen',
+    '/dashboard':         'Personal',
+    '/monitor':           'Monitor de Asistencia',
+    '/audit':             'Auditoría de Tiempo',
+    '/schedules':         'Horarios',
+    '/requests':          'Solicitudes',
+    '/vacation-plan':     'Plan de Vacaciones',
+    '/payroll':           'Planilla',
+    '/announcements':     'Comunicados',
+    '/ventas':            'Ventas',
+    '/facturacion':       'Facturación',
+    '/cotizaciones':      'Cotizaciones',
+    '/productos':         'Productos',
+    '/encuesta':          'Encuesta',
+    '/encuesta-admin':    'Encuesta Admin',
+    '/branches':          'Sucursales',
+    '/roles':             'Roles',
+    '/permissions':       'Permisos',
+    '/auditview':         'Auditoría',
+    '/home':              'Mi Portal',
+    '/my-requests':       'Mis Solicitudes',
+    '/my-announcements':  'Mis Comunicados',
+    '/my-documents':      'Mis Documentos',
+    '/profile':           'Mi Perfil',
+    '/kiosk':             'Reloj',
+    '/login':             'Portal FarmaSalud',
+};
+
 const AppWithToast = () => {
     const location = useLocation();
     const isKioskMode = location.pathname.startsWith('/kiosk');
+
+    useEffect(() => {
+        const path = location.pathname;
+        const base = '/' + path.split('/')[1];
+        const isDashboardEmployee = path.startsWith('/dashboard/empleado/');
+        const label = isDashboardEmployee
+            ? 'Perfil de Empleado'
+            : (ROUTE_TITLES[base] ?? null);
+        document.title = label ? `${label} — FarmaSalud` : 'Portal FarmaSalud';
+    }, [location.pathname]);
 
     // Deshabilitar corrección ortográfica y autocorrección en todos los campos
     useEffect(() => {

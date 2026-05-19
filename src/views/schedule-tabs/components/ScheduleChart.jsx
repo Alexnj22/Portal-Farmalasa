@@ -46,8 +46,15 @@ const ScheduleChart = ({
                     </div>
                     
                     {isLoadingSales ? (
-                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <Loader2 size={20} className="animate-spin text-[#0052CC]" />
+                        <div className="absolute inset-0 flex items-end gap-1.5 z-10 px-1">
+                            {Array.from({ length: 7 }).map((_, i) => (
+                                <div key={i} className="flex-1 flex flex-col justify-end items-center h-full">
+                                    <div
+                                        className="w-full skeleton rounded-t-[6px]"
+                                        style={{ height: `${30 + (i % 3) * 20 + (i % 2) * 10}%` }}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     ) : currentChartData.length === 0 ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-2 p-4 text-center animate-in fade-in duration-300">

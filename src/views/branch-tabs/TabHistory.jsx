@@ -454,16 +454,16 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                         /* SKELETON DE LÍNEA DE TIEMPO */
                         <div className="w-full space-y-12 relative z-10 pt-10">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className={`flex flex-col md:flex-row items-center w-full opacity-50 animate-pulse ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                                <div key={i} className={`flex flex-col md:flex-row items-center w-full ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
                                     <div className={`hidden md:block w-[45%] ${i % 2 === 0 ? 'text-left pl-12' : 'text-right pr-12'}`}>
-                                        <div className={`h-4 bg-slate-300/60 rounded w-24 ${i % 2 === 0 ? 'mr-auto' : 'ml-auto'}`}></div>
+                                        <div className={`h-4 skeleton rounded-full w-24 ${i % 2 === 0 ? 'mr-auto' : 'ml-auto'}`} />
                                     </div>
-                                    <div className="absolute left-[20px] md:left-1/2 w-8 h-8 rounded-full bg-slate-200/80 border-4 border-white -translate-x-[20px] md:-translate-x-1/2 z-30"></div>
+                                    <div className="absolute left-[20px] md:left-1/2 w-8 h-8 skeleton rounded-full border-4 border-white -translate-x-[20px] md:-translate-x-1/2 z-30" />
                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 ${i % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
-                                        <div className="h-32 bg-white/40 border border-white/50 rounded-[1.5rem] p-5 w-full">
-                                            <div className="h-3 bg-slate-300/50 rounded w-1/3 mb-4"></div>
-                                            <div className="h-5 bg-slate-300/60 rounded w-3/4 mb-3"></div>
-                                            <div className="h-3 bg-slate-300/50 rounded w-1/2 mt-5"></div>
+                                        <div className="h-32 bg-white/40 border border-white/50 rounded-[1.5rem] p-5 w-full space-y-3">
+                                            <div className="h-3 skeleton rounded-full w-1/3" />
+                                            <div className="h-5 skeleton rounded-full w-3/4" />
+                                            <div className="h-3 skeleton rounded-full w-1/2 mt-2" />
                                         </div>
                                     </div>
                                 </div>

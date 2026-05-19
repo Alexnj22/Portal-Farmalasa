@@ -383,12 +383,12 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6 font-sans animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 space-y-6 font-sans animate-view-enter max-w-7xl mx-auto">
       {/* HEADER */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
         <div>
-          <h1 className="text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl shadow-[0_10px_20px_rgba(0,122,255,0.25)]">
+          <h1 className="text-[22px] md:text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight flex-wrap">
+            <div className="p-2.5 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl shadow-[0_10px_20px_rgba(0,122,255,0.25)] shrink-0">
               <Clock className="text-white" size={22} strokeWidth={1.5} />
             </div>
             Monitor en Tiempo Real

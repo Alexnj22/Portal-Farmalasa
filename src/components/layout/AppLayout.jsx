@@ -809,7 +809,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0">
+                <div className={`flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
                     {/* Desktop global bell — liquid glass, top-right corner */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">
@@ -861,7 +861,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             {/* ── Bottom tabs (solo para usuarios con solo autogestión) ── */}
             {hasSelfOnly && (
-                <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 transition-all duration-500 ${blurClasses}`}>
+                <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                     <div className="flex items-center justify-around bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[1.75rem] shadow-[0_-4px_30px_rgba(0,0,0,0.06)] px-2 py-2">
                         {selfItems.map(({ key, path, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                             const pathSeg = path.replace(/^\//, '').split('/')[0];

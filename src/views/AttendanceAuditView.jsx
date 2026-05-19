@@ -499,7 +499,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     : "";
 
   return (
-    <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto h-full relative">
+    <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto h-full relative animate-view-enter">
       
       {/* NUEVO: MODAL DE CONFIRMACIÓN DE INASISTENCIA */}
       <ConfirmModal 
@@ -513,9 +513,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
       <header className="space-y-4 mb-6">
         <div>
-          <h1 className="text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl shadow-md">
-              <AlertTriangle className="text-white" size={24} strokeWidth={1.5} />
+          <h1 className="text-[22px] md:text-[28px] font-semibold text-slate-900 flex items-center gap-3 tracking-tight">
+            <div className="p-2.5 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl shadow-md shrink-0">
+              <AlertTriangle className="text-white" size={22} strokeWidth={1.5} />
             </div>
             Auditoría de Tiempos
           </h1>

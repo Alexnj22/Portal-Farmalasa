@@ -8,7 +8,7 @@ const FormDocumentViewer = ({ formData }) => {
         <div className="flex flex-col h-full bg-slate-50/50">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#007AFF] flex items-center justify-center shadow-inner shrink-0">
+                    <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#0052CC] flex items-center justify-center shadow-inner shrink-0">
                         <FileText size={24} strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
@@ -21,7 +21,7 @@ const FormDocumentViewer = ({ formData }) => {
                     download 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center gap-2 px-5 py-3 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(0,122,255,0.2)] active:scale-[0.97] shrink-0"
+                    className="flex items-center gap-2 px-5 py-3 bg-[#0052CC] hover:bg-[#003D99] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(0,82,204,0.2)] active:scale-[0.97] shrink-0"
                 >
                     <Download size={16} strokeWidth={2} /> Descargar
                 </a>
@@ -36,7 +36,7 @@ const FormDocumentViewer = ({ formData }) => {
                             <iframe src={url} className="w-full h-full border-none" title="Visor de Documento">
                                 <div className="p-8 text-center text-slate-500">
                                     <p>Tu navegador no soporta la visualización de este tipo de archivo.</p>
-                                    <a href={url} target="_blank" rel="noreferrer" className="text-[#007AFF] underline mt-2 block">Haz clic aquí para abrirlo directamente</a>
+                                    <a href={url} target="_blank" rel="noreferrer" className="text-[#0052CC] underline mt-2 block">Haz clic aquí para abrirlo directamente</a>
                                 </div>
                             </iframe>
                         </object>

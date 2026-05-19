@@ -372,10 +372,10 @@ function MainApp() {
 
     if (loading || (isAuthenticated && permsLoading)) {
         return (
-            <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden flex items-center justify-center">
+            <div className="fixed inset-0 w-full h-[100dvh] bg-[#E6F0FF] overflow-hidden flex items-center justify-center">
                 <GlobalBackground />
                 <div className="relative z-10 flex flex-col items-center justify-center gap-4 bg-white/40 backdrop-blur-xl border border-white/80 p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in-95 duration-500">
-                    <Loader2 size={32} className="text-[#007AFF] animate-spin" strokeWidth={2.5} />
+                    <Loader2 size={32} className="text-[#0052CC] animate-spin" strokeWidth={2.5} />
                     <span className="text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse">
                         Verificando sesión...
                     </span>
@@ -395,7 +395,7 @@ function MainApp() {
             } />
             <Route path="/login" element={
                 !isAuthenticated ? (
-                    <div className="relative min-h-[100dvh] w-full bg-[#F2F2F7]">
+                    <div className="relative min-h-[100dvh] w-full bg-[#E6F0FF]">
                         <GlobalBackground />
                         <div className="relative z-10 w-full min-h-[100dvh] flex flex-col">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
@@ -411,7 +411,7 @@ function MainApp() {
 
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F2F2F7] overflow-hidden flex flex-col">
+                    <div className="fixed inset-0 w-full h-[100dvh] bg-[#E6F0FF] overflow-hidden flex flex-col">
                         <GlobalBackground />
                         <AuthSyncHelper />
 
@@ -535,20 +535,20 @@ export default function App() {
 }
 
 const MobileConstructionScreen = () => (
-    <div className="sm:hidden fixed inset-0 z-[99999] bg-[#F2F2F7] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+    <div className="sm:hidden fixed inset-0 z-[99999] bg-[#E6F0FF] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
         <GlobalBackground />
 
         <div className="relative z-10 flex flex-col items-center max-w-sm bg-white/60 backdrop-blur-xl border border-white/80 p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in duration-700">
 
-            <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-tr from-[#007AFF]/10 to-[#5856D6]/10 rounded-full mb-6 border border-white">
-                <Settings className="text-[#007AFF] animate-spin" size={40} strokeWidth={1.5} style={{ animationDuration: '4s' }} />
+            <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-tr from-[#0052CC]/10 to-[#6929C4]/10 rounded-full mb-6 border border-white">
+                <Settings className="text-[#0052CC] animate-spin" size={40} strokeWidth={1.5} style={{ animationDuration: '4s' }} />
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Monitor className="text-[#5856D6] bg-[#F2F2F7] rounded-md p-1 scale-75" size={28} strokeWidth={2} />
+                    <Monitor className="text-[#6929C4] bg-[#E6F0FF] rounded-md p-1 scale-75" size={28} strokeWidth={2} />
                 </div>
             </div>
 
             <h2 className="text-[22px] font-black text-slate-800 tracking-tight mb-3 leading-none">
-                Versión Móvil<br /><span className="text-[#007AFF]">en Desarrollo</span>
+                Versión Móvil<br /><span className="text-[#0052CC]">en Desarrollo</span>
             </h2>
 
             <p className="text-[13px] font-medium text-slate-500 leading-relaxed">
@@ -558,9 +558,9 @@ const MobileConstructionScreen = () => (
             </p>
 
             <div className="mt-8 flex gap-1.5 justify-center">
-                <span className="w-1.5 h-1.5 bg-[#007AFF] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-1.5 h-1.5 bg-[#007AFF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-[#007AFF] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                <span className="w-1.5 h-1.5 bg-[#0052CC] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
             </div>
         </div>
     </div>
@@ -636,10 +636,10 @@ const AppWithToast = () => {
 
 const GlobalBackground = () => (
     <div className="fixed inset-0 w-full h-[100dvh] z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#007AFF]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
-        <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#5856D6]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#0052CC]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
+        <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#6929C4]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
         <div
-            className="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] bg-[#34C759]/15 rounded-full filter blur-[120px] animate-ambient-drift"
+            className="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] bg-[#12B76A]/15 rounded-full filter blur-[120px] animate-ambient-drift"
             style={{ animationDelay: "3s" }}
         />
     </div>

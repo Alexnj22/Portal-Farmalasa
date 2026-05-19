@@ -44,7 +44,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
             <div className="flex items-center justify-between mb-4">
                 {onPrev ? (
                     <button type="button" onClick={onPrev}
-                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
+                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#0052CC]">
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -53,7 +53,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                 </p>
                 {onNext ? (
                     <button type="button" onClick={onNext}
-                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#007AFF]">
+                        className="p-1.5 hover:bg-white/60 rounded-full transition-colors text-slate-500 hover:text-[#0052CC]">
                         <ChevronRight size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -111,17 +111,17 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     if (holiday) {
                         btnClass += 'text-red-400 bg-red-50 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
-                        btnClass += 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110 cursor-pointer';
+                        btnClass += 'bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.4)] scale-110 cursor-pointer';
                     } else if (isAnyRangeStart || isAnyRangeEnd) {
                         btnClass += 'bg-emerald-500 text-white shadow-[0_4px_12px_rgba(16,185,129,0.4)] scale-105 cursor-pointer';
                     } else if (inRange) {
-                        btnClass += 'text-[#007AFF] font-black cursor-pointer hover:bg-white hover:shadow-sm';
+                        btnClass += 'text-[#0052CC] font-black cursor-pointer hover:bg-white hover:shadow-sm';
                     } else if (isInAnyRange) {
                         btnClass += 'text-emerald-700 font-black cursor-pointer hover:bg-white hover:shadow-sm';
                     } else if (isToday) {
-                        btnClass += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 cursor-pointer hover:bg-slate-100';
+                        btnClass += 'text-[#0052CC] font-black ring-1 ring-[#0052CC]/40 cursor-pointer hover:bg-slate-100';
                     } else {
-                        btnClass += 'text-slate-600 cursor-pointer hover:bg-slate-100 hover:text-[#007AFF]';
+                        btnClass += 'text-slate-600 cursor-pointer hover:bg-slate-100 hover:text-[#0052CC]';
                     }
 
                     return (
@@ -141,7 +141,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                                 {day}
                             </button>
                             {isToday && !isStart && !isEnd && !holiday && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#007AFF] z-10" />
+                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#0052CC] z-10" />
                             )}
                             {holiday && (
                                 <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-red-400 z-10" />
@@ -347,7 +347,7 @@ const RangeDatePicker = ({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-xl">
+                        <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-xl">
                             <CalendarDays size={16} strokeWidth={2.5} />
                         </div>
                         <div>
@@ -427,7 +427,7 @@ const RangeDatePicker = ({
                         type="button"
                         onClick={handleConfirm}
                         disabled={!multiRange && (!draftStart || !draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] hover:bg-[#003D99] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[0_4px_12px_rgba(0,82,204,0.3)]">
                         <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
                     </button>
                 </div>
@@ -440,7 +440,7 @@ const RangeDatePicker = ({
         <>
             <div ref={triggerRef} onClick={handleOpen} className="cursor-pointer">
                 {multiRange ? (
-                    <div className={`flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
+                    <div className={`flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#0052CC]/40 ${isOpen ? 'border-[#0052CC]/50 ring-4 ring-[#0052CC]/10' : 'border-white/80'}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-emerald-500' : 'text-slate-400'} strokeWidth={2.5} />
                         <p className={`text-[12px] font-bold ${selectedRanges.length > 0 ? 'text-slate-700' : 'text-slate-400'}`}>
                             {selectedRanges.length > 0
@@ -449,8 +449,8 @@ const RangeDatePicker = ({
                         </p>
                     </div>
                 ) : (
-                    <div className={`flex items-center gap-3 h-[48px] px-4 bg-white/50 border rounded-2xl transition-all hover:bg-white/80 hover:border-[#007AFF]/40 ${isOpen ? 'border-[#007AFF]/50 ring-4 ring-[#007AFF]/10' : 'border-white/80'}`}>
-                        <CalendarDays size={14} className={startDate ? 'text-[#007AFF]' : 'text-slate-400'} strokeWidth={2.5} />
+                    <div className={`flex items-center gap-3 h-[48px] px-4 bg-white/50 border rounded-2xl transition-all hover:bg-white/80 hover:border-[#0052CC]/40 ${isOpen ? 'border-[#0052CC]/50 ring-4 ring-[#0052CC]/10' : 'border-white/80'}`}>
+                        <CalendarDays size={14} className={startDate ? 'text-[#0052CC]' : 'text-slate-400'} strokeWidth={2.5} />
                         <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-slate-700' : 'text-slate-400'}`}>
                             {startDate && endDate
                                 ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
@@ -459,7 +459,7 @@ const RangeDatePicker = ({
                                 : placeholder}
                         </span>
                         {startDate && endDate && (
-                            <span className="shrink-0 text-[10px] font-black text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full">
+                            <span className="shrink-0 text-[10px] font-black text-[#0052CC] bg-[#0052CC]/10 px-2 py-0.5 rounded-full">
                                 {Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d
                             </span>
                         )}

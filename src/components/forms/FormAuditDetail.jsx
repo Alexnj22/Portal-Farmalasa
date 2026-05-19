@@ -13,7 +13,7 @@ const FormAuditDetail = ({ data }) => {
         switch (severity) {
             case 'CRITICAL': return { bg: 'bg-red-500', icon: <ShieldAlert size={20} className="text-white" /> };
             case 'WARNING': return { bg: 'bg-amber-500', icon: <AlertTriangle size={20} className="text-white" /> };
-            default: return { bg: 'bg-[#007AFF]', icon: <CheckCircle2 size={20} className="text-white" /> };
+            default: return { bg: 'bg-[#0052CC]', icon: <CheckCircle2 size={20} className="text-white" /> };
         }
     };
 
@@ -64,7 +64,7 @@ const FormAuditDetail = ({ data }) => {
 
                     <div className={itemContainerClass}>
                         <div className={`${iconBoxClass} bg-blue-50/50`}>
-                            <Activity size={16} className="text-[#007AFF]" />
+                            <Activity size={16} className="text-[#0052CC]" />
                         </div>
                         <div className="min-w-0 pt-0.5">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
@@ -91,7 +91,7 @@ const FormAuditDetail = ({ data }) => {
                         <div className="min-w-0 pt-0.5">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-[#007AFF] bg-white/90 border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
+                                <span className="text-[10px] font-black text-[#0052CC] bg-white/90 border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
                                     {data.source}
                                 </span>
                                 {data.device_name && <span className="text-[13px] font-bold text-slate-700 truncate">{data.device_name}</span>}

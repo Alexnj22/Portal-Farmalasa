@@ -139,7 +139,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
     const [uploadingDoc, setUploadingDoc] = useState(false);
 
     const cardBg =
-        req.status === 'PENDING'   ? 'border-[#007AFF]/30 bg-white/80 backdrop-blur-2xl' :
+        req.status === 'PENDING'   ? 'border-[#0052CC]/30 bg-white/80 backdrop-blur-2xl' :
         req.status === 'APPROVED'  ? 'border-emerald-300/70 bg-emerald-50/80 backdrop-blur-2xl' :
         req.status === 'REJECTED'  ? 'border-red-300 bg-white/90 backdrop-blur-xl' :
         'border-white/60 bg-white/40 backdrop-blur-md';
@@ -162,7 +162,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             {statConf.label}
                         </span>
                         {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] font-bold text-[#007AFF]">· Niv. {req.current_level}/{maxLevels}</span>
+                            <span className="text-[9px] font-bold text-[#0052CC]">· Niv. {req.current_level}/{maxLevels}</span>
                         )}
                         {req.type === 'DISABILITY' && req.status === 'PENDING' && (
                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">· Urgente</span>
@@ -240,7 +240,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         {meta.docUrl ? (
                             <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 hover:text-[#007AFF] hover:border-[#007AFF]/30 transition-all">
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 hover:text-[#0052CC] hover:border-[#0052CC]/30 transition-all">
                                 <FileImage size={13} strokeWidth={2} />
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
@@ -680,7 +680,7 @@ const EmployeeRequestsView = () => {
                     {!existingVacation.approved && existingVacation.pending && (() => {
                         const m = typeof existingVacation.pending.metadata === 'object' ? existingVacation.pending.metadata : {};
                         return (
-                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-[#007AFF]/8 border border-[#007AFF]/20 text-[11px] font-bold text-[#007AFF]">
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-[#0052CC]/8 border border-[#0052CC]/20 text-[11px] font-bold text-[#0052CC]">
                                 <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span>Tienes vacaciones programadas en revisión{m.startDate ? ` — ${fmt(m.startDate)} al ${fmt(m.endDate)}` : ''}.</span>
                             </div>
@@ -857,7 +857,7 @@ const EmployeeRequestsView = () => {
                             value={payload.amount || ''}
                             onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 transition-all duration-300 placeholder-slate-300"
+                            className="w-full pl-8 pr-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 transition-all duration-300 placeholder-slate-300"
                         />
                     </div>
                 </div>
@@ -1016,7 +1016,7 @@ const EmployeeRequestsView = () => {
                     <div className="bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border border-white/80 p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                         <div className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#007AFF] text-white shadow-sm">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#0052CC] text-white shadow-sm">
                                 <Plus size={16} strokeWidth={2.5} />
                             </div>
                             <h3 className="font-black text-slate-800 text-[15px] uppercase tracking-tight ml-1 flex-1">Nueva Solicitud</h3>
@@ -1118,7 +1118,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-amber-300' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-amber-300' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>
@@ -1126,7 +1126,7 @@ const EmployeeRequestsView = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || formDisabilityBlocked}
-                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
@@ -1138,7 +1138,7 @@ const EmployeeRequestsView = () => {
                 </div>
 
                 {/* ── PANEL DERECHO: Lista ── */}
-                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
+                <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 pt-4 px-3 md:px-4 content-start">
 
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
@@ -1197,12 +1197,12 @@ const EmployeeRequestsView = () => {
                             <div key={statusFilter} className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] col-span-full">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 pointer-events-none ${
-                                        statusFilter === 'PENDING' ? 'bg-[#007AFF]' :
+                                        statusFilter === 'PENDING' ? 'bg-[#0052CC]' :
                                         statusFilter === 'APPROVED' ? 'bg-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'
                                     }`} />
                                     <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
-                                        statusFilter === 'PENDING' ? 'text-[#007AFF]' :
+                                        statusFilter === 'PENDING' ? 'text-[#0052CC]' :
                                         statusFilter === 'APPROVED' ? 'text-emerald-500' :
                                         statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'
                                     }`}>

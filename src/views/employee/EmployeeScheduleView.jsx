@@ -141,7 +141,7 @@ const EmployeeScheduleView = () => {
                 <div className="text-center">
                     <p className="text-[13px] font-black text-slate-800">{weekLabel}</p>
                     {isCurrentWeek && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#007AFF]">Semana actual</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#0052CC]">Semana actual</span>
                     )}
                 </div>
                 <button
@@ -173,14 +173,14 @@ const EmployeeScheduleView = () => {
                             key={d.id}
                             className={`rounded-[1.75rem] border p-4 transition-all ${
                                 d.isToday
-                                    ? 'bg-[#007AFF]/5 border-[#007AFF]/30 shadow-[0_0_0_1px_rgba(0,122,255,0.15)]'
+                                    ? 'bg-[#0052CC]/5 border-[#0052CC]/30 shadow-[0_0_0_1px_rgba(0,82,204,0.15)]'
                                     : 'bg-white/60 backdrop-blur-md border-white/60'
                             }`}
                         >
                             <div className="flex items-center gap-3">
                                 {/* Fecha pill */}
                                 <div className={`w-12 h-12 rounded-[1rem] flex flex-col items-center justify-center flex-shrink-0 ${
-                                    d.isToday ? 'bg-[#007AFF] text-white' : 'bg-slate-100 text-slate-600'
+                                    d.isToday ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-600'
                                 }`}>
                                     <span className="text-[8px] font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
                                     <span className="text-[16px] font-black leading-tight">{d.date.getDate()}</span>
@@ -213,7 +213,7 @@ const EmployeeScheduleView = () => {
                                 </div>
 
                                 {d.isToday && (
-                                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest bg-[#007AFF] text-white px-2 py-0.5 rounded-full animate-pulse">
+                                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest bg-[#0052CC] text-white px-2 py-0.5 rounded-full animate-pulse">
                                         Hoy
                                     </span>
                                 )}

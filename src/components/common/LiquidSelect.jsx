@@ -272,11 +272,11 @@ const LiquidSelect = ({
                                     opt.disabled
                                         ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
                                         : String(value) === String(opt.value)
-                                            ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] border-transparent'
+                                            ? 'bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] border-transparent'
                                             : isHighlighted
                                                 ? isDark
                                                     ? 'bg-white/10 text-white border-white/20'
-                                                    : 'bg-[#007AFF]/8 text-slate-900 border-[#007AFF]/20'
+                                                    : 'bg-[#0052CC]/8 text-slate-900 border-[#0052CC]/20'
                                                 : isDark
                                                     ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
                                                     : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
@@ -344,10 +344,10 @@ const LiquidSelect = ({
     } ${
         isDark
             ? isOpen
-                ? 'bg-black/50 border border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.15)] text-white'
+                ? 'bg-black/50 border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.15)] text-white'
                 : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
             : isOpen
-                ? 'bg-white border-[#007AFF] shadow-[0_0_0_4px_rgba(0,122,255,0.12)] border text-slate-700'
+                ? 'bg-white border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] border text-slate-700'
                 : 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/80 group-hover:bg-white/80 group-hover:border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_8px_rgba(255,255,255,0.7)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.07),inset_0_1px_8px_rgba(255,255,255,0.8)] text-slate-700'
     }`;
 
@@ -359,10 +359,10 @@ const LiquidSelect = ({
         >
             {/* ICONO IZQUIERDO */}
             <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center shadow-sm transition-colors duration-300 z-10 pointer-events-none ${isOpen
-                    ? 'text-white bg-[#007AFF]'
+                    ? 'text-white bg-[#0052CC]'
                     : isDark
-                        ? 'bg-black/40 text-[#007AFF] border border-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                        : 'bg-white/80 text-[#007AFF] border border-white'
+                        ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
+                        : 'bg-white/80 text-[#0052CC] border border-white'
                 }`}>
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>
@@ -460,7 +460,7 @@ const LiquidSelect = ({
                             : isDark ? 'bg-transparent group-hover:bg-white/10 hover:bg-white/20' : 'bg-transparent group-hover:bg-slate-100 hover:bg-slate-200'
                         }`}>
                         <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
-                                ? 'rotate-180 text-[#007AFF]'
+                                ? 'rotate-180 text-[#0052CC]'
                                 : isDark ? 'text-white/40' : 'text-slate-400'
                             }`} />
                     </div>

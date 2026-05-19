@@ -225,9 +225,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
             expectedD: isGluedToLunch ? lactEndD : lunchEndD,
             label: "Regreso Almuerzo",
             icon: Utensils,
-            color: "text-[#007AFF]",
-            bg: "bg-[#007AFF]/10",
-            border: "border-[#007AFF]/20",
+            color: "text-[#0052CC]",
+            bg: "bg-[#0052CC]/10",
+            border: "border-[#0052CC]/20",
           });
         }
 
@@ -644,7 +644,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                           className="flex items-center gap-4 text-left group/emp active:scale-[0.99] transition-transform"
                           title="Ver perfil"
                         >
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden group-hover/emp:border-[#007AFF]/30 transition-colors">
+                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden group-hover/emp:border-[#0052CC]/30 transition-colors">
                             {emp?.photo ? (
                               <img
                                 src={emp.photo}
@@ -656,7 +656,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                             )}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900 text-[14px] leading-none mb-1.5 group-hover/emp:text-[#007AFF] transition-colors">
+                            <p className="font-semibold text-slate-900 text-[14px] leading-none mb-1.5 group-hover/emp:text-[#0052CC] transition-colors">
                               {emp?.name || "Empleado"}
                             </p>
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
@@ -669,7 +669,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                       <td className="p-3 md:p-5">
                         <div className="flex flex-col items-start gap-2">
                           <span className="font-semibold text-slate-800 flex items-center gap-2 text-[13px]">
-                            <Calendar size={14} className="text-[#007AFF]" />
+                            <Calendar size={14} className="text-[#0052CC]" />
                             {new Date(`${record.date}T12:00:00Z`).toLocaleDateString()}
                           </span>
                           <span className="px-2 py-1 bg-black/[0.04] text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">
@@ -701,7 +701,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         <button
                           onClick={() => openModal(record)}
                           disabled={!canEdit}
-                          className="bg-white text-[#007AFF] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#007AFF] hover:bg-[#007AFF]/5 transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-white text-[#0052CC] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#0052CC] hover:bg-[#0052CC]/5 transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
                           type="button"
                         >
                           Corregir <Edit3 size={14} strokeWidth={2} />
@@ -775,7 +775,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                       type="time"
                       value={adjustTime}
                       onChange={e => setAdjustTime(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-mono text-[15px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF] transition-all"
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-mono text-[15px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC] transition-all"
                     />
                   </div>
                 </div>
@@ -796,7 +796,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     type="button"
                     onClick={() => handlePendingAction('ADJUST')}
                     disabled={isConfirmingAction || !canEdit}
-                    className="flex flex-col items-center gap-2 px-4 py-4 bg-blue-50 border border-blue-200 text-[#007AFF] rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-[0.97] disabled:opacity-40"
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-blue-50 border border-blue-200 text-[#0052CC] rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-[0.97] disabled:opacity-40"
                   >
                     <Clock size={18} strokeWidth={2} />
                     Ajustar
@@ -847,10 +847,10 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           <button
             type="button"
             onClick={() => goToEmployeeProfile(selectedEmp)}
-            className="w-full bg-white border border-white/60 shadow-sm rounded-[1.5rem] p-5 flex items-center gap-5 text-left hover:shadow-md hover:border-[#007AFF]/20 hover:scale-[1.01] transition-all duration-300 active:scale-[0.99] group cursor-pointer"
+            className="w-full bg-white border border-white/60 shadow-sm rounded-[1.5rem] p-5 flex items-center gap-5 text-left hover:shadow-md hover:border-[#0052CC]/20 hover:scale-[1.01] transition-all duration-300 active:scale-[0.99] group cursor-pointer"
             title="Ver perfil"
           >
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 group-hover:border-[#007AFF]/20 transition-colors">
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 group-hover:border-[#0052CC]/20 transition-colors">
               {selectedEmp?.photo ? (
                 <img
                   src={selectedEmp.photo}
@@ -865,7 +865,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="text-[16px] font-bold text-slate-900 truncate group-hover:text-[#007AFF] transition-colors">
+              <p className="text-[16px] font-bold text-slate-900 truncate group-hover:text-[#0052CC] transition-colors">
                 {selectedEmp?.name || "Empleado"}
               </p>
 
@@ -874,7 +874,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                   <Building2 size={12} /> {selectedBranchName}
                 </span>
 
-                <span className="inline-flex items-center gap-1.5 text-[#007AFF] bg-[#007AFF]/10 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#007AFF]/15">
+                <span className="inline-flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#0052CC]/15">
                   <Calendar size={12} />{" "}
                   {selectedAudit
                     ? new Date(`${selectedAudit.date}T12:00:00Z`).toLocaleDateString()
@@ -905,7 +905,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                   hover:scale-[1.02] hover:-translate-y-1
                   ${
                     isActive
-                      ? "bg-white border-[#007AFF] shadow-[0_12px_32px_rgba(0,122,255,0.15)] z-10"
+                      ? "bg-white border-[#0052CC] shadow-[0_12px_32px_rgba(0,82,204,0.15)] z-10"
                       : "bg-slate-50 border-transparent hover:bg-white hover:border-blue-200 hover:shadow-lg shadow-sm z-0"
                   }
                 `}
@@ -917,8 +917,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500
                         ${
                           isActive
-                            ? "bg-[#007AFF] text-white shadow-lg shadow-blue-500/30 rotate-0"
-                            : "bg-white text-slate-400 shadow-sm -rotate-3 group-hover:rotate-0 group-hover:bg-[#007AFF]/10 group-hover:text-[#007AFF]"
+                            ? "bg-[#0052CC] text-white shadow-lg shadow-blue-500/30 rotate-0"
+                            : "bg-white text-slate-400 shadow-sm -rotate-3 group-hover:rotate-0 group-hover:bg-[#0052CC]/10 group-hover:text-[#0052CC]"
                         }
                       `}
                     >
@@ -928,7 +928,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     <div>
                       <p
                         className={`text-[15px] font-bold tracking-tight transition-colors duration-300 ${
-                          isActive ? "text-[#007AFF]" : "text-slate-700 group-hover:text-slate-900"
+                          isActive ? "text-[#0052CC]" : "text-slate-700 group-hover:text-slate-900"
                         }`}
                       >
                         {inc.label}
@@ -942,7 +942,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                   <div
                     className={`transition-all duration-300 transform ${
                       isActive
-                        ? "text-[#007AFF] scale-110"
+                        ? "text-[#0052CC] scale-110"
                         : "text-slate-300 group-hover:text-slate-400 group-hover:scale-110"
                     }`}
                   >
@@ -959,7 +959,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] overflow-hidden
                     ${
                       isActive
-                        ? "max-h-24 opacity-100 mt-5 pt-5 border-t border-[#007AFF]/10"
+                        ? "max-h-24 opacity-100 mt-5 pt-5 border-t border-[#0052CC]/10"
                         : "max-h-0 opacity-0 mt-0 pointer-events-none"
                     }
                   `}
@@ -972,7 +972,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                       type="time"
                       value={formState.time24}
                       onChange={(e) => updateTime(inc.missingPunch, e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-mono text-[16px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF] transition-all shadow-inner hover:bg-white"
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-mono text-[16px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC] transition-all shadow-inner hover:bg-white"
                     />
                   </div>
                 </div>
@@ -995,7 +995,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
             <button
               onClick={handleSaveSelected}
               disabled={!canEdit || !Object.values(editForms).some((v) => v.active)}
-              className="px-8 h-12 bg-[#007AFF] hover:bg-[#0066CC] active:scale-[0.98] text-white rounded-[1.25rem] font-bold text-[13px] uppercase tracking-widest shadow-[0_8px_20px_rgba(0,122,255,0.25)] hover:shadow-[0_12px_24px_rgba(0,122,255,0.35)] transition-all disabled:opacity-30 disabled:grayscale"
+              className="px-8 h-12 bg-[#0052CC] hover:bg-[#003D99] active:scale-[0.98] text-white rounded-[1.25rem] font-bold text-[13px] uppercase tracking-widest shadow-[0_8px_20px_rgba(0,82,204,0.25)] hover:shadow-[0_12px_24px_rgba(0,82,204,0.35)] transition-all disabled:opacity-30 disabled:grayscale"
               type="button"
             >
               Confirmar Cambios

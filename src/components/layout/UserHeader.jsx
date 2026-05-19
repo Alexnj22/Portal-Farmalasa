@@ -18,7 +18,7 @@ const UserHeader = ({ user, handleLogout }) => {
                  <div className="relative group">
                      {/* Efecto de brillo detrás del logo */}
                      <div className="absolute inset-0 bg-blue-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                     <div className="relative p-2.5 bg-gradient-to-br from-[#007AFF] to-[#0055FF] rounded-xl text-white shadow-lg border border-white/20 group-hover:scale-105 transition-transform duration-300">
+                     <div className="relative p-2.5 bg-gradient-to-br from-[#0052CC] to-[#0055FF] rounded-xl text-white shadow-lg border border-white/20 group-hover:scale-105 transition-transform duration-300">
                          <Building2 size={20} className="drop-shadow-sm" />
                      </div>
                  </div>
@@ -28,8 +28,8 @@ const UserHeader = ({ user, handleLogout }) => {
                          Portal Farmacias
                      </h1>
                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="h-0.5 w-3 bg-[#007AFF] rounded-full"></span>
-                        <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-[0.2em]">
+                        <span className="h-0.5 w-3 bg-[#0052CC] rounded-full"></span>
+                        <p className="text-[10px] font-bold text-[#0052CC] uppercase tracking-[0.2em]">
                             La Popular y La Salud
                         </p>
                      </div>

@@ -261,7 +261,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Cantidad</label>
                     <input type="number" min="0" step="0.001" value={item.cantidad}
                         onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
-                        className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 text-center outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
+                        className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 text-center outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                 </div>
                 <div>
                     <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
@@ -269,7 +269,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">$</span>
                         <input type="number" min="0" step="0.01" value={item.precioUnitario}
                             onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
-                            className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[12px] font-bold text-slate-800 text-right outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
+                            className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[12px] font-bold text-slate-800 text-right outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                     </div>
                 </div>
             </div>
@@ -295,7 +295,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 ) : null}
                 <div className="flex items-center gap-1.5 ml-auto">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</span>
-                    <span className="text-[14px] font-black text-[#007AFF]">{fmt(item.subtotal)}</span>
+                    <span className="text-[14px] font-black text-[#0052CC]">{fmt(item.subtotal)}</span>
                 </div>
             </div>
         </div>
@@ -696,7 +696,7 @@ export default function CotizacionesView() {
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Fecha</label>
                             <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[13px] font-bold text-slate-700 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
+                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[13px] font-bold text-slate-700 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Cliente</label>
@@ -760,7 +760,7 @@ export default function CotizacionesView() {
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
                             <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
-                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[12px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all" />
+                                className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[12px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                         </div>
                     </div>
                 </div>
@@ -820,7 +820,7 @@ export default function CotizacionesView() {
                             {appliesRetention && <Row label="Retención 1%" val={`–${fmt(totals.retention)}`} className="text-amber-600" />}
                             <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                                 <span className="text-[14px] font-black text-slate-800">TOTAL</span>
-                                <span className="text-[22px] font-black text-[#007AFF]">{fmt(totals.total)}</span>
+                                <span className="text-[22px] font-black text-[#0052CC]">{fmt(totals.total)}</span>
                             </div>
                         </div>
                     </div>
@@ -838,7 +838,7 @@ export default function CotizacionesView() {
                         Cancelar
                     </button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
-                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#007AFF] hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-[0.97]'}`}>
+                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#0052CC] hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97]'}`}>
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
                         {saving ? 'Guardando...' : isEdit ? 'Actualizar Cotización' : 'Guardar Cotización'}
                     </button>
@@ -873,7 +873,7 @@ export default function CotizacionesView() {
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-[0.97] transition-all">
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
                                     <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
                                 </button>
                             </>
@@ -924,7 +924,7 @@ export default function CotizacionesView() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
-                                    <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                    <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">#</th>
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Producto</th>
                                         <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Pres.</th>
@@ -986,7 +986,7 @@ export default function CotizacionesView() {
                             {cot.applies_retention && <Row label="Retención 1%" val={`–${fmt(vTotals.retention)}`} className="text-amber-600" />}
                             <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                                 <span className="text-[14px] font-black text-slate-800">TOTAL</span>
-                                <span className="text-[22px] font-black text-[#007AFF]">{fmt(vTotals.total)}</span>
+                                <span className="text-[22px] font-black text-[#0052CC]">{fmt(vTotals.total)}</span>
                             </div>
                         </div>
                     </div>
@@ -1001,7 +1001,7 @@ export default function CotizacionesView() {
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
                             <button onClick={() => handlePrint(cot, itemsData)}
-                                className="flex items-center gap-2 px-7 py-3.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] active:scale-[0.97] transition-all">
+                                className="flex items-center gap-2 px-7 py-3.5 bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#003D99] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] active:scale-[0.97] transition-all">
                                 <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
                             </button>
                         </div>
@@ -1040,7 +1040,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             ) : undefined}
@@ -1091,7 +1091,7 @@ export default function CotizacionesView() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead>
-                                    <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                    <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                         <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Número</th>
                                         <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
                                         <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Cliente</th>
@@ -1112,7 +1112,7 @@ export default function CotizacionesView() {
                                                 className={`group border-t border-black/[0.04] cursor-pointer transition-colors ${isAnulada ? 'opacity-50 bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
                                                 {/* Número */}
                                                 <td className="px-4 py-2.5">
-                                                    <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#007AFF]'}`}>{cot.numero}</span>
+                                                    <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#0052CC]'}`}>{cot.numero}</span>
                                                 </td>
                                                 {/* Fecha */}
                                                 <td className="px-4 py-2.5">

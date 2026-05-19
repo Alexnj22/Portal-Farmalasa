@@ -20,7 +20,7 @@ const BranchTabLegal = ({
     // 🚨 ESTILOS LIQUID GLASS
     const islandClass = "bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col h-full";
     const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(0,0,0,0.06)] hover:bg-white/80 hover:border-white";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-[#007AFF]/30 focus-within:ring-4 focus-within:ring-[#007AFF]/10";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-[#0052CC]/30 focus-within:ring-4 focus-within:ring-[#0052CC]/10";
 
     const regentOptions = useMemo(() =>
         availableRegents.map(e => ({ value: e.id, label: e.name }))
@@ -38,7 +38,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 1: LICENCIA SRS */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] mb-5 flex items-center gap-2">
                         <ShieldCheck size={18} strokeWidth={2.5} /> Licencia de Funcionamiento (CSSP/DNM)
                     </h4>
                     {/* 🚨 CONTENIDO EN 1 COLUMNA (flex-col) */}
@@ -81,7 +81,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 2: REGENCIA FARMACÉUTICA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] mb-5 flex items-center gap-2">
                         <FileBadge size={18} strokeWidth={2.5} /> Regencia Farmacéutica
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
@@ -127,7 +127,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 3: FARMACOVIGILANCIA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] mb-5 flex items-center gap-2">
                         <ShieldAlert size={18} strokeWidth={2.5} /> Referente de Farmacovigilancia
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
@@ -174,7 +174,7 @@ const BranchTabLegal = ({
                 {/* ISLA 4: ÁREA DE INYECTABLES */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex items-center justify-between mb-5">
-                        <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
+                        <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] flex items-center gap-2">
                             <Syringe size={18} strokeWidth={2.5} /> Área Inyectables
                         </h4>
                         <Switch on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-sm' : 'bg-white text-slate-500 border border-slate-100 hover:border-[#007AFF]/30 hover:shadow-sm'}`}
+                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-sm' : 'bg-white text-slate-500 border border-slate-100 hover:border-[#0052CC]/30 hover:shadow-sm'}`}
                                                 >
                                                     {emp.name.split(' ')[0]} {isSelected && '✓'}
                                                 </button>
@@ -229,7 +229,7 @@ const BranchTabLegal = ({
             {/* 🚨 BLOQUE FINAL (FULL WIDTH / 1 COLUMNA): LIBROS CONTROLADOS */}
             <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                 <div className="flex items-center justify-between mb-5">
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] flex items-center gap-2">
                         <FileWarning size={18} strokeWidth={2.5} /> Libros Controlados
                     </h4>
                     <Switch on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />

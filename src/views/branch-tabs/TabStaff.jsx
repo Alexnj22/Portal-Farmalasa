@@ -17,7 +17,7 @@ import { supabase } from '../../supabaseClient';
 const getStaffTheme = (colorTheme) => {
     const themes = {
         amber: { bg: 'bg-white/40 hover:bg-amber-50/50', text: 'text-amber-600', ring: 'border-amber-400', badge: 'bg-amber-500', shadow: 'hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]', icon: Star, gradient: 'from-amber-400 to-orange-500' },
-        blue: { bg: 'bg-white/40 hover:bg-blue-50/50', text: 'text-[#007AFF]', ring: 'border-[#007AFF]', badge: 'bg-[#007AFF]', shadow: 'hover:shadow-[0_8px_30px_rgba(0,122,255,0.15)]', icon: Award, gradient: 'from-[#007AFF] to-indigo-500' },
+        blue: { bg: 'bg-white/40 hover:bg-blue-50/50', text: 'text-[#0052CC]', ring: 'border-[#0052CC]', badge: 'bg-[#0052CC]', shadow: 'hover:shadow-[0_8px_30px_rgba(0,82,204,0.15)]', icon: Award, gradient: 'from-[#0052CC] to-indigo-500' },
         emerald: { bg: 'bg-white/40 hover:bg-emerald-50/50', text: 'text-emerald-600', ring: 'border-emerald-400', badge: 'bg-emerald-500', shadow: 'hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]', icon: ShieldCheck, gradient: 'from-emerald-400 to-teal-500' },
         purple: { bg: 'bg-white/40 hover:bg-purple-50/50', text: 'text-purple-600', ring: 'border-purple-400', badge: 'bg-purple-500', shadow: 'hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]', icon: HeartPulse, gradient: 'from-purple-400 to-fuchsia-500' },
         slate: { bg: 'bg-white/50 hover:bg-white/80', text: 'text-slate-600', ring: 'border-slate-300', badge: 'bg-slate-400', shadow: 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
@@ -102,7 +102,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="text-center relative z-10 mb-3">
-                <p className="text-[14px] font-black text-slate-800 leading-tight group-hover:text-[#007AFF] transition-colors truncate px-2">{employee.name}</p>
+                <p className="text-[14px] font-black text-slate-800 leading-tight group-hover:text-[#0052CC] transition-colors truncate px-2">{employee.name}</p>
                 <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-white/60 border border-white rounded-full shadow-sm">
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
                     <p className={`text-[8px] font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
@@ -131,7 +131,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
                             <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-slate-400 hover:text-emerald-500 bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
-                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-slate-400 hover:text-[#007AFF] bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="Copiar">
+                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-slate-400 hover:text-[#0052CC] bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="Copiar">
                                 {copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-emerald-500" /> : <Copy size={12} strokeWidth={2} />}
                             </button>
                         </div>
@@ -143,7 +143,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                         <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                                Ingreso {hireDate && <span className="text-[#007AFF] bg-blue-50 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
+                                Ingreso {hireDate && <span className="text-[#0052CC] bg-blue-50 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
                             </span>
                             <span className="text-[10px] font-bold text-slate-700 mt-0.5 truncate">{formatDate(hireDate)}</span>
                         </div>
@@ -154,7 +154,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="absolute bottom-3 right-3 z-20">
                 <button
                     onClick={(e) => { e.stopPropagation(); onClick(employee); }}
-                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-[#007AFF] hover:border-[#007AFF] hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] text-slate-400 hover:text-white group/btn"
+                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-[#0052CC] hover:border-[#0052CC] hover:shadow-[0_4px_15px_rgba(0,82,204,0.3)] text-slate-400 hover:text-white group/btn"
                     title="Ver Expediente de Personal"
                 >
                     <CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" />
@@ -256,7 +256,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-[#007AFF] hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,122,255,0.3)] active:scale-[0.97]"
+                    className="px-5 py-2.5 bg-[#0052CC] hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,82,204,0.3)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
@@ -264,7 +264,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 
             {isSyncing && (
                 <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner">
-                    <div className="bg-gradient-to-r from-blue-500 to-[#007AFF] h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                    <div className="bg-gradient-to-r from-blue-500 to-[#0052CC] h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
 
@@ -668,13 +668,13 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-[#007AFF]/5 to-indigo-500/5 border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-[#0052CC]/5 to-indigo-500/5 border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 text-[#007AFF] flex items-center justify-center shadow-sm">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 text-[#0052CC] flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h4 className="text-[13px] font-black uppercase tracking-widest text-[#007AFF] leading-none">Inteligencia WFM Activa</h4>
+                                            <h4 className="text-[13px] font-black uppercase tracking-widest text-[#0052CC] leading-none">Inteligencia WFM Activa</h4>
                                             <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Algoritmo predictivo leyendo Supabase</p>
                                         </div>
                                     </div>
@@ -686,7 +686,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <p className="text-[18px] font-black text-slate-800 mt-1">{historicalSales.length}</p>
                                                 <p className="text-[9px] font-bold text-slate-500">Horas de venta analizadas</p>
                                             </div>
-                                            <div className="bg-blue-50/80 backdrop-blur-md rounded-xl p-3 border border-blue-100 shadow-[0_2px_10px_rgba(0,122,255,0.05)]">
+                                            <div className="bg-blue-50/80 backdrop-blur-md rounded-xl p-3 border border-blue-100 shadow-[0_2px_10px_rgba(0,82,204,0.05)]">
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-blue-500">Pico Máximo Detectado</p>
                                                 <p className="text-[15px] font-black text-blue-700 mt-1 flex items-center gap-1.5">
                                                     {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-blue-400" />
@@ -733,7 +733,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {/* SECCIÓN 2: ÁREA OPERATIVA */}
                             <div className="space-y-3 pt-2 mt-6">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
-                                    <User size={12} className="text-[#007AFF]" strokeWidth={3} /> Área Clínica y Operativa
+                                    <User size={12} className="text-[#0052CC]" strokeWidth={3} /> Área Clínica y Operativa
                                 </h4>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

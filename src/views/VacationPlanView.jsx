@@ -36,7 +36,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -207,7 +207,7 @@ const GanttChart = ({ plans, year }) => {
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                             }
                                         </div>
-                                        <span className="text-[11px] font-bold text-slate-700 truncate group-hover/row:text-[#007AFF] transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <span className="text-[11px] font-bold text-slate-700 truncate group-hover/row:text-[#0052CC] transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-white/50 border border-slate-100 rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
@@ -578,11 +578,11 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-white/70 h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -626,7 +626,7 @@ const VacationPlanView = () => {
                 {/* Search button — blue pill standard */}
                 <button
                     onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
@@ -650,7 +650,7 @@ const VacationPlanView = () => {
                         }`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0 transition-colors duration-500 ${editingPlan ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
                                         {editingPlan
                                             ? <Edit3 size={16} className="text-white" strokeWidth={2.5} />
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
@@ -704,9 +704,9 @@ const VacationPlanView = () => {
 
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-[#007AFF]/8 border-[#007AFF]/15'}`}>
-                                        <Calendar size={13} className={editingPlan ? 'text-amber-600' : 'text-[#007AFF]'} strokeWidth={2.5} />
-                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-[#007AFF]'}`}>{computedDays} días calendario</span>
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-amber-500/8 border-amber-500/15' : 'bg-[#0052CC]/8 border-[#0052CC]/15'}`}>
+                                        <Calendar size={13} className={editingPlan ? 'text-amber-600' : 'text-[#0052CC]'} strokeWidth={2.5} />
+                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-amber-700' : 'text-[#0052CC]'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -739,7 +739,7 @@ const VacationPlanView = () => {
                                             ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
                                             : editingPlan
                                                 ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
-                                                : 'bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_12px_rgba(0,122,255,0.3)]'
+                                                : 'bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
                                     }`}
                                 >
                                     {isSubmitting
@@ -804,7 +804,7 @@ const VacationPlanView = () => {
                                                                             : (p.employee?.name || '?').charAt(0).toUpperCase()
                                                                         }
                                                                     </div>
-                                                                    <p className="font-bold text-slate-700 group-hover/row:text-[#007AFF] transition-colors">{p.employee?.name || '—'}</p>
+                                                                    <p className="font-bold text-slate-700 group-hover/row:text-[#0052CC] transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado

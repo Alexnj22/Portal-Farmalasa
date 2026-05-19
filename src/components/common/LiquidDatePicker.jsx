@@ -261,13 +261,13 @@ const LiquidDatePicker = ({
             <div className="p-4 md:p-5 w-[280px] bg-white/70 backdrop-blur-[25px] backdrop-saturate-[200%] border border-white/90 shadow-[0_24px_50px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.7)] rounded-[2rem] font-sans">
                 
                 <div className="flex justify-between items-center mb-5 px-1">
-                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
-                    <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-[12px] md:text-[13px] font-black text-slate-700 uppercase tracking-widest hover:text-[#007AFF] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/50 active:scale-[0.97] disabled:opacity-50" disabled={currentMode === 'years'}>
+                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#0052CC] active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-[12px] md:text-[13px] font-black text-slate-700 uppercase tracking-widest hover:text-[#0052CC] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/50 active:scale-[0.97] disabled:opacity-50" disabled={currentMode === 'years'}>
                         {currentMode === 'days' && `${MONTHS_SHORT[currentMonth]} ${currentYear}`}
                         {currentMode === 'months' && `${currentYear}`}
                         {currentMode === 'years' && `${startYear} - ${startYear + 9}`}
                     </button>
-                    <button type="button" onClick={handleNext} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={handleNext} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#0052CC] active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
                 </div>
 
                 {currentMode === 'days' && (
@@ -309,16 +309,16 @@ const LiquidDatePicker = ({
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)
                                 let btnClass = "w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 ";
                                 if (isSolidDot) {
-                                    btnClass += "bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.4)] scale-110";
+                                    btnClass += "bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.4)] scale-110";
                                 } else if (inBetween) {
-                                    btnClass += "text-[#007AFF] hover:bg-white hover:shadow-sm";
+                                    btnClass += "text-[#0052CC] hover:bg-white hover:shadow-sm";
                                 } else if (holiday) {
                                     // 🚨 Estilo de Asueto (Rojo claro)
                                     btnClass += "text-red-500 font-black bg-red-50/80 hover:bg-red-100";
                                 } else {
                                     btnClass += isToday
-                                        ? "text-[#007AFF] font-black hover:bg-slate-100 ring-1 ring-[#007AFF]/40"
-                                        : "text-slate-600 hover:bg-slate-100 hover:text-[#007AFF]";
+                                        ? "text-[#0052CC] font-black hover:bg-slate-100 ring-1 ring-[#0052CC]/40"
+                                        : "text-slate-600 hover:bg-slate-100 hover:text-[#0052CC]";
                                 }
 
                                 return (
@@ -338,7 +338,7 @@ const LiquidDatePicker = ({
                                         )}
                                         {/* Puntito azul para hoy */}
                                         {isToday && !isSolidDot && !holiday && (
-                                            <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#007AFF]"></div>
+                                            <div className="absolute bottom-0 w-1 h-1 rounded-full bg-[#0052CC]"></div>
                                         )}
                                         {/* Puntito verde para días ya seleccionados (PERMISO) */}
                                         {selectedDates.includes(`${String(currentYear)}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`) && !isSolidDot && (
@@ -355,7 +355,7 @@ const LiquidDatePicker = ({
                     <div className="grid grid-cols-3 gap-3 animate-in fade-in zoom-in-95 duration-300">
                         {MONTHS_SHORT.map((month, index) => {
                             const isSelected = mVal === String(index + 1).padStart(2, '0') && yVal === String(currentYear);
-                            return <button key={month} type="button" onClick={() => handleMonthSelect(index)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu uppercase tracking-wide ${isSelected ? 'bg-[#007AFF] text-white shadow-lg scale-105' : 'text-slate-600 hover:bg-white hover:text-[#007AFF]'}`}>{month}</button>;
+                            return <button key={month} type="button" onClick={() => handleMonthSelect(index)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu uppercase tracking-wide ${isSelected ? 'bg-[#0052CC] text-white shadow-lg scale-105' : 'text-slate-600 hover:bg-white hover:text-[#0052CC]'}`}>{month}</button>;
                         })}
                     </div>
                 )}
@@ -365,7 +365,7 @@ const LiquidDatePicker = ({
                         {years.map((year) => {
                             const isSelected = yVal === String(year);
                             const isOutRange = year < startYear || year > startYear + 9;
-                            return <button key={year} type="button" onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu ${isSelected ? 'bg-[#007AFF] text-white shadow-lg scale-105' : isOutRange ? 'text-slate-400 opacity-50' : 'text-slate-600 hover:bg-white hover:text-[#007AFF]'}`}>{year}</button>;
+                            return <button key={year} type="button" onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu ${isSelected ? 'bg-[#0052CC] text-white shadow-lg scale-105' : isOutRange ? 'text-slate-400 opacity-50' : 'text-slate-600 hover:bg-white hover:text-[#0052CC]'}`}>{year}</button>;
                         })}
                     </div>
                 )}
@@ -379,7 +379,7 @@ const LiquidDatePicker = ({
     return (
         <>
             <div ref={containerRef} className="w-full h-full flex items-center gap-1 px-3 md:px-4 rounded-xl transition-all hover:bg-white/40 group/picker min-w-[140px] cursor-text focus-within:bg-white/50" onClick={() => { if(!isOpen) openPicker(); if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus(); }}>
-                <IconToRender size={14} className={hasValue ? "text-[#007AFF]" : "text-slate-400 group-hover/picker:text-[#007AFF] transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
+                <IconToRender size={14} className={hasValue ? "text-[#0052CC]" : "text-slate-400 group-hover/picker:text-[#0052CC] transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
                 <div className="flex items-center flex-1">
                     <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`w-[26px] bg-transparent border-none outline-none text-[12px] md:text-[13px] font-bold text-center placeholder:text-slate-300 ${dVal ? 'text-slate-800' : ''}`} />
                     <span className="text-slate-300 font-medium mx-0.5 pointer-events-none">/</span>

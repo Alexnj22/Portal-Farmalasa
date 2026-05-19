@@ -328,7 +328,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-300" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
-                        <h4 className="font-black text-slate-800 text-[12px] 2xl:text-[13px] truncate leading-tight mb-1 group-hover/row:text-[#007AFF] transition-colors" title={emp.name}>{shortName}</h4>
+                        <h4 className="font-black text-slate-800 text-[12px] 2xl:text-[13px] truncate leading-tight mb-1 group-hover/row:text-[#0052CC] transition-colors" title={emp.name}>{shortName}</h4>
                         
                         <div className="flex items-center gap-1 mb-1.5 2xl:mb-2 w-full overflow-x-auto hide-scrollbar scroll-smooth">
                             {rolesArray.map((roleObj, idx) => {
@@ -416,14 +416,14 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         <div className={`min-h-[85px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-all duration-300 flex flex-col 
                             ${!isReadOnly ? 'group-hover/cell:-translate-y-1 group-hover/cell:shadow-md' : ''}
                             ${conf ? conf.bg + ' border border-dashed ' + conf.border : 
-                              hasShift ? `bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${!isReadOnly ? 'group-hover/cell:border-[#007AFF]/40' : ''}` : 
-                              `border border-dashed border-slate-300/60 bg-slate-50/30 backdrop-blur-sm ${!isReadOnly ? 'group-hover/cell:bg-blue-50/50 group-hover/cell:border-[#007AFF]/40' : ''}`
+                              hasShift ? `bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${!isReadOnly ? 'group-hover/cell:border-[#0052CC]/40' : ''}` : 
+                              `border border-dashed border-slate-300/60 bg-slate-50/30 backdrop-blur-sm ${!isReadOnly ? 'group-hover/cell:bg-blue-50/50 group-hover/cell:border-[#0052CC]/40' : ''}`
                             }
                             ${isDailyOvertime && hasShift ? `!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)] ${!isReadOnly ? 'group-hover/cell:!border-red-400' : ''}` : ''}
                         `}>
                             
                             {!conf && !isReadOnly && (
-                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#007AFF] text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-blue-600">
+                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0052CC] text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-blue-600">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
@@ -472,7 +472,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className={`w-full flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors ${!isReadOnly ? 'group-hover/cell:text-[#007AFF]' : ''}`}>
+                                    <div className={`w-full flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors ${!isReadOnly ? 'group-hover/cell:text-[#0052CC]' : ''}`}>
                                         <span className="text-[8px] font-black uppercase tracking-widest">Descanso</span>
                                     </div>
                                 )}
@@ -550,13 +550,13 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                                     headerBg = "bg-rose-50 border-rose-200 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
                                     headerTextColor = "text-rose-800";
                                     dayTextColor = "text-rose-500";
-                                } else if (dayColor === '#FF9500') { // Pico (Naranja)
+                                } else if (dayColor === '#F79009') { // Pico (Naranja)
                                     headerBg = "bg-amber-50 border-amber-200 shadow-[0_4px_15px_rgba(245,158,11,0.05)]";
                                     headerTextColor = "text-amber-800";
                                     dayTextColor = "text-amber-600";
-                                } else if (dayColor === '#007AFF') { // Normal (Azul)
-                                    headerBg = "bg-blue-50 border-blue-200 shadow-[0_4px_15px_rgba(0,122,255,0.05)]";
-                                    headerTextColor = "text-[#007AFF]";
+                                } else if (dayColor === '#0052CC') { // Normal (Azul)
+                                    headerBg = "bg-blue-50 border-blue-200 shadow-[0_4px_15px_rgba(0,82,204,0.05)]";
+                                    headerTextColor = "text-[#0052CC]";
                                     dayTextColor = "text-blue-500";
                                 }
 

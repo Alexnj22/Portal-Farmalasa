@@ -144,7 +144,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     {/* MONTO EXACTO */}
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                            <DollarSign size={12} className="text-[#007AFF]" /> Monto Pagado Exacto
+                            <DollarSign size={12} className="text-[#0052CC]" /> Monto Pagado Exacto
                         </label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -155,7 +155,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#007AFF] focus:bg-white font-black text-slate-800 text-lg shadow-sm transition-all group-hover:border-[#007AFF]/50 placeholder:text-slate-300"
+                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white font-black text-slate-800 text-lg shadow-sm transition-all group-hover:border-[#0052CC]/50 placeholder:text-slate-300"
                                 placeholder="0.00"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
@@ -166,7 +166,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     {/* MES QUE CUBRE (LIQUID DATE PICKER) */}
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                            <Calendar size={12} className={isConflict ? "text-red-500" : "text-[#007AFF]"} /> Mes que Cubre
+                            <Calendar size={12} className={isConflict ? "text-red-500" : "text-[#0052CC]"} /> Mes que Cubre
                         </label>
                         <div className={isConflict ? "ring-2 ring-red-400/50 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
@@ -197,7 +197,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#007AFF] focus:bg-white font-bold text-slate-700 text-sm shadow-sm transition-all hover:border-[#007AFF]/50 placeholder:text-slate-400 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white font-bold text-slate-700 text-sm shadow-sm transition-all hover:border-[#0052CC]/50 placeholder:text-slate-400 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
@@ -207,12 +207,12 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 {/* UPLOAD FILE (ÁREA DE ARRASTRE MEJORADA) */}
                 <div className="pt-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 flex items-center gap-1.5">
-                        <UploadCloud size={12} className="text-[#007AFF]" /> Comprobante / Recibo (Foto o PDF)
+                        <UploadCloud size={12} className="text-[#0052CC]" /> Comprobante / Recibo (Foto o PDF)
                     </label>
 
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
                             ? 'bg-emerald-50/50 border-emerald-300 hover:bg-emerald-50'
-                            : 'bg-slate-50/50 border-slate-300 hover:bg-[#007AFF]/5 hover:border-[#007AFF]/50'
+                            : 'bg-slate-50/50 border-slate-300 hover:bg-[#0052CC]/5 hover:border-[#0052CC]/50'
                         }`}>
                         <input
                             type="file"
@@ -235,7 +235,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-1">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-[#007AFF] mb-1 group-hover:shadow-md transition-all">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-[#0052CC] mb-1 group-hover:shadow-md transition-all">
                                     <UploadCloud size={24} strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[13px] font-black text-slate-700 tracking-tight">
@@ -249,7 +249,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                         {/* Efecto hover background */}
                         {!paymentData.receiptFile && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#007AFF]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0052CC]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         )}
                     </div>
                 </div>

@@ -264,7 +264,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         {/* Branch header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/60 bg-white/20 flex-wrap gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,122,255,0.3)]">
+                                <div className="w-8 h-8 bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.3)]">
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
@@ -483,7 +483,7 @@ const PayrollView = ({ openModal }) => {
                 </div>
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -512,7 +512,7 @@ const PayrollView = ({ openModal }) => {
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
-                                    className="w-8 h-8 bg-[#007AFF] text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
+                                    className="w-8 h-8 bg-[#0052CC] text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
                                     <Plus size={14} strokeWidth={2.5} />
                                 </button>
                             </div>
@@ -526,8 +526,8 @@ const PayrollView = ({ openModal }) => {
                                         return (
                                             <button key={p.id} onClick={() => setActivePeriod(p)}
                                                 className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in"
-                                                style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,122,255,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,122,255,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,122,255,0.12)':'none' }}>
-                                                <p className={`text-[11px] font-black leading-tight ${active?'text-[#007AFF]':'text-slate-800'}`}>{p.name}</p>
+                                                style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
+                                                <p className={`text-[11px] font-black leading-tight ${active?'text-[#0052CC]':'text-slate-800'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
                                                     <p className="text-[9px] text-slate-400">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
                                                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
@@ -544,7 +544,7 @@ const PayrollView = ({ openModal }) => {
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
                             <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                                <div className="w-16 h-16 bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,122,255,0.3)] mb-4">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-2xl flex items-center justify-center shadow-[0_8px_24px_rgba(0,82,204,0.3)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[15px] font-black text-slate-700 uppercase tracking-tight">Selecciona un período</p>
@@ -596,7 +596,7 @@ const PayrollView = ({ openModal }) => {
                                             )}
                                             {isApproved && (
                                                 <button onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066CC] text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,122,255,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0052CC] hover:bg-[#003D99] text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(0,82,204,0.35)]">
                                                     <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
                                                 </button>
                                             )}

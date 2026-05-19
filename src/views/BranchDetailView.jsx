@@ -243,7 +243,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-full bg-blue-50 text-[#0052CC] flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ubicación</span>
                                 <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{liveBranch.address || "No registrada"}</span>
@@ -299,11 +299,11 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             ref={(el) => tabBtnRefs.current.set(tab.id, el)}
                                             onClick={() => setActiveTab(tab.id)}
                                             className={`relative flex items-center justify-center gap-2 py-2.5 px-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all duration-300 z-10 rounded-full shrink-0 border border-transparent ${isActive
-                                                    ? 'text-[#007AFF]'
+                                                    ? 'text-[#0052CC]'
                                                     : 'text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm hover:-translate-y-0.5 hover:border-white/90'
                                                 }`}
                                         >
-                                            <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-[#007AFF]' : ''} />
+                                            <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-[#0052CC]' : ''} />
                                             <span className="hidden xl:inline">{tab.label}</span>
 
                                             {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
@@ -322,7 +322,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <button onClick={() => openModal && openModal('editBranchInmueble', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-orange-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Building2 size={13} /> Local</button>
                                 {hasServices && <button onClick={() => openModal && openModal('editBranchServicios', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-emerald-500 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Zap size={13} /> Serv.</button>}
                                 {hasLegal && <button onClick={() => openModal && openModal('editBranchLegal', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-purple-600 hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Scale size={13} /> Legal</button>}
-                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-[#005CE6] hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
+                                {hasKiosk && <button onClick={() => openModal && openModal('manageKiosks', liveBranch)} className="px-4 h-9 md:h-10 rounded-full text-[10px] font-black uppercase tracking-wider bg-transparent text-slate-500 hover:bg-white hover:text-[#003D99] hover:shadow-sm hover:-translate-y-0.5 flex items-center gap-1.5 transition-all shrink-0"><Monitor size={13} /> Kioscos</button>}
                             </div>
                         </div>
                         )}
@@ -333,7 +333,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
                                     ? 'bg-red-50 text-red-500 border border-red-200/50 hover:bg-red-500 hover:text-white'
-                                    : 'bg-white text-[#007AFF] border border-white hover:border-[#007AFF]/30'
+                                    : 'bg-white text-[#0052CC] border border-white hover:border-[#0052CC]/30'
                                 }`}
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
                         >
@@ -354,14 +354,14 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
                             onClick={() => navigate('/branches')} 
-                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Sucursales"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                            <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#007AFF] transition-colors relative z-10" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#0052CC]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#0052CC] transition-colors relative z-10" />
                         </button>
 
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#007AFF] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,122,255,0.3)] shrink-0">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#0052CC] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0">
                             <Building2 size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                         </div>
 
@@ -374,7 +374,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
                                 <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-slate-300'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
 
-                                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-[#007AFF] border-[#007AFF] text-white translate-x-1' : 'bg-[#007AFF]/10 border-[#007AFF]/20 text-[#007AFF] group-hover/title:translate-x-0.5'}`}>
+                                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-[#0052CC] border-[#0052CC] text-white translate-x-1' : 'bg-[#0052CC]/10 border-[#0052CC]/20 text-[#0052CC] group-hover/title:translate-x-0.5'}`}>
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />
                                 </div>
                             </div>

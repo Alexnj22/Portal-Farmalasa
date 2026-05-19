@@ -259,8 +259,8 @@ useEffect(() => {
                         const txPerHr = item.avg / scale;
                         let color = '#64748b';                     // ≤4  muerta   — 1 persona ociosa
                         if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
-                        else if (txPerHr > 12) color = '#FF9500';  // >12 pico     — 2-3 personas
-                        else if (txPerHr >  4) color = '#007AFF';  // >4  normal   — 1-2 personas
+                        else if (txPerHr > 12) color = '#F79009';  // >12 pico     — 2-3 personas
+                        else if (txPerHr >  4) color = '#0052CC';  // >4  normal   — 1-2 personas
                         const hi = item.avg / max;
                         item.height = hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%';
                         item.color = color;
@@ -552,14 +552,14 @@ useEffect(() => {
                 <div className="flex items-center gap-3 md:gap-4 w-full">
                     <button
                         onClick={() => setViewMode('calendar')}
-                        className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white/70 backdrop-blur-xl"
+                        className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white/70 backdrop-blur-xl"
                         title="Volver a Calendario"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                        <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-500 group-hover/back:text-[#007AFF] transition-colors relative z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#0052CC]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                        <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-500 group-hover/back:text-[#0052CC] transition-colors relative z-10" />
                     </button>
 
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,122,255,0.3)] shrink-0 border border-white/20">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0 border border-white/20">
                         <BookOpen size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
                     </div>
 
@@ -601,9 +601,9 @@ useEffect(() => {
                         <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3">
                             <div className="flex items-center min-w-0 gap-1 md:gap-2 h-full">
                                 <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
-                                    <button onClick={() => setViewMode('calendar')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'calendar' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Vista Calendario"><CalendarDays size={16} strokeWidth={2.5} /></button>
+                                    <button onClick={() => setViewMode('calendar')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'calendar' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Vista Calendario"><CalendarDays size={16} strokeWidth={2.5} /></button>
                                     <div className="w-px h-5 bg-white/60 mx-0.5"></div>
-                                    <button onClick={() => setViewMode('shifts')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'shifts' ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Catálogo de Turnos"><BookOpen size={16} strokeWidth={2.5} /></button>
+                                    <button onClick={() => setViewMode('shifts')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'shifts' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Catálogo de Turnos"><BookOpen size={16} strokeWidth={2.5} /></button>
                                 </div>
                                 <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 hidden md:block shrink-0"></div>
                                 
@@ -617,13 +617,13 @@ useEffect(() => {
                                     <div className="flex items-center gap-1 md:gap-2 h-full py-0.5 shrink-0">
                                         <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 shrink-0"></div>
                                         <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-full ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
-                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500"><button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#007AFF] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button></div>
+                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500"><button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button></div>
                                             <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
                                                 <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-1 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
-                                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#007AFF]'}`}>{formatWeekRange(startDate)}</span>
+                                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
                                             </div>
                                             {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
-                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500"><button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#007AFF] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button></div>
+                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500"><button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button></div>
                                         </div>
                                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openModal) openModal("aiSchedulerPreview", { branchId: filterBranch, startDate }); }} disabled={!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit} className={`relative group/saly w-9 h-9 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer'}`}>
                                             <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-20 group-hover/saly:opacity-100 transition-all duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
@@ -632,7 +632,7 @@ useEffect(() => {
                                         </button>
                                         
                                         {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
-                                        {!isJefe && canEdit && <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,122,255,0.3)] border border-[#007AFF]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-[0.97] gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                        {!isJefe && canEdit && <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,82,204,0.3)] border border-[#0052CC]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
                                             {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
                                             <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : 'Publicar'}</span>
                                         </button>}

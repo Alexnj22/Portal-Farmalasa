@@ -48,8 +48,8 @@ export const Switch = ({ on, onToggle }) => (
     <button
         type="button"
         onClick={onToggle}
-        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#007AFF]/50 active:scale-[0.97] transform-gpu ${
-            on ? "bg-[#007AFF] border border-[#0066CC]" : "bg-slate-200/80 border border-slate-300"
+        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0052CC]/50 active:scale-[0.97] transform-gpu ${
+            on ? "bg-[#0052CC] border border-[#003D99]" : "bg-slate-200/80 border border-slate-300"
         }`}
         aria-pressed={on}
     >
@@ -141,7 +141,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <div className="relative group flex items-center w-full">
             {Icon && (
-                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-white/60 flex items-center justify-center text-slate-400 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-[#007AFF] group-focus-within:bg-blue-50 pointer-events-none">
+                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-white/60 flex items-center justify-center text-slate-400 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-[#0052CC] group-focus-within:bg-blue-50 pointer-events-none">
                     <Icon size={16} strokeWidth={2.5}/>
                 </div>
             )}
@@ -152,7 +152,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
                 minLength={minLength}
                 maxLength={maxLength}
                 // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-white/50 border border-white/60 rounded-[1.25rem] text-[13px] font-bold text-slate-700 placeholder-slate-400 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
+                className={`w-full py-3.5 bg-white/50 border border-white/60 rounded-[1.25rem] text-[13px] font-bold text-slate-700 placeholder-slate-400 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}

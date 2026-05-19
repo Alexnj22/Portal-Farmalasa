@@ -52,7 +52,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const isPendingReceipt = statusObj.state === 'pending_receipt';
 
     const colorMap = {
-        blue: 'text-[#007AFF] bg-blue-50 border-blue-100',
+        blue: 'text-[#0052CC] bg-blue-50 border-blue-100',
         orange: 'text-orange-500 bg-orange-50 border-orange-100',
         cyan: 'text-cyan-500 bg-cyan-50 border-cyan-100',
         purple: 'text-purple-500 bg-purple-50 border-purple-100',
@@ -107,7 +107,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:text-[#007AFF] hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:text-[#0052CC] hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -125,7 +125,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             <div className="bg-white/80 backdrop-blur-xl border border-white/50 p-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-base font-black text-slate-800 flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shadow-sm"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#0052CC] shadow-sm"></span>
                     ${payload[0].value.toFixed(2)}
                 </p>
             </div>
@@ -323,12 +323,12 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div className="group lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,122,255,0.08)]">
-                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#007AFF]/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
+                    <div className="group lg:col-span-2 bg-white/40 backdrop-blur-xl border border-white/80 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[0_12px_40px_rgba(0,82,204,0.08)]">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#0052CC]/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/80 text-[#007AFF] rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-white/80 text-[#0052CC] rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
@@ -343,8 +343,8 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#007AFF" stopOpacity={0.9}/>
-                                            <stop offset="95%" stopColor="#007AFF" stopOpacity={0.1}/>
+                                            <stop offset="5%" stopColor="#0052CC" stopOpacity={0.9}/>
+                                            <stop offset="95%" stopColor="#0052CC" stopOpacity={0.1}/>
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
@@ -370,7 +370,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                         className="transition-all duration-300 hover:opacity-90"
                                     >
                                         {historicalData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? '#007AFF' : 'url(#colorTotal)'} />
+                                            <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? '#0052CC' : 'url(#colorTotal)'} />
                                         ))}
                                     </Bar>
                                 </BarChart>

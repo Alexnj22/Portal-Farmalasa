@@ -137,8 +137,8 @@ const FormWfmAnalytics = ({ branches }) => {
                 const v = item.avgTransactions;
                 let fill = '#64748b';                // ≤4  muerta   — 1 persona ociosa
                 if      (v > 18) fill = '#FF2D55';  // >18 crítica  — 3+ personas
-                else if (v > 12) fill = '#FF9500';  // >12 pico     — 2-3 personas
-                else if (v >  4) fill = '#007AFF';  // >4  normal   — 1-2 personas
+                else if (v > 12) fill = '#F79009';  // >12 pico     — 2-3 personas
+                else if (v >  4) fill = '#0052CC';  // >4  normal   — 1-2 personas
                 return { ...item, fill };
             });
         };
@@ -250,7 +250,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     
                     <div className="flex flex-col gap-2 mb-2">
                         <p className="text-[13px] font-bold flex items-center gap-2.5">
-                            <Users size={16} className="text-[#FF9500]" /> 
+                            <Users size={16} className="text-[#F79009]" /> 
                             {data.avgTransactions} {timeRange === '0' ? 'Tx Registradas' : 'Tx Promedio'}
                         </p>
                         <p className="text-[13px] font-bold flex items-center gap-2.5">
@@ -262,7 +262,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     <div className="mt-2.5 pt-2 border-t border-slate-700 flex flex-col gap-1.5">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{dateLabel}</span>
                         {activeView === 'DAYS' && isHistoricalView && (
-                            <div className="flex items-center gap-1.5 text-[#007AFF]">
+                            <div className="flex items-center gap-1.5 text-[#0052CC]">
                                 <MousePointerClick size={12} />
                                 <span className="text-[9px] font-black uppercase tracking-widest">Clic para ver horas</span>
                             </div>
@@ -303,7 +303,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             key={opt.value}
                             type="button"
                             onClick={(e) => { e.preventDefault(); setTimeRange(opt.value); }}
-                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-white text-[#007AFF] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
+                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-white text-[#0052CC] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
                         >
                             {opt.label}
                         </button>
@@ -317,11 +317,11 @@ const FormWfmAnalytics = ({ branches }) => {
                 {/* CABECERA DE GRÁFICA Y CONTROLES (TABS PILL STYLE) */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 pb-4">
                     <div className="flex items-center gap-3">
-                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[0_3px_10px_rgba(0,122,255,0.15)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.3)]">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#007AFF] to-[#005CE6] rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
+                        <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[0_3px_10px_rgba(0,82,204,0.15)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.3)]">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#0052CC] to-[#003D99] rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-10 transition-colors duration-300" />
                         </div>
-                        <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight leading-none group-hover/branch:text-[#007AFF] transition-colors">
+                        <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight leading-none group-hover/branch:text-[#0052CC] transition-colors">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
                                 activeView === 'GENERAL_HOURS' ? (timeRange === '0' ? 'Afluencia por Hora (Hoy)' : 'Afluencia General (Hr)') :
                                     `Afluencia por Hora - ${DAYS_MAP[activeView]}`}
@@ -335,7 +335,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                 <button
                                     type="button"
                                     onClick={(e) => { e.preventDefault(); setActiveView('DAYS'); }}
-                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-white text-[#007AFF] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
+                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
                                 >
                                     Semana
                                 </button>
@@ -343,7 +343,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); setActiveView('GENERAL_HOURS'); }}
-                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-white text-[#007AFF] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
+                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-white text-[#0052CC] shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800'}`}
                             >
                                 {timeRange === '0' ? 'Horas de Hoy' : 'General (Hr)'}
                             </button>
@@ -358,7 +358,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                         type="button"
                                         onClick={(e) => { e.preventDefault(); setActiveView(d); }}
                                         title={DAYS_MAP[d]}
-                                        className={`w-9 h-8 rounded-full text-[11px] font-black uppercase transition-all duration-300 flex items-center justify-center ${activeView === d ? 'bg-[#007AFF] text-white shadow-md scale-110 z-10' : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'}`}
+                                        className={`w-9 h-8 rounded-full text-[11px] font-black uppercase transition-all duration-300 flex items-center justify-center ${activeView === d ? 'bg-[#0052CC] text-white shadow-md scale-110 z-10' : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'}`}
                                     >
                                         {['D', 'L', 'M', 'M', 'J', 'V', 'S'][d]}
                                     </button>
@@ -370,7 +370,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
                 {isLoading ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400 relative z-10">
-                        <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-[#007AFF]" />
+                        <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-[#0052CC]" />
                         <p className="text-[11px] font-black uppercase tracking-widest animate-pulse">Analizando operaciones con Sparkles...</p>
                     </div>
                 ) : chartData.length === 0 ? (
@@ -403,7 +403,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 )}
                 
                 {/* Sparkles de fondo sutiles para efecto liquidglass */}
-                <div className="absolute bottom-6 right-6 text-[#FF9500]/15 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <div className="absolute bottom-6 right-6 text-[#F79009]/15 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                     <Sparkles size={100} strokeWidth={0.5} />
                 </div>
             </div>
@@ -411,8 +411,8 @@ const FormWfmAnalytics = ({ branches }) => {
             {/* LEYENDA DEL HEATMAP (GLASS PILL STYLE) */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-white/70 backdrop-blur-xl rounded-full py-3.5 px-6 border border-white/80 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] mt-2 transition-shadow duration-500 hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_30px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
-                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#007AFF] shadow-sm"></div> Tráfico Normal</div>
-                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF9500] shadow-sm"></div> Hora Pico (Aviso)</div>
+                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#0052CC] shadow-sm"></div> Tráfico Normal</div>
+                <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>
                 <div className="flex items-center gap-2.5 text-[10px] sm:text-[11px] font-extrabold text-slate-600 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF2D55] shadow-sm"></div> Hora Crítica</div>
             </div>
         </div>

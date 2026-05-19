@@ -656,7 +656,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
     const FallbackLoader = () => (
         <div className="w-full h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
-            <div className="w-8 h-8 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-4 border-[#0052CC] border-t-transparent rounded-full animate-spin"></div>
             <p className="font-bold text-[10px] uppercase tracking-widest animate-pulse">Cargando Módulo...</p>
         </div>
     );
@@ -681,20 +681,20 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <div className="flex items-center gap-4">
 
                                 {(() => {
-                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-[#007AFF]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-[#007AFF]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-[#0052CC]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-[#0052CC]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#007AFF]`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#007AFF]`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#0052CC]`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#0052CC]`}><UserPlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "rehireEmployee") return <div className={`${squircleClass} text-emerald-600`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
                                     if (type === "vacationRecall") return <div className={`${squircleClass} text-amber-500`}><Palmtree size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#007AFF]`}><Clock size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#0052CC]`}><Clock size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#007AFF]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#0052CC]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-[#007AFF]`}><DollarSign size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-[#0052CC]`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-amber-500`}><Edit2 size={22} strokeWidth={2.5} /></div>;
 
                                     return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
@@ -728,10 +728,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#007AFF] border-[#007AFF] text-white scale-110 shadow-[0_4px_14px_rgba(0,122,255,0.35)]' : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#007AFF]/40 group-hover:text-[#007AFF]'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#0052CC] border-[#0052CC] text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#0052CC]/40 group-hover:text-[#0052CC]'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#007AFF]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#0052CC]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                                                     {step.label}
                                                 </span>
                                             </button>
@@ -831,7 +831,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {/* RIGHT: Siguiente o Guardar */}
                                 {nextStep ? (
                                     <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                        className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#007AFF] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_8px_22px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                        className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#0052CC] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
                                         {EMP_STEP_LABELS[nextStep]}
                                         <ChevronRight size={15} strokeWidth={2.5} />
                                     </button>
@@ -854,7 +854,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 type="submit"
                                 form="unified-modal-form"
                                 disabled={isSaving || !isFormValid}
-                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#0052CC] text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                             >
                                 {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                             </button>

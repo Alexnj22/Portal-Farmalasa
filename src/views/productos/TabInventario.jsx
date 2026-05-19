@@ -94,7 +94,7 @@ function SmartPagination({ page, total, onChange }) {
                         : <button key={p} onClick={() => onChange(p)}
                             className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
                                 p === page
-                                    ? 'bg-[#007AFF] text-white shadow-md shadow-blue-200 scale-110'
+                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
                                     : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
                             }`}>{p}</button>
                 )}
@@ -112,7 +112,7 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     return (
         <th onClick={() => onSort(field)}
             className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active ? 'text-[#007AFF]' : 'text-slate-400 hover:text-slate-600'
+                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
             } ${className}`}>
             <span className="flex items-center gap-1">
                 {label}
@@ -305,7 +305,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                            <Package size={15} className="text-[#007AFF]" />
+                            <Package size={15} className="text-[#0052CC]" />
                         </div>
                         <div className="text-left">
                             <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
@@ -503,7 +503,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
                             <thead className="sticky top-0 z-10">
-                                <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                     {selectedErp === null && (
                                         <SortTh field="sucursal" label="Sucursal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     )}
@@ -554,7 +554,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                 <td className="px-4 py-2.5">
                                                     <div className="flex items-center gap-2">
                                                         <ChevronDown size={12} strokeWidth={2.5}
-                                                            className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
+                                                            className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
                                                         <div className="min-w-0">
                                                             <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
                                                                 {group.descripcion || '—'}
@@ -691,7 +691,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 onClick={() => { setPageSize(size); setPage(1); }}
                                 className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
                                     pageSize === size
-                                        ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
                                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
                                 }`}>
                                 {size}

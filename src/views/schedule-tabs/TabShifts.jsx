@@ -130,7 +130,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-50 ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-[#007AFF]/60 hover:bg-white hover:text-[#007AFF] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-[#0052CC]/60 hover:bg-white hover:text-[#0052CC] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
                             <Copy size={12} strokeWidth={2.5} />
                         </button>
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300' : 'bg-white/80 text-amber-500 border-white hover:bg-white hover:text-amber-600'}`} title="Editar">
@@ -418,7 +418,7 @@ const TabShifts = ({ branches, shiftTab }) => {
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
                                 {editingGroup ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
@@ -487,7 +487,7 @@ const TabShifts = ({ branches, shiftTab }) => {
                         <button
                             type="submit"
                             disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end}
-                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.3)]' : 'bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)]'}`}
+                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.3)]' : 'bg-[#0052CC] hover:bg-[#003D99] shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)]'}`}
                         >
                             {isLoading
                                 ? <><Loader2 size={18} className="animate-spin" /> Procesando...</>
@@ -504,7 +504,7 @@ const TabShifts = ({ branches, shiftTab }) => {
 
                 {/* Buscador inline */}
                 <div className="px-3 md:px-4 pt-4 pb-3">
-                    <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/70 rounded-[2rem] px-4 h-12 shadow-[inset_0_1px_4px_rgba(255,255,255,0.8),0_4px_16px_rgba(0,0,0,0.04)] transition-all duration-300 focus-within:bg-white/80 focus-within:shadow-[inset_0_1px_4px_rgba(255,255,255,0.9),0_4px_20px_rgba(0,122,255,0.08)] focus-within:border-[#007AFF]/20">
+                    <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/70 rounded-[2rem] px-4 h-12 shadow-[inset_0_1px_4px_rgba(255,255,255,0.8),0_4px_16px_rgba(0,0,0,0.04)] transition-all duration-300 focus-within:bg-white/80 focus-within:shadow-[inset_0_1px_4px_rgba(255,255,255,0.9),0_4px_20px_rgba(0,82,204,0.08)] focus-within:border-[#0052CC]/20">
                         <Search size={15} className="text-slate-400 shrink-0" strokeWidth={2.5} />
                         <input
                             ref={searchInputRef}
@@ -526,8 +526,8 @@ const TabShifts = ({ branches, shiftTab }) => {
                     {isEmpty ? (
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
-                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${localSearch ? 'bg-[#007AFF]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${localSearch ? 'text-[#007AFF]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${localSearch ? 'bg-[#0052CC]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${localSearch ? 'text-[#0052CC]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-400'}`}>
                                     {localSearch ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>
                                 <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
@@ -537,7 +537,7 @@ const TabShifts = ({ branches, shiftTab }) => {
                                     {localSearch ? `No hay turnos que coincidan con "${localSearch}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
                                 </p>
                                 {localSearch && (
-                                    <button onClick={() => setLocalSearch('')} className="mt-4 px-4 py-2 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-[11px] font-black uppercase tracking-widest hover:bg-[#007AFF]/20 transition-colors active:scale-[0.97]">
+                                    <button onClick={() => setLocalSearch('')} className="mt-4 px-4 py-2 rounded-full bg-[#0052CC]/10 text-[#0052CC] text-[11px] font-black uppercase tracking-widest hover:bg-[#0052CC]/20 transition-colors active:scale-[0.97]">
                                         Limpiar búsqueda
                                     </button>
                                 )}

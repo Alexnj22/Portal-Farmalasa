@@ -24,7 +24,7 @@ const BranchTabGeneral = ({
     const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-white/80";
     
     // Altura optimizada h-[40px] para encajar perfecto
-    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus-within:ring-4 focus-within:ring-[#007AFF]/10 focus-within:border-[#007AFF]/50";
+    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50";
 
     return (
         // 🚨 COMPRESIÓN: space-y-4 en lugar de space-y-6
@@ -33,7 +33,7 @@ const BranchTabGeneral = ({
             {/* ISLA 1: IDENTIDAD */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-[0.8rem] border border-[#007AFF]/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-[0.8rem] border border-[#0052CC]/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Building2 size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Identidad de Sucursal</h4>

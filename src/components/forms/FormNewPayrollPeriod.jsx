@@ -22,8 +22,8 @@ const FormNewPayrollPeriod = ({ formData = {}, setFormData }) => {
     return (
         <div className="space-y-5">
             {name && (
-                <div className="bg-[#007AFF]/8 border border-[#007AFF]/15 rounded-2xl px-4 py-2.5">
-                    <p className="text-[11px] font-black text-[#007AFF]">{name}</p>
+                <div className="bg-[#0052CC]/8 border border-[#0052CC]/15 rounded-2xl px-4 py-2.5">
+                    <p className="text-[11px] font-black text-[#0052CC]">{name}</p>
                 </div>
             )}
             <div className="grid grid-cols-2 gap-4">

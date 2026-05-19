@@ -161,7 +161,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             type="range" min={1} max={3} step={0.01}
                             value={zoom}
                             onChange={e => setZoom(Number(e.target.value))}
-                            className="flex-1 accent-[#007AFF] cursor-pointer"
+                            className="flex-1 accent-[#0052CC] cursor-pointer"
                         />
                         <ZoomIn size={13} className="text-slate-400 shrink-0" />
                     </div>
@@ -217,7 +217,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     <button
                         onClick={handleConfirm}
                         disabled={confirming || !cropPx}
-                        className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-[#007AFF] hover:bg-[#006AEF] transition-colors disabled:opacity-50 flex items-center gap-2"
+                        className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-[#0052CC] hover:bg-[#003D99] transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                         {confirming
                             ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>

@@ -229,7 +229,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-white/50 border border-white/80 rounded-[1rem] h-[40px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50 placeholder:text-slate-400";
+    const inputClasses = "w-full bg-white/50 border border-white/80 rounded-[1rem] h-[40px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400";
     const labelClasses = "text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block";
 
     return (
@@ -263,7 +263,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             
             {isTransfer && !isPromotion && !isSupport && (
                 <div className="bg-blue-50/80 border border-blue-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
-                    <MapPin className="text-[#007AFF] shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                    <MapPin className="text-[#0052CC] shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-blue-600">Cambio de Sucursal</p>
                         <p className="text-[12px] text-blue-800/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
@@ -455,7 +455,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                                         placeholder="Ej: 3"
                                     />
                                     <span className="absolute right-4 text-slate-400 text-[11px] font-black uppercase tracking-widest">días</span>
@@ -478,7 +478,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <label className="text-[10px] font-black uppercase tracking-widest text-blue-600">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">¿Cambia de sucursal?</span>
-                                <input type="checkbox" className="accent-[#007AFF] w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
+                                <input type="checkbox" className="accent-[#0052CC] w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
                             </label>
                         </div>
                         <div className="h-[40px]">
@@ -530,7 +530,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
 
                             <div className="flex items-center justify-center pt-5 px-1">
-                                <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-full shadow-sm">
+                                <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-full shadow-sm">
                                     <ArrowRight size={16} strokeWidth={3} />
                                 </div>
                             </div>
@@ -538,8 +538,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="flex-1">
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
-                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#007AFF]/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#007AFF] uppercase text-center focus:!ring-[#007AFF]/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0052CC]/50" size={14} strokeWidth={2.5}/>
+                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#0052CC] uppercase text-center focus:!ring-[#0052CC]/20`} value={formData?.newCode || ''} onChange={(e) => {
                                         const upperVal = e.target.value.toUpperCase().trim();
                                         setFormData(prev => ({ ...prev, newCode: upperVal }));
                                         if (upperVal.length > 0) {
@@ -658,20 +658,20 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 
                     <div>
                         <label className={labelClasses}>Soporte Digital {isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}</label>
-                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300/60 bg-white/40 hover:bg-white/70 hover:border-[#007AFF]/50'}`}>
+                        <label className={`relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 group overflow-hidden ${formData?.file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300/60 bg-white/40 hover:bg-white/70 hover:border-[#0052CC]/50'}`}>
                             {formData?.file ? (
                                 <div className="flex flex-col items-center gap-1 text-emerald-600 animate-in zoom-in-95">
                                     <div className="p-2 bg-emerald-100 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
                                     <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-[#007AFF] transition-colors">
+                                <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-[#0052CC] transition-colors">
                                     <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
                                         <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>

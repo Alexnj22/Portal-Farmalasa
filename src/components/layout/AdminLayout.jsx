@@ -144,11 +144,11 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
     const isFloating = !isMobile && !isSidebarOpen && isHovering;
 
     return (
-        <div className="flex w-full min-h-[100dvh] bg-[#F2F2F7] lg:bg-transparent font-sans overflow-hidden relative">
+        <div className="flex w-full min-h-[100dvh] bg-[#E6F0FF] lg:bg-transparent font-sans overflow-hidden relative">
             
             {isMobile && isSidebarOpen && (
                 <div 
-                    className="fixed inset-0 bg-[#0A2A5E]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    className="fixed inset-0 bg-[#030B1C]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
@@ -160,19 +160,19 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
             >
 
                 <div className={`sidebar-ambient absolute inset-y-0 left-0 -z-10 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isFloating ? 'w-[19rem]' : 'w-full'}`}>
-                    <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
-                    <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
+                    <div className="absolute -inset-4 rounded-[2.6rem] bg-[#030B1C]/35 blur-2xl opacity-55" />
+                    <div className="absolute -inset-6 rounded-[3.2rem] bg-[#071528]/28 blur-3xl opacity-35" />
                     <div className="absolute -inset-8 rounded-[3.6rem] bg-black/20 blur-3xl opacity-25" />
                 </div>
 
-                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 ${isFloating ? 'w-[19rem] shadow-[25px_0_60px_rgba(0,0,0,0.5)] z-50 border-white/20' : 'w-full z-10 border-white/10'} rounded-[2.5rem] overflow-hidden flex flex-col border bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] group-hover/sidebar:shadow-[0_30px_90px_rgba(0,0,0,0.5)] group-hover/sidebar:border-white/20`}>
+                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 ${isFloating ? 'w-[19rem] shadow-[25px_0_60px_rgba(0,0,0,0.5)] z-50 border-white/20' : 'w-full z-10 border-white/10'} rounded-[2.5rem] overflow-hidden flex flex-col border bg-gradient-to-b from-[#030B1C] via-[#071528] to-[#010610] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] group-hover/sidebar:shadow-[0_30px_90px_rgba(0,0,0,0.5)] group-hover/sidebar:border-white/20`}>
 
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/18 via-white/6 to-transparent opacity-80" />
 
                     <div className={`p-6 pb-4 border-b border-white/10 relative ${isExpanded ? 'flex items-center justify-between' : 'flex items-center justify-center'}`}>
                         <div className="flex items-center gap-4">
-                            <div className="bg-gradient-to-tr from-[#1D7AFC] to-[#5856D6] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(29,122,252,0.35)] flex-shrink-0 relative group cursor-pointer hover:scale-105 hover:shadow-[0_14px_40px_rgba(29,122,252,0.5)] transition-all">
+                            <div className="bg-gradient-to-tr from-[#4D94FF] to-[#6929C4] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(77,148,255,0.35)] flex-shrink-0 relative group cursor-pointer hover:scale-105 hover:shadow-[0_14px_40px_rgba(77,148,255,0.5)] transition-all">
                                 <Building2 className="text-white" size={24} strokeWidth={1.5} />
                                 <Sparkles size={12} className="absolute -top-1 -right-1 text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -195,7 +195,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                     <nav ref={navRef} className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto scrollbar-hide relative">
                         <div className={`absolute left-4 right-4 rounded-[1rem] bg-white/10 border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.25)] backdrop-blur-md transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${pill.show ? 'opacity-100' : 'opacity-0'}`} style={{ top: pill.top, height: pill.height }}>
                             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#1D7AFC]/15 via-transparent to-transparent rounded-[1rem]" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/15 via-transparent to-transparent rounded-[1rem]" />
                         </div>
 
                         {menuItems.map((item) => {
@@ -206,7 +206,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             return (
                                 <button key={item.id} ref={(el) => { if (el) itemRefs.current.set(item.id, el); else itemRefs.current.delete(item.id); }} onClick={() => setView(item.id)} type="button" className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-[1rem] transition-all duration-300 group relative overflow-hidden text-left ${isActive ? 'text-white' : 'text-white/75 hover:text-white hover:translate-x-1 hover:bg-white/[0.08]'} active:scale-[0.99]`}>
                                     <div className="relative z-10 flex-shrink-0">
-                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-all duration-300 ${isActive ? 'text-[#1D7AFC] scale-110' : 'text-white/65 group-hover:text-white group-hover:scale-110'}`} />
+                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-all duration-300 ${isActive ? 'text-[#4D94FF] scale-110' : 'text-white/65 group-hover:text-white group-hover:scale-110'}`} />
                                         {!isExpanded && showItemAlert && (
                                             <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>
                                         )}
@@ -239,7 +239,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                 </div>
                                 <div className="h-4 w-px bg-white/10"></div>
                                 <button onClick={handleCopyPin} className="flex items-center gap-2 group/pin cursor-pointer outline-none relative hover:scale-105 transition-transform" title="Copiar PIN">
-                                    <ShieldCheck size={14} className="text-[#1D7AFC]" strokeWidth={2} />
+                                    <ShieldCheck size={14} className="text-[#4D94FF]" strokeWidth={2} />
                                     <div className="relative w-12 flex items-center justify-center">
                                         <span className={`absolute text-[13px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
                                         <Copy size={14} className={`absolute text-white/80 transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
@@ -254,7 +254,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                         {isExpanded ? (
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setView('profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5" title="Ver mi perfil" type="button">
-                                    <div className="h-10 w-10 rounded-[1rem] bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.20)] border border-white/10 flex items-center justify-center text-white/70 overflow-hidden flex-shrink-0 group-hover:border-[#1D7AFC]/50 group-hover:shadow-[0_0_15px_rgba(29,122,252,0.3)] transition-all duration-300">
+                                    <div className="h-10 w-10 rounded-[1rem] bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.20)] border border-white/10 flex items-center justify-center text-white/70 overflow-hidden flex-shrink-0 group-hover:border-[#4D94FF]/50 group-hover:shadow-[0_0_15px_rgba(77,148,255,0.3)] transition-all duration-300">
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Foto" /> : <User size={20} strokeWidth={1.5} />}
                                     </div>
                                     <div className="flex-1 overflow-hidden transition-all duration-300">
@@ -272,7 +272,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                     <ChevronRight size={18} strokeWidth={2} />
                                 </button>
 
-                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.97] flex items-center justify-center text-[#1D7AFC] group overflow-hidden" title="Ver / Copiar PIN">
+                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.97] flex items-center justify-center text-[#4D94FF] group overflow-hidden" title="Ver / Copiar PIN">
                                     {isCopied ? (
                                         <CheckCircle2 size={18} className="text-emerald-400" />
                                     ) : (
@@ -310,18 +310,18 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div data-surface="page-header" className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-[0.97] transition-transform">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#030B1C] hover:text-[#0052CC] active:scale-[0.97] transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
                             <div className="w-px h-6 bg-slate-300/50 rounded-full" /> 
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
-                                <p className="text-[8px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
+                                <p className="text-[8px] font-bold text-[#0052CC] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
                             </div>
                         </div>
 
                         <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg hover:-translate-y-0.5">
-                            <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Perfil" /> : <User size={18} className="text-slate-400" />}
                         </button>
                     </div>

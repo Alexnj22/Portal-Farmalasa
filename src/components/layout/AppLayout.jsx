@@ -385,14 +385,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             >
                 {/* Left accent for subitems */}
                 {indent && (
-                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? 'bg-[#1D7AFC]' : 'bg-white/20'}`} />
+                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? 'bg-[#4D94FF]' : 'bg-white/20'}`} />
                 )}
 
                 <div className="relative z-10 flex-shrink-0">
                     <Icon
                         size={indent ? 16 : 20}
                         strokeWidth={isActive ? 2 : 1.5}
-                        className={`transition-all duration-300 ${isActive ? 'text-[#1D7AFC] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
+                        className={`transition-all duration-300 ${isActive ? 'text-[#4D94FF] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
                     />
                     {!isExpanded && alert && (
                         <span className="absolute -top-1 -right-1 relative flex h-2 w-2">
@@ -479,7 +479,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
-                        className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild ? 'text-[#1D7AFC] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
+                        className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild ? 'text-[#4D94FF] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -522,12 +522,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     };
 
     return (
-        <div className="flex w-full min-h-[100dvh] bg-[#F2F2F7] lg:bg-transparent font-sans overflow-hidden relative">
+        <div className="flex w-full min-h-[100dvh] bg-[#E6F0FF] lg:bg-transparent font-sans overflow-hidden relative">
 
             {/* Mobile backdrop */}
             {isMobile && isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-[#0A2A5E]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                    className="fixed inset-0 bg-[#030B1C]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
@@ -544,19 +544,19 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             >
                 {/* ── Ambient glow layers ── */}
                 <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#1D7AFC]/12 blur-2xl" />
-                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#0A2A5E]/35 blur-3xl opacity-70" />
-                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#041636]/40 blur-[45px] opacity-50" />
+                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
+                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
+                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
                     <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
                 </div>
 
                 {/* ── Glass container ── */}
                 <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-[#081428]/96
+                    bg-[#030B1C]/96
                     backdrop-blur-3xl
                     border border-white/14
                     shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)]
-                    transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(29,122,252,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]">
+                    transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]">
 
                     {/* Specular top sheen */}
                     <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
@@ -578,12 +578,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
                                 {/* Logo glow */}
-                                <div className="absolute -inset-1.5 rounded-[1.5rem] bg-[#1D7AFC]/30 blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500" />
+                                <div className="absolute -inset-1.5 rounded-[1.5rem] bg-[#4D94FF]/30 blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500" />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                     bg-white/12 backdrop-blur-sm
                                     border border-white/20
                                     shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)]
-                                    transition-all duration-300 group-hover/logo:scale-105 group-hover/logo:shadow-[0_12px_32px_rgba(29,122,252,0.35),inset_0_1px_0_rgba(255,255,255,0.35)]
+                                    transition-all duration-300 group-hover/logo:scale-105 group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)]
                                     group-hover/logo:border-white/30
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                     {/* Inner sheen */}
@@ -627,8 +627,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             style={{ top: pill.top, height: pill.height }}
                         >
                             <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />
-                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-gradient-to-b from-[#5BA8FF] via-[#1D7AFC] to-[#1D7AFC]/50 shadow-[0_0_10px_rgba(29,122,252,0.8)]" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#1D7AFC]/10 via-transparent to-transparent rounded-[1rem]" />
+                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}
@@ -645,7 +645,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {hasPermission('kiosk_pin', 'can_view') && (
                                     <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-white/5 border border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12 transition-all">
                                         <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
-                                            <CheckCircle2 size={13} className="text-[#1D7AFC]" strokeWidth={2} />
+                                            <CheckCircle2 size={13} className="text-[#4D94FF]" strokeWidth={2} />
                                             <div className="relative w-12 flex items-center justify-center">
                                                 <span className={`absolute text-[12px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
                                                 <Copy size={13} className={`absolute text-white/80 transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
@@ -678,7 +678,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0
                                             border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)]
                                             bg-white/10 flex items-center justify-center text-white/70
-                                            group-hover/user:border-[#1D7AFC]/40 transition-all">
+                                            group-hover/user:border-[#4D94FF]/40 transition-all">
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
@@ -711,8 +711,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <button onClick={handleCopyPin}
                                         className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
                                             bg-white/6 border border-white/12
-                                            text-[#1D7AFC] hover:bg-white/12 hover:border-white/20
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(29,122,252,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
+                                            text-[#4D94FF] hover:bg-white/12 hover:border-white/20
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(77,148,255,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
                                             hover:scale-105 active:scale-[0.97] transition-all"
                                         title="PIN">
                                         {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
@@ -775,13 +775,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-[0.97] transition-transform">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#030B1C] hover:text-[#0052CC] active:scale-[0.97] transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
                             <div className="w-px h-6 bg-slate-300/50 rounded-full" />
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
-                                <p className="text-[8px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
+                                <p className="text-[8px] font-bold text-[#0052CC] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -794,7 +794,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <BellRing
                                         size={18}
                                         strokeWidth={2}
-                                        className={hasUrgentUnread ? 'text-red-500 animate-wiggle' : 'text-[#007AFF]'}
+                                        className={hasUrgentUnread ? 'text-red-500 animate-wiggle' : 'text-[#0052CC]'}
                                     />
                                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-sm z-10">
                                         {unreadCount > 9 ? '9+' : unreadCount}
@@ -803,7 +803,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </button>
                             )}
                             <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg">
-                                <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
                         </div>
@@ -817,7 +817,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">
                             {/* Ambient glow */}
                             <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none
-                                ${hasUrgentUnread ? 'bg-red-500/30' : 'bg-[#007AFF]/20'}`} />
+                                ${hasUrgentUnread ? 'bg-red-500/30' : 'bg-[#0052CC]/20'}`} />
                             {/* Extra pulse ring for urgent */}
                             {hasUrgentUnread && (
                                 <span className="absolute inset-0 rounded-[1.25rem] bg-red-400/25 animate-ping" style={{ animationDuration: '1.5s' }} />
@@ -831,18 +831,18 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     transition-all duration-200
                                     ${hasUrgentUnread
                                         ? 'bg-red-50/90 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                                        : 'bg-white/75 border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,122,255,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}
+                                        : 'bg-white/75 border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}
                             >
                                 {/* Inner sheen */}
                                 <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />
                                 {/* Color tint */}
                                 <div className={`absolute inset-0 rounded-[1.25rem] pointer-events-none
-                                    ${hasUrgentUnread ? 'bg-gradient-to-br from-red-500/10 via-transparent to-transparent' : 'bg-gradient-to-br from-[#007AFF]/8 via-transparent to-transparent'}`} />
+                                    ${hasUrgentUnread ? 'bg-gradient-to-br from-red-500/10 via-transparent to-transparent' : 'bg-gradient-to-br from-[#0052CC]/8 via-transparent to-transparent'}`} />
 
                                 <BellRing
                                     size={18}
                                     strokeWidth={2}
-                                    className={`relative z-10 transition-colors ${hasUrgentUnread ? 'text-red-500 animate-[wiggle_0.4s_ease-in-out_infinite]' : 'text-[#007AFF]'}`}
+                                    className={`relative z-10 transition-colors ${hasUrgentUnread ? 'text-red-500 animate-[wiggle_0.4s_ease-in-out_infinite]' : 'text-[#0052CC]'}`}
                                 />
                                 <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 text-white text-[9px] font-black rounded-full flex items-center justify-center z-20
                                     ${hasUrgentUnread
@@ -870,16 +870,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             const isActive = activeId === pathSeg;
                             const badge = getBadge(key);
                             return (
-                                <button key={key} onClick={() => navigate(path)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#007AFF]/10' : 'hover:bg-slate-100/60'}`}>
+                                <button key={key} onClick={() => navigate(path)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
                                     <div className="relative">
-                                        <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#007AFF]' : 'text-slate-400'} />
+                                        <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-400'} />
                                         {badge > 0 && (
                                             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                 {badge > 9 ? '9+' : badge}
                                             </span>
                                         )}
                                     </div>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#007AFF]' : 'text-slate-400'}`}>{label}</span>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-400'}`}>{label}</span>
                                 </button>
                             );
                         })}
@@ -909,11 +909,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 type="button"
                             >
                                 <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0
-                                    ${flyout.isActive ? 'bg-[#1D7AFC]/25' : 'bg-white/8 group-hover/fi:bg-[#1D7AFC]/20'}`}>
+                                    ${flyout.isActive ? 'bg-[#4D94FF]/25' : 'bg-white/8 group-hover/fi:bg-[#4D94FF]/20'}`}>
                                     <flyout.icon
                                         size={16}
                                         strokeWidth={flyout.isActive ? 2 : 1.5}
-                                        className={flyout.isActive ? 'text-[#5BA8FF]' : 'text-white/55 group-hover/fi:text-[#5BA8FF]'}
+                                        className={flyout.isActive ? 'text-[#7DB8FF]' : 'text-white/55 group-hover/fi:text-[#7DB8FF]'}
                                     />
                                 </div>
                                 <span className="text-[13px] font-semibold whitespace-nowrap text-white leading-none pr-1">{flyout.label}</span>
@@ -928,7 +928,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                                     </span>
                                 )}
-                                {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#1D7AFC] shadow-[0_0_6px_rgba(29,122,252,0.8)] flex-shrink-0" />}
+                                {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
                             </button>
                         </div>
                     ) : flyout.type === 'group' ? (
@@ -941,7 +941,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                 {/* Group label header */}
                                 <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
-                                    <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#5BA8FF] to-[#1D7AFC] shadow-[0_0_6px_rgba(29,122,252,0.6)]" />
+                                    <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.6)]" />
                                     <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.18em]">{flyout.label}</span>
                                 </div>
 
@@ -973,16 +973,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             >
                                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
                                                     ${m.isActive
-                                                        ? 'bg-[#1D7AFC]/25 shadow-[0_2px_8px_rgba(29,122,252,0.25)]'
+                                                        ? 'bg-[#4D94FF]/25 shadow-[0_2px_8px_rgba(77,148,255,0.25)]'
                                                         : 'bg-white/8 group-hover/fi:bg-white/14'}`}>
                                                     <MIcon
                                                         size={14}
                                                         strokeWidth={m.isActive ? 2 : 1.5}
-                                                        className={m.isActive ? 'text-[#5BA8FF]' : 'text-white/70 group-hover/fi:text-white'}
+                                                        className={m.isActive ? 'text-[#7DB8FF]' : 'text-white/70 group-hover/fi:text-white'}
                                                     />
                                                 </div>
                                                 <span className="text-[13px] font-medium whitespace-nowrap flex-1">{m.label}</span>
-                                                {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#1D7AFC] shadow-[0_0_6px_rgba(29,122,252,0.8)] flex-shrink-0" />}
+                                                {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
                                                 {m.badge > 0 && (
                                                     <span className="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                         {m.badge > 9 ? '9+' : m.badge}
@@ -1012,11 +1012,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 type="button"
                             >
                                 <div className="w-9 h-9 rounded-[0.75rem] overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
-                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#5BA8FF]" />}
+                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#7DB8FF]" />}
                                 </div>
                                 <div className="flex flex-col items-start pr-1">
-                                    <span className="text-[13px] font-semibold text-[#5BA8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
-                                    <span className="text-[11px] text-[#5BA8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
+                                    <span className="text-[13px] font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
+                                    <span className="text-[11px] text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
                                 </div>
                             </button>
                         </div>

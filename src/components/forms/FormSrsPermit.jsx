@@ -23,7 +23,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 <input 
                     type="text" 
                     placeholder="Ej: F025-2024"
-                    className="w-full px-4 py-3.5 rounded-[1rem] bg-white border border-slate-200 outline-none focus:border-[#007AFF] focus:ring-4 focus:ring-[#007AFF]/10 transition-all font-mono text-[14px] text-slate-800 font-semibold placeholder:text-slate-300" 
+                    className="w-full px-4 py-3.5 rounded-[1rem] bg-white border border-slate-200 outline-none focus:border-[#0052CC] focus:ring-4 focus:ring-[#0052CC]/10 transition-all font-mono text-[14px] text-slate-800 font-semibold placeholder:text-slate-300" 
                     value={legalData.srsPermit || ""} 
                     onChange={(e) => updateLegalField('srsPermit', e.target.value)} 
                 />
@@ -33,7 +33,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">
                     Documento de Permiso Escaneado (PDF/IMG)
                 </label>
-                <div className="flex items-center gap-3 cursor-pointer relative rounded-[1rem] border border-slate-200 bg-white px-4 py-3.5 hover:bg-slate-50 hover:border-[#007AFF]/30 transition-colors group">
+                <div className="flex items-center gap-3 cursor-pointer relative rounded-[1rem] border border-slate-200 bg-white px-4 py-3.5 hover:bg-slate-50 hover:border-[#0052CC]/30 transition-colors group">
                     <div className="p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors text-emerald-600">
                         <UploadCloud size={18} strokeWidth={2} />
                     </div>

@@ -83,7 +83,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             {/* 1. Nombre del Documento */}
             <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 ml-1">
-                    <FilePlus size={12} className="text-[#007AFF]"/> Nombre del Documento
+                    <FilePlus size={12} className="text-[#0052CC]"/> Nombre del Documento
                 </label>
                 <div className="relative">
                     <input 
@@ -91,7 +91,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         value={data.title}
                         onChange={(e) => updateField('title', e.target.value)}
                         placeholder="Ej. Permiso de Rótulos Luminosos"
-                        className="w-full bg-white/60 backdrop-blur-md border border-white/80 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF] focus:bg-white outline-none transition-all shadow-sm placeholder:text-slate-400/70"
+                        className="w-full bg-white/60 backdrop-blur-md border border-white/80 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC] focus:bg-white outline-none transition-all shadow-sm placeholder:text-slate-400/70"
                     />
                 </div>
             </div>
@@ -112,7 +112,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             {/* 3. Zona de Carga (PDF / Imagen) */}
             <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 ml-1">
-                    <UploadCloud size={12} className="text-[#007AFF]"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
+                    <UploadCloud size={12} className="text-[#0052CC]"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
                 </label>
                 <div className="relative">
                     <input
@@ -129,7 +129,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             ? 'border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50' 
                             : isEditing && !data.url
                                 ? 'border-red-300 bg-red-50/30 hover:bg-red-50 hover:border-red-400' // Alerta roja si falta subir en edición
-                                : 'border-slate-300 bg-white/60 backdrop-blur-md hover:bg-white hover:border-[#007AFF]/50'
+                                : 'border-slate-300 bg-white/60 backdrop-blur-md hover:bg-white hover:border-[#0052CC]/50'
                         }`}
                     >
                         {data.file ? (
@@ -165,7 +165,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         onClick={() => updateField('hasIssueDate', !data.hasIssueDate)}
                     >
                         <div>
-                            <p className="text-[13px] font-black text-slate-700 group-hover:text-[#007AFF] transition-colors">¿Tiene fecha de expedición?</p>
+                            <p className="text-[13px] font-black text-slate-700 group-hover:text-[#0052CC] transition-colors">¿Tiene fecha de expedición?</p>
                             <p className="text-[10px] font-bold text-slate-400 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-emerald-500' : 'bg-slate-200'}`}>

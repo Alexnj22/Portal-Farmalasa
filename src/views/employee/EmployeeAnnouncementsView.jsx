@@ -29,7 +29,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const meta = ann.metadata || null;
 
     const badgeEl = ann.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-[#007AFF] bg-[#007AFF]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#007AFF]/20"><Globe size={11} strokeWidth={2} /> Global</span>
+        ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={11} strokeWidth={2} /> Global</span>
         : ann.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-emerald-200/50"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={11} strokeWidth={2} /> Personal</span>;
@@ -49,7 +49,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         >
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-slate-300' : isUrgent ? 'bg-red-500' : 'bg-[#007AFF]'}`} />
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-slate-300' : isUrgent ? 'bg-red-500' : 'bg-[#0052CC]'}`} />
                 {isUrgent && (
                     <span className={`flex items-center gap-1 text-white bg-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
                         <Flame size={11} strokeWidth={2.5} /> Urgente
@@ -312,7 +312,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
     })();
 
     const badgeEl = current.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-[#007AFF] bg-[#007AFF]/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[#007AFF]/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
+        ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-200/60"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : <span className="flex items-center gap-1.5 text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-orange-200/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
@@ -335,7 +335,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                                 fontVariantNumeric: 'tabular-nums',
                                 background: isUrgent
                                     ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                                    : 'linear-gradient(135deg, #007AFF, #5856D6)',
+                                    : 'linear-gradient(135deg, #0052CC, #6929C4)',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                             }}
@@ -357,7 +357,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                             return (
                                 <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                                     done ? 'w-2.5 h-2.5 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
-                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#007AFF] shadow-[0_0_8px_rgba(0,122,255,0.5)]') :
+                                    cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#0052CC] shadow-[0_0_8px_rgba(0,82,204,0.5)]') :
                                            'w-2.5 h-2.5 bg-slate-200'
                                 }`} />
                             );
@@ -534,7 +534,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                                 className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
                                     isUrgent
                                         ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_8px_28px_rgba(239,68,68,0.38)] hover:shadow-[0_14px_36px_rgba(239,68,68,0.52)]'
-                                        : 'bg-gradient-to-r from-[#007AFF] to-[#5856D6] text-white shadow-[0_8px_28px_rgba(0,122,255,0.35)] hover:shadow-[0_14px_36px_rgba(0,122,255,0.50)]'
+                                        : 'bg-gradient-to-r from-[#0052CC] to-[#6929C4] text-white shadow-[0_8px_28px_rgba(0,82,204,0.35)] hover:shadow-[0_14px_36px_rgba(0,82,204,0.50)]'
                                 }`}
                             >
                                 <CheckCircle2 size={19} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform duration-200"/>
@@ -686,7 +686,7 @@ const EmployeeAnnouncementsView = () => {
         <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
-                <Search size={16} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <Search size={16} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input
                     ref={searchInputRef}
                     type="text"
@@ -700,7 +700,7 @@ const EmployeeAnnouncementsView = () => {
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#007AFF] ml-1">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] ml-1">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
             </div>
@@ -751,7 +751,7 @@ const EmployeeAnnouncementsView = () => {
 
                 <div className="w-px h-6 bg-slate-200/60 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                    className={`relative w-9 h-9 md:w-10 md:h-10 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
+                    className={`relative w-9 h-9 md:w-10 md:h-10 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>

@@ -210,7 +210,7 @@ const BranchChips = ({
                   moreOpen
                     ? "text-slate-900 bg-white/55 shadow-[0_14px_30px_rgba(0,0,0,0.10)]"
                     : "text-slate-500 hover:text-slate-700 hover:bg-white/35 hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
-                  isHiddenSelected ? "ring-2 ring-[#007AFF]/20" : "",
+                  isHiddenSelected ? "ring-2 ring-[#0052CC]/20" : "",
                 ].join(" ")}
               >
                 <span className="truncate">Ver más</span>
@@ -236,7 +236,7 @@ const BranchChips = ({
                             "w-full px-4 py-3 rounded-[1rem] text-left flex items-center justify-between",
                             "transition-all duration-200 transform-gpu",
                             active 
-                                ? "bg-[#007AFF]/10 text-[#007AFF]" 
+                                ? "bg-[#0052CC]/10 text-[#0052CC]" 
                                 : "hover:bg-slate-50 hover:translate-x-1 text-slate-600",
                           ].join(" ")}
                         >
@@ -252,7 +252,7 @@ const BranchChips = ({
                           </div>
 
                           {active && (
-                            <Check size={16} className="text-[#007AFF] flex-shrink-0" strokeWidth={2.5} />
+                            <Check size={16} className="text-[#0052CC] flex-shrink-0" strokeWidth={2.5} />
                           )}
                         </button>
                       );

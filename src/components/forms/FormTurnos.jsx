@@ -189,7 +189,7 @@ const FormTurnos = ({ branches }) => {
         const isBusy = actionLoading === shift.id;
 
         return (
-            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-[#007AFF] shadow-[0_8px_30px_rgba(0,122,255,0.1)] ring-2 ring-[#007AFF]/10' : 'border-slate-100'} ${isBeingDeleted ? 'bg-red-50' : 'hover:border-[#007AFF]/30 hover:shadow-md'}`}>
+            <div className={`bg-white rounded-[1.25rem] border shadow-sm transition-all duration-300 relative overflow-hidden group ${isCurrentlyEditing ? 'border-[#0052CC] shadow-[0_8px_30px_rgba(0,82,204,0.1)] ring-2 ring-[#0052CC]/10' : 'border-slate-100'} ${isBeingDeleted ? 'bg-red-50' : 'hover:border-[#0052CC]/30 hover:shadow-md'}`}>
                 
                 {isArchived && <div className="absolute top-0 right-0 w-2 h-full bg-slate-300"></div>}
                 
@@ -215,7 +215,7 @@ const FormTurnos = ({ branches }) => {
                                 <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
                             ) : (
                                 <>
-                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-[#007AFF] hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-[#0052CC] hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
                                     <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
                                 </>
                             )}
@@ -265,7 +265,7 @@ const FormTurnos = ({ branches }) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sucursal Asignada</label>
                         <select 
                             required 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#007AFF] bg-white shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] bg-white shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors" 
                             value={currentForm.branchId} 
                             onChange={e => setCurrentForm({ ...currentForm, branchId: e.target.value })}
                         >
@@ -280,7 +280,7 @@ const FormTurnos = ({ branches }) => {
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#007AFF] shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 placeholder:text-slate-300" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 placeholder:text-slate-300" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />
@@ -306,7 +306,7 @@ const FormTurnos = ({ branches }) => {
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-[#007AFF] text-white border-[#005CE6] hover:bg-[#0066CC] hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-[#0052CC] text-white border-[#003D99] hover:bg-[#003D99] hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>
@@ -323,13 +323,13 @@ const FormTurnos = ({ branches }) => {
             <div className="flex flex-col h-full bg-slate-50 rounded-[2rem] border border-slate-100 p-6 overflow-hidden">
                 <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-slate-100/60">
                     <h4 className="text-[12px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                        <ListTodo size={16} className="text-[#007AFF]"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
+                        <ListTodo size={16} className="text-[#0052CC]"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
                     </h4>
                     
                     {/* FILTROS DE SUCURSAL Y ESTADO (Minificados) */}
                     <div className="flex items-center gap-2">
                         <select 
-                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#007AFF]/20 transition-colors"
+                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#0052CC]/20 transition-colors"
                             value={listBranchFilter}
                             onChange={(e) => setListBranchFilter(e.target.value)}
                         >
@@ -338,7 +338,7 @@ const FormTurnos = ({ branches }) => {
                         </select>
                         
                         <select 
-                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#007AFF]/20 transition-colors"
+                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#0052CC]/20 transition-colors"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
@@ -352,7 +352,7 @@ const FormTurnos = ({ branches }) => {
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-hide pb-8 relative">
                     {allShifts === null ? (
                          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 opacity-60">
-                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-[#007AFF]" />
+                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-[#0052CC]" />
                              <p className="text-[10px] font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
                          </div>
                     ) : visibleShifts.length > 0 ? (

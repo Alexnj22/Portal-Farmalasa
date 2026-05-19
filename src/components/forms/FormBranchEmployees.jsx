@@ -114,8 +114,8 @@ const hasInjections = legal.injections === true;
             {/* 👑 SECCIÓN 1: PERSONAL DE PLANTA */}
             <div style={gpuLockStyle}>
                 <div className="flex items-center gap-2 mb-5 px-1">
-                    <div className="p-1.5 bg-[#007AFF]/10 rounded-lg border border-[#007AFF]/20">
-                        <Building2 size={16} className="text-[#007AFF]" strokeWidth={2.5} />
+                    <div className="p-1.5 bg-[#0052CC]/10 rounded-lg border border-[#0052CC]/20">
+                        <Building2 size={16} className="text-[#0052CC]" strokeWidth={2.5} />
                     </div>
                     <h3 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Personal de Planta</h3>
                 </div>
@@ -162,12 +162,12 @@ const hasInjections = legal.injections === true;
                                 <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-white/60 p-4 flex flex-col justify-center translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
                                     <div className="flex justify-between items-center mb-2 border-b border-slate-200/60 pb-2">
                                         <span className="text-slate-800 font-black text-[12px] truncate">{emp.name}</span>
-                                        <div className="w-6 h-6 rounded-full bg-[#007AFF] flex items-center justify-center shadow-md">
+                                        <div className="w-6 h-6 rounded-full bg-[#0052CC] flex items-center justify-center shadow-md">
                                             <ArrowUpRight size={12} className="text-white shrink-0" strokeWidth={3} />
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-2 text-slate-600"><CalendarDays size={12} className="text-[#007AFF]"/><span className="text-[9px] font-bold tracking-wider uppercase">Ingreso: {tiempoEmpresa}</span></div>
+                                        <div className="flex items-center gap-2 text-slate-600"><CalendarDays size={12} className="text-[#0052CC]"/><span className="text-[9px] font-bold tracking-wider uppercase">Ingreso: {tiempoEmpresa}</span></div>
                                         <div className="flex items-center gap-2 text-slate-600"><MapPin size={12} className="text-emerald-500"/><span className="text-[9px] font-bold tracking-wider uppercase">En sucursal: {tiempoSucursal}</span></div>
                                     </div>
                                 </div>
@@ -204,12 +204,12 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-slate-50/50 backdrop-blur-sm border border-white/50 shadow-sm hover:bg-white hover:border-[#007AFF]/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-slate-50/50 backdrop-blur-sm border border-white/50 shadow-sm hover:bg-white hover:border-[#0052CC]/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[10px] border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-slate-100 border-slate-200 p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-[11px] font-bold text-slate-600 leading-tight group-hover:text-[#007AFF] transition-colors whitespace-normal truncate">{emp.name}</h4>
+                                    <h4 className="text-[11px] font-bold text-slate-600 leading-tight group-hover:text-[#0052CC] transition-colors whitespace-normal truncate">{emp.name}</h4>
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
                             </div>

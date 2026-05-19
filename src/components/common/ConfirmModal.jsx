@@ -62,7 +62,7 @@ const ConfirmModal = ({
                 
                 {/* Glow de fondo */}
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 ${
-                    isDestructive ? 'bg-red-500' : 'bg-[#007AFF]'
+                    isDestructive ? 'bg-red-500' : 'bg-[#0052CC]'
                 }`}></div>
 
                 <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-10">
@@ -71,7 +71,7 @@ const ConfirmModal = ({
                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border backdrop-blur-md transition-all duration-300 ${
                         isDark ? 'bg-white/5 border-white/10' : 'bg-white/60 border-white/80 shadow-sm'
                     } ${
-                        isDestructive ? 'text-red-500' : 'text-[#007AFF]'
+                        isDestructive ? 'text-red-500' : 'text-[#0052CC]'
                     }`}>
                         {isProcessing ? (
                             <Loader2 size={28} strokeWidth={2.5} className="animate-spin" />
@@ -113,11 +113,11 @@ const ConfirmModal = ({
                     <button 
                         onClick={onConfirm}
                         disabled={isProcessing}
-                        // 🚨 FIX: flex-wrap por si el texto es muy largo, y sintaxis arreglada en bg-[#007AFF]
+                        // 🚨 FIX: flex-wrap por si el texto es muy largo, y sintaxis arreglada en bg-[#0052CC]
                         className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 flex-1 flex flex-wrap items-center justify-center gap-2 border-transparent shadow-sm ${
                             isProcessing 
-                                ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-red-500' : 'bg-[#007AFF]')
-                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#007AFF] hover:bg-[#0066CC]')
+                                ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-red-500' : 'bg-[#0052CC]')
+                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#0052CC] hover:bg-[#003D99]')
                         }`}
                     >
                         {isProcessing ? (

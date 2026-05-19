@@ -78,7 +78,7 @@ export default function SrsBuscadorWidget({
             <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     {loading
-                        ? <Loader2 size={14} className="text-[#007AFF] animate-spin" />
+                        ? <Loader2 size={14} className="text-[#0052CC] animate-spin" />
                         : <Search size={14} className="text-slate-400" />
                     }
                 </div>
@@ -87,7 +87,7 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
@@ -167,7 +167,7 @@ function SrsResultCard({ product: p, onSelect }) {
 
     return (
         <div className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
-            onSelect ? 'cursor-pointer hover:border-[#007AFF]/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
+            onSelect ? 'cursor-pointer hover:border-[#0052CC]/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
         }`}
             onClick={onSelect || undefined}
         >

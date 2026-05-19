@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit, isEditingThis, canEdit = false }) => {
   const renderBadge = () => {
     switch (ann.badgeType) {
-      case 'GLOBAL': return <span className="flex items-center gap-1.5 text-[#007AFF] bg-[#007AFF]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#007AFF]/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'GLOBAL': return <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'BRANCH': return <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-emerald-200/50"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'ROLE': return <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
@@ -112,13 +112,13 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       <div className="mt-2 space-y-2">
         <div className={`flex justify-between items-end text-[10px] font-bold uppercase tracking-widest ${ann.priority === 'URGENT' && !isScheduled ? 'text-red-400' : 'text-slate-500'}`}>
           <span>{isScheduled ? 'Progreso Bloqueado' : 'Progreso de Lectura'}</span>
-          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-red-500' : ann.readPercentage === 100 ? 'text-emerald-500' : isScheduled ? 'text-indigo-400' : 'text-[#007AFF]'}>
+          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-red-500' : ann.readPercentage === 100 ? 'text-emerald-500' : isScheduled ? 'text-indigo-400' : 'text-[#0052CC]'}>
             {ann.readPercentage}%
           </span>
         </div>
         <div className={`w-full rounded-full h-2.5 overflow-hidden border ${ann.priority === 'URGENT' && !isScheduled ? 'bg-red-50/50 border-red-200/50' : 'bg-white/50 border-white/60'}`}>
           <div
-            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-red-500' : ann.readPercentage === 100 ? 'bg-emerald-500' : isScheduled ? 'bg-indigo-300' : 'bg-[#007AFF]'}`}
+            className={`h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'bg-red-500' : ann.readPercentage === 100 ? 'bg-emerald-500' : isScheduled ? 'bg-indigo-300' : 'bg-[#0052CC]'}`}
             style={{ width: `${ann.readPercentage}%` }}
           ></div>
         </div>
@@ -134,7 +134,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
               ? 'text-emerald-600 border-emerald-200'
               : isScheduled
                 ? 'text-indigo-400 border-indigo-100'
-                : 'text-[#007AFF] border-white'
+                : 'text-[#0052CC] border-white'
             }`}
         >
           {isScheduled ? <CalendarClock size={16} strokeWidth={2.5} /> : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 ? (
@@ -543,10 +543,10 @@ const AnnouncementsView = ({ openModal }) => {
   const renderFiltersContent = () => (
     <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
         {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => setIsSearchMode(false)} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => setIsSearchMode(false)} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
@@ -571,7 +571,7 @@ const AnnouncementsView = ({ openModal }) => {
 
         </div>
         <div className="w-px h-6 md:h-8 bg-slate-200/60 mx-1 md:mx-2 shrink-0"></div>
-        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
+        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
           <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
           {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
         </button>
@@ -593,7 +593,7 @@ const AnnouncementsView = ({ openModal }) => {
             <div className={`bg-white/40 backdrop-blur-[30px] backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${editingAnnId ? 'bg-white/60 border border-amber-300/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]' : 'border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'}`}>              
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-amber-500' : 'bg-[#007AFF]'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingAnnId ? 'bg-amber-500' : 'bg-[#0052CC]'}`}>
                     {editingAnnId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                   </div>
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
@@ -609,19 +609,19 @@ const AnnouncementsView = ({ openModal }) => {
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
                   <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-white/80 border-[#007AFF]/30 text-[#007AFF] shadow-[0_2px_10px_rgba(0,122,255,0.2)]' : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
+                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-white/80 border-[#0052CC]/30 text-[#0052CC] shadow-[0_2px_10px_rgba(0,82,204,0.2)]' : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
                     <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-red-50 border-red-300 text-red-600 shadow-[0_2px_10px_rgba(239,68,68,0.2)]' : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
-                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
+                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
-                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 focus:shadow-[0_0_0_4px_rgba(0,122,255,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div className="pt-3 border-t border-white/50">
@@ -637,18 +637,18 @@ const AnnouncementsView = ({ openModal }) => {
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
                           return (
-                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-[#007AFF] border-white shadow-sm scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`}>{type.label}</button>
+                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-[#0052CC] border-white shadow-sm scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`}>{type.label}</button>
                           );
                         })}
                       </div>
-                      {targetType === 'BRANCH' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Sucursal --</option>{(branches || []).map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}</select>)}
-                      {targetType === 'ROLE' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#007AFF]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Cargo --</option>{uniqueRoles.map((r) => (<option key={r} value={r}>{r}</option>))}</select>)}
+                      {targetType === 'BRANCH' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Sucursal --</option>{(branches || []).map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}</select>)}
+                      {targetType === 'ROLE' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Cargo --</option>{uniqueRoles.map((r) => (<option key={r} value={r}>{r}</option>))}</select>)}
                   {targetType === 'EMPLOYEE' && (
                     <div className="space-y-3">
                       {selectedEmployees.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 p-3 bg-white/60 rounded-[1rem] border border-white/80 shadow-sm">
                           {selectedEmployees.map((id) => (
-                            <div key={id} className="flex items-center gap-1.5 bg-[#007AFF]/10 text-[#007AFF] px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-[#007AFF]/20 hover:scale-105">
+                            <div key={id} className="flex items-center gap-1.5 bg-[#0052CC]/10 text-[#0052CC] px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-[#0052CC]/20 hover:scale-105">
                               <span>{employeesById.get(String(id))?.name || 'Empleado'}</span>
                               <button type="button" onClick={() => removeEmployee(id)} disabled={isSubmitting} className="hover:text-red-500"><X size={12} strokeWidth={2.5} /></button>
                             </div>
@@ -660,7 +660,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-white/60 focus:bg-white rounded-2xl text-[13px] outline-none font-bold text-slate-700" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-20 w-full mt-2 bg-white/90 backdrop-blur-xl border border-white/90 rounded-[1.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.12)] max-h-60 overflow-y-auto p-1">
-                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-[#007AFF]/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-slate-700">{emp.name}</p><Plus size={14} className="text-[#007AFF]" /></button>)) : <div className="p-3 text-[12px] text-slate-400 font-bold text-center">Sin resultados.</div>}
+                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-[#0052CC]/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-slate-700">{emp.name}</p><Plus size={14} className="text-[#0052CC]" /></button>)) : <div className="p-3 text-[12px] text-slate-400 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
                       </div>
@@ -700,21 +700,21 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] ${editingAnnId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}>
+                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] ${editingAnnId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-[#0052CC] hover:bg-[#003D99]'}`}>
                   {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
                 </button>
               </form>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-screen lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
+          <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto">
             <div className="space-y-5 flex-1 pt-4 px-3 md:px-4">
               {paginatedList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                   <div className="relative group flex flex-col items-center text-center">
-                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-[#007AFF]' : listTab === 'ACTIVE' ? 'bg-emerald-500' : listTab === 'SCHEDULED' ? 'bg-indigo-500' : 'bg-slate-400'}`}></div>
+                    <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-[#0052CC]' : listTab === 'ACTIVE' ? 'bg-emerald-500' : listTab === 'SCHEDULED' ? 'bg-indigo-500' : 'bg-slate-400'}`}></div>
                     
-                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-[#007AFF]' : listTab === 'ACTIVE' ? 'text-emerald-500' : listTab === 'SCHEDULED' ? 'text-indigo-500' : 'text-slate-400'}`}>
+                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-[#0052CC]' : listTab === 'ACTIVE' ? 'text-emerald-500' : listTab === 'SCHEDULED' ? 'text-indigo-500' : 'text-slate-400'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     
@@ -739,8 +739,8 @@ const AnnouncementsView = ({ openModal }) => {
               <div className="flex items-center justify-between pt-6 mt-2 border-t border-slate-200/50 shrink-0 px-3 md:px-4">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest bg-white/60 backdrop-blur-sm shadow-sm px-3 py-1.5 rounded-lg border border-white/80">Pág {currentPage} de {totalPages}</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#0052CC] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#0052CC] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
                 </div>
               </div>
             )}

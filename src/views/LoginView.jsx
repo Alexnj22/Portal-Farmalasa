@@ -306,7 +306,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 placeholder="Nueva contraseña (mín. 6 caracteres)"
                                 value={newPassword}
                                 onChange={e => { setNewPassword(e.target.value); setChangePassError(''); }}
-                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                             />
                         </div>
                         <div className="relative flex items-center">
@@ -316,7 +316,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 placeholder="Confirmar contraseña"
                                 value={confirmPassword}
                                 onChange={e => { setConfirmPassword(e.target.value); setChangePassError(''); }}
-                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                                className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                             />
                         </div>
                     </form>
@@ -330,7 +330,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         form="change-pwd-form"
                         onClick={handleChangePassword}
                         disabled={changePassLoading || !newPassword || !confirmPassword}
-                        className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                        className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
                     >
                         {changePassLoading ? <Loader2 size={18} className="animate-spin" /> : 'Guardar contraseña'}
                     </button>
@@ -347,7 +347,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     {/* Columna izquierda: Terminal Kiosco (40%) */}
                     <div
-                        className="w-[40%] bg-gradient-to-b from-[#0A2A5E] to-[#041636]
+                        className="w-[40%] bg-gradient-to-b from-[#030B1C] to-[#010610]
                             flex flex-col items-center justify-center gap-5 p-6 cursor-pointer
                             active:brightness-90 transition-all select-none"
                         onClick={() => setView('timeclock')}
@@ -389,14 +389,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 onClick={() => { handleStopScannerBtn(); setLoginMode('code'); setError(''); }}
                                 className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest
                                     rounded-[1.5rem] transition-all duration-300
-                                    ${loginMode === 'code' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    ${loginMode === 'code' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                                 Carné
                             </button>
                             <button type="button"
                                 onClick={() => { handleStopScannerBtn(); setLoginMode('username'); setError(''); }}
                                 className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest
                                     rounded-[1.5rem] transition-all duration-300
-                                    ${loginMode === 'username' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    ${loginMode === 'username' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                                 Usuario
                             </button>
                         </div>
@@ -410,7 +410,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     <div className="relative group z-20 flex items-center gap-2">
                                         <div className="relative flex-1 flex items-center">
                                             <div className="absolute left-0 w-12 flex items-center justify-center
-                                                pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] z-30">
+                                                pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] z-30">
                                                 <ScanBarcode size={20} strokeWidth={2} />
                                             </div>
                                             <input
@@ -424,7 +424,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                                 className="w-full pl-12 pr-4 py-3.5 bg-white/30 hover:bg-white/50
                                                     backdrop-blur-md border border-white/60 rounded-[1.5rem]
                                                     text-slate-800 placeholder-slate-400 focus:outline-none
-                                                    focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15
+                                                    focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15
                                                     transition-all text-base tracking-[0.4em] font-black uppercase
                                                     [-webkit-text-security:disc]"
                                             />
@@ -445,7 +445,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                                 rounded-[1.25rem] border backdrop-blur-md transition-all active:scale-[0.97]
                                                 ${scannerActive
                                                     ? 'bg-red-50/80 border-red-200/60 text-red-400'
-                                                    : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF]'}`}>
+                                                    : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#0052CC]'}`}>
                                             {scannerActive ? <CameraOff size={18} strokeWidth={2} /> : <Camera size={18} strokeWidth={2} />}
                                         </button>
                                     </div>
@@ -455,11 +455,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             <div className="relative w-full h-[160px] rounded-[1.5rem]
                                                 overflow-hidden bg-black border border-black/20">
                                                 <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
-                                                <div style={{ position: 'absolute', left: '5%', right: '5%', height: '2px', background: 'rgba(0,122,255,0.9)', animation: 'scan 2s ease-in-out infinite', zIndex: 10, boxShadow: '0 0 10px rgba(0,122,255,0.7)' }} />
-                                                <div style={{position:'absolute',top:10,left:10,width:18,height:18,borderTop:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'4px 0 0 0',zIndex:11}} />
-                                                <div style={{position:'absolute',top:10,right:10,width:18,height:18,borderTop:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 4px 0 0',zIndex:11}} />
-                                                <div style={{position:'absolute',bottom:10,left:10,width:18,height:18,borderBottom:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'0 0 0 4px',zIndex:11}} />
-                                                <div style={{position:'absolute',bottom:10,right:10,width:18,height:18,borderBottom:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 0 4px 0',zIndex:11}} />
+                                                <div style={{ position: 'absolute', left: '5%', right: '5%', height: '2px', background: 'rgba(0,82,204,0.9)', animation: 'scan 2s ease-in-out infinite', zIndex: 10, boxShadow: '0 0 10px rgba(0,82,204,0.7)' }} />
+                                                <div style={{position:'absolute',top:10,left:10,width:18,height:18,borderTop:'3px solid #0052CC',borderLeft:'3px solid #0052CC',borderRadius:'4px 0 0 0',zIndex:11}} />
+                                                <div style={{position:'absolute',top:10,right:10,width:18,height:18,borderTop:'3px solid #0052CC',borderRight:'3px solid #0052CC',borderRadius:'0 4px 0 0',zIndex:11}} />
+                                                <div style={{position:'absolute',bottom:10,left:10,width:18,height:18,borderBottom:'3px solid #0052CC',borderLeft:'3px solid #0052CC',borderRadius:'0 0 0 4px',zIndex:11}} />
+                                                <div style={{position:'absolute',bottom:10,right:10,width:18,height:18,borderBottom:'3px solid #0052CC',borderRight:'3px solid #0052CC',borderRadius:'0 0 4px 0',zIndex:11}} />
                                                 <video ref={videoRef} className="w-full h-full object-cover"
                                                     autoPlay playsInline muted />
                                             </div>
@@ -470,10 +470,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <div className={`p-2.5 rounded-2xl text-center animate-in zoom-in-95 duration-200
                                             ${scanFeedback.status === 'error' ? 'bg-red-50 border border-red-200' :
                                               scanFeedback.status === 'success' ? 'bg-emerald-50 border border-emerald-200' :
-                                              'bg-[#007AFF]/5 border border-[#007AFF]/20'}`}>
+                                              'bg-[#0052CC]/5 border border-[#0052CC]/20'}`}>
                                             <p className={`text-[11px] font-bold flex items-center justify-center gap-1
                                                 ${scanFeedback.status === 'error' ? 'text-red-600' :
-                                                  scanFeedback.status === 'success' ? 'text-emerald-600' : 'text-[#007AFF]'}`}>
+                                                  scanFeedback.status === 'success' ? 'text-emerald-600' : 'text-[#0052CC]'}`}>
                                                 {scanFeedback.status === 'reading' && <Loader2 size={11} className="animate-spin" />}
                                                 {scanFeedback.message}
                                             </p>
@@ -484,7 +484,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                                     <div className="relative group flex items-center">
                                         <div className="absolute left-0 w-12 flex items-center justify-center
-                                            pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] z-10">
+                                            pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] z-10">
                                             <UserIcon size={18} strokeWidth={2} />
                                         </div>
                                         <input
@@ -497,13 +497,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             className="w-full pl-12 pr-4 py-3.5 bg-white/30 hover:bg-white/50
                                                 backdrop-blur-md border border-white/60 rounded-[1.5rem]
                                                 text-slate-800 placeholder-slate-400 focus:outline-none
-                                                focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15
+                                                focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15
                                                 transition-all text-[13px] font-bold"
                                         />
                                     </div>
                                     <div className="relative group flex items-center">
                                         <div className="absolute left-0 w-12 flex items-center justify-center
-                                            pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] z-10">
+                                            pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] z-10">
                                             <Lock size={18} strokeWidth={2} />
                                         </div>
                                         <input
@@ -516,7 +516,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             className="w-full pl-12 pr-4 py-3.5 bg-white/30 hover:bg-white/50
                                                 backdrop-blur-md border border-white/60 rounded-[1.5rem]
                                                 text-slate-800 placeholder-slate-400 focus:outline-none
-                                                focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15
+                                                focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15
                                                 transition-all text-[13px] font-bold"
                                         />
                                     </div>
@@ -532,7 +532,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             )}
 
                             <button type="submit" disabled={isLoading}
-                                className="w-full h-[48px] bg-gradient-to-b from-[#007AFF] to-[#005CE6]
+                                className="w-full h-[48px] bg-gradient-to-b from-[#0052CC] to-[#003D99]
                                     text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest
                                     shadow-lg flex items-center justify-center gap-2 transition-all
                                     active:scale-[0.97] disabled:opacity-70 disabled:active:scale-100">
@@ -550,14 +550,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
                     <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
-                        <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-[0.97]">
+                        <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,82,204,0.2)] transition-all duration-500 overflow-hidden active:scale-[0.97]">
                             <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <div className="overflow-hidden flex items-center justify-start">
-                                    <span className="text-[#007AFF] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Ventas</span>
+                                    <span className="text-[#0052CC] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Ventas</span>
                                 </div>
                             </div>
                             <div className="w-16 h-16 flex items-center justify-center shrink-0">
-                                <ShoppingCart size={24} className="text-slate-500 group-hover:text-[#007AFF] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                                <ShoppingCart size={24} className="text-slate-500 group-hover:text-[#0052CC] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
                             </div>
                         </a>
 
@@ -566,11 +566,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(88,86,214,0.2)] transition-all duration-500 overflow-hidden active:scale-[0.97]">
                             <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <div className="overflow-hidden flex items-center justify-start">
-                                    <span className="text-[#5856D6] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Farmalasa</span>
+                                    <span className="text-[#6929C4] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Farmalasa</span>
                                 </div>
                             </div>
                             <div className="w-16 h-16 flex items-center justify-center shrink-0">
-                                <Pill size={24} className="text-slate-500 group-hover:text-[#5856D6] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
+                                <Pill size={24} className="text-slate-500 group-hover:text-[#6929C4] transition-colors duration-300 group-hover:scale-110" strokeWidth={1.5} />
                             </div>
                         </a>
                     </div>
@@ -584,7 +584,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                                 Portal
                             </h3>
-                            <p className="text-[10px] font-black text-[#007AFF]/80 uppercase tracking-[0.2em] text-center w-full">
+                            <p className="text-[10px] font-black text-[#0052CC]/80 uppercase tracking-[0.2em] text-center w-full">
                                 Farmacias La Popular & La Salud
                             </p>
                         </div>
@@ -593,14 +593,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             <button
                                 type="button"
                                 onClick={() => { handleStopScannerBtn(); setLoginMode('code'); setError(''); }}
-                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'code' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'code' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 Carné
                             </button>
                             <button
                                 type="button"
                                 onClick={() => { handleStopScannerBtn(); setLoginMode('username'); setError(''); }}
-                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'username' ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] transition-all duration-300 ${loginMode === 'username' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 Usuario
                             </button>
@@ -611,7 +611,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <div className="flex flex-col gap-3">
                                     <div className="relative group z-20 flex items-center gap-2">
                                         <div className="relative flex-1 flex items-center">
-                                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-30">
+                                            <div className="absolute left-0 w-16 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] transition-colors duration-300 z-30">
                                                 <ScanBarcode size={24} strokeWidth={2} />
                                             </div>
                                             <input
@@ -622,7 +622,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                                 placeholder="CÓDIGO"
                                                 autoComplete="off"
                                                 spellCheck="false"
-                                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
+                                                className="w-full pl-16 pr-6 py-5 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.75rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-xl tracking-[0.5em] font-black uppercase [-webkit-text-security:disc]"
                                             />
                                         </div>
                                         <button
@@ -641,7 +641,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-[0.97] ${
                                                 scannerActive
                                                     ? 'bg-red-50/80 border-red-200/60 text-red-400 hover:bg-red-100 hover:text-red-500'
-                                                    : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
+                                                    : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#0052CC] hover:border-[#0052CC]/20'
                                             }`}
                                         >
                                             {scannerActive ? <CameraOff size={20} strokeWidth={2} /> : <Camera size={20} strokeWidth={2} />}
@@ -652,15 +652,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
                                             <div className="relative w-full h-[260px] rounded-[1.5rem] overflow-hidden bg-black border border-black/20">
                                                 <style>{`@keyframes scan{0%{top:8%}50%{top:84%}100%{top:8%}}`}</style>
-                                                <div style={{ position: 'absolute', left: '5%', right: '5%', height: '2px', background: 'rgba(0,122,255,0.9)', animation: 'scan 2s ease-in-out infinite', zIndex: 10, boxShadow: '0 0 10px rgba(0,122,255,0.7)' }} />
-                                                <div style={{position:'absolute',top:12,left:12,width:22,height:22,borderTop:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'4px 0 0 0',zIndex:11}} />
-                                                <div style={{position:'absolute',top:12,right:12,width:22,height:22,borderTop:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 4px 0 0',zIndex:11}} />
-                                                <div style={{position:'absolute',bottom:12,left:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderLeft:'3px solid #007AFF',borderRadius:'0 0 0 4px',zIndex:11}} />
-                                                <div style={{position:'absolute',bottom:12,right:12,width:22,height:22,borderBottom:'3px solid #007AFF',borderRight:'3px solid #007AFF',borderRadius:'0 0 4px 0',zIndex:11}} />
+                                                <div style={{ position: 'absolute', left: '5%', right: '5%', height: '2px', background: 'rgba(0,82,204,0.9)', animation: 'scan 2s ease-in-out infinite', zIndex: 10, boxShadow: '0 0 10px rgba(0,82,204,0.7)' }} />
+                                                <div style={{position:'absolute',top:12,left:12,width:22,height:22,borderTop:'3px solid #0052CC',borderLeft:'3px solid #0052CC',borderRadius:'4px 0 0 0',zIndex:11}} />
+                                                <div style={{position:'absolute',top:12,right:12,width:22,height:22,borderTop:'3px solid #0052CC',borderRight:'3px solid #0052CC',borderRadius:'0 4px 0 0',zIndex:11}} />
+                                                <div style={{position:'absolute',bottom:12,left:12,width:22,height:22,borderBottom:'3px solid #0052CC',borderLeft:'3px solid #0052CC',borderRadius:'0 0 0 4px',zIndex:11}} />
+                                                <div style={{position:'absolute',bottom:12,right:12,width:22,height:22,borderBottom:'3px solid #0052CC',borderRight:'3px solid #0052CC',borderRadius:'0 0 4px 0',zIndex:11}} />
                                                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                                             </div>
                                             <div className="flex items-center justify-center gap-2 px-3 py-2 bg-black/10 backdrop-blur-sm rounded-[1rem] mt-1">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] animate-pulse shrink-0" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#0052CC] animate-pulse shrink-0" />
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 text-center">Apunta al código de barras de tu carné</p>
                                             </div>
                                         </div>
@@ -670,12 +670,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <div className={`p-3 rounded-2xl text-center animate-in zoom-in-95 duration-200 ${
                                             scanFeedback.status === 'error'   ? 'bg-red-50 border border-red-200' :
                                             scanFeedback.status === 'success' ? 'bg-emerald-50 border border-emerald-200' :
-                                            'bg-[#007AFF]/5 border border-[#007AFF]/20'
+                                            'bg-[#0052CC]/5 border border-[#0052CC]/20'
                                         }`}>
                                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Código detectado: <span className="font-bold">{scanFeedback.code}</span></p>
                                             <p className={`text-[12px] font-bold flex items-center justify-center gap-1 ${
                                                 scanFeedback.status === 'error'   ? 'text-red-600' :
-                                                scanFeedback.status === 'success' ? 'text-emerald-600' : 'text-[#007AFF]'
+                                                scanFeedback.status === 'success' ? 'text-emerald-600' : 'text-[#0052CC]'
                                             }`}>
                                                 {scanFeedback.status === 'reading' && <Loader2 size={12} className="animate-spin" />}
                                                 {scanFeedback.message}
@@ -686,7 +686,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             ) : (
                                 <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <div className="relative group flex items-center">
-                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
+                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] transition-colors duration-300 z-10">
                                             <UserIcon size={20} strokeWidth={2} />
                                         </div>
                                         <input
@@ -696,11 +696,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             type="text"
                                             placeholder="nombre.apellido"
                                             autoComplete="username"
-                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
+                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
                                         />
                                     </div>
                                     <div className="relative group flex items-center">
-                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#007AFF] transition-colors duration-300 z-10">
+                                        <div className="absolute left-0 w-14 flex items-center justify-center pointer-events-none text-slate-400 group-focus-within:text-[#0052CC] transition-colors duration-300 z-10">
                                             <Lock size={20} strokeWidth={2} />
                                         </div>
                                         <input
@@ -710,7 +710,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             type="password"
                                             placeholder="Contraseña"
                                             autoComplete="current-password"
-                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#007AFF]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
+                                            className="w-full pl-14 pr-5 py-4 bg-white/30 hover:bg-white/50 backdrop-blur-md border border-white/60 rounded-[1.5rem] text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-white focus:ring-4 focus:ring-[#0052CC]/15 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] transition-all text-[14px] font-bold"
                                         />
                                     </div>
                                 </div>
@@ -725,7 +725,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#007AFF] to-[#005CE6] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-70 disabled:active:scale-100">
+                            <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#0052CC] to-[#003D99] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-70 disabled:active:scale-100">
                                 {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Ingresar al Portal'}
                             </button>
                         </form>
@@ -737,7 +737,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                                 <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-[0.97] transition-transform group hover:bg-white/40">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm group-hover:text-[#007AFF] transition-colors">
+                                        <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm group-hover:text-[#0052CC] transition-colors">
                                             <Clock size={20} strokeWidth={2.5} />
                                         </div>
                                         <div className="text-left">
@@ -745,7 +745,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mt-1">Marcar entrada / salida</p>
                                         </div>
                                     </div>
-                                    <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center group-hover:bg-[#007AFF] group-hover:text-white group-hover:border-transparent transition-all">
+                                    <div className="w-8 h-8 rounded-full bg-white/80 border border-white flex items-center justify-center group-hover:bg-[#0052CC] group-hover:text-white group-hover:border-transparent transition-all">
                                         <ChevronRight size={16} className="text-slate-400 group-hover:text-white" strokeWidth={3} />
                                     </div>
                                 </button>
@@ -755,11 +755,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     <div className="fixed z-40 flex items-center justify-center gap-3 p-3 transition-all duration-500 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-xl bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] flex-row landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:right-[max(env(safe-area-inset-right,24px),24px)] landscape:left-auto landscape:translate-x-0 landscape:w-auto landscape:flex-col lg:hidden">
                         <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="flex-1 landscape:flex-none landscape:w-16 flex items-center justify-center gap-2 py-3.5 px-4 bg-white/60 hover:bg-white rounded-[1.5rem]">
-                            <ShoppingCart size={18} strokeWidth={2.5} className="text-[#007AFF]" />
+                            <ShoppingCart size={18} strokeWidth={2.5} className="text-[#0052CC]" />
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 landscape:hidden">Ventas</span>
                         </a>
                         <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="flex-1 landscape:flex-none landscape:w-16 flex items-center justify-center gap-2 py-3.5 px-4 bg-white/60 hover:bg-white rounded-[1.5rem]">
-                            <Pill size={18} strokeWidth={2.5} className="text-[#5856D6]" />
+                            <Pill size={18} strokeWidth={2.5} className="text-[#6929C4]" />
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 landscape:hidden">FarmaLasa</span>
                         </a>
                     </div>

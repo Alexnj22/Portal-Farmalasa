@@ -6,7 +6,7 @@ const THEME_MAP = {
   green: { glow: 'bg-emerald-500', border: 'border-emerald-500/40', icon: 'text-emerald-400' },
   red: { glow: 'bg-red-600', border: 'border-red-500/50', icon: 'text-red-400' },
   orange: { glow: 'bg-orange-500', border: 'border-orange-500/50', icon: 'text-orange-400' },
-  blue: { glow: 'bg-[#007AFF]', border: 'border-[#007AFF]/50', icon: 'text-[#007AFF]' },
+  blue: { glow: 'bg-[#0052CC]', border: 'border-[#0052CC]/50', icon: 'text-[#0052CC]' },
   pink: { glow: 'bg-pink-500', border: 'border-pink-500/50', icon: 'text-pink-400' },
   purple: { glow: 'bg-purple-500', border: 'border-purple-500/50', icon: 'text-purple-400' },
   slate: { glow: 'bg-slate-400', border: 'border-white/10', icon: 'text-white' },

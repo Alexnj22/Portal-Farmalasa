@@ -196,7 +196,7 @@ const SalyChatOverlay = () => {
                                 {/* Badge Dinámico de Destinatarios */}
                                 <div className="flex items-center gap-2 pt-2">
                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Para:</span>
-                                    {draftObj.target_type === 'GLOBAL' && <span className="flex items-center gap-1 text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-[#007AFF]/20"><Globe size={10} strokeWidth={2.5} /> Todos</span>}
+                                    {draftObj.target_type === 'GLOBAL' && <span className="flex items-center gap-1 text-[#0052CC] bg-[#0052CC]/10 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={10} strokeWidth={2.5} /> Todos</span>}
                                     {draftObj.target_type === 'BRANCH' && <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-emerald-200"><Building2 size={10} strokeWidth={2.5} /> {branches?.find(b => String(b.id) === String(draftObj.target_value))?.name || 'Sucursal Específica'}</span>}
                                     {draftObj.target_type === 'ROLE' && <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-purple-200"><Users size={10} strokeWidth={2.5} /> {draftObj.target_value}</span>}
                                 </div>
@@ -205,7 +205,7 @@ const SalyChatOverlay = () => {
                                     <button
                                         onClick={() => executePublishAnnouncement(draftObj, msgId)}
                                         disabled={publishingId === msgId}
-                                        className="flex-1 py-2.5 bg-[#007AFF] hover:bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 py-2.5 bg-[#0052CC] hover:bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {publishingId === msgId ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : <><Send size={14} strokeWidth={2.5} /> Aprobar y Publicar</>}
                                     </button>
@@ -234,14 +234,14 @@ const SalyChatOverlay = () => {
                 <div className={`w-[340px] sm:w-[380px] h-[600px] max-h-[calc(100vh-100px)] relative flex flex-col overflow-hidden transition-all duration-300 ease-out origin-bottom-right shadow-[0_20px_60px_-15px_rgba(4,22,54,0.3)] rounded-[24px] border border-white/60 bg-white/70 backdrop-blur-3xl ${isOpen ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto' : 'scale-95 opacity-0 translate-y-4 pointer-events-none'}`}>
 
                     {/* ✨ HEADER */}
-                    <div className="relative z-20 bg-gradient-to-r from-[#041636] to-[#0a234f] p-4 flex items-center justify-between shrink-0 border-b border-white/10 shadow-sm overflow-hidden">
+                    <div className="relative z-20 bg-gradient-to-r from-[#030B1C] to-[#071528] p-4 flex items-center justify-between shrink-0 border-b border-white/10 shadow-sm overflow-hidden">
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-[40px] pointer-events-none"></div>
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-tr from-sky-500 via-cyan-400 to-teal-300 rounded-[10px] shadow-[0_0_15px_rgba(6,182,212,0.3)] border border-white/20">
                                 <Hexagon size={20} className="text-white drop-shadow-sm" strokeWidth={2.5} />
                                 <div className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 duration-1000"></span>
-                                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-[#041636]"></span>
+                                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-[#030B1C]"></span>
                                 </div>
                             </div>
                             <div className="flex flex-col justify-center">
@@ -270,7 +270,7 @@ const SalyChatOverlay = () => {
                                 )}
 
                                 <div className={`max-w-[85%] p-3.5 text-[13px] md:text-[13.5px] font-medium shadow-sm backdrop-blur-md ${msg.role === 'user'
-                                        ? 'bg-[#007AFF] text-white rounded-[18px] rounded-tr-[4px] border border-blue-400/30 shadow-[0_4px_15px_rgba(0,122,255,0.2)]'
+                                        ? 'bg-[#0052CC] text-white rounded-[18px] rounded-tr-[4px] border border-blue-400/30 shadow-[0_4px_15px_rgba(0,82,204,0.2)]'
                                         : 'bg-white text-slate-600 border border-slate-200/80 rounded-[18px] rounded-tl-[4px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]'
                                     }`}>
                                     {renderFormattedText(msg.text, msg.role, msg.id)}
@@ -313,7 +313,7 @@ const SalyChatOverlay = () => {
                             <button
                                 type="submit"
                                 disabled={!inputValue.trim() || isTyping}
-                                className="absolute right-1.5 w-9 h-9 bg-gradient-to-r from-[#007AFF] to-[#005CE6] text-white flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="absolute right-1.5 w-9 h-9 bg-gradient-to-r from-[#0052CC] to-[#003D99] text-white flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {isTyping ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} className="ml-0.5" strokeWidth={2.5} />}
                             </button>
@@ -325,7 +325,7 @@ const SalyChatOverlay = () => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     title="Asistente Operativo Saly"
-                    className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(6,182,212,0.4)] hover:shadow-[0_15px_30px_rgba(6,182,212,0.5)] hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 ease-out z-50 overflow-hidden ${isOpen ? 'bg-[#041636] rotate-90 shadow-none hover:-translate-y-0' : 'bg-gradient-to-tr from-sky-500 via-cyan-400 to-teal-400 border border-white/30'}`}
+                    className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(6,182,212,0.4)] hover:shadow-[0_15px_30px_rgba(6,182,212,0.5)] hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 ease-out z-50 overflow-hidden ${isOpen ? 'bg-[#030B1C] rotate-90 shadow-none hover:-translate-y-0' : 'bg-gradient-to-tr from-sky-500 via-cyan-400 to-teal-400 border border-white/30'}`}
                 >
                     {isOpen ? (
                         <X size={24} strokeWidth={2.5} className="text-white -rotate-90 transition-transform duration-300" />

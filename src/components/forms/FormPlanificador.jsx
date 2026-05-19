@@ -42,7 +42,7 @@ const Switch = memo(({ on, onToggle, disabled }) => (
         onClick={onToggle}
         className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-full border-2 transition-all duration-300 ease-in-out cursor-pointer ${
             disabled ? "opacity-50 cursor-not-allowed bg-white/40 border-white/50" 
-            : on ? "bg-[#007AFF] border-[#007AFF] shadow-[0_2px_8px_rgba(0,122,255,0.3)]" : "bg-slate-200 border-slate-200 hover:bg-slate-300 hover:border-slate-300"
+            : on ? "bg-[#0052CC] border-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.3)]" : "bg-slate-200 border-slate-200 hover:bg-slate-300 hover:border-slate-300"
         }`}
     >
         <span className={`absolute top-[1px] left-[1px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${on ? "translate-x-5 md:translate-x-6" : "translate-x-0"}`} />
@@ -137,7 +137,7 @@ const DayRow = memo(({
                 <div className="w-full xl:w-36 flex items-center justify-between xl:mt-2.5 flex-shrink-0">
                     <div>
                         <h4 className="text-[13px] md:text-[14px] font-black text-slate-800 uppercase tracking-widest">{day.name}</h4>
-                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-[#007AFF]' : 'text-slate-400'}`}>
+                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-[#0052CC]' : 'text-slate-400'}`}>
                             {conflict ? conflict.label : isWorking ? 'Día Laboral' : 'Día de Descanso'}
                         </p>
                     </div>
@@ -178,7 +178,7 @@ const DayRow = memo(({
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-[100]">
                                 <label className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-1.5">
-                                    <Clock size={12} className={!config.shiftId ? 'text-red-500 animate-pulse' : 'text-[#007AFF]'}/> Turno Asignado
+                                    <Clock size={12} className={!config.shiftId ? 'text-red-500 animate-pulse' : 'text-[#0052CC]'}/> Turno Asignado
                                 </label>
                                 <LiquidSelect 
                                     value={String(config.shiftId || '')}
@@ -390,7 +390,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                     <div className="flex justify-between items-end mb-1.5">
                         <div>
                             <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
-                                <Clock size={12} className={currentStats.isExcess ? 'text-red-500' : 'text-[#007AFF]'}/>
+                                <Clock size={12} className={currentStats.isExcess ? 'text-red-500' : 'text-[#0052CC]'}/>
                                 Horas Asignadas
                             </h3>
                             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
@@ -403,7 +403,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                         </div>
                     </div>
                     <div className="h-1.5 bg-white/50 rounded-full overflow-hidden shadow-inner border border-white/80">
-                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-red-500' : 'bg-[#007AFF]'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
+                        <div className={`h-full rounded-full transition-all duration-500 ease-out ${currentStats.isExcess ? 'bg-red-500' : 'bg-[#0052CC]'}`} style={{ width: `${Math.min((currentStats.hours / maxHours) * 100, 100)}%` }}></div>
                     </div>
                 </div>
 

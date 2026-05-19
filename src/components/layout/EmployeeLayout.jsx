@@ -79,23 +79,23 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
     }, [announcements, user]);
 
     return (
-        <div className="flex w-full h-full bg-[#F2F2F7] lg:bg-transparent font-sans overflow-hidden relative">
+        <div className="flex w-full h-full bg-[#E6F0FF] lg:bg-transparent font-sans overflow-hidden relative">
 
             {/* ── Sidebar Desktop ── */}
             <aside className={`hidden lg:flex flex-col shrink-0 w-[15.5rem] my-2 ml-2 relative transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Glow layers */}
                 <div className="sidebar-ambient absolute inset-y-0 left-0 -z-10 w-full pointer-events-none">
-                    <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
-                    <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
+                    <div className="absolute -inset-4 rounded-[2.6rem] bg-[#030B1C]/35 blur-2xl opacity-55" />
+                    <div className="absolute -inset-6 rounded-[3.2rem] bg-[#071528]/28 blur-3xl opacity-35" />
                 </div>
 
                 {/* Panel */}
-                <div data-surface="sidebar" className="flex-1 rounded-[2.5rem] overflow-hidden flex flex-col border border-white/10 bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] shadow-[0_30px_90px_rgba(0,0,0,0.4)]">
+                <div data-surface="sidebar" className="flex-1 rounded-[2.5rem] overflow-hidden flex flex-col border border-white/10 bg-gradient-to-b from-[#030B1C] via-[#071528] to-[#010610] shadow-[0_30px_90px_rgba(0,0,0,0.4)]">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                     {/* Logo */}
                     <div className="p-6 pb-4 border-b border-white/10 flex items-center gap-4">
-                        <div className="bg-gradient-to-tr from-[#1D7AFC] to-[#5856D6] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(29,122,252,0.35)] flex-shrink-0 relative group hover:scale-105 transition-all">
+                        <div className="bg-gradient-to-tr from-[#4D94FF] to-[#6929C4] p-2.5 rounded-[1.25rem] shadow-[0_14px_30px_rgba(77,148,255,0.35)] flex-shrink-0 relative group hover:scale-105 transition-all">
                             <Building2 className="text-white" size={22} strokeWidth={1.5} />
                             <Sparkles size={12} className="absolute -top-1 -right-1 text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -112,7 +112,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                             style={{ top: pill.top, height: pill.height, position: 'absolute' }}
                         >
                             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#1D7AFC]/15 via-transparent to-transparent rounded-[1rem]" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/15 via-transparent to-transparent rounded-[1rem]" />
                         </div>
 
                         {NAV_ITEMS.map(({ id, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
@@ -125,7 +125,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                                     className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-[1rem] transition-all duration-300 relative text-left ${isActive ? 'text-white' : 'text-white/75 hover:text-white hover:translate-x-1 hover:bg-white/[0.08]'} active:scale-[0.99]`}
                                 >
                                     <div className="relative z-10 flex-shrink-0">
-                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-all duration-300 ${isActive ? 'text-[#1D7AFC] scale-110' : 'text-white/65'}`} />
+                                        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className={`transition-all duration-300 ${isActive ? 'text-[#4D94FF] scale-110' : 'text-white/65'}`} />
                                         {id === 'announcements' && unreadCount > 0 && (
                                             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center z-20">
                                                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -144,7 +144,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                         <ThemeToggle variant="sidebar" className="mb-3" />
                         <div className="flex items-center gap-2">
                             <button onClick={() => navigate('/profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98]">
-                                <div className="h-10 w-10 rounded-[1rem] bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-[#1D7AFC]/50 transition-all">
+                                <div className="h-10 w-10 rounded-[1rem] bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-[#4D94FF]/50 transition-all">
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} className="text-white/70" />}
                                 </div>
                                 <div className="flex-1 overflow-hidden">
@@ -197,16 +197,16 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                     {NAV_ITEMS.map(({ id, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                         const isActive = active === id;
                         return (
-                            <button key={id} onClick={() => navigate(`/${id}`)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#007AFF]/10' : 'hover:bg-slate-100/60'}`}>
+                            <button key={id} onClick={() => navigate(`/${id}`)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
                                 <div className="relative">
-                                    <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#007AFF]' : 'text-slate-400'} />
+                                    <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-400'} />
                                     {id === 'announcements' && unreadCount > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                             {unreadCount > 9 ? '9+' : unreadCount}
                                         </span>
                                     )}
                                 </div>
-                                <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#007AFF]' : 'text-slate-400'}`}>{label}</span>
+                                <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-400'}`}>{label}</span>
                             </button>
                         );
                     })}

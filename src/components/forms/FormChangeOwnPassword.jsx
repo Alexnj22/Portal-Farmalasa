@@ -43,7 +43,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                             placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
                             value={val}
                             onChange={e => setter(e.target.value)}
-                            className="w-full pl-10 pr-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                            className="w-full pl-10 pr-10 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                         />
                         {isLast && (
                             <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-slate-400 hover:text-slate-600">
@@ -54,7 +54,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading || !newPass || !confirm}
-                className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}
             </button>
         </div>

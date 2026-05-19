@@ -472,7 +472,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     { label: 'Escaneados', v: scanned, cls: 'text-slate-700' },
                                     { label: 'Auto-aplica', v: autoQueue.length, cls: 'text-emerald-600' },
                                     { label: 'Para revisar', v: reviewQueue.length - reviewIdx, cls: 'text-amber-600' },
-                                    { label: 'Aplicados', v: applied, cls: 'text-[#007AFF]' },
+                                    { label: 'Aplicados', v: applied, cls: 'text-[#0052CC]' },
                                 ].map(c => (
                                     <div key={c.label} className="bg-slate-50 rounded-2xl py-2.5 px-1">
                                         <p className={`text-[18px] font-black tabular-nums ${c.cls}`}>{c.v}</p>
@@ -609,12 +609,12 @@ export default function SrsEnriquecerModal({ onClose }) {
                                         {/* Toggle panel buttons */}
                                         <div className="flex items-center gap-3 pt-1 border-t border-slate-100">
                                             <button onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}
-                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-[#007AFF]' : 'text-slate-400 hover:text-[#007AFF]'}`}>
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'srs' ? 'text-[#0052CC]' : 'text-slate-400 hover:text-[#0052CC]'}`}>
                                                 <Search size={12} /> Buscar en SRS
                                             </button>
                                             <span className="text-slate-200">|</span>
                                             <button onClick={() => setReviewPanel(p => p === 'manual' ? null : 'manual')}
-                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'manual' ? 'text-[#007AFF]' : 'text-slate-400 hover:text-[#007AFF]'}`}>
+                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${reviewPanel === 'manual' ? 'text-[#0052CC]' : 'text-slate-400 hover:text-[#0052CC]'}`}>
                                                 <FlaskConical size={12} /> Ingresar manualmente
                                             </button>
                                         </div>
@@ -650,14 +650,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white placeholder:text-slate-300"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-white placeholder:text-slate-300 text-center"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1
@@ -669,7 +669,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         </div>
                                                     ))}
                                                     <button onClick={() => setManualItems(prev => [...prev, { nombre: '', concentracion: '', _key: Date.now() }])}
-                                                        className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors pt-0.5">
+                                                        className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#0052CC] transition-colors pt-0.5">
                                                         <Plus size={10} /> Agregar principio
                                                     </button>
                                                 </div>
@@ -685,7 +685,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         setReviewPanel(null);
                                                         setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
                                                     }}
-                                                    className="self-end px-4 py-1.5 rounded-full bg-[#007AFF] text-white text-[11px] font-black disabled:opacity-40 hover:bg-[#006AEF] transition-colors">
+                                                    className="self-end px-4 py-1.5 rounded-full bg-[#0052CC] text-white text-[11px] font-black disabled:opacity-40 hover:bg-[#003D99] transition-colors">
                                                     Usar estos principios
                                                 </button>
                                             </div>
@@ -737,7 +737,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     )}
 
                                     <button onClick={onClose}
-                                        className="self-center px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-[#007AFF] hover:bg-[#006AEF] transition-colors">
+                                        className="self-center px-6 py-2.5 rounded-full text-[12px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] transition-colors">
                                         Cerrar
                                     </button>
                                 </div>

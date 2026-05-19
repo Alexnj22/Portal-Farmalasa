@@ -240,7 +240,7 @@ function SmartPagination({ page, total, onChange }) {
                         : <button key={p} onClick={() => onChange(p)}
                             className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
                                 p === page
-                                    ? 'bg-[#007AFF] text-white shadow-md shadow-blue-200 scale-110'
+                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
                                     : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
                             }`}>{p}</button>
                 )}
@@ -298,7 +298,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             <button onClick={() => onSort(col)}
                 className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
-                        ? 'text-[#007AFF] bg-blue-50'
+                        ? 'text-[#0052CC] bg-blue-50'
                         : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100/70'
                 }`}>
                 {label}
@@ -592,7 +592,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
                             <thead className="sticky top-0 z-10">
-                                <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                     <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
                                     <SortTh label="ID"          col="correlativo"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-2.5" />
                                     <SortTh label="Tipo"        col="tipo_documento" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-2.5" />
@@ -1564,7 +1564,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     <div className="overflow-x-auto w-full">
                     <table className="min-w-full text-sm">
                         <thead className="sticky top-0 z-10">
-                            <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                            <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                 <th className="text-left px-4 py-2.5 w-8 text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
                                 <SortTh label="Producto"  col="descripcion" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
                                 <SortTh label="Unidades"  col="cantidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
@@ -2006,7 +2006,7 @@ export default function VentasView() {
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input ref={(el) => { if (el && isSearchMode) setTimeout(() => el.focus(), 100) }} type="text" placeholder={searchPlaceholder}
                     className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
@@ -2016,7 +2016,7 @@ export default function VentasView() {
                     </button>
                 )}
                 <button onClick={closeSearch}
-                    className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2">
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -2042,7 +2042,7 @@ export default function VentasView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={openSearch}
-                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                    className="w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>

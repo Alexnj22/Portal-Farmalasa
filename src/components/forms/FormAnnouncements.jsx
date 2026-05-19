@@ -10,7 +10,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
@@ -23,7 +23,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronRight size={16} strokeWidth={2.5} />
       </button>
@@ -77,7 +77,7 @@ const FormAnnouncements = ({ data }) => {
       
       {/* HEADER DEL REPORTE */}
       <div className="mb-5 pr-8 flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 text-[#007AFF]">
+        <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 text-[#0052CC]">
             <Eye size={22} strokeWidth={2.5} />
         </div>
         
@@ -94,7 +94,7 @@ const FormAnnouncements = ({ data }) => {
       {/* CONTENIDO DEL MENSAJE */}
       {(readersModal.content || readersModal.message || readersModal.body) && (
         <div className="mb-8 shrink-0 relative overflow-hidden bg-white/40 backdrop-blur-sm rounded-[1rem] border border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#007AFF]/40"></div>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0052CC]/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}
                 <p className="text-[11px] md:text-[12px] text-slate-600 font-medium leading-relaxed max-h-[4.5rem] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">

@@ -10,7 +10,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "" }) => {
         return (
             <div className={`relative flex items-center justify-center bg-slate-100 overflow-hidden ${className}`}>
                 {fallbackText ? (
-                    <span className="font-black uppercase text-[#007AFF] tracking-tight">{fallbackText.charAt(0)}</span>
+                    <span className="font-black uppercase text-[#0052CC] tracking-tight">{fallbackText.charAt(0)}</span>
                 ) : (
                     <User size={className.includes('w-20') || className.includes('w-24') ? 36 : 18} className="text-slate-300" strokeWidth={2} />
                 )}

@@ -20,7 +20,7 @@ const portalProps = {
     styles: { menuPortal: base => ({ ...base, zIndex: 99999 }) },
 };
 
-const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus-within:ring-4 focus-within:ring-[#007AFF]/10 focus-within:border-[#007AFF]/50';
+const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50';
 const island    = 'bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
 const reqBadge  = <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200 text-[8px]">Requerido</span>;
 

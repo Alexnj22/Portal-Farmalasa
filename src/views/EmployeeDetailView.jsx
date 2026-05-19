@@ -287,9 +287,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     // 🚨 MODO PRO 4: Fallback Skeleton en lugar de pantalla blanca (return null)
     if (!emp) return (
-        <div className="w-full h-[100dvh] flex items-center justify-center bg-[#F2F2F7]">
+        <div className="w-full h-[100dvh] flex items-center justify-center bg-[#E6F0FF]">
             <div className="flex flex-col items-center gap-4 text-slate-400 animate-pulse">
-                <div className="w-16 h-16 border-4 border-slate-200 border-t-[#007AFF] rounded-full animate-spin"></div>
+                <div className="w-16 h-16 border-4 border-slate-200 border-t-[#0052CC] rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-widest">Cargando Perfil...</p>
             </div>
         </div>
@@ -346,23 +346,23 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     }}
                 ></div>
 
-                <button onClick={() => setCurrentTab('history')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setCurrentTab('history')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <Clock size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Historial</span>
                 </button>
-                <button onClick={() => setCurrentTab('documents')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setCurrentTab('documents')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <FileText size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Archivo</span>
                 </button>
-                <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <Stethoscope size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Ausencias</span>
                 </button>
-                <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <Wallet size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Horarios</span>
                 </button>
-                <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
                 </button>
                 {canEdit && (
-                    <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#007AFF]' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                         <BarChart2 size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Clima</span>
                     </button>
                 )}
@@ -377,7 +377,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </button>
             )}
             {canEdit && (
-                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
                 </button>
             )}
@@ -396,15 +396,15 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Personal"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                            <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#007AFF] transition-colors relative z-10" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#0052CC]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-400 group-hover/back:text-[#0052CC] transition-colors relative z-10" />
                         </button>
                     )}
 
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#007AFF] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,122,255,0.3)] shrink-0">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-[#0052CC] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0">
                         <User size={20} className="md:w-6 md:h-6" strokeWidth={2} />
                     </div>
 
@@ -430,7 +430,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className="p-2.5 bg-blue-50 text-[#007AFF] rounded-xl shadow-sm border border-blue-100/50"><Briefcase size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-blue-50 text-[#0052CC] rounded-xl shadow-sm border border-blue-100/50"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-slate-800 truncate">{tenure}</p>
@@ -458,7 +458,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         <div className="lg:col-span-4 space-y-5">
                             <div className="relative w-full overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-2xl">
                                 
-                                <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-[#007AFF]/15 to-transparent"></div>
+                                <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-[#0052CC]/15 to-transparent"></div>
                                 
                                 <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-10">
                                     
@@ -482,7 +482,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </h2>
                                     
                                     <div className="flex flex-col items-center gap-2 mb-8">
-                                        <span className="px-4 py-1 rounded-full bg-[#007AFF]/10 border border-[#007AFF]/20 text-[#007AFF] font-black text-[10px] uppercase tracking-[0.15em] text-center shadow-sm">
+                                        <span className="px-4 py-1 rounded-full bg-[#0052CC]/10 border border-[#0052CC]/20 text-[#0052CC] font-black text-[10px] uppercase tracking-[0.15em] text-center shadow-sm">
                                             {emp.role || 'Sin Cargo Asignado'}
                                         </span>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -492,7 +492,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
                                                 <button onClick={handleEditProfile}
                                                     disabled={!canEdit}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#0052CC] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[0_4px_15px_rgba(0,82,204,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                                     <Edit size={12}/> Editar
                                                 </button>
                                                 <button onClick={handleResetPassword}
@@ -505,7 +505,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="w-full space-y-3">
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/60 border border-white/80 hover:bg-white transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-[#007AFF] group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-[#0052CC] group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-[12px] font-bold text-slate-700 truncate">{emp.email || emp.username || 'No registrado'}</p>
@@ -589,7 +589,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                         <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <Clock size={18} className="text-[#007AFF]"/> Historial Operativo
+                                                <Clock size={18} className="text-[#0052CC]"/> Historial Operativo
                                             </h3>
                                             <div className="px-3 py-1 bg-white/70 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-white shadow-sm">
                                                 {timeline.length} Eventos
@@ -616,7 +616,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
-                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-emerald-500' : 'border-[#007AFF]'}`}></div>
+                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-emerald-500' : 'border-[#0052CC]'}`}></div>
                                                         
                                                         <div className={`bg-white/60 hover:bg-white/90 rounded-3xl p-5 border border-white/80 transition-all duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
@@ -643,7 +643,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             
                                                             {ev.metadata?.old_value && ev.metadata?.new_value && (
                                                                  <p className="text-[11px] font-medium text-slate-500 mt-2 bg-slate-50 p-2 rounded-lg border border-slate-100 flex gap-2 items-center">
-                                                                     <span className="font-bold line-through opacity-70">{ev.metadata.old_value}</span> <ArrowRightLeft size={10}/> <span className="font-bold text-[#007AFF]">{ev.metadata.new_value}</span>
+                                                                     <span className="font-bold line-through opacity-70">{ev.metadata.old_value}</span> <ArrowRightLeft size={10}/> <span className="font-bold text-[#0052CC]">{ev.metadata.new_value}</span>
                                                                  </p>
                                                             )}
                                                             
@@ -658,7 +658,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                             EDITADO
                                                                         </span>
                                                                     ) : ev.documentId ? (
-                                                                        <button className="flex items-center gap-1.5 text-[#007AFF] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
+                                                                        <button className="flex items-center gap-1.5 text-[#0052CC] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
                                                                         </button>
                                                                     ) : (
@@ -722,20 +722,20 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                          <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <FileText size={18} className="text-[#007AFF]"/> Expediente Digital
+                                                <FileText size={18} className="text-[#0052CC]"/> Expediente Digital
                                             </h3>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {emp.documents?.map(doc => (
                                                 <div key={doc.id} className="p-4 bg-white/60 hover:bg-white/90 rounded-[1.5rem] border border-white/80 flex items-center justify-between group cursor-pointer shadow-sm hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-300">
                                                     <div className="flex items-center gap-3.5">
-                                                        <div className="p-3 bg-[#007AFF]/10 rounded-xl text-[#007AFF] shadow-inner group-hover:scale-110 transition-transform"><FileText size={20} strokeWidth={2.5}/></div>
+                                                        <div className="p-3 bg-[#0052CC]/10 rounded-xl text-[#0052CC] shadow-inner group-hover:scale-110 transition-transform"><FileText size={20} strokeWidth={2.5}/></div>
                                                         <div className="min-w-0 pr-2">
                                                             <p className="text-[12px] font-black text-slate-700 truncate">{doc.name}</p>
                                                             <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{doc.type || 'DOCUMENTO'}</p>
                                                         </div>
                                                     </div>
-                                                    <button className="w-8 h-8 flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 text-[#007AFF] bg-blue-50 rounded-full transition-all duration-300 shadow-sm border border-blue-100"><Download size={14} strokeWidth={2.5}/></button>
+                                                    <button className="w-8 h-8 flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 text-[#0052CC] bg-blue-50 rounded-full transition-all duration-300 shadow-sm border border-blue-100"><Download size={14} strokeWidth={2.5}/></button>
                                                 </div>
                                             ))}
                                             {(!emp.documents || emp.documents.length === 0) && (
@@ -788,14 +788,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronLeft size={14} strokeWidth={2.5}/>
                                                 </button>
                                                 <span className="text-[13px] font-black text-slate-700 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronRight size={14} strokeWidth={2.5}/>
                                                 </button>
                                             </div>
@@ -836,7 +836,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     if (isSelected) {
                                                         cellBg = 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/40';
                                                     } else if (isToday) {
-                                                        cellBg = 'bg-[#007AFF]';
+                                                        cellBg = 'bg-[#0052CC]';
                                                     } else if (isInsurance && hasPermit) {
                                                         cellBg = 'bg-gradient-to-br from-amber-100 to-violet-100 border border-violet-200';
                                                     } else if (isInsurance) {
@@ -1019,7 +1019,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div>
                                             <div className="flex justify-between items-center mb-5 pt-4 border-t border-slate-200/50">
                                                 <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                    <CalendarDays size={18} className="text-[#007AFF]"/> Turnos de la Semana
+                                                    <CalendarDays size={18} className="text-[#0052CC]"/> Turnos de la Semana
                                                 </h3>
                                             </div>
                                             
@@ -1029,17 +1029,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         const isToday = dia.day === todayName; 
 
                                                         return (
-                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-white/80' : 'opacity-50 grayscale bg-slate-50/50'} ${isToday ? 'bg-blue-50/50 ring-1 ring-[#007AFF]/20 shadow-[inset_0_0_20px_rgba(0,122,255,0.05)]' : ''}`}>
+                                                            <div key={idx} className={`relative p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors ${dia.active ? 'hover:bg-white/80' : 'opacity-50 grayscale bg-slate-50/50'} ${isToday ? 'bg-blue-50/50 ring-1 ring-[#0052CC]/20 shadow-[inset_0_0_20px_rgba(0,82,204,0.05)]' : ''}`}>
                                                                 
                                                                 {isToday && (
-                                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#007AFF] shadow-[0_0_10px_rgba(0,122,255,0.4)]"></div>
+                                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#0052CC] shadow-[0_0_10px_rgba(0,82,204,0.4)]"></div>
                                                                 )}
 
                                                                 <div className="flex items-center gap-3 w-32 shrink-0 relative">
                                                                     <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-300'}`}></div>
                                                                     <span className={`text-[12px] font-black uppercase tracking-widest ${dia.active ? 'text-slate-700' : 'text-slate-400'}`}>{dia.day}</span>
                                                                     {isToday && (
-                                                                        <span className="ml-2 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-[#007AFF] text-white shadow-sm animate-pulse">Hoy</span>
+                                                                        <span className="ml-2 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-[#0052CC] text-white shadow-sm animate-pulse">Hoy</span>
                                                                     )}
                                                                 </div>
                                                                 
@@ -1081,12 +1081,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {/* Botón nueva solicitud */}
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <ClipboardList size={18} className="text-[#007AFF]"/> Mis Solicitudes
+                                                <ClipboardList size={18} className="text-[#0052CC]"/> Mis Solicitudes
                                             </h3>
                                             <button
                                                 onClick={() => setShowReqForm(v => !v)}
                                                 disabled={!canEdit}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <Plus size={13} strokeWidth={3}/> Nueva Solicitud
                                             </button>
@@ -1094,7 +1094,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         {/* Formulario */}
                                         {showReqForm && (
-                                            <div className="rounded-[1.75rem] border border-[#007AFF]/20 bg-white/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,122,255,0.06)] p-5 space-y-4 animate-in slide-in-from-top-3 duration-300">
+                                            <div className="rounded-[1.75rem] border border-[#0052CC]/20 bg-white/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,82,204,0.06)] p-5 space-y-4 animate-in slide-in-from-top-3 duration-300">
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tipo</p>
                                                     <div className="flex flex-wrap gap-2">
@@ -1158,7 +1158,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         onChange={e => setReqFormNote(e.target.value)}
                                                         rows={3}
                                                         placeholder="Describe tu solicitud..."
-                                                        className="w-full px-4 py-3 rounded-[1.25rem] border border-slate-200 bg-white text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 focus:border-[#007AFF]/50 resize-none transition-all"
+                                                        className="w-full px-4 py-3 rounded-[1.25rem] border border-slate-200 bg-white text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]/50 resize-none transition-all"
                                                     />
                                                 </div>
 
@@ -1188,7 +1188,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 useToastStore.getState().showToast('Error', 'No se pudo crear la solicitud.', 'error');
                                                             }
                                                         }}
-                                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066DD] text-white text-[12px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
+                                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0052CC] hover:bg-[#003D99] text-white text-[12px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
                                                     >
                                                         {isCreatingReq ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2.5} />}
                                                         Enviar
@@ -1256,7 +1256,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'clima' && canEdit && (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                                         <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                            <BarChart2 size={18} className="text-[#007AFF]"/> Encuestas de Clima
+                                            <BarChart2 size={18} className="text-[#0052CC]"/> Encuestas de Clima
                                         </h3>
 
                                         {loadingSurvey ? (

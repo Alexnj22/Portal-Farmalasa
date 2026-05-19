@@ -30,9 +30,9 @@ const AlertModal = ({
         },
         info: {
             icon: Info,
-            glow: 'bg-[#007AFF]/15',
-            iconColor: 'text-[#007AFF]',
-            btn: 'bg-[#007AFF] hover:bg-[#0066CC] shadow-[0_4px_15px_rgba(0,122,255,0.3)]'
+            glow: 'bg-[#0052CC]/15',
+            iconColor: 'text-[#0052CC]',
+            btn: 'bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_15px_rgba(0,82,204,0.3)]'
         }
     };
 

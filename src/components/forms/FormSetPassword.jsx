@@ -58,9 +58,9 @@ const FormSetPassword = ({ formData, onClose }) => {
     return (
         <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
             {/* Email pill */}
-            <div className="px-4 py-3 bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-[1rem]">
+            <div className="px-4 py-3 bg-[#0052CC]/5 border border-[#0052CC]/15 rounded-[1rem]">
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Usuario del Portal</p>
-                <p className="text-[13px] font-bold text-[#007AFF] truncate">{username}@farmalasa.app</p>
+                <p className="text-[13px] font-bold text-[#0052CC] truncate">{username}@farmalasa.app</p>
             </div>
 
             {/* Nueva contraseña */}
@@ -75,7 +75,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                         value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                     />
                 </div>
             </div>
@@ -92,7 +92,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Repite la contraseña"
                         value={confirm}
                         onChange={e => { setConfirm(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#007AFF]/30 focus:ring-4 focus:ring-[#007AFF]/10 focus:border-[#007AFF]/50"
+                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                     />
                 </div>
             </div>
@@ -109,7 +109,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || !password || !confirm}
-                className="w-full h-[48px] bg-[#007AFF] hover:bg-[#0066CC] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
+                className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none"
             >
                 {loading
                     ? <><Loader2 size={18} className="animate-spin" /> Guardando...</>

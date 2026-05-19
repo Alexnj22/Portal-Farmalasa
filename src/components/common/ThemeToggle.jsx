@@ -41,9 +41,9 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
     >
       <div className={`w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0
         transition-[background-color] duration-150
-        ${isCompat ? 'bg-[#007AFF]/20' : 'bg-white/10'}`}>
+        ${isCompat ? 'bg-[#0052CC]/20' : 'bg-white/10'}`}>
         {isCompat
-          ? <Monitor size={14} strokeWidth={2} className="text-[#007AFF]" />
+          ? <Monitor size={14} strokeWidth={2} className="text-[#0052CC]" />
           : <Layers size={14} strokeWidth={2} className="text-white/70 group-hover:text-white transition-colors duration-150" />
         }
       </div>
@@ -56,7 +56,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
         </p>
       </div>
       <div className={`w-8 h-4 rounded-full border flex items-center transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] shrink-0
-        ${isCompat ? 'bg-[#007AFF] border-[#007AFF] justify-end' : 'bg-white/10 border-white/20 justify-start'}`}>
+        ${isCompat ? 'bg-[#0052CC] border-[#0052CC] justify-end' : 'bg-white/10 border-white/20 justify-start'}`}>
         <div className={`w-3 h-3 rounded-full shadow-sm mx-0.5 transition-[background-color] duration-200
           ${isCompat ? 'bg-white' : 'bg-white/60'}`} />
       </div>

@@ -235,7 +235,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             )}
             
             <div className="flex items-center gap-1.5 relative z-10">
-              <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#007AFF] tracking-tight" title={emp.name}>
+              <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#0052CC] tracking-tight" title={emp.name}>
                 {shortName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
@@ -265,7 +265,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                   <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-emerald-500 hover:text-emerald-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-emerald-50 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
-                  <a href={`tel:${phoneDigits}`} className="text-[#007AFF] hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-blue-50 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
+                  <a href={`tel:${phoneDigits}`} className="text-[#0052CC] hover:text-blue-600 hover:scale-110 hover:-translate-y-0.5 transition-all bg-blue-50 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
                     <Phone size={10} strokeWidth={3} />
                   </a>
                 </div>
@@ -324,7 +324,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,122,255,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <User size={12} strokeWidth={2.5} className="md:hidden" />
@@ -355,7 +355,7 @@ const SkeletonRow = () => (
 
 const SortIcon = ({ columnKey, sortConfig }) => {
   if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} strokeWidth={3} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
-  return sortConfig.direction === 'asc' ? <ArrowUp size={12} strokeWidth={3} className="text-[#007AFF]" /> : <ArrowDown size={12} strokeWidth={3} className="text-[#007AFF]" />;
+  return sortConfig.direction === 'asc' ? <ArrowUp size={12} strokeWidth={3} className="text-[#0052CC]" /> : <ArrowDown size={12} strokeWidth={3} className="text-[#0052CC]" />;
 };
 
 const StaffManagementView = ({
@@ -583,7 +583,7 @@ const StaffManagementView = ({
     <div className={`flex items-center bg-white/40 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
         <input
           ref={searchInputRef}
           type="text"
@@ -593,7 +593,7 @@ const StaffManagementView = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
@@ -636,7 +636,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#007AFF]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#0052CC]/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -646,7 +646,7 @@ const StaffManagementView = ({
         <div className="flex items-center shrink-0 border-l border-white/30 pl-2 ml-1">
           <button
             onClick={() => setIsSearchActive(true)}
-            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
             title="Buscar colaborador"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -666,12 +666,12 @@ const StaffManagementView = ({
       <div className="p-4 md:p-6 lg:p-8 space-y-6 flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-700">
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
-          <button onClick={() => setActiveStatFilter('ALL')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'ALL' ? 'border-[#007AFF] shadow-[0_0_15px_rgba(0,122,255,0.2)] ring-1 ring-[#007AFF] -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
+          <button onClick={() => setActiveStatFilter('ALL')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'ALL' ? 'border-[#0052CC] shadow-[0_0_15px_rgba(0,82,204,0.2)] ring-1 ring-[#0052CC] -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
             <div>
-              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'ALL' ? 'text-[#007AFF]' : 'text-slate-500'}`}>Total</p>
+              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'ALL' ? 'text-[#0052CC]' : 'text-slate-500'}`}>Total</p>
               <h3 className="text-2xl md:text-3xl font-black text-slate-800 leading-none">{stats.total}</h3>
             </div>
-            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'ALL' ? 'bg-[#007AFF] text-white border-transparent shadow-[0_4px_15px_rgba(0,122,255,0.4)] scale-110' : 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20 group-hover:scale-110'}`}><Users size={20} strokeWidth={2.5} /></div>
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'ALL' ? 'bg-[#0052CC] text-white border-transparent shadow-[0_4px_15px_rgba(0,82,204,0.4)] scale-110' : 'bg-[#0052CC]/10 text-[#0052CC] border-[#0052CC]/20 group-hover:scale-110'}`}><Users size={20} strokeWidth={2.5} /></div>
           </button>
 
           <button onClick={() => setActiveStatFilter('Activo')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'Activo' ? 'border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.2)] ring-1 ring-emerald-400 -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
@@ -702,10 +702,10 @@ const StaffManagementView = ({
         <div className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">
 
           <div className="px-5 py-3.5 border-b border-white/40 bg-white/20 flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#007AFF]">
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
               <Hash size={12} strokeWidth={3} />
               {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
-              {activeStatFilter !== 'ALL' && <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">Filtrado por: <span className="uppercase text-[#007AFF] font-black">{activeStatFilter}</span></span>}
+              {activeStatFilter !== 'ALL' && <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span></span>}
             </div>
           </div>
 
@@ -758,7 +758,7 @@ const StaffManagementView = ({
             <div className="px-5 py-3 border-t border-white/40 bg-white/20 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Ver:</span>
-                <select className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-3 py-1.5 text-[10px] font-black text-slate-700 outline-none focus:ring-2 focus:ring-[#007AFF]/20 cursor-pointer shadow-sm transition-all appearance-none pr-8 relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: 'right 8px center', backgroundRepeat: 'no-repeat', backgroundSize: '12px' }} value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                <select className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-3 py-1.5 text-[10px] font-black text-slate-700 outline-none focus:ring-2 focus:ring-[#0052CC]/20 cursor-pointer shadow-sm transition-all appearance-none pr-8 relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: 'right 8px center', backgroundRepeat: 'no-repeat', backgroundSize: '12px' }} value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
                   <option value={15}>15 Filas</option><option value={30}>30 Filas</option><option value={50}>50 Filas</option>
                 </select>
               </div>
@@ -766,8 +766,8 @@ const StaffManagementView = ({
               <div className="flex items-center gap-4">
                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pág {currentPage} / {totalPages || 1}</span>
                 <div className="flex items-center gap-1.5 bg-white/50 p-1 rounded-full border border-white/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronLeft size={16} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronRight size={16} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#0052CC] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronLeft size={16} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#0052CC] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronRight size={16} strokeWidth={2.5} /></button>
                 </div>
               </div>
             </div>

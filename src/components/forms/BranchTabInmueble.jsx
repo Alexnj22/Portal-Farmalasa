@@ -22,7 +22,7 @@ const BranchTabInmueble = ({
     };
 
     const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(0,0,0,0.06)] hover:bg-white/80 hover:border-white";
-    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-[#007AFF]/30 focus-within:ring-4 focus-within:ring-[#007AFF]/10";
+    const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-[#0052CC]/30 focus-within:ring-4 focus-within:ring-[#0052CC]/10";
 
     const extinguisherOptions = useMemo(() => [
         { value: 'ABC', label: 'Polvo Químico Seco (ABC)' },
@@ -46,7 +46,7 @@ const BranchTabInmueble = ({
             <div className={`bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/60 pb-5">
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
+                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#0052CC] flex items-center gap-2">
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
@@ -64,7 +64,7 @@ const BranchTabInmueble = ({
                                 }
                             }));
                         }} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-[#007AFF]' : 'text-slate-400'}`}>Alquilado</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-[#0052CC]' : 'text-slate-400'}`}>Alquilado</span>
                     </div>
                 </div>
 
@@ -185,7 +185,7 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 2: ALCALDÍA */}
                 <div className={`bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF] mb-5 flex items-center gap-2">
+                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#0052CC] mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
                     <div className="space-y-4 flex-1">
@@ -229,7 +229,7 @@ const BranchTabInmueble = ({
                 <div className={`bg-white/60 rounded-[2rem] p-6 border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF] flex items-center gap-2">
+                            <h4 className="text-[12px] font-black uppercase tracking-widest text-[#0052CC] flex items-center gap-2">
                                 <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
                             </h4>
                             <Switch 

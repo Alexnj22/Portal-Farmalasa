@@ -101,13 +101,13 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
         onChange(e);
     };
 
-    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus-within:ring-4 focus-within:ring-[#007AFF]/10 focus-within:border-[#007AFF]/50";
+    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50";
     const errorClasses = hasError || (required && !value?.trim()) ? '!border-red-400 !bg-red-50/50' : '';
 
     return (
         <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                <span>{label} {helperText && <span className="text-[8px] text-[#007AFF] ml-1">{helperText}</span>}</span>
+                <span>{label} {helperText && <span className="text-[8px] text-[#0052CC] ml-1">{helperText}</span>}</span>
                 {required && !value?.trim() && !hasError && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
                 {hasError && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
@@ -362,7 +362,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const islandClass = "bg-white/60 rounded-[1.5rem] p-4 md:p-5 border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
     const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-white/80";
-    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#007AFF]/40 focus-within:ring-4 focus-within:ring-[#007AFF]/10 focus-within:border-[#007AFF]/50";
+    const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {
@@ -378,14 +378,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
             {/* ALERTA DE BORRADOR (solo en creación) */}
             {!isEditMode && hasDraft && (
-                <div className="mx-auto mb-4 bg-[#007AFF]/10 border border-[#007AFF]/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
-                    <div className="flex items-center gap-2 text-[#007AFF]">
+                <div className="mx-auto mb-4 bg-[#0052CC]/10 border border-[#0052CC]/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
+                    <div className="flex items-center gap-2 text-[#0052CC]">
                         <RotateCcw size={16} strokeWidth={2.5} />
                         <span className="text-[11px] font-bold">Tienes un borrador sin guardar.</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
-                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#007AFF] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
+                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#0052CC] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
                     </div>
                 </div>
             )}
@@ -672,18 +672,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
                             </div>
 
-                            <div className={`bg-[#007AFF]/5 rounded-[1.5rem] p-4 md:p-5 border border-[#007AFF]/20 shadow-[0_8px_30px_rgba(0,122,255,0.05)] transition-all hover:-translate-y-1 hover:shadow-md`}>
+                            <div className={`bg-[#0052CC]/5 rounded-[1.5rem] p-4 md:p-5 border border-[#0052CC]/20 shadow-[0_8px_30px_rgba(0,82,204,0.05)] transition-all hover:-translate-y-1 hover:shadow-md`}>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-[#007AFF] text-white rounded-[0.8rem] shadow-[0_4px_12px_rgba(0,122,255,0.3)]"><Lock size={16} strokeWidth={2.5} /></div>
-                                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#007AFF]">Seguridad Kiosko</h4>
+                                    <div className="p-2 bg-[#0052CC] text-white rounded-[0.8rem] shadow-[0_4px_12px_rgba(0,82,204,0.3)]"><Lock size={16} strokeWidth={2.5} /></div>
+                                    <h4 className="text-[12px] font-black uppercase tracking-widest text-[#0052CC]">Seguridad Kiosko</h4>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Requerido</span></label>
                                     <div className="relative">
-                                        <input type="text" name="code" value={formData.code} onChange={handleChange} className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[13px] font-black text-slate-700 outline-none uppercase shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-[#007AFF]/10 focus-within:border-[#007AFF]/50 hover:shadow-md ${!formData.code?.trim() ? '!border-red-400 !bg-red-50/50' : ''}`} />
-                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-[#007AFF] hover:bg-blue-50 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
+                                        <input type="text" name="code" value={formData.code} onChange={handleChange} className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[13px] font-black text-slate-700 outline-none uppercase shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50 hover:shadow-md ${!formData.code?.trim() ? '!border-red-400 !bg-red-50/50' : ''}`} />
+                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
-                                    <p className="text-[9px] font-bold text-[#007AFF] mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Codificado vía SHA-256 para el carnet.</p>
+                                    <p className="text-[9px] font-bold text-[#0052CC] mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Codificado vía SHA-256 para el carnet.</p>
                                 </div>
                             </div>
                         </div>

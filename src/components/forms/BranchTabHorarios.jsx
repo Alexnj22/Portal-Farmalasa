@@ -15,7 +15,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         if (isInvalid) {
             cardClass += "bg-red-50/80 border border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.05),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(239,68,68,0.15),inset_0_2px_10px_rgba(255,255,255,1)] hover:bg-red-50";
         } else {
-            cardClass += "bg-white/80 border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,122,255,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:border-[#007AFF]/30";
+            cardClass += "bg-white/80 border border-white shadow-[0_4px_15px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)] hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,82,204,0.08),inset_0_2px_10px_rgba(255,255,255,1)] hover:border-[#0052CC]/30";
         }
     } else {
         cardClass += "bg-slate-50/40 border border-white/50 opacity-80 hover:opacity-100 hover:bg-white/60 hover:shadow-sm";
@@ -25,7 +25,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-red-600' : 'text-[#007AFF]') : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-red-600' : 'text-[#0052CC]') : 'text-slate-400 group-hover:text-slate-600'}`}>
                         {day.name}
                     </p>
                     
@@ -33,7 +33,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <button
                             type="button"
                             onClick={() => copyPreviousDay(index)}
-                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-red-400 hover:text-red-600 hover:bg-red-100/50' : 'text-[#007AFF]/60 hover:text-[#007AFF] hover:bg-[#007AFF]/10'}`}
+                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-red-400 hover:text-red-600 hover:bg-red-100/50' : 'text-[#0052CC]/60 hover:text-[#0052CC] hover:bg-[#0052CC]/10'}`}
                             title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
                         >
                             <CopyPlus size={13} strokeWidth={2.5}/>
@@ -49,7 +49,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-red-500' : 'text-slate-500'}`}>
                             Apertura
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#007AFF]/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#0052CC]/10 bg-white">
                             <TimePicker12
                                 value={d.start || ""}
                                 defaultMeridiem="AM"
@@ -62,7 +62,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-red-500' : 'text-slate-500'}`}>
                             Cierre
                         </p>
-                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#007AFF]/10 bg-white">
+                        <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-[#0052CC]/10 bg-white">
                             <TimePicker12
                                 value={d.end || ""}
                                 defaultMeridiem="PM"
@@ -94,7 +94,7 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                 
                 {/* ENCABEZADO PRO */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-[#007AFF]/10 text-[#007AFF] rounded-[0.8rem] border border-[#007AFF]/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-[0.8rem] border border-[#0052CC]/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">

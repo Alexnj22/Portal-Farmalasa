@@ -8,7 +8,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#007AFF]/40 focus:border-[#007AFF]/50 focus:ring-4 focus:ring-[#007AFF]/10 rounded-[1rem] text-[13px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#0052CC]/40 focus:border-[#0052CC]/50 focus:ring-4 focus:ring-[#0052CC]/10 rounded-[1rem] text-[13px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     const entry = formData._entry || {};
@@ -33,8 +33,8 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
     return (
         <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 bg-[#007AFF]/5 border border-[#007AFF]/15 rounded-2xl px-4 py-2.5">
-                <p className="text-[11px] font-black text-[#007AFF]">
+            <div className="col-span-2 bg-[#0052CC]/5 border border-[#0052CC]/15 rounded-2xl px-4 py-2.5">
+                <p className="text-[11px] font-black text-[#0052CC]">
                     {emp.name} — Salario diario: ${daily.toFixed(2)}
                 </p>
             </div>

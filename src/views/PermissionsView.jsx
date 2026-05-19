@@ -599,7 +599,7 @@ const PermissionsView = () => {
     // Header flotante
     const headerLeft = (
         <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-[#007AFF] to-[#5856D6] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,122,255,0.25)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
+            <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl md:rounded-2xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
                 <Lock className="text-white" size={20} strokeWidth={1.5} />
             </div>
             <h2 className="font-semibold text-[18px] md:text-[22px] text-slate-900 tracking-tight">
@@ -625,7 +625,7 @@ const PermissionsView = () => {
         <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
@@ -639,7 +639,7 @@ const PermissionsView = () => {
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -659,7 +659,7 @@ const PermissionsView = () => {
                     </>
                 )}
                 <button onClick={() => setIsSearchMode(true)}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar cargo">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}

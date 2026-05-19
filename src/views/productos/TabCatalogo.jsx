@@ -102,7 +102,7 @@ function SmartPagination({ page, total, onChange }) {
                         : <button key={p} onClick={() => onChange(p)}
                             className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
                                 p === page
-                                    ? 'bg-[#007AFF] text-white shadow-md shadow-blue-200 scale-110'
+                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
                                     : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
                             }`}>{p}</button>
                 )}
@@ -153,7 +153,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             {/* Informational cards — total & nuevos */}
             <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[140px]">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                    <Package size={15} className="text-[#007AFF]" />
+                    <Package size={15} className="text-[#0052CC]" />
                 </div>
                 <div className="text-left min-w-0">
                     <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
@@ -227,7 +227,7 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     return (
         <th onClick={() => onSort(field)}
             className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active ? 'text-[#007AFF]' : 'text-slate-400 hover:text-slate-600'
+                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
             } ${className}`}>
             <span className="flex items-center gap-1">
                 {label}
@@ -295,13 +295,13 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                         value={item.nombre}
                         onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                         placeholder="Nombre del principio"
-                        className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 placeholder:text-slate-300"
+                        className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-slate-50 placeholder:text-slate-300"
                     />
                     <input
                         value={item.concentracion || ''}
                         onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                         placeholder="Cant."
-                        className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 bg-slate-50 placeholder:text-slate-300 text-center"
+                        className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-slate-50 placeholder:text-slate-300 text-center"
                     />
                     <button onClick={() => removeItem(item._key)}
                         className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
@@ -310,7 +310,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                 </div>
             ))}
             <button onClick={addItem}
-                className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors pt-1">
+                className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#0052CC] transition-colors pt-1">
                 <Plus size={10} /> Agregar principio
             </button>
         </div>
@@ -443,7 +443,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 <div className="flex bg-slate-100 rounded-full p-0.5 shrink-0">
                                     <button onClick={() => setField(i, 'view', 'sala')}
                                         className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
-                                            isSala ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                            isSala ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'
                                         }`}>Sala</button>
                                     <button onClick={() => setField(i, 'view', 'bodega')}
                                         className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
@@ -459,7 +459,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 {['vitrina', 'estante'].map(t => (
                                     <button key={t} onClick={() => setField(i, 'tipo', t)}
                                         className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
-                                            loc.tipo === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400'
+                                            loc.tipo === t ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400'
                                         }`}>
                                         {t === 'vitrina' ? 'Vit.' : 'Est.'}
                                     </button>
@@ -480,7 +480,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                     onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                     maxLength={2}
                                     className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                        isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                        isSala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'
                                     }`} />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -490,7 +490,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                     onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                     maxLength={2}
                                     className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                        isSala ? 'border-slate-200 focus:ring-[#007AFF]/30' : 'border-amber-200 focus:ring-amber-400/30'
+                                        isSala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'
                                     }`} />
                             </div>
                         </div>
@@ -500,7 +500,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                             <div className="mt-1.5 flex justify-center">
                                 <span className={`w-1 h-1 rounded-full transition-all ${
                                     isSala && hasBodega ? 'bg-amber-400' :
-                                    !isSala && hasSala  ? 'bg-[#007AFF]' : 'bg-transparent'
+                                    !isSala && hasSala  ? 'bg-[#0052CC]' : 'bg-transparent'
                                 }`} />
                             </div>
                         )}
@@ -671,7 +671,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             )}
                             <button onClick={() => fileRef.current?.click()}
                                 className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
-                                    border-slate-200 hover:border-[#007AFF]/50 bg-slate-50/70 hover:bg-blue-50/30">
+                                    border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30">
                                 {localFoto ? (
                                     <>
                                         <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
@@ -687,10 +687,10 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                                         {photoLoading
-                                            ? <Loader2 size={24} className="text-[#007AFF] animate-spin" />
+                                            ? <Loader2 size={24} className="text-[#0052CC] animate-spin" />
                                             : <>
-                                                <Camera size={24} className="text-slate-300 group-hover:text-[#007AFF] transition-colors" />
-                                                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#007AFF] transition-colors">Subir foto</span>
+                                                <Camera size={24} className="text-slate-300 group-hover:text-[#0052CC] transition-colors" />
+                                                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#0052CC] transition-colors">Subir foto</span>
                                                 <span className="text-[8px] text-slate-300">JPG, PNG o WebP</span>
                                             </>}
                                     </div>
@@ -718,7 +718,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
                                     <table className="min-w-full text-sm">
                                         <thead>
-                                            <tr className="bg-slate-50/95 border-b border-slate-200/60">
+                                            <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
                                                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
@@ -879,7 +879,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             Cancelar
                         </button>
                         <button onClick={handleSave} disabled={saving}
-                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#007AFF] text-white shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
+                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#0052CC] text-white shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
                             Guardar
                         </button>
@@ -1322,7 +1322,7 @@ export default function TabCatalogo({
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
                             <thead className="sticky top-0 z-10">
-                                <tr className="bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/60">
+                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
                                     <SortTh field="nombre"    label="Producto"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     <SortTh field="lab"       label="Laboratorio" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
                                     <SortTh field="categoria" label="Categoría"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
@@ -1468,7 +1468,7 @@ export default function TabCatalogo({
                                 onClick={() => { setPageSize(size); setPage(1); }}
                                 className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
                                     pageSize === size
-                                        ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
                                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
                                 }`}>
                                 {size}

@@ -128,7 +128,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
 
                 <div className="pt-4 border-t border-slate-200">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#007AFF] ml-1 mb-2 flex items-center gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] ml-1 mb-2 flex items-center gap-2">
                         <CalendarCheck size={14}/> Último Mes Pagado
                     </label>
                     <input 

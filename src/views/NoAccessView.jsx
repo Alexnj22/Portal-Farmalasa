@@ -33,7 +33,7 @@ const NoAccessView = () => {
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-[#F2F2F7] z-50 overflow-hidden">
+        <div className="fixed inset-0 flex items-center justify-center bg-[#E6F0FF] z-50 overflow-hidden">
 
             {/* Ambient blobs */}
             <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-red-400/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />

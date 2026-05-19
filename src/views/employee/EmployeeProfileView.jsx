@@ -25,7 +25,7 @@ const EVENT_THEMES = {
     TRANSFER:    { bg: 'bg-blue-50',     text: 'text-blue-700',    border: 'border-blue-200',    dot: 'border-blue-500',     glow: 'hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]'  },
     HIRING:      { bg: 'bg-emerald-50',  text: 'text-emerald-700', border: 'border-emerald-200', dot: 'border-emerald-500',  glow: 'hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]' },
 };
-const DEFAULT_THEME = { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'border-[#007AFF]', glow: 'hover:shadow-[0_8px_24px_rgba(0,122,255,0.10)]' };
+const DEFAULT_THEME = { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', dot: 'border-[#0052CC]', glow: 'hover:shadow-[0_8px_24px_rgba(0,82,204,0.10)]' };
 
 const WEEK_DAYS = [
     { id: 1, short: 'Lu' }, { id: 2, short: 'Ma' }, { id: 3, short: 'Mi' },
@@ -249,7 +249,7 @@ const EmployeeProfileView = ({ openModal }) => {
             {/* Edit button */}
             <button
                 onClick={() => openModal('editContact', emp)}
-                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,122,255,0.4)] hover:bg-[#0066DD] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
+                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-[#0052CC] text-white text-[11px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-[#003D99] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
             >
                 <Edit3 size={13} strokeWidth={2.5} />
                 <span className="hidden sm:inline">Editar</span>
@@ -559,7 +559,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     <p className="text-[11px] font-medium text-slate-500 mt-2 bg-white/70 p-2 rounded-lg border border-slate-100/80 flex gap-2 items-center">
                                                         <span className="font-bold line-through opacity-70">{meta.old_value}</span>
                                                         <ArrowRightLeft size={10} />
-                                                        <span className="font-bold text-[#007AFF]">{meta.new_value}</span>
+                                                        <span className="font-bold text-[#0052CC]">{meta.new_value}</span>
                                                     </p>
                                                 )}
                                                 {(isCancelled || isEdited) && (

@@ -85,13 +85,13 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
                 {onPrev
-                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#007AFF] transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
-                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#007AFF] transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
             </div>
 
@@ -118,23 +118,23 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                         const e = previewStart < previewEnd ? previewEnd   : previewStart;
                         inRange = dayStr > s && dayStr < e;
                         if (!isSingle) {
-                            if (isStart && previewStart <= previewEnd) wrapBg = 'bg-gradient-to-r from-transparent to-[#007AFF]/15';
-                            else if (isStart) wrapBg = 'bg-gradient-to-l from-transparent to-[#007AFF]/15';
-                            else if (isEnd   && previewStart <= previewEnd) wrapBg = 'bg-gradient-to-l from-transparent to-[#007AFF]/15';
-                            else if (isEnd) wrapBg = 'bg-gradient-to-r from-transparent to-[#007AFF]/15';
-                            else if (inRange) wrapBg = 'bg-[#007AFF]/12';
+                            if (isStart && previewStart <= previewEnd) wrapBg = 'bg-gradient-to-r from-transparent to-[#0052CC]/15';
+                            else if (isStart) wrapBg = 'bg-gradient-to-l from-transparent to-[#0052CC]/15';
+                            else if (isEnd   && previewStart <= previewEnd) wrapBg = 'bg-gradient-to-l from-transparent to-[#0052CC]/15';
+                            else if (isEnd) wrapBg = 'bg-gradient-to-r from-transparent to-[#0052CC]/15';
+                            else if (inRange) wrapBg = 'bg-[#0052CC]/12';
                         }
                     }
 
                     let btnCls = 'w-7 h-7 mx-auto flex items-center justify-center rounded-full text-[11px] font-bold transition-all z-10 relative ';
                     if (isStart || isEnd) {
-                        btnCls += 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.45)] scale-110 cursor-pointer';
+                        btnCls += 'bg-[#0052CC] text-white shadow-[0_2px_8px_rgba(0,82,204,0.45)] scale-110 cursor-pointer';
                     } else if (inRange) {
-                        btnCls += 'text-[#007AFF] font-black cursor-pointer hover:bg-white/80';
+                        btnCls += 'text-[#0052CC] font-black cursor-pointer hover:bg-white/80';
                     } else if (isToday) {
-                        btnCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 cursor-pointer hover:bg-white/80';
+                        btnCls += 'text-[#0052CC] font-black ring-1 ring-[#0052CC]/40 cursor-pointer hover:bg-white/80';
                     } else {
-                        btnCls += 'text-slate-600 cursor-pointer hover:bg-white/80 hover:text-[#007AFF]';
+                        btnCls += 'text-slate-600 cursor-pointer hover:bg-white/80 hover:text-[#0052CC]';
                     }
 
                     return (
@@ -145,7 +145,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                                 {day}
                             </button>
                             {isToday && !isStart && !isEnd && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#007AFF] z-20" />
+                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-[#0052CC] z-20" />
                             )}
                         </div>
                     );
@@ -306,15 +306,15 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-2xl bg-[#007AFF]/10 flex items-center justify-center shrink-0">
-                                <CalendarDays size={15} className="text-[#007AFF]" strokeWidth={2.5} />
+                            <div className="w-8 h-8 rounded-2xl bg-[#0052CC]/10 flex items-center justify-center shrink-0">
+                                <CalendarDays size={15} className="text-[#0052CC]" strokeWidth={2.5} />
                             </div>
                             <div>
                                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-700 leading-tight">
                                     Seleccionar período
                                 </p>
                                 <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
-                                    dayPhase === 'picking-end' ? 'text-[#007AFF] animate-pulse' : 'text-slate-400'
+                                    dayPhase === 'picking-end' ? 'text-[#0052CC] animate-pulse' : 'text-slate-400'
                                 }`}>
                                     {subtitle()}
                                 </p>
@@ -338,8 +338,8 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                         className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight
                                             ${active
-                                                ? 'bg-[#007AFF] text-white shadow-[0_2px_8px_rgba(0,122,255,0.4)] scale-[1.03]'
-                                                : 'bg-white/50 text-slate-600 hover:bg-white hover:text-[#007AFF] hover:shadow-md hover:-translate-y-0.5 border border-white/60'
+                                                ? 'bg-[#0052CC] text-white shadow-[0_2px_8px_rgba(0,82,204,0.4)] scale-[1.03]'
+                                                : 'bg-white/50 text-slate-600 hover:bg-white hover:text-[#0052CC] hover:shadow-md hover:-translate-y-0.5 border border-white/60'
                                             }`}>
                                         {p.label}
                                     </button>
@@ -357,7 +357,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     onClick={() => { setSelMode(opt.key); setDayPhase('idle'); setDayHover(null); }}
                                     className={`px-3 py-1 rounded-full text-[9.5px] font-black transition-all ${
                                         selMode === opt.key
-                                            ? 'bg-[#007AFF] text-white shadow-sm'
+                                            ? 'bg-[#0052CC] text-white shadow-sm'
                                             : 'text-slate-400 hover:text-slate-600'
                                     }`}>
                                     {opt.label}
@@ -372,13 +372,13 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <div className="px-5 pb-5">
                             <div className="flex items-center justify-between mb-3">
                                 <button type="button" onClick={() => setViewYear(y => y - 1)}
-                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#007AFF] transition-all shadow-sm">
+                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all shadow-sm">
                                     <ChevronLeft size={13} strokeWidth={3} />
                                 </button>
                                 <span className="text-[12px] font-black text-slate-700 tracking-wide">{viewYear}</span>
                                 <button type="button" onClick={() => setViewYear(y => y + 1)}
                                     disabled={viewYear >= curY + 1}
-                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#007AFF] transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
+                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
                                     <ChevronRight size={13} strokeWidth={3} />
                                 </button>
                             </div>
@@ -390,21 +390,21 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
                                     let cellCls = 'relative h-10 flex items-center justify-center rounded-2xl text-[11px] font-bold transition-all select-none ';
                                     if (isStart || isEnd) {
-                                        cellCls += 'bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.45)] scale-105 z-10 ';
+                                        cellCls += 'bg-[#0052CC] text-white shadow-[0_3px_10px_rgba(0,82,204,0.45)] scale-105 z-10 ';
                                     } else if (inRange) {
-                                        cellCls += 'bg-[#007AFF]/12 text-[#007AFF] font-black ';
+                                        cellCls += 'bg-[#0052CC]/12 text-[#0052CC] font-black ';
                                     } else if (isFuture) {
                                         cellCls += 'text-slate-300 cursor-not-allowed ';
                                     } else if (isCurrent) {
-                                        cellCls += 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/40 cursor-pointer hover:bg-white hover:shadow-sm ';
+                                        cellCls += 'text-[#0052CC] font-black ring-1 ring-[#0052CC]/40 cursor-pointer hover:bg-white hover:shadow-sm ';
                                     } else {
-                                        cellCls += 'text-slate-600 cursor-pointer hover:bg-white hover:text-[#007AFF] hover:shadow-sm ';
+                                        cellCls += 'text-slate-600 cursor-pointer hover:bg-white hover:text-[#0052CC] hover:shadow-sm ';
                                     }
 
                                     let stripCls = '';
-                                    if (inRange) stripCls = 'absolute inset-y-0 inset-x-0 bg-[#007AFF]/10 rounded-none';
-                                    else if (isStart && !isSingle) stripCls = 'absolute inset-y-0 right-0 left-1/2 bg-[#007AFF]/10';
-                                    else if (isEnd   && !isSingle) stripCls = 'absolute inset-y-0 left-0 right-1/2 bg-[#007AFF]/10';
+                                    if (inRange) stripCls = 'absolute inset-y-0 inset-x-0 bg-[#0052CC]/10 rounded-none';
+                                    else if (isStart && !isSingle) stripCls = 'absolute inset-y-0 right-0 left-1/2 bg-[#0052CC]/10';
+                                    else if (isEnd   && !isSingle) stripCls = 'absolute inset-y-0 left-0 right-1/2 bg-[#0052CC]/10';
 
                                     return (
                                         <button key={mi} type="button"
@@ -446,7 +446,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                             </div>
                             {dayPhase === 'picking-end' && (
                                 <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-[10px] font-bold text-[#007AFF] animate-pulse">
+                                    <p className="text-[10px] font-bold text-[#0052CC] animate-pulse">
                                         Selecciona la fecha de fin
                                     </p>
                                     <button type="button" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}
@@ -469,7 +469,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
             <div ref={triggerRef} onClick={open}
                 className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-[1rem] transition-all hover:bg-white/60 group">
                 <CalendarDays size={13}
-                    className={fini ? 'text-[#007AFF]' : 'text-slate-400 group-hover:text-[#007AFF] transition-colors'}
+                    className={fini ? 'text-[#0052CC]' : 'text-slate-400 group-hover:text-[#0052CC] transition-colors'}
                     strokeWidth={2.5} />
                 <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-slate-700' : 'text-slate-400'}`}>
                     {fini && ffin ? (rangeLabel || `${formatDisplay(fini)} → ${formatDisplay(ffin)}`) : placeholder}

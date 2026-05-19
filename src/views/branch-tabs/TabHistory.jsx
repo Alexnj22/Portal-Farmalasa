@@ -11,7 +11,7 @@ import { supabase } from '../../supabaseClient';
 // ============================================================================
 const getThemeForAction = (action, isDoc, isSynthetic) => {
     if (isSynthetic) return { icon: Building2, bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200', dot: 'bg-orange-500', shadow: 'shadow-[0_4px_20px_rgba(249,115,22,0.15)]' };
-    if (isDoc) return { icon: FileText, bg: 'bg-blue-50', text: 'text-[#007AFF]', border: 'border-[#007AFF]/20', dot: 'bg-[#007AFF]', shadow: 'shadow-[0_4px_20px_rgba(0,122,255,0.15)]' };
+    if (isDoc) return { icon: FileText, bg: 'bg-blue-50', text: 'text-[#0052CC]', border: 'border-[#0052CC]/20', dot: 'bg-[#0052CC]', shadow: 'shadow-[0_4px_20px_rgba(0,82,204,0.15)]' };
 
     switch (action) {
         case 'PAGO_REGISTRADO':
@@ -238,7 +238,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         return createPortal(
             <div id="print-report-container" className="hidden print:block w-full bg-white text-slate-900 font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-slate-600 uppercase tracking-widest leading-none">Sucursal: <span className="text-[#007AFF]">{liveBranch?.name || 'No especificada'}</span></h2></div>
+                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-slate-600 uppercase tracking-widest leading-none">Sucursal: <span className="text-[#0052CC]">{liveBranch?.name || 'No especificada'}</span></h2></div>
                     <div className="text-right"><p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-slate-900 leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
@@ -292,10 +292,10 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 >
                     {isSearchOpen ? (
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
-                            <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
+                            <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                             <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
-                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2">
+                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -327,12 +327,12 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
 
                                 <div className="relative z-[9999]" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                    <button className="h-9 px-3 flex items-center gap-2 text-slate-500 hover:bg-white hover:text-[#007AFF] rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
+                                    <button className="h-9 px-3 flex items-center gap-2 text-slate-500 hover:bg-white hover:text-[#0052CC] rounded-full transition-all font-black text-[10px] uppercase tracking-widest shrink-0">
                                         <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
                                     </button>
                                     <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                                         <div className="w-[160px] bg-white/90 backdrop-blur-xl border border-white/90 shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
-                                            <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-[#007AFF]/10 hover:text-[#007AFF] rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
+                                            <button onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-[#0052CC]/10 hover:text-[#0052CC] rounded-xl transition-colors"><Printer size={14} strokeWidth={2.5} /> Reporte PDF</button>
                                             <button onClick={() => { handleExportHistory(); setIsDownloadMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-colors"><FileOutput size={14} strokeWidth={2.5} /> Datos CSV</button>
                                         </div>
                                     </div>
@@ -340,7 +340,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                 <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
 
-                                <Filter size={14} className="text-[#007AFF] ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
+                                <Filter size={14} className="text-[#0052CC] ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
                                 <div className="w-[140px] sm:w-[160px] shrink-0">
                                     <div className="w-[140px] sm:w-[160px] shrink-0">
                                         <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)} options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]} clearable={false} />
@@ -361,7 +361,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
 
                             <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-slate-300/30 shrink-0`}>
-                                <button onClick={() => setIsSearchOpen(true)} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
+                                <button onClick={() => setIsSearchOpen(true)} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                 </button>
                             </div>
@@ -481,9 +481,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <div key={yearGroup.year} className="w-full mb-4">
 
                                         <div className="relative flex justify-center items-center w-full mb-4 group">
-                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-[#007AFF]/10 text-[#007AFF] border-white shadow-[0_10px_30px_rgba(0,122,255,0.2)]' : 'bg-white/50 text-slate-600 border-white/60 shadow-[0_4px_15px_rgba(0,0,0,0.04)] hover:bg-[#007AFF]/5 hover:text-[#007AFF] hover:border-white hover:shadow-[0_8px_25px_rgba(0,122,255,0.15)]'}`}>
+                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-20 flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-[13px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-[#0052CC]/10 text-[#0052CC] border-white shadow-[0_10px_30px_rgba(0,82,204,0.2)]' : 'bg-white/50 text-slate-600 border-white/60 shadow-[0_4px_15px_rgba(0,0,0,0.04)] hover:bg-[#0052CC]/5 hover:text-[#0052CC] hover:border-white hover:shadow-[0_8px_25px_rgba(0,82,204,0.15)]'}`}>
                                                 <Calendar size={15} strokeWidth={2.5} /> AÑO {yearGroup.year}
-                                                <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-[#007AFF]' : 'text-slate-400'}`} />
+                                                <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-[#0052CC]' : 'text-slate-400'}`} />
                                             </button>
                                             <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-slate-200/80 -z-10 md:hidden"></div>
                                         </div>
@@ -499,9 +499,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                         <div key={monthGroup.id} className="w-full mt-2 mb-2">
 
                                                             <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-[#007AFF] border-white shadow-[0_8px_20px_rgba(0,122,255,0.15)]' : 'bg-white/50 backdrop-blur-md text-slate-500 border-white/60 hover:text-slate-700 shadow-sm'}`}>
+                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-20 flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-white text-[#0052CC] border-white shadow-[0_8px_20px_rgba(0,82,204,0.15)]' : 'bg-white/50 backdrop-blur-md text-slate-500 border-white/60 hover:text-slate-700 shadow-sm'}`}>
                                                                     {monthGroup.name}
-                                                                    <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-[#007AFF]' : 'text-slate-400'}`} />
+                                                                    <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-[#0052CC]' : 'text-slate-400'}`} />
                                                                 </button>
                                                                 <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-slate-200/80 -z-10 md:hidden"></div>
                                                             </div>
@@ -589,7 +589,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                 {(oldVal || newVal) && (
                                                                                                     <div className="flex flex-col gap-1 mt-2">
                                                                                                         {oldVal && <span className="text-[10px] font-bold text-slate-400 line-through truncate">Antes: {oldVal}</span>}
-                                                                                                        {newVal && <span className={`text-[10px] font-bold truncate ${item.severity === 'CRITICAL' ? 'text-red-500' : 'text-[#007AFF]'}`}>Nuevo: {newVal}</span>}
+                                                                                                        {newVal && <span className={`text-[10px] font-bold truncate ${item.severity === 'CRITICAL' ? 'text-red-500' : 'text-[#0052CC]'}`}>Nuevo: {newVal}</span>}
                                                                                                     </div>
                                                                                                 )}
 
@@ -610,7 +610,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                     </div>
 
                                                                                                     {(isDoc && item.file_url) || parsedDetails.file_url ? (
-                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-[#007AFF] bg-white/40 backdrop-blur-md border border-white/60 hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[0_2px_8px_rgba(0,122,255,0.05)] hover:shadow-[0_6px_15px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 shrink-0">
+                                                                                                        <button onClick={() => handlePreviewDocument(item.file_url || parsedDetails.file_url, itemTitle)} className="flex items-center justify-center gap-1.5 text-[#0052CC] bg-white/40 backdrop-blur-md border border-white/60 hover:bg-white hover:border-white px-3 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest transition-all active:scale-[0.97] shadow-[0_2px_8px_rgba(0,82,204,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 shrink-0">
                                                                                                             <Eye size={12} strokeWidth={2.5} /> Ver Doc
                                                                                                         </button>
                                                                                                     ) : null}
@@ -637,7 +637,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                     {!showAllHistory && syntheticHistory.length > filteredHistory.length && !dateFilter.start && !dateFilter.end && searchQuery === '' && typeFilter === 'ALL' && (
                         <div className="pt-8 text-center animate-in fade-in duration-500 relative z-10">
-                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-white/80 backdrop-blur-md border border-white hover:border-[#007AFF]/30 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:text-[#007AFF] hover:shadow-[0_8px_20px_rgba(0,122,255,0.15)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
+                            <button onClick={() => setShowAllHistory(true)} className="px-6 h-10 bg-white/80 backdrop-blur-md border border-white hover:border-[#0052CC]/30 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:text-[#0052CC] hover:shadow-[0_8px_20px_rgba(0,82,204,0.15)] hover:-translate-y-1 transition-all rounded-full active:scale-[0.97] shadow-sm inline-flex items-center justify-center gap-2">
                                 Cargar historial completo
                             </button>
                         </div>

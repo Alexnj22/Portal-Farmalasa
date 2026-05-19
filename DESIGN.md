@@ -49,11 +49,14 @@ Diseño corporativo sin transparencias. Para navegadores / computadoras que no s
 ### Superficies — Compat
 | Token | Valor | Uso |
 |-------|-------|-----|
-| `--surface-card` | `#ffffff` | Cards planas |
-| `--surface-header` | `#ffffff` | Header sólido con borde inferior |
-| `--surface-modal` | `#ffffff` | Modal sólido |
-| `--surface-input` | `#F8FAFC` | Input con borde slate |
-| `--surface-page` | `#F1F5F9` | Fondo ligeramente más oscuro |
+| `--surface-page` | `#EEF2F7` | Gris azulado frío — no blanco puro |
+| `--surface-card` | `#FFFFFF` | Card blanca con sombra dimensional |
+| `--surface-header` | `#FFFFFF` | Header sólido, `border-radius: 1.25rem` |
+| `--surface-modal` | `#FFFFFF` | Modal sólido |
+| `--surface-input` | `#F7F9FC` | Input levemente grisado |
+| `--surface-sidebar` | `#111E35` | Sidebar navy sólido — mismo registro marca |
+
+**Nota compat:** Sin animaciones de entrada, sin hover lifts (evita blurriness en monitores no-retina). Se usa `subpixel-antialiased` para texto más nítido en monitores viejos.
 
 ### Neutros
 | Token | Valor | Uso |

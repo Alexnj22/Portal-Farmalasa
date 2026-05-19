@@ -63,32 +63,36 @@
 
 /* ── THEME: COMPAT (corporativo, sin transparencias) ── */
 [data-theme="compat"] {
-  --surface-page:         #F1F5F9;
-  --surface-card:         #ffffff;
-  --surface-card-hover:   #f8fafc;
-  --surface-header:       #ffffff;
-  --surface-modal:        #ffffff;
-  --surface-input:        #F8FAFC;
-  --surface-dropdown:     #ffffff;
-  --surface-tab-track:    #F1F5F9;
+  /* Superficies — paleta editorial fría */
+  --surface-page:         #EEF2F7;    /* gris azulado cálido, no blanco puro */
+  --surface-card:         #FFFFFF;
+  --surface-card-hover:   #FAFCFF;
+  --surface-header:       #FFFFFF;
+  --surface-modal:        #FFFFFF;
+  --surface-input:        #F7F9FC;
+  --surface-dropdown:     #FFFFFF;
+  --surface-tab-track:    #E8EEF5;
 
-  --border-card:          #E2E8F0;
-  --border-header:        #E2E8F0;
-  --border-modal:         #E2E8F0;
-  --border-input:         #CBD5E1;
-  --border-tab:           #E2E8F0;
-  --border-muted:         #F1F5F9;
+  /* Bordes más visibles y definidos */
+  --border-card:          #D4DCE8;
+  --border-header:        #D4DCE8;
+  --border-modal:         #D4DCE8;
+  --border-input:         #C2CEDC;
+  --border-tab:           #D4DCE8;
+  --border-muted:         #E8EEF5;
 
-  --shadow-card:          0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-card-hover:    0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-header:        0 1px 0 #E2E8F0, 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-modal:         0 20px 50px rgba(0,0,0,0.15);
-  --shadow-btn-brand:     0 2px 6px rgba(0,122,255,0.20);
-  --shadow-btn-brand-h:   0 4px 12px rgba(0,122,255,0.28);
+  /* Sombras dimensionales — anillo exterior + elevación */
+  --shadow-card:          0 0 0 1px #D4DCE8, 0 4px 20px rgba(10,20,50,0.07), 0 1px 4px rgba(10,20,50,0.04);
+  --shadow-card-hover:    0 0 0 1px #B8C5D6, 0 8px 28px rgba(10,20,50,0.10);
+  --shadow-header:        0 1px 0 #D4DCE8, 0 4px 16px rgba(10,20,50,0.05);
+  --shadow-modal:         0 0 0 1px #D4DCE8, 0 24px 60px rgba(10,20,50,0.18);
+  --shadow-btn-brand:     0 2px 8px rgba(0,122,255,0.22);
+  --shadow-btn-brand-h:   0 4px 14px rgba(0,122,255,0.30);
 
-  --radius-card:          0.75rem;
+  /* Radios — corporativo pero no cuadrado */
+  --radius-card:          1rem;
   --radius-modal:         1.25rem;
-  --radius-header:        0;
+  --radius-header:        1.25rem;
   --radius-btn:           0.5rem;
   --radius-input:         0.5rem;
   --radius-badge:         0.375rem;
@@ -200,9 +204,75 @@
   box-shadow: var(--shadow-card) !important;
 }
 
-/* Compat: reduce hover lift to 1px */
+/* Compat: sidebar sólido, sin blur, sin orbes */
+[data-theme="compat"] [data-surface="sidebar"] {
+  background: #111E35 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), 1px 0 0 rgba(255,255,255,0.05) !important;
+}
+[data-theme="compat"] .sidebar-ambient {
+  display: none !important;
+}
+
+/* Compat: kill entrance & stagger animations — reduce GPU load en monitores viejos */
+[data-theme="compat"] .animate-view-enter {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+[data-theme="compat"] .animate-stagger-child {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+[data-theme="compat"] [class*="animate-in"] {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+[data-theme="compat"] [class*="slide-in"] {
+  transform: none !important;
+}
+
+/* Compat: sin hover lifts — evita subpixel blur en monitores de baja resolución */
+[data-theme="compat"] * {
+  --tw-translate-y: 0 !important;
+  --tw-translate-x: 0 !important;
+}
+/* Restaurar el press scale (activo:scale) — feedback táctil importante */
+[data-theme="compat"] [class*="active:scale"] {
+  --tw-translate-y: 0 !important;
+}
+
+/* Compat: hover cards sin lift, solo cambio de sombra */
 [data-theme="compat"] [data-surface="card"]:hover {
-  --tw-translate-y: -1px;
+  transform: none !important;
+  box-shadow: var(--shadow-card-hover);
+}
+[data-theme="compat"] [data-surface="page-header"]:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-header);
+}
+
+/* Compat: reducir duración de transiciones — UI más snappy, menos GPU */
+[data-theme="compat"] * {
+  transition-duration: 120ms !important;
+}
+/* Excepciones: sidebar collapse que necesita 500ms */
+[data-theme="compat"] aside {
+  transition-duration: 300ms !important;
+}
+
+/* Compat: font rendering nítido para monitores no-retina */
+[data-theme="compat"] {
+  -webkit-font-smoothing: subpixel-antialiased;
+  text-rendering: optimizeLegibility;
+}
+[data-theme="compat"] * {
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /* ═══════════════════════════════════════════════════════════════

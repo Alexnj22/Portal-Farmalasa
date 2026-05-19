@@ -543,7 +543,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
                 {/* ── Ambient glow layers ── */}
-                <div className="absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
+                <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
                     <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#1D7AFC]/12 blur-2xl" />
                     <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#0A2A5E]/35 blur-3xl opacity-70" />
                     <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#041636]/40 blur-[45px] opacity-50" />
@@ -551,7 +551,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </div>
 
                 {/* ── Glass container ── */}
-                <div className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
+                <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
                     bg-[#081428]/96
                     backdrop-blur-3xl
                     border border-white/14

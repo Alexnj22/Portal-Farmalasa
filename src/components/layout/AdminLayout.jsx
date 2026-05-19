@@ -159,13 +159,13 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 className={`fixed lg:relative z-50 lg:z-[60] group/sidebar h-[calc(100dvh-16px)] lg:h-auto ${isMobile ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[320px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[320px] left-2 shadow-none') : (isSidebarOpen ? 'w-[19rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[5.5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')} transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0 my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
 
-                <div className={`absolute inset-y-0 left-0 -z-10 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isFloating ? 'w-[19rem]' : 'w-full'}`}>
+                <div className={`sidebar-ambient absolute inset-y-0 left-0 -z-10 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${isFloating ? 'w-[19rem]' : 'w-full'}`}>
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
                     <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
                     <div className="absolute -inset-8 rounded-[3.6rem] bg-black/20 blur-3xl opacity-25" />
                 </div>
 
-                <div className={`absolute inset-y-0 left-0 ${isFloating ? 'w-[19rem] shadow-[25px_0_60px_rgba(0,0,0,0.5)] z-50 border-white/20' : 'w-full z-10 border-white/10'} rounded-[2.5rem] overflow-hidden flex flex-col border bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] group-hover/sidebar:shadow-[0_30px_90px_rgba(0,0,0,0.5)] group-hover/sidebar:border-white/20`}>
+                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 ${isFloating ? 'w-[19rem] shadow-[25px_0_60px_rgba(0,0,0,0.5)] z-50 border-white/20' : 'w-full z-10 border-white/10'} rounded-[2.5rem] overflow-hidden flex flex-col border bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] group-hover/sidebar:shadow-[0_30px_90px_rgba(0,0,0,0.5)] group-hover/sidebar:border-white/20`}>
 
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/18 via-white/6 to-transparent opacity-80" />

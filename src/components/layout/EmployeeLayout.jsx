@@ -84,13 +84,13 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
             {/* ── Sidebar Desktop ── */}
             <aside className={`hidden lg:flex flex-col shrink-0 w-[15.5rem] my-2 ml-2 relative transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Glow layers */}
-                <div className="absolute inset-y-0 left-0 -z-10 w-full pointer-events-none">
+                <div className="sidebar-ambient absolute inset-y-0 left-0 -z-10 w-full pointer-events-none">
                     <div className="absolute -inset-4 rounded-[2.6rem] bg-[#0A2A5E]/30 blur-2xl opacity-55" />
                     <div className="absolute -inset-6 rounded-[3.2rem] bg-[#061F49]/25 blur-3xl opacity-35" />
                 </div>
 
                 {/* Panel */}
-                <div className="flex-1 rounded-[2.5rem] overflow-hidden flex flex-col border border-white/10 bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] shadow-[0_30px_90px_rgba(0,0,0,0.4)]">
+                <div data-surface="sidebar" className="flex-1 rounded-[2.5rem] overflow-hidden flex flex-col border border-white/10 bg-gradient-to-b from-[#0A2A5E] via-[#061F49] to-[#041636] shadow-[0_30px_90px_rgba(0,0,0,0.4)]">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                     {/* Logo */}

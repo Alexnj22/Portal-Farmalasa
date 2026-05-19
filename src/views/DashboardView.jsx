@@ -292,6 +292,7 @@ const DashboardView = ({ openModal }) => {
   const [activeTab, setActiveTab] = useState(() => {
     try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general';
   });
+  const [configTab, setConfigTab] = useState(activeTab);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
     try {
@@ -882,6 +883,7 @@ const DashboardView = ({ openModal }) => {
 
   const switchTab = (tabId) => {
     setActiveTab(tabId);
+    setConfigTab(tabId);
     try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch {}
   };
 
@@ -1541,7 +1543,6 @@ const DashboardView = ({ openModal }) => {
 
         {/* Config panel */}
         {showConfig && (() => {
-          const [configTab, setConfigTab] = React.useState(activeTab);
           const tabWidgetIds = configTab === 'general'
             ? [...TAB_WIDGETS.general, 'kpi']
             : TAB_WIDGETS[configTab] ?? [];

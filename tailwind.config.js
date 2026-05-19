@@ -13,10 +13,20 @@ export default {
           '70%':  { transform: 'scale(1.02) translateY(-2px)' },
           '100%': { transform: 'scale(1)    translateY(0)'    },
         },
+        'kpi-enter': {
+          '0%':   { opacity: '0', transform: 'translateY(10px) scale(0.97)' },
+          '100%': { opacity: '1', transform: 'translateY(0)    scale(1)'    },
+        },
+        'widget-enter': {
+          '0%':   { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)'   },
+        },
       },
       animation: {
         wiggle:          'wiggle 0.4s ease-in-out infinite',
         'widget-settle': 'widget-settle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        'kpi-enter':     'kpi-enter 280ms cubic-bezier(0.23,1,0.32,1) both',
+        'widget-enter':  'widget-enter 250ms cubic-bezier(0.23,1,0.32,1) both',
       },
       borderRadius: {
         glass: "2rem",

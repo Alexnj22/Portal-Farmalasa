@@ -183,8 +183,10 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
-  <div onClick={onClick} className={`relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-5 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-300' : ''}`}>
+const KpiCard = ({ icon: Icon, label, value, sub, color, onClick, animDelay }) => ( // eslint-disable-line no-unused-vars
+  <div onClick={onClick}
+    style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
+    className={`animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-5 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     <div className="relative flex items-center justify-between">
       <div className="w-10 h-10 rounded-[0.875rem] flex items-center justify-center shadow-sm" style={{ background: color + '18', border: `1px solid ${color}20` }}>
@@ -242,9 +244,9 @@ const MonthYearPicker = ({ value, onChange }) => {
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-white/90 backdrop-blur-[20px] border border-white/90 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
-              <button onClick={() => setViewYear(y => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-colors active:scale-90"><ChevronLeft size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
               <span className="text-[13px] font-black text-slate-800">{viewYear}</span>
-              <button onClick={() => setViewYear(y => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-colors active:scale-90"><ChevronRight size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {MONTH_NAMES_SHORT.map((m, i) => {
@@ -252,7 +254,7 @@ const MonthYearPicker = ({ value, onChange }) => {
                 const isCur = new Date().getMonth() === i && new Date().getFullYear() === viewYear;
                 return (
                   <button key={i} onClick={() => { onChange(new Date(viewYear, i, 1)); setOpen(false); }}
-                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-all active:scale-95 ${isSel ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)]' : isCur ? 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/30 hover:bg-[#007AFF]/10' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)]' : isCur ? 'text-[#007AFF] font-black ring-1 ring-[#007AFF]/30 hover:bg-[#007AFF]/10' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
                     {m}
                   </button>
                 );
@@ -916,7 +918,7 @@ const DashboardView = ({ openModal }) => {
       <div
         key={id}
         data-widget-id={id}
-        className={`relative group/drag ${isBouncing ? 'animate-widget-settle' : ''}`}
+        className={`relative group/drag animate-widget-enter ${isBouncing ? 'animate-widget-settle' : ''}`}
         style={{
           gridColumnStart: pos.col,
           gridRowStart:    pos.row,
@@ -929,9 +931,9 @@ const DashboardView = ({ openModal }) => {
         {/* Grip handle — reveals on hover */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-all duration-200 cursor-grab active:cursor-grabbing touch-none select-none"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-[opacity,transform] duration-200 cursor-grab active:cursor-grabbing touch-none select-none"
         >
-          <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#007AFF] hover:border-[#007AFF] hover:text-white transition-all duration-150 group/grip">
+          <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#007AFF] hover:border-[#007AFF] hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-slate-400 group-hover/grip:text-white transition-colors" />
             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
@@ -943,11 +945,11 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-30 transition-all duration-200 ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-30 transition-[opacity,transform] duration-200 ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-all active:scale-90 ${isResizeOpen ? 'bg-[#007AFF] border-[#007AFF] text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-[#007AFF] hover:border-[#007AFF]/50'}`}
+              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-[#007AFF] border-[#007AFF] text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-[#007AFF] hover:border-[#007AFF]/50'}`}
               title="Cambiar tamaño"
             >
               <Maximize2 size={11} strokeWidth={2.5} />
@@ -960,7 +962,7 @@ const DashboardView = ({ openModal }) => {
                   {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
-                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-all active:scale-90 ${n === eCols ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-[background-color,color] active:scale-[0.97] ${n === eCols ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                       {n}
                     </button>
                   ))}
@@ -969,7 +971,7 @@ const DashboardView = ({ openModal }) => {
                   {[1,2,3,4].map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
-                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-all active:scale-90 ${n === eRows ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                      className={`w-6 h-6 rounded-full text-[10px] font-black transition-[background-color,color] active:scale-[0.97] ${n === eRows ? 'bg-[#007AFF] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                       {n}
                     </button>
                   ))}
@@ -991,9 +993,9 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de Asistencia" icon={Activity}
           action={
             <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1 py-0.5">
-              <button onClick={() => setTrendOffset(o=>o-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-90"><ChevronLeft size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>o-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={13} strokeWidth={2.5} /></button>
               <span className="text-[11px] font-bold text-slate-600 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed"><ChevronRight size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed"><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
           <div className="px-4 pb-4 pt-2 h-full">
@@ -1045,12 +1047,12 @@ const DashboardView = ({ openModal }) => {
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
-              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#007AFF] hover:text-white transition-all active:scale-90 shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
+              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#007AFF] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
               <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
-                {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-all active:scale-95"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
-                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-95 ${salesView==='HOURS'?'bg-white text-[#007AFF] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
-                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-95 ${salesView==='DAYS'?'bg-white text-[#007AFF] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Días</button>
+                {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
+                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#007AFF] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
+                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-[#007AFF] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Días</button>
               </div>
             </div>
           }>
@@ -1067,7 +1069,7 @@ const DashboardView = ({ openModal }) => {
                   if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-[#007AFF]/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
-                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
+                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
                         <p className="font-black text-[8px] uppercase tracking-widest text-slate-400 mb-1 border-b border-white/10 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
@@ -1079,8 +1081,8 @@ const DashboardView = ({ openModal }) => {
                         )}
                         {salesView==='DAYS'&&<p className="text-[7px] text-[#007AFF] font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
-                      <div className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-[7px] font-bold text-slate-400 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-cyan-500 transition-all whitespace-nowrap z-10">{item.label}</span>
+                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
+                      <span className="text-[7px] font-bold text-slate-400 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-cyan-500 transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
                     </div>
                   ));
                 })()}
@@ -1135,7 +1137,7 @@ const DashboardView = ({ openModal }) => {
                       onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
                       onMouseLeave={()=>setSalesBarTip(null)}>
                       {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
-                      <div className="w-full rounded-t-[2px] transition-all" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
+                      <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                     </div>
                   );
                 })}
@@ -1218,7 +1220,7 @@ const DashboardView = ({ openModal }) => {
                 const issue=getBranchIssue(b);
                 return (
                   <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all text-left w-full ${canManage('dash_branches')?'hover:bg-amber-50/80 cursor-pointer':'cursor-default'} border-amber-100 bg-amber-50/50`}>
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-amber-50/80 cursor-pointer':'cursor-default'} border-amber-100 bg-amber-50/50`}>
                     <AlertTriangle size={13} className="text-amber-500 shrink-0"/>
                     <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-slate-700 truncate">{b.name}</p><p className="text-[9px] text-amber-600 font-semibold">{issue}</p></div>
                     {canManage('dash_branches')&&<ChevronRight size={11} className="text-slate-300 shrink-0"/>}
@@ -1237,9 +1239,9 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('calendar',
         <WidgetCard title="Calendario" icon={CalendarDays} action={
           <div className="flex items-center gap-0.5">
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-all active:scale-90"><ChevronLeft size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={12} strokeWidth={2.5}/></button>
             <MonthYearPicker value={calMonth} onChange={setCalMonth}/>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-all active:scale-90"><ChevronRight size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#007AFF] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={12} strokeWidth={2.5}/></button>
           </div>
         }>
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
@@ -1259,7 +1261,7 @@ const DashboardView = ({ openModal }) => {
                     <div key={day}
                       onMouseEnter={e=>{if(!hasH)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
-                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-all duration-150 ${isToday?'bg-[#007AFF]':hasH?'bg-red-50 hover:bg-red-100':'hover:bg-slate-100/80'}`}>
+                      className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-150 ${isToday?'bg-[#007AFF]':hasH?'bg-red-50 hover:bg-red-100':'hover:bg-slate-100/80'}`}>
                       <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-red-500':'text-slate-700'}`}>{day}</span>
                       {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-red-400"/></div>}
                     </div>
@@ -1325,9 +1327,9 @@ const DashboardView = ({ openModal }) => {
                 <span className="text-[13px] leading-none">🎉</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-all active:scale-90"><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={11} strokeWidth={2.5}/></button>
                 <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-all active:scale-90"><ChevronRight size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={11} strokeWidth={2.5}/></button>
               </div>
             </div>
           </div>
@@ -1351,7 +1353,7 @@ const DashboardView = ({ openModal }) => {
                     ? 'bg-white/30 border-white/40 opacity-40'
                     : 'bg-white/50 border-white/60 hover:bg-white/80 hover:border-slate-200/60 hover:shadow-sm';
                   return (
-                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 ${cardCls}`}>
+                    <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-200 ${cardCls}`}>
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
@@ -1514,7 +1516,7 @@ const DashboardView = ({ openModal }) => {
           const TabIcon = tab.icon;
           return (
             <button key={tab.id} onClick={() => switchTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[0.7rem] text-[12px] font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[0.7rem] text-[12px] font-bold transition-[background-color,color,box-shadow] duration-150 active:scale-[0.97] ${
                 activeTab === tab.id
                   ? 'bg-[#007AFF] text-white shadow-[0_2px_10px_rgba(0,122,255,0.35)]'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
@@ -1530,7 +1532,7 @@ const DashboardView = ({ openModal }) => {
       <div className="w-px h-5 bg-slate-200/70"/>
 
       {/* Personalizar */}
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
+      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-[background-color,color,border-color] duration-150 active:scale-[0.97] shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
         <Settings2 size={14}/> Personalizar
       </button>
     </div>
@@ -1548,7 +1550,7 @@ const DashboardView = ({ openModal }) => {
             : TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Personalizar Dashboard</p>
@@ -1562,7 +1564,7 @@ const DashboardView = ({ openModal }) => {
                   const TabIcon = tab.icon;
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
                         configTab === tab.id ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-700'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
@@ -1578,7 +1580,7 @@ const DashboardView = ({ openModal }) => {
                   const WIcon = w.icon;
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
-                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-all ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-100' : enabled ? 'bg-[#007AFF]/5 border-[#007AFF]/20 hover:bg-[#007AFF]/8' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-100' : enabled ? 'bg-[#007AFF]/5 border-[#007AFF]/20 hover:bg-[#007AFF]/8' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-[#007AFF]' : 'text-slate-400'}/>
                       <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-slate-800' : 'text-slate-400'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-[#007AFF]' : 'bg-slate-200'}`}>
@@ -1594,32 +1596,33 @@ const DashboardView = ({ openModal }) => {
 
         {/* KPI row — content varies by tab */}
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#FF3B30':'#34C759'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+          <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" animDelay={0}   onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" animDelay={60}  sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
+            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" animDelay={120} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#FF3B30':'#34C759'} animDelay={180} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
-            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#007AFF" onClick={() => navigate('/cotizaciones')}/>
-            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#34C759"/>
-            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#5856D6" onClick={() => navigate('/facturacion')}/>
-            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#FF9500"/>
+          <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#007AFF" animDelay={0}   onClick={() => navigate('/cotizaciones')}/>
+            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#34C759" animDelay={60}/>
+            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#5856D6" animDelay={120} onClick={() => navigate('/facturacion')}/>
+            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#FF9500" animDelay={180}/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:transition-all [&>*]:duration-300">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF"/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
-            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#FF3B30" onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+          <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#007AFF" animDelay={0}/>
+            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#34C759" animDelay={60}  sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}%`:'0%'}/>
+            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#FF3B30" animDelay={120} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#FF9500" animDelay={180} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
           </div>
         )}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div
+          key={activeTab}
           ref={gridRef}
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
           style={{ gridAutoRows: `${ROW_H}px` }}

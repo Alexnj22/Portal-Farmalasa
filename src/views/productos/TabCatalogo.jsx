@@ -1044,6 +1044,7 @@ export default function TabCatalogo({
             if (sField === 'nombre')          qb = qb.order('nombre', { ascending: sDir === 'asc' });
             else if (sField === 'activo')      qb = qb.order('activo', { ascending: sDir === 'asc' }).order('nombre');
             else if (sField === 'categoria')   qb = qb.order('tipo_medicamento', { ascending: sDir === 'asc', nullsFirst: false }).order('nombre');
+            else if (sField === 'lab')         qb = qb.order('nombre', { referencedTable: 'laboratorios', ascending: sDir === 'asc', nullsFirst: false }).order('nombre');
             else                               qb = qb.order('nombre');
 
             const { data, count, error } = await qb;

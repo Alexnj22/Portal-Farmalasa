@@ -185,11 +185,11 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div onClick={onClick}
-    className={`animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
-      <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0" style={{ background: color + '18', border: `1px solid ${color}20` }}>
+      <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
       <p className="text-[11px] font-semibold text-slate-500 leading-snug">{label}</p>
@@ -204,7 +204,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => ( // eslint-disable-line no-unused-vars
-  <div className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
+  <div className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
     {/* Glass shine */}
     <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
     {/* Header */}
@@ -932,7 +932,7 @@ const DashboardView = ({ openModal }) => {
         {/* Grip handle — reveals on hover */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-[opacity,transform] duration-200 cursor-grab active:cursor-grabbing touch-none select-none"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none"
         >
           <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#007AFF] hover:border-[#007AFF] hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-slate-400 group-hover/grip:text-white transition-colors" />
@@ -946,7 +946,7 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-30 transition-[opacity,transform] duration-200 ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-30 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
@@ -1347,8 +1347,8 @@ const DashboardView = ({ openModal }) => {
                           ?<img src={e.photo_url||e.photo} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-[#007AFF]/30':e.isTomorrow?'border-amber-300':'border-white'}`}/>
                           :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-[#007AFF] text-white border-[#007AFF]/30':e.isTomorrow?'bg-amber-500 text-white border-amber-300':'bg-slate-100 text-slate-500 border-white'}`}>{initials}</div>
                         }
-                        {e.isToday&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">🎂</span>}
-                        {e.isTomorrow&&<span className="absolute -top-1 -right-1 text-[11px] leading-none">⏰</span>}
+                        {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#007AFF] flex items-center justify-center ring-2 ring-white shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
+                        {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
@@ -1497,16 +1497,24 @@ const DashboardView = ({ openModal }) => {
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
-      {/* Tab pills */}
-      <div className="flex items-center bg-white/60 border border-white/80 rounded-[1.1rem] p-1 backdrop-blur-sm shadow-sm">
+      {/* Emil-style sliding tab indicator — single animated pill, not N toggling backgrounds */}
+      <div className="relative flex items-center bg-white/60 border border-white/80 rounded-[1.25rem] p-1 backdrop-blur-sm shadow-sm">
+        {/* The one pill that slides — position driven by activeTab index */}
+        <div className="absolute inset-1 pointer-events-none" aria-hidden>
+          <div
+            className="absolute inset-y-0 rounded-[0.875rem] bg-[#007AFF] shadow-[0_2px_10px_rgba(0,122,255,0.35)] transition-[left] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+            style={{
+              left:  `calc(${TABS.findIndex(t => t.id === activeTab)} * 100% / ${TABS.length})`,
+              width: `calc(100% / ${TABS.length})`,
+            }}
+          />
+        </div>
         {TABS.map(tab => {
           const TabIcon = tab.icon;
           return (
             <button key={tab.id} onClick={() => switchTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[0.7rem] text-[12px] font-bold transition-[background-color,color,box-shadow] duration-150 active:scale-[0.97] ${
-                activeTab === tab.id
-                  ? 'bg-[#007AFF] text-white shadow-[0_2px_10px_rgba(0,122,255,0.35)]'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+              className={`relative flex-1 flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[0.875rem] text-[12px] font-bold transition-[color] duration-150 active:scale-[0.97] whitespace-nowrap ${
+                activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-800'
               }`}>
               <TabIcon size={12} strokeWidth={2.2}/>
               {tab.label}
@@ -1518,9 +1526,9 @@ const DashboardView = ({ openModal }) => {
       {/* Divider */}
       <div className="w-px h-5 bg-slate-200/70"/>
 
-      {/* Personalizar */}
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-[background-color,color,border-color] duration-150 active:scale-[0.97] shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
-        <Settings2 size={14}/> Personalizar
+      {/* Personalizar — pill shape matching LiquidSelect trigger language */}
+      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-[background-color,color,border-color] duration-150 active:scale-[0.97] shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
+        <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar
       </button>
     </div>
   );
@@ -1609,7 +1617,6 @@ const DashboardView = ({ openModal }) => {
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div
-          key={activeTab}
           ref={gridRef}
           className={`grid gap-4 relative ${isMobile ? 'grid-cols-2' : 'grid-cols-4 min-w-[700px]'}`}
           style={{ gridAutoRows: `${ROW_H}px` }}

@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import ThemeToggle from '../common/ThemeToggle';
 
 const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleLogout }) => {
     const { user, isJefe } = useAuth();
@@ -248,6 +249,8 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             </div>
                         )}
 
+                        {isExpanded && <ThemeToggle variant="sidebar" />}
+
                         {isExpanded ? (
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setView('profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5" title="Ver mi perfil" type="button">
@@ -303,7 +306,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
 
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
-                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
+                    <div data-surface="page-header" className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-[0.97] transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />

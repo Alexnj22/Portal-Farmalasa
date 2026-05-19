@@ -209,6 +209,7 @@ const LiquidSelect = ({
     const dropdownContent = isOpen && (
         <div
             ref={dropdownRef}
+            data-surface="dropdown"
             style={{
                 top: coords.top,
                 left: coords.left,
@@ -352,6 +353,7 @@ const LiquidSelect = ({
 
     return (
         <div
+            data-surface="input"
             className={`relative group w-full transition-all duration-300 transform-gpu ${isOpen || disabled ? '' : 'hover:-translate-y-0.5'}`}
             ref={selectRef}
         >

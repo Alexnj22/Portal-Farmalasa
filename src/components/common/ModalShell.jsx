@@ -60,7 +60,8 @@ export default function ModalShell({
           Al quitar transform-gpu, evitamos que todo el modal se convierta en una sola textura rígida,
           permitiendo que el scroll interno del UnifiedModal se procese de forma independiente y nativa. */}
       <div
-        className={`relative w-full ${maxWidthClass} animate-in fade-in zoom-in-95 duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`}
+        data-surface="modal"
+        className={`relative w-full ${maxWidthClass} animate-in fade-in zoom-in-95 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

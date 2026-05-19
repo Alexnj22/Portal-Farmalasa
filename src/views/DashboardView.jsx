@@ -184,7 +184,7 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
-  <div onClick={onClick}
+  <div data-surface="card" onClick={onClick}
     className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
@@ -204,7 +204,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => ( // eslint-disable-line no-unused-vars
-  <div className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
+  <div data-surface="card" className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
     {/* Glass shine */}
     <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
     {/* Header */}
@@ -1498,7 +1498,7 @@ const DashboardView = ({ openModal }) => {
   const filtersContent = (
     <div className="flex items-center gap-2">
       {/* Emil-style sliding tab indicator — single animated pill, not N toggling backgrounds */}
-      <div className="relative flex items-center bg-white/60 border border-white/80 rounded-[1.25rem] p-1 backdrop-blur-sm shadow-sm">
+      <div data-surface="tab-track" className="relative flex items-center bg-white/60 border border-white/80 rounded-[1.25rem] p-1 backdrop-blur-sm shadow-sm">
         {/* The one pill that slides — position driven by activeTab index */}
         <div className="absolute inset-1 pointer-events-none" aria-hidden>
           <div

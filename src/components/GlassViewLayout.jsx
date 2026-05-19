@@ -36,11 +36,11 @@ const GlassViewLayout = ({
     };
 
     return (
-        <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto h-full w-full font-sans animate-in fade-in duration-700 relative overflow-hidden overscroll-none">
+        <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto h-full w-full font-sans animate-view-enter relative overflow-hidden overscroll-none">
 
             {/* ── DESKTOP: header flotante (lg+) ────────────────────────────── */}
             <div className="hidden lg:block absolute top-6 xl:top-7 left-0 right-0 z-40 px-6 xl:px-8 pointer-events-none">
-                <div className="group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2.5rem] py-6 px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto transition-all duration-500 ease-out">
+                <div data-surface="page-header" className="group/header backdrop-blur-[10px] backdrop-saturate-[300%] bg-white/20 border border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)] hover:-translate-y-[1px] rounded-[2.5rem] py-6 px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
                     <div className="relative z-10 flex flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0 shrink-0">
@@ -116,10 +116,10 @@ const GlassViewLayout = ({
                 <div className="hidden lg:block h-[180px] xl:h-[200px]" />
 
                 {/* Cuerpo del contenido */}
-                <div className={`group/table flex flex-col transition-all duration-500 ease-out transform-gpu ${
+                <div data-surface={transparentBody ? undefined : "card"} className={`group/table flex flex-col ${
                     transparentBody
                         ? 'bg-transparent'
-                        : 'bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] overflow-hidden'
+                        : 'bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] rounded-[1.5rem] lg:rounded-[2.5rem] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] overflow-hidden transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]'
                 }`}>
                     {children}
                 </div>

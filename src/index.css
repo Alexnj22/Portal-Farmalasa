@@ -1,5 +1,239 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — PORTAL FARMALASA
+   Referencia: DESIGN.md en la raíz del proyecto
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand */
+  --brand:          #007AFF;
+  --brand-dark:     #005CE6;
+  --brand-purple:   #5856D6;
+
+  /* Semantic */
+  --success:        #34C759;
+  --warning:        #FF9500;
+  --danger:         #FF3B30;
+
+  /* Ease functions */
+  --ease-spring:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out:       cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Duration */
+  --dur-fast:       150ms;
+  --dur-base:       200ms;
+  --dur-slow:       300ms;
+
+  /* ── THEME: LIQUID GLASS (default) ── */
+  --surface-page:         #F2F2F7;
+  --surface-card:         rgba(255,255,255,0.55);
+  --surface-card-hover:   rgba(255,255,255,0.70);
+  --surface-header:       rgba(255,255,255,0.85);
+  --surface-modal:        rgba(255,255,255,0.88);
+  --surface-input:        rgba(255,255,255,0.60);
+  --surface-dropdown:     rgba(255,255,255,0.75);
+  --surface-tab-track:    rgba(255,255,255,0.60);
+
+  --border-card:          rgba(255,255,255,0.75);
+  --border-header:        rgba(255,255,255,0.80);
+  --border-modal:         rgba(255,255,255,0.90);
+  --border-input:         rgba(255,255,255,0.80);
+  --border-tab:           rgba(255,255,255,0.80);
+  --border-muted:         rgba(0,0,0,0.06);
+
+  --shadow-card:          inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 32px rgba(0,0,0,0.06);
+  --shadow-card-hover:    inset 0 1px 0 rgba(255,255,255,0.95), 0 16px 40px rgba(0,0,0,0.09);
+  --shadow-header:        inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 24px rgba(0,0,0,0.05);
+  --shadow-modal:         0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95);
+  --shadow-btn-brand:     0 4px 14px rgba(0,122,255,0.25);
+  --shadow-btn-brand-h:   0 8px 20px rgba(0,122,255,0.35);
+
+  --radius-card:          1.75rem;
+  --radius-modal:         2rem;
+  --radius-header:        2.5rem;
+  --radius-btn:           9999px;
+  --radius-input:         0.75rem;
+  --radius-badge:         9999px;
+
+  --backdrop-card:        blur(18px) saturate(180%);
+  --backdrop-header:      blur(20px) saturate(180%);
+  --backdrop-modal:       blur(40px) saturate(150%);
+}
+
+/* ── THEME: COMPAT (corporativo, sin transparencias) ── */
+[data-theme="compat"] {
+  --surface-page:         #F1F5F9;
+  --surface-card:         #ffffff;
+  --surface-card-hover:   #f8fafc;
+  --surface-header:       #ffffff;
+  --surface-modal:        #ffffff;
+  --surface-input:        #F8FAFC;
+  --surface-dropdown:     #ffffff;
+  --surface-tab-track:    #F1F5F9;
+
+  --border-card:          #E2E8F0;
+  --border-header:        #E2E8F0;
+  --border-modal:         #E2E8F0;
+  --border-input:         #CBD5E1;
+  --border-tab:           #E2E8F0;
+  --border-muted:         #F1F5F9;
+
+  --shadow-card:          0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-card-hover:    0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-header:        0 1px 0 #E2E8F0, 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-modal:         0 20px 50px rgba(0,0,0,0.15);
+  --shadow-btn-brand:     0 2px 6px rgba(0,122,255,0.20);
+  --shadow-btn-brand-h:   0 4px 12px rgba(0,122,255,0.28);
+
+  --radius-card:          0.75rem;
+  --radius-modal:         1.25rem;
+  --radius-header:        0;
+  --radius-btn:           0.5rem;
+  --radius-input:         0.5rem;
+  --radius-badge:         0.375rem;
+
+  --backdrop-card:        none;
+  --backdrop-header:      none;
+  --backdrop-modal:       none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPAT GLOBAL OVERRIDES
+   Targets Tailwind utility classes via attribute selectors.
+   backdrop-filter: none disables all blur/saturate in compat mode.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Remove ALL blur in compat */
+[data-theme="compat"] [class*="backdrop-blur-"],
+[data-theme="compat"] [class*="backdrop-saturate-"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Surface tokens — applied via data-surface attribute */
+[data-surface="card"] {
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--backdrop-card);
+  -webkit-backdrop-filter: var(--backdrop-card);
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-spring);
+}
+[data-surface="card"]:hover {
+  --tw-translate-y: -2px;
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-surface="page-header"] {
+  background: var(--surface-header);
+  border: 1px solid var(--border-header);
+  box-shadow: var(--shadow-header);
+  border-radius: var(--radius-header);
+  backdrop-filter: var(--backdrop-header);
+  -webkit-backdrop-filter: var(--backdrop-header);
+}
+
+[data-surface="modal"] {
+  background: var(--surface-modal);
+  border: 1px solid var(--border-modal);
+  box-shadow: var(--shadow-modal);
+  border-radius: var(--radius-modal);
+  backdrop-filter: var(--backdrop-modal);
+  -webkit-backdrop-filter: var(--backdrop-modal);
+}
+
+[data-surface="dropdown"] {
+  background: var(--surface-dropdown);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-modal);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--backdrop-card);
+  -webkit-backdrop-filter: var(--backdrop-card);
+}
+
+[data-surface="input"] {
+  background: var(--surface-input);
+  border: 1px solid var(--border-input);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
+  border-radius: var(--radius-input);
+  backdrop-filter: var(--backdrop-card);
+  -webkit-backdrop-filter: var(--backdrop-card);
+}
+
+[data-surface="tab-track"] {
+  background: var(--surface-tab-track);
+  border: 1px solid var(--border-tab);
+  border-radius: 1.25rem;
+  backdrop-filter: var(--backdrop-card);
+  -webkit-backdrop-filter: var(--backdrop-card);
+}
+
+/* Compat: round pill buttons → standard rounded */
+[data-theme="compat"] [data-surface="tab-track"] {
+  border-radius: 0.75rem;
+}
+
+/* Compat: hide ambient gradient orbs */
+[data-theme="compat"] .animate-ambient-drift,
+[data-theme="compat"] .animate-ambient-drift-reverse {
+  display: none !important;
+}
+
+/* Compat: reduce hover lift to 1px */
+[data-theme="compat"] [data-surface="card"]:hover {
+  --tw-translate-y: -1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL ANIMATION UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Entrance animation for view-level containers */
+@keyframes viewEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-view-enter {
+  animation: viewEnter 250ms var(--ease-spring) both;
+}
+
+/* Stagger helper — add to children, use --stagger-delay CSS var */
+@keyframes staggerEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-stagger-child {
+  animation: staggerEnter 220ms var(--ease-spring) both;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+/* Hover shimmer on dark sidebar items */
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+.animate-shimmer {
+  animation: shimmer 1.4s var(--ease-out) infinite;
+}
+
+/* Skeleton pulse */
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(148,163,184,0.12) 25%,
+    rgba(148,163,184,0.22) 37%,
+    rgba(148,163,184,0.12) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+@keyframes skeletonPulse {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* ANIMACIONES PARA LOS ORBES (LIQUID GLASS) */
 @keyframes ambientDrift {
     0% { transform: translate3d(0, 0, 0) scale(1); }

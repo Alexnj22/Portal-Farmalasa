@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, ClipboardList, Bell, User, LogOut, Building2, Sparkles, FolderOpen } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
+import ThemeToggle from '../common/ThemeToggle';
 
 const NAV_ITEMS = [
     { id: 'home',          label: 'Inicio',       icon: Home },
@@ -140,6 +141,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                     {/* Footer usuario */}
                     <div className="p-4 border-t border-white/10 bg-black/10 relative">
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+                        <ThemeToggle variant="sidebar" className="mb-3" />
                         <div className="flex items-center gap-2">
                             <button onClick={() => navigate('/profile')} className="flex-1 flex items-center gap-3 hover:bg-white/10 p-2 -m-2 rounded-[1rem] transition-all duration-300 text-left group active:scale-[0.98]">
                                 <div className="h-10 w-10 rounded-[1rem] bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-[#1D7AFC]/50 transition-all">
@@ -162,7 +164,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Header móvil */}
                 <div className="lg:hidden px-4 pt-3 pb-2 shrink-0">
-                    <div className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[1.5rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                    <div data-surface="page-header" className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[1.5rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex-shrink-0">
                                 {user?.photo

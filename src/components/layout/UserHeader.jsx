@@ -11,7 +11,7 @@ const UserHeader = ({ user, handleLogout }) => {
         pr-[max(env(safe-area-inset-right,24px),24px)]">
         
         {/* Contenedor Glass Flotante */}
-        <div className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl px-5 py-3 transition-all hover:bg-white/80 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+        <div data-surface="page-header" className="flex items-center justify-between bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl px-5 py-3 transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-white/80 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
             
             {/* --- LOGO + TÍTULO --- */}
             <div className="flex items-center gap-3.5">

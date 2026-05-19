@@ -64,7 +64,7 @@ export default function IdleScanPanel({
               className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[10px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-orange-400/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
             />
             {hasValue && (
-              <button type="button" onClick={clearHandler} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-95">
+              <button type="button" onClick={clearHandler} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]">
                 <XCircle size={22} strokeWidth={2} />
               </button>
             )}
@@ -73,11 +73,11 @@ export default function IdleScanPanel({
 
           <div className="mt-5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center gap-2 transition-all duration-300 bg-red-500/10 px-6 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-95">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center gap-2 transition-all duration-300 bg-red-500/10 px-6 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-orange-400 flex items-center gap-2 transition-all duration-300 bg-orange-500/10 px-6 py-3.5 rounded-full border border-orange-500/30 hover:bg-orange-500/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-95">
+              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-orange-400 flex items-center gap-2 transition-all duration-300 bg-orange-500/10 px-6 py-3.5 rounded-full border border-orange-500/30 hover:bg-orange-500/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <ShieldAlert size={14} /> Autorizar Permiso / Salida
               </button>
             )}

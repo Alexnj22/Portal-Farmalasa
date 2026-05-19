@@ -111,7 +111,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition-all shrink-0 active:scale-95" title="Desconectar Kiosco">
+                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
                                                     <PowerOff size={14} strokeWidth={2.5} />
                                                 </button>
                                             )}
@@ -124,7 +124,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => setConfirmingId(null)} 
-                                                    className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
                                                 >
                                                     Cancelar
                                                 </button>
@@ -132,7 +132,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => executeRevoke(kiosk.id, kiosk.device_name)} 
-                                                    className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
                                                 >
                                                     {isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}
                                                 </button>

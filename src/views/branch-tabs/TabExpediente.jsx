@@ -48,7 +48,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-95"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -57,7 +57,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-95"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#007AFF] hover:bg-white transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -66,7 +66,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.isCustom && !doc.url && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-[0.97]"
                         title="Eliminar Espacio"
                     >
                         <Trash2 size={14} strokeWidth={2.5} />
@@ -172,7 +172,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-blue-50/50 text-[#007AFF] font-black text-[10px] uppercase tracking-widest border border-blue-200/60 hover:bg-[#007AFF] hover:text-white hover:border-[#007AFF] hover:shadow-[0_6px_20px_rgba(0,122,255,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-95"
+                        className="w-full h-10 rounded-xl bg-blue-50/50 text-[#007AFF] font-black text-[10px] uppercase tracking-widest border border-blue-200/60 hover:bg-[#007AFF] hover:text-white hover:border-[#007AFF] hover:shadow-[0_6px_20px_rgba(0,122,255,0.35)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -372,7 +372,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => setShowAllDocs(!showAllDocs)}
-                            className={`h-10 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${showAllDocs
+                            className={`h-10 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ${showAllDocs
                                 ? 'bg-white/60 backdrop-blur-xl text-slate-800 border-white/80'
                                 : 'bg-white/60 backdrop-blur-xl text-slate-500 border-white/80'
                                 }`}
@@ -382,7 +382,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => openModal('addCustomDocument', liveBranch)}
-                            className="h-10 px-4 rounded-full bg-white/60 backdrop-blur-xl text-slate-700 font-black text-[10px] uppercase tracking-widest border border-white/80 flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-[#007AFF] active:scale-95 shrink-0"
+                            className="h-10 px-4 rounded-full bg-white/60 backdrop-blur-xl text-slate-700 font-black text-[10px] uppercase tracking-widest border border-white/80 flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-[#007AFF] active:scale-[0.97] shrink-0"
                         >
                             <Plus size={16} strokeWidth={3} /> Nuevo
                         </button>
@@ -391,7 +391,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={handleSearchClick}
-                            className="w-10 h-10 rounded-full bg-[#007AFF] text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shrink-0"
+                            className="w-10 h-10 rounded-full bg-[#007AFF] text-white flex items-center justify-center shadow-[0_4px_15px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shrink-0"
                             title="Buscar Documento"
                         >
                             <Search size={16} strokeWidth={3} />
@@ -436,7 +436,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <CheckCircle2 size={40} className="text-emerald-400 mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-emerald-600">Expediente impecable</p>
                             <p className="text-[11px] font-bold text-emerald-500/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#007AFF] bg-white border border-[#007AFF]/20 shadow-[0_2px_10px_rgba(0,122,255,0.05)] hover:border-[#007AFF]/50 hover:bg-blue-50 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-95">
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#007AFF] bg-white border border-[#007AFF]/20 shadow-[0_2px_10px_rgba(0,122,255,0.05)] hover:border-[#007AFF]/50 hover:bg-blue-50 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>

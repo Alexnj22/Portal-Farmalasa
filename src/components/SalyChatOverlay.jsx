@@ -169,7 +169,7 @@ const SalyChatOverlay = () => {
                                             if (avisosBtn) avisosBtn.click();
                                         }, 100);
                                     }}
-                                    className="mt-1 w-full py-2 bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 text-[10.5px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95"
+                                    className="mt-1 w-full py-2 bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 text-[10.5px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-[0.97]"
                                 >
                                     Ir al Módulo de Avisos
                                 </button>
@@ -205,7 +205,7 @@ const SalyChatOverlay = () => {
                                     <button
                                         onClick={() => executePublishAnnouncement(draftObj, msgId)}
                                         disabled={publishingId === msgId}
-                                        className="flex-1 py-2.5 bg-[#007AFF] hover:bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 py-2.5 bg-[#007AFF] hover:bg-blue-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {publishingId === msgId ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : <><Send size={14} strokeWidth={2.5} /> Aprobar y Publicar</>}
                                     </button>
@@ -253,7 +253,7 @@ const SalyChatOverlay = () => {
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="relative z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-rose-500 hover:text-white transition-colors active:scale-95">
+                        <button onClick={() => setIsOpen(false)} className="relative z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-rose-500 hover:text-white transition-colors active:scale-[0.97]">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
@@ -313,7 +313,7 @@ const SalyChatOverlay = () => {
                             <button
                                 type="submit"
                                 disabled={!inputValue.trim() || isTyping}
-                                className="absolute right-1.5 w-9 h-9 bg-gradient-to-r from-[#007AFF] to-[#005CE6] text-white flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="absolute right-1.5 w-9 h-9 bg-gradient-to-r from-[#007AFF] to-[#005CE6] text-white flex items-center justify-center rounded-full shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 {isTyping ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} className="ml-0.5" strokeWidth={2.5} />}
                             </button>
@@ -325,7 +325,7 @@ const SalyChatOverlay = () => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     title="Asistente Operativo Saly"
-                    className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(6,182,212,0.4)] hover:shadow-[0_15px_30px_rgba(6,182,212,0.5)] hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out z-50 overflow-hidden ${isOpen ? 'bg-[#041636] rotate-90 shadow-none hover:-translate-y-0' : 'bg-gradient-to-tr from-sky-500 via-cyan-400 to-teal-400 border border-white/30'}`}
+                    className={`pointer-events-auto relative flex items-center justify-center w-14 h-14 rounded-full shadow-[0_10px_25px_rgba(6,182,212,0.4)] hover:shadow-[0_15px_30px_rgba(6,182,212,0.5)] hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 ease-out z-50 overflow-hidden ${isOpen ? 'bg-[#041636] rotate-90 shadow-none hover:-translate-y-0' : 'bg-gradient-to-tr from-sky-500 via-cyan-400 to-teal-400 border border-white/30'}`}
                 >
                     {isOpen ? (
                         <X size={24} strokeWidth={2.5} className="text-white -rotate-90 transition-transform duration-300" />

@@ -277,11 +277,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Check size={13} strokeWidth={2.5} /> Aprobar
                             </button>
                             <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-[12px] font-bold transition-all active:scale-95 shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(239,68,68,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(239,68,68,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <X size={13} strokeWidth={2.5} /> Rechazar
                             </button>
                         </div>
@@ -445,7 +445,7 @@ const RequestsView = () => {
                 ))}
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={() => setIsSearchMode(true)}
-                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
+                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -543,7 +543,7 @@ const RequestsView = () => {
                             </button>
                             <button onClick={handleConfirmAction}
                                 disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
                                     actionModal.mode === 'approve'
                                         ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
                                         : 'bg-red-500 hover:bg-red-600 shadow-[0_4px_16px_rgba(239,68,68,0.3)]'

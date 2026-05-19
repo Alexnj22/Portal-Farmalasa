@@ -131,7 +131,7 @@ export default function FeedbackOverlay({
                   <button
                     type="button"
                     onClick={onEarlyExtra}
-                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-purple-500/10 backdrop-blur-xl border border-purple-500/30 text-purple-300 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] w-full transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-200 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-95"
+                    className="flex items-center justify-center gap-2 px-8 py-3.5 bg-purple-500/10 backdrop-blur-xl border border-purple-500/30 text-purple-300 rounded-[1.5rem] font-bold uppercase tracking-widest text-[11px] w-full transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-200 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] active:scale-[0.97]"
                   >
                     <TimerReset size={15} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">Registrar Tiempo Extra</span>
@@ -176,7 +176,7 @@ export default function FeedbackOverlay({
                     <p className={`text-[15px] md:text-[16px] font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-violet-100/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${isSuccess ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-violet-500/20 text-violet-300 border border-violet-400/40 hover:bg-violet-500/30 hover:border-violet-400/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]' : isUrgent ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-violet-500/20 text-violet-300 border border-violet-400/40 hover:bg-violet-500/30 hover:border-violet-400/60 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]' : isUrgent ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-base">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>

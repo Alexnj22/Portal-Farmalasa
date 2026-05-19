@@ -110,7 +110,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
                         <Users size={16} className="text-[#007AFF]"/> Profesionales Asignados
                     </h4>
-                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-[#007AFF]/20 text-[#007AFF] hover:bg-[#007AFF] hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-95 uppercase tracking-widest shadow-sm hover:shadow-[0_4px_12px_rgba(0,122,255,0.2)] hover:-translate-y-0.5">
+                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-[#007AFF]/20 text-[#007AFF] hover:bg-[#007AFF] hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[0_4px_12px_rgba(0,122,255,0.2)] hover:-translate-y-0.5">
                         <Plus size={14} strokeWidth={2.5}/> Añadir Profesional
                     </button>
                 </div>
@@ -120,7 +120,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         /* TARJETA PADRE 2 (DINÁMICA) */
                         <div key={nurse.id || index} className="bg-white/40 backdrop-blur-xl border border-white/80 p-5 md:p-6 rounded-[2rem] relative group shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 hover:bg-white/70 transition-all duration-500 transform-gpu">
                             
-                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-red-200 text-red-400 rounded-full shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-95 hover:scale-110">
+                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-red-200 text-red-400 rounded-full shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-[0.97] hover:scale-110">
                                 <Trash2 size={14} strokeWidth={2.5}/>
                             </button>
                             

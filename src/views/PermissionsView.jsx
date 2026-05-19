@@ -635,7 +635,7 @@ const PermissionsView = () => {
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
@@ -659,7 +659,7 @@ const PermissionsView = () => {
                     </>
                 )}
                 <button onClick={() => setIsSearchMode(true)}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar cargo">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}

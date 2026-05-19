@@ -134,7 +134,7 @@ const EmployeeScheduleView = () => {
             <div className="flex items-center justify-between bg-white/70 backdrop-blur-xl border border-white/60 rounded-[1.75rem] px-4 py-3 shadow-sm">
                 <button
                     onClick={() => setWeekOffset(v => v - 1)}
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90"
+                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]"
                 >
                     <ChevronLeft size={18} strokeWidth={2.5} />
                 </button>
@@ -146,7 +146,7 @@ const EmployeeScheduleView = () => {
                 </div>
                 <button
                     onClick={() => setWeekOffset(v => v + 1)}
-                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-90"
+                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>

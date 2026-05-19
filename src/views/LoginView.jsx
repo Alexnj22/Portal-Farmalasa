@@ -442,7 +442,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                             }}
                                             title={scannerActive ? 'Cerrar cámara' : 'Escanear carné'}
                                             className={`shrink-0 w-[50px] h-[50px] flex items-center justify-center
-                                                rounded-[1.25rem] border backdrop-blur-md transition-all active:scale-95
+                                                rounded-[1.25rem] border backdrop-blur-md transition-all active:scale-[0.97]
                                                 ${scannerActive
                                                     ? 'bg-red-50/80 border-red-200/60 text-red-400'
                                                     : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF]'}`}>
@@ -535,7 +535,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 className="w-full h-[48px] bg-gradient-to-b from-[#007AFF] to-[#005CE6]
                                     text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest
                                     shadow-lg flex items-center justify-center gap-2 transition-all
-                                    active:scale-95 disabled:opacity-70 disabled:active:scale-100">
+                                    active:scale-[0.97] disabled:opacity-70 disabled:active:scale-100">
                                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Ingresar al Portal'}
                             </button>
                         </form>
@@ -550,7 +550,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     landscape:pb-[max(env(safe-area-inset-bottom,32px),32px)]">
 
                     <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end gap-6 z-30 p-5 rounded-[3rem] bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_30px_60px_rgba(0,0,0,0.08),inset_0_2px_20px_rgba(255,255,255,0.8)] animate-in fade-in slide-in-from-right-8 duration-700 hover:bg-white/50 hover:shadow-[0_50px_100px_rgba(0,0,0,0.12),inset_0_2px_30px_rgba(255,255,255,1)] hover:border-white/80 hover:scale-[1.02] transition-all cursor-default">
-                        <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
+                        <a href="https://clientesdte.oss.com.sv/farma_salud/dashboard.php" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(0,122,255,0.2)] transition-all duration-500 overflow-hidden active:scale-[0.97]">
                             <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <div className="overflow-hidden flex items-center justify-start">
                                     <span className="text-[#007AFF] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Ventas</span>
@@ -563,7 +563,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                         <div className="w-10 h-[2px] bg-white/50 mr-3 rounded-full transition-all duration-300 group-hover:bg-white/80" />
 
-                        <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(88,86,214,0.2)] transition-all duration-500 overflow-hidden active:scale-95">
+                        <a href="https://farmalasa.com" target="_blank" rel="noopener noreferrer" className="group flex items-center h-16 rounded-[1.5rem] bg-white/50 hover:bg-white border border-transparent hover:border-white/90 shadow-sm hover:shadow-[0_15px_30px_rgba(88,86,214,0.2)] transition-all duration-500 overflow-hidden active:scale-[0.97]">
                             <div className="grid grid-cols-[0fr] group-hover:grid-cols-[1fr] transition-[grid-template-columns] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <div className="overflow-hidden flex items-center justify-start">
                                     <span className="text-[#5856D6] text-[10px] font-black uppercase tracking-widest whitespace-nowrap pl-5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">Farmalasa</span>
@@ -638,7 +638,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                                 }
                                             }}
                                             title={scannerActive ? 'Cerrar cámara' : 'Escanear carné con cámara'}
-                                            className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-95 ${
+                                            className={`shrink-0 w-[58px] h-[58px] flex items-center justify-center rounded-[1.5rem] border backdrop-blur-md shadow-sm transition-all duration-300 active:scale-[0.97] ${
                                                 scannerActive
                                                     ? 'bg-red-50/80 border-red-200/60 text-red-400 hover:bg-red-100 hover:text-red-500'
                                                     : 'bg-white/40 border-white/60 text-slate-400 hover:bg-white hover:text-[#007AFF] hover:border-[#007AFF]/20'
@@ -725,7 +725,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#007AFF] to-[#005CE6] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100">
+                            <button type="submit" disabled={isLoading} className="w-full h-[64px] bg-gradient-to-b from-[#007AFF] to-[#005CE6] text-white rounded-[1.75rem] font-black text-[14px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-70 disabled:active:scale-100">
                                 {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Ingresar al Portal'}
                             </button>
                         </form>
@@ -735,7 +735,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <div className="flex items-center gap-4 my-8 opacity-60">
                                     <div className="flex-1 h-px bg-slate-400/30"></div>
                                 </div>
-                                <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-95 transition-transform group hover:bg-white/40">
+                                <button onClick={() => setView('timeclock')} className="w-full p-4 rounded-[2rem] bg-white/20 backdrop-blur-md border border-white/90 flex items-center justify-between shadow-sm active:scale-[0.97] transition-transform group hover:bg-white/40">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-[1.25rem] bg-white text-slate-500 flex items-center justify-center border border-white shadow-sm group-hover:text-[#007AFF] transition-colors">
                                             <Clock size={20} strokeWidth={2.5} />

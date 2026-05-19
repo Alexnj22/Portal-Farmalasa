@@ -99,7 +99,7 @@ const AuthPromptPanel = ({
               <button
                 type="button"
                 onClick={clearHandler}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-95"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]"
                 title="Limpiar código"
               >
                 <XCircle size={22} strokeWidth={2} />
@@ -112,16 +112,16 @@ const AuthPromptPanel = ({
           <div className="mt-5 sm:mt-6 flex flex-col items-center justify-center gap-3 w-full">
 
             {promptType === 'OUT_LATE' && (
-              <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-300 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-95">
+              <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-300 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
                 No, guardar según horario
               </button>
             )}
             {skipPinHandler && (
-              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-amber-500/10 px-5 py-3.5 rounded-full border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-95">
+              <button type="button" onClick={skipPinHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-amber-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-amber-500/10 px-5 py-3.5 rounded-full border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <SkipForward size={14} /> Omitir PIN — Notificar a TH
               </button>
             )}
-            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-red-500/10 px-5 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-95">
+            <button type="button" onClick={cancelHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-red-500/10 px-5 py-3.5 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
               <XCircle size={14} /> Cancelar / Atrás
             </button>
           </div>

@@ -677,7 +677,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title={isEdit ? 'Editar Cotización' : 'Nueva Cotización'}
             filtersContent={
                 <button onClick={() => { resetForm(); setMode('list'); }}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <ChevronLeft size={14} strokeWidth={3} /> Lista
                 </button>
             }
@@ -834,11 +834,11 @@ export default function CotizacionesView() {
 
                 <div className="flex items-center justify-end gap-3 pb-4">
                     <button onClick={() => { resetForm(); setMode('list'); }}
-                        className="px-6 py-3 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                        className="px-6 py-3 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                         Cancelar
                     </button>
                     <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
-                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#007AFF] hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-95'}`}>
+                        className={`flex items-center gap-2 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#007AFF] hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-[0.97]'}`}>
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
                         {saving ? 'Guardando...' : isEdit ? 'Actualizar Cotización' : 'Guardar Cotización'}
                     </button>
@@ -859,21 +859,21 @@ export default function CotizacionesView() {
                 filtersContent={
                     <div className="flex items-center gap-2 flex-wrap">
                         <button onClick={() => setMode('list')}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-95 transition-all">
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white/60 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-white/80 hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                             <ChevronLeft size={14} strokeWidth={3} /> Lista
                         </button>
                         {cot.status === 'ACTIVA' && canEdit && (
                             <>
                                 <button onClick={() => startEdit(cot)}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-95 transition-all">
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-200 hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     <Edit2 size={13} strokeWidth={2.5} /> Editar
                                 </button>
                                 <button onClick={() => setConfirmAnular(cot.id)}
-                                    className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-95 transition-all">
+                                    className="px-4 py-2.5 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                     Anular
                                 </button>
                                 <button onClick={() => handlePrint(cot, itemsData)}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-md hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] active:scale-[0.97] transition-all">
                                     <Printer size={14} strokeWidth={2.5} /> Imprimir / PDF
                                 </button>
                             </>
@@ -1001,7 +1001,7 @@ export default function CotizacionesView() {
                     {cot.status === 'ACTIVA' && (
                         <div className="flex justify-end pb-4">
                             <button onClick={() => handlePrint(cot, itemsData)}
-                                className="flex items-center gap-2 px-7 py-3.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] active:scale-95 transition-all">
+                                className="flex items-center gap-2 px-7 py-3.5 bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg hover:bg-[#0066DD] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] active:scale-[0.97] transition-all">
                                 <Printer size={16} strokeWidth={2.5} /> Imprimir / Guardar PDF
                             </button>
                         </div>
@@ -1040,7 +1040,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-95 transition-all">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:bg-[#0066DD] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             ) : undefined}

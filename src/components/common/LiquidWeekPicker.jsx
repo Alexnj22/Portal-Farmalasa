@@ -113,7 +113,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 <div className="flex items-center justify-between mb-3 px-1">
                     <button type="button"
                         onClick={() => setViewDate(new Date(year, month - 1, 1))}
-                        className="p-1.5 hover:bg-white/80 rounded-full text-slate-500 transition-all active:scale-90">
+                        className="p-1.5 hover:bg-white/80 rounded-full text-slate-500 transition-all active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
                     <span className="text-[12px] font-black text-slate-700 uppercase tracking-widest">
@@ -121,7 +121,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                     </span>
                     <button type="button"
                         onClick={() => setViewDate(new Date(year, month + 1, 1))}
-                        className="p-1.5 hover:bg-white/80 rounded-full text-slate-500 transition-all active:scale-90">
+                        className="p-1.5 hover:bg-white/80 rounded-full text-slate-500 transition-all active:scale-[0.97]">
                         <ChevronRight size={14} strokeWidth={3} />
                     </button>
                 </div>

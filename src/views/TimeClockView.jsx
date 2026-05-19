@@ -123,7 +123,7 @@ const TimeClockView = ({ setView }) => {
       {/* Botón Salir */}
       <button 
         onClick={handleLogout} 
-        className="fixed top-[max(env(safe-area-inset-top,16px),16px)] right-[max(env(safe-area-inset-right,16px),16px)] text-white/50 hover:text-white flex items-center justify-center gap-2 z-50 font-medium bg-white/5 border border-white/10 w-10 h-10 sm:w-auto sm:h-11 sm:px-5 rounded-full backdrop-blur-xl active:scale-95 transition-all duration-500 hover:scale-105 hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3),inset_0_1px_5px_rgba(255,255,255,0.05)] cursor-pointer" 
+        className="fixed top-[max(env(safe-area-inset-top,16px),16px)] right-[max(env(safe-area-inset-right,16px),16px)] text-white/50 hover:text-white flex items-center justify-center gap-2 z-50 font-medium bg-white/5 border border-white/10 w-10 h-10 sm:w-auto sm:h-11 sm:px-5 rounded-full backdrop-blur-xl active:scale-[0.97] transition-all duration-500 hover:scale-105 hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20 hover:shadow-[0_10px_20px_rgba(0,0,0,0.3),inset_0_1px_5px_rgba(255,255,255,0.05)] cursor-pointer" 
         title="Salir del Kiosco (Esc)"
       >
         <LogOut size={16} strokeWidth={2} /> 

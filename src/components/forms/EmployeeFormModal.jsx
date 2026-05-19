@@ -385,7 +385,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     </div>
                     <div className="flex items-center gap-2">
                         <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
-                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#007AFF] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md">Restaurar</button>
+                        <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#007AFF] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
                     </div>
                 </div>
             )}

@@ -49,7 +49,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                     : <Sparkles size={16} className="text-cyan-400 animate-pulse" />}
             </div>
 
-            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 z-20" title="Ignorar aviso">
+            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-[0.97] z-20" title="Ignorar aviso">
                 <X size={14} strokeWidth={2.5} />
             </button>
 
@@ -60,7 +60,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-10">
-                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
                         <Zap size={14} strokeWidth={2.5} /> Crear este turno
                     </button>
                 </div>
@@ -117,10 +117,10 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-[0.97]">
                             Cancelar
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm ${confirmAction === 'archive' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
                             {confirmAction === 'archive' ? 'Archivar' : 'Reactivar'}
                         </button>
                     </div>
@@ -130,19 +130,19 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             <div className={`absolute top-4 right-4 flex items-center gap-1.5 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-50 ${isEditingThis || confirmAction ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
                 {!isArchived && !confirmAction && (
                     <>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-[#007AFF]/60 hover:bg-white hover:text-[#007AFF] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-95 hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-[#007AFF]/60 hover:bg-white hover:text-[#007AFF] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Duplicar">
                             <Copy size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-95 hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300' : 'bg-white/80 text-amber-500 border-white hover:bg-white hover:text-amber-600'}`} title="Editar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300' : 'bg-white/80 text-amber-500 border-white hover:bg-white hover:text-amber-600'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-slate-400 hover:bg-white hover:text-red-500 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-95 hover:-translate-y-0.5 cursor-pointer" title="Archivar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-slate-400 hover:bg-white hover:text-red-500 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
                             <Archive size={12} strokeWidth={2.5} />
                         </button>
                     </>
                 )}
                 {isArchived && !confirmAction && (
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-emerald-500 hover:bg-white hover:text-emerald-600 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-95 hover:-translate-y-0.5 cursor-pointer" title="Reactivar">
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('unarchive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-emerald-500 hover:bg-white hover:text-emerald-600 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Reactivar">
                         <RotateCcw size={12} strokeWidth={2.5} />
                     </button>
                 )}
@@ -424,7 +424,7 @@ const TabShifts = ({ branches, shiftTab }) => {
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group">
                                 <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                             </button>
                         )}
@@ -515,7 +515,7 @@ const TabShifts = ({ branches, shiftTab }) => {
                             className="flex-1 bg-transparent outline-none text-[13px] font-semibold text-slate-700 placeholder-slate-400"
                         />
                         {localSearch && (
-                            <button onClick={() => { setLocalSearch(''); searchInputRef.current?.focus(); }} className="text-slate-400 hover:text-slate-600 transition-colors active:scale-90">
+                            <button onClick={() => { setLocalSearch(''); searchInputRef.current?.focus(); }} className="text-slate-400 hover:text-slate-600 transition-colors active:scale-[0.97]">
                                 <X size={14} strokeWidth={2.5} />
                             </button>
                         )}
@@ -537,7 +537,7 @@ const TabShifts = ({ branches, shiftTab }) => {
                                     {localSearch ? `No hay turnos que coincidan con "${localSearch}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
                                 </p>
                                 {localSearch && (
-                                    <button onClick={() => setLocalSearch('')} className="mt-4 px-4 py-2 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-[11px] font-black uppercase tracking-widest hover:bg-[#007AFF]/20 transition-colors active:scale-95">
+                                    <button onClick={() => setLocalSearch('')} className="mt-4 px-4 py-2 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-[11px] font-black uppercase tracking-widest hover:bg-[#007AFF]/20 transition-colors active:scale-[0.97]">
                                         Limpiar búsqueda
                                     </button>
                                 )}

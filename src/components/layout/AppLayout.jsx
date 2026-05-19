@@ -608,7 +608,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     text-white/50 hover:text-white
                                     shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]
                                     hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]
-                                    transition-all duration-200 active:scale-95">
+                                    transition-all duration-200 active:scale-[0.97]">
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
                         )}
@@ -685,7 +685,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <button onClick={handleLogout}
                                         className="p-2 rounded-[0.85rem] text-white/40 hover:text-red-300 hover:bg-red-500/15
                                             border border-transparent hover:border-red-500/20
-                                            transition-all flex-shrink-0 hover:scale-105 active:scale-95"
+                                            transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]"
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>
@@ -700,7 +700,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             bg-white/6 border border-white/10
                                             text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]
-                                            hover:scale-105 active:scale-95 transition-all">
+                                            hover:scale-105 active:scale-[0.97] transition-all">
                                         <ChevronRight size={17} strokeWidth={2} />
                                     </button>
                                 )}
@@ -710,7 +710,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             bg-white/6 border border-white/12
                                             text-[#1D7AFC] hover:bg-white/12 hover:border-white/20
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(29,122,252,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
-                                            hover:scale-105 active:scale-95 transition-all"
+                                            hover:scale-105 active:scale-[0.97] transition-all"
                                         title="PIN">
                                         {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
@@ -726,7 +726,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             bg-white/6 border border-white/12
                                             text-purple-400 hover:bg-white/12 hover:border-white/20
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(168,85,247,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
-                                            hover:scale-105 active:scale-95 transition-all"
+                                            hover:scale-105 active:scale-[0.97] transition-all"
                                         title="PIN SU">
                                         {isSuCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
@@ -770,7 +770,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-90 transition-transform">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-[0.97] transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
                             <div className="w-px h-6 bg-slate-300/50 rounded-full" />
@@ -783,7 +783,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             {showBell && unreadCount > 0 && (
                                 <button
                                     onClick={() => navigate('/my-announcements')}
-                                    className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-95 transition-all flex items-center justify-center hover:shadow-md
+                                    className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-[0.97] transition-all flex items-center justify-center hover:shadow-md
                                         ${hasUrgentUnread ? 'bg-red-50 border-red-200' : 'bg-white border-white/60'}`}
                                 >
                                     <BellRing
@@ -797,7 +797,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-60" />
                                 </button>
                             )}
-                            <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-95 transition-all flex items-center justify-center relative group hover:shadow-lg">
+                            <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg">
                                 <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
@@ -822,7 +822,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 className={`relative flex items-center justify-center w-11 h-11 rounded-[1.25rem]
                                     backdrop-blur-2xl border
                                     shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
-                                    hover:-translate-y-0.5 hover:scale-105 active:scale-95 active:translate-y-0
+                                    hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0
                                     transition-all duration-200
                                     ${hasUrgentUnread
                                         ? 'bg-red-50/90 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'

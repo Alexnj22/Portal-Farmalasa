@@ -24,7 +24,7 @@ const UserHeader = ({ user, handleLogout }) => {
                  </div>
                  
                  <div className="flex flex-col">
-                     <h1 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">
+                     <h1 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">
                          Portal Farmacias
                      </h1>
                      <div className="flex items-center gap-1.5 mt-0.5">
@@ -69,7 +69,7 @@ const UserHeader = ({ user, handleLogout }) => {
                 {/* Botón Logout Estilizado */}
                 <button 
                     onClick={handleLogout}
-                    className="group relative p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-400 hover:text-red-500 transition-all duration-300 active:scale-95"
+                    className="group relative p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-400 hover:text-red-500 transition-all duration-300 active:scale-[0.97]"
                     title="Cerrar Sesión"
                 >
                     <LogOut size={18} className="transition-transform group-hover:-translate-x-0.5" />

@@ -468,7 +468,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                   'border-slate-200 hover:border-slate-300'
                                                                 }`}>
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
                                                                             isCopied  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                                                             isVisited ? 'bg-amber-50 text-amber-700 border-amber-200' :
                                                                             isCCF     ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' :
@@ -940,7 +940,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
                                                                             isCopied      ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                                                             isVisited     ? 'bg-amber-50 text-amber-700 border-amber-200' :
                                                                             hasNullCampos ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' :
@@ -1381,7 +1381,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                         <div key={n.id} className="relative group/tip">
                                                             <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-emerald-400 shadow-emerald-100' : 'border-red-200 hover:border-red-300'}`}>
                                                                 <button onClick={() => copyNullId(copyVal)}
-                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-95 ${isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}`}>
+                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${isCopied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}`}>
                                                                     {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                     {n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
                                                                 </button>
@@ -1759,7 +1759,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             const isConfirming = confirmingId === r.id;
                                             return (
                                                 <React.Fragment key={r.id}>
-                                                    <tr className={`transition-colors duration-200 group border-l-4 border-transparent ${theme.rowHover}`}>
+                                                    <tr className={`transition-colors duration-200 group ${theme.rowHover}`}>
                                                         <td className="p-5 pl-6">
                                                             <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
                                                             <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
@@ -1770,7 +1770,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                         <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
                                                         <td className="p-5 pr-6 text-right">
                                                             <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                                 <Check size={13} strokeWidth={2.5} /> Confirmar
                                                             </button>
                                                         </td>
@@ -1862,7 +1862,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     const isConfirming = confirmingId === r.id;
                                                     return (
                                                         <React.Fragment key={r.id}>
-                                                            <tr className={`transition-colors duration-200 group border-l-4 border-transparent ${theme.rowHover}`}>
+                                                            <tr className={`transition-colors duration-200 group ${theme.rowHover}`}>
                                                                 <td className="p-5 pl-6">
                                                                     <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
                                                                     <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
@@ -1873,7 +1873,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
                                                                 <td className="p-5 pr-6 text-right">
                                                                     <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                        className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                        className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                                         <Check size={13} strokeWidth={2.5} /> Confirmar
                                                                     </button>
                                                                 </td>
@@ -1960,7 +1960,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             const tipoPago = r.tipo_pago?.toLowerCase() || '';
                                             const dt = r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
                                             return (
-                                                <tr key={r.id} className="hover:bg-white/70 transition-colors border-l-4 border-transparent hover:border-l-blue-400/50">
+                                                <tr key={r.id} className="hover:bg-white/70 transition-colors">
                                                     <td className="p-5 pl-8">
                                                         <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_pago}</span>
                                                     </td>
@@ -2097,7 +2097,7 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap">
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
                 </a>
 
@@ -2105,7 +2105,7 @@ export default function FacturacionView() {
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                         <button onClick={openSearch}
-                            className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
+                            className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                             {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                         </button>

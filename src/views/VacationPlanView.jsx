@@ -568,7 +568,7 @@ const VacationPlanView = () => {
                 </div>
                 <button
                     onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-10 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-95">
+                    className="px-4 h-10 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -578,11 +578,11 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-white/70 h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-90">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -626,7 +626,7 @@ const VacationPlanView = () => {
                 {/* Search button — blue pill standard */}
                 <button
                     onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full" />}
@@ -663,7 +663,7 @@ const VacationPlanView = () => {
                                 {editingPlan && (
                                     <button
                                         onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group"
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group"
                                     >
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
@@ -835,7 +835,7 @@ const VacationPlanView = () => {
                                                                             title="Editar"
                                                                             onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-amber-100 border-amber-300 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
+                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-amber-100 border-amber-300 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-500 hover:text-white hover:border-slate-500'}`}
                                                                         >
                                                                             <Edit2 size={11} strokeWidth={2.5} />
                                                                         </button>
@@ -845,7 +845,7 @@ const VacationPlanView = () => {
                                                                             title="Confirmar"
                                                                             onClick={() => handleConfirmPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Check size={11} strokeWidth={3} />
                                                                         </button>
@@ -855,7 +855,7 @@ const VacationPlanView = () => {
                                                                             title="Cancelar"
                                                                             onClick={() => handleCancelPlan(p.id)}
                                                                             disabled={!canEdit}
-                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Trash2 size={11} strokeWidth={2.5} />
                                                                         </button>

@@ -251,7 +251,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button onClick={onClose} className="px-8 h-12 rounded-full bg-slate-100 text-slate-600 font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 hover:text-slate-800 transition-colors shadow-sm active:scale-95">
+                    <button onClick={onClose} className="px-8 h-12 rounded-full bg-slate-100 text-slate-600 font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 hover:text-slate-800 transition-colors shadow-sm active:scale-[0.97]">
                         Ajustar Recursos y Volver a intentar
                     </button>
                 </div>
@@ -412,7 +412,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <button onClick={onClose} disabled={isSaving} className="px-5 h-10 md:h-11 rounded-full text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-100 transition-colors flex items-center gap-2">
                     <X size={14}/> Descartar
                 </button>
-                <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-full bg-[#007AFF] text-white text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center gap-2">
+                <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-full bg-[#007AFF] text-white text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(0,122,255,0.3)] hover:bg-[#0066CC] hover:shadow-[0_12px_25px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center gap-2">
                     {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>} 
                     {isSaving ? 'Guardando...' : 'Aplicar Horario'}
                 </button>

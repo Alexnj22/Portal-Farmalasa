@@ -241,7 +241,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {isPendingData(emp) && <PendingBadge emp={emp} />}
 
               {birthdayInfo?.isThisMonth && (
-                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-bounce' : ''}`} title={birthdayInfo.isToday ? `¡HOY cumple años! Día ${birthdayInfo.day}` : `Cumpleaños: Día ${birthdayInfo.day} de este mes`}>
+                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.isToday ? `¡HOY cumple años! Día ${birthdayInfo.day}` : `Cumpleaños: Día ${birthdayInfo.day} de este mes`}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-pink-600 scale-125' : 'text-pink-500'} shrink-0`} />
                   <span className={`text-[8px] font-black ${birthdayInfo.isToday ? 'text-white bg-pink-600 px-1 rounded' : 'text-pink-600 bg-pink-100 px-1 rounded'}`}>
                      {birthdayInfo.isToday ? 'HBD! 🔥' : `Día ${birthdayInfo.day}`}
@@ -307,7 +307,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
               onClick={() => onRehireEmployee(emp)}
-              className="flex items-center gap-1.5 h-8 md:h-9 px-3 bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 rounded-full font-black text-[9px] uppercase tracking-widest shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+              className="flex items-center gap-1.5 h-8 md:h-9 px-3 bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 rounded-full font-black text-[9px] uppercase tracking-widest shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
               title="Recontratar"
             >
               <RefreshCw size={12} strokeWidth={2.5} />
@@ -317,14 +317,14 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           <button
             onClick={() => onEditEmployee(emp)}
             disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
             <Edit3 size={14} strokeWidth={2.5} />
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,122,255,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-95"
+            className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,122,255,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <User size={12} strokeWidth={2.5} className="md:hidden" />
@@ -592,7 +592,7 @@ const StaffManagementView = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
@@ -614,7 +614,7 @@ const StaffManagementView = ({
             <button
               type="button"
               onClick={clearFilters}
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/60 hover:bg-white text-slate-500 hover:text-red-500 flex items-center justify-center transition-all duration-200 active:scale-95 shrink-0 shadow-sm border border-white animate-in zoom-in"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/60 hover:bg-white text-slate-500 hover:text-red-500 flex items-center justify-center transition-all duration-200 active:scale-[0.97] shrink-0 shadow-sm border border-white animate-in zoom-in"
               title="Limpiar filtros"
             >
               <Trash2 size={14} strokeWidth={2.5} />
@@ -626,7 +626,7 @@ const StaffManagementView = ({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 border border-white/80 hover:border-emerald-200"
+            className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] border border-white/80 hover:border-emerald-200"
             title="Exportar a Excel"
           >
             <Download size={16} strokeWidth={3} />
@@ -636,7 +636,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#007AFF]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#007AFF]/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -646,7 +646,7 @@ const StaffManagementView = ({
         <div className="flex items-center shrink-0 border-l border-white/30 pl-2 ml-1">
           <button
             onClick={() => setIsSearchActive(true)}
-            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
             title="Buscar colaborador"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -745,7 +745,7 @@ const StaffManagementView = ({
                         <div className="w-16 h-16 bg-white/60 rounded-[1.2rem] flex items-center justify-center mb-4 border border-white/80 shadow-sm"><Search size={28} strokeWidth={2.5} className="text-slate-400" /></div>
                         <p className="text-[15px] font-black text-slate-700 tracking-tight">No hay nadie aquí</p>
                         <p className="text-[11px] font-medium text-slate-500 mt-1 max-w-[250px] leading-relaxed">Ajusta el filtro de sucursal o limpia la búsqueda para ver a tu equipo.</p>
-                        {hasActiveFilters && <button onClick={clearFilters} className="mt-5 text-[10px] font-black uppercase tracking-widest text-white bg-slate-400 hover:bg-slate-500 px-5 py-2.5 rounded-full transition-all shadow-sm active:scale-95 flex items-center gap-2"><X size={14} strokeWidth={3} /> Limpiar Filtros</button>}
+                        {hasActiveFilters && <button onClick={clearFilters} className="mt-5 text-[10px] font-black uppercase tracking-widest text-white bg-slate-400 hover:bg-slate-500 px-5 py-2.5 rounded-full transition-all shadow-sm active:scale-[0.97] flex items-center gap-2"><X size={14} strokeWidth={3} /> Limpiar Filtros</button>}
                       </div>
                     </td>
                   </tr>
@@ -766,8 +766,8 @@ const StaffManagementView = ({
               <div className="flex items-center gap-4">
                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pág {currentPage} / {totalPages || 1}</span>
                 <div className="flex items-center gap-1.5 bg-white/50 p-1 rounded-full border border-white/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"><ChevronLeft size={16} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"><ChevronRight size={16} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronLeft size={16} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#007AFF] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronRight size={16} strokeWidth={2.5} /></button>
                 </div>
               </div>
             </div>

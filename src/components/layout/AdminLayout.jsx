@@ -185,7 +185,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                         </div>
 
                         {isExpanded && (
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 border border-white/5" title={isSidebarOpen ? "Contraer menú" : "Fijar menú abierto"}>
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-[0.97] border border-white/5" title={isSidebarOpen ? "Contraer menú" : "Fijar menú abierto"}>
                                 {isMobile ? <X size={18} strokeWidth={2} /> : (isSidebarOpen ? <ChevronLeft size={18} strokeWidth={2} /> : <ChevronRight size={18} strokeWidth={2} />)}
                             </button>
                         )}
@@ -259,17 +259,17 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-widest truncate">{user?.role || user?.userType || 'Sistema'}</p>
                                     </div>
                                 </button>
-                                <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] rounded-[1rem] transition-all flex-shrink-0 hover:scale-105 active:scale-95" title="Cerrar Sesión" type="button">
+                                <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] rounded-[1rem] transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]" title="Cerrar Sesión" type="button">
                                     <LogOut size={18} strokeWidth={1.5} />
                                 </button>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-4 py-2 animate-in fade-in duration-500">
-                                <button onClick={() => setIsSidebarOpen(true)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-95 mb-2 border border-white/5" title="Mostrar menú">
+                                <button onClick={() => setIsSidebarOpen(true)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-[0.97] mb-2 border border-white/5" title="Mostrar menú">
                                     <ChevronRight size={18} strokeWidth={2} />
                                 </button>
 
-                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center text-[#1D7AFC] group overflow-hidden" title="Ver / Copiar PIN">
+                                <button onClick={handleCopyPin} className="relative w-11 h-11 rounded-[1.25rem] bg-white/5 border border-white/10 shadow-sm hover:bg-white/15 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.97] flex items-center justify-center text-[#1D7AFC] group overflow-hidden" title="Ver / Copiar PIN">
                                     {isCopied ? (
                                         <CheckCircle2 size={18} className="text-emerald-400" />
                                     ) : (
@@ -305,7 +305,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-90 transition-transform">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#0A2A5E] hover:text-[#007AFF] active:scale-[0.97] transition-transform">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
                             <div className="w-px h-6 bg-slate-300/50 rounded-full" /> 
@@ -315,7 +315,7 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
                             </div>
                         </div>
 
-                        <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-95 transition-all flex items-center justify-center relative group hover:shadow-lg hover:-translate-y-0.5">
+                        <button onClick={() => setView('profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg hover:-translate-y-0.5">
                             <div className="absolute inset-0 bg-[#007AFF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="Perfil" /> : <User size={18} className="text-slate-400" />}
                         </button>

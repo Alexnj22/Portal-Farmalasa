@@ -46,7 +46,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-white text-amber-600 font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-amber-500 hover:text-white border border-amber-200 hover:border-amber-500 transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-95"
+                    className="px-8 py-3.5 bg-white text-amber-600 font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-amber-500 hover:text-white border border-amber-200 hover:border-amber-500 transition-all duration-300 shadow-sm hover:shadow-[0_8px_20px_rgba(245,158,11,0.3)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>

@@ -249,7 +249,7 @@ const EmployeeProfileView = ({ openModal }) => {
             {/* Edit button */}
             <button
                 onClick={() => openModal('editContact', emp)}
-                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,122,255,0.4)] hover:bg-[#0066DD] hover:-translate-y-0.5 transition-all duration-200 active:scale-95 whitespace-nowrap"
+                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-[#007AFF] text-white text-[11px] font-black uppercase tracking-widest shadow-[0_3px_8px_rgba(0,122,255,0.4)] hover:bg-[#0066DD] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
             >
                 <Edit3 size={13} strokeWidth={2.5} />
                 <span className="hidden sm:inline">Editar</span>
@@ -257,7 +257,7 @@ const EmployeeProfileView = ({ openModal }) => {
             {/* Password button */}
             <button
                 onClick={() => openModal('changeOwnPassword', {})}
-                className="w-10 h-10 rounded-full bg-amber-50/80 backdrop-blur-sm border border-amber-200/80 text-amber-600 flex items-center justify-center hover:bg-amber-100 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-95 shrink-0"
+                className="w-10 h-10 rounded-full bg-amber-50/80 backdrop-blur-sm border border-amber-200/80 text-amber-600 flex items-center justify-center hover:bg-amber-100 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shrink-0"
                 title="Cambiar contraseña"
             >
                 <KeyRound size={15} strokeWidth={2} />
@@ -453,7 +453,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 </div>
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-white/60 text-slate-500 border-slate-200/60 hover:border-slate-300'}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-slate-800 text-white border-slate-800' : 'bg-white/60 text-slate-500 border-slate-200/60 hover:border-slate-300'}`}
                                 >
                                     <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
@@ -477,7 +477,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     {(filterFrom || filterTo || filterType) && (
                                         <button
                                             onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }}
-                                            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center shrink-0 transition-all active:scale-95"
+                                            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
                                             title="Limpiar filtros"
                                         >
                                             <X size={13} strokeWidth={2.5} />
@@ -489,7 +489,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 ${!filterType ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
                                         >
                                             Todos
                                         </button>
@@ -500,7 +500,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <button
                                                     key={type}
                                                     onClick={() => setFilterType(filterType === type ? '' : type)}
-                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 ${filterType === type ? `${theme?.bg || 'bg-slate-100'} ${theme?.text || 'text-slate-700'} ${theme?.border || 'border-slate-300'}` : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-slate-100'} ${theme?.text || 'text-slate-700'} ${theme?.border || 'border-slate-300'}` : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
                                                 >
                                                     {label}
                                                 </button>
@@ -578,7 +578,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="mt-3 pt-3 border-t border-slate-100">
                                         <button
                                             onClick={() => setTimelineLimit(null)}
-                                            className="w-full py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 hover:-translate-y-0.5 transition-all active:scale-95"
+                                            className="w-full py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Ver todo ({timeline.length})
                                         </button>
@@ -587,7 +587,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="mt-3 pt-3 border-t border-slate-100">
                                         <button
                                             onClick={() => { setTimelineLimit(8); setShowTimelineFilter(false); }}
-                                            className="w-full py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 hover:-translate-y-0.5 transition-all active:scale-95"
+                                            className="w-full py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Mostrar menos
                                         </button>

@@ -48,7 +48,7 @@ export const Switch = ({ on, onToggle }) => (
     <button
         type="button"
         onClick={onToggle}
-        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#007AFF]/50 active:scale-95 transform-gpu ${
+        className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#007AFF]/50 active:scale-[0.97] transform-gpu ${
             on ? "bg-[#007AFF] border border-[#0066CC]" : "bg-slate-200/80 border border-slate-300"
         }`}
         aria-pressed={on}
@@ -115,10 +115,10 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
                 {hasFile && (
                     <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-white border border-emerald-200 rounded-lg text-emerald-600 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-95 z-20" title="Ver Documento">
+                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-white border border-emerald-200 rounded-lg text-emerald-600 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.97] z-20" title="Ver Documento">
                             <Eye size={16} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-white border border-red-200 rounded-lg text-red-500 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95 z-20" title="Quitar Documento">
+                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-white border border-red-200 rounded-lg text-red-500 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-[0.97] z-20" title="Quitar Documento">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>

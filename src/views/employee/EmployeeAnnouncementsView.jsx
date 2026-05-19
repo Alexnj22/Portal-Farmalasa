@@ -304,10 +304,10 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
         if (phase === 'check') return {
             animation: 'none',
             transform: 'scale(1.02)',
-            transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+            transition: 'transform 0.2s cubic-bezier(0.23,1,0.32,1)',
         };
         return {
-            animation: 'card-enter 0.32s cubic-bezier(0.34,1.56,0.64,1) both',
+            animation: 'card-enter 0.32s cubic-bezier(0.23,1,0.32,1) both',
         };
     })();
 
@@ -355,7 +355,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                             const done = i < doneCount;
                             const cur  = i === doneCount;
                             return (
-                                <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                                <div key={i} className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                                     done ? 'w-2.5 h-2.5 bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
                                     cur  ? 'w-8   h-2.5 ' + (isUrgent ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#007AFF] shadow-[0_0_8px_rgba(0,122,255,0.5)]') :
                                            'w-2.5 h-2.5 bg-slate-200'
@@ -392,7 +392,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                                 transform: `translateY(${cfg.dy}px) rotate(${cfg.rot}deg) scale(${cfg.scale})`,
                                 transition: exiting
                                     ? 'opacity 0.12s ease'
-                                    : 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1), opacity 0.38s ease',
+                                    : 'transform 0.42s cubic-bezier(0.23,1,0.32,1), opacity 0.38s ease',
                                 zIndex: 4 - idx,
                                 pointerEvents: 'none',
                                 transformOrigin: 'center bottom',
@@ -410,7 +410,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-emerald-500/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_12px_40px_rgba(16,185,129,0.55)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
                             <p className="mt-3 text-[11px] font-black text-emerald-700 uppercase tracking-widest animate-in fade-in slide-in-from-bottom-1 duration-200 delay-75">Leído</p>
@@ -567,7 +567,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                 <div className="mt-5 flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <button
                         onClick={handleBack}
-                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-amber-200 bg-amber-50 text-amber-700 shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
+                        className="relative flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full overflow-hidden border border-amber-200 bg-amber-50 text-amber-700 shadow-[0_4px_16px_rgba(245,158,11,0.18)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.32)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
                     >
                         {/* barra de countdown que se encoge en 5s */}
                         <div
@@ -696,7 +696,7 @@ const EmployeeAnnouncementsView = () => {
                     onChange={e => setSearchQuery(e.target.value)}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all active:scale-95 shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all active:scale-[0.97] shrink-0">
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
@@ -751,7 +751,7 @@ const EmployeeAnnouncementsView = () => {
 
                 <div className="w-px h-6 bg-slate-200/60 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                    className={`relative w-9 h-9 md:w-10 md:h-10 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-95`}>
+                    className={`relative w-9 h-9 md:w-10 md:h-10 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 active:scale-[0.97]`}>
                     <Search size={15} strokeWidth={2.5} />
                     {searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
@@ -808,7 +808,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex justify-end mb-4">
                             <button
                                 onClick={() => setShowOldRead(v => !v)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-95 shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 active:scale-[0.97] shadow-sm"
                             >
                                 <Clock size={12} strokeWidth={2.5} />
                                 {showOldRead ? 'Solo este mes' : 'Ver anteriores'}

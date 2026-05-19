@@ -372,12 +372,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
             {canEdit && getEffectiveStatus(emp) === 'En Vacaciones' && (
                 <button onClick={handleVacationRecall} disabled={!canEdit}
-                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Palmtree size={14} strokeWidth={3}/> <span className="hidden sm:inline">Ingreso en Vacaciones</span>
                 </button>
             )}
             {canEdit && (
-                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={handleNewHRAction} disabled={!canEdit} className="flex items-center gap-2 h-9 md:h-10 px-4 md:px-5 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                     <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Acción RRHH</span>
                 </button>
             )}
@@ -396,7 +396,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
@@ -492,11 +492,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-300">
                                                 <button onClick={handleEditProfile}
                                                     disabled={!canEdit}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-[#007AFF] text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[0_4px_15px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                                                     <Edit size={12}/> Editar
                                                 </button>
                                                 <button onClick={handleResetPassword}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-amber-500 text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-[0_4px_15px_rgba(245,158,11,0.3)]">
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white/80 hover:bg-amber-500 text-slate-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] shadow-sm hover:shadow-[0_4px_15px_rgba(245,158,11,0.3)]">
                                                     <KeyRound size={12}/> Contraseña
                                                 </button>
                                             </div>
@@ -682,7 +682,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 _editingEventId: ev.id
                                                                             })}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                                                                             <Edit size={11} strokeWidth={2.5}/> Editar
                                                                         </button>
                                                                     )}
@@ -690,7 +690,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <button
                                                                             onClick={() => { setCancelingEventId(ev.id); setShowCancelModal(true); }}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed">
                                                                             <Ban size={11} strokeWidth={2.5}/> Cancelar
                                                                         </button>
                                                                     )}
@@ -763,7 +763,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex items-center gap-2">
                                                 {ausenciasSelectedDay && (
                                                     <button onClick={() => setAusenciasSelectedDay(null)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 text-[11px] font-black hover:bg-red-100 transition-all active:scale-95">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 text-[11px] font-black hover:bg-red-100 transition-all active:scale-[0.97]">
                                                         <X size={10} strokeWidth={3}/> {ausenciasSelectedDay}
                                                     </button>
                                                 )}
@@ -788,14 +788,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-90">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronLeft size={14} strokeWidth={2.5}/>
                                                 </button>
                                                 <span className="text-[13px] font-black text-slate-700 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-90">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#007AFF] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronRight size={14} strokeWidth={2.5}/>
                                                 </button>
                                             </div>
@@ -1086,7 +1086,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <button
                                                 onClick={() => setShowReqForm(v => !v)}
                                                 disabled={!canEdit}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#007AFF] to-[#005CE6] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <Plus size={13} strokeWidth={3}/> Nueva Solicitud
                                             </button>
@@ -1188,7 +1188,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 useToastStore.getState().showToast('Error', 'No se pudo crear la solicitud.', 'error');
                                                             }
                                                         }}
-                                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066DD] text-white text-[12px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066DD] text-white text-[12px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
                                                     >
                                                         {isCreatingReq ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2.5} />}
                                                         Enviar
@@ -1434,7 +1434,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 setCancelReason('');
                                 setCancelingEventId(null);
                             }}
-                            className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-red-500 hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                            className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white flex-1 transition-all shadow-sm border-transparent bg-red-500 hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
                             Confirmar Cancelación
                         </button>
                     </div>

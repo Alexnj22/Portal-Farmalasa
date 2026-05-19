@@ -581,7 +581,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     type="button"
                     onClick={() => openPendingReview(punch, emp)}
                     disabled={!canEdit}
-                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-amber-400 hover:bg-amber-50 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-amber-400 hover:bg-amber-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                   >
                     Revisar <Edit3 size={13} strokeWidth={2.5} />
                   </button>
@@ -635,7 +635,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                   return (
                     <tr
                       key={record.id}
-                      className="hover:bg-white/70 transition-colors duration-200 group border-l-4 border-transparent hover:border-l-[#007AFF]/50"
+                      className="hover:bg-white/70 transition-colors duration-200 group"
                     >
                       <td className="p-3 md:p-5 pl-4 md:pl-8">
                         <button
@@ -701,7 +701,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         <button
                           onClick={() => openModal(record)}
                           disabled={!canEdit}
-                          className="bg-white text-[#007AFF] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#007AFF] hover:bg-[#007AFF]/5 transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-white text-[#007AFF] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#007AFF] hover:bg-[#007AFF]/5 transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
                           type="button"
                         >
                           Corregir <Edit3 size={14} strokeWidth={2} />
@@ -786,7 +786,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     type="button"
                     onClick={() => handlePendingAction('REJECT')}
                     disabled={isConfirmingAction || !canEdit}
-                    className="flex flex-col items-center gap-2 px-4 py-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-red-100 hover:border-red-300 transition-all active:scale-95 disabled:opacity-40"
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-red-100 hover:border-red-300 transition-all active:scale-[0.97] disabled:opacity-40"
                   >
                     <Trash2 size={18} strokeWidth={2} />
                     Rechazar
@@ -796,7 +796,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     type="button"
                     onClick={() => handlePendingAction('ADJUST')}
                     disabled={isConfirmingAction || !canEdit}
-                    className="flex flex-col items-center gap-2 px-4 py-4 bg-blue-50 border border-blue-200 text-[#007AFF] rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-95 disabled:opacity-40"
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-blue-50 border border-blue-200 text-[#007AFF] rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-[0.97] disabled:opacity-40"
                   >
                     <Clock size={18} strokeWidth={2} />
                     Ajustar
@@ -806,7 +806,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                     type="button"
                     onClick={() => handlePendingAction('CONFIRM')}
                     disabled={isConfirmingAction || !canEdit}
-                    className="flex flex-col items-center gap-2 px-4 py-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-100 hover:border-emerald-300 transition-all active:scale-95 disabled:opacity-40"
+                    className="flex flex-col items-center gap-2 px-4 py-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-100 hover:border-emerald-300 transition-all active:scale-[0.97] disabled:opacity-40"
                   >
                     <CheckCircle2 size={18} strokeWidth={2} />
                     Confirmar
@@ -901,7 +901,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                 onClick={() => togglePunch(inc.missingPunch)}
                 className={`
                   group relative rounded-[1.5rem] p-5 cursor-pointer border-2
-                  transform transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                  transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
                   hover:scale-[1.02] hover:-translate-y-1
                   ${
                     isActive

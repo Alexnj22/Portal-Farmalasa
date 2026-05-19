@@ -100,14 +100,14 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <button
                     onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-fuchsia-600 border border-fuchsia-700 text-white font-black text-[10px] uppercase tracking-widest hover:bg-fuchsia-700 transition-all active:scale-95 shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-fuchsia-600 border border-fuchsia-700 text-white font-black text-[10px] uppercase tracking-widest hover:bg-fuchsia-700 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
                 >
                     <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
                 </button>
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:text-[#007AFF] hover:border-blue-200 hover:bg-white transition-all active:scale-95 shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:text-[#007AFF] hover:border-blue-200 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>

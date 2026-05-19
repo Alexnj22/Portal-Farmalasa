@@ -78,7 +78,7 @@ const KioskConfigModal = ({
               type="button"
               onClick={onRevoke}
               disabled={isProcessing}
-              className="relative z-20 w-full text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center gap-2 transition-all duration-300 bg-red-500/10 py-4 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              className="relative z-20 w-full text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-red-400 flex items-center justify-center gap-2 transition-all duration-300 bg-red-500/10 py-4 rounded-full border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={16} /> Revocar Permisos Locales
             </button>
@@ -141,7 +141,7 @@ const KioskConfigModal = ({
                 type="button"
                 onClick={onSave}
                 disabled={isProcessing || !selectedBranchId || !deviceNameInput}
-                className="relative z-10 w-full mt-2 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-blue-400 flex items-center justify-center gap-2 transition-all duration-300 bg-blue-500/15 py-4 rounded-full border border-blue-500/30 hover:bg-blue-500/25 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                className="relative z-10 w-full mt-2 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-blue-400 flex items-center justify-center gap-2 transition-all duration-300 bg-blue-500/15 py-4 rounded-full border border-blue-500/30 hover:bg-blue-500/25 hover:border-blue-500/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isProcessing ? (
                   <span className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />

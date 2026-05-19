@@ -13,7 +13,7 @@ const ScheduleChart = ({
         <div className="col-span-1 lg:col-span-2 bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border border-white/80 rounded-[2rem] p-4 shadow-[inset_0_2px_15px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.05)] flex flex-col justify-between hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)] transition-all duration-300 group/chart relative overflow-visible min-h-[180px] z-10">
             
             <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
-                <button onClick={() => openModal && openModal("viewWfmAnalytics")} className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-[#007AFF] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200" title="Expandir Análisis">
+                <button onClick={() => openModal && openModal("viewWfmAnalytics")} className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-[#007AFF] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all duration-200" title="Expandir Análisis">
                     <Maximize2 size={12} strokeWidth={2.5} />
                 </button>
             </div>
@@ -28,12 +28,12 @@ const ScheduleChart = ({
 
                 <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-7">
                     {typeof chartView === 'number' && (
-                        <button onClick={() => setChartView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 text-slate-500 hover:text-slate-800 flex items-center gap-1 hover:bg-white/50 active:scale-95">
+                        <button onClick={() => setChartView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 text-slate-500 hover:text-slate-800 flex items-center gap-1 hover:bg-white/50 active:scale-[0.97]">
                             <ChevronLeft size={10} strokeWidth={3} /> Volver a Días
                         </button>
                     )}
-                    <button onClick={() => setChartView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-95 ${chartView === 'HOURS' ? 'bg-white text-[#007AFF] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>Horas</button>
-                    <button onClick={() => setChartView('DAYS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-95 ${chartView === 'DAYS' ? 'bg-white text-[#007AFF] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>Días</button>
+                    <button onClick={() => setChartView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#007AFF] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>Horas</button>
+                    <button onClick={() => setChartView('DAYS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#007AFF] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>Días</button>
                 </div>
             </div>
 

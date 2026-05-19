@@ -150,7 +150,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                                     <p className="text-[10px] text-white/60 uppercase font-bold tracking-widest truncate">{branch?.name || user?.role || 'Empleado'}</p>
                                 </div>
                             </button>
-                            <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/20 rounded-[1rem] transition-all flex-shrink-0 hover:scale-105 active:scale-95" title="Cerrar Sesión">
+                            <button onClick={handleLogout} className="p-2.5 text-white/60 hover:text-red-300 hover:bg-red-500/20 rounded-[1rem] transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]" title="Cerrar Sesión">
                                 <LogOut size={18} strokeWidth={1.5} />
                             </button>
                         </div>
@@ -175,7 +175,7 @@ const EmployeeLayout = ({ user, handleLogout, children, isOverlayActive = false 
                                 <p className="text-[10px] font-bold text-slate-400">{branch?.name || user?.role || 'Empleado'}</p>
                             </div>
                         </div>
-                        <button onClick={handleLogout} className="p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-400 hover:text-red-500 transition-all active:scale-95">
+                        <button onClick={handleLogout} className="p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-400 hover:text-red-500 transition-all active:scale-[0.97]">
                             <LogOut size={16} />
                         </button>
                     </div>

@@ -2042,7 +2042,7 @@ export default function VentasView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={openSearch}
-                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transform-gpu relative">
+                    className="w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-300 hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>

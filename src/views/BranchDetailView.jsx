@@ -331,7 +331,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
                         {canEdit && <button
                             onClick={() => setIsEditMode(!isEditMode)}
-                            className={`flex items-center justify-center shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 transform-gpu active:scale-95 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
+                            className={`flex items-center justify-center shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
                                     ? 'bg-red-50 text-red-500 border border-red-200/50 hover:bg-red-500 hover:text-white'
                                     : 'bg-white text-[#007AFF] border border-white hover:border-[#007AFF]/30'
                                 }`}
@@ -354,7 +354,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
                             onClick={() => navigate('/branches')} 
-                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Sucursales"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-[#007AFF]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>

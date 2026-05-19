@@ -256,7 +256,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-[#007AFF] hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,122,255,0.3)] active:scale-95"
+                    className="px-5 py-2.5 bg-[#007AFF] hover:bg-blue-500 disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_15px_rgba(0,122,255,0.3)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
@@ -541,7 +541,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
                     {isFarmacia && <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-50 animate-in zoom-in-95"
+                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-50 animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (

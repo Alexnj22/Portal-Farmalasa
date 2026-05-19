@@ -10,7 +10,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.max(1, p - 1))}
         disabled={currentPage === 1}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
@@ -23,7 +23,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         type="button"
         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
         disabled={currentPage === totalPages}
-        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
+        className="w-8 h-8 rounded-full bg-white/60 border border-white/90 flex items-center justify-center text-slate-500 hover:text-[#007AFF] hover:bg-white disabled:opacity-40 disabled:hover:scale-100 transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <ChevronRight size={16} strokeWidth={2.5} />
       </button>

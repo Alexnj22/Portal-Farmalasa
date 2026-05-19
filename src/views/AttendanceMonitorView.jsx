@@ -425,7 +425,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             "rounded-[1.2rem] border border-white/60 bg-white/40 backdrop-blur-md shadow-sm",
             "flex items-center justify-center",
             "transition-all duration-300 ease-out",
-            "hover:bg-white hover:shadow-md active:scale-95",
+            "hover:bg-white hover:shadow-md active:scale-[0.97]",
             searchOpen ? "ring-2 ring-[#007AFF] bg-white text-[#007AFF]" : "text-slate-500 hover:text-[#007AFF]",
           ].join(" ")}
           title="Buscar empleado"
@@ -437,7 +437,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       {/* BUSCADOR */}
       <div
         className={[
-          "overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] relative z-10",
+          "overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10",
           searchOpen ? "max-h-24 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0",
         ].join(" ")}
       >

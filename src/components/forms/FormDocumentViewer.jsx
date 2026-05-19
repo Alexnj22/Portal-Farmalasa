@@ -21,7 +21,7 @@ const FormDocumentViewer = ({ formData }) => {
                     download 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center gap-2 px-5 py-3 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(0,122,255,0.2)] active:scale-95 shrink-0"
+                    className="flex items-center gap-2 px-5 py-3 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(0,122,255,0.2)] active:scale-[0.97] shrink-0"
                 >
                     <Download size={16} strokeWidth={2} /> Descargar
                 </a>

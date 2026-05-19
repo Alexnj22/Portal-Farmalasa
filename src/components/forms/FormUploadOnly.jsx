@@ -12,7 +12,7 @@ const FormUploadOnly = ({ formData, setFormData }) => (
             />
             <label htmlFor="filePost" className="cursor-pointer block">
                 {formData.file ? (
-                    <div className="text-blue-600 animate-bounce">
+                    <div className="text-blue-600">
                         <CheckCircle size={48} className="mx-auto mb-2" />
                         <span className="font-bold text-sm">{formData.file.name}</span>
                     </div>

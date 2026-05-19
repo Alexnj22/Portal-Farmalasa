@@ -508,7 +508,7 @@ export default function EncuestaAdminView() {
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group">
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
@@ -737,7 +737,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group">
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group">
                                     <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                 </button>
                             </div>
@@ -998,13 +998,13 @@ export default function EncuestaAdminView() {
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             {isExpanded && (
                                                 <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/80 border border-white/60 text-slate-500 hover:bg-white hover:text-slate-700 shadow-sm transition-all active:scale-95">
+                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/80 border border-white/60 text-slate-500 hover:bg-white hover:text-slate-700 shadow-sm transition-all active:scale-[0.97]">
                                                     <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
                                             )}
                                             {canManage && (
                                             <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md'}`}
                                                 title="Editar encuesta">
                                                 <Edit3 size={14} strokeWidth={2.5} />
                                             </button>
@@ -1056,13 +1056,13 @@ export default function EncuestaAdminView() {
                                                 )}
                                                 {s.tipo === 'clima' && (
                                                     <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
-                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-95">
+                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
                                                         <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
                                                     </button>
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#007AFF] px-3 h-7 rounded-full bg-[#007AFF]/10 hover:bg-[#007AFF]/20 transition-colors border border-[#007AFF]/20 active:scale-95">
+                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#007AFF] px-3 h-7 rounded-full bg-[#007AFF]/10 hover:bg-[#007AFF]/20 transition-colors border border-[#007AFF]/20 active:scale-[0.97]">
                                                         Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -1097,7 +1097,7 @@ export default function EncuestaAdminView() {
                                                 <div className="flex items-center gap-2">
                                                     {canManage && (
                                                     <button onClick={() => openResponseForm()}
-                                                        className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95">
+                                                        className="flex items-center gap-2 px-4 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97]">
                                                         <Plus size={14} strokeWidth={2.5} /> Agregar
                                                     </button>
                                                     )}
@@ -1216,11 +1216,11 @@ export default function EncuestaAdminView() {
                                                                                             ) : canManage ? (
                                                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-center">
                                                                                                     <button onClick={() => openResponseForm(row)}
-                                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                                        className="p-1.5 rounded-full bg-white/80 text-amber-500 border border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
                                                                                                         <Edit3 size={11} strokeWidth={2.5} />
                                                                                                     </button>
                                                                                                     <button onClick={() => setConfirmDelete(row.id)}
-                                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-95">
+                                                                                                        className="p-1.5 rounded-full bg-white/80 text-red-400 border border-red-50 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-md transition-all active:scale-[0.97]">
                                                                                                         <Trash2 size={11} strokeWidth={2.5} />
                                                                                                     </button>
                                                                                                 </div>

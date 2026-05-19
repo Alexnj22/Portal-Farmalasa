@@ -607,7 +607,7 @@ export default function EncuestaView() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/encuesta-admin')}
-                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-95 transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 bg-white"
+                        className="w-9 h-9 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,122,255,0.2)] hover:-translate-y-0.5 bg-white"
                         title="Volver a Gestión de Encuesta">
                         <ArrowLeft size={15} strokeWidth={2.5} className="text-slate-500" />
                     </button>

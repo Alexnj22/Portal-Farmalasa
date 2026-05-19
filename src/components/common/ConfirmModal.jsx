@@ -117,7 +117,7 @@ const ConfirmModal = ({
                         className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 flex-1 flex flex-wrap items-center justify-center gap-2 border-transparent shadow-sm ${
                             isProcessing 
                                 ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-red-500' : 'bg-[#007AFF]')
-                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-95 ' + (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#007AFF] hover:bg-[#0066CC]')
+                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#007AFF] hover:bg-[#0066CC]')
                         }`}
                     >
                         {isProcessing ? (

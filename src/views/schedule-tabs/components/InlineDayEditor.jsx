@@ -297,7 +297,7 @@ const InlineDayEditor = memo(({ dateStr, dayId, currentData, shifts, filterBranc
                         <p className="text-[11px] font-black text-[#007AFF] uppercase tracking-widest leading-none mb-1">{new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}</p>
                         <p className="text-[14px] font-bold text-slate-700 leading-none">{new Date(dateStr + 'T00:00:00').getDate()}</p>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-95"><X size={16} strokeWidth={3} /></button>
+                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97]"><X size={16} strokeWidth={3} /></button>
                 </div>
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">
@@ -433,7 +433,7 @@ const InlineDayEditor = memo(({ dateStr, dayId, currentData, shifts, filterBranc
                         className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
                             ? 'bg-slate-100 text-slate-400 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-[#007AFF] to-[#005CE6] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 active:translate-y-0'}`}
+                            : 'bg-gradient-to-r from-[#007AFF] to-[#005CE6] text-white shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
                     </button>

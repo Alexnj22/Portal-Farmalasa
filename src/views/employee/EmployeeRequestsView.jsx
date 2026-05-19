@@ -110,13 +110,13 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
             <div className="grid grid-cols-2 gap-2">
                 <button
                     onClick={() => onReject(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest hover:bg-red-100 transition-all active:scale-[0.97]"
                 >
                     <X size={12} strokeWidth={2.5} /> Rechazar
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-widest shadow-[0_4px_12px_rgba(16,185,129,0.3)] hover:bg-emerald-600 transition-all active:scale-[0.97]"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>

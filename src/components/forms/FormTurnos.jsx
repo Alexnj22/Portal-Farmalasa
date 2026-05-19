@@ -215,8 +215,8 @@ const FormTurnos = ({ branches }) => {
                                 <button onClick={() => handleRestoreShift(shift)} title="Restaurar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"><Plus size={16} strokeWidth={2.5}/></button>
                             ) : (
                                 <>
-                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-[#007AFF] hover:text-white hover:shadow-md transition-all active:scale-95"><Pencil size={15} strokeWidth={2.5}/></button>
-                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-95"><Package size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => startEditing(shift)} title="Editar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-[#007AFF] hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Pencil size={15} strokeWidth={2.5}/></button>
+                                    <button onClick={() => setConfirmingArchiveId(shift.id)} title="Archivar Turno" className="w-8 h-8 rounded-full flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:shadow-md transition-all active:scale-[0.97]"><Package size={15} strokeWidth={2.5}/></button>
                                 </>
                             )}
                         </div>
@@ -256,7 +256,7 @@ const FormTurnos = ({ branches }) => {
                         <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
-                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colorsactive:scale-95"><X size={16} strokeWidth={3}/></button>
+                        <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
                     )}
                 </div>
 
@@ -306,7 +306,7 @@ const FormTurnos = ({ branches }) => {
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-[#007AFF] text-white border-[#005CE6] hover:bg-[#0066CC] hover:shadow-lg hover:-translate-y-0.5'} active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 hover:shadow-lg' : 'bg-[#007AFF] text-white border-[#005CE6] hover:bg-[#0066CC] hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>

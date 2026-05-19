@@ -595,7 +595,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
                                 <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
                             </button>
                         )}

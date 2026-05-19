@@ -95,7 +95,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             <td className="px-4 md:px-8 py-4 text-right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-white/80 hover:shadow-md hover:-translate-y-0.5 active:scale-95"
+                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/70 hover:bg-white text-slate-600 hover:text-[#007AFF] rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-white/80 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
                     title="Ver Detalles"
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
@@ -306,7 +306,7 @@ const filtersContent = (
                 {rawSearchTerm && (
                     <button
                         onClick={() => setRawSearchTerm("")}
-                        className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0"
+                        className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
                     >
                         <X size={16} strokeWidth={2.5} />
                     </button>
@@ -434,7 +434,7 @@ const filtersContent = (
 
                     <button
                         onClick={() => setIsSearchMode(true)}
-                        className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                        className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                         title="Buscar por texto"
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -462,7 +462,7 @@ const filtersContent = (
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95 ${isLive ? 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white/80 text-slate-500 border-slate-200/60 hover:bg-white hover:text-[#007AFF]'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-red-500 text-white border-red-600 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-white/80 text-slate-500 border-slate-200/60 hover:bg-white hover:text-[#007AFF]'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -471,7 +471,7 @@ const filtersContent = (
                     <button
                         onClick={exportToCSV}
                         disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-95 ${isExporting ? 'bg-emerald-50/90 text-emerald-600 border-emerald-200/50' : 'bg-white/80 hover:bg-white text-slate-600 border-slate-200/60 hover:text-[#007AFF]'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-emerald-50/90 text-emerald-600 border-emerald-200/50' : 'bg-white/80 hover:bg-white text-slate-600 border-slate-200/60 hover:text-[#007AFF]'}`}
                     >
                         {isExporting ? <Check size={12} className="text-emerald-500" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
                         <span>{isExporting ? 'Ok' : 'Exportar'}</span>
@@ -565,7 +565,7 @@ const filtersContent = (
                                     setCurrentPage(prev => Math.max(prev - 1, 1));
                                 }}
                                 disabled={currentPage === 1}
-                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#007AFF] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#007AFF] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                             >
                                 <ChevronLeft size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
                             </button>
@@ -574,7 +574,7 @@ const filtersContent = (
                                     setCurrentPage(prev => Math.min(prev + 1, totalPages));
                                 }}
                                 disabled={currentPage === totalPages || totalPages === 0}
-                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#007AFF] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#007AFF] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                             >
                                 <ChevronRight size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
                             </button>

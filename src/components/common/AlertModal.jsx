@@ -74,7 +74,7 @@ const AlertModal = ({
                 }`}>
                     <button 
                         onClick={onClose}
-                        className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 transform-gpu border-none ${currentConfig.btn}`}
+                        className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}
                     >
                         {buttonText}
                     </button>

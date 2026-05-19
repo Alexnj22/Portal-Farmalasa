@@ -33,7 +33,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <button
                             type="button"
                             onClick={() => copyPreviousDay(index)}
-                            className={`p-1 rounded-md active:scale-95 transition-all duration-200 ${isInvalid ? 'text-red-400 hover:text-red-600 hover:bg-red-100/50' : 'text-[#007AFF]/60 hover:text-[#007AFF] hover:bg-[#007AFF]/10'}`}
+                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-red-400 hover:text-red-600 hover:bg-red-100/50' : 'text-[#007AFF]/60 hover:text-[#007AFF] hover:bg-[#007AFF]/10'}`}
                             title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
                         >
                             <CopyPlus size={13} strokeWidth={2.5}/>

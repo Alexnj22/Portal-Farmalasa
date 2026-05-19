@@ -375,7 +375,7 @@ const RolesView = ({ openModal }) => {
                             e.stopPropagation();
                             if (openModal) openModal('viewRoleEmployees', { role });
                         }}
-                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ${isExternal ? 'bg-white/80 text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-700' : 'bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 hover:bg-[#007AFF] hover:text-white'}`}
+                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-white/80 text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-700' : 'bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 hover:bg-[#007AFF] hover:text-white'}`}
                     >
                         <Users size={12} strokeWidth={2.5} /> {roleEmps.length} Personas
                     </button>
@@ -446,7 +446,7 @@ const RolesView = ({ openModal }) => {
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0"
+                            className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
                         >
                             <X size={16} strokeWidth={2.5} />
                         </button>
@@ -489,7 +489,7 @@ const RolesView = ({ openModal }) => {
                     <div className={`flex items-center transition-all duration-500 ease-in-out origin-right ${activeTab === 'list' ? 'max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-white/30' : 'max-w-0 opacity-0 scale-50 pointer-events-none m-0 p-0 border-transparent overflow-hidden'}`}>
                         <button
                             onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
-                            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                            className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                             title="Buscar cargos"
                             tabIndex={activeTab === 'list' ? 0 : -1}
                         >
@@ -574,7 +574,7 @@ const RolesView = ({ openModal }) => {
                                     {editingRoleId && (
                                         <button
                                             onClick={handleCancelEdit}
-                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group"
+                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group"
                                         >
                                             <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                         </button>
@@ -682,7 +682,7 @@ const RolesView = ({ openModal }) => {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-95 text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 hover:shadow-amber-500/40' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}
+                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,122,255,0.3)] hover:shadow-[0_8px_24px_rgba(0,122,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 hover:shadow-amber-500/40' : 'bg-[#007AFF] hover:bg-[#0066CC]'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -765,7 +765,7 @@ const RolesView = ({ openModal }) => {
                                                             isEditingThis ? handleCancelEdit() : handleEditClick(e, role);
                                                         }}
                                                         disabled={!canEdit}
-                                                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
+                                                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
                                                             ? 'bg-amber-100 text-amber-600 border border-amber-300 hover:bg-amber-500 hover:text-white'
                                                             : 'bg-white border border-white/90 text-amber-500 hover:bg-amber-50 hover:text-amber-600'
                                                             }`}
@@ -776,7 +776,7 @@ const RolesView = ({ openModal }) => {
                                                     <button
                                                         onClick={(e) => handleDeleteRoleRequest(e, role)}
                                                         disabled={!canEdit}
-                                                        className="w-8 h-8 bg-white border border-white/90 text-red-400 rounded-full hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center shadow-sm active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        className="w-8 h-8 bg-white border border-white/90 text-red-400 rounded-full hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
                                                         title="Eliminar cargo"
                                                     >
                                                         <Trash2 size={14} strokeWidth={2.5} />
@@ -799,7 +799,7 @@ const RolesView = ({ openModal }) => {
 
                                                 <button
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
-                                                    className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-95 ${isEditingThis
+                                                    className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
                                                         ? 'border-amber-200 text-amber-500 hover:bg-amber-500 hover:text-white'
                                                         : 'border-slate-100 text-slate-400 hover:bg-[#007AFF] hover:text-white hover:border-[#007AFF]'
                                                         }`}
@@ -838,14 +838,14 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 ${isExporting ? 'bg-white/50 border-white text-slate-400 cursor-not-allowed' : 'bg-white border-white/90 text-slate-600 hover:text-[#007AFF] hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-white/50 border-white text-slate-400 cursor-not-allowed' : 'bg-white border-white/90 text-slate-600 hover:text-[#007AFF] hover:border-white'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>
                                 <button
                                     onClick={toggleFullScreen}
                                     disabled={isExporting}
-                                    className="px-4 py-2 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-xl shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                    className="px-4 py-2 bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-xl shadow-[0_4px_12px_rgba(0,122,255,0.3)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
                                 >
                                     {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span>

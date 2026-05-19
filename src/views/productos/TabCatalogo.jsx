@@ -879,7 +879,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             Cancelar
                         </button>
                         <button onClick={handleSave} disabled={saving}
-                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#007AFF] text-white shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
+                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#007AFF] text-white shadow-[0_3px_8px_rgba(0,122,255,0.35)] hover:bg-[#0066CC] hover:-translate-y-0.5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
                             Guardar
                         </button>

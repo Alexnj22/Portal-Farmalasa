@@ -144,7 +144,7 @@ const DocCard = ({ doc }) => {
                                     href={doc.meta.docUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${cfg.bg} ${cfg.border} ${cfg.text}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${cfg.bg} ${cfg.border} ${cfg.text}`}
                                 >
                                     <Eye size={10} strokeWidth={2.5} />
                                     Ver
@@ -254,7 +254,7 @@ const EmployeeDocumentsView = () => {
                     ref={(input) => { if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
                 />
                 {search && (
-                    <button onClick={() => setSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-95 transform-gpu shrink-0">
+                    <button onClick={() => setSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
@@ -282,7 +282,7 @@ const EmployeeDocumentsView = () => {
                 </button>
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={() => setSearchOpen(true)}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu"
+                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar documentos">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
@@ -337,7 +337,7 @@ const EmployeeDocumentsView = () => {
                                     <button
                                         key={s.key}
                                         onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 ${filterStatus === s.key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
                                     >
                                         {s.label}
                                     </button>
@@ -389,7 +389,7 @@ const EmployeeDocumentsView = () => {
                         {(search || hasFilters) && (
                             <button
                                 onClick={() => { setSearch(''); clearFilters(); setTab('ALL'); }}
-                                className="mt-4 px-4 py-2 rounded-2xl bg-white/60 border border-white/80 text-[11px] font-black text-slate-600 hover:bg-white transition-all hover:-translate-y-0.5 active:scale-95"
+                                className="mt-4 px-4 py-2 rounded-2xl bg-white/60 border border-white/80 text-[11px] font-black text-slate-600 hover:bg-white transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                             >
                                 Limpiar filtros
                             </button>

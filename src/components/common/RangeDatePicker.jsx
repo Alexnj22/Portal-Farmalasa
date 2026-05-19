@@ -427,7 +427,7 @@ const RangeDatePicker = ({
                         type="button"
                         onClick={handleConfirm}
                         disabled={!multiRange && (!draftStart || !draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-95 shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#007AFF] hover:bg-[#005CE6] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[0_4px_12px_rgba(0,122,255,0.3)]">
                         <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
                     </button>
                 </div>

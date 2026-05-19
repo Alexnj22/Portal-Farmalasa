@@ -258,16 +258,16 @@ const LiquidDatePicker = ({
             style={{ top: coords.top, left: coords.left, transform: coords.transform }}
             className={`absolute z-[99999] animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
         >
-            <div className="p-4 md:p-5 w-[280px] bg-white/70 backdrop-blur-[25px] backdrop-saturate-[200%] border border-white/90 shadow-[0_24px_50px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.7)] rounded-[2rem] font-sans transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform-gpu hover:scale-[1.04] hover:-translate-y-1">
+            <div className="p-4 md:p-5 w-[280px] bg-white/70 backdrop-blur-[25px] backdrop-saturate-[200%] border border-white/90 shadow-[0_24px_50px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.7)] rounded-[2rem] font-sans transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu hover:scale-[1.04] hover:-translate-y-1">
                 
                 <div className="flex justify-between items-center mb-5 px-1">
-                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-95"><ChevronLeft size={16} strokeWidth={3} /></button>
-                    <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-[12px] md:text-[13px] font-black text-slate-700 uppercase tracking-widest hover:text-[#007AFF] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/50 active:scale-95 disabled:opacity-50" disabled={currentMode === 'years'}>
+                    <button type="button" onClick={handlePrev} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-[0.97]"><ChevronLeft size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={() => { if (currentMode === 'days') setCurrentMode('months'); else if (currentMode === 'months') setCurrentMode('years'); }} className="text-[12px] md:text-[13px] font-black text-slate-700 uppercase tracking-widest hover:text-[#007AFF] transition-colors px-3 py-1.5 rounded-xl hover:bg-white/50 active:scale-[0.97] disabled:opacity-50" disabled={currentMode === 'years'}>
                         {currentMode === 'days' && `${MONTHS_SHORT[currentMonth]} ${currentYear}`}
                         {currentMode === 'months' && `${currentYear}`}
                         {currentMode === 'years' && `${startYear} - ${startYear + 9}`}
                     </button>
-                    <button type="button" onClick={handleNext} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-95"><ChevronRight size={16} strokeWidth={3} /></button>
+                    <button type="button" onClick={handleNext} className="p-2 hover:bg-white/80 rounded-full transition-colors text-slate-500 hover:text-[#007AFF] active:scale-[0.97]"><ChevronRight size={16} strokeWidth={3} /></button>
                 </div>
 
                 {currentMode === 'days' && (

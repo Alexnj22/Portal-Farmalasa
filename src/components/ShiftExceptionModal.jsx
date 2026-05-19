@@ -214,7 +214,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                                 />
                             </div>
                             
-                            <button type="submit" className="w-full mt-2 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2">
+                            <button type="submit" className="w-full mt-2 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.97] flex items-center justify-center gap-2">
                                 <Save size={16} /> Aplicar Excepción a HOY
                             </button>
                         </form>

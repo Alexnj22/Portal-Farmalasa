@@ -146,7 +146,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-[1.5rem] bg-white/60 backdrop-blur-md border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.04)] h-[100px] active:scale-95 transition-all">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-[1.5rem] bg-white/60 backdrop-blur-md border border-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.04)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
                                 <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-4 group-hover:opacity-0">
                                     <div className={`w-14 h-14 rounded-[1.2rem] border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-slate-100 p-0'}`}>
@@ -204,7 +204,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-slate-50/50 backdrop-blur-sm border border-white/50 shadow-sm hover:bg-white hover:border-[#007AFF]/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-95 h-[72px]">
+                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-[1rem] bg-slate-50/50 backdrop-blur-sm border border-white/50 shadow-sm hover:bg-white hover:border-[#007AFF]/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[10px] border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-slate-100 border-slate-200 p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>

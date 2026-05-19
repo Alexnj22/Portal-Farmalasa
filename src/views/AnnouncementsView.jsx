@@ -49,7 +49,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             {ann.readIds.length === 0 && (
               <button
                 onClick={() => onEdit(ann)}
-                className={`p-2.5 rounded-full transition-all duration-300 active:scale-95 shadow-sm border ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 hover:-translate-y-0.5 hover:shadow-md'}`}
+                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-500 hover:text-white' : 'bg-white/80 text-amber-500 border-amber-100 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 hover:-translate-y-0.5 hover:shadow-md'}`}
                 title="Editar aviso"
               >
                 <Edit3 size={14} strokeWidth={2.5} />
@@ -57,7 +57,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             )}
             <button
               onClick={() => onArchive(ann.id)}
-              className="p-2.5 text-slate-400 bg-white/80 border border-white shadow-sm hover:text-slate-800 hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-95"
+              className="p-2.5 text-slate-400 bg-white/80 border border-white shadow-sm hover:text-slate-800 hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
               title="Archivar aviso"
             >
               <Archive size={14} strokeWidth={2.5} />
@@ -67,7 +67,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         {canEdit && ann.readIds.length === 0 && (
           <button
             onClick={() => onDelete(ann)}
-            className="p-2.5 text-red-400 bg-white/80 border border-red-50 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-95"
+            className="p-2.5 text-red-400 bg-white/80 border border-red-50 shadow-sm hover:text-red-600 hover:bg-red-50 hover:border-red-200 hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
             title="Eliminar aviso"
           >
             <Trash2 size={14} strokeWidth={2.5} />
@@ -128,7 +128,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         <button
           onClick={() => onViewDetail(ann)}
           disabled={isScheduled}
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-95 w-full sm:w-auto bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:-translate-y-0 ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] w-full sm:w-auto bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:-translate-y-0 ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled
             ? 'text-red-600 border-red-200'
             : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 && !isScheduled
               ? 'text-emerald-600 border-emerald-200'
@@ -545,7 +545,7 @@ const AnnouncementsView = ({ openModal }) => {
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-[#007AFF] shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
-        {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-95 transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+        {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => setIsSearchMode(false)} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#007AFF] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
@@ -571,7 +571,7 @@ const AnnouncementsView = ({ openModal }) => {
 
         </div>
         <div className="w-px h-6 md:h-8 bg-slate-200/60 mx-1 md:mx-2 shrink-0"></div>
-        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-95 transform-gpu" title="Buscar avisos">
+        <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#007AFF] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,122,255,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,122,255,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu" title="Buscar avisos">
           <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
           {announcementSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
         </button>
@@ -599,7 +599,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <span className="font-black uppercase tracking-tight ml-1">{editingAnnId ? 'Editar Aviso' : 'Nuevo Aviso'}</span>
                 </h3>
                 {editingAnnId && (
-                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-95 group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
+                  <button onClick={handleCancelEdit} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-red-500 bg-red-50 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-red-200 shadow-sm active:scale-[0.97] group"><X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar</button>
                 )}
               </div>
 
@@ -737,8 +737,8 @@ const AnnouncementsView = ({ openModal }) => {
               <div className="flex items-center justify-between pt-6 mt-2 border-t border-slate-200/50 shrink-0 px-3 md:px-4">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest bg-white/60 backdrop-blur-sm shadow-sm px-3 py-1.5 rounded-lg border border-white/80">Pág {currentPage} de {totalPages}</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-95"><ChevronLeft size={18} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-95"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-white/70 border border-white/90 rounded-xl shadow-sm text-[#007AFF] disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
                 </div>
               </div>
             )}

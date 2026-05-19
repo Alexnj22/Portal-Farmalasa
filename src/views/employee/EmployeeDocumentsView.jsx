@@ -370,7 +370,7 @@ const EmployeeDocumentsView = () => {
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[1,2,3,4].map(i => (
-                            <div key={i} className="animate-pulse bg-white/60 rounded-[1.75rem] h-36 border border-white/80" style={{ animationDelay: `${i * 80}ms` }} />
+                            <div key={i} className="skeleton rounded-[1.75rem] h-36" style={{ '--stagger-delay': `${i * 80}ms` }} />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (

@@ -185,17 +185,17 @@ const EmployeeProfileView = ({ openModal }) => {
         <GlassViewLayout icon={User} title="Mi Perfil">
             <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 flex flex-col lg:flex-row gap-5 items-start animate-in fade-in duration-300">
                 <div className="w-full lg:w-[400px] shrink-0 space-y-4">
-                    <div className="animate-pulse bg-slate-200/80 rounded-[2.5rem] h-80" />
+                    <div className="skeleton rounded-[2.5rem] h-80" />
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="animate-pulse bg-slate-200/80 rounded-2xl h-11" />
-                        <div className="animate-pulse bg-slate-200/80 rounded-2xl h-11" />
+                        <div className="skeleton rounded-2xl h-11" />
+                        <div className="skeleton rounded-2xl h-11" />
                     </div>
-                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-44" />
+                    <div className="skeleton rounded-[2rem] h-44" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-4">
-                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-24" />
-                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-32" />
-                    <div className="animate-pulse bg-slate-200/80 rounded-[2rem] h-72" />
+                    <div className="skeleton rounded-[2rem] h-24" />
+                    <div className="skeleton rounded-[2rem] h-32" />
+                    <div className="skeleton rounded-[2rem] h-72" />
                 </div>
             </div>
         </GlassViewLayout>
@@ -515,8 +515,8 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="space-y-3 animate-in fade-in duration-300">
                                 {Array.from({ length: 4 }).map((_, i) => (
                                     <div key={i} className="flex gap-3 pl-7 relative">
-                                        <div className="absolute -left-[10px] top-2 w-4 h-4 rounded-full animate-pulse bg-slate-300/60" />
-                                        <div className="flex-1 animate-pulse bg-slate-200/80 rounded-2xl h-16" />
+                                        <div className="absolute -left-[10px] top-2 w-4 h-4 rounded-full skeleton" />
+                                        <div className="flex-1 skeleton rounded-2xl h-16" />
                                     </div>
                                 ))}
                             </div>

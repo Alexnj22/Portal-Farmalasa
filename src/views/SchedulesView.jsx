@@ -676,7 +676,7 @@ useEffect(() => {
             fixedScrollMode={viewMode === 'shifts'}
         >
             {viewMode === 'shifts' ? (
-                <div className="w-full h-full animate-in fade-in duration-700 relative">
+                <div key="shifts" className="w-full h-full animate-view-enter relative">
                     <TabShifts
                         branches={branches}
                         filterBranch={filterBranch}
@@ -684,7 +684,7 @@ useEffect(() => {
                     />
                 </div>
             ) : (
-                <div className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 animate-in fade-in duration-700 mx-auto h-full overflow-hidden">
+                <div key="calendar" className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 animate-view-enter mx-auto h-full overflow-hidden">
                     {employeesInView.length === 0 ? (
                         <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[65vh] relative z-10">
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none"></div>

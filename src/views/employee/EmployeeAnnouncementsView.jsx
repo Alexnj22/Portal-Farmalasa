@@ -763,22 +763,22 @@ const EmployeeAnnouncementsView = () => {
         <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent} transparentBody={true}>
             <div className="pb-8">
                 {isStoreLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="animate-pulse bg-white/60 backdrop-blur-md border border-white/60 rounded-[2.5rem] p-6 space-y-4">
+                            <div key={i} className="animate-stagger-child bg-white/60 backdrop-blur-md border border-white/60 rounded-[2.5rem] p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
                                 <div className="flex gap-2">
-                                    <div className="bg-slate-200/80 rounded-full h-4 w-4" />
-                                    <div className="bg-slate-200/80 rounded-md h-4 w-20" />
+                                    <div className="skeleton rounded-full h-4 w-4" />
+                                    <div className="skeleton rounded-md h-4 w-20" />
                                 </div>
                                 <div className="space-y-2">
-                                    <div className="bg-slate-200/80 rounded-full h-5 w-3/4" />
-                                    <div className="bg-slate-200/80 rounded-full h-3 w-full" />
-                                    <div className="bg-slate-200/80 rounded-full h-3 w-2/3" />
+                                    <div className="skeleton rounded-full h-5 w-3/4" />
+                                    <div className="skeleton rounded-full h-3 w-full" />
+                                    <div className="skeleton rounded-full h-3 w-2/3" />
                                 </div>
-                                <div className="bg-slate-200/80 rounded-full h-2 w-full" />
+                                <div className="skeleton rounded-full h-2 w-full" />
                                 <div className="pt-3 border-t border-white/60 flex justify-between">
-                                    <div className="bg-slate-200/80 rounded-full h-3 w-24" />
-                                    <div className="bg-slate-200/80 rounded-full h-3 w-12" />
+                                    <div className="skeleton rounded-full h-3 w-24" />
+                                    <div className="skeleton rounded-full h-3 w-12" />
                                 </div>
                             </div>
                         ))}

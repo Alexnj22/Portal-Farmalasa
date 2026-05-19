@@ -281,25 +281,23 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             {/* 📊 DASHBOARD ANALÍTICO (SKELETON VS REAL) */}
             {isLoadingData ? (
                 /* SKELETON DE CARGA DASHBOARD */
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-pulse">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* Gráfico Skeleton */}
                     <div className="lg:col-span-2 bg-white/40 border border-white/50 rounded-[2rem] p-6 shadow-sm flex flex-col min-h-[280px]">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-slate-200/50 rounded-[1.25rem]"></div>
+                            <div className="w-12 h-12 skeleton rounded-[1.25rem]"></div>
                             <div className="flex flex-col gap-2 w-1/3">
-                                <div className="h-3.5 bg-slate-300/50 rounded-full w-3/4"></div>
-                                <div className="h-2.5 bg-slate-300/50 rounded-full w-1/2"></div>
+                                <div className="h-3.5 skeleton rounded-full w-3/4"></div>
+                                <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                         </div>
                         <div className="flex-1 flex items-end justify-between gap-4 px-2 border-b border-slate-200/50 pb-2">
-                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[40%]"></div>
-                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[60%]"></div>
-                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[30%]"></div>
-                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[80%]"></div>
-                            <div className="w-full bg-slate-300/40 rounded-t-lg h-[50%]"></div>
-                            <div className="w-full bg-[#007AFF]/30 rounded-t-lg h-[90%] relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20 animate-pulse"></div>
-                            </div>
+                            <div className="w-full skeleton rounded-t-lg h-[40%]"></div>
+                            <div className="w-full skeleton rounded-t-lg h-[60%]"></div>
+                            <div className="w-full skeleton rounded-t-lg h-[30%]"></div>
+                            <div className="w-full skeleton rounded-t-lg h-[80%]"></div>
+                            <div className="w-full skeleton rounded-t-lg h-[50%]"></div>
+                            <div className="w-full skeleton rounded-t-lg h-[90%]"></div>
                         </div>
                     </div>
 
@@ -307,17 +305,17 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="flex flex-col gap-5">
                         <div className="bg-white/40 border border-white/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full bg-slate-200/60"></div>
-                                <div className="h-2.5 bg-slate-300/50 rounded-full w-1/2"></div>
+                                <div className="w-4 h-4 rounded-full skeleton"></div>
+                                <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
-                            <div className="h-8 bg-slate-300/50 rounded-lg w-1/3 mt-2"></div>
+                            <div className="h-8 skeleton rounded-lg w-1/3 mt-2"></div>
                         </div>
-                        <div className="bg-amber-50/40 border border-amber-100/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div className="bg-white/40 border border-white/50 rounded-[2rem] p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-amber-200/50"></div>
-                                <div className="h-2.5 bg-amber-200/80 rounded-full w-1/2"></div>
+                                <div className="w-8 h-8 rounded-lg skeleton"></div>
+                                <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
-                            <div className="h-5 bg-amber-300/50 rounded-lg w-2/3 mt-2"></div>
+                            <div className="h-5 skeleton rounded-lg w-2/3 mt-2"></div>
                         </div>
                     </div>
                 </div>

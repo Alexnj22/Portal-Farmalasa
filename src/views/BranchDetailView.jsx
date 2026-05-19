@@ -393,7 +393,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                     <div ref={sentinelRef} className="absolute -top-10 h-1 w-full pointer-events-none" aria-hidden="true" />
 
                     <div className="bg-white/50 backdrop-blur-[20px] backdrop-saturate-[180%] rounded-[2.5rem] border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
-
+                        <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">
                         {activeTab === 'history' && (
                             <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} employees={employees} openModal={openModal} />
                         )}
@@ -408,7 +408,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {activeTab === 'expenses' && (
                             <TabExpenses liveBranch={liveBranch} openModal={openModal} branchType={branchType} />
                         )}
-
+                        </div>
                     </div>
                 </div>
             </GlassViewLayout>

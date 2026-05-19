@@ -157,10 +157,10 @@ const EmployeeScheduleView = () => {
                     {Array.from({ length: 7 }).map((_, i) => (
                         <div key={i} className="rounded-[1.75rem] border border-white/60 bg-white/60 backdrop-blur-md p-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-[1rem] animate-pulse bg-slate-200/80 flex-shrink-0" />
+                                <div className="w-12 h-12 rounded-[1rem] skeleton flex-shrink-0" />
                                 <div className="flex-1 space-y-2">
-                                    <div className="animate-pulse bg-slate-200/80 rounded-full h-3 w-24" />
-                                    <div className="animate-pulse bg-slate-200/80 rounded-full h-5 w-32" />
+                                    <div className="skeleton rounded-full h-3 w-24" />
+                                    <div className="skeleton rounded-full h-5 w-32" />
                                 </div>
                             </div>
                         </div>

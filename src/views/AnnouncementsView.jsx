@@ -727,8 +727,10 @@ const AnnouncementsView = ({ openModal }) => {
                   </div>
                 </div>
               ) : (
-                paginatedList.map((ann) => (
-                  <AnnouncementCard key={ann.id} ann={ann} onArchive={handleArchiveCallback} onDelete={handleDeleteCallback} onViewDetail={handleViewDetailCallback} onEdit={() => editingAnnId === ann.id ? handleCancelEdit() : handleEditClick(ann)} isEditingThis={editingAnnId === ann.id} canEdit={canEdit} />
+                paginatedList.map((ann, i) => (
+                  <div key={ann.id} className="animate-stagger-child" style={{ '--stagger-delay': `${Math.min(i, 7) * 45}ms` }}>
+                    <AnnouncementCard ann={ann} onArchive={handleArchiveCallback} onDelete={handleDeleteCallback} onViewDetail={handleViewDetailCallback} onEdit={() => editingAnnId === ann.id ? handleCancelEdit() : handleEditClick(ann)} isEditingThis={editingAnnId === ann.id} canEdit={canEdit} />
+                  </div>
                 ))
               )}
             </div>

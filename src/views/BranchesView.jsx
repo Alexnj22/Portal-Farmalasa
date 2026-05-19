@@ -195,7 +195,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 const BranchCard = memo(({
     branch, branchEmployees, count, activeKiosks, currentTime,
     handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
-    canEdit = false
+    canEdit = false, staggerIndex = 0
 }) => {
     const [aiMode, setAiMode] = useState(false);
     const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -247,7 +247,7 @@ const BranchCard = memo(({
     };
 
     return (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px' }} className={`group relative rounded-[2.5rem] transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-[2.5rem] transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
             <div className={`absolute inset-0 z-50 bg-white/80 backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-indigo-100/50 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
@@ -780,9 +780,10 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                             </div>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">
-                                            {groupBranches.map((branch) => (
+                                            {groupBranches.map((branch, i) => (
                                                 <BranchCard
                                                     key={branch.id}
+                                                    staggerIndex={i}
                                                     branch={branch}
                                                     branchEmployees={employeesMap.get(String(branch.id)) || []}
                                                     count={employeesMap.get(String(branch.id))?.length || 0}

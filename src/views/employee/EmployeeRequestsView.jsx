@@ -1178,18 +1178,18 @@ const EmployeeRequestsView = () => {
                         </div>
 
                         {isLoading ? (
-                            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="animate-pulse bg-white/80 border border-white/60 rounded-[2.5rem] p-6 flex flex-col gap-3">
+                                    <div key={i} className="animate-stagger-child bg-white/80 border border-white/60 rounded-[2.5rem] p-6 flex flex-col gap-3" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                         <div className="flex items-center gap-2 pr-10">
-                                            <div className="bg-slate-200/80 rounded-md h-6 w-24" />
-                                            <div className="bg-slate-200/80 rounded-md h-6 w-20" />
+                                            <div className="skeleton rounded-md h-6 w-24" />
+                                            <div className="skeleton rounded-md h-6 w-20" />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <div className="bg-slate-200/80 rounded-full h-3.5 w-full" />
-                                            <div className="bg-slate-200/80 rounded-full h-3.5 w-4/5" />
+                                            <div className="skeleton rounded-full h-3.5 w-full" />
+                                            <div className="skeleton rounded-full h-3.5 w-4/5" />
                                         </div>
-                                        <div className="bg-slate-200/80 rounded-full h-3 w-28 mt-1" />
+                                        <div className="skeleton rounded-full h-3 w-28 mt-1" />
                                     </div>
                                 ))}
                             </div>

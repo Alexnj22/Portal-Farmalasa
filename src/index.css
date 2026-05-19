@@ -230,15 +230,16 @@
   animation: shimmer 1.4s var(--ease-out) infinite;
 }
 
-/* Skeleton pulse */
+/* Skeleton sweep — gradient shimmer, overrides bg-* utilities */
 .skeleton {
   background: linear-gradient(90deg,
-    rgba(148,163,184,0.12) 25%,
+    rgba(148,163,184,0.10) 25%,
     rgba(148,163,184,0.22) 37%,
-    rgba(148,163,184,0.12) 63%
-  );
-  background-size: 400% 100%;
-  animation: skeletonPulse 1.4s ease-in-out infinite;
+    rgba(148,163,184,0.10) 63%
+  ) !important;
+  background-size: 400% 100% !important;
+  animation: skeletonPulse 1.4s ease-in-out infinite !important;
+  border-radius: 0.5rem;
 }
 @keyframes skeletonPulse {
   0%   { background-position: 100% 50%; }

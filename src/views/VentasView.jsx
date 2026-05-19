@@ -528,9 +528,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
                         <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white">
-                            <div className="w-6 h-6 rounded-lg bg-slate-200 animate-pulse shrink-0" />
-                            <div className={`h-3 rounded-full bg-slate-200 animate-pulse`} style={{ width: w * 0.45 }} />
-                            <div className={`h-4 rounded-full bg-slate-200 animate-pulse`} style={{ width: w * 0.55 }} />
+                            <div className="w-6 h-6 rounded-lg skeleton shrink-0" />
+                            <div className="h-3 skeleton" style={{ width: w * 0.45 }} />
+                            <div className="h-4 skeleton" style={{ width: w * 0.55 }} />
                         </div>
                     ))
                 ) : (() => {
@@ -567,14 +567,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         <tbody>
                             {Array.from({ length: 10 }).map((_, i) => (
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-12 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3"><div className="h-3 w-32 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 text-right"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
+                                    <td className="px-4 py-3"><div className="h-3 w-20 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-12 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
+                                    <td className="px-4 py-3"><div className="h-3 w-32 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-16 skeleton" /></td>
+                                    <td className="px-4 py-3 text-right"><div className="h-3 w-16 skeleton ml-auto" /></td>
                                 </tr>
                             ))}
                         </tbody>

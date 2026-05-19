@@ -1126,7 +1126,7 @@ const DashboardView = ({ openModal }) => {
             <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-emerald-600':'text-slate-300'}`}>{fS(totalS)??'—'}</span>
           </div>
           {todayLoading?(
-            <div className="w-full bg-slate-100 rounded-lg animate-pulse flex-1"/>
+            <div className="skeleton rounded-lg flex-1"/>
           ):(
             <div className="flex flex-col flex-1 min-h-0">
               <div className="flex items-end gap-[1px] w-full flex-1">
@@ -1163,7 +1163,7 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Ausencias Activas" icon={UserX}
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
-            {absLoading?[0,1,2].map(i=><div key={i} className="px-5 py-3 animate-pulse"><div className="h-3 bg-slate-100 rounded w-3/4 mb-1.5"/><div className="h-2.5 bg-slate-50 rounded w-1/2"/></div>)
+            {absLoading?[0,1,2].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
               :absences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
               :absences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
@@ -1188,7 +1188,7 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList}
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#007AFF] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
-            {reqLoading?[0,1,2,3].map(i=><div key={i} className="px-5 py-3 animate-pulse"><div className="h-3 bg-slate-100 rounded w-3/4 mb-1.5"/><div className="h-2.5 bg-slate-50 rounded w-1/2"/></div>)
+            {reqLoading?[0,1,2,3].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
               :pendingReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
               :pendingReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}

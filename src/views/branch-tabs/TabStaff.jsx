@@ -634,31 +634,31 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
-                        <div className="space-y-8 animate-pulse mb-8 pt-2">
+                        <div className="space-y-8 mb-8 pt-2">
                             {/* Dashboard Skeleton */}
                             <div className="bg-white/40 border border-blue-200/50 rounded-[1.5rem] p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100/50"></div>
+                                    <div className="w-10 h-10 rounded-full skeleton"></div>
                                     <div className="flex flex-col gap-2 w-1/3">
-                                        <div className="h-3 bg-slate-300/60 rounded-full w-full"></div>
-                                        <div className="h-2 bg-slate-300/60 rounded-full w-2/3"></div>
+                                        <div className="h-3 skeleton rounded-full w-full"></div>
+                                        <div className="h-2 skeleton rounded-full w-2/3"></div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                                    {[1, 2, 3].map(i => <div key={`db-skel-${i}`} className="h-20 bg-slate-200/50 rounded-xl"></div>)}
+                                    {[1, 2, 3].map(i => <div key={`db-skel-${i}`} className="h-20 skeleton rounded-xl"></div>)}
                                 </div>
                             </div>
 
                             {/* Secciones de Tarjetas Skeleton */}
                             <div>
-                                <div className="h-3 bg-slate-300/60 rounded w-48 mb-4"></div>
+                                <div className="h-3 skeleton rounded w-48 mb-4"></div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {[1, 2].map((i) => (
                                         <div key={`skel-jefe-${i}`} className="bg-white/40 border border-white/50 rounded-[1.5rem] h-[220px] p-5 flex flex-col items-center">
-                                            <div className="w-16 h-16 rounded-full bg-slate-200/60 mb-4"></div>
-                                            <div className="h-4 bg-slate-300/60 rounded w-3/4 mb-2"></div>
-                                            <div className="h-3 bg-slate-300/60 rounded w-1/2 mb-auto"></div>
-                                            <div className="w-full h-10 bg-slate-200/50 rounded-xl mt-4"></div>
+                                            <div className="w-16 h-16 rounded-full skeleton mb-4"></div>
+                                            <div className="h-4 skeleton rounded w-3/4 mb-2"></div>
+                                            <div className="h-3 skeleton rounded w-1/2 mb-auto"></div>
+                                            <div className="w-full h-10 skeleton rounded-xl mt-4"></div>
                                         </div>
                                     ))}
                                 </div>

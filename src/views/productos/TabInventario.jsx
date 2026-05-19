@@ -482,12 +482,12 @@ export default function TabInventario({ searchTerm = '' }) {
                         <tbody>
                             {Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3"><div className="h-3 w-48 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 text-right"><div className="h-3 w-10 rounded-full bg-slate-100 animate-pulse ml-auto" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3"><div className="h-3 w-48 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-16 skeleton" /></td>
+                                    <td className="px-4 py-3 text-right"><div className="h-3 w-10 skeleton ml-auto" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-20 skeleton" /></td>
                                 </tr>
                             ))}
                         </tbody>

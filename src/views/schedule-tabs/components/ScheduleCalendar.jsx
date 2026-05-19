@@ -593,12 +593,12 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                     <tbody className="relative z-10">
                         {isLoading ? (
                             [...Array(4)].map((_, idx) => (
-                                <tr key={idx} className="animate-pulse">
+                                <tr key={idx}>
                                     <td className="p-0 sticky left-0 z-20">
-                                        <div className="h-[90px] bg-white/40 rounded-[1.5rem] mx-1"></div>
+                                        <div className="h-[90px] skeleton rounded-[1.5rem] mx-1"></div>
                                     </td>
                                     {[...Array(7)].map((_, dIdx) => (
-                                        <td key={dIdx} className="p-0"><div className="h-[90px] bg-white/20 rounded-[1.5rem] mx-1"></div></td>
+                                        <td key={dIdx} className="p-0"><div className="h-[90px] skeleton rounded-[1.5rem] mx-1"></div></td>
                                     ))}
                                 </tr>
                             ))

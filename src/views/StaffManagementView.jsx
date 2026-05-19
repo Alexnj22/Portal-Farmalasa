@@ -136,7 +136,7 @@ const getBranchWeight = (branchStr) => {
   return 4;
 };
 
-const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false }) => {
+const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false, staggerIndex = 0 }) => {
   const computedStatus = getEffectiveStatus(emp);
   const statusInfo = getStatusInfo(computedStatus);
   const shortName = formatShortName(emp.name);
@@ -209,7 +209,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   const rowCelebrationClass = birthdayInfo?.isToday ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-white to-pink-50 ring-2 ring-pink-100' : '';
 
   return (
-    <tr className={`group hover:bg-white/40 transition-colors duration-300 ${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
+    <tr style={{ '--stagger-delay': `${Math.min(staggerIndex, 12) * 30}ms` }} className={`animate-stagger-child group hover:bg-white/40 transition-colors duration-300 ${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
       <td className="px-4 md:px-8 py-3.5 border-b border-white/40 w-[280px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
@@ -340,14 +340,14 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 const SkeletonRow = () => (
   <tr>
     <td colSpan="5">
-      <div className="flex items-center gap-4 px-8 py-3.5 animate-pulse">
-        <div className="w-10 h-10 rounded-full bg-slate-200/80 shrink-0" />
+      <div className="flex items-center gap-4 px-8 py-3.5">
+        <div className="w-10 h-10 rounded-full skeleton shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-3 bg-slate-200/80 rounded w-1/3" />
-          <div className="h-2 bg-slate-200/60 rounded w-1/4" />
+          <div className="h-3 skeleton rounded w-1/3" />
+          <div className="h-2 skeleton rounded w-1/4" />
         </div>
-        <div className="h-3 bg-slate-200/80 rounded w-1/5" />
-        <div className="h-6 bg-slate-200/80 rounded-full w-16" />
+        <div className="h-3 skeleton rounded w-1/5" />
+        <div className="h-6 skeleton rounded-full w-16" />
       </div>
     </td>
   </tr>
@@ -735,8 +735,8 @@ const StaffManagementView = ({
                 {bootStatus !== 'ready' && employees.length === 0 ? (
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : paginatedEmployees.length > 0 ? (
-                  paginatedEmployees.map((emp) => (
-                    <EmployeeRow key={emp.id} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
+                  paginatedEmployees.map((emp, i) => (
+                    <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
                   ))
                 ) : (
                   <tr>

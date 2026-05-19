@@ -682,12 +682,12 @@ const PermissionsView = () => {
                         {/* Skeleton left column */}
                         <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
-                                <div key={i} className="rounded-[1.5rem] border border-white/80 bg-white/60 p-4 animate-pulse" style={{ animationDelay: `${i * 60}ms` }}>
+                                <div key={i} className="animate-stagger-child rounded-[1.5rem] border border-white/80 bg-white/60 p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-slate-200/80 flex-shrink-0" />
+                                        <div className="w-8 h-8 rounded-xl skeleton flex-shrink-0" />
                                         <div className="flex-1 space-y-1.5">
-                                            <div className="h-3 bg-slate-200/80 rounded-full w-3/4" />
-                                            <div className="h-2 bg-slate-200/60 rounded-full w-1/2" />
+                                            <div className="h-3 skeleton rounded-full w-3/4" />
+                                            <div className="h-2 skeleton rounded-full w-1/2" />
                                         </div>
                                     </div>
                                 </div>
@@ -697,20 +697,20 @@ const PermissionsView = () => {
                         <div className="flex-1 min-w-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-6 lg:pb-10">
                             {MODULE_GROUPS.slice(0, 3).map((g, gi) => (
                                 <div key={gi}>
-                                    <div className="animate-pulse h-3 w-24 bg-slate-200/80 rounded-full mx-auto mb-3" />
+                                    <div className="h-3 w-24 skeleton mx-auto mb-3" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((_, i) => (
-                                            <div key={i} className="animate-pulse bg-white/60 rounded-[1.5rem] border border-white/80 p-4" style={{ animationDelay: `${(gi * 3 + i) * 50}ms` }}>
+                                            <div key={i} className="animate-stagger-child bg-white/60 rounded-[1.5rem] border border-white/80 p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
                                                 <div className="flex gap-3 mb-4">
-                                                    <div className="w-9 h-9 rounded-xl bg-slate-200/80 flex-shrink-0" />
+                                                    <div className="w-9 h-9 rounded-xl skeleton flex-shrink-0" />
                                                     <div className="flex-1 space-y-1.5 pt-0.5">
-                                                        <div className="h-3 bg-slate-200/80 rounded-full w-3/4" />
-                                                        <div className="h-2 bg-slate-200/60 rounded-full w-full" />
+                                                        <div className="h-3 skeleton w-3/4" />
+                                                        <div className="h-2 skeleton w-full" />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2.5">
-                                                    <div className="h-4 bg-slate-200/60 rounded-full" />
-                                                    <div className="h-4 bg-slate-200/60 rounded-full" />
+                                                    <div className="h-4 skeleton" />
+                                                    <div className="h-4 skeleton" />
                                                 </div>
                                             </div>
                                         ))}

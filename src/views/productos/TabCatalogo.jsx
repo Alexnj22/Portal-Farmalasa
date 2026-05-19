@@ -1296,16 +1296,16 @@ export default function TabCatalogo({
                                 <tr key={i} className="border-b border-slate-50 last:border-0">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-slate-100 animate-pulse shrink-0" />
+                                            <div className="w-9 h-9 rounded-lg skeleton shrink-0" />
                                             <div className="space-y-1.5">
-                                                <div className="h-3 w-40 rounded-full bg-slate-100 animate-pulse" />
-                                                <div className="h-2.5 w-24 rounded-full bg-slate-100 animate-pulse" />
+                                                <div className="h-3 w-40 skeleton" />
+                                                <div className="h-2.5 w-24 skeleton" />
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-28 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 rounded-full bg-slate-100 animate-pulse" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-14 rounded-full bg-slate-100 animate-pulse" /></td>
+                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-28 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
+                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-14 skeleton" /></td>
                                     <td className="px-4 py-3 w-10" />
                                 </tr>
                             ))}

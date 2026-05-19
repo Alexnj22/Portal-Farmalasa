@@ -174,9 +174,9 @@ const WIDGET_DEFS = [
   { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays  },
   { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone     },
   { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift          },
-  { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'cotizaciones',       icon: Receipt       },
-  { id: 'facturacion',   label: 'Facturación hoy',         permission: 'facturacion',        icon: FileText      },
-  { id: 'top_productos', label: 'Top productos del mes',   permission: 'ventas',             icon: Package       },
+  { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt       },
+  { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText      },
+  { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package       },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -1386,7 +1386,7 @@ const DashboardView = ({ openModal }) => {
 
     /* ── COTIZACIONES ── */
     if (wid === 'cotizaciones') {
-      if (!showWidget('cotizaciones', 'cotizaciones')) return null;
+      if (!showWidget('cotizaciones', 'dash_cotizaciones')) return null;
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt}
@@ -1425,7 +1425,7 @@ const DashboardView = ({ openModal }) => {
 
     /* ── FACTURACION HOY ── */
     if (wid === 'facturacion') {
-      if (!showWidget('facturacion', 'facturacion')) return null;
+      if (!showWidget('facturacion', 'dash_facturacion')) return null;
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText}
@@ -1464,7 +1464,7 @@ const DashboardView = ({ openModal }) => {
 
     /* ── TOP PRODUCTOS ── */
     if (wid === 'top_productos') {
-      if (!showWidget('top_productos', 'ventas')) return null;
+      if (!showWidget('top_productos', 'dash_top_productos')) return null;
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
@@ -1506,6 +1506,28 @@ const DashboardView = ({ openModal }) => {
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
+      {/* Tab pills */}
+      <div className="flex items-center bg-white/60 border border-white/80 rounded-[1.1rem] p-1 backdrop-blur-sm shadow-sm">
+        {TABS.map(tab => {
+          const TabIcon = tab.icon;
+          return (
+            <button key={tab.id} onClick={() => switchTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[0.7rem] text-[12px] font-bold transition-all ${
+                activeTab === tab.id
+                  ? 'bg-[#007AFF] text-white shadow-[0_2px_10px_rgba(0,122,255,0.35)]'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
+              }`}>
+              <TabIcon size={12} strokeWidth={2.2}/>
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-5 bg-slate-200/70"/>
+
+      {/* Personalizar */}
       <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-[0.875rem] text-[12px] font-bold transition-all shadow-sm border ${showConfig?'bg-[#007AFF] text-white border-[#007AFF]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
         <Settings2 size={14}/> Personalizar
       </button>
@@ -1517,52 +1539,57 @@ const DashboardView = ({ openModal }) => {
     <GlassViewLayout icon={LayoutDashboard} title="Dashboard" filtersContent={filtersContent} transparentBody={true}>
       <div className="space-y-5 pb-10 px-2">
 
-        {/* Tab selector */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-white/60 border border-white/80 rounded-[1.1rem] p-1 backdrop-blur-sm shadow-sm">
-            {TABS.map(tab => {
-              const TabIcon = tab.icon;
-              return (
-                <button key={tab.id} onClick={() => switchTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-[0.75rem] text-[12px] font-bold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-[#007AFF] text-white shadow-[0_2px_10px_rgba(0,122,255,0.35)]'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'
-                  }`}>
-                  <TabIcon size={13} strokeWidth={2.2}/>
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Config panel */}
-        {showConfig && (
-          <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Widgets</p>
-              <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors px-2 py-1 rounded-lg hover:bg-slate-50">
-                <RotateCcw size={11}/> Restablecer todo
-              </button>
+        {showConfig && (() => {
+          const [configTab, setConfigTab] = React.useState(activeTab);
+          const tabWidgetIds = configTab === 'general'
+            ? [...TAB_WIDGETS.general, 'kpi']
+            : TAB_WIDGETS[configTab] ?? [];
+          const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
+          return (
+            <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Personalizar Dashboard</p>
+                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#007AFF] transition-colors px-2 py-1 rounded-lg hover:bg-slate-50">
+                  <RotateCcw size={11}/> Restablecer todo
+                </button>
+              </div>
+              {/* Tab selector inside panel */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-[0.875rem] p-1">
+                {TABS.map(tab => {
+                  const TabIcon = tab.icon;
+                  return (
+                    <button key={tab.id} onClick={() => setConfigTab(tab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-all ${
+                        configTab === tab.id ? 'bg-white text-[#007AFF] shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                      }`}>
+                      <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Widgets for selected tab */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {tabDefs.map(w => {
+                  const hasAccess = !w.permission || hasPermission(w.permission, 'can_view');
+                  const enabled = isWidgetOn(w.id);
+                  const WIcon = w.icon;
+                  return (
+                    <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
+                      className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-all ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-100' : enabled ? 'bg-[#007AFF]/5 border-[#007AFF]/20 hover:bg-[#007AFF]/8' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                      <WIcon size={14} className={enabled && hasAccess ? 'text-[#007AFF]' : 'text-slate-400'}/>
+                      <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-slate-800' : 'text-slate-400'}`}>{w.label}</span>
+                      <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-[#007AFF]' : 'bg-slate-200'}`}>
+                        <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled && hasAccess ? 'translate-x-4' : 'translate-x-0.5'}`}/>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {WIDGET_DEFS.map(w => {
-                const hasAccess = !w.permission || hasPermission(w.permission,'can_view'), enabled = isWidgetOn(w.id), WIcon = w.icon;
-                return (
-                  <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
-                    className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-all ${!hasAccess?'opacity-40 cursor-not-allowed bg-slate-50 border-slate-100':enabled?'bg-[#007AFF]/5 border-[#007AFF]/20 hover:bg-[#007AFF]/8':'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                    <WIcon size={14} className={enabled&&hasAccess?'text-[#007AFF]':'text-slate-400'}/>
-                    <span className={`text-[11px] font-semibold flex-1 ${enabled&&hasAccess?'text-slate-800':'text-slate-400'}`}>{w.label}</span>
-                    <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled&&hasAccess?'bg-[#007AFF]':'bg-slate-200'}`}>
-                      <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled&&hasAccess?'translate-x-4':'translate-x-0.5'}`}/>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* KPI row — content varies by tab */}
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (

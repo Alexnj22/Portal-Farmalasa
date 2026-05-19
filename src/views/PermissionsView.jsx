@@ -118,8 +118,11 @@ const MODULE_GROUPS = [
             { key: 'dash_announcements',label: 'Widget: Avisos recientes',    desc: 'Últimos avisos publicados en el dashboard',                               icon: Megaphone,       hasApprove: false, hasScope: true },
             { key: 'dash_shifts',       label: 'Widget: Estado de turnos',    desc: 'Ver quién está en labores, almuerzo o lactancia por sucursal en tiempo real', icon: Clock,       hasApprove: false, hasScope: true },
             { key: 'dash_absences',     label: 'Widget: Ausencias activas',   desc: 'Empleados con vacaciones, incapacidad o permiso activos hoy',              icon: UserX,           hasApprove: false, hasScope: true },
-            { key: 'dash_sales',        label: 'Widget: Ventas por hora',     desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,       hasApprove: false, hasScope: true },
-            { key: 'dash_birthdays',    label: 'Widget: Cumpleaños del mes',  desc: 'Cumpleañeros del mes con foto, sucursal y edad',                           icon: Gift,            hasApprove: false, hasScope: true },
+            { key: 'dash_sales',          label: 'Widget: Ventas por hora',       desc: 'Historial promedio de transacciones por hora del día por sucursal',        icon: BarChart2,       hasApprove: false, hasScope: true },
+            { key: 'dash_birthdays',      label: 'Widget: Cumpleaños del mes',    desc: 'Cumpleañeros del mes con foto, sucursal y edad',                           icon: Gift,            hasApprove: false, hasScope: true },
+            { key: 'dash_cotizaciones',   label: 'Widget: Cotizaciones activas',  desc: 'Resumen de cotizaciones activas del mes con montos en el dashboard',       icon: Receipt,         hasApprove: false, hasScope: true },
+            { key: 'dash_facturacion',    label: 'Widget: Facturación hoy',       desc: 'Documentos emitidos hoy (CCF/FCF) con total facturado en el dashboard',   icon: FileText,        hasApprove: false, hasScope: true },
+            { key: 'dash_top_productos',  label: 'Widget: Top Productos del mes', desc: 'Ranking de los 10 productos más vendidos en el mes actual',               icon: Package,         hasApprove: false, hasScope: true },
         ],
     },
     {

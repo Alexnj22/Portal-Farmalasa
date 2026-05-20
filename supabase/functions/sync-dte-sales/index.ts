@@ -67,7 +67,7 @@ async function syncBranch(
   // 1. Login + fetch con reintentos
   const cookie = await withRetry(() => getSessionCookie(username, password));
 
-  const url = `${DTE_BASE}?id_sucursal=${erpId}&fini=${startDate}&ffin=${endDate}`;
+  const url = `${DTE_BASE}?fini=${startDate}&ffin=${endDate}&id_sucursal=${erpId}`;
   const res = await withRetry(() => fetch(url, {
     headers: { Cookie: cookie },
     signal: AbortSignal.timeout(30_000),

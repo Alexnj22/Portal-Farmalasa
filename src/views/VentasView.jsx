@@ -788,19 +788,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 const cachedEntry = pricesCache[it.erp_product_id];
                                                                 const productPriceRows = cachedEntry || [];
                                                                 const pricesFetched = Array.isArray(cachedEntry);
-                                                                const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
-                                                                const bestPriceRow = productPriceRows.find(p => {
-                                                                    const pres = p.presentaciones;
-                                                                    if (!pres) return false;
-                                                                    const arr = Array.isArray(pres) ? pres : [pres];
-                                                                    // exact key match, tipo-only match, or startsWith tipo
-                                                                    return arr.some(pr =>
-                                                                        presKey(pr.tipo, pr.descripcion) === itPresKey ||
-                                                                        pr.tipo?.toUpperCase() === itPresKey ||
-                                                                        itPresKey.startsWith((pr.tipo ?? '').toUpperCase())
+                                                                // Try every price row for this product; pick the tier whose
+                                                                // price is closest to the actual sale price (lowest diff).
+                                                                // We don't match by id_presentacion because ERP sales and
+                                                                // catalog use different ID namespaces.
+                                                                const salePrice = parseFloat(it.precio_unitario);
+                                                                const tierCandidates = productPriceRows
+                                                                    .map(row => detectTier(salePrice, row))
+                                                                    .filter(Boolean);
+                                                                const tier = tierCandidates.length === 0 ? null :
+                                                                    tierCandidates.reduce((best, t) =>
+                                                                        (t.diff ?? Infinity) < (best.diff ?? Infinity) ? t : best
                                                                     );
-                                                                }) || productPriceRows[0] || null;
-                                                                const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
                                                                 const noPrice = pricesFetched && productPriceRows.length === 0;
                                                                 return (
                                                                     <tr key={idx} className={`transition-colors ${rowHoverCls}`}>

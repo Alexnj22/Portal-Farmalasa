@@ -595,11 +595,10 @@ export default function MetasView() {
             <YAxis type="category" dataKey="branch" tick={{fontSize:10,fill:axisColor,fontWeight:700}} tickLine={false} axisLine={false} width={68}/>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false}/>
             <Tooltip
-              formatter={(v, n) => [fmtK(v), n==='val'?'Ventas':'Meta']}
+              formatter={(v, n) => [fmtK(v), 'Ventas']}
               contentStyle={{fontSize:11, background:'#0f172a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'white'}}
             />
-            <Bar dataKey="goal" barSize={14} fill={isAurora?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)'} radius={[0,4,4,0]} isAnimationActive={false}/>
-            <Bar dataKey="val" barSize={14} radius={[0,4,4,0]} isAnimationActive={true} animationDuration={500} animationEasing="ease-out"
+            <Bar dataKey="val" barSize={18} radius={[0,4,4,0]} isAnimationActive={true} animationDuration={500} animationEasing="ease-out"
               label={{position:'right', formatter:fmtK, fontSize:9, fill:axisColor}}
             >
               {monthViewData.map((d, i) => (

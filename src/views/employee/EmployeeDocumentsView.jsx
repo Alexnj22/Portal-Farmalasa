@@ -245,13 +245,12 @@ const EmployeeDocumentsView = () => {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${searchOpen ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input
-                    ref={searchInputRef}
+                    ref={(input) => { searchInputRef.current = input; if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
                     type="text"
                     placeholder="Buscar documento..."
                     className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    ref={(input) => { if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
                 />
                 {search && (
                     <button onClick={() => setSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">

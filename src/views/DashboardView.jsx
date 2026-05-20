@@ -92,10 +92,11 @@ const TABS = [
   { id: 'rrhh',      label: 'RRHH',      icon: Users           },
 ];
 
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos'];
 const TAB_WIDGETS = {
-  general:   ['kpi', 'sales', 'branches'],   // + sales_branch_* handled dynamically
-  comercial: ['cotizaciones', 'facturacion', 'top_productos'],
-  rrhh:      ['trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
+  general:   ALL_WIDGET_IDS,
+  comercial: ['kpi','cotizaciones','facturacion','top_productos','sales'],
+  rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -163,20 +164,27 @@ const STATUS_CONFIG = {
   ABSENT:    { label: 'Sin marcar',    dot: 'bg-gray-200',   bg: 'bg-gray-50',   text: 'text-gray-400',   border: 'border-gray-100'   },
 };
 
+const CATEGORY_META = {
+  personal:  { label: 'Personal',   color: '#0052CC', accent: 'rgba(0,82,204,0.10)',   border: 'rgba(0,82,204,0.18)'   },
+  ventas:    { label: 'Ventas',     color: '#12B76A', accent: 'rgba(18,183,106,0.10)', border: 'rgba(18,183,106,0.18)' },
+  productos: { label: 'Productos',  color: '#F79009', accent: 'rgba(247,144,9,0.10)',  border: 'rgba(247,144,9,0.18)'  },
+  general:   { label: 'General',    color: '#6929C4', accent: 'rgba(105,41,196,0.10)', border: 'rgba(105,41,196,0.18)' },
+};
+
 const WIDGET_DEFS = [
-  { id: 'kpi',           label: 'Estadísticas clave',     permission: 'dash_kpi',           icon: TrendingUp    },
-  { id: 'trend',         label: 'Tendencia de asistencia', permission: 'dash_trend',         icon: Activity      },
-  { id: 'requests',      label: 'Solicitudes pendientes',  permission: 'dash_requests',      icon: ClipboardList },
-  { id: 'shifts',        label: 'Estado de turnos',        permission: 'dash_shifts',        icon: Users         },
-  { id: 'absences',      label: 'Ausencias activas',       permission: 'dash_absences',      icon: UserX         },
-  { id: 'sales',         label: 'Ventas por día/hora',     permission: 'dash_sales',         icon: BarChart2     },
-  { id: 'branches',      label: 'Alertas de sucursales',   permission: 'dash_branches',      icon: Building2     },
-  { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays  },
-  { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone     },
-  { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift          },
-  { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt       },
-  { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText      },
-  { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package       },
+  { id: 'kpi',           label: 'Estadísticas clave',     permission: 'dash_kpi',           icon: TrendingUp,   category: 'personal'  },
+  { id: 'trend',         label: 'Tendencia de asistencia', permission: 'dash_trend',         icon: Activity,     category: 'personal'  },
+  { id: 'requests',      label: 'Solicitudes pendientes',  permission: 'dash_requests',      icon: ClipboardList,category: 'personal'  },
+  { id: 'shifts',        label: 'Estado de turnos',        permission: 'dash_shifts',        icon: Users,        category: 'personal'  },
+  { id: 'absences',      label: 'Ausencias activas',       permission: 'dash_absences',      icon: UserX,        category: 'personal'  },
+  { id: 'sales',         label: 'Ventas por día/hora',     permission: 'dash_sales',         icon: BarChart2,    category: 'ventas'    },
+  { id: 'branches',      label: 'Alertas de sucursales',   permission: 'dash_branches',      icon: Building2,    category: 'general'   },
+  { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays, category: 'general'   },
+  { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone,    category: 'general'   },
+  { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift,         category: 'personal'  },
+  { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt,      category: 'ventas'    },
+  { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText,     category: 'ventas'    },
+  { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -203,23 +211,30 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 );
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
-const WidgetCard = ({ title, icon: Icon, action, children, noClip = false }) => ( // eslint-disable-line no-unused-vars
-  <div data-surface="card" className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
-    {/* Glass shine */}
-    <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
-    {/* Header */}
-    <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-white/50 shrink-0 gap-2 flex-wrap">
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="w-7 h-7 rounded-[0.65rem] bg-[#0052CC]/10 border border-[#0052CC]/15 flex items-center justify-center shrink-0">
-          <Icon size={13} className="text-[#0052CC]" strokeWidth={2.2} />
+const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => { // eslint-disable-line no-unused-vars
+  const cat = CATEGORY_META[category] || CATEGORY_META.general;
+  return (
+    <div data-surface="card" className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
+      {/* Glass shine */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+      {/* Top accent bar */}
+      <div className="absolute top-0 inset-x-6 h-[2px] rounded-full pointer-events-none"
+        style={{ background: cat.color, opacity: 0.30 }} />
+      {/* Header */}
+      <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-white/50 shrink-0 gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-[0.65rem] flex items-center justify-center shrink-0"
+            style={{ background: cat.accent, border: `1px solid ${cat.border}` }}>
+            <Icon size={13} style={{ color: cat.color }} strokeWidth={2.2} />
+          </div>
+          <h3 className="text-[12px] font-black text-slate-800 tracking-tight truncate">{title}</h3>
         </div>
-        <h3 className="text-[12px] font-black text-slate-800 tracking-tight truncate">{title}</h3>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>
-    <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
-  </div>
-);
+  );
+};
 
 const MonthYearPicker = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
@@ -279,6 +294,31 @@ const getBranchIssue = (b) => {
   return null;
 };
 
+// ─── Per-tab layout init helpers ──────────────────────────────────────────────
+const initTabLayouts = (userId) => {
+  const result = {};
+  TABS.forEach(tab => {
+    try {
+      const saved = localStorage.getItem(`portal_dash_layout_${userId||'guest'}_${tab.id}`);
+      if (saved) { const p = JSON.parse(saved); if (Object.keys(p).length) { result[tab.id] = p; return; } }
+    } catch {}
+    const order = (TAB_WIDGETS[tab.id] || []).filter(id => id !== 'kpi');
+    result[tab.id] = autoPlaceOrder(order, {});
+  });
+  return result;
+};
+const initTabSizes = (userId) => {
+  const result = {};
+  TABS.forEach(tab => {
+    try {
+      const saved = localStorage.getItem(`portal_dash_sizes_${userId||'guest'}_${tab.id}`);
+      if (saved) { result[tab.id] = JSON.parse(saved); return; }
+    } catch {}
+    result[tab.id] = {};
+  });
+  return result;
+};
+
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
   const { user, hasPermission } = useAuth();
@@ -296,6 +336,10 @@ const DashboardView = ({ openModal }) => {
     try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general';
   });
   const [configTab, setConfigTab] = useState(activeTab);
+  const [tabDir, setTabDir] = useState('right');
+  const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === ((() => { try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general'; })())));
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
     try {
@@ -311,34 +355,10 @@ const DashboardView = ({ openModal }) => {
   });
   const [showConfig, setShowConfig] = useState(false);
 
-  // ── Widget layout: explicit grid positions { [id]: { col, row } } ──────────
-  const [widgetLayout, setWidgetLayout] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`portal_dash_layout_${user?.id||'guest'}`);
-      if (saved) {
-        const p = JSON.parse(saved);
-        if (Object.values(p).every(v => v?.col && v?.row)) {
-          const missing = DEFAULT_WIDGET_ORDER.filter(id => !(id in p));
-          if (!missing.length) return p;
-          const extended = [...Object.keys(p), ...missing];
-          const newLayout = autoPlaceOrder(extended, {});
-          const next = { ...p };
-          missing.forEach(id => { next[id] = newLayout[id] || { col: 1, row: 999 }; });
-          return next;
-        }
-      }
-    } catch {}
-    // Migrate from old order-based storage
-    const oldOrder = (() => { try { const s = localStorage.getItem(`portal_dash_widgets_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {} return DEFAULT_WIDGET_ORDER; })();
-    const oldSizes = (() => { try { const s = localStorage.getItem(`portal_dash_sizes_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {} return {}; })();
-    return autoPlaceOrder(oldOrder, oldSizes);
-  });
-
-  // Per-widget size overrides: { [id]: { cols, rows } }
-  const [widgetSizes, setWidgetSizes] = useState(() => {
-    try { const s = localStorage.getItem(`portal_dash_sizes_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
-    return {};
-  });
+  // ── Widget layout: per-tab { [tabId]: { [widgetId]: { col, row } } } ────────
+  const [widgetLayout, setWidgetLayout] = useState(() => initTabLayouts(user?.id));
+  // Per-widget size overrides: per-tab { [tabId]: { [widgetId]: { cols, rows } } }
+  const [widgetSizes,  setWidgetSizes]  = useState(() => initTabSizes(user?.id));
 
   // ── Mobile detection ────────────────────────────────────────────────────────
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
@@ -353,32 +373,42 @@ const DashboardView = ({ openModal }) => {
   const activeColsRef = useRef(activeCols);
   useEffect(() => { activeColsRef.current = activeCols; }, [activeCols]);
 
-  // ── Mobile layout/sizes (separate from desktop) ─────────────────────────────
+  // ── Mobile layout/sizes (separate from desktop, per-tab) ───────────────────
   const [mobileLayout, setMobileLayout] = useState(() => {
-    try { const s = localStorage.getItem(`portal_dash_mobile_layout_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
-    return {};
+    const result = {};
+    TABS.forEach(tab => {
+      try { const s = localStorage.getItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch {}
+      if (!result[tab.id]) result[tab.id] = {};
+    });
+    return result;
   });
   const [mobileSizes, setMobileSizes] = useState(() => {
-    try { const s = localStorage.getItem(`portal_dash_mobile_sizes_${user?.id||'guest'}`); if (s) return JSON.parse(s); } catch {}
-    return {};
+    const result = {};
+    TABS.forEach(tab => {
+      try { const s = localStorage.getItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch {}
+      if (!result[tab.id]) result[tab.id] = {};
+    });
+    return result;
   });
-  const mobileLayoutRef = useRef(mobileLayout);
-  const mobileSizesRef  = useRef(mobileSizes);
-  useEffect(() => { mobileLayoutRef.current = mobileLayout; }, [mobileLayout]);
-  useEffect(() => { mobileSizesRef.current  = mobileSizes;  }, [mobileSizes]);
+  const mobileLayoutRef = useRef(mobileLayout[activeTab] || {});
+  const mobileSizesRef  = useRef(mobileSizes[activeTab]  || {});
+  useEffect(() => { mobileLayoutRef.current = mobileLayout[activeTab] || {}; }, [mobileLayout, activeTab]);
+  useEffect(() => { mobileSizesRef.current  = mobileSizes[activeTab]  || {}; }, [mobileSizes,  activeTab]);
 
-  // Active layout: mobile layout (auto-placed from desktop order if first time) or desktop
+  // Active layout: per-tab. Mobile falls back to auto-placed from desktop order.
   const activeLayout = useMemo(() => {
-    if (!isMobile) return widgetLayout;
-    if (mobileLayout && Object.keys(mobileLayout).length) return mobileLayout;
-    const order = Object.keys(widgetLayout).sort((a, b) => {
-      const pa = widgetLayout[a], pb = widgetLayout[b];
+    const tabLayout = widgetLayout[activeTab] || {};
+    if (!isMobile) return tabLayout;
+    const mbl = mobileLayout[activeTab] || {};
+    if (Object.keys(mbl).length) return mbl;
+    const order = Object.keys(tabLayout).sort((a,b) => {
+      const pa = tabLayout[a], pb = tabLayout[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
     });
-    return autoPlaceOrder(order, mobileSizes, MOBILE_COLS);
-  }, [isMobile, widgetLayout, mobileLayout, mobileSizes]);
+    return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
+  }, [isMobile, widgetLayout, mobileLayout, activeTab, mobileSizes]);
 
-  const activeSizes  = isMobile ? mobileSizes  : widgetSizes;
+  const activeSizes = isMobile ? (mobileSizes[activeTab] || {}) : (widgetSizes[activeTab] || {});
 
   // Active cols clamped for effective size
   const getEffectiveCols = (id) => Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols);
@@ -387,20 +417,15 @@ const DashboardView = ({ openModal }) => {
   const updateWidgetSize = useCallback((id, dim, val) => {
     const isM   = isMobileRef.current;
     const cols  = activeColsRef.current;
+    const tabId = activeTabRef.current;
     const sizesRef  = isM ? mobileSizesRef  : widgetSizesRef;
     const layoutRef = isM ? mobileLayoutRef : widgetLayoutRef;
     const setSizes  = isM ? setMobileSizes  : setWidgetSizes;
     const setLayout = isM ? setMobileLayout : setWidgetLayout;
-    const lsLayoutKey = isM
-      ? `portal_dash_mobile_layout_${user?.id||'guest'}`
-      : `portal_dash_layout_${user?.id||'guest'}`;
-    const lsSizesKey = isM
-      ? `portal_dash_mobile_sizes_${user?.id||'guest'}`
-      : `portal_dash_sizes_${user?.id||'guest'}`;
 
-    const newSizes = { ...sizesRef.current, [id]: { ...(sizesRef.current[id]||{}), [dim]: val } };
-    setSizes(newSizes);
-    try { localStorage.setItem(lsSizesKey, JSON.stringify(newSizes)); } catch {}
+    const newTabSizes = { ...sizesRef.current, [id]: { ...(sizesRef.current[id]||{}), [dim]: val } };
+    setSizes(prev => ({ ...prev, [tabId]: newTabSizes }));
+    try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}sizes_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabSizes)); } catch {}
 
     const currentLayout = layoutRef.current;
     let pos = currentLayout[id];
@@ -414,12 +439,12 @@ const DashboardView = ({ openModal }) => {
           pos = layoutForResolve[id];
         }
       }
-      const newLayout = resolveCollisions(id, pos.col, pos.row, layoutForResolve, newSizes, cols);
-      const movedIds = Object.keys(newLayout).filter(wid =>
-        newLayout[wid].col !== currentLayout[wid]?.col || newLayout[wid].row !== currentLayout[wid]?.row
+      const newTabLayout = resolveCollisions(id, pos.col, pos.row, layoutForResolve, newTabSizes, cols);
+      const movedIds = Object.keys(newTabLayout).filter(wid =>
+        newTabLayout[wid].col !== currentLayout[wid]?.col || newTabLayout[wid].row !== currentLayout[wid]?.row
       );
-      setLayout(newLayout);
-      try { localStorage.setItem(lsLayoutKey, JSON.stringify(newLayout)); } catch {}
+      setLayout(prev => ({ ...prev, [tabId]: newTabLayout }));
+      try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabLayout)); } catch {}
       if (movedIds.length) {
         setBouncingIds(new Set(movedIds));
         setTimeout(() => setBouncingIds(new Set()), 700);
@@ -444,33 +469,29 @@ const DashboardView = ({ openModal }) => {
       .then(({ data, error }) => {
         if (error) console.error('[dash prefs load]', error);
         if (data) {
-          if (data.layout && Object.keys(data.layout).length) {
-            const missing = DEFAULT_WIDGET_ORDER.filter(id => !(id in data.layout));
-            let layout = data.layout;
-            if (missing.length) {
-              const extended = [...Object.keys(data.layout), ...missing];
-              const newLayout = autoPlaceOrder(extended, data.sizes || {});
-              layout = { ...data.layout };
-              missing.forEach(id => { layout[id] = newLayout[id] || { col: 1, row: 999 }; });
+          if (data.layout && typeof data.layout === 'object') {
+            const isNewFormat = TABS.some(t => t.id in data.layout);
+            if (isNewFormat) {
+              setWidgetLayout(data.layout);
+              TABS.forEach(t => { try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(data.layout[t.id] || {})); } catch {} });
             }
-            setWidgetLayout(layout);
-            try { localStorage.setItem(`portal_dash_layout_${user.id}`, JSON.stringify(layout)); } catch {}
           }
-          if (data.sizes && Object.keys(data.sizes).length) {
-            setWidgetSizes(data.sizes);
-            try { localStorage.setItem(`portal_dash_sizes_${user.id}`, JSON.stringify(data.sizes)); } catch {}
+          if (data.sizes && typeof data.sizes === 'object') {
+            const isNewFormat = TABS.some(t => t.id in data.sizes);
+            if (isNewFormat) {
+              setWidgetSizes(data.sizes);
+              TABS.forEach(t => { try { localStorage.setItem(`portal_dash_sizes_${user.id}_${t.id}`, JSON.stringify(data.sizes[t.id] || {})); } catch {} });
+            }
           }
           if (data.widgets && Array.isArray(data.widgets) && data.widgets.length) {
             setWidgetConfig(data.widgets);
             try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
           }
-          if (data.mobile_layout && Object.keys(data.mobile_layout).length) {
+          if (data.mobile_layout && TABS.some(t => t.id in data.mobile_layout)) {
             setMobileLayout(data.mobile_layout);
-            try { localStorage.setItem(`portal_dash_mobile_layout_${user.id}`, JSON.stringify(data.mobile_layout)); } catch {}
           }
-          if (data.mobile_sizes && Object.keys(data.mobile_sizes).length) {
+          if (data.mobile_sizes && TABS.some(t => t.id in data.mobile_sizes)) {
             setMobileSizes(data.mobile_sizes);
-            try { localStorage.setItem(`portal_dash_mobile_sizes_${user.id}`, JSON.stringify(data.mobile_sizes)); } catch {}
           }
         }
         setPrefsReady(true); // flip → triggers save effect below to persist current state
@@ -511,10 +532,10 @@ const DashboardView = ({ openModal }) => {
   const dndRef      = useRef({ active: null, snap: null, started: false, startX: 0, startY: 0 });
   const dndListeners = useRef({ move: null, up: null });
   const gridRef      = useRef(null);
-  const widgetLayoutRef = useRef(widgetLayout);
-  const widgetSizesRef  = useRef(widgetSizes);
-  useEffect(() => { widgetLayoutRef.current = widgetLayout; }, [widgetLayout]);
-  useEffect(() => { widgetSizesRef.current  = widgetSizes;  }, [widgetSizes]);
+  const widgetLayoutRef = useRef(widgetLayout[activeTab] || {});
+  const widgetSizesRef  = useRef(widgetSizes[activeTab]  || {});
+  useEffect(() => { widgetLayoutRef.current = widgetLayout[activeTab] || {}; }, [widgetLayout, activeTab]);
+  useEffect(() => { widgetSizesRef.current  = widgetSizes[activeTab]  || {}; }, [widgetSizes,  activeTab]);
   // Active refs always point to the right layout/sizes for current breakpoint
   const activeLayoutRef = useRef(activeLayout);
   const activeSizesRef  = useRef(activeSizes);
@@ -524,6 +545,10 @@ const DashboardView = ({ openModal }) => {
   const [dndActive, setDndActive] = useState(null);
   const [dndSnap,   setDndSnap]   = useState(null); // { col, row, valid }
   const [dndPos,    setDndPos]    = useState({ x: 0, y: 0 });
+
+  // ── Mobile long-press drag ─────────────────────────────────────────────────
+  const longPressTimerRef = useRef(null);
+  const longPressOriginRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => () => {
     if (dndListeners.current.move) window.removeEventListener('pointermove', dndListeners.current.move);
@@ -586,12 +611,13 @@ const DashboardView = ({ openModal }) => {
         const movedIds = Object.keys(newLayout).filter(id =>
           newLayout[id].col !== prev[id]?.col || newLayout[id].row !== prev[id]?.row
         );
+        const tabId = activeTabRef.current;
         if (isM) {
-          setMobileLayout(newLayout);
-          try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+          setMobileLayout(prev => ({ ...prev, [tabId]: newLayout }));
+          try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch {}
         } else {
-          setWidgetLayout(newLayout);
-          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(newLayout)); } catch {}
+          setWidgetLayout(prev => ({ ...prev, [tabId]: newLayout }));
+          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch {}
         }
         // Spring-bounce the widgets that moved
         if (movedIds.length) {
@@ -609,6 +635,32 @@ const DashboardView = ({ openModal }) => {
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerup', onUp);
   }, [user]);
+
+  const handleLongPressStart = useCallback((e, id) => {
+    const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+    longPressOriginRef.current = { x, y };
+    longPressTimerRef.current = setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate(40);
+      startDrag({ clientX: x, clientY: y, preventDefault: () => {} }, id);
+    }, 450);
+  }, [startDrag]);
+
+  const handleLongPressMoveCancel = useCallback((e) => {
+    if (!longPressTimerRef.current) return;
+    const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+    const { x: ox, y: oy } = longPressOriginRef.current;
+    if (Math.sqrt((x-ox)**2 + (y-oy)**2) > 8) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  }, []);
 
   // ── Local data state ───────────────────────────────────────────────────────
   const [pendingReqs,    setPendingReqs]    = useState([]);
@@ -646,19 +698,17 @@ const DashboardView = ({ openModal }) => {
 
   useEffect(() => {
     if (!salesBranches.length) return;
+    const ids = salesBranches.map(b => `sales_branch_${b.id}`);
     setWidgetLayout(prev => {
-      const ids = salesBranches.map(b => `sales_branch_${b.id}`);
-      const missing = ids.filter(id => !(id in prev));
+      const tabLayout = prev['general'] || {};
+      const missing = ids.filter(id => !(id in tabLayout));
       if (!missing.length) return prev;
-      // Build a temporary order to auto-place the missing ones after existing widgets
-      const existingOrder = Object.keys(prev);
-      const extended = [...existingOrder, ...missing];
-      const newLayout = autoPlaceOrder(extended, widgetSizesRef.current);
-      // Keep existing positions, only add new ones
-      const next = { ...prev };
-      missing.forEach(id => { next[id] = newLayout[id] || { col: 1, row: 999 }; });
-      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(next)); } catch {}
-      return next;
+      const existingOrder = Object.keys(tabLayout);
+      const newLayout = autoPlaceOrder([...existingOrder, ...missing], widgetSizesRef.current);
+      const nextTabLayout = { ...tabLayout };
+      missing.forEach(id => { nextTabLayout[id] = newLayout[id] || { col: 1, row: 999 }; });
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch {}
+      return { ...prev, general: nextTabLayout };
     });
   }, [salesBranches, user]);
 
@@ -885,28 +935,38 @@ const DashboardView = ({ openModal }) => {
   const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
 
   const switchTab = (tabId) => {
+    const nextIdx = TABS.findIndex(t => t.id === tabId);
+    setTabDir(nextIdx > prevTabIndexRef.current ? 'right' : 'left');
+    prevTabIndexRef.current = nextIdx;
     setActiveTab(tabId);
     setConfigTab(tabId);
     try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch {}
   };
 
-  const isWidgetInTab = (id) => {
-    if (id.startsWith('sales_branch_')) return activeTab === 'general';
-    return TAB_WIDGETS[activeTab]?.includes(id) ?? false;
-  };
+  // activeLayout is already tab-scoped — no extra filter needed
+  const isWidgetInTab = () => true;
 
   const resetAll = () => {
-    const defaultLayout = autoPlaceOrder(DEFAULT_WIDGET_ORDER, {});
-    setWidgetLayout(defaultLayout);
-    setWidgetSizes({});
-    try {
-      localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}`, JSON.stringify(defaultLayout));
-      localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}`);
-    } catch {}
+    const newLayouts = {}, newSizes = {}, newMobileLayouts = {}, newMobileSizes = {};
+    TABS.forEach(tab => {
+      const order = (TAB_WIDGETS[tab.id] || []).filter(id => id !== 'kpi');
+      newLayouts[tab.id] = autoPlaceOrder(order, {});
+      newSizes[tab.id] = {};
+      newMobileLayouts[tab.id] = {};
+      newMobileSizes[tab.id] = {};
+      try { localStorage.removeItem(`portal_dash_layout_${user?.id||'guest'}_${tab.id}`); } catch {}
+      try { localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}_${tab.id}`); } catch {}
+      try { localStorage.removeItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); } catch {}
+      try { localStorage.removeItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); } catch {}
+    });
+    setWidgetLayout(newLayouts);
+    setWidgetSizes(newSizes);
+    setMobileLayout(newMobileLayouts);
+    setMobileSizes(newMobileSizes);
   };
 
   // ── wrapWidget: explicit grid position, resize button, drag handle ──────────
-  const wrapWidget = (id, content) => {
+  const wrapWidget = (id, content, staggerIdx = 0) => {
     const { label } = getWidgetSize(id);
     const eCols = getEffectiveCols(id);
     const eRows = getEffectiveRows(id);
@@ -919,7 +979,7 @@ const DashboardView = ({ openModal }) => {
       <div
         key={id}
         data-widget-id={id}
-        className={`relative group/drag ${isBouncing ? 'animate-widget-settle' : ''}`}
+        className={`relative group/drag animate-stagger-child ${isBouncing ? 'animate-widget-settle' : ''}`}
         style={{
           gridColumnStart: pos.col,
           gridRowStart:    pos.row,
@@ -927,12 +987,17 @@ const DashboardView = ({ openModal }) => {
           gridRowEnd:      `span ${eRows}`,
           opacity:    isActive ? 0.2 : 1,
           transition: isActive ? 'opacity 0.12s' : 'opacity 0.2s',
+          '--stagger-delay': `${staggerIdx * 45}ms`,
         }}
+        onPointerDown={isMobile ? (e) => handleLongPressStart(e, id) : undefined}
+        onPointerMove={isMobile ? handleLongPressMoveCancel : undefined}
+        onPointerUp={isMobile ? handleLongPressEnd : undefined}
+        onPointerCancel={isMobile ? handleLongPressEnd : undefined}
       >
-        {/* Grip handle — reveals on hover */}
+        {/* Grip handle — always visible on mobile, hover-only on desktop */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-100 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none"
         >
           <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#0052CC] hover:border-[#0052CC] hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-slate-400 group-hover/grip:text-white transition-colors" />
@@ -986,12 +1051,15 @@ const DashboardView = ({ openModal }) => {
   };
 
   // Render a widget by id, wrapped with DnD
-  const renderWidget = (wid) => {
+  const renderWidget = (wid, staggerIdx = 0) => {
+    /* ── KPI is rendered separately above the grid, skip in grid ── */
+    if (wid === 'kpi') return null;
+
     /* ── TREND ── */
     if (wid === 'trend') {
       if (!showWidget('trend','dash_trend')) return null;
       return wrapWidget('trend',
-        <WidgetCard title="Tendencia de Asistencia" icon={Activity}
+        <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
             <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1 py-0.5">
               <button onClick={() => setTrendOffset(o=>o-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={13} strokeWidth={2.5} /></button>
@@ -1012,14 +1080,14 @@ const DashboardView = ({ openModal }) => {
             </ResponsiveContainer>
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── SHIFTS ── */
     if (wid === 'shifts') {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
-        <WidgetCard title="Estado de Turnos" icon={Clock}
+        <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
           action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {shiftStatusData.length===0?(
@@ -1037,14 +1105,14 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── SALES ── */
     if (wid === 'sales') {
       if (!showWidget('sales','dash_sales')) return null;
       return wrapWidget('sales',
-        <WidgetCard noClip icon={BarChart2}
+        <WidgetCard noClip icon={BarChart2} category="ventas"
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
@@ -1096,7 +1164,7 @@ const DashboardView = ({ openModal }) => {
             </div>
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── SALES BRANCH MINI ── */
@@ -1153,14 +1221,14 @@ const DashboardView = ({ openModal }) => {
             </div>
           )}
         </div>
-      );
+      , staggerIdx);
     }
 
     /* ── ABSENCES ── */
     if (wid === 'absences') {
       if (!showWidget('absences','dash_absences')) return null;
       return wrapWidget('absences',
-        <WidgetCard title="Ausencias Activas" icon={UserX}
+        <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
@@ -1178,14 +1246,14 @@ const DashboardView = ({ openModal }) => {
               })}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── REQUESTS ── */
     if (wid === 'requests') {
       if (!showWidget('requests','dash_requests')) return null;
       return wrapWidget('requests',
-        <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList}
+        <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
@@ -1200,14 +1268,14 @@ const DashboardView = ({ openModal }) => {
               ))}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── BRANCHES ── */
     if (wid === 'branches') {
       if (!showWidget('branches','dash_branches')) return null;
       return wrapWidget('branches',
-        <WidgetCard title="Alertas · Sucursales" icon={Building2}
+        <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
           action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {branchAlerts.length===0?(
@@ -1231,14 +1299,14 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── CALENDAR ── */
     if (wid === 'calendar') {
       if (!showWidget('calendar','dash_calendar')) return null;
       return wrapWidget('calendar',
-        <WidgetCard title="Calendario" icon={CalendarDays} action={
+        <WidgetCard title="Calendario" icon={CalendarDays} category="general" action={
           <div className="flex items-center gap-0.5">
             <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={12} strokeWidth={2.5}/></button>
             <MonthYearPicker value={calMonth} onChange={setCalMonth}/>
@@ -1272,14 +1340,14 @@ const DashboardView = ({ openModal }) => {
             </div>
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── ANNOUNCEMENTS ── */
     if (wid === 'announcements') {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
-        <WidgetCard title="Avisos Recientes" icon={Megaphone}
+        <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
           action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todos <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
@@ -1295,7 +1363,7 @@ const DashboardView = ({ openModal }) => {
               ))}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── BIRTHDAYS ── */
@@ -1372,7 +1440,7 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </div>
-      );
+      , staggerIdx);
     }
 
     /* ── COTIZACIONES ── */
@@ -1380,7 +1448,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('cotizaciones', 'dash_cotizaciones')) return null;
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('cotizaciones',
-        <WidgetCard title="Cotizaciones Activas" icon={Receipt}
+        <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
           action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="flex flex-col h-full">
             <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
@@ -1411,7 +1479,7 @@ const DashboardView = ({ openModal }) => {
             </div>
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── FACTURACION HOY ── */
@@ -1419,7 +1487,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('facturacion', 'dash_facturacion')) return null;
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('facturacion',
-        <WidgetCard title="Facturación Hoy" icon={FileText}
+        <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
           action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="flex flex-col h-full px-4 py-3 gap-3">
             <div className="grid grid-cols-2 gap-3">
@@ -1450,7 +1518,7 @@ const DashboardView = ({ openModal }) => {
             </div>
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     /* ── TOP PRODUCTOS ── */
@@ -1459,7 +1527,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
-        <WidgetCard title="Top Productos · Mes Actual" icon={Package}
+        <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
           action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
@@ -1485,36 +1553,35 @@ const DashboardView = ({ openModal }) => {
             })}
           </div>
         </WidgetCard>
-      );
+      , staggerIdx);
     }
 
     return null;
   };
 
   // ── Build widget list from explicit positions ──────────────────────────────
-  const buildWidgetList = () => Object.keys(activeLayout).filter(isWidgetInTab).map(renderWidget);
+  const buildWidgetList = () => {
+    const sorted = Object.keys(activeLayout).sort((a, b) => {
+      const pa = activeLayout[a], pb = activeLayout[b];
+      return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
+    });
+    return sorted.map((id, idx) => renderWidget(id, idx));
+  };
 
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
-      {/* Emil-style sliding tab indicator — single animated pill, not N toggling backgrounds */}
-      <div data-surface="tab-track" className="relative flex items-center bg-white/60 border border-white/80 rounded-[1.25rem] p-1 backdrop-blur-sm shadow-sm">
-        {/* The one pill that slides — position driven by activeTab index */}
-        <div className="absolute inset-1 pointer-events-none" aria-hidden>
-          <div
-            className="absolute inset-y-0 rounded-[0.875rem] bg-[#0052CC] shadow-[0_2px_10px_rgba(0,82,204,0.35)] transition-[left] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
-            style={{
-              left:  `calc(${TABS.findIndex(t => t.id === activeTab)} * 100% / ${TABS.length})`,
-              width: `calc(100% / ${TABS.length})`,
-            }}
-          />
-        </div>
+      {/* Pill-button tab container — matches ProductosView style */}
+      <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3">
         {TABS.map(tab => {
           const TabIcon = tab.icon;
+          const isActive = activeTab === tab.id;
           return (
             <button key={tab.id} onClick={() => switchTab(tab.id)}
-              className={`relative flex-1 flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[0.875rem] text-[12px] font-bold transition-[color] duration-150 active:scale-[0.97] whitespace-nowrap ${
-                activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-800'
+              className={`px-4 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border flex items-center gap-1.5 active:scale-[0.97] ${
+                isActive
+                  ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                  : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
               }`}>
               <TabIcon size={12} strokeWidth={2.2}/>
               {tab.label}
@@ -1536,13 +1603,11 @@ const DashboardView = ({ openModal }) => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <GlassViewLayout icon={LayoutDashboard} title="Dashboard" filtersContent={filtersContent} transparentBody={true}>
-      <div className="space-y-5 pb-10 px-2">
+      <div className="pb-0 px-2">
 
         {/* Config panel */}
         {showConfig && (() => {
-          const tabWidgetIds = configTab === 'general'
-            ? [...TAB_WIDGETS.general, 'kpi']
-            : TAB_WIDGETS[configTab] ?? [];
+          const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
             <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
@@ -1588,6 +1653,9 @@ const DashboardView = ({ openModal }) => {
             </div>
           );
         })()}
+
+        {/* Tab content — animates on tab switch */}
+        <div key={activeTab} className={`space-y-5 pb-10 ${tabDir === 'right' ? 'animate-tab-enter-right' : 'animate-tab-enter-left'}`}>
 
         {/* KPI row — content varies by tab */}
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
@@ -1639,6 +1707,7 @@ const DashboardView = ({ openModal }) => {
           )}
         </div>
 
+        </div>{/* end tab content */}
       </div>
 
       {/* Sales bar tooltip */}

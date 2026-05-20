@@ -10,11 +10,12 @@ import {
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
-import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -318,6 +319,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
 function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions }) {
+    const { isCompat, isAurora } = useTheme();
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -725,15 +727,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                             </DataRow>
                             {isExpanded && (
-                                <tr className="border-t border-blue-100/60">
-                                    <td colSpan={8} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
+                                <tr className={`border-t ${isAurora ? 'border-white/[0.06]' : isCompat ? 'border-slate-100' : 'border-blue-100/60'}`}>
+                                    <td colSpan={8} className={`px-5 py-4 ${isAurora ? 'bg-white/[0.04]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20'}`}>
                                         {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
+                                            <div className={`flex items-center gap-2 text-[11px] py-1 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>
                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
-                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
-                                                <Info size={12} className="text-slate-300 shrink-0" />
+                                            <div className={`flex items-center gap-2 text-[11px] py-1 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>
+                                                <Info size={12} className={`shrink-0 ${isAurora ? 'text-white/20' : 'text-slate-300'}`} />
                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                             </div>
                                         ) : (
@@ -751,13 +753,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
+                                                const hdrTxt = isAurora ? 'text-white/40' : 'text-slate-400';
+                                                const nameTxt = isAurora ? 'text-white/90' : 'text-slate-700';
+                                                const numTxt = isAurora ? 'text-white/60' : 'text-slate-500';
+                                                const dividerCls = isAurora ? 'border-white/[0.07]' : 'border-slate-100/80';
+                                                const rowHoverCls = isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-white/70';
                                                 return (
                                                     <div>
-                                                        <div className="grid gap-x-2 pb-1 mb-0.5 border-b border-slate-100/80" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
-                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 pl-2">Producto</span>
-                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Cant.</span>
-                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right hidden sm:block">P. Unit.</span>
-                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Total</span>
+                                                        <div className={`grid gap-x-2 pb-1 mb-0.5 border-b ${dividerCls}`} style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider pl-2 ${hdrTxt}`}>Producto</span>
+                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right ${hdrTxt}`}>Cant.</span>
+                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right hidden sm:block ${hdrTxt}`}>P. Unit.</span>
+                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right ${hdrTxt}`}>Total</span>
                                                         </div>
                                                         {regularItems.map((it, idx) => {
                                                             const productPriceRows = pricesCache[it.erp_product_id] || [];
@@ -770,22 +777,22 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                             }) || productPriceRows[0] || null;
                                                             const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
                                                             return (
-                                                            <div key={idx} className="grid gap-x-2 items-start py-0.5 rounded-lg hover:bg-white/70 transition-colors" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                            <div key={idx} className={`grid gap-x-2 items-start py-0.5 rounded-lg transition-colors ${rowHoverCls}`} style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
                                                                 <div className="pl-2 py-0.5">
-                                                                    <div className="text-[11px] font-semibold text-slate-700 leading-snug">{it.descripcion}</div>
+                                                                    <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                     {(antibioticIds.has(it.erp_product_id) || tier || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                         <div className="flex flex-wrap gap-1 mt-0.5">
                                                                             {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
                                                                             {tier && <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>}
-                                                                            {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
+                                                                            {it.presentacion && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-400'}`}>{it.presentacion}</span>}
                                                                             {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
-                                                                            {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono">Vence {it.fecha_vencimiento}</span>}
+                                                                            {it.fecha_vencimiento && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-500'}`}>Vence {it.fecha_vencimiento}</span>}
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="py-0.5 pt-1 text-right text-[10px] font-bold text-slate-500">{fmtQty(it.cantidad)}u</div>
-                                                                <div className="py-0.5 pt-1 text-right text-[10px] text-slate-400 hidden sm:block">{fmt(it.precio_unitario)}</div>
-                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-slate-700">{fmt(it.total_linea)}</div>
+                                                                <div className={`py-0.5 pt-1 text-right text-[10px] font-bold ${numTxt}`}>{fmtQty(it.cantidad)}u</div>
+                                                                <div className={`py-0.5 pt-1 text-right text-[10px] hidden sm:block ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</div>
+                                                                <div className={`py-0.5 pt-1 text-right text-[11px] font-black ${nameTxt}`}>{fmt(it.total_linea)}</div>
                                                             </div>
                                                             );
                                                         })}
@@ -804,17 +811,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             })()
                                         )}
                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
-                                            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                                            <div className={`mt-3 pt-3 border-t flex justify-end ${isAurora ? 'border-white/[0.07]' : 'border-slate-100'}`}>
                                                 <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                    <div className={`flex justify-between gap-6 text-[11px] ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>
                                                         <span>Subtotal (sin IVA)</span>
-                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
+                                                        <span className={`font-semibold ${isAurora ? 'text-white/80' : 'text-slate-700'}`}>{fmt(r.subtotal)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                    <div className={`flex justify-between gap-6 text-[11px] ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>
                                                         <span>IVA (13%)</span>
-                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
+                                                        <span className={`font-semibold ${isAurora ? 'text-white/80' : 'text-slate-700'}`}>{fmt(r.iva)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[12px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-0.5">
+                                                    <div className={`flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 ${isAurora ? 'text-white border-white/[0.07]' : 'text-slate-800 border-slate-200'}`}>
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>
                                                     </div>
@@ -853,6 +860,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
 function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions }) {
+    const { isCompat, isAurora } = useTheme();
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -1022,133 +1030,129 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
-            ) : (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <div className="overflow-x-auto w-full">
-                    <table className="min-w-full text-sm">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-black/[0.06] text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                <th className="text-left px-4 py-3 w-10">#</th>
-                                <th className="text-left px-4 py-3">Vendedor</th>
-                                <th className="text-left px-4 py-3 hidden md:table-cell">Sucursal</th>
-                                <th className="text-right px-4 py-3">Facturas</th>
-                                <th className="text-right px-4 py-3">Total</th>
-                                <th className="text-right px-4 py-3 hidden md:table-cell">Ticket Prom.</th>
-                                <th className="px-4 py-3 w-8" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {knownRows.map((r, i) => {
-                                const isOpen   = expanded === r.cod_vendedor;
-                                const ticket   = r.count > 0 ? r.total / r.count : 0;
-                                const pct      = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
-                                const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
-                                const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
+            <DataTable
+                columns={[
+                    { key: 'rank',     label: '#' },
+                    { key: 'vendedor', label: 'Vendedor' },
+                    { key: 'sucursal', label: 'Sucursal', hideBelow: 'md' },
+                    { key: 'facturas', label: 'Facturas', align: 'right' },
+                    { key: 'total',    label: 'Total',    align: 'right' },
+                    { key: 'ticket',   label: 'Ticket Prom.', align: 'right', hideBelow: 'md' },
+                    { key: 'expand',   label: '' },
+                ]}
+                loading={loading}
+                skeletonRows={6}
+                empty={{ icon: Users, message: 'Sin datos de vendedores para este período' }}
+                minWidth="520px"
+            >
+                {knownRows.map((r, i) => {
+                    const isOpen       = expanded === r.cod_vendedor;
+                    const ticket       = r.count > 0 ? r.total / r.count : 0;
+                    const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
+                    const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
+                    const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
+                    const expandBg     = isAurora ? 'bg-white/[0.04]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
+                    const expandBorder = isAurora ? 'border-white/[0.06]' : isCompat ? 'border-slate-100' : 'border-blue-100/60';
+                    const cardNormal   = isAurora ? 'bg-white/[0.06] border-white/[0.1]' : 'bg-white border-slate-200';
+                    const cardCross    = isAurora ? 'bg-orange-900/20 border-orange-400/30' : 'bg-orange-50 border-orange-200';
 
-                                return (
-                                    <React.Fragment key={r.cod_vendedor}>
-                                        <tr className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors cursor-pointer"
-                                            onClick={() => toggleExpand(r.cod_vendedor)}>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    {i === 0 ? <Trophy size={15} className="text-yellow-500" />
-                                                        : i === 1 ? <Trophy size={15} className="text-slate-400" />
-                                                        : i === 2 ? <Trophy size={15} className="text-amber-600" />
-                                                        : <span className="text-xs text-slate-400 font-bold w-4 text-center">{i + 1}</span>}
-                                                    <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    {r.emp ? (
-                                                        <LiquidAvatar src={r.emp.photo_url || r.emp.photo}
-                                                            fallbackText={r.emp.first_names}
-                                                            className="w-8 h-8 rounded-full shrink-0" />
-                                                    ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                            <Users size={14} className="text-slate-400" />
-                                                        </div>
-                                                    )}
-                                                    <div>
-                                                        <p className="font-semibold text-slate-800 text-[13px]">{displayName}</p>
-                                                        <p className="text-[10px] text-slate-400">Cód. {r.cod_vendedor}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 hidden md:table-cell text-slate-600 text-[12px]">
-                                                {getBranchName(baseBranchId)}
-                                                {r.branchIds.filter(id => id !== baseBranchId).map(id => (
-                                                    <span key={id} className="ml-1 text-[10px] text-orange-500 font-semibold">+{getBranchName(id)}</span>
-                                                ))}
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-semibold text-slate-700 text-[12px]">{fmtNum(r.count)}</td>
-                                            <td className="px-4 py-3 text-right">
-                                                <p className="font-black text-slate-800 text-[13px]">{fmt(r.total)}</p>
-                                                <div className="mt-1 h-1 rounded-full bg-slate-100">
-                                                    <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-right hidden md:table-cell text-slate-500 text-[12px]">{fmt(ticket)}</td>
-                                            <td className="px-4 py-3">
-                                                {isOpen ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
-                                            </td>
-                                        </tr>
-                                        {isOpen && (
-                                            <tr className="border-t border-slate-100">
-                                                <td colSpan={7} className="px-4 py-3 bg-slate-50/80">
-                                                    {loadingExpand ? (
-                                                        <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
-                                                    ) : (
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Ventas diarias</p>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {expandedData.map(d => {
-                                                                    const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
-                                                                    return (
-                                                                        <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200'}`}>
-                                                                            <p className="text-slate-500 mb-0.5">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                            <p className="font-black text-slate-800">{fmt(d.total)}</p>
-                                                                            <p className="text-slate-400">{d.count} fact.</p>
-                                                                            {cross.map(b => (
-                                                                                <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
-                                                                            ))}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            })}
-                            {[...unknownByBranch.values()].map(u => (
-                                <tr key={`u-${u.branch_id}`} className="border-t border-orange-100 bg-orange-50/30">
-                                    <td className="px-4 py-3"><span className="text-[10px] text-orange-300 font-bold">—</span></td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                                                <Users size={14} className="text-orange-400" />
+                    return (
+                        <React.Fragment key={r.cod_vendedor}>
+                            <DataRow index={i} onClick={() => toggleExpand(r.cod_vendedor)} className={isOpen ? (isAurora ? 'bg-white/[0.06]' : 'bg-blue-50/30') : ''}>
+                                <DataCell>
+                                    <div className="flex items-center gap-1.5">
+                                        {i === 0 ? <Trophy size={15} className="text-yellow-500" />
+                                            : i === 1 ? <Trophy size={15} className="text-slate-400" />
+                                            : i === 2 ? <Trophy size={15} className="text-amber-600" />
+                                            : <span className="text-xs text-slate-400 font-bold w-4 text-center">{i + 1}</span>}
+                                        <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
+                                    </div>
+                                </DataCell>
+                                <DataCell>
+                                    <div className="flex items-center gap-2.5">
+                                        {r.emp ? (
+                                            <LiquidAvatar src={r.emp.photo_url || r.emp.photo}
+                                                fallbackText={r.emp.first_names}
+                                                className="w-8 h-8 rounded-full shrink-0" />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                                <Users size={14} className="text-slate-400" />
                                             </div>
-                                            <p className="font-semibold text-orange-600 text-[13px]">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
+                                        )}
+                                        <div>
+                                            <p className="font-semibold text-[13px]">{displayName}</p>
+                                            <p className="text-[10px] text-slate-400">Cód. {r.cod_vendedor}</p>
                                         </div>
+                                    </div>
+                                </DataCell>
+                                <DataCell hideBelow="md" className="text-[12px]">
+                                    {getBranchName(baseBranchId)}
+                                    {r.branchIds.filter(id => id !== baseBranchId).map(id => (
+                                        <span key={id} className="ml-1 text-[10px] text-orange-500 font-semibold">+{getBranchName(id)}</span>
+                                    ))}
+                                </DataCell>
+                                <DataCell align="right" className="font-semibold text-[12px]">{fmtNum(r.count)}</DataCell>
+                                <DataCell align="right">
+                                    <p className="font-black text-[13px]">{fmt(r.total)}</p>
+                                    <div className="mt-1 h-1 rounded-full bg-slate-100">
+                                        <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                    </div>
+                                </DataCell>
+                                <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
+                                <DataCell>
+                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-slate-400'}`} />
+                                </DataCell>
+                            </DataRow>
+                            {isOpen && (
+                                <tr className={`border-t ${expandBorder}`}>
+                                    <td colSpan={7} className={`px-4 py-3 ${expandBg}`}>
+                                        {loadingExpand ? (
+                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
+                                        ) : (
+                                            <div>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>Ventas diarias</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {expandedData.map(d => {
+                                                        const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
+                                                        return (
+                                                            <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
+                                                                <p className={`mb-0.5 ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                                                <p className={`font-black ${isAurora ? 'text-white/90' : 'text-slate-800'}`}>{fmt(d.total)}</p>
+                                                                <p className={isAurora ? 'text-white/40' : 'text-slate-400'}>{d.count} fact.</p>
+                                                                {cross.map(b => (
+                                                                    <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </td>
-                                    <td className="px-4 py-3 hidden md:table-cell text-slate-400 text-[12px]">—</td>
-                                    <td className="px-4 py-3 text-right text-slate-500 text-[12px]">{fmtNum(u.count)}</td>
-                                    <td className="px-4 py-3 text-right font-bold text-slate-600 text-[13px]">{fmt(u.total)}</td>
-                                    <td className="px-4 py-3 text-right hidden md:table-cell text-slate-400 text-[12px]">{u.count > 0 ? fmt(u.total / u.count) : '—'}</td>
-                                    <td className="px-4 py-3" />
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            )}
+                            )}
+                        </React.Fragment>
+                    );
+                })}
+                {[...unknownByBranch.values()].map(u => (
+                    <DataRow key={`u-${u.branch_id}`} className="bg-orange-50/30">
+                        <DataCell><span className="text-[10px] text-orange-300 font-bold">—</span></DataCell>
+                        <DataCell>
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                    <Users size={14} className="text-orange-400" />
+                                </div>
+                                <p className="font-semibold text-orange-600 text-[13px]">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
+                            </div>
+                        </DataCell>
+                        <DataCell hideBelow="md" className="text-[12px]">—</DataCell>
+                        <DataCell align="right" className="text-[12px]">{fmtNum(u.count)}</DataCell>
+                        <DataCell align="right" className="font-bold text-[13px]">{fmt(u.total)}</DataCell>
+                        <DataCell align="right" hideBelow="md" className="text-[12px]">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
+                        <DataCell />
+                    </DataRow>
+                ))}
+            </DataTable>
 
         </div>
     );
@@ -1175,16 +1179,20 @@ const PAGO_STYLE = {
 };
 function detectTier(precioUnitario, preciosRow, tiers = DRILL_TIERS) {
     if (!preciosRow || !precioUnitario) return null;
-    // Tier prices stored with IVA; normalize to net for comparison with net precio_unitario.
+    const p = parseFloat(precioUnitario);
+    // Prices may be stored with or without IVA; try both and take the closest match.
     const candidates = tiers
-        .map(t => ({ ...t, price: parseFloat(preciosRow[t.key] || 0) / 1.13 }))
-        .filter(t => t.price > 0);
+        .map(t => {
+            const gross = parseFloat(preciosRow[t.key] || 0);
+            if (!gross) return null;
+            const net   = gross / 1.13;
+            const diff  = Math.min(Math.abs(gross - p) / gross, Math.abs(net - p) / net);
+            return { ...t, diff };
+        })
+        .filter(Boolean);
     if (!candidates.length) return null;
-    const best = candidates.reduce((a, b) =>
-        Math.abs(b.price - precioUnitario) < Math.abs(a.price - precioUnitario) ? b : a
-    );
-    if (Math.abs(best.price - precioUnitario) / best.price > 0.10)
-        return { label: 'Especial', color: 'bg-rose-100 text-rose-600' };
+    const best = candidates.reduce((a, b) => b.diff < a.diff ? b : a);
+    if (best.diff > 0.10) return { label: 'Especial', color: 'bg-rose-100 text-rose-600' };
     return best;
 }
 
@@ -1219,6 +1227,7 @@ function findFirstChangeSince(history, idPresentaciones, fechaStr) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
+    const { isCompat, isAurora } = useTheme();
     const { maxPriceLevel } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
@@ -1558,36 +1567,46 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-400" /></div>
-            ) : error ? (
+            {error && (
                 <div className="text-center py-16 text-red-400">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
                     <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-blue-500 hover:underline">Reintentar</button>
                 </div>
-            ) : filtered.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
-                    <Package size={40} className="mx-auto mb-3" />
-                    <p className="font-medium">{searchTerm ? `Sin resultados para "${searchTerm}"` : 'Sin datos para este período'}</p>
-                </div>
-            ) : (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <div className="overflow-x-auto w-full">
-                    <table className="min-w-full text-sm">
-                        <thead className="sticky top-0 z-10">
-                            <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
-                                <th className="text-left px-4 py-2.5 w-8 text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
-                                <SortTh label="Producto"  col="descripcion" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                <SortTh label="Unidades"  col="cantidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden md:table-cell" />
-                                <SortTh label="Total s/IVA" col="neto"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                <SortTh label="Costo"     col="costo_total" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden lg:table-cell" />
-                                <SortTh label="Utilidad"  col="utilidad"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                <SortTh label="Margen"    col="margen"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {paginated.map((r, i) => {
+            )}
+            {!error && (
+            <DataTable
+                columns={[
+                    { key: 'rank',        label: '#' },
+                    { key: 'descripcion', label: 'Producto',     sortable: true },
+                    { key: 'cantidad',    label: 'Unidades',     sortable: true, align: 'right', hideBelow: 'md' },
+                    { key: 'neto',        label: 'Total s/IVA',  sortable: true, align: 'right' },
+                    { key: 'costo_total', label: 'Costo',        sortable: true, align: 'right', hideBelow: 'lg' },
+                    { key: 'utilidad',    label: 'Utilidad',     sortable: true, align: 'right', hideBelow: 'sm' },
+                    { key: 'margen',      label: 'Margen',       sortable: true, align: 'right' },
+                ]}
+                sortKey={sortCol}
+                sortDir={sortDir}
+                onSort={handleSort}
+                loading={loading}
+                skeletonRows={10}
+                empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : 'Sin datos para este período' }}
+                minWidth="640px"
+                footer={!loading && rows.length > 0 ? (
+                    <>
+                        <div className="w-[130px]">
+                            <LiquidSelect value={String(pageSize)}
+                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
+                        </div>
+                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
+                            {searchTerm ? `${filtered.length} de ${rows.length}` : `${fmtNum(rows.length)} productos`}
+                        </span>
+                    </>
+                ) : undefined}
+            >
+                {paginated.map((r, i) => {
                                 const globalIdx  = (page - 1) * pageSize + i;
                                 const rowKey     = r.erp_product_id != null ? String(r.erp_product_id) : `desc::${r.descripcion}`;
                                 const isExpanded = expandedKey === rowKey;
@@ -1599,18 +1618,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     : 'text-red-600';
                                 return (
                                     <React.Fragment key={rowKey}>
-                                    <tr
-                                        className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/40' : 'hover:bg-slate-50/60'}`}
-                                        onClick={() => toggleExpand(rowKey, r.erp_product_id)}
-                                    >
-                                        <td className="px-4 py-3">
+                                    <DataRow index={i} onClick={() => toggleExpand(rowKey, r.erp_product_id)}
+                                        className={isExpanded ? (isAurora ? 'bg-white/[0.06]' : 'bg-blue-50/40') : ''}>
+                                        <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
-                                                : <span className="text-[11px] text-slate-400 font-bold">{globalIdx + 1}</span>}
-                                        </td>
-                                        <td className="px-4 py-3 max-w-[220px]">
+                                                : <span className="text-slate-400">{globalIdx + 1}</span>}
+                                        </DataCell>
+                                        <DataCell className="max-w-[220px]">
                                             <div className="flex items-start gap-1.5">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold text-slate-800 text-[12px] leading-tight">{r.descripcion}</p>
+                                                    <p className="font-semibold text-[12px] leading-tight">{r.descripcion}</p>
                                                     {r.presentaciones?.length > 0 && (
                                                         <p className="text-[10px] text-slate-400 mt-0.5">
                                                             {r.presentaciones.length === 1
@@ -1622,27 +1639,27 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
                                                     </div>
                                                 </div>
-                                                <ChevronDown size={13} className={`text-slate-300 shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : ''}`} />
+                                                <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-slate-300'}`} />
                                             </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-right text-[12px] font-semibold text-slate-600 hidden md:table-cell">{fmtNum(r.cantidad)}</td>
-                                        <td className="px-4 py-3 text-right font-black text-slate-800 text-[13px]">{fmt(r.neto)}</td>
-                                        <td className="px-4 py-3 text-right text-[12px] text-slate-500 hidden lg:table-cell">
-                                            {r.costo_total != null ? fmt(r.costo_total) : <span className="text-slate-200">—</span>}
-                                        </td>
-                                        <td className="px-4 py-3 text-right text-[12px] font-bold hidden sm:table-cell">
+                                        </DataCell>
+                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad)}</DataCell>
+                                        <DataCell align="right" className="font-black text-[13px]">{fmt(r.neto)}</DataCell>
+                                        <DataCell align="right" hideBelow="lg" className="text-[12px]">
+                                            {r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
+                                        </DataCell>
+                                        <DataCell align="right" hideBelow="sm" className="text-[12px] font-bold">
                                             {r.utilidad != null
                                                 ? <span className={r.utilidad >= 0 ? 'text-emerald-600' : 'text-red-600'}>{fmt(r.utilidad)}</span>
-                                                : <span className="text-slate-200">—</span>}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
+                                                : <span className="opacity-30">—</span>}
+                                        </DataCell>
+                                        <DataCell align="right">
                                             {margin != null
                                                 ? <span className={`text-[12px] font-black ${marginColor}`}>{fmtPct(margin)}</span>
-                                                : <span className="text-slate-200 text-[12px]">—</span>}
-                                        </td>
-                                    </tr>
+                                                : <span className="opacity-30 text-[12px]">—</span>}
+                                        </DataCell>
+                                    </DataRow>
                                     {isExpanded && (
-                                        <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
+                                        <tr className={isAurora ? 'bg-white/[0.04]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-b from-blue-50/25 to-slate-50/10'}>
                                             <td colSpan={7} className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">
@@ -1942,21 +1959,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     </React.Fragment>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                    </div>
-                    <div className="flex items-center justify-between px-4 py-2.5">
-                        <div className="w-[130px]">
-                            <LiquidSelect value={String(pageSize)}
-                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
-                        </div>
-                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
-                            {searchTerm ? `${filtered.length} de ${rows.length}` : `${fmtNum(rows.length)} productos`}
-                        </span>
-                    </div>
-                    </div>
+            </DataTable>
             )}
         </div>
     );

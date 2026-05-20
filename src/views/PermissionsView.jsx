@@ -5,7 +5,7 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt
+    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -69,6 +69,7 @@ const MODULE_GROUPS = [
                 { key: 'facturacion_tab_no_efectivo',  label: 'No Efectivo'  },
             ]},
             { key: 'cotizaciones',  label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt, hasApprove: false, hasScope: true },
+            { key: 'metas',         label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas', icon: Target, hasApprove: false },
         ],
     },
     {
@@ -442,7 +443,6 @@ const PermissionsView = () => {
             .from('role_permissions')
             .upsert({
                 role_id: roleId,
-                system_role: null,
                 module_key: moduleKey,
                 can_view: next.can_view ?? false,
                 can_edit: next.can_edit ?? false,
@@ -471,7 +471,6 @@ const PermissionsView = () => {
         setActivatingAll(true);
         const rows = MODULES.map(m => ({
             role_id: selectedRoleId,
-            system_role: null,
             module_key: m.key,
             can_view: true,
             can_edit: m.isTab ? false : true,
@@ -509,7 +508,6 @@ const PermissionsView = () => {
             const src = permissions[`${sourceRoleId}:${m.key}`] || {};
             return {
                 role_id: selectedRoleId,
-                system_role: null,
                 module_key: m.key,
                 can_view: src.can_view ?? false,
                 can_edit: src.can_edit ?? false,
@@ -560,7 +558,6 @@ const PermissionsView = () => {
         });
         const rows = groupModules.map(m => ({
             role_id: selectedRoleId,
-            system_role: null,
             module_key: m.key,
             can_view: activate,
             can_edit: activate,

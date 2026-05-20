@@ -760,7 +760,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const rowHoverCls = isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-white/70';
                                                 return (
                                                     <div>
-                                                        <div className={`grid gap-x-2 pb-1 mb-0.5 border-b ${dividerCls}`} style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                        <div className={`grid gap-x-2 pb-1 mb-0.5 border-b ${dividerCls}`} style={{ gridTemplateColumns: '1fr 52px 68px auto' }}>
                                                             <span className={`text-[9px] font-semibold uppercase tracking-wider pl-2 ${hdrTxt}`}>Producto</span>
                                                             <span className={`text-[9px] font-semibold uppercase tracking-wider text-right ${hdrTxt}`}>Cant.</span>
                                                             <span className={`text-[9px] font-semibold uppercase tracking-wider text-right hidden sm:block ${hdrTxt}`}>P. Unit.</span>
@@ -777,22 +777,24 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                             }) || productPriceRows[0] || null;
                                                             const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
                                                             return (
-                                                            <div key={idx} className={`grid gap-x-2 items-start py-0.5 rounded-lg transition-colors ${rowHoverCls}`} style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                            <div key={idx} className={`grid gap-x-2 items-center py-0.5 rounded-lg transition-colors ${rowHoverCls}`} style={{ gridTemplateColumns: '1fr 52px 68px auto' }}>
                                                                 <div className="pl-2 py-0.5">
                                                                     <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
-                                                                    {(antibioticIds.has(it.erp_product_id) || tier || it.presentacion || it.lote || it.fecha_vencimiento) && (
+                                                                    {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                         <div className="flex flex-wrap gap-1 mt-0.5">
                                                                             {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                            {tier && <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>}
                                                                             {it.presentacion && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-400'}`}>{it.presentacion}</span>}
                                                                             {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
                                                                             {it.fecha_vencimiento && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-500'}`}>Vence {it.fecha_vencimiento}</span>}
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className={`py-0.5 pt-1 text-right text-[10px] font-bold ${numTxt}`}>{fmtQty(it.cantidad)}u</div>
-                                                                <div className={`py-0.5 pt-1 text-right text-[10px] hidden sm:block ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</div>
-                                                                <div className={`py-0.5 pt-1 text-right text-[11px] font-black ${nameTxt}`}>{fmt(it.total_linea)}</div>
+                                                                <div className={`py-0.5 text-right text-[10px] font-bold ${numTxt}`}>{fmtQty(it.cantidad)}u</div>
+                                                                <div className={`py-0.5 text-right text-[10px] hidden sm:block ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</div>
+                                                                <div className="py-0.5 flex items-center justify-end gap-1.5">
+                                                                    {tier && <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shrink-0 ${tier.color}`}>{tier.label}</span>}
+                                                                    <span className={`text-[11px] font-black ${nameTxt}`}>{fmt(it.total_linea)}</span>
+                                                                </div>
                                                             </div>
                                                             );
                                                         })}

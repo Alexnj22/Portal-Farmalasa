@@ -486,16 +486,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
                     // Also prefetch prices for all unique erp_product_ids in this batch
                     const erpIds = [...new Set(items.map(it => it.erp_product_id).filter(id => id && id !== -999))];
-                    const uncachedErpIds = erpIds.filter(id => !pricesCache[id]);
+                    const uncachedErpIds = erpIds.filter(id => !(id in pricesCache));
                     if (uncachedErpIds.length) {
                         supabase.from('product_precios')
                             .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
                             .eq('activo', true)
                             .in('product_id', uncachedErpIds)
                             .then(({ data: priceRows }) => {
-                                if (!priceRows) return;
                                 const pg = {};
-                                for (const p of priceRows) {
+                                // Pre-seed so IDs with no rows are marked "attempted" and won't re-fetch
+                                for (const id of uncachedErpIds) pg[id] = [];
+                                for (const p of (priceRows || [])) {
                                     if (!pg[p.product_id]) pg[p.product_id] = [];
                                     pg[p.product_id].push(p);
                                 }
@@ -526,10 +527,37 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     useEffect(() => { fetchRows(); }, [fetchRows]);
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]);
 
+    const fetchPricesForIds = useCallback((erpIds) => {
+        const uncachedIds = erpIds.filter(id => !(id in pricesCache));
+        if (!uncachedIds.length) return;
+        supabase.from('product_precios')
+            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+            .eq('activo', true)
+            .in('product_id', uncachedIds)
+            .then(({ data: priceRows }) => {
+                const grouped = {};
+                // Pre-seed with empty arrays so IDs with no rows are marked as "attempted"
+                for (const id of uncachedIds) grouped[id] = [];
+                for (const p of (priceRows || [])) {
+                    if (!grouped[p.product_id]) grouped[p.product_id] = [];
+                    grouped[p.product_id].push(p);
+                }
+                setPricesCache(prev => ({ ...prev, ...grouped }));
+            });
+    }, [pricesCache]);
+
     const toggleRow = useCallback(async (invoiceId) => {
         if (expandedId === invoiceId) { setExpandedId(null); return; }
         setExpandedId(invoiceId);
-        if (itemsCache[invoiceId]) return;
+
+        // Items already cached — still ensure prices are fetched for any gap
+        if (itemsCache[invoiceId]) {
+            const erpIds = [...new Set((itemsCache[invoiceId] || [])
+                .map(it => it.erp_product_id).filter(id => id && id !== -999))];
+            fetchPricesForIds(erpIds);
+            return;
+        }
+
         setLoadingItems(true);
         const { data } = await supabase
             .from('sales_invoice_items')
@@ -540,25 +568,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         setLoadingItems(false);
 
         const erpIds = [...new Set((data || []).map(it => it.erp_product_id).filter(id => id && id !== -999))];
-        if (erpIds.length) {
-            const uncachedIds = erpIds.filter(id => !pricesCache[id]);
-            if (uncachedIds.length) {
-                supabase.from('product_precios')
-                    .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
-                    .eq('activo', true)
-                    .in('product_id', uncachedIds)
-                    .then(({ data: priceRows }) => {
-                        if (!priceRows) return;
-                        const grouped = {};
-                        for (const p of priceRows) {
-                            if (!grouped[p.product_id]) grouped[p.product_id] = [];
-                            grouped[p.product_id].push(p);
-                        }
-                        setPricesCache(prev => ({ ...prev, ...grouped }));
-                    });
-            }
-        }
-    }, [expandedId, itemsCache, pricesCache]);
+        fetchPricesForIds(erpIds);
+    }, [expandedId, itemsCache, fetchPricesForIds]);
 
     const totalPages = isSearching ? 1 : Math.ceil((filterPuntos ? puntosCount : totalCount) / pageSize);
     const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
@@ -773,16 +784,24 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                         </thead>
                                                         <tbody>
                                                             {regularItems.map((it, idx) => {
-                                                                const productPriceRows = pricesCache[it.erp_product_id] || [];
+                                                                // undefined = not yet fetched; [] = fetched, no catalog entry
+                                                                const cachedEntry = pricesCache[it.erp_product_id];
+                                                                const productPriceRows = cachedEntry || [];
+                                                                const pricesFetched = Array.isArray(cachedEntry);
                                                                 const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
                                                                 const bestPriceRow = productPriceRows.find(p => {
                                                                     const pres = p.presentaciones;
                                                                     if (!pres) return false;
                                                                     const arr = Array.isArray(pres) ? pres : [pres];
-                                                                    return arr.some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey);
+                                                                    // exact key match, tipo-only match, or startsWith tipo
+                                                                    return arr.some(pr =>
+                                                                        presKey(pr.tipo, pr.descripcion) === itPresKey ||
+                                                                        pr.tipo?.toUpperCase() === itPresKey ||
+                                                                        itPresKey.startsWith((pr.tipo ?? '').toUpperCase())
+                                                                    );
                                                                 }) || productPriceRows[0] || null;
                                                                 const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
-                                                                const noPrice = productPriceRows.length === 0;
+                                                                const noPrice = pricesFetched && productPriceRows.length === 0;
                                                                 return (
                                                                     <tr key={idx} className={`transition-colors ${rowHoverCls}`}>
                                                                         <td className="py-1 pl-2 pr-2">

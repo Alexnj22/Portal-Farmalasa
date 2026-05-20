@@ -762,9 +762,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                         {regularItems.map((it, idx) => {
                                                             const productPriceRows = pricesCache[it.erp_product_id] || [];
                                                             const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
-                                                            const bestPriceRow = productPriceRows.find(p =>
-                                                                (p.presentaciones || []).some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey)
-                                                            ) || productPriceRows[0] || null;
+                                                            const bestPriceRow = productPriceRows.find(p => {
+                                                                const pres = p.presentaciones;
+                                                                if (!pres) return false;
+                                                                const arr = Array.isArray(pres) ? pres : [pres];
+                                                                return arr.some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey);
+                                                            }) || productPriceRows[0] || null;
                                                             const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
                                                             return (
                                                             <div key={idx} className="grid gap-x-2 items-start py-0.5 rounded-lg hover:bg-white/70 transition-colors" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>

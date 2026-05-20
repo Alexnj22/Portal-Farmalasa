@@ -34,6 +34,7 @@ import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
 import PayrollView from "./views/PayrollView";
 import VentasView from "./views/VentasView";
+import MetasView from "./views/MetasView";
 import ProductosView from "./views/ProductosView";
 import FacturacionView from "./views/FacturacionView";
 import CotizacionesView from "./views/CotizacionesView";
@@ -470,6 +471,7 @@ function MainApp() {
                                     <Route path="announcements" element={<PermissionGuard moduleKey="announcements"><AnnouncementsView openModal={openModal} /></PermissionGuard>} />
 
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
+                                    <Route path="metas" element={<PermissionGuard moduleKey="metas"><MetasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
@@ -577,6 +579,7 @@ const ROUTE_TITLES = {
     '/payroll':           'Planilla',
     '/announcements':     'Comunicados',
     '/ventas':            'Ventas',
+    '/metas':             'Metas',
     '/facturacion':       'Facturación',
     '/cotizaciones':      'Cotizaciones',
     '/productos':         'Productos',

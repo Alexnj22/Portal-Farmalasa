@@ -5,7 +5,7 @@ import {
     Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
-    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt
+    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
@@ -35,6 +35,7 @@ const MODULE_MAP = {
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
+    metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
@@ -60,7 +61,7 @@ const MENU_GROUPS = [
     { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan']                       },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
     { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos']                            },
 ];

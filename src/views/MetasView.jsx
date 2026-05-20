@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea, Cell,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Target, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Target, Settings2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 
@@ -68,9 +68,9 @@ function getStatus(val, goal) {
 }
 
 const STATUS_STYLES = {
-  green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',   dot:'bg-green-500',  label:'Logrado',  ring:'ring-green-400' },
-  orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200', dot:'bg-orange-500', label:'Cerca',    ring:'ring-orange-400' },
-  red:    { row:'bg-red-50/80',    cell:'text-red-800 font-semibold',   badge:'bg-red-100 text-red-700 border border-red-200',           dot:'bg-red-500',    label:'Pendiente',ring:'ring-red-400' },
+  green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',         dot:'bg-green-500',  label:'Logrado',  ring:'ring-green-400' },
+  orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200',      dot:'bg-orange-400', label:'Cerca',    ring:'ring-orange-400' },
+  red:    { row:'bg-red-50/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',        dot:'bg-red-600',    label:'No logró', ring:'ring-red-500' },
 };
 
 // Linear regression → projects `ahead` steps from last non-null value
@@ -145,10 +145,14 @@ export default function MetasView() {
     return next;
   });
 
-  // Projections
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState(15);
+
+  // Projections — Domicilio se integró a Salud 3 desde abril 2026, no se proyecta
   const projData = useMemo(() => {
     const res = {};
-    BRANCHES.forEach(b => { res[b] = project(RAW[b], 3); });
+    BRANCHES.forEach(b => {
+      res[b] = b === 'Domicilio' ? [null, null, null] : project(RAW[b], 3);
+    });
     return res;
   }, []);
 
@@ -203,6 +207,20 @@ export default function MetasView() {
     });
     return [...hist, ...proj];
   }, [hidden, projData]);
+
+  // Interactive month comparison chart data
+  const monthViewData = useMemo(() => {
+    const m = MONTHS[selectedMonthIdx];
+    const isProj = m?.projected;
+    return BRANCHES
+      .filter(b => !(b === 'Domicilio' && isProj))
+      .map(b => {
+        const raw = isProj ? projData[b][selectedMonthIdx - 16] : RAW[b][selectedMonthIdx];
+        const val = raw ?? 0;
+        const goal = goals[b] ?? 0;
+        return { branch: b === 'La Popular' ? 'La Pop.' : b, val, goal, status: getStatus(raw, goal) };
+      });
+  }, [selectedMonthIdx, goals, projData]);
 
   // Annual totals (2025 and 2026 YTD)
   const annualTotals = useMemo(() => {
@@ -406,8 +424,15 @@ export default function MetasView() {
                 dataKey={b}
                 stroke={COLORS[b]}
                 strokeWidth={2}
-                dot={false}
-                activeDot={{ r:4, strokeWidth:0 }}
+                dot={(props) => {
+                  const { cx, cy, index, value } = props;
+                  if (value == null || cx == null || cy == null) return <g key={`d-${b}-${index}`}/>;
+                  if (index >= 16) return <circle key={`d-${b}-${index}`} cx={cx} cy={cy} r={2.5} fill={COLORS[b]} opacity={0.4}/>;
+                  const st = getStatus(value, goals[b]);
+                  const dc = st==='green'?'#22c55e':st==='orange'?'#f97316':'#ef4444';
+                  return <circle key={`d-${b}-${index}`} cx={cx} cy={cy} r={3.5} fill={dc} stroke="white" strokeWidth={1.5}/>;
+                }}
+                activeDot={{ r:5, strokeWidth:0 }}
                 connectNulls={false}
               />
             ))}
@@ -428,7 +453,7 @@ export default function MetasView() {
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart
                   layout="vertical"
-                  data={BRANCHES.filter(b=>!hidden.has(b)).map(b => ({
+                  data={BRANCHES.filter(b=>!hidden.has(b) && b!=='Domicilio').map(b => ({
                     branch: b,
                     value: projData[b]?.[pi] ?? 0,
                     goal: goals[b] ?? 0,
@@ -445,7 +470,7 @@ export default function MetasView() {
                   <Bar dataKey="value" radius={[0,4,4,0]} barSize={12}
                     label={{ position:'right', formatter:fmtK, fontSize:9, fill:axisColor }}
                   >
-                    {BRANCHES.filter(b=>!hidden.has(b)).map(b => (
+                    {BRANCHES.filter(b=>!hidden.has(b) && b!=='Domicilio').map(b => (
                       <Cell key={b} fill={COLORS[b]} />
                     ))}
                   </Bar>
@@ -456,14 +481,72 @@ export default function MetasView() {
         </div>
       </div>
 
+      {/* ── Interactive Month Comparison ─────────────────────────────── */}
+      <div className={`rounded-2xl border p-5 ${card} ${shadow}`}>
+        <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <p className={`text-[13px] font-black ${txt}`}>Comparativo por Mes</p>
+            <p className={`text-[11px] ${muted}`}>Ventas reales vs meta — navega mes a mes con las flechas</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedMonthIdx(i => Math.max(0, i - 1))}
+              disabled={selectedMonthIdx === 0}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
+                ${isAurora ? 'bg-[rgba(77,148,255,0.15)] text-white/70 hover:bg-[rgba(77,148,255,0.3)] disabled:opacity-20'
+                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
+            >
+              <ChevronLeft size={16} strokeWidth={2.5}/>
+            </button>
+            <div className="text-center min-w-[110px]">
+              <p className={`text-[14px] font-black ${txt}`}>{MONTHS[selectedMonthIdx].full}</p>
+              {MONTHS[selectedMonthIdx].projected && (
+                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full
+                  ${isAurora ? 'bg-[rgba(77,148,255,0.2)] text-blue-300' : 'bg-indigo-100 text-indigo-600'}`}>
+                  Proyección
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setSelectedMonthIdx(i => Math.min(MONTHS.length - 1, i + 1))}
+              disabled={selectedMonthIdx === MONTHS.length - 1}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
+                ${isAurora ? 'bg-[rgba(77,148,255,0.15)] text-white/70 hover:bg-[rgba(77,148,255,0.3)] disabled:opacity-20'
+                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
+            >
+              <ChevronRight size={16} strokeWidth={2.5}/>
+            </button>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart layout="vertical" data={monthViewData} margin={{top:0, right:72, left:0, bottom:0}}>
+            <XAxis type="number" tickFormatter={v=>`$${(v/1000).toFixed(0)}k`} tick={{fontSize:9,fill:axisColor}} tickLine={false} axisLine={false} />
+            <YAxis type="category" dataKey="branch" tick={{fontSize:10,fill:axisColor,fontWeight:700}} tickLine={false} axisLine={false} width={68}/>
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false}/>
+            <Tooltip
+              formatter={(v, n) => [fmtK(v), n==='val'?'Ventas':'Meta']}
+              contentStyle={{fontSize:11, background:'#0f172a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'white'}}
+            />
+            <Bar dataKey="goal" barSize={14} fill={isAurora?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)'} radius={[0,4,4,0]} isAnimationActive={false}/>
+            <Bar dataKey="val" barSize={14} radius={[0,4,4,0]} isAnimationActive={true} animationDuration={500} animationEasing="ease-out"
+              label={{position:'right', formatter:fmtK, fontSize:9, fill:axisColor}}
+            >
+              {monthViewData.map((d, i) => (
+                <Cell key={i} fill={d.status==='green'?'#22c55e':d.status==='orange'?'#f97316':'#ef4444'}/>
+              ))}
+            </Bar>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
       {/* ── Data Table ──────────────────────────────────────────────────── */}
       <div className={`rounded-2xl border overflow-hidden ${card} ${shadow}`}>
         <div className={`px-5 py-3 border-b ${divider}`}>
           <p className={`text-[13px] font-black ${txt}`}>Detalle Mensual</p>
           <p className={`text-[11px] ${muted}`}>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-200 inline-block"/>Logrado ≥ 100%</span>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-200 inline-block"/>Cerca ≥ 95%</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-200 inline-block"/>Pendiente &lt; 95%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Logrado ≥ 100%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-100 inline-block"/>Cerca ≥ 95%</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-300 inline-block"/>No logró &lt; 95%</span>
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -500,7 +583,7 @@ export default function MetasView() {
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
                             ${yr2026 ? (isAurora ? 'bg-[rgba(77,148,255,0.04)]' : 'bg-indigo-50/30') : ''}
-                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-800':'bg-red-50 text-red-800') : (isAurora ? 'text-[rgba(210,230,255,0.4)]' : 'text-slate-300')}`}
+                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : (isAurora ? 'text-[rgba(210,230,255,0.4)]' : 'text-slate-300')}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
                         </td>

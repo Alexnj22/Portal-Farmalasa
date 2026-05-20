@@ -7,10 +7,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
+import LoginConceptView from './LoginConceptView';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
     const { login, loginWithUsername, isAdmin, user, completePasswordChange } = useAuth();
 
+    const [conceptMode, setConceptMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [loginMode, setLoginMode] = useState('code');
@@ -287,6 +289,16 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setChangePassLoading(false);
     };
 
+    if (conceptMode) {
+        return (
+            <LoginConceptView
+                setView={setView}
+                setActiveEmployee={setActiveEmployee}
+                onExitConcept={() => setConceptMode(false)}
+            />
+        );
+    }
+
     if (mustChangePwd) {
         return (
             <div className="relative flex flex-col items-center justify-center w-full min-h-[100dvh] overflow-y-auto px-5 py-12">
@@ -539,6 +551,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Ingresar al Portal'}
                             </button>
                         </form>
+                        <button
+                            type="button"
+                            onClick={() => setConceptMode(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-400 border border-slate-200/60 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/5 transition-all duration-200 active:scale-[0.97]">
+                            ✦ Ver concepto
+                        </button>
                     </div>
                 </div>
 
@@ -751,6 +769,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 </button>
                             </>
                         )}
+
+                        <div className="flex justify-center mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setConceptMode(true)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-slate-400 border border-slate-200/60 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/5 transition-all duration-200 active:scale-[0.97]">
+                                ✦ Ver concepto
+                            </button>
+                        </div>
                     </div>
 
                     <div className="fixed z-40 flex items-center justify-center gap-3 p-3 transition-all duration-500 bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[2rem] shadow-xl bottom-[max(env(safe-area-inset-bottom,24px),24px)] left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] flex-row landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:right-[max(env(safe-area-inset-right,24px),24px)] landscape:left-auto landscape:translate-x-0 landscape:w-auto landscape:flex-col lg:hidden">

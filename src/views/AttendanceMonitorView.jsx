@@ -19,6 +19,7 @@ import {
   Zap,
   X,
   Users,
+  Moon,
 } from "lucide-react";
 
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -33,6 +34,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [filterBranch, setFilterBranch] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDarkConcept, setIsDarkConcept] = useState(false);
 
   // Filtros visuales
   const [statusTab, setStatusTab] = useState("ALL");
@@ -406,8 +408,279 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       >
         {searchOpen ? <X size={17} strokeWidth={2.5} /> : <Search size={17} strokeWidth={2.5} />}
       </button>
+      <button
+        type="button"
+        onClick={() => setIsDarkConcept(true)}
+        title="Ver concepto oscuro"
+        className="w-10 h-10 flex-shrink-0 rounded-[0.875rem] border border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC] flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
+      >
+        <Moon size={16} strokeWidth={2} />
+      </button>
     </div>
   );
+
+  const getDarkCardBg = (status, isLate) => {
+    if (isLate && status !== "FINISHED") return "rgba(239,68,68,0.08)";
+    switch (status) {
+      case "WORKING":       return "rgba(16,185,129,0.07)";
+      case "EXTRA_WORKING": return "rgba(105,41,196,0.09)";
+      case "LUNCH":         return "rgba(249,115,22,0.07)";
+      case "LACTATION":     return "rgba(236,72,153,0.07)";
+      case "FINISHED":      return "rgba(255,255,255,0.03)";
+      case "OFF_DAY":       return "rgba(255,255,255,0.02)";
+      default:              return "rgba(255,255,255,0.05)";
+    }
+  };
+  const getDarkCardBorder = (status, isLate) => {
+    if (isLate && status !== "FINISHED") return "rgba(239,68,68,0.28)";
+    switch (status) {
+      case "WORKING":       return "rgba(16,185,129,0.25)";
+      case "EXTRA_WORKING": return "rgba(105,41,196,0.28)";
+      case "LUNCH":         return "rgba(249,115,22,0.25)";
+      case "LACTATION":     return "rgba(236,72,153,0.25)";
+      case "FINISHED":      return "rgba(255,255,255,0.06)";
+      case "OFF_DAY":       return "rgba(255,255,255,0.05)";
+      default:              return "rgba(255,255,255,0.09)";
+    }
+  };
+
+  if (isDarkConcept) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-auto"
+        style={{ background: "radial-gradient(ellipse at 78% 12%, rgba(0,82,204,0.13) 0%, transparent 52%), radial-gradient(ellipse at 12% 88%, rgba(105,41,196,0.09) 0%, transparent 52%), #050E1F" }}>
+
+        {/* ── Sticky dark header ── */}
+        <div className="sticky top-0 z-30 flex items-center gap-3 px-5 md:px-6 py-4"
+          style={{ background: "rgba(5,14,31,0.90)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="w-9 h-9 rounded-[0.875rem] flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg, #0052CC, #6929C4)" }}>
+            <Clock size={15} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-white font-black text-[15px] leading-none">Monitor en Tiempo Real</h1>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.22)" }}>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">En vivo</span>
+              </div>
+            </div>
+            <p className="hidden md:block text-[10px] font-black tracking-[0.12em] font-mono mt-0.5"
+              style={{ color: "rgba(255,255,255,0.30)" }}>
+              {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
+            <button type="button" onClick={() => setSearchOpen(v => !v)}
+              className="w-10 h-10 flex-shrink-0 rounded-[0.875rem] flex items-center justify-center transition-all duration-200 active:scale-[0.97]"
+              style={searchOpen
+                ? { background: "#0052CC", border: "1px solid rgba(0,82,204,0.60)", color: "white", boxShadow: "0 4px 12px rgba(0,82,204,0.35)" }
+                : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.45)" }}>
+              {searchOpen ? <X size={16} strokeWidth={2.5} /> : <Search size={16} strokeWidth={2.5} />}
+            </button>
+            <button onClick={() => setIsDarkConcept(false)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-200 active:scale-[0.97]"
+              style={{ color: "rgba(255,255,255,0.38)", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "rgba(255,255,255,0.80)"; e.currentTarget.style.background = "rgba(255,255,255,0.09)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.38)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
+              <X size={11} /> Diseño original
+            </button>
+          </div>
+        </div>
+
+        <div className="px-4 md:px-6 py-5 space-y-5">
+          {/* Search */}
+          <div className={["overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]", searchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"].join(" ")}>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[1.5rem]"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Search size={16} style={{ color: "rgba(255,255,255,0.28)", flexShrink: 0 }} />
+              <input ref={searchInputRef} type="text" placeholder="Escribe nombre o código..."
+                className="w-full bg-transparent border-none outline-none text-sm font-bold text-white placeholder-white/25"
+                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              {searchTerm && (
+                <button type="button" onClick={() => setSearchTerm("")}
+                  className="text-xs font-black uppercase transition-colors shrink-0"
+                  style={{ color: "rgba(255,255,255,0.30)" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgb(248,113,113)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.30)"}>
+                  Borrar
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+            {statCards.map(card => {
+              const isActive = statusTab === card.id;
+              const Icon = card.icon;
+              return (
+                <button key={card.id} type="button" onClick={() => setStatusTab(card.id)}
+                  className="text-left p-5 rounded-[2rem] transition-all duration-300 group relative overflow-hidden"
+                  style={isActive
+                    ? { background: "rgba(0,82,204,0.22)", border: "1px solid rgba(0,82,204,0.45)", boxShadow: "0 12px 24px rgba(0,82,204,0.22)", transform: "scale(1.02)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  {Icon && (
+                    <div className="absolute -right-3 -top-3 opacity-[0.08] transition-transform group-hover:scale-110 group-hover:rotate-12">
+                      <Icon size={70} className="text-red-400" />
+                    </div>
+                  )}
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-1 relative z-10"
+                    style={{ color: "rgba(255,255,255,0.35)" }}>{card.label}</p>
+                  <p className="text-[28px] font-black relative z-10 leading-none"
+                    style={{ color: isActive ? "#4D94FF" : "rgba(255,255,255,0.85)" }}>
+                    {card.count}
+                  </p>
+                  {isActive && (
+                    <div className="absolute bottom-3 right-3 animate-in zoom-in duration-300">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#4D94FF]" style={{ boxShadow: "0 0 10px #0052CC" }} />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Employee grid */}
+          {employeeDataList.length === 0 ? (
+            <div className="rounded-[2rem] p-20 text-center flex flex-col items-center gap-4 mt-8"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="w-20 h-20 rounded-full flex items-center justify-center animate-pulse"
+                style={{ background: "rgba(255,255,255,0.06)" }}>
+                <Users size={32} style={{ color: "rgba(255,255,255,0.20)" }} />
+              </div>
+              <p className="text-[14px] font-black uppercase tracking-widest"
+                style={{ color: "rgba(255,255,255,0.35)" }}>
+                No hay empleados en esta categoría
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
+              {employeeDataList.map(({ emp, status, isLate, lateText, punches, lastActionTime, shiftName, scheduleDetails }) => {
+                const bName = branchNameById.get(String(emp.branchId)) || "N/A";
+                const dBg     = getDarkCardBg(status, isLate);
+                const dBorder = getDarkCardBorder(status, isLate);
+                return (
+                  <div key={emp.id}
+                    className="p-5 rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
+                    style={{ background: dBg, border: `1px solid ${dBorder}`, boxShadow: "0 10px 28px rgba(0,0,0,0.40)" }}>
+                    {/* Card header */}
+                    <div className="flex justify-between items-start mb-5">
+                      <button type="button" onClick={() => goToProfile(emp)}
+                        className="flex items-center gap-4 text-left group w-full">
+                        <div className="relative">
+                          <div className="h-14 w-14 rounded-2xl overflow-hidden flex items-center justify-center font-black text-lg transition-transform group-hover:scale-105"
+                            style={{
+                              background: isLate && status !== "FINISHED" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.08)",
+                              border: `1px solid ${dBorder}`,
+                              color: isLate && status !== "FINISHED" ? "rgb(248,113,113)" : "rgba(255,255,255,0.50)",
+                            }}>
+                            {emp.photo ? (
+                              <img src={emp.photo} className="w-full h-full object-cover" alt="Foto" />
+                            ) : String(emp?.name || "?").charAt(0)}
+                          </div>
+                          {emp.hasLactation && (
+                            <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full shadow-sm"
+                              style={{ background: "rgba(236,72,153,0.15)", border: "1px solid rgba(236,72,153,0.25)", color: "rgb(249,168,212)" }}
+                              title="Lactancia Activa">
+                              <Baby size={10} strokeWidth={3} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-[15px] leading-tight truncate"
+                            style={{ color: "rgba(255,255,255,0.88)" }}>{emp.name}</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest truncate mt-0.5"
+                            style={{ color: "rgba(255,255,255,0.35)" }}>
+                            {emp.role || "Colaborador"}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="mb-5">{getStatusBadge(status, isLate, lateText)}</div>
+
+                    <div className="space-y-2.5 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
+                          style={{ color: "rgba(255,255,255,0.35)" }}>
+                          <Building2 size={12} /> Sucursal
+                        </span>
+                        <span className="font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>{bName}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
+                          style={{ color: "rgba(255,255,255,0.35)" }}>
+                          <MapPin size={12} /> Turno
+                        </span>
+                        <span className="font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>{shiftName}</span>
+                      </div>
+                      {scheduleDetails?.start && (
+                        <div className="p-2.5 rounded-xl space-y-1.5"
+                          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                          <div className="flex items-center gap-2 text-[10px] font-semibold"
+                            style={{ color: "rgba(255,255,255,0.60)" }}>
+                            <Clock size={12} className="text-[#4D94FF]" />
+                            {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
+                          </div>
+                          {scheduleDetails.lunch && (
+                            <div className="flex items-center gap-2 text-[10px] font-semibold"
+                              style={{ color: "rgba(255,255,255,0.45)" }}>
+                              <Utensils size={12} className="text-orange-400" />
+                              {formatTime12h(scheduleDetails.lunch)} (Almuerzo)
+                            </div>
+                          )}
+                          {scheduleDetails.lactation && (
+                            <div className="flex items-center gap-2 text-[10px] font-semibold"
+                              style={{ color: "rgba(255,255,255,0.45)" }}>
+                              <Baby size={12} className="text-pink-400" />
+                              {formatTime12h(scheduleDetails.lactation)} (Lactancia)
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-[11px] pt-1">
+                        <span className="font-bold uppercase tracking-wider flex items-center gap-1.5"
+                          style={{ color: "rgba(255,255,255,0.35)" }}>
+                          <Timer size={12} /> Último Reg.
+                        </span>
+                        <span className="font-black text-[13px]"
+                          style={{ color: isLate && status !== "FINISHED" ? "rgb(248,113,113)" : "rgba(255,255,255,0.85)" }}>
+                          {lastActionTime || "--:--"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {punches?.length > 0 && (
+                      <div className="mt-4 pt-3 flex flex-wrap gap-2"
+                        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        {punches.slice(-4).reverse().map((p, idx) => {
+                          const PIcon = punchIcon(p.type);
+                          const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                          const isLatest = idx === 0;
+                          return (
+                            <div key={`${p.timestamp}-${idx}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider"
+                              style={isLatest
+                                ? { background: "rgba(0,82,204,0.22)", border: "1px solid rgba(0,82,204,0.38)", color: "#4D94FF" }
+                                : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.45)" }}>
+                              <PIcon size={10} strokeWidth={2.5} />
+                              {t}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent}>

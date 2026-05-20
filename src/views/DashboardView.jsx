@@ -269,17 +269,6 @@ const MonthYearPicker = ({ value, onChange }) => {
   );
 };
 
-// ─── DashClock ────────────────────────────────────────────────────────────────
-const DashClock = () => {
-  const [t, setT] = useState(() => new Date());
-  useEffect(() => { const id = setInterval(() => setT(new Date()), 1000); return () => clearInterval(id); }, []);
-  return (
-    <p className="text-white/40 text-[11px] font-black tabular-nums tracking-[0.12em]">
-      {t.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-    </p>
-  );
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const parseMeta = (raw) => typeof raw === 'object' && raw !== null ? raw : (() => { try { return JSON.parse(raw); } catch { return {}; } })();
 const localDateStr = (d = new Date()) => { const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
@@ -307,7 +296,6 @@ const DashboardView = ({ openModal }) => {
     try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general';
   });
   const [configTab, setConfigTab] = useState(activeTab);
-  const [conceptMode, setConceptMode] = useState(false);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
     try {
@@ -1538,232 +1526,12 @@ const DashboardView = ({ openModal }) => {
       {/* Divider */}
       <div className="w-px h-5 bg-slate-200/70"/>
 
-      {/* Aurora concept toggle */}
-      <button onClick={() => setConceptMode(true)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-black uppercase tracking-widest text-slate-400 border border-slate-200/60 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/5 transition-[color,border-color,background-color] duration-150 active:scale-[0.97]">
-        ✦ Aurora
-      </button>
-
-      {/* Divider */}
-      <div className="w-px h-5 bg-slate-200/70"/>
-
       {/* Personalizar — pill shape matching LiquidSelect trigger language */}
       <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-[background-color,color,border-color] duration-150 active:scale-[0.97] shadow-sm border ${showConfig?'bg-[#0052CC] text-white border-[#0052CC]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
         <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar
       </button>
     </div>
   );
-
-  // ── Aurora concept render ──────────────────────────────────────────────────
-  if (conceptMode) {
-    const AURORA_KF = `
-      @keyframes drd1{0%{transform:translate(0,0) scale(1)}33%{transform:translate(60px,-40px) scale(1.08)}66%{transform:translate(-30px,50px) scale(0.95)}100%{transform:translate(0,0) scale(1)}}
-      @keyframes drd2{0%{transform:translate(0,0) scale(1)}40%{transform:translate(-50px,40px) scale(1.06)}70%{transform:translate(40px,-50px) scale(0.92)}100%{transform:translate(0,0) scale(1)}}
-      @keyframes drd3{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,60px) scale(1.10)}80%{transform:translate(-40px,-20px) scale(0.96)}100%{transform:translate(0,0) scale(1)}}
-      @keyframes drd4{0%{transform:translate(0,0) scale(1)}25%{transform:translate(-70px,-30px) scale(1.05)}75%{transform:translate(50px,40px) scale(0.94)}100%{transform:translate(0,0) scale(1)}}
-      @keyframes drd5{0%{transform:translate(0,0) scale(1)}60%{transform:translate(40px,-60px) scale(1.07)}85%{transform:translate(-20px,30px) scale(0.98)}100%{transform:translate(0,0) scale(1)}}
-    `;
-    const ORBS = [
-      { w:950, h:950, top:'-260px', left:'-200px',    color:'rgba(0,82,204,0.48)',    blur:80, anim:'drd1 22s ease-in-out infinite' },
-      { w:750, h:750, bottom:'-200px', right:'-120px', color:'rgba(13,148,136,0.32)', blur:65, anim:'drd2 28s ease-in-out infinite' },
-      { w:650, h:650, top:'38%',  right:'14%',         color:'rgba(79,70,229,0.26)',  blur:60, anim:'drd3 34s ease-in-out infinite' },
-      { w:520, h:520, top:'22%',  left:'24%',          color:'rgba(105,41,196,0.22)', blur:55, anim:'drd4 25s ease-in-out infinite' },
-      { w:420, h:420, bottom:'18%', left:'9%',         color:'rgba(5,150,105,0.18)',  blur:50, anim:'drd5 31s ease-in-out infinite' },
-    ];
-    const totalSalesToday = Object.values(todaySales).reduce((s, b) => s + (b.totalSales || 0), 0);
-    const attendancePct = activeEmployees.length > 0 ? Math.round(presentToday / activeEmployees.length * 100) : 0;
-    const maxBranchSale = Math.max(...activeBranches.map(b => todaySales[String(b.id)]?.totalSales || 0), 1);
-
-    return (
-      <div className="fixed inset-0 z-50 overflow-auto" style={{ background: '#030B1C' }}>
-        <style>{AURORA_KF}</style>
-
-        {/* Aurora orbs */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-          {ORBS.map((orb, i) => (
-            <div key={i} style={{
-              position: 'absolute',
-              width: orb.w, height: orb.h,
-              ...(orb.top    !== undefined ? { top:    orb.top    } : {}),
-              ...(orb.bottom !== undefined ? { bottom: orb.bottom } : {}),
-              ...(orb.left   !== undefined ? { left:   orb.left   } : {}),
-              ...(orb.right  !== undefined ? { right:  orb.right  } : {}),
-              background: `radial-gradient(ellipse at center, ${orb.color} 0%, transparent 70%)`,
-              filter: `blur(${orb.blur}px)`,
-              animation: orb.anim,
-              willChange: 'transform',
-            }} />
-          ))}
-          <div className="absolute inset-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', opacity: 0.025, backgroundRepeat: 'repeat', backgroundSize: '180px' }} />
-        </div>
-
-        {/* Sticky header */}
-        <div className="sticky top-0 z-10 flex items-center gap-3 px-6 py-4" style={{ backdropFilter: 'blur(24px)', background: 'rgba(3,11,28,0.65)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="w-8 h-8 rounded-[0.875rem] flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #0052CC, #6929C4)', boxShadow: '0 4px 14px rgba(0,82,204,0.4)' }}>
-            <LayoutDashboard size={14} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-black text-[15px] leading-none">Dashboard</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.20em] mt-0.5" style={{ color: 'rgba(255,255,255,0.30)' }}>Concepto Aurora</p>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <DashClock />
-            <button onClick={() => setConceptMode(false)}
-              className="px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-[color,border-color] duration-150"
-              style={{ color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.10)' }}
-              onMouseEnter={e => { e.currentTarget.style.color='rgba(255,255,255,0.85)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.25)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)'; }}>
-              Salir
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="relative px-6 py-8 space-y-5 max-w-[1400px] mx-auto" style={{ zIndex: 1 }}>
-
-          {/* Hero row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-            {/* Attendance */}
-            <div className="rounded-[1.75rem] p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
-              <div className="flex items-center gap-2 mb-5">
-                <UserCheck size={13} style={{ color: '#4D94FF' }} />
-                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.40)' }}>Asistencia Hoy</p>
-              </div>
-              <div className="flex items-end gap-3 mb-1">
-                <p className="font-black text-white" style={{ fontSize: '58px', lineHeight: 1 }}>{presentToday}</p>
-                <div className="mb-2">
-                  <p className="font-bold text-[14px]" style={{ color: 'rgba(255,255,255,0.30)' }}>de {activeEmployees.length}</p>
-                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.20)' }}>empleados</p>
-                </div>
-              </div>
-              <div className="h-1 rounded-full mt-4 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                <div className="h-full rounded-full transition-all duration-700" style={{
-                  width: `${attendancePct}%`,
-                  background: attendancePct >= 80 ? '#12B76A' : attendancePct >= 50 ? '#F79009' : '#F04438',
-                  boxShadow: `0 0 10px ${attendancePct >= 80 ? 'rgba(18,183,106,0.55)' : attendancePct >= 50 ? 'rgba(247,144,9,0.55)' : 'rgba(240,68,56,0.55)'}`,
-                }} />
-              </div>
-              <p className="text-[11px] font-bold mt-2" style={{ color: 'rgba(255,255,255,0.28)' }}>{attendancePct}% del equipo presente</p>
-            </div>
-
-            {/* Sales today */}
-            <div className="rounded-[1.75rem] p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
-              <div className="flex items-center gap-2 mb-5">
-                <ShoppingCart size={13} style={{ color: 'rgba(52,199,89,0.85)' }} />
-                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.40)' }}>Ventas Hoy</p>
-              </div>
-              <p className="font-black text-white leading-none" style={{ fontSize: '36px' }}>
-                ${totalSalesToday.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-[11px] font-bold mt-1.5 mb-5" style={{ color: 'rgba(255,255,255,0.25)' }}>{activeBranches.length} sucursales</p>
-              <div className="space-y-2">
-                {activeBranches.slice(0, 5).map(b => {
-                  const bSales = todaySales[String(b.id)]?.totalSales || 0;
-                  return (
-                    <div key={b.id} className="flex items-center gap-2.5">
-                      <p className="text-[10px] font-bold w-[4.5rem] truncate" style={{ color: 'rgba(255,255,255,0.38)' }}>{b.name}</p>
-                      <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <div className="h-full rounded-full" style={{ width: `${(bSales / maxBranchSale) * 100}%`, background: 'rgba(52,199,89,0.55)', transition: 'width 0.7s ease' }} />
-                      </div>
-                      <p className="text-[10px] font-black w-14 text-right tabular-nums" style={{ color: 'rgba(255,255,255,0.45)' }}>${Math.round(bSales).toLocaleString('es')}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Comercial KPIs */}
-            <div className="rounded-[1.75rem] p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
-              <div className="flex items-center gap-2 mb-5">
-                <Receipt size={13} style={{ color: 'rgba(168,85,247,0.85)' }} />
-                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.40)' }}>Comercial</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Cotizaciones', value: cotizStats.activas, sub: 'activas', big: true },
-                  { label: 'Monto', value: `$${(cotizStats.total / 1000).toFixed(1)}k`, sub: 'en cartera', big: false },
-                  { label: 'Documentos', value: factStats.count, sub: 'emitidos hoy', big: true },
-                  { label: 'Facturado', value: `$${(factStats.total / 1000).toFixed(1)}k`, sub: 'total del día', big: false },
-                ].map((item, i) => (
-                  <div key={i}>
-                    <p className="text-[10px] font-bold mb-1" style={{ color: 'rgba(255,255,255,0.30)' }}>{item.label}</p>
-                    <p className="font-black text-white leading-none" style={{ fontSize: item.big ? '30px' : '22px' }}>{item.value}</p>
-                    <p className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.22)' }}>{item.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* RRHH pill row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { Icon: Users,         label: 'Empleados',  value: activeEmployees.length, sub: 'activos',    accent: '#4D94FF' },
-              { Icon: UserX,         label: 'Ausencias',  value: absences.length,         sub: 'activas',    accent: absences.length > 0 ? '#F04438' : '#12B76A' },
-              { Icon: ClipboardList, label: 'Solicitudes',value: pendingReqs.length,      sub: 'pendientes', accent: pendingReqs.length > 0 ? '#F79009' : '#12B76A' },
-              { Icon: Building2,     label: 'Sucursales', value: branches.length,         sub: branchAlerts.length > 0 ? `${branchAlerts.length} alerta${branchAlerts.length > 1 ? 's' : ''}` : 'sin alertas', accent: branchAlerts.length > 0 ? '#F04438' : '#12B76A' },
-            ].map(({ Icon, label, value, sub, accent }, i) => (
-              <div key={i} className="rounded-[1.5rem] p-5" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(14px)' }}>
-                <Icon size={13} style={{ color: accent, marginBottom: '10px' }} />
-                <p className="font-black text-white leading-none" style={{ fontSize: '36px' }}>{value}</p>
-                <p className="text-[10px] font-black uppercase tracking-wider mt-2" style={{ color: 'rgba(255,255,255,0.30)' }}>{label}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.20)' }}>{sub}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* 7-day attendance trend */}
-          <div className="rounded-[1.75rem] p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(14px)' }}>
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp size={13} style={{ color: '#4D94FF' }} />
-              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.38)' }}>Tendencia — últimos 7 días</p>
-              <span className="ml-auto text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.20)' }}>{trendRangeLabel}</span>
-            </div>
-            <div className="flex items-end gap-3" style={{ height: '72px' }}>
-              {trendData.map((d, i) => {
-                const maxVal = Math.max(...trendData.map(t => t.total), 1);
-                const hPct  = Math.max((d.total / maxVal) * 100, d.total > 0 ? 8 : 3);
-                const isToday = d.date === today;
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                    <p className="text-[9px] font-black tabular-nums" style={{ color: isToday ? 'rgba(77,148,255,0.75)' : 'rgba(255,255,255,0.28)' }}>{d.total > 0 ? d.total : ''}</p>
-                    <div className="w-full rounded-full" style={{
-                      height: `${hPct}%`,
-                      minHeight: '3px',
-                      background: isToday ? 'rgba(77,148,255,0.75)' : 'rgba(255,255,255,0.10)',
-                      boxShadow: isToday ? '0 0 10px rgba(77,148,255,0.45)' : 'none',
-                      transition: 'height 0.6s ease',
-                    }} />
-                    <p className="text-[9px] font-bold capitalize" style={{ color: isToday ? 'rgba(77,148,255,0.65)' : 'rgba(255,255,255,0.22)' }}>{d.day}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Announcements strip */}
-          {recentAnnouncements.length > 0 && (
-            <div className="rounded-[1.75rem] px-6 py-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(14px)' }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Megaphone size={13} style={{ color: 'rgba(247,144,9,0.85)' }} />
-                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.38)' }}>Avisos recientes</p>
-              </div>
-              <div className="space-y-2.5">
-                {recentAnnouncements.slice(0, 3).map(a => (
-                  <div key={a.id} className="flex items-start gap-3 pb-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="w-1.5 h-1.5 rounded-full mt-[5px] shrink-0" style={{ background: a.type === 'URGENTE' ? '#F04438' : '#F79009' }} />
-                    <p className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>{a.title}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-      </div>
-    );
-  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (

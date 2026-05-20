@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import ThemeToggle from '../common/ThemeToggle';
+import { useTheme } from '../../context/ThemeContext';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -67,8 +68,17 @@ const MENU_GROUPS = [
 // Self-service module keys (for bottom tabs logic)
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
 
+const AURORA_ORBS = [
+    { cls: 'aurora-orb-1', w: 950, h: 950, top: '-260px', left: '-200px',    color: 'rgba(0,82,204,0.45)'    , blur: 80 },
+    { cls: 'aurora-orb-2', w: 750, h: 750, bottom: '-200px', right: '-120px', color: 'rgba(13,148,136,0.30)', blur: 65 },
+    { cls: 'aurora-orb-3', w: 650, h: 650, top: '38%',  right: '14%',         color: 'rgba(79,70,229,0.25)',  blur: 60 },
+    { cls: 'aurora-orb-4', w: 520, h: 520, top: '22%',  left: '24%',          color: 'rgba(105,41,196,0.22)', blur: 55 },
+    { cls: 'aurora-orb-5', w: 420, h: 420, bottom: '18%', left: '9%',         color: 'rgba(5,150,105,0.18)',  blur: 50 },
+];
+
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, systemRole } = useAuth();
+    const { isAurora } = useTheme();
     const branches = useStaff((state) => state.branches);
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
@@ -522,7 +532,26 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     };
 
     return (
-        <div className="flex w-full min-h-[100dvh] bg-[#E6F0FF] lg:bg-transparent font-sans overflow-hidden relative">
+        <div className={`flex w-full min-h-[100dvh] font-sans overflow-hidden relative ${isAurora ? 'bg-[#030B1C]' : 'bg-[#E6F0FF] lg:bg-transparent'}`}>
+
+            {/* ── Aurora background orbs ── */}
+            {isAurora && (
+                <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+                    {AURORA_ORBS.map((orb, i) => (
+                        <div key={i} className={orb.cls} style={{
+                            position: 'absolute',
+                            width: orb.w, height: orb.h,
+                            ...(orb.top    !== undefined ? { top:    orb.top    } : {}),
+                            ...(orb.bottom !== undefined ? { bottom: orb.bottom } : {}),
+                            ...(orb.left   !== undefined ? { left:   orb.left   } : {}),
+                            ...(orb.right  !== undefined ? { right:  orb.right  } : {}),
+                            background: `radial-gradient(ellipse at center, ${orb.color} 0%, transparent 70%)`,
+                            filter: `blur(${orb.blur}px)`,
+                        }} />
+                    ))}
+                    <div className="aurora-noise absolute inset-0" />
+                </div>
+            )}
 
             {/* Mobile backdrop */}
             {isMobile && isSidebarOpen && (
@@ -775,10 +804,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="text-[#030B1C] hover:text-[#0052CC] active:scale-[0.97] transition-transform">
+                            <button onClick={() => setIsSidebarOpen(true)} className={`active:scale-[0.97] transition-[color,transform] ${isAurora ? 'text-white/70 hover:text-white' : 'text-[#030B1C] hover:text-[#0052CC]'}`}>
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
-                            <div className="w-px h-6 bg-slate-300/50 rounded-full" />
+                            <div className={`w-px h-6 rounded-full ${isAurora ? 'bg-white/15' : 'bg-slate-300/50'}`} />
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
                                 <p className="text-[8px] font-bold text-[#0052CC] uppercase tracking-[0.2em] mt-0.5">La Salud</p>

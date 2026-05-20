@@ -10,6 +10,7 @@ import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
+import { useTheme } from '../../context/ThemeContext';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -70,8 +71,55 @@ const EmployeeHomeView = () => {
     const [isLoadingWeek, setIsLoadingWeek]   = useState(false);
     const [branchSchedule, setBranchSchedule] = useState([]);
 
+    const { isAurora, isCompat } = useTheme();
+
     const emp    = employees.find(e => String(e.id) === String(user?.id));
     const branch = branches.find(b => String(b.id) === String(emp?.branchId));
+
+    const tk = {
+        card: isAurora
+            ? 'bg-[rgba(4,10,40,0.60)] backdrop-blur-xl border-[rgba(77,148,255,0.15)] shadow-[0_4px_20px_rgba(0,20,100,0.30)]'
+            : isCompat
+            ? 'bg-white border-slate-200 shadow-sm'
+            : 'bg-white/60 backdrop-blur-xl border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]',
+        cardHover: isAurora
+            ? 'hover:bg-[rgba(4,10,40,0.78)] hover:border-[rgba(77,148,255,0.28)] hover:shadow-[0_20px_40px_rgba(0,20,100,0.45)]'
+            : isCompat
+            ? 'hover:bg-slate-50 hover:shadow-md'
+            : 'hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]',
+        textStrong: isAurora ? 'text-[rgba(210,230,255,0.95)]' : 'text-slate-800',
+        textMid:   isAurora ? 'text-[rgba(180,210,255,0.75)]' : 'text-slate-600',
+        textMuted: isAurora ? 'text-[rgba(150,200,255,0.55)]' : 'text-slate-400',
+        divider:   isAurora ? 'border-[rgba(77,148,255,0.12)]' : 'border-slate-100',
+        pill: isAurora
+            ? 'bg-[rgba(4,10,40,0.72)] backdrop-blur-2xl border-[rgba(77,148,255,0.20)] shadow-[0_4px_20px_rgba(0,20,100,0.4)]'
+            : isCompat
+            ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.07)]'
+            : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)]',
+        shiftPill: isAurora
+            ? 'bg-[rgba(77,148,255,0.10)] border-[rgba(77,148,255,0.22)]'
+            : isCompat
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-white/50 border-white/70',
+        ctaBtn: isAurora
+            ? 'bg-[rgba(77,148,255,0.18)] border-[rgba(77,148,255,0.38)] text-[rgba(180,215,255,0.95)] hover:bg-[rgba(77,148,255,0.30)]'
+            : isCompat
+            ? 'bg-[#0052CC] border-[#0052CC] text-white hover:bg-[#003D99]'
+            : 'bg-white/70 border-white/80 text-slate-700 hover:bg-white/90',
+        dayHeaderDefault: isAurora
+            ? 'bg-[rgba(77,148,255,0.10)] text-[rgba(190,220,255,0.80)]'
+            : isCompat ? 'bg-slate-100 text-slate-600' : 'bg-slate-50 text-slate-600',
+        dayHeaderToday: isAurora ? 'bg-[rgba(77,148,255,0.35)] text-white' : 'bg-slate-800 text-white',
+        dayHeaderNext: isAurora ? 'bg-[rgba(77,148,255,0.06)] text-[rgba(150,200,255,0.60)]' : isCompat ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500',
+        dayBody: isAurora ? 'bg-[rgba(4,10,40,0.40)]' : 'bg-white/40',
+        empRowSelf: isAurora ? 'bg-[rgba(77,148,255,0.15)] border-[rgba(77,148,255,0.30)]' : 'bg-slate-100/80 border-slate-200',
+        empRow:     isAurora ? 'bg-[rgba(77,148,255,0.07)]' : 'bg-white/60',
+        navBtn: isAurora ? 'hover:bg-[rgba(77,148,255,0.12)] text-[rgba(150,200,255,0.65)]' : 'hover:bg-slate-100 text-slate-500',
+        navLabel: isAurora ? 'text-[rgba(150,200,255,0.65)]' : 'text-slate-500',
+        iconBg: isAurora ? 'bg-[rgba(77,148,255,0.12)]' : 'bg-slate-100',
+        progressTrack: isAurora ? 'bg-[rgba(77,148,255,0.12)]' : 'bg-slate-100',
+        progressBar:   isAurora ? 'bg-[rgba(77,148,255,0.60)]' : 'bg-slate-700',
+    };
 
     // Reloj
     useEffect(() => {
@@ -328,24 +376,25 @@ const EmployeeHomeView = () => {
                     {/* Nombre + cargo */}
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <GreetIcon size={11} className="text-slate-400 flex-shrink-0" />
-                            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">{greeting},</span>
-                            <span className="text-[16px] md:text-[18px] font-black text-slate-900 leading-none truncate">{user?.name?.split(' ')[0]}</span>
+                            <GreetIcon size={11} className={`${tk.textMuted} flex-shrink-0`} />
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${tk.textMuted}`}>{greeting},</span>
+                            <span className={`text-[16px] md:text-[18px] font-black leading-none truncate ${tk.textStrong}`}>{user?.name?.split(' ')[0]}</span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">{emp?.role || 'Empleado'} · {branch?.name || '—'}</p>
+                        <p className={`text-[11px] mt-0.5 truncate ${tk.textMuted}`}>{emp?.role || 'Empleado'} · {branch?.name || '—'}</p>
                     </div>
                 </div>
             }
             filtersContent={
-                <div className="flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 md:px-4 gap-3 md:gap-4 overflow-hidden">
+                <div className={`flex items-center rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 md:px-4 gap-3 md:gap-4 overflow-hidden border ${tk.pill}`}>
                     {/* Hora + fecha */}
                     <div className="hidden sm:flex flex-col items-end shrink-0">
-                        <span className="text-[15px] font-black text-slate-700 leading-none">{timeLabel}</span>
-                        <span className="text-[9px] font-bold text-slate-400 mt-0.5 capitalize tracking-wider">{todayLabel}</span>
+                        <span className={`text-[15px] font-black leading-none ${tk.textStrong}`}>{timeLabel}</span>
+                        <span className={`text-[9px] font-bold mt-0.5 capitalize tracking-wider ${tk.textMuted}`}>{todayLabel}</span>
                     </div>
                     {/* Turno hoy */}
                     {activeEvent === undefined ? null : activeEvent ? (
                         <div className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black text-[10px] uppercase tracking-widest border ${
+                            isAurora ? 'bg-[rgba(77,148,255,0.15)] text-[rgba(180,215,255,0.90)] border-[rgba(77,148,255,0.30)]' :
                             activeEvent.type === 'VACATION'   ? 'bg-amber-50 text-amber-700 border-amber-200' :
                             activeEvent.type === 'DISABILITY' ? 'bg-red-50 text-red-700 border-red-200' :
                             'bg-purple-50 text-purple-700 border-purple-200'
@@ -354,27 +403,27 @@ const EmployeeHomeView = () => {
                             {EVENT_BADGES[activeEvent.type]?.badge || activeEvent.type}
                         </div>
                     ) : todayShift ? (
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/50 border border-white/70 rounded-2xl">
+                        <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${tk.shiftPill}`}>
                             <div className="text-center">
-                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
-                                <p className="text-[13px] font-black text-slate-700 leading-none">{formatTime12h(todayShift.start)}</p>
+                                <p className={`text-[8px] font-black uppercase tracking-widest ${tk.textMuted}`}>Entrada</p>
+                                <p className={`text-[13px] font-black leading-none ${tk.textStrong}`}>{formatTime12h(todayShift.start)}</p>
                             </div>
                             <Coffee size={10} className="text-orange-400 flex-shrink-0" />
                             <div className="text-center">
-                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Salida</p>
-                                <p className="text-[13px] font-black text-slate-700 leading-none">{formatTime12h(todayShift.end)}</p>
+                                <p className={`text-[8px] font-black uppercase tracking-widest ${tk.textMuted}`}>Salida</p>
+                                <p className={`text-[13px] font-black leading-none ${tk.textStrong}`}>{formatTime12h(todayShift.end)}</p>
                             </div>
                         </div>
                     ) : (
-                        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white/50 border border-white/70 rounded-2xl">
-                            <Palmtree size={13} strokeWidth={1.5} className="text-slate-400" />
-                            <p className="text-[11px] font-bold text-slate-500">Día libre</p>
+                        <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border ${tk.shiftPill}`}>
+                            <Palmtree size={13} strokeWidth={1.5} className={tk.textMuted} />
+                            <p className={`text-[11px] font-bold ${tk.textMid}`}>Día libre</p>
                         </div>
                     )}
-                    <div className="w-px h-6 bg-white/40 shrink-0 hidden sm:block" />
+                    <div className={`w-px h-6 shrink-0 hidden sm:block ${isAurora ? 'bg-[rgba(77,148,255,0.20)]' : 'bg-white/40'}`} />
                     {/* Botón */}
                     <button onClick={() => navigate('/my-requests')}
-                        className="flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-white/80 text-slate-700 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:bg-white/90 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-[0.97] shrink-0">
+                        className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-[0.97] shrink-0 border ${tk.ctaBtn}`}>
                         <Plus size={13} strokeWidth={3} /> Nueva Solicitud
                     </button>
                 </div>
@@ -396,7 +445,7 @@ const EmployeeHomeView = () => {
                         ))}
                     </div>
                     {/* Schedule skeleton */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2rem] p-4 space-y-3">
+                    <div className={`rounded-[2rem] p-4 space-y-3 border ${tk.card}`}>
                         <div className="flex items-center justify-between mb-2">
                             <div className="skeleton rounded-full h-4 w-32" />
                             <div className="skeleton rounded-full h-4 w-24" />
@@ -419,17 +468,17 @@ const EmployeeHomeView = () => {
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
 
                     {/* Mañana */}
-                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                    <div className={`group/card rounded-[1.75rem] p-4 hover:-translate-y-1.5 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border ${tk.card} ${tk.cardHover}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${tk.textMuted}`}>
                             <CalendarDays size={10} className="text-emerald-500" /> Mañana
                         </p>
                         {tomorrowShift ? (
                             <>
-                                <p className="text-[22px] font-black text-slate-800 leading-none group-hover/card:text-slate-600 transition-colors duration-300">{formatTime12h(tomorrowShift.start)}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">→ {formatTime12h(tomorrowShift.end)}</p>
+                                <p className={`text-[22px] font-black leading-none transition-colors duration-300 ${tk.textStrong}`}>{formatTime12h(tomorrowShift.start)}</p>
+                                <p className={`text-[10px] font-medium mt-0.5 ${tk.textMuted}`}>→ {formatTime12h(tomorrowShift.end)}</p>
                             </>
                         ) : (
-                            <div className="flex items-center gap-1.5 text-slate-400 mt-1.5">
+                            <div className={`flex items-center gap-1.5 mt-1.5 ${tk.textMuted}`}>
                                 <Palmtree size={14} strokeWidth={1.5} />
                                 <p className="text-[11px] font-bold">Libre</p>
                             </div>
@@ -438,29 +487,29 @@ const EmployeeHomeView = () => {
 
                     {/* Solicitudes */}
                     <div onClick={() => navigate('/my-requests')}
-                        className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-4 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                        className={`group/card rounded-[1.75rem] p-4 cursor-pointer hover:-translate-y-1.5 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border ${tk.card} ${tk.cardHover}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${tk.textMuted}`}>
                             <ClipboardList size={10} className="text-purple-500" /> Solicitudes
                         </p>
                         {pendingCount === null
-                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                            ? <Loader2 size={14} className={`${tk.textMuted} animate-spin`} />
                             : <>
-                                <p className="text-[28px] font-black text-slate-800 leading-none group-hover/card:text-purple-600 transition-colors duration-300">{pendingCount}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">pendientes</p>
+                                <p className={`text-[28px] font-black leading-none group-hover/card:text-purple-400 transition-colors duration-300 ${tk.textStrong}`}>{pendingCount}</p>
+                                <p className={`text-[10px] font-medium mt-0.5 ${tk.textMuted}`}>pendientes</p>
                             </>
                         }
                     </div>
 
                     {/* Tardanzas */}
-                    <div className="group/card bg-white/60 backdrop-blur-xl border border-white/80 rounded-[1.75rem] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+                    <div className={`group/card rounded-[1.75rem] p-4 hover:-translate-y-1.5 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border ${tk.card} ${tk.cardHover}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${tk.textMuted}`}>
                             <Timer size={10} className="text-orange-500" /> Tardanzas
                         </p>
                         {tardanzas === null
-                            ? <Loader2 size={14} className="text-slate-300 animate-spin" />
+                            ? <Loader2 size={14} className={`${tk.textMuted} animate-spin`} />
                             : <>
-                                <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-600' : 'text-slate-800 group-hover/card:text-orange-500'}`}>{tardanzas.count}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                <p className={`text-[28px] font-black leading-none transition-colors duration-300 ${tardanzas.count > 3 ? 'text-red-400' : `${tk.textStrong} group-hover/card:text-orange-400`}`}>{tardanzas.count}</p>
+                                <p className={`text-[10px] font-medium mt-0.5 ${tk.textMuted}`}>
                                     {tardanzas.minutes > 0 ? `${tardanzas.minutes}m` : 'este mes'}
                                 </p>
                             </>
@@ -469,35 +518,37 @@ const EmployeeHomeView = () => {
 
                     {/* Avisos */}
                     <div onClick={() => navigate('/my-announcements')}
-                        className={`group/card rounded-[1.75rem] p-4 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-1.5 ${
+                        className={`group/card rounded-[1.75rem] p-4 cursor-pointer hover:-translate-y-1.5 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] border ${
                             hasUrgent
-                                ? 'bg-red-50/80 border-2 border-red-400/60 shadow-[0_4px_20px_rgba(239,68,68,0.12)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.15)]'
-                                : 'bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]'
+                                ? 'bg-red-500/10 border-red-400/40 shadow-[0_4px_20px_rgba(239,68,68,0.15)] hover:shadow-[0_20px_40px_rgba(239,68,68,0.22)]'
+                                : `${tk.card} ${tk.cardHover}`
                         }`}>
-                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-500' : 'text-slate-400'}`}>
-                            {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-500" />} Avisos
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1 ${hasUrgent ? 'text-red-400' : tk.textMuted}`}>
+                            {hasUrgent ? <Flame size={10} /> : <Bell size={10} className="text-red-400" />} Avisos
                         </p>
-                        <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-600' : 'text-slate-800 group-hover/card:text-red-500 transition-colors duration-300'}`}>{unreadAnnouncements.length}</p>
-                        <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : 'text-slate-400'}`}>
+                        <p className={`text-[28px] font-black leading-none ${hasUrgent ? 'text-red-400' : `${tk.textStrong} group-hover/card:text-red-400 transition-colors duration-300`}`}>{unreadAnnouncements.length}</p>
+                        <p className={`text-[10px] font-medium mt-0.5 ${hasUrgent ? 'text-red-400' : tk.textMuted}`}>
                             {hasUrgent ? '¡URGENTE!' : 'sin leer'}
                         </p>
                     </div>
 
                     {/* Vacaciones */}
-                    <div className={`col-span-2 lg:col-span-1 rounded-[1.75rem] p-4 backdrop-blur-xl border transition-all duration-300 hover:-translate-y-1.5 ${
-                        myVacationPlans.length > 0
+                    <div className={`col-span-2 lg:col-span-1 rounded-[1.75rem] p-4 backdrop-blur-xl border hover:-translate-y-1.5 transition-all duration-300 ${
+                        myVacationPlans.length > 0 && !isAurora
                             ? 'bg-gradient-to-br from-emerald-50/80 to-white/80 border-emerald-200/60 shadow-[0_4px_20px_rgba(16,185,129,0.08)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)]'
-                            : 'bg-white/60 border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]'
+                            : myVacationPlans.length > 0 && isAurora
+                            ? 'bg-[rgba(4,40,30,0.60)] border-[rgba(16,185,129,0.25)] shadow-[0_4px_20px_rgba(16,185,129,0.12)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.20)]'
+                            : `${tk.card} ${tk.cardHover}`
                     }`}>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${tk.textMuted}`}>
                             <Palmtree size={9} className="text-emerald-500" /> Mis Vacaciones
                         </p>
                         {myVacationPlans.length === 0 ? (
                             <div className="flex items-center gap-2">
-                                <Palmtree size={16} strokeWidth={1} className="text-slate-300 flex-shrink-0" />
+                                <Palmtree size={16} strokeWidth={1} className={`${tk.textMuted} opacity-50 flex-shrink-0`} />
                                 <div>
-                                    <p className="text-[11px] font-black text-slate-400">Pendiente</p>
-                                    <p className="text-[9px] text-slate-300 font-medium">RRHH asignará</p>
+                                    <p className={`text-[11px] font-black ${tk.textMuted}`}>Pendiente</p>
+                                    <p className={`text-[9px] font-medium ${tk.textMuted} opacity-60`}>RRHH asignará</p>
                                 </div>
                             </div>
                         ) : (
@@ -508,14 +559,16 @@ const EmployeeHomeView = () => {
                                     const daysLeft = Math.ceil((new Date(vp.start_date + 'T12:00:00') - new Date()) / 86400000);
                                     return (
                                         <div key={vp.id} className={`p-2 rounded-xl border transition-all ${
-                                            vp.status === 'CONFIRMED' ? 'border-emerald-200/70 bg-emerald-50/50' : 'border-white/80 bg-white/40'
+                                            vp.status === 'CONFIRMED'
+                                                ? isAurora ? 'border-emerald-500/25 bg-emerald-900/20' : 'border-emerald-200/70 bg-emerald-50/50'
+                                                : isAurora ? 'border-[rgba(77,148,255,0.15)] bg-[rgba(77,148,255,0.06)]' : 'border-white/80 bg-white/40'
                                         }`}>
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${s.color}`}>{s.label}</span>
-                                                {daysLeft > 0 && daysLeft <= 90 && <span className="text-[8px] font-black text-slate-400">en {daysLeft}d</span>}
+                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-[rgba(77,148,255,0.15)] text-[rgba(150,200,255,0.80)] border-[rgba(77,148,255,0.25)]' : s.color}`}>{s.label}</span>
+                                                {daysLeft > 0 && daysLeft <= 90 && <span className={`text-[8px] font-black ${tk.textMuted}`}>en {daysLeft}d</span>}
                                             </div>
-                                            <p className="text-[10px] font-black text-slate-700">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
-                                            <p className="text-[9px] text-slate-400">{vp.days}d · {vp.year}</p>
+                                            <p className={`text-[10px] font-black ${tk.textStrong}`}>{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                            <p className={`text-[9px] ${tk.textMuted}`}>{vp.days}d · {vp.year}</p>
                                         </div>
                                     );
                                 })}
@@ -527,8 +580,8 @@ const EmployeeHomeView = () => {
 
                 {/* 3. Próximos eventos pills */}
                 {upcomingEvents.length > 0 && (
-                    <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                    <div className={`rounded-[2rem] px-4 py-3 border ${tk.card}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-1.5 ${tk.textMuted}`}>
                             <Sparkles size={9} className="text-amber-500" /> Próximos Eventos
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -537,7 +590,7 @@ const EmployeeHomeView = () => {
                                 const start = meta.startDate || ev.date;
                                 const conf  = EVENT_BADGES[ev.type];
                                 return (
-                                    <div key={ev.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/60 border border-white/80 rounded-full text-[10px] font-bold text-slate-600 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200">
+                                    <div key={ev.id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 border ${tk.shiftPill} ${tk.textMid}`}>
                                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${EVT_DOT[ev.type] || 'bg-slate-400'}`} />
                                         {conf?.label || ev.type} · {new Date(start + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     </div>
@@ -548,18 +601,18 @@ const EmployeeHomeView = () => {
                 )}
 
                 {/* 4. Horario de sucursal — full width */}
-                <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-[2rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                <div className={`rounded-[2rem] p-5 border ${tk.card}`}>
 
                     {/* Header nav semana */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-slate-100 rounded-xl">
-                                <CalendarDays size={13} className="text-slate-600" strokeWidth={2.5} />
+                            <div className={`p-1.5 rounded-xl ${tk.iconBg}`}>
+                                <CalendarDays size={13} className={tk.textMid} strokeWidth={2.5} />
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Horario de Sucursal</p>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${tk.textMuted}`}>Horario de Sucursal</p>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <button onClick={() => setWeekOffset(v => v - 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]">
+                            <button onClick={() => setWeekOffset(v => v - 1)} className={`p-1.5 rounded-xl transition-all active:scale-[0.97] ${tk.navBtn}`}>
                                 <ChevronLeft size={15} strokeWidth={2.5} />
                             </button>
                             <LiquidWeekPicker
@@ -570,17 +623,17 @@ const EmployeeHomeView = () => {
                                     setWeekOffset(diff);
                                 }}
                             >
-                                <span className="text-[11px] font-black text-slate-700 min-w-[100px] text-center px-2 py-1 rounded-xl hover:bg-slate-100 transition-all">
+                                <span className={`text-[11px] font-black min-w-[100px] text-center px-2 py-1 rounded-xl transition-all ${tk.textStrong} ${tk.navBtn}`}>
                                     {weekLabel}
                                 </span>
                             </LiquidWeekPicker>
-                            <button onClick={() => setWeekOffset(v => v + 1)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all active:scale-[0.97]">
+                            <button onClick={() => setWeekOffset(v => v + 1)} className={`p-1.5 rounded-xl transition-all active:scale-[0.97] ${tk.navBtn}`}>
                                 <ChevronRight size={15} strokeWidth={2.5} />
                             </button>
                             {weekOffset !== 0 && (
                                 <button
                                     onClick={() => setWeekOffset(0)}
-                                    className="p-1.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 border border-red-200 transition-all active:scale-[0.97] animate-in fade-in zoom-in-95 duration-200"
+                                    className={`p-1.5 rounded-xl border transition-all active:scale-[0.97] animate-in fade-in zoom-in-95 duration-200 ${isAurora ? 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/30' : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'}`}
                                     title="Volver a esta semana"
                                 >
                                     <X size={13} strokeWidth={2.5} />
@@ -591,7 +644,7 @@ const EmployeeHomeView = () => {
 
                     {/* 2 filas de 4 días */}
                     {isLoadingWeek ? (
-                        <div className="flex justify-center py-8 text-slate-400 gap-2">
+                        <div className={`flex justify-center py-8 gap-2 ${tk.textMuted}`}>
                             <Loader2 size={16} className="animate-spin" />
                             <span className="text-[11px]">Cargando…</span>
                         </div>
@@ -625,12 +678,12 @@ const EmployeeHomeView = () => {
                                         return (
                                             <div key={d.id} className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
                                                 d.isToday
-                                                    ? 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
-                                                    : 'border-white/60'
+                                                    ? isAurora ? 'border-[rgba(77,148,255,0.45)] shadow-[0_0_0_2px_rgba(77,148,255,0.15)]' : 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
+                                                    : isAurora ? 'border-[rgba(77,148,255,0.12)]' : 'border-white/60'
                                             } ${isPast ? 'opacity-40 grayscale' : ''}`}>
 
                                                 {/* Header del día */}
-                                                <div className={`px-2 py-3 text-center flex-shrink-0 ${d.isToday ? 'bg-slate-800 text-white' : d.isNextWeek ? 'bg-slate-100 text-slate-500' : 'bg-slate-50 text-slate-600'}`}>
+                                                <div className={`px-2 py-3 text-center flex-shrink-0 ${d.isToday ? tk.dayHeaderToday : d.isNextWeek ? tk.dayHeaderNext : tk.dayHeaderDefault}`}>
                                                     <p className="text-[9px] font-black uppercase tracking-widest opacity-70">{d.short}</p>
                                                     <p className="text-[22px] font-black leading-tight">{d.date.getDate()}</p>
                                                     {d.isToday && <p className="text-[8px] font-black uppercase tracking-widest opacity-80">Hoy</p>}
@@ -638,24 +691,22 @@ const EmployeeHomeView = () => {
                                                 </div>
 
                                                 {/* Lista empleados */}
-                                                <div className="flex-1 p-2 space-y-1.5 bg-white/40">
+                                                <div className={`flex-1 p-2 space-y-1.5 ${tk.dayBody}`}>
                                                     {branchEmpsForDay.length === 0 ? (
-                                                        <p className="text-[10px] text-slate-300 text-center py-3">—</p>
+                                                        <p className={`text-[10px] text-center py-3 ${tk.textMuted} opacity-50`}>—</p>
                                                     ) : branchEmpsForDay.map(({ e: em, shift, lunchTime, lactationTime }) => (
-                                                        <div key={em.id} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${
-                                                            String(em.id) === String(user?.id)
-                                                                ? 'bg-slate-100/80 border border-slate-200'
-                                                                : 'bg-white/60'
+                                                        <div key={em.id} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all border ${
+                                                            String(em.id) === String(user?.id) ? tk.empRowSelf : `${tk.empRow} border-transparent`
                                                         }`}>
-                                                            <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border border-white/60">
+                                                            <div className={`w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border ${isAurora ? 'border-[rgba(77,148,255,0.25)]' : 'border-white/60'}`}>
                                                                 {em.photo || em.photo_url
                                                                     ? <img src={em.photo || em.photo_url} className="w-full h-full object-cover" alt="" />
-                                                                    : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[9px] font-black text-slate-500">{em.name?.charAt(0)}</div>
+                                                                    : <div className={`w-full h-full flex items-center justify-center text-[9px] font-black ${isAurora ? 'bg-[rgba(77,148,255,0.20)] text-[rgba(150,200,255,0.80)]' : 'bg-slate-200 text-slate-500'}`}>{em.name?.charAt(0)}</div>
                                                                 }
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-1">
-                                                                    <p className={`text-[10px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? 'text-slate-700' : 'text-slate-600'}`}>
+                                                                    <p className={`text-[10px] font-black truncate leading-tight ${String(em.id) === String(user?.id) ? tk.textStrong : tk.textMid}`}>
                                                                         {String(em.id) === String(user?.id) ? 'Tú' : em.name?.split(' ')[0]}
                                                                     </p>
                                                                     {lunchTime && <Utensils size={8} className="text-orange-400 flex-shrink-0" strokeWidth={2.5} title={`Almuerzo ${lunchTime}`} />}
@@ -663,13 +714,13 @@ const EmployeeHomeView = () => {
                                                                 </div>
                                                                 {String(em.id) === String(user?.id) && d.event ? (() => {
                                                                     const evCfg = {
-                                                                        VACATION:   { label: 'Vacaciones', cls: 'text-emerald-600' },
-                                                                        DISABILITY: { label: 'Incapacidad', cls: 'text-red-500'     },
-                                                                        PERMIT:     { label: 'Permiso',     cls: 'text-amber-500'   },
-                                                                    }[d.event.type] || { label: d.event.type, cls: 'text-slate-400' };
+                                                                        VACATION:   { label: 'Vacaciones', cls: isAurora ? 'text-emerald-400' : 'text-emerald-600' },
+                                                                        DISABILITY: { label: 'Incapacidad', cls: 'text-red-400'   },
+                                                                        PERMIT:     { label: 'Permiso',     cls: 'text-amber-400' },
+                                                                    }[d.event.type] || { label: d.event.type, cls: tk.textMuted };
                                                                     return <p className={`text-[9px] font-black truncate leading-tight ${evCfg.cls}`}>{evCfg.label}</p>;
                                                                 })() : (
-                                                                    <p className="text-[9px] text-slate-400 font-medium truncate leading-tight">
+                                                                    <p className={`text-[9px] font-medium truncate leading-tight ${tk.textMuted}`}>
                                                                         {shift ? `${formatTime12h(shift.start)}→${formatTime12h(shift.end)}` : 'Sin definir'}
                                                                     </p>
                                                                 )}
@@ -687,15 +738,15 @@ const EmployeeHomeView = () => {
 
                     {/* Progress bar horas propias */}
                     {totalWeekHours > 0 && (
-                        <div className="mt-4 pt-3 border-t border-slate-100">
+                        <div className={`mt-4 pt-3 border-t ${tk.divider}`}>
                             <div className="flex items-center justify-between mb-1.5">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                                <p className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${tk.textMuted}`}>
                                     <Clock size={9} /> Tus horas esta semana
                                 </p>
-                                <p className="text-[10px] font-black text-slate-700">{totalWeekHours.toFixed(1)}/44h</p>
+                                <p className={`text-[10px] font-black ${tk.textStrong}`}>{totalWeekHours.toFixed(1)}/44h</p>
                             </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-slate-700 rounded-full transition-all duration-700"
+                            <div className={`h-1.5 rounded-full overflow-hidden ${tk.progressTrack}`}>
+                                <div className={`h-full rounded-full transition-all duration-700 ${tk.progressBar}`}
                                     style={{ width: `${Math.min(100, (totalWeekHours / 44) * 100)}%` }} />
                             </div>
                         </div>

@@ -79,7 +79,7 @@ const AURORA_ORBS = [
 
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, systemRole } = useAuth();
-    const { isAurora } = useTheme();
+    const { isAurora, isCompat } = useTheme();
     const branches = useStaff((state) => state.branches);
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
@@ -803,15 +803,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Mobile top bar */}
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
-                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-[40px] border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)] rounded-[2rem] p-2 pl-5 transition-all duration-300">
+                    <div className={`flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border ${
+                        isAurora
+                            ? 'bg-[rgba(4,10,40,0.80)] backdrop-blur-2xl border-[rgba(77,148,255,0.22)] shadow-[0_12px_40px_rgba(0,20,100,0.5)]'
+                            : isCompat
+                            ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
+                            : 'bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]'
+                    }`}>
                         <div className="flex items-center gap-4">
                             <button onClick={() => setIsSidebarOpen(true)} className={`active:scale-[0.97] transition-[color,transform] ${isAurora ? 'text-white/70 hover:text-white' : 'text-[#030B1C] hover:text-[#0052CC]'}`}>
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
                             <div className={`w-px h-6 rounded-full ${isAurora ? 'bg-white/15' : 'bg-slate-300/50'}`} />
                             <div className="flex flex-col justify-center">
-                                <h1 className="text-[14px] font-black text-slate-800 leading-none tracking-tight">Portal</h1>
-                                <p className="text-[8px] font-bold text-[#0052CC] uppercase tracking-[0.2em] mt-0.5">La Salud</p>
+                                <h1 className={`text-[14px] font-black leading-none tracking-tight ${isAurora ? 'text-white' : 'text-slate-800'}`}>Portal</h1>
+                                <p className={`text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 ${isAurora ? 'text-[#4D94FF]' : 'text-[#0052CC]'}`}>La Salud</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -819,7 +825,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <button
                                     onClick={() => navigate('/my-announcements')}
                                     className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-[0.97] transition-all flex items-center justify-center hover:shadow-md
-                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : 'bg-white border-white/60'}`}
+                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : isAurora ? 'bg-[rgba(77,148,255,0.1)] border-[rgba(77,148,255,0.22)]' : 'bg-white border-white/60'}`}
                                 >
                                     <BellRing
                                         size={18}
@@ -832,7 +838,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-60" />
                                 </button>
                             )}
-                            <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] bg-white border border-white shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg">
+                            <button onClick={() => navigate('/profile')} className={`w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border ${isAurora ? 'bg-[rgba(77,148,255,0.1)] border-[rgba(77,148,255,0.22)]' : 'bg-white border-white'}`}>
                                 <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
@@ -894,7 +900,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             {/* ── Bottom tabs (solo para usuarios con solo autogestión) ── */}
             {hasSelfOnly && (
                 <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
-                    <div className="flex items-center justify-around bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[1.75rem] shadow-[0_-4px_30px_rgba(0,0,0,0.06)] px-2 py-2">
+                    <div className={`flex items-center justify-around rounded-[1.75rem] px-2 py-2 border ${
+                        isAurora
+                            ? 'bg-[rgba(4,10,40,0.85)] backdrop-blur-2xl border-[rgba(77,148,255,0.22)] shadow-[0_-4px_30px_rgba(0,20,100,0.3)]'
+                            : isCompat
+                            ? 'bg-white border-slate-200 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'
+                            : 'bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'
+                    }`}>
                         {selfItems.map(({ key, path, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                             const pathSeg = path.replace(/^\//, '').split('/')[0];
                             const isActive = activeId === pathSeg;

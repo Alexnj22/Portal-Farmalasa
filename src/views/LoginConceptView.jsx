@@ -403,17 +403,15 @@ const LoginConceptView = ({ setView, setActiveEmployee, onExitConcept }) => {
                 </form>
 
                 {/* Kiosk link */}
-                {!isMobileOrApp() && (
-                    <button onClick={() => setView('timeclock')}
-                        className="mt-9 flex items-center gap-2 transition-colors duration-200 active:opacity-60"
-                        style={{ color:'rgba(255,255,255,0.28)' }}
-                        onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.60)'}
-                        onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.28)'}>
-                        <Clock size={13} strokeWidth={2} />
-                        <span className="text-[11px] font-bold">Terminal Kiosco</span>
-                        <ChevronRight size={11} strokeWidth={2.5} />
-                    </button>
-                )}
+                <button onClick={() => setView('timeclock')}
+                    className="mt-9 flex items-center gap-2 transition-colors duration-200 active:opacity-60"
+                    style={{ color:'rgba(255,255,255,0.28)' }}
+                    onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.60)'}
+                    onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.28)'}>
+                    <Clock size={13} strokeWidth={2} />
+                    <span className="text-[11px] font-bold">Terminal Kiosco</span>
+                    <ChevronRight size={11} strokeWidth={2.5} />
+                </button>
 
                 <p className="mt-10 text-[9px] font-bold uppercase tracking-widest"
                     style={{ color:'rgba(255,255,255,0.12)' }}>

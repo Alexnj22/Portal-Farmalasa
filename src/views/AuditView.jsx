@@ -4,12 +4,12 @@ import {
     Clock, ShieldCheck, Search, Globe,
     Database, Trash2, AlertCircle,
     ListFilter, ChevronLeft, ChevronRight, Hash,
-    ArrowUpDown, ArrowDown, ArrowUp,
     Radio, Power, Check, Download, X,
     MonitorSmartphone, AlertTriangle, Info
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -48,8 +48,8 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     const severityInfo = useMemo(() => getSeverityInfo(log.severity), [log.severity]);
     const logDate = useMemo(() => new Date(log.created_at), [log.created_at]);
     return (
-        <tr className="group hover:bg-[#0052CC]/[0.04] transition-colors duration-300">
-            <td className="px-4 md:px-8 py-4">
+        <DataRow>
+            <DataCell>
                 <div className="text-[11px] md:text-xs font-black text-slate-800 uppercase tracking-tight transition-colors group-hover:text-[#0052CC]">
                     {logDate.toLocaleDateString()}
                 </div>
@@ -64,8 +64,8 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         </span>
                     </span>
                 </div>
-            </td>
-            <td className="px-4 md:px-8 py-4">
+            </DataCell>
+            <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
                     <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-white/80 shadow-[0_2px_10px_rgba(0,0,0,0.04)] flex items-center justify-center text-slate-600 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
                         {userPhoto ? (
@@ -86,13 +86,13 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         )}
                     </div>
                 </div>
-            </td>
-            <td className="px-4 md:px-8 py-4">
+            </DataCell>
+            <DataCell>
                 <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-white/60 backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
                     {severityInfo.icon} <span className="hidden sm:inline">{log.action?.replace(/_/g, ' ') || 'ACCIÓN'}</span>
                 </span>
-            </td>
-            <td className="px-4 md:px-8 py-4 text-right">
+            </DataCell>
+            <DataCell align="right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
                     className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-white/80 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
@@ -100,18 +100,10 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
                 </button>
-            </td>
-        </tr>
+            </DataCell>
+        </DataRow>
     );
 });
-
-// ============================================================================
-// VISTA PRINCIPAL
-// ============================================================================
-const SortIcon = ({ columnKey, sortConfig }) => {
-    if (sortConfig.key !== columnKey) return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
-    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-[#0052CC]" /> : <ArrowDown size={14} className="text-[#0052CC]" />;
-};
 
 const AuditView = ({ openModal }) => {
     const storeAuditLog = useStaff(state => state.auditLog);
@@ -479,109 +471,55 @@ const filtersContent = (
                 </div>
             </div>
 
-            <div className="w-full overflow-x-auto scrollbar-hide">
-                <table className="min-w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
-                    <thead className="bg-[#0052CC]/5 sticky top-0 z-10 backdrop-blur-xl">
-                        <tr>
-                            <th onClick={() => handleSort('created_at')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
-                                <div className="flex items-center gap-2">Origen / Hora <SortIcon columnKey="created_at" sortConfig={sortConfig} /></div>
-                            </th>
-                            <th onClick={() => handleSort('user_name')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
-                                <div className="flex items-center gap-2">Usuario <SortIcon columnKey="user_name" sortConfig={sortConfig} /></div>
-                            </th>
-                            <th onClick={() => handleSort('action')} className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] cursor-pointer hover:bg-white/30 transition-colors group select-none border-b border-[#0052CC]/10">
-                                <div className="flex items-center gap-2">Acción <SortIcon columnKey="action" sortConfig={sortConfig} /></div>
-                            </th>
-                            <th className="px-4 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.1em] md:tracking-[0.15em] text-right border-b border-[#0052CC]/10">
-                                Detalles
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/50 font-sans">
-                        {paginatedLogs.length > 0 ? (
-                            paginatedLogs.map((log) => {
-                                // 🚨 MAGIA PRO: Si es de kiosco, la foto suele estar en el target_id
-                                const foundPhoto = employeePhotoMap[log.user_id] || employeePhotoMap[log.target_id];
-
-                                return (
-                                    <AuditRow
-                                        key={log.id}
-                                        log={log}
-                                        openModal={openModal}
-                                        userPhoto={foundPhoto}
-                                    />
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan="4" className="py-24 text-center">
-                                    <div className="flex flex-col items-center justify-center opacity-70 px-4">
-                                        <div className="bg-white/60 p-4 md:p-5 rounded-full mb-4 border border-white/80 shadow-sm">
-                                            <ListFilter size={28} className="text-slate-500 md:w-9 md:h-9" />
-                                        </div>
-                                        <p className="text-[14px] md:text-[15px] font-bold text-slate-700">No hay registros</p>
-                                        <p className="text-[10px] md:text-xs font-medium text-slate-500 mt-1 max-w-[200px] md:max-w-none text-center">Limpia los filtros o cambia la búsqueda.</p>
-                                        <button
-                                            onClick={clearFilters}
-                                            className="mt-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-[#003D99] hover:bg-white/80 px-4 py-2 rounded-full transition-all border border-white/60 shadow-sm hover:shadow-md hover:-translate-y-0.5"
-                                        >
-                                            Limpiar Filtros
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {totalItems > 0 && (
-                <div className="px-4 md:px-8 py-4 md:py-5 bg-white/50 border-t border-white/90 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mostrar</span>
-                        <select
-                            className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-2 md:px-3 py-1.5 text-[10px] md:text-[11px] font-bold text-slate-700 outline-none hover:border-[#0052CC]/50 cursor-pointer shadow-sm uppercase tracking-wider transition-colors"
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <option value={15}>15 Filas</option>
-                            <option value={30}>30 Filas</option>
-                            <option value={50}>50 Filas</option>
-                            <option value={100}>100 Filas</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                            Pág {currentPage} de {totalPages || 1}
-                        </span>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => {
-                                    setCurrentPage(prev => Math.max(prev - 1, 1));
-                                }}
-                                disabled={currentPage === 1}
-                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+            <DataTable
+                columns={[
+                    { key: 'created_at', label: 'Origen / Hora', sortable: true },
+                    { key: 'user_name',  label: 'Usuario',       sortable: true },
+                    { key: 'action',     label: 'Acción',        sortable: true },
+                    { key: 'details',    label: 'Detalles',      align: 'right' },
+                ]}
+                sortKey={sortConfig.key}
+                sortDir={sortConfig.direction}
+                onSort={handleSort}
+                loading={false}
+                empty={{
+                    icon: ListFilter,
+                    message: 'No hay registros',
+                    subtext: 'Limpia los filtros o cambia la búsqueda.',
+                    action: { label: 'Limpiar Filtros', onClick: clearFilters },
+                }}
+                footer={totalItems > 0 ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+                        <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                            <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mostrar</span>
+                            <select
+                                className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-2 md:px-3 py-1.5 text-[10px] md:text-[11px] font-bold text-slate-700 outline-none hover:border-[#0052CC]/50 cursor-pointer shadow-sm uppercase tracking-wider transition-colors"
+                                value={itemsPerPage}
+                                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                             >
-                                <ChevronLeft size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                                }}
-                                disabled={currentPage === totalPages || totalPages === 0}
-                                className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] hover:border-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-                            >
-                                <ChevronRight size={14} className="md:w-4 md:h-4" strokeWidth={2.5} />
-                            </button>
+                                <option value={15}>15 Filas</option>
+                                <option value={30}>30 Filas</option>
+                                <option value={50}>50 Filas</option>
+                                <option value={100}>100 Filas</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
+                            <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
+                            <div className="flex gap-2">
+                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
+                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white/80 backdrop-blur-md border border-white/80 rounded-full shadow-sm text-slate-700 hover:text-[#0052CC] disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                ) : null}
+            >
+                {paginatedLogs.map((log) => {
+                    const foundPhoto = employeePhotoMap[log.user_id] || employeePhotoMap[log.target_id];
+                    return (
+                        <AuditRow key={log.id} log={log} openModal={openModal} userPhoto={foundPhoto} />
+                    );
+                })}
+            </DataTable>
         </GlassViewLayout>
     );
 };

@@ -10,6 +10,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -248,8 +249,18 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
             .map(g => ({ ...g, entries: [...g.entries].sort((a, b) => roleOrder(a.employee) - roleOrder(b.employee)) }));
     }, [entries, branches]);
 
-    const COLS = ['Empleado', 'Días', 'Sal. Ord.', 'Extras', 'ISSS', 'AFP', 'Renta', 'Desc. Total', 'Líquido', ''];
-    let rowIdx = 0;
+    const COLS = [
+        { key: 'empleado',   label: 'Empleado' },
+        { key: 'dias',       label: 'Días',       align: 'right' },
+        { key: 'salord',     label: 'Sal. Ord.',  align: 'right' },
+        { key: 'extras',     label: 'Extras',     align: 'right' },
+        { key: 'isss',       label: 'ISSS',       align: 'right' },
+        { key: 'afp',        label: 'AFP',        align: 'right' },
+        { key: 'renta',      label: 'Renta',      align: 'right' },
+        { key: 'desc',       label: 'Desc. Total', align: 'right' },
+        { key: 'liquido',    label: 'Líquido',    align: 'right' },
+        { key: 'acciones',   label: '' },
+    ];
 
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -299,62 +310,48 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                         </div>
 
                         {/* Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-[10px]">
-                                <thead>
-                                    <tr className="border-b border-white/40">
-                                        {COLS.map(h => (
-                                            <th key={h} className="px-4 py-3 text-left font-black uppercase tracking-widest text-slate-400 whitespace-nowrap first:pl-6 last:pr-6">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/30">
-                                    {grp.map((e) => {
-                                        const emp    = e.employee || {};
-                                        const edited = e.status === 'EDITED';
-                                        const delay  = rowIdx++ * 25;
-                                        return (
-                                            <tr key={e.id}
-                                                className={`group hover:bg-white/50 transition-colors animate-in fade-in duration-300 ${edited ? 'bg-amber-50/20' : ''}`}
-                                                style={{ animationDelay: `${delay}ms` }}>
-                                                <td className="px-4 py-3 pl-6 whitespace-nowrap">
-                                                    <div className="flex items-center gap-3">
-                                                        <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
-                                                        <div>
-                                                            <p className="font-black text-slate-800 text-[11px] leading-tight">{emp.name || '—'}</p>
-                                                            {emp.role && <p className="text-[9px] text-slate-400 font-medium leading-tight">{emp.role}</p>}
-                                                            {edited && <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">editado</span>}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{round2(e.days_worked)}</td>
-                                                <td className="px-4 py-3 font-bold text-slate-700 text-right">{fmt(e.ordinary_salary)}</td>
-                                                <td className="px-4 py-3 font-bold text-blue-600 text-right">{fmt(e.subtotal_b)}</td>
-                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.isss_deduction)}</td>
-                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.afp_deduction)}</td>
-                                                <td className="px-4 py-3 text-slate-500 text-right">{fmt(e.renta_deduction)}</td>
-                                                <td className="px-4 py-3 font-bold text-red-600 text-right">{fmt(e.total_deductions)}</td>
-                                                <td className="px-4 py-3 font-black text-emerald-700 text-right whitespace-nowrap text-[11px]">{fmt(e.net_pay)}</td>
-                                                <td className="px-4 py-3 pr-6">
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
-                                                            className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
-                                                            <Printer size={12} strokeWidth={2.5} />
-                                                        </button>
-                                                        {!isPaid && (
-                                                            <button onClick={() => onEdit(e)} title="Editar"
-                                                                className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
-                                                                <Edit2 size={12} strokeWidth={2.5} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable columns={COLS} minWidth="720px">
+                            {grp.map((e, ei) => {
+                                const emp    = e.employee || {};
+                                const edited = e.status === 'EDITED';
+                                return (
+                                    <DataRow key={e.id} index={ei} className={edited ? 'bg-amber-50/20' : ''}>
+                                        <DataCell className="whitespace-nowrap">
+                                            <div className="flex items-center gap-3">
+                                                <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
+                                                <div>
+                                                    <p className="font-black text-slate-800 text-[11px] leading-tight">{emp.name || '—'}</p>
+                                                    {emp.role && <p className="text-[9px] text-slate-400 font-medium leading-tight">{emp.role}</p>}
+                                                    {edited && <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">editado</span>}
+                                                </div>
+                                            </div>
+                                        </DataCell>
+                                        <DataCell align="right" className="font-bold">{round2(e.days_worked)}</DataCell>
+                                        <DataCell align="right" className="font-bold">{fmt(e.ordinary_salary)}</DataCell>
+                                        <DataCell align="right" className="font-bold text-blue-600">{fmt(e.subtotal_b)}</DataCell>
+                                        <DataCell align="right" className="text-slate-500">{fmt(e.isss_deduction)}</DataCell>
+                                        <DataCell align="right" className="text-slate-500">{fmt(e.afp_deduction)}</DataCell>
+                                        <DataCell align="right" className="text-slate-500">{fmt(e.renta_deduction)}</DataCell>
+                                        <DataCell align="right" className="font-bold text-red-600">{fmt(e.total_deductions)}</DataCell>
+                                        <DataCell align="right" className="font-black text-emerald-700 whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
+                                        <DataCell>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
+                                                    className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
+                                                    <Printer size={12} strokeWidth={2.5} />
+                                                </button>
+                                                {!isPaid && (
+                                                    <button onClick={() => onEdit(e)} title="Editar"
+                                                        className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
+                                                        <Edit2 size={12} strokeWidth={2.5} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </DataCell>
+                                    </DataRow>
+                                );
+                            })}
+                        </DataTable>
                     </div>
                 );
             })}

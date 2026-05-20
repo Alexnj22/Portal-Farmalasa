@@ -24,6 +24,7 @@ import BranchChips from "../components/common/BranchChips";
 import ModalShell from "../components/common/ModalShell";
 import ConfirmModal from "../components/common/ConfirmModal";
 import GlassViewLayout from "../components/GlassViewLayout";
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 const PUNCH_TYPE_LABELS = {
   IN: 'Entrada',
@@ -581,128 +582,88 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       )}
 
       {/* TABLA DE INCONSISTENCIAS (MARCAJES FALTANTES) */}
-      <div className="bg-white/50 backdrop-blur-2xl backdrop-saturate-[150%] rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,1)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-black/[0.02] border-b border-black/[0.04]">
-                <th className="p-3 md:p-5 pl-4 md:pl-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                  Colaborador
-                </th>
-                <th className="p-3 md:p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                  Fecha / Turno
-                </th>
-                <th className="p-3 md:p-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest w-2/5">
-                  Inconsistencias Detectadas
-                </th>
-                <th className="p-3 md:p-5 pr-4 md:pr-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">
-                  Acción
-                </th>
-              </tr>
-            </thead>
+      <DataTable
+        columns={[
+          { key: 'colaborador',     label: 'Colaborador' },
+          { key: 'fecha',           label: 'Fecha / Turno' },
+          { key: 'inconsistencias', label: 'Inconsistencias Detectadas', className: 'w-2/5' },
+          { key: 'accion',          label: 'Acción', align: 'right' },
+        ]}
+        empty={{ icon: CheckCircle, message: 'Todos los marcajes están correctos' }}
+        minWidth="700px"
+      >
+        {pendingAudits.map((record, i) => {
+          const emp = employeeById.get(String(record.employeeId));
+          const bName = branchNameById.get(String(emp?.branchId)) || "Sucursal";
 
-            <tbody className="divide-y divide-black/[0.03]">
-              {pendingAudits.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="p-20 text-center">
-                    <div className="flex flex-col items-center gap-3 opacity-40">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                        <CheckCircle size={32} strokeWidth={1.5} />
+          return (
+            <DataRow key={record.id} index={i}>
+              <DataCell>
+                <button
+                  type="button"
+                  onClick={() => goToEmployeeProfile(emp)}
+                  className="flex items-center gap-4 text-left group/emp active:scale-[0.99] transition-transform"
+                  title="Ver perfil"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden group-hover/emp:border-[#0052CC]/30 transition-colors">
+                    {emp?.photo ? (
+                      <img src={emp.photo} alt={emp?.name || "Empleado"} className="w-full h-full object-cover" />
+                    ) : (
+                      emp?.name?.charAt(0) || "?"
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-[14px] leading-none mb-1.5 group-hover/emp:text-[#0052CC] transition-colors">
+                      {emp?.name || "Empleado"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{bName}</p>
+                  </div>
+                </button>
+              </DataCell>
+
+              <DataCell>
+                <div className="flex flex-col items-start gap-2">
+                  <span className="font-semibold text-slate-800 flex items-center gap-2 text-[13px]">
+                    <Calendar size={14} className="text-[#0052CC]" />
+                    {new Date(`${record.date}T12:00:00Z`).toLocaleDateString()}
+                  </span>
+                  <span className="px-2 py-1 bg-black/[0.04] text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    {record.shift.name}: {formatTime12h(record.shift.start)} - {formatTime12h(record.shift.end)}
+                  </span>
+                </div>
+              </DataCell>
+
+              <DataCell>
+                <div className="flex flex-wrap gap-2">
+                  {record.inconsistencies.map((inc, j) => {
+                    const Icon = inc.icon;
+                    return (
+                      <div
+                        key={j}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${inc.bg} ${inc.color} ${inc.border} shadow-sm bg-white/50 backdrop-blur-sm`}
+                      >
+                        <Icon size={14} strokeWidth={2} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{inc.label}</span>
                       </div>
-                      <p className="font-bold uppercase tracking-widest text-[13px] text-slate-600">
-                        Todos los marcajes están correctos
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                pendingAudits.map((record) => {
-                  const emp = employeeById.get(String(record.employeeId));
-                  const bName = branchNameById.get(String(emp?.branchId)) || "Sucursal";
+                    );
+                  })}
+                </div>
+              </DataCell>
 
-                  return (
-                    <tr
-                      key={record.id}
-                      className="hover:bg-white/70 transition-colors duration-200 group"
-                    >
-                      <td className="p-3 md:p-5 pl-4 md:pl-8">
-                        <button
-                          type="button"
-                          onClick={() => goToEmployeeProfile(emp)}
-                          className="flex items-center gap-4 text-left group/emp active:scale-[0.99] transition-transform"
-                          title="Ver perfil"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden group-hover/emp:border-[#0052CC]/30 transition-colors">
-                            {emp?.photo ? (
-                              <img
-                                src={emp.photo}
-                                alt={emp?.name || "Empleado"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              emp?.name?.charAt(0) || "?"
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900 text-[14px] leading-none mb-1.5 group-hover/emp:text-[#0052CC] transition-colors">
-                              {emp?.name || "Empleado"}
-                            </p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                              {bName}
-                            </p>
-                          </div>
-                        </button>
-                      </td>
-
-                      <td className="p-3 md:p-5">
-                        <div className="flex flex-col items-start gap-2">
-                          <span className="font-semibold text-slate-800 flex items-center gap-2 text-[13px]">
-                            <Calendar size={14} className="text-[#0052CC]" />
-                            {new Date(`${record.date}T12:00:00Z`).toLocaleDateString()}
-                          </span>
-                          <span className="px-2 py-1 bg-black/[0.04] text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                            {record.shift.name}: {formatTime12h(record.shift.start)} - {formatTime12h(record.shift.end)}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="p-3 md:p-5">
-                        <div className="flex flex-wrap gap-2">
-                          {record.inconsistencies.map((inc, i) => {
-                            const Icon = inc.icon;
-                            return (
-                              <div
-                                key={i}
-                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${inc.bg} ${inc.color} ${inc.border} shadow-sm bg-white/50 backdrop-blur-sm`}
-                              >
-                                <Icon size={14} strokeWidth={2} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">
-                                  {inc.label}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </td>
-
-                      <td className="p-3 md:p-5 pr-4 md:pr-8 text-right">
-                        <button
-                          onClick={() => openModal(record)}
-                          disabled={!canEdit}
-                          className="bg-white text-[#0052CC] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#0052CC] hover:bg-[#0052CC]/5 transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                          type="button"
-                        >
-                          Corregir <Edit3 size={14} strokeWidth={2} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              <DataCell align="right">
+                <button
+                  onClick={() => openModal(record)}
+                  disabled={!canEdit}
+                  className="bg-white text-[#0052CC] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#0052CC] hover:bg-[#0052CC]/5 transition-[border-color,background-color] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                >
+                  Corregir <Edit3 size={14} strokeWidth={2} />
+                </button>
+              </DataCell>
+            </DataRow>
+          );
+        })}
+      </DataTable>
 
       {/* MODAL: REVISIÓN DE MARCAJE SIN PIN */}
       <ModalShell

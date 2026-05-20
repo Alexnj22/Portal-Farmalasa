@@ -12,6 +12,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -1061,139 +1062,94 @@ export default function CotizacionesView() {
             </div>
 
             {/* Tabla */}
-            {loadingList ? (
-                <div className="px-5 pb-5">
-                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                        <table className="min-w-full text-sm">
-                            <tbody>
-                                {Array.from({ length: 6 }).map((_, i) => (
-                                    <tr key={i} className="border-b border-slate-50 last:border-0">
-                                        <td className="px-4 py-3"><div className="h-3 w-20 skeleton" /></td>
-                                        <td className="px-4 py-3"><div className="h-3 w-24 skeleton" /></td>
-                                        <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-32 skeleton" /></td>
-                                        <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-16 skeleton" /></td>
-                                        <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-24 skeleton" /></td>
-                                        <td className="px-4 py-3 text-right"><div className="h-3 w-16 skeleton ml-auto" /></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            ) : cotizaciones.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-400">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-slate-100 flex items-center justify-center"><Receipt size={28} strokeWidth={1.5} /></div>
-                    <p className="text-[13px] font-bold">Aún no hay cotizaciones</p>
-                </div>
-            ) : (
-                <div className="px-5 pb-5">
-                    <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead>
-                                    <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Número</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Cliente</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Tipo</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell">Sucursal</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Creado por</th>
-                                        <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:table-cell">Estado</th>
-                                        <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
-                                        <th className="px-3 py-2.5 w-8" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {cotizaciones.map(cot => {
-                                        const isAnulada = cot.status === 'ANULADA';
-                                        const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
-                                        return (
-                                            <tr key={cot.id} onClick={() => openCot(cot)}
-                                                className={`group border-t border-black/[0.04] cursor-pointer transition-colors ${isAnulada ? 'opacity-50 bg-red-50/20 hover:bg-red-50/40' : 'hover:bg-slate-50/70'}`}>
-                                                {/* Número */}
-                                                <td className="px-4 py-2.5">
-                                                    <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#0052CC]'}`}>{cot.numero}</span>
-                                                </td>
-                                                {/* Fecha */}
-                                                <td className="px-4 py-2.5">
-                                                    <p className="text-[12px] font-bold text-slate-700">{fmtD(cot.fecha)}</p>
-                                                </td>
-                                                {/* Cliente */}
-                                                <td className="px-4 py-2.5">
-                                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{cot.customer_name}</p>
-                                                </td>
-                                                {/* Tipo */}
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700'}`}>
-                                                        {cot.document_type}
-                                                    </span>
-                                                </td>
-                                                {/* Sucursal */}
-                                                <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                    <span className="text-[11px] text-slate-600">{branchName}</span>
-                                                </td>
-                                                {/* Creado por */}
-                                                <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    {cot.created_by_name ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
-                                                                className="w-6 h-6 rounded-full shrink-0" />
-                                                            <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{cot.created_by_name}</span>
-                                                        </div>
-                                                    ) : <span className="text-slate-300">—</span>}
-                                                </td>
-                                                {/* Estado */}
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                                                        {cot.status}
-                                                    </span>
-                                                </td>
-                                                {/* Total */}
-                                                <td className="px-4 py-2.5 text-right">
-                                                    <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
-                                                </td>
-                                                {/* Acciones en hover */}
-                                                <td className="pr-3 py-2.5" onClick={e => e.stopPropagation()}>
-                                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                                        {!isAnulada && canEdit && (
-                                                            <>
-                                                                <button
-                                                                    title="Editar"
-                                                                    onClick={() => startEdit(cot)}
-                                                                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors"
-                                                                >
-                                                                    <Edit2 size={12} strokeWidth={2.5} />
-                                                                </button>
-                                                                <button
-                                                                    title="Imprimir / PDF"
-                                                                    onClick={async () => {
-                                                                        const { data } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
-                                                                        handlePrint(cot, data || []);
-                                                                    }}
-                                                                    className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-700 flex items-center justify-center transition-colors"
-                                                                >
-                                                                    <Printer size={12} strokeWidth={2.5} />
-                                                                </button>
-                                                                <button
-                                                                    title="Anular"
-                                                                    onClick={() => setConfirmAnular(cot.id)}
-                                                                    className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors"
-                                                                >
-                                                                    <Trash2 size={12} strokeWidth={2.5} />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DataTable
+                columns={[
+                    { key: 'numero',     label: 'Número' },
+                    { key: 'fecha',      label: 'Fecha' },
+                    { key: 'cliente',    label: 'Cliente' },
+                    { key: 'tipo',       label: 'Tipo',       hideBelow: 'sm' },
+                    { key: 'sucursal',   label: 'Sucursal',   hideBelow: 'lg' },
+                    { key: 'creadopor',  label: 'Creado por', hideBelow: 'md' },
+                    { key: 'estado',     label: 'Estado',     hideBelow: 'sm' },
+                    { key: 'total',      label: 'Total',      align: 'right' },
+                    { key: 'acciones',   label: '' },
+                ]}
+                loading={loadingList}
+                skeletonRows={6}
+                empty={{ icon: Receipt, message: 'Aún no hay cotizaciones' }}
+                minWidth="600px"
+            >
+                {cotizaciones.map((cot, i) => {
+                    const isAnulada  = cot.status === 'ANULADA';
+                    const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
+                    return (
+                        <DataRow
+                            key={cot.id}
+                            index={i}
+                            onClick={() => openCot(cot)}
+                            className={isAnulada ? 'opacity-50 bg-red-50/20' : ''}
+                        >
+                            <DataCell>
+                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#0052CC]'}`}>{cot.numero}</span>
+                            </DataCell>
+                            <DataCell>
+                                <p className="text-[12px] font-bold text-slate-700">{fmtD(cot.fecha)}</p>
+                            </DataCell>
+                            <DataCell>
+                                <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{cot.customer_name}</p>
+                            </DataCell>
+                            <DataCell hideBelow="sm">
+                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                                    {cot.document_type}
+                                </span>
+                            </DataCell>
+                            <DataCell hideBelow="lg">
+                                <span className="text-[11px] text-slate-600">{branchName}</span>
+                            </DataCell>
+                            <DataCell hideBelow="md">
+                                {cot.created_by_name ? (
+                                    <div className="flex items-center gap-2">
+                                        <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name} className="w-6 h-6 rounded-full shrink-0" />
+                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{cot.created_by_name}</span>
+                                    </div>
+                                ) : <span className="text-slate-300">—</span>}
+                            </DataCell>
+                            <DataCell hideBelow="sm">
+                                <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                    {cot.status}
+                                </span>
+                            </DataCell>
+                            <DataCell align="right">
+                                <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
+                            </DataCell>
+                            <DataCell onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                    {!isAnulada && canEdit && (
+                                        <>
+                                            <button title="Editar" onClick={() => startEdit(cot)}
+                                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors">
+                                                <Edit2 size={12} strokeWidth={2.5} />
+                                            </button>
+                                            <button title="Imprimir / PDF"
+                                                onClick={async () => {
+                                                    const { data } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
+                                                    handlePrint(cot, data || []);
+                                                }}
+                                                className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-700 flex items-center justify-center transition-colors">
+                                                <Printer size={12} strokeWidth={2.5} />
+                                            </button>
+                                            <button title="Anular" onClick={() => setConfirmAnular(cot.id)}
+                                                className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-colors">
+                                                <Trash2 size={12} strokeWidth={2.5} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </DataCell>
+                        </DataRow>
+                    );
+                })}
+            </DataTable>
         </GlassViewLayout>
     </>);
 }

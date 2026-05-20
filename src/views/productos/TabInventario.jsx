@@ -5,6 +5,7 @@ import {
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -107,22 +108,6 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
-    const active = sortField === field;
-    return (
-        <th onClick={() => onSort(field)}
-            className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
-            } ${className}`}>
-            <span className="flex items-center gap-1">
-                {label}
-                <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
-                    {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-                </span>
-            </span>
-        </th>
-    );
-}
 
 export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,    setSelectedErp]    = useState(null);
@@ -277,6 +262,15 @@ export default function TabInventario({ searchTerm = '' }) {
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const colCount   = selectedErp === null ? 7 : 6;
+    const tableColumns = [
+        ...(selectedErp === null ? [{ key: 'sucursal',     label: 'Sucursal',     sortable: true }] : []),
+        { key: 'descripcion',  label: 'Producto',      sortable: true },
+        { key: 'presentacion', label: 'Presentación',  hideBelow: 'md' },
+        { key: 'lote',         label: 'Lote',          hideBelow: 'lg' },
+        { key: 'laboratorio',  label: 'Laboratorio',   hideBelow: 'lg' },
+        { key: 'unidades',     label: 'Und.',          sortable: true, align: 'right' },
+        { key: 'vence',        label: 'Vence',         hideBelow: 'sm' },
+    ];
 
     const lastSync = (() => {
         const logs = syncLog.filter(l =>
@@ -476,210 +470,178 @@ export default function TabInventario({ searchTerm = '' }) {
                         Reintentar
                     </button>
                 </div>
-            ) : loading ? (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <table className="min-w-full">
-                        <tbody>
-                            {Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
-                                <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3"><div className="h-3 w-48 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-16 skeleton" /></td>
-                                    <td className="px-4 py-3 text-right"><div className="h-3 w-10 skeleton ml-auto" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-20 skeleton" /></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : total === 0 ? (
-                <div className="rounded-2xl border border-black/[0.07] bg-white shadow-sm py-20 text-center text-slate-400">
-                    <Package size={32} className="opacity-30 mx-auto mb-3" />
-                    <p className="text-sm">No se encontraron productos</p>
-                </div>
             ) : (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-sm">
-                            <thead className="sticky top-0 z-10">
-                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
+                <DataTable
+                    columns={tableColumns}
+                    sortKey={sortField}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    loading={loading}
+                    skeletonRows={Math.min(pageSize, 8)}
+                    empty={{ icon: Package, message: 'No se encontraron productos' }}
+                    minWidth="700px"
+                >
+                    {groups.map((group, i) => {
+                        const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
+                        const isExpanded = expandedKey === key;
+                        const lab        = labMap[group.erp_product_id] ?? null;
+                        const numLotes   = Number(group.num_lotes);
+                        const loteDisplay = numLotes === 0 ? '—'
+                            : numLotes === 1 ? (group.lote_sample || '—')
+                            : 'VARIOS';
+                        const pres  = group.presentaciones || [];
+                        const units = Number(group.total_unidades);
+                        const info       = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
+                        const hasExpired = info?.expired;
+                        const isSoon     = info && !info.expired && info.days <= 30;
+                        const isSixMo    = info && !info.expired && info.days > 30 && info.days <= 180;
+
+                        return (
+                            <React.Fragment key={key}>
+                                <DataRow
+                                    index={i}
+                                    onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
+                                    className={
+                                        isExpanded ? 'bg-blue-50/50' :
+                                        hasExpired ? 'bg-red-50/40' :
+                                        isSoon     ? 'bg-amber-50/30' :
+                                        isSixMo    ? 'bg-orange-50/20' : ''
+                                    }
+                                >
                                     {selectedErp === null && (
-                                        <SortTh field="sucursal" label="Sucursal" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                        <DataCell className="whitespace-nowrap">
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-slate-600 bg-slate-50 border-slate-200'}`}>
+                                                {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
+                                            </span>
+                                        </DataCell>
                                     )}
-                                    <SortTh field="descripcion" label="Producto" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Presentación</th>
-                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell whitespace-nowrap">Lote</th>
-                                    <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden lg:table-cell whitespace-nowrap">Laboratorio</th>
-                                    <SortTh field="unidades" label="Und." sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                    <SortTh field="vence" label="Vence" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {groups.map((group) => {
-                                    const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
-                                    const isExpanded = expandedKey === key;
-                                    const lab        = labMap[group.erp_product_id] ?? null;
-                                    const numLotes   = Number(group.num_lotes);
-                                    const loteDisplay = numLotes === 0 ? '—'
-                                        : numLotes === 1 ? (group.lote_sample || '—')
-                                        : 'VARIOS';
-                                    const pres  = group.presentaciones || [];
-                                    const units = Number(group.total_unidades);
-                                    const info       = group.earliest_venc ? expiryInfo(group.earliest_venc) : null;
-                                    const hasExpired = info?.expired;
-                                    const isSoon     = info && !info.expired && info.days <= 30;
-                                    const isSixMo    = info && !info.expired && info.days > 30 && info.days <= 180;
 
-                                    return (
-                                        <React.Fragment key={key}>
-                                            <tr
-                                                onClick={() => handleExpand(group.erp_sucursal_id, group.erp_product_id)}
-                                                className={`cursor-pointer transition-colors ${
-                                                    isExpanded ? 'bg-blue-50/50' :
-                                                    hasExpired ? 'bg-red-50/40 hover:bg-red-50/60' :
-                                                    isSoon     ? 'bg-amber-50/30 hover:bg-amber-50/50' :
-                                                    isSixMo    ? 'bg-orange-50/20 hover:bg-orange-50/40' :
-                                                    'hover:bg-slate-50/70'
-                                                }`}>
-
-                                                {selectedErp === null && (
-                                                    <td className="px-4 py-2.5 whitespace-nowrap">
-                                                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-slate-600 bg-slate-50 border-slate-200'}`}>
-                                                            {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
-                                                        </span>
-                                                    </td>
+                                    <DataCell>
+                                        <div className="flex items-center gap-2">
+                                            <ChevronDown size={12} strokeWidth={2.5}
+                                                className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
+                                            <div className="min-w-0">
+                                                <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
+                                                    {group.descripcion || '—'}
+                                                </span>
+                                                {group.es_antibiotico && (
+                                                    <span className="mt-0.5 inline-flex text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
+                                                        ANTIBIÓTICO
+                                                    </span>
                                                 )}
+                                            </div>
+                                        </div>
+                                    </DataCell>
 
-                                                <td className="px-4 py-2.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <ChevronDown size={12} strokeWidth={2.5}
-                                                            className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
-                                                        <div className="min-w-0">
-                                                            <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
-                                                                {group.descripcion || '—'}
-                                                            </span>
-                                                            {group.es_antibiotico && (
-                                                                <span className="mt-0.5 inline-flex text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
-                                                                    ANTIBIÓTICO
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                    <DataCell hideBelow="md">
+                                        {pres.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                                {pres.map(p => (
+                                                    <span key={p} className="text-[10px] font-bold text-slate-500 bg-slate-100/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
+                                                        {p}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : <span className="text-slate-300 text-xs">—</span>}
+                                    </DataCell>
+
+                                    <DataCell hideBelow="lg">
+                                        <span className={`text-[11px] font-mono ${numLotes > 1 ? 'text-slate-400 italic' : 'text-slate-500'}`}>
+                                            {loteDisplay}
+                                        </span>
+                                    </DataCell>
+
+                                    <DataCell hideBelow="lg">
+                                        <span className="text-[11px] text-slate-500">
+                                            {lab || <span className="text-slate-200">—</span>}
+                                        </span>
+                                    </DataCell>
+
+                                    <DataCell align="right" className="whitespace-nowrap">
+                                        <span className={`text-sm font-semibold tabular-nums ${
+                                            units === 0 ? 'text-slate-300' :
+                                            hasExpired  ? 'text-red-600'   : 'text-slate-700'
+                                        }`}>
+                                            {units.toLocaleString()}
+                                        </span>
+                                        <span className="text-[9px] text-slate-300 ml-0.5">und</span>
+                                    </DataCell>
+
+                                    <DataCell hideBelow="sm">
+                                        <ExpiryCell fecha={group.earliest_venc} />
+                                    </DataCell>
+                                </DataRow>
+
+                                {isExpanded && (
+                                    <tr>
+                                        <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
+                                            <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
+                                                {expandLoading.has(key) ? (
+                                                    <div className="flex items-center gap-2 text-slate-400 py-2">
+                                                        <Loader2 size={14} className="animate-spin" />
+                                                        <span className="text-xs">Cargando...</span>
                                                     </div>
-                                                </td>
-
-                                                <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    {pres.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {pres.map(p => (
-                                                                <span key={p} className="text-[10px] font-bold text-slate-500 bg-slate-100/80 border border-slate-200/60 px-2 py-0.5 rounded-full">
-                                                                    {p}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    ) : <span className="text-slate-300 text-xs">—</span>}
-                                                </td>
-
-                                                <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                    <span className={`text-[11px] font-mono ${numLotes > 1 ? 'text-slate-400 italic' : 'text-slate-500'}`}>
-                                                        {loteDisplay}
-                                                    </span>
-                                                </td>
-
-                                                <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                    <span className="text-[11px] text-slate-500">
-                                                        {lab || <span className="text-slate-200">—</span>}
-                                                    </span>
-                                                </td>
-
-                                                <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                                                    <span className={`text-sm font-semibold tabular-nums ${
-                                                        units === 0   ? 'text-slate-300' :
-                                                        hasExpired    ? 'text-red-600'   : 'text-slate-700'
-                                                    }`}>
-                                                        {units.toLocaleString()}
-                                                    </span>
-                                                    <span className="text-[9px] text-slate-300 ml-0.5">und</span>
-                                                </td>
-
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    <ExpiryCell fecha={group.earliest_venc} />
-                                                </td>
-                                            </tr>
-
-                                            {isExpanded && (
-                                                <tr>
-                                                    <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
-                                                        <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
-                                                            {expandLoading.has(key) ? (
-                                                                <div className="flex items-center gap-2 text-slate-400 py-2">
-                                                                    <Loader2 size={14} className="animate-spin" />
-                                                                    <span className="text-xs">Cargando...</span>
-                                                                </div>
-                                                            ) : (expandedData[key] || []).length === 0 ? (
-                                                                <p className="text-xs text-slate-400 py-2">Sin datos</p>
-                                                            ) : (
-                                                                <table className="w-full">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
-                                                                                <th key={h}
-                                                                                    className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-400 pr-6 last:pr-0 ${
-                                                                                        h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
-                                                                                    }`}>
-                                                                                    {h}
-                                                                                </th>
-                                                                            ))}
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {(expandedData[key] || []).map((row, i) => {
-                                                                            const factor   = parseFactor(row.detalle);
-                                                                            const rowUnits = (row.cantidad || 0) * factor;
-                                                                            return (
-                                                                                <tr key={i} className="border-t border-slate-100/60">
-                                                                                    <td className="py-1.5 pr-6">
-                                                                                        <span className="text-[12px] font-semibold text-slate-700">
-                                                                                            {row.presentacion || '—'}
-                                                                                        </span>
-                                                                                        {row.detalle && (
-                                                                                            <span className="text-[10px] text-slate-400 font-mono ml-1.5">
-                                                                                                {row.detalle}
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </td>
-                                                                                    <td className="py-1.5 pr-6 text-[11px] font-mono text-slate-500">
-                                                                                        {row.lote || '—'}
-                                                                                    </td>
-                                                                                    <td className="py-1.5 pr-6">
-                                                                                        <ExpiryCell fecha={row.fecha_vencimiento} />
-                                                                                    </td>
-                                                                                    <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-slate-600 tabular-nums">
-                                                                                        {(row.cantidad || 0).toLocaleString()}
-                                                                                    </td>
-                                                                                    <td className="py-1.5 text-right">
-                                                                                        <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                                                            {rowUnits.toLocaleString()}
-                                                                                        </span>
-                                                                                        <span className="text-[9px] text-slate-300 ml-0.5">und</span>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            );
-                                                                        })}
-                                                                    </tbody>
-                                                                </table>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                                ) : (expandedData[key] || []).length === 0 ? (
+                                                    <p className="text-xs text-slate-400 py-2">Sin datos</p>
+                                                ) : (
+                                                    <table className="w-full">
+                                                        <thead>
+                                                            <tr>
+                                                                {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
+                                                                    <th key={h}
+                                                                        className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-400 pr-6 last:pr-0 ${
+                                                                            h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
+                                                                        }`}>
+                                                                        {h}
+                                                                    </th>
+                                                                ))}
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {(expandedData[key] || []).map((row, j) => {
+                                                                const factor   = parseFactor(row.detalle);
+                                                                const rowUnits = (row.cantidad || 0) * factor;
+                                                                return (
+                                                                    <tr key={j} className="border-t border-slate-100/60">
+                                                                        <td className="py-1.5 pr-6">
+                                                                            <span className="text-[12px] font-semibold text-slate-700">
+                                                                                {row.presentacion || '—'}
+                                                                            </span>
+                                                                            {row.detalle && (
+                                                                                <span className="text-[10px] text-slate-400 font-mono ml-1.5">
+                                                                                    {row.detalle}
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="py-1.5 pr-6 text-[11px] font-mono text-slate-500">
+                                                                            {row.lote || '—'}
+                                                                        </td>
+                                                                        <td className="py-1.5 pr-6">
+                                                                            <ExpiryCell fecha={row.fecha_vencimiento} />
+                                                                        </td>
+                                                                        <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-slate-600 tabular-nums">
+                                                                            {(row.cantidad || 0).toLocaleString()}
+                                                                        </td>
+                                                                        <td className="py-1.5 text-right">
+                                                                            <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                                                {rowUnits.toLocaleString()}
+                                                                            </span>
+                                                                            <span className="text-[9px] text-slate-300 ml-0.5">und</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        );
+                    })}
+                </DataTable>
             )}
 
             {/* ── Pagination ── */}

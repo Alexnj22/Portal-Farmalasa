@@ -10,6 +10,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1787,73 +1788,78 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                     </div>
                                 </div>
                                 {/* Table */}
-                                <div className="overflow-x-auto w-full">
-                                <table className="min-w-full text-left border-collapse">
-                                    <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
-                                    <tbody className="divide-y divide-black/[0.03]">
-                                        {tipoPageRows.map(r => {
-                                            const isConfirming = confirmingId === r.id;
-                                            return (
-                                                <React.Fragment key={r.id}>
-                                                    <tr className={`transition-colors duration-200 group ${theme.rowHover}`}>
-                                                        <td className="p-5 pl-6">
-                                                            <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
-                                                            <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
-                                                        </td>
-                                                        <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
-                                                        <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[160px] truncate">{r.cliente || '—'}</td>
-                                                        <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{r.fecha}</td>
-                                                        <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
-                                                        <td className="p-5 pr-6 text-right">
-                                                            <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
-                                                                <Check size={13} strokeWidth={2.5} /> Confirmar
-                                                            </button>
+                                <DataTable
+                                    columns={[
+                                        { key: 'correlativo', label: 'Correlativo' },
+                                        { key: 'sucursal',    label: 'Sucursal',  hideBelow: 'md' },
+                                        { key: 'cliente',     label: 'Cliente',   hideBelow: 'lg' },
+                                        { key: 'fecha',       label: 'Fecha' },
+                                        { key: 'total',       label: 'Total' },
+                                        { key: 'accion',      label: '',          align: 'right' },
+                                    ]}
+                                    empty={{ message: 'Sin transacciones' }}
+                                    minWidth="560px"
+                                >
+                                    {tipoPageRows.map((r, ri) => {
+                                        const isConfirming = confirmingId === r.id;
+                                        return (
+                                            <React.Fragment key={r.id}>
+                                                <DataRow index={ri}>
+                                                    <DataCell>
+                                                        <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
+                                                        <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
+                                                    </DataCell>
+                                                    <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
+                                                    <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
+                                                    <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
+                                                    <DataCell className="text-[14px] font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                                    <DataCell align="right">
+                                                        <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                            className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                            <Check size={13} strokeWidth={2.5} /> Confirmar
+                                                        </button>
+                                                    </DataCell>
+                                                </DataRow>
+                                                {isConfirming && (
+                                                    <tr>
+                                                        <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
+                                                            <div className="flex items-start gap-3 max-w-3xl">
+                                                                <div className="flex-1 space-y-2">
+                                                                    <textarea
+                                                                        className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                        rows={2} autoFocus
+                                                                        placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
+                                                                        value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
+                                                                    />
+                                                                    <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+                                                                        <Paperclip size={14} />
+                                                                        {confirmFile ? (
+                                                                            <span className="text-slate-700 font-bold">{confirmFile.name}</span>
+                                                                        ) : (
+                                                                            <span>Adjuntar comprobante (imagen o PDF)</span>
+                                                                        )}
+                                                                        <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+                                                                            onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
+                                                                    </label>
+                                                                </div>
+                                                                <div className="flex flex-col gap-2 shrink-0">
+                                                                    <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
+                                                                        className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
+                                                                        {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                                                                    </button>
+                                                                    <button onClick={() => setConfirmingId(null)}
+                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                        <X size={12} /> Cancelar
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                     </tr>
-                                                    {isConfirming && (
-                                                        <tr>
-                                                            <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
-                                                                <div className="flex items-start gap-3 max-w-3xl">
-                                                                    <div className="flex-1 space-y-2">
-                                                                        <textarea
-                                                                            className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
-                                                                            rows={2} autoFocus
-                                                                            placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
-                                                                            value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
-                                                                        />
-                                                                        <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
-                                                                            <Paperclip size={14} />
-                                                                            {confirmFile ? (
-                                                                                <span className="text-slate-700 font-bold">{confirmFile.name}</span>
-                                                                            ) : (
-                                                                                <span>Adjuntar comprobante (imagen o PDF)</span>
-                                                                            )}
-                                                                            <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
-                                                                                onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
-                                                                        </label>
-                                                                    </div>
-                                                                    <div className="flex flex-col gap-2 shrink-0">
-                                                                        <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                            className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
-                                                                            {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                                                                        </button>
-                                                                        <button onClick={() => setConfirmingId(null)}
-                                                                            className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-all hover:-translate-y-0.5">
-                                                                            <X size={12} /> Cancelar
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                                </div>
-                                <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </DataTable>
                             </div>
                         );
                     })}
@@ -1890,69 +1896,74 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
                                             </div>
                                         </div>
-                                        <div className="overflow-x-auto w-full">
-                                        <table className="min-w-full text-left border-collapse">
-                                            <AuditThead cols={['Correlativo', 'Sucursal', 'Cliente', 'Fecha', 'Total', '']} />
-                                            <tbody className="divide-y divide-black/[0.03]">
-                                                {tipoPageRows.map(r => {
-                                                    const isConfirming = confirmingId === r.id;
-                                                    return (
-                                                        <React.Fragment key={r.id}>
-                                                            <tr className={`transition-colors duration-200 group ${theme.rowHover}`}>
-                                                                <td className="p-5 pl-6">
-                                                                    <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
-                                                                    <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
-                                                                </td>
-                                                                <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
-                                                                <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[160px] truncate">{r.cliente || '—'}</td>
-                                                                <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{r.fecha}</td>
-                                                                <td className="p-5 text-[14px] font-bold text-slate-800 whitespace-nowrap">{fmt(r.total)}</td>
-                                                                <td className="p-5 pr-6 text-right">
-                                                                    <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                        className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
-                                                                        <Check size={13} strokeWidth={2.5} /> Confirmar
-                                                                    </button>
+                                        <DataTable
+                                            columns={[
+                                                { key: 'correlativo', label: 'Correlativo' },
+                                                { key: 'sucursal',    label: 'Sucursal',  hideBelow: 'md' },
+                                                { key: 'cliente',     label: 'Cliente',   hideBelow: 'lg' },
+                                                { key: 'fecha',       label: 'Fecha' },
+                                                { key: 'total',       label: 'Total' },
+                                                { key: 'accion',      label: '',          align: 'right' },
+                                            ]}
+                                            empty={{ message: 'Sin transacciones' }}
+                                            minWidth="560px"
+                                        >
+                                            {tipoPageRows.map((r, ri) => {
+                                                const isConfirming = confirmingId === r.id;
+                                                return (
+                                                    <React.Fragment key={r.id}>
+                                                        <DataRow index={ri}>
+                                                            <DataCell>
+                                                                <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-slate-50 text-slate-500 border-slate-200">{r.tipo_documento}</span>
+                                                                <div className="font-mono text-[12px] text-slate-700 mt-1">{r.correlativo}</div>
+                                                            </DataCell>
+                                                            <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
+                                                            <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
+                                                            <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
+                                                            <DataCell className="text-[14px] font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                                            <DataCell align="right">
+                                                                <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                                    className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                    <Check size={13} strokeWidth={2.5} /> Confirmar
+                                                                </button>
+                                                            </DataCell>
+                                                        </DataRow>
+                                                        {isConfirming && (
+                                                            <tr>
+                                                                <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
+                                                                    <div className="flex items-start gap-3 max-w-3xl">
+                                                                        <div className="flex-1 space-y-2">
+                                                                            <textarea
+                                                                                className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                rows={2} autoFocus
+                                                                                placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
+                                                                                value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
+                                                                            />
+                                                                            <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+                                                                                <Paperclip size={14} />
+                                                                                {confirmFile ? <span className="text-slate-700 font-bold">{confirmFile.name}</span> : <span>Adjuntar documento de crédito</span>}
+                                                                                <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+                                                                                    onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
+                                                                            </label>
+                                                                        </div>
+                                                                        <div className="flex flex-col gap-2 shrink-0">
+                                                                            <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
+                                                                                className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
+                                                                                {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                                                                            </button>
+                                                                            <button onClick={() => setConfirmingId(null)}
+                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                                <X size={12} /> Cancelar
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 </td>
                                                             </tr>
-                                                            {isConfirming && (
-                                                                <tr>
-                                                                    <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
-                                                                        <div className="flex items-start gap-3 max-w-3xl">
-                                                                            <div className="flex-1 space-y-2">
-                                                                                <textarea
-                                                                                    className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 resize-none ${theme.input}`}
-                                                                                    rows={2} autoFocus
-                                                                                    placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
-                                                                                    value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
-                                                                                />
-                                                                                <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-slate-500 hover:text-slate-700 transition-colors">
-                                                                                    <Paperclip size={14} />
-                                                                                    {confirmFile ? <span className="text-slate-700 font-bold">{confirmFile.name}</span> : <span>Adjuntar documento de crédito</span>}
-                                                                                    <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
-                                                                                        onChange={e => setConfirmFile(e.target.files?.[0] || null)} />
-                                                                                </label>
-                                                                            </div>
-                                                                            <div className="flex flex-col gap-2 shrink-0">
-                                                                                <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                                    className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
-                                                                                    {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
-                                                                                </button>
-                                                                                <button onClick={() => setConfirmingId(null)}
-                                                                                    className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/80 hover:border-red-200 shadow transition-all hover:-translate-y-0.5">
-                                                                                    <X size={12} /> Cancelar
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            )}
-                                                        </React.Fragment>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                        </div>
-                                        <Pagination page={tipoPg} total={tipoTotalPages} onChange={p => setPendingPage(tipo, p)} />
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </DataTable>
                                     </div>
                                 );
                             })}
@@ -1987,55 +1998,68 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                 )}
                                 <span className="ml-auto text-[10px] text-slate-400">{confirmedFiltered.length} resultado{confirmedFiltered.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <div className="w-full overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <AuditThead cols={CONFIRMED_COLS} sortKey={cSortKey} sortDir={cSortDir} onSort={cToggle} />
-                                    <tbody className="divide-y divide-black/[0.03]">
-                                        {confirmedPageRows.map(r => {
-                                            const inv = r.invoice;
-                                            const tipoPago = r.tipo_pago?.toLowerCase() || '';
-                                            const dt = r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
-                                            return (
-                                                <tr key={r.id} className="hover:bg-white/70 transition-colors">
-                                                    <td className="p-5 pl-8">
-                                                        <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_pago}</span>
-                                                    </td>
-                                                    <td className="p-5">
-                                                        <div className="font-mono text-[12px] text-slate-600">{inv?.correlativo || '—'}</div>
-                                                    </td>
-                                                    <td className="p-5 text-[13px] text-slate-600 hidden md:table-cell">{getBranch(r.branch_id)}</td>
-                                                    <td className="p-5 text-[13px] text-slate-600 hidden lg:table-cell max-w-[140px] truncate">{inv?.cliente || '—'}</td>
-                                                    <td className="p-5 text-[13px] text-slate-500 whitespace-nowrap">{inv?.fecha || '—'}</td>
-                                                    <td className="p-5 text-[13px] font-bold text-slate-700 whitespace-nowrap">{fmt(inv?.total)}</td>
-                                                    <td className="p-5">
-                                                        <div className="flex items-center gap-2">
-                                                            {r.confirmed_by_photo ? (
-                                                                <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0" />
-                                                            ) : (
-                                                                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold shrink-0">
-                                                                    {r.confirmed_by?.charAt(0)?.toUpperCase() || '?'}
-                                                                </div>
-                                                            )}
-                                                            <span className="text-[12px] font-semibold text-slate-700 whitespace-nowrap">{r.confirmed_by || '—'}</span>
+                            <DataTable
+                                columns={[
+                                    { key: 'tipo_pago',     label: 'Tipo Pago',     sortable: true },
+                                    { key: 'correlativo',   label: 'Correlativo',   sortable: true },
+                                    { key: 'sucursal',      label: 'Sucursal',      sortable: true, hideBelow: 'md' },
+                                    { key: 'cliente',       label: 'Cliente',       sortable: true, hideBelow: 'lg' },
+                                    { key: 'fecha',         label: 'Fecha',         sortable: true },
+                                    { key: 'total',         label: 'Total',         sortable: true },
+                                    { key: 'confirmed_by',  label: 'Confirmado por', sortable: true },
+                                    { key: 'confirmed_at',  label: 'Fecha conf.',   sortable: true },
+                                    { key: 'comprobante',   label: 'Comprobante' },
+                                    { key: 'notas',         label: 'Notas' },
+                                ]}
+                                sortKey={cSortKey}
+                                sortDir={cSortDir}
+                                onSort={cToggle}
+                                empty={{ message: 'Sin pagos confirmados' }}
+                                footer={<Pagination page={confirmedPage} total={confirmedTotalPages} onChange={setConfirmedPage} />}
+                                minWidth="800px"
+                            >
+                                {confirmedPageRows.map((r, ci) => {
+                                    const inv = r.invoice;
+                                    const tipoPago = r.tipo_pago?.toLowerCase() || '';
+                                    const dt = r.confirmed_at ? new Date(r.confirmed_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                                    return (
+                                        <DataRow key={r.id} index={ci}>
+                                            <DataCell>
+                                                <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>{r.tipo_pago}</span>
+                                            </DataCell>
+                                            <DataCell>
+                                                <div className="font-mono text-[12px] text-slate-600">{inv?.correlativo || '—'}</div>
+                                            </DataCell>
+                                            <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
+                                            <DataCell hideBelow="lg" className="max-w-[140px] truncate">{inv?.cliente || '—'}</DataCell>
+                                            <DataCell className="whitespace-nowrap">{inv?.fecha || '—'}</DataCell>
+                                            <DataCell className="font-bold whitespace-nowrap">{fmt(inv?.total)}</DataCell>
+                                            <DataCell>
+                                                <div className="flex items-center gap-2">
+                                                    {r.confirmed_by_photo ? (
+                                                        <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0" />
+                                                    ) : (
+                                                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold shrink-0">
+                                                            {r.confirmed_by?.charAt(0)?.toUpperCase() || '?'}
                                                         </div>
-                                                    </td>
-                                                    <td className="p-5 text-[12px] text-slate-400 whitespace-nowrap">{dt}</td>
-                                                    <td className="p-5">
-                                                        {r.proof_url ? (
-                                                            <a href={r.proof_url} target="_blank" rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                                                                <Paperclip size={12} /> Ver <ExternalLink size={10} />
-                                                            </a>
-                                                        ) : <span className="text-[12px] text-slate-300 italic">Sin comprobante</span>}
-                                                    </td>
-                                                    <td className="p-5 pr-8 text-[12px] text-slate-500 max-w-[180px]">{r.notes || <span className="italic text-slate-300">—</span>}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                                <Pagination page={confirmedPage} total={confirmedTotalPages} onChange={setConfirmedPage} />
-                            </div>
+                                                    )}
+                                                    <span className="text-[12px] font-semibold text-slate-700 whitespace-nowrap">{r.confirmed_by || '—'}</span>
+                                                </div>
+                                            </DataCell>
+                                            <DataCell className="whitespace-nowrap">{dt}</DataCell>
+                                            <DataCell>
+                                                {r.proof_url ? (
+                                                    <a href={r.proof_url} target="_blank" rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                                                        <Paperclip size={12} /> Ver <ExternalLink size={10} />
+                                                    </a>
+                                                ) : <span className="text-[12px] text-slate-300 italic">Sin comprobante</span>}
+                                            </DataCell>
+                                            <DataCell className="max-w-[180px]">{r.notes || <span className="italic text-slate-300">—</span>}</DataCell>
+                                        </DataRow>
+                                    );
+                                })}
+                            </DataTable>
                         </div>
                     )}
                 </div>

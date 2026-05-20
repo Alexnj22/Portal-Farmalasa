@@ -13,9 +13,6 @@ import {
   ChevronLeft,
   X,
   Trash2,
-  ArrowUpDown,
-  ArrowDown,
-  ArrowUp,
   Hash,
   User,
   Edit3,
@@ -43,6 +40,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -209,8 +207,8 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   const rowCelebrationClass = birthdayInfo?.isToday ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-white to-pink-50 ring-2 ring-pink-100' : '';
 
   return (
-    <tr style={{ '--stagger-delay': `${Math.min(staggerIndex, 12) * 30}ms` }} className={`animate-stagger-child group hover:bg-white/40 transition-colors duration-300 ${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
-      <td className="px-4 md:px-8 py-3.5 border-b border-white/40 w-[280px]">
+    <DataRow index={staggerIndex} className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
+      <DataCell className="w-[280px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
             <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
@@ -273,16 +271,16 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             </div>
           </div>
         </div>
-      </td>
+      </DataCell>
 
-      <td className="px-4 md:px-8 py-3.5 border-b border-white/40">
+      <DataCell>
         <div className="flex items-center gap-1.5 text-slate-600 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-slate-400 shrink-0" />
           <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
-      </td>
+      </DataCell>
 
-      <td className="px-4 md:px-8 py-3.5 border-b border-white/40 max-w-[200px]">
+      <DataCell className="max-w-[200px]">
         <div className="flex items-center gap-1 flex-wrap">
           {rolesArray.map((roleObj, idx) => {
             const theme = getRoleTheme(roleObj.original);
@@ -293,16 +291,16 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             );
           })}
         </div>
-      </td>
+      </DataCell>
 
-      <td className="px-4 md:px-8 py-3.5 border-b border-white/40">
+      <DataCell>
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-[9px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${statusInfo.className}`}>
           <statusInfo.icon size={12} strokeWidth={2.5} className="shrink-0" />
           {statusInfo.text}
         </span>
-      </td>
+      </DataCell>
 
-      <td className="px-4 md:px-8 py-3.5 text-right border-b border-white/40">
+      <DataCell align="right">
         <div className="flex items-center justify-end gap-2">
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
@@ -332,31 +330,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             <ChevronRight size={14} strokeWidth={3} className="hidden md:inline" />
           </button>
         </div>
-      </td>
-    </tr>
+      </DataCell>
+    </DataRow>
   );
 });
-
-const SkeletonRow = () => (
-  <tr>
-    <td colSpan="5">
-      <div className="flex items-center gap-4 px-8 py-3.5">
-        <div className="w-10 h-10 rounded-full skeleton shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-3 skeleton rounded w-1/3" />
-          <div className="h-2 skeleton rounded w-1/4" />
-        </div>
-        <div className="h-3 skeleton rounded w-1/5" />
-        <div className="h-6 skeleton rounded-full w-16" />
-      </div>
-    </td>
-  </tr>
-);
-
-const SortIcon = ({ columnKey, sortConfig }) => {
-  if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} strokeWidth={3} className="text-slate-300 group-hover:text-slate-400 opacity-50 transition-colors" />;
-  return sortConfig.direction === 'asc' ? <ArrowUp size={12} strokeWidth={3} className="text-[#0052CC]" /> : <ArrowDown size={12} strokeWidth={3} className="text-[#0052CC]" />;
-};
 
 const StaffManagementView = ({
   setActiveEmployee,
@@ -699,59 +676,45 @@ const StaffManagementView = ({
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">
+        <div data-surface="card" className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">
 
-          <div className="px-5 py-3.5 border-b border-white/40 bg-white/20 flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
-              <Hash size={12} strokeWidth={3} />
-              {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
-              {activeStatFilter !== 'ALL' && <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span></span>}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-x-auto overflow-y-auto hide-scrollbar">
-            <table className="min-w-full text-left border-collapse whitespace-nowrap">
-              <thead className="bg-white/40 sticky top-0 z-10 backdrop-blur-md border-b border-white/60 shadow-sm">
-                <tr>
-                  <th onClick={() => handleSort('name')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Colaborador <SortIcon columnKey="name" sortConfig={sortConfig} /></div>
-                  </th>
-                  <th onClick={() => handleSort('branch')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Sucursal <SortIcon columnKey="branch" sortConfig={sortConfig} /></div>
-                  </th>
-                  <th onClick={() => handleSort('role')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Cargos Asignados <SortIcon columnKey="role" sortConfig={sortConfig} /></div>
-                  </th>
-                  <th onClick={() => handleSort('status')} className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] cursor-pointer hover:bg-white/50 transition-colors group select-none">
-                    <div className="flex items-center gap-2">Estado Operativo <SortIcon columnKey="status" sortConfig={sortConfig} /></div>
-                  </th>
-                  <th className="px-4 md:px-8 py-3 text-[9px] md:text-[10px] font-black uppercase text-slate-500 tracking-[0.15em] text-right">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-white/40">
-                {bootStatus !== 'ready' && employees.length === 0 ? (
-                  Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
-                ) : paginatedEmployees.length > 0 ? (
-                  paginatedEmployees.map((emp, i) => (
-                    <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="py-24 text-center">
-                      <div className="flex flex-col items-center justify-center opacity-70 px-4 animate-in zoom-in-95 duration-500">
-                        <div className="w-16 h-16 bg-white/60 rounded-[1.2rem] flex items-center justify-center mb-4 border border-white/80 shadow-sm"><Search size={28} strokeWidth={2.5} className="text-slate-400" /></div>
-                        <p className="text-[15px] font-black text-slate-700 tracking-tight">No hay nadie aquí</p>
-                        <p className="text-[11px] font-medium text-slate-500 mt-1 max-w-[250px] leading-relaxed">Ajusta el filtro de sucursal o limpia la búsqueda para ver a tu equipo.</p>
-                        {hasActiveFilters && <button onClick={clearFilters} className="mt-5 text-[10px] font-black uppercase tracking-widest text-white bg-slate-400 hover:bg-slate-500 px-5 py-2.5 rounded-full transition-all shadow-sm active:scale-[0.97] flex items-center gap-2"><X size={14} strokeWidth={3} /> Limpiar Filtros</button>}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="flex-1 overflow-y-auto hide-scrollbar">
+            <DataTable
+              columns={[
+                { key: 'name',   label: 'Colaborador',      sortable: true },
+                { key: 'branch', label: 'Sucursal',         sortable: true },
+                { key: 'role',   label: 'Cargos Asignados', sortable: true },
+                { key: 'status', label: 'Estado Operativo', sortable: true },
+                { key: 'actions',label: 'Acciones',         align: 'right' },
+              ]}
+              sortKey={sortConfig.key}
+              sortDir={sortConfig.direction}
+              onSort={handleSort}
+              loading={bootStatus !== 'ready' && employees.length === 0}
+              skeletonRows={8}
+              empty={{
+                icon: Search,
+                message: 'No hay nadie aquí',
+                subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
+                action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
+              }}
+              toolbar={
+                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
+                  <Hash size={12} strokeWidth={3} />
+                  {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
+                  {activeStatFilter !== 'ALL' && (
+                    <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">
+                      Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span>
+                    </span>
+                  )}
+                </div>
+              }
+              minWidth="700px"
+            >
+              {paginatedEmployees.map((emp, i) => (
+                <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
+              ))}
+            </DataTable>
           </div>
 
           {totalItems > 0 && (

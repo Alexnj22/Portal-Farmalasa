@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea, Cell,
@@ -6,6 +6,7 @@ import {
 import { TrendingUp, TrendingDown, Minus, Target, Settings2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import GlassViewLayout from '../components/GlassViewLayout';
+import { supabase } from '../supabaseClient';
 
 // ─── Static data from spreadsheet ────────────────────────────────────────────
 
@@ -31,7 +32,12 @@ const MONTHS = [
   { label:"Jul'26", full:'Julio 2026',       yr:2026, projected:true },
 ];
 
-const BRANCHES = ['Domicilio','La Popular','Salud 1','Salud 2','Salud 3','Salud 4','Salud 5'];
+const BRANCHES = ['La Popular','Salud 1','Salud 2','Salud 3','Salud 4','Salud 5'];
+
+const BRANCH_ID_MAP = {
+  'La Popular': 2, 'Salud 1': 4, 'Salud 2': 25,
+  'Salud 3': 27, 'Salud 4': 28, 'Salud 5': 29,
+};
 
 const RAW = {
   'Domicilio':  [2650.85,2525.95,2440.45,3369.21,1913.40,1750.79,2336.15,2582.21,996.25,1537.40,1790.55,1534.80,2459.65,1870.55,2601.76,null],
@@ -49,8 +55,8 @@ const COLORS = {
 };
 
 const DEFAULT_GOALS = {
-  'Domicilio':2800,'La Popular':45000,'Salud 1':52000,
-  'Salud 2':47000,'Salud 3':38000,'Salud 4':42000,'Salud 5':15000,
+  'La Popular': 45338.70, 'Salud 1': 51382.30, 'Salud 2': 47721.90,
+  'Salud 3':    44258.60, 'Salud 4': 45695.07, 'Salud 5': 17197.14,
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -68,9 +74,9 @@ function getStatus(val, goal) {
 }
 
 const STATUS_STYLES = {
-  green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',         dot:'bg-green-500',  label:'Logrado',  ring:'ring-green-400' },
-  orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200',      dot:'bg-orange-400', label:'Cerca',    ring:'ring-orange-400' },
-  red:    { row:'bg-red-50/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',        dot:'bg-red-600',    label:'No logró', ring:'ring-red-500' },
+  green:  { row:'bg-green-50/80',  cell:'text-green-800 font-semibold', badge:'bg-green-100 text-green-700 border border-green-200',    dot:'bg-green-500',  label:'Cumplió',    ring:'ring-green-400' },
+  orange: { row:'bg-orange-50/80', cell:'text-orange-800 font-semibold',badge:'bg-orange-100 text-orange-700 border border-orange-200', dot:'bg-orange-400', label:'',           ring:'ring-orange-400' },
+  red:    { row:'bg-red-50/80',    cell:'text-red-900 font-semibold',   badge:'bg-red-600 text-white border border-red-700 shadow-sm',  dot:'bg-red-600',    label:'No Cumplió', ring:'ring-red-500' },
 };
 
 // Linear regression → projects `ahead` steps from last non-null value
@@ -145,14 +151,41 @@ export default function MetasView() {
     return next;
   });
 
-  const [selectedMonthIdx, setSelectedMonthIdx] = useState(15);
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState(16); // May'26 = current month
+  const [liveSales, setLiveSales] = useState(null);
 
-  // Projections — Domicilio se integró a Salud 3 desde abril 2026, no se proyecta
+  useEffect(() => {
+    const today = new Date();
+    const d = today.getDate();
+    const m = today.getMonth() + 1;
+    const y = today.getFullYear();
+    const pad = n => String(n).padStart(2, '0');
+    const fini = `${y}-${pad(m)}-01`;
+    const ffin = `${y}-${pad(m)}-${pad(d)}`;
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    async function fetchLive() {
+      const results = {};
+      await Promise.all(BRANCHES.map(async b => {
+        const { data, error } = await supabase.rpc('get_ventas_stats', {
+          p_fini: fini, p_ffin: ffin,
+          p_branch_id: BRANCH_ID_MAP[b],
+          p_hora_corte: null,
+        });
+        if (!error && data != null) {
+          const actual = parseFloat(data.total_sum || 0);
+          results[b] = { actual, projected: actual / d * daysInMonth, day: d, daysInMonth };
+        }
+      }));
+      setLiveSales(results);
+    }
+    fetchLive();
+  }, []);
+
+  // Projections (regression, used for Jun/Jul 2026)
   const projData = useMemo(() => {
     const res = {};
-    BRANCHES.forEach(b => {
-      res[b] = b === 'Domicilio' ? [null, null, null] : project(RAW[b], 3);
-    });
+    BRANCHES.forEach(b => { res[b] = project(RAW[b], 3); });
     return res;
   }, []);
 
@@ -212,15 +245,21 @@ export default function MetasView() {
   const monthViewData = useMemo(() => {
     const m = MONTHS[selectedMonthIdx];
     const isProj = m?.projected;
-    return BRANCHES
-      .filter(b => !(b === 'Domicilio' && isProj))
-      .map(b => {
-        const raw = isProj ? projData[b][selectedMonthIdx - 16] : RAW[b][selectedMonthIdx];
-        const val = raw ?? 0;
-        const goal = goals[b] ?? 0;
-        return { branch: b === 'La Popular' ? 'La Pop.' : b, val, goal, status: getStatus(raw, goal) };
-      });
-  }, [selectedMonthIdx, goals, projData]);
+    const isMay26 = selectedMonthIdx === 16;
+    return BRANCHES.map(b => {
+      let raw;
+      if (isMay26 && liveSales?.[b]) {
+        raw = liveSales[b].projected;
+      } else if (isProj) {
+        raw = projData[b][selectedMonthIdx - 16];
+      } else {
+        raw = RAW[b][selectedMonthIdx];
+      }
+      const val = raw ?? 0;
+      const goal = goals[b] ?? 0;
+      return { branch: b === 'La Popular' ? 'La Pop.' : b, val, goal, status: getStatus(raw, goal) };
+    });
+  }, [selectedMonthIdx, goals, projData, liveSales]);
 
   // Annual totals (2025 and 2026 YTD)
   const annualTotals = useMemo(() => {
@@ -275,7 +314,7 @@ export default function MetasView() {
       {showGoalEditor && (
         <div className={`rounded-2xl border p-4 ${card} ${shadow}`}>
           <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${muted}`}>Meta mensual por sucursal</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {BRANCHES.map(b => (
               <div key={b} className="flex flex-col gap-1">
                 <label className={`text-[9px] font-bold uppercase tracking-wider ${muted}`}>{b}</label>
@@ -297,17 +336,29 @@ export default function MetasView() {
       )}
 
       {/* ── KPI Cards ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {BRANCHES.map(b => {
+          const liveData = liveSales?.[b];
           const cur = current[b];
           const prev = previous[b];
-          const val = cur?.value ?? null;
+
+          // Use projected end-of-month when live data is available, else last historical value
+          const val = liveData != null ? liveData.projected : (cur?.value ?? null);
+          const actualVal = liveData?.actual ?? null;
           const goal = goals[b];
           const status = getStatus(val, goal);
           const st = STATUS_STYLES[status] || {};
           const pct = (val != null && goal) ? val / goal : null;
-          const trend = (val != null && prev != null) ? val - prev : null;
-          const curMonthLabel = cur ? MONTHS[cur.idx]?.label : '—';
+          const trend = (liveData == null && cur && prev != null) ? cur.value - prev : null;
+
+          const badgeLabel = status === 'green'  ? 'Cumplió'
+                           : status === 'orange' ? pctFmt(pct)
+                           : status === 'red'    ? 'No Cumplió'
+                           : null;
+
+          const monthLabel = liveData
+            ? `Proy. al ${liveData.daysInMonth} may · día ${liveData.day}`
+            : (cur ? MONTHS[cur.idx]?.label : '—');
 
           const borderColor = status === 'green'  ? 'border-green-400/60'
                             : status === 'orange' ? 'border-orange-400/60'
@@ -321,16 +372,19 @@ export default function MetasView() {
             >
               <div className="flex items-center justify-between gap-1">
                 <span className={`text-[10px] font-black uppercase tracking-wider truncate ${txt}`}>{b}</span>
-                {status && (
+                {badgeLabel && (
                   <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${st.badge}`}>
-                    {st.label}
+                    {badgeLabel}
                   </span>
                 )}
               </div>
 
               <div>
                 <p className={`text-[18px] font-black leading-none ${txt}`}>{fmtK(val)}</p>
-                <p className={`text-[10px] mt-0.5 ${muted}`}>{curMonthLabel}</p>
+                <p className={`text-[10px] mt-0.5 ${muted}`}>{monthLabel}</p>
+                {actualVal != null && (
+                  <p className={`text-[10px] ${muted}`}>Real: {fmtK(actualVal)}</p>
+                )}
               </div>
 
               {/* Progress bar */}
@@ -453,7 +507,7 @@ export default function MetasView() {
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart
                   layout="vertical"
-                  data={BRANCHES.filter(b=>!hidden.has(b) && b!=='Domicilio').map(b => ({
+                  data={BRANCHES.filter(b=>!hidden.has(b)).map(b => ({
                     branch: b,
                     value: projData[b]?.[pi] ?? 0,
                     goal: goals[b] ?? 0,
@@ -470,7 +524,7 @@ export default function MetasView() {
                   <Bar dataKey="value" radius={[0,4,4,0]} barSize={12}
                     label={{ position:'right', formatter:fmtK, fontSize:9, fill:axisColor }}
                   >
-                    {BRANCHES.filter(b=>!hidden.has(b) && b!=='Domicilio').map(b => (
+                    {BRANCHES.filter(b=>!hidden.has(b)).map(b => (
                       <Cell key={b} fill={COLORS[b]} />
                     ))}
                   </Bar>
@@ -544,9 +598,9 @@ export default function MetasView() {
         <div className={`px-5 py-3 border-b ${divider}`}>
           <p className={`text-[13px] font-black ${txt}`}>Detalle Mensual</p>
           <p className={`text-[11px] ${muted}`}>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Logrado ≥ 100%</span>
-            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-100 inline-block"/>Cerca ≥ 95%</span>
-            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-300 inline-block"/>No logró &lt; 95%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 inline-block"/>Cumplió ≥ 100%</span>
+            <span className="inline-flex items-center gap-1 mr-3"><span className="w-2.5 h-2.5 rounded-sm bg-orange-100 inline-block"/>≥ 95%</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-300 inline-block"/>No Cumplió &lt; 95%</span>
           </p>
         </div>
         <div className="overflow-x-auto">

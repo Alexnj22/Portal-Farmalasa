@@ -14,6 +14,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -330,6 +331,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [sortDir, setSortDir]       = useState('desc');
     const [expandedId, setExpandedId] = useState(null);
     const [itemsCache, setItemsCache] = useState({});
+    const [pricesCache, setPricesCache] = useState({});
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingItems, setLoadingItems] = useState(false);
     const [loadingRows, setLoadingRows]   = useState(true);
@@ -479,6 +481,25 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         grouped[it.invoice_id].push(it);
                     }
                     setItemsCache(prev => ({ ...prev, ...grouped }));
+
+                    // Also prefetch prices for all unique erp_product_ids in this batch
+                    const erpIds = [...new Set(items.map(it => it.erp_product_id).filter(id => id && id !== -999))];
+                    const uncachedErpIds = erpIds.filter(id => !pricesCache[id]);
+                    if (uncachedErpIds.length) {
+                        supabase.from('product_precios')
+                            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+                            .eq('activo', true)
+                            .in('product_id', uncachedErpIds)
+                            .then(({ data: priceRows }) => {
+                                if (!priceRows) return;
+                                const pg = {};
+                                for (const p of priceRows) {
+                                    if (!pg[p.product_id]) pg[p.product_id] = [];
+                                    pg[p.product_id].push(p);
+                                }
+                                setPricesCache(prev => ({ ...prev, ...pg }));
+                            });
+                    }
                 });
         }
 
@@ -515,7 +536,27 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             .order('total_linea', { ascending: false });
         setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
         setLoadingItems(false);
-    }, [expandedId, itemsCache]);
+
+        const erpIds = [...new Set((data || []).map(it => it.erp_product_id).filter(id => id && id !== -999))];
+        if (erpIds.length) {
+            const uncachedIds = erpIds.filter(id => !pricesCache[id]);
+            if (uncachedIds.length) {
+                supabase.from('product_precios')
+                    .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+                    .eq('activo', true)
+                    .in('product_id', uncachedIds)
+                    .then(({ data: priceRows }) => {
+                        if (!priceRows) return;
+                        const grouped = {};
+                        for (const p of priceRows) {
+                            if (!grouped[p.product_id]) grouped[p.product_id] = [];
+                            grouped[p.product_id].push(p);
+                        }
+                        setPricesCache(prev => ({ ...prev, ...grouped }));
+                    });
+            }
+        }
+    }, [expandedId, itemsCache, pricesCache]);
 
     const totalPages = isSearching ? 1 : Math.ceil((filterPuntos ? puntosCount : totalCount) / pageSize);
     const avgTicket  = totalCount > 0 ? totalAmount / totalCount : 0;
@@ -560,249 +601,25 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 />
             </div>
 
-            {loadingRows && rows.length === 0 ? (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
-                    <div className="overflow-x-auto w-full">
-                    <table className="min-w-full text-sm">
-                        <tbody>
-                            {Array.from({ length: 10 }).map((_, i) => (
-                                <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3"><div className="h-3 w-20 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-12 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-24 skeleton" /></td>
-                                    <td className="px-4 py-3"><div className="h-3 w-32 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-3 w-16 skeleton" /></td>
-                                    <td className="px-4 py-3 text-right"><div className="h-3 w-16 skeleton ml-auto" /></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            ) : !loadingRows && rows.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
-                    <TrendingUp size={40} className="mx-auto mb-3" />
-                    <p className="font-medium">{isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período'}</p>
-                </div>
-            ) : (
-                <>
-                    <div className={`rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm transition-opacity duration-150 ${loadingRows ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                        <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-sm">
-                            <thead className="sticky top-0 z-10">
-                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
-                                    <SortTh label="Fecha"       col="fecha"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
-                                    <SortTh label="ID"          col="correlativo"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-2.5" />
-                                    <SortTh label="Tipo"        col="tipo_documento" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-2.5" />
-                                    <SortTh label="Sucursal"    col="branch_id"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden lg:table-cell py-2.5" />
-                                    <SortTh label="Vendedor"    col="cod_vendedor"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell py-2.5" />
-                                    <SortTh label="Cliente"     col="cliente"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left py-2.5" />
-                                    <SortTh label="Método pago" col="tipo_pago"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-left hidden sm:table-cell py-2.5" />
-                                    <SortTh label="Total"       col="total"          sortCol={sortCol} sortDir={sortDir} onSort={handleSort} className="text-right py-2.5" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map(r => {
-                                    const isCancelled = CANCELLED_ESTADOS.includes(r.estado);
-                                    const isCCF = r.tipo_documento === 'CCF' || r.tipo_documento === 'COF';
-                                    const isExpanded = expandedId === r.id;
-                                    const cachedItems = itemsCache[r.id];
-                                    const noData = cachedItems && cachedItems.length === 0;
-                                    const emp = empMap.get(r.cod_vendedor);
-                                    const changes = changelogCache[r.id] ?? [];
-                                    const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
-                                    const tipoBadgeColor = r.tipo_documento === 'CCF'
-                                        ? 'bg-red-50 text-red-600'
-                                        : r.tipo_documento === 'FCF'
-                                        ? 'bg-blue-50 text-blue-600'
-                                        : 'bg-slate-100 text-slate-500';
-                                    return (
-                                        <React.Fragment key={r.id}>
-                                            <tr onClick={() => toggleRow(r.id)}
-                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${isCancelled ? 'opacity-50 bg-red-50/30 hover:bg-red-50/50' : isExpanded ? 'bg-blue-50/50' : 'hover:bg-slate-50/70'}`}>
-                                                {/* Fecha */}
-                                                <td className="px-4 py-2.5">
-                                                    <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
-                                                    {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
-                                                    {isCancelled
-                                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>
-                                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
-                                                </td>
-                                                {/* ID */}
-                                                <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-slate-500 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
-                                                    <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
-                                                </td>
-                                                {/* Tipo documento */}
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    {r.tipo_documento
-                                                        ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
-                                                        : <span className="text-slate-300">—</span>}
-                                                </td>
-                                                {/* Sucursal */}
-                                                <td className="px-4 py-2.5 hidden lg:table-cell">
-                                                    <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
-                                                </td>
-                                                {/* Vendedor */}
-                                                <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    <div className="flex items-center gap-2">
-                                                        {emp ? (
-                                                            <LiquidAvatar src={emp.photo_url || emp.photo} fallbackText={emp.first_names}
-                                                                className="w-6 h-6 rounded-full shrink-0" />
-                                                        ) : (
-                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                                <Users size={11} className="text-slate-400" />
-                                                            </div>
-                                                        )}
-                                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">
-                                                            {emp ? emp.first_names : (r.cod_vendedor || '—')}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                {/* Cliente */}
-                                                <td className="px-4 py-2.5">
-                                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{r.cliente || '—'}</p>
-                                                    {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
-                                                        <div className="flex gap-1 flex-wrap mt-0.5">
-                                                            {(r.has_puntos || filterPuntos) && (
-                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700">Puntos</span>
-                                                            )}
-                                                            {abInvoicesSet.has(r.id) && (
-                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                {/* Método pago */}
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
-                                                    {r.tipo_pago
-                                                        ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
-                                                        : <span className="text-slate-300">—</span>}
-                                                </td>
-                                                {/* Total */}
-                                                <td className="px-4 py-2.5 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {relevantChanges.length > 0 && (
-                                                            <div className="shrink-0" onClick={e => e.stopPropagation()}
-                                                                onMouseEnter={e => {
-                                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes: relevantChanges });
-                                                                }}
-                                                                onMouseLeave={() => setChangeTooltip(null)}>
-                                                                <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
-                                                                    <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
-                                                        <ChevronDown size={12}
-                                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {isExpanded && (
-                                                <tr className="border-t border-blue-100/60">
-                                                    <td colSpan={8} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
-                                                        {loadingItems && !cachedItems ? (
-                                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
-                                                                <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
-                                                            </div>
-                                                        ) : noData ? (
-                                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
-                                                                <Info size={12} className="text-slate-300 shrink-0" />
-                                                                Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
-                                                            </div>
-                                                        ) : (
-                                                            (() => {
-                                                                // Deduplicate: exact same (erp_product_id/descripcion, presentacion, precio_unitario, total_linea) → keep one
-                                                                const seen = new Set();
-                                                                const deduped = (cachedItems || []).filter(it => {
-                                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
-                                                                    if (seen.has(sig)) return false;
-                                                                    seen.add(sig);
-                                                                    return true;
-                                                                });
-                                                                // Discount items (ERP id=-999 = DESCPUNTO)
-                                                                const discountItems = deduped.filter(it => it.erp_product_id === -999);
-                                                                const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
-                                                                const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
-                                                                // Arithmetic fallback: if no discount item found but sum > total
-                                                                const regularSum = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
-                                                                const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
-                                                                const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                                return (
-                                                                    <div>
-                                                                        {/* Column headers */}
-                                                                        <div className="grid gap-x-2 pb-1 mb-0.5 border-b border-slate-100/80" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
-                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 pl-2">Producto</span>
-                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Cant.</span>
-                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right hidden sm:block">P. Unit.</span>
-                                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Total</span>
-                                                                        </div>
-                                                                        {regularItems.map((it, idx) => (
-                                                                            <div key={idx} className="grid gap-x-2 items-start py-0.5 rounded-lg hover:bg-white/70 transition-colors" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
-                                                                                <div className="pl-2 py-0.5">
-                                                                                    <div className="text-[11px] font-semibold text-slate-700 leading-snug">{it.descripcion}</div>
-                                                                                    {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
-                                                                                        <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                                            {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
-                                                                                            {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
-                                                                                            {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono">Vence {it.fecha_vencimiento}</span>}
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="py-0.5 pt-1 text-right text-[10px] font-bold text-slate-500">{fmtQty(it.cantidad)}u</div>
-                                                                                <div className="py-0.5 pt-1 text-right text-[10px] text-slate-400 hidden sm:block">{fmt(it.precio_unitario)}</div>
-                                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-slate-700">{fmt(it.total_linea)}</div>
-                                                                            </div>
-                                                                        ))}
-                                                                        {finalDiscount > 0 && (
-                                                                            <div className="grid gap-x-2 mt-1 pt-1 border-t border-amber-100" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
-                                                                                <div className="pl-2 py-0.5 flex items-center gap-1.5">
-                                                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
-                                                                                    <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
-                                                                                </div>
-                                                                                <div />
-                                                                                <div className="hidden sm:block" />
-                                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        )}
-                                                        {/* IVA breakdown for CCF/COF */}
-                                                        {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
-                                                            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
-                                                                <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
-                                                                        <span>Subtotal (sin IVA)</span>
-                                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
-                                                                        <span>IVA (13%)</span>
-                                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between gap-6 text-[12px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-0.5">
-                                                                        <span>Total</span>
-                                                                        <span>{fmt(r.total)}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                        </div>
-                    <div className="flex items-center justify-between px-4 py-2.5">
+            <DataTable
+                columns={[
+                    { key: 'fecha',      label: 'Fecha',        sortable: true },
+                    { key: 'id',         label: 'ID',           sortable: true, hideBelow: 'md' },
+                    { key: 'tipo',       label: 'Tipo',         sortable: true, hideBelow: 'sm' },
+                    { key: 'sucursal',   label: 'Sucursal',     sortable: true, hideBelow: 'lg' },
+                    { key: 'vendedor',   label: 'Vendedor',     sortable: true, hideBelow: 'md' },
+                    { key: 'cliente',    label: 'Cliente',      sortable: true },
+                    { key: 'metodo',     label: 'Método pago',  sortable: true, hideBelow: 'sm' },
+                    { key: 'total',      label: 'Total',        sortable: true, align: 'right' },
+                ]}
+                sortKey={sortCol}
+                sortDir={sortDir}
+                onSort={handleSort}
+                loading={loadingRows && rows.length === 0}
+                skeletonRows={10}
+                empty={{ icon: TrendingUp, message: isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período' }}
+                footer={!loadingRows && rows.length > 0 ? (
+                    <>
                         <div className="w-[130px]">
                             <LiquidSelect value={String(pageSize)}
                                 onChange={v => { setPageSize(Number(v)); setPage(1); }}
@@ -812,10 +629,202 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
                             {isSearching ? `${rows.length} resultados` : `${fmtNum(totalCount)} total`}
                         </span>
-                    </div>
-                    </div>
-                </>
-            )}
+                    </>
+                ) : undefined}
+                minWidth="700px"
+            >
+                {rows.map((r, i) => {
+                    const isCancelled = CANCELLED_ESTADOS.includes(r.estado);
+                    const isExpanded  = expandedId === r.id;
+                    const cachedItems = itemsCache[r.id];
+                    const noData      = cachedItems && cachedItems.length === 0;
+                    const emp         = empMap.get(r.cod_vendedor);
+                    const changes     = changelogCache[r.id] ?? [];
+                    const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
+                    const tipoBadgeColor = r.tipo_documento === 'CCF'
+                        ? 'bg-red-50 text-red-600'
+                        : r.tipo_documento === 'FCF'
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'bg-slate-100 text-slate-500';
+                    return (
+                        <React.Fragment key={r.id}>
+                            <DataRow
+                                index={i}
+                                onClick={() => toggleRow(r.id)}
+                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? 'bg-blue-50/50' : ''}
+                            >
+                                <DataCell>
+                                    <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
+                                    {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
+                                    {isCancelled
+                                        ? <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>
+                                        : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
+                                </DataCell>
+                                <DataCell hideBelow="md">
+                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-slate-500 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
+                                    <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
+                                </DataCell>
+                                <DataCell hideBelow="sm">
+                                    {r.tipo_documento
+                                        ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
+                                        : <span className="text-slate-300">—</span>}
+                                </DataCell>
+                                <DataCell hideBelow="lg">
+                                    <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
+                                </DataCell>
+                                <DataCell hideBelow="md">
+                                    <div className="flex items-center gap-2">
+                                        {emp ? (
+                                            <LiquidAvatar src={emp.photo_url || emp.photo} fallbackText={emp.first_names} className="w-6 h-6 rounded-full shrink-0" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                                <Users size={11} className="text-slate-400" />
+                                            </div>
+                                        )}
+                                        <span className="text-[11px] text-slate-600 truncate max-w-[100px]">
+                                            {emp ? emp.first_names : (r.cod_vendedor || '—')}
+                                        </span>
+                                    </div>
+                                </DataCell>
+                                <DataCell>
+                                    <p className="text-[12px] text-slate-700 truncate max-w-[160px]">{r.cliente || '—'}</p>
+                                    {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
+                                        <div className="flex gap-1 flex-wrap mt-0.5">
+                                            {(r.has_puntos || filterPuntos) && (
+                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700">Puntos</span>
+                                            )}
+                                            {abInvoicesSet.has(r.id) && (
+                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </DataCell>
+                                <DataCell hideBelow="sm">
+                                    {r.tipo_pago
+                                        ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
+                                        : <span className="text-slate-300">—</span>}
+                                </DataCell>
+                                <DataCell align="right">
+                                    <div className="flex items-center justify-end gap-2">
+                                        {relevantChanges.length > 0 && (
+                                            <div className="shrink-0" onClick={e => e.stopPropagation()}
+                                                onMouseEnter={e => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes: relevantChanges });
+                                                }}
+                                                onMouseLeave={() => setChangeTooltip(null)}>
+                                                <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
+                                                    <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                        <ChevronDown size={12}
+                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
+                                    </div>
+                                </DataCell>
+                            </DataRow>
+                            {isExpanded && (
+                                <tr className="border-t border-blue-100/60">
+                                    <td colSpan={8} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 backdrop-blur-sm">
+                                        {loadingItems && !cachedItems ? (
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
+                                                <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
+                                            </div>
+                                        ) : noData ? (
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-400 py-1">
+                                                <Info size={12} className="text-slate-300 shrink-0" />
+                                                Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
+                                            </div>
+                                        ) : (
+                                            (() => {
+                                                const seen = new Set();
+                                                const deduped = (cachedItems || []).filter(it => {
+                                                    const sig = `${it.erp_product_id ?? it.descripcion}|${it.presentacion ?? ''}|${it.precio_unitario}|${it.total_linea}|${it.lote ?? ''}`;
+                                                    if (seen.has(sig)) return false;
+                                                    seen.add(sig);
+                                                    return true;
+                                                });
+                                                const discountItems = deduped.filter(it => it.erp_product_id === -999);
+                                                const regularItems  = deduped.filter(it => it.erp_product_id !== -999 && it.descripcion);
+                                                const discountAmt   = discountItems.reduce((s, it) => s + Math.abs(parseFloat(it.total_linea || 0)), 0);
+                                                const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
+                                                const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
+                                                const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
+                                                return (
+                                                    <div>
+                                                        <div className="grid gap-x-2 pb-1 mb-0.5 border-b border-slate-100/80" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 pl-2">Producto</span>
+                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Cant.</span>
+                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right hidden sm:block">P. Unit.</span>
+                                                            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 text-right">Total</span>
+                                                        </div>
+                                                        {regularItems.map((it, idx) => {
+                                                            const productPriceRows = pricesCache[it.erp_product_id] || [];
+                                                            const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
+                                                            const bestPriceRow = productPriceRows.find(p =>
+                                                                (p.presentaciones || []).some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey)
+                                                            ) || productPriceRows[0] || null;
+                                                            const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
+                                                            return (
+                                                            <div key={idx} className="grid gap-x-2 items-start py-0.5 rounded-lg hover:bg-white/70 transition-colors" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                                <div className="pl-2 py-0.5">
+                                                                    <div className="text-[11px] font-semibold text-slate-700 leading-snug">{it.descripcion}</div>
+                                                                    {(antibioticIds.has(it.erp_product_id) || tier || it.presentacion || it.lote || it.fecha_vencimiento) && (
+                                                                        <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
+                                                                            {tier && <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>}
+                                                                            {it.presentacion && <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{it.presentacion}</span>}
+                                                                            {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
+                                                                            {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 font-mono">Vence {it.fecha_vencimiento}</span>}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="py-0.5 pt-1 text-right text-[10px] font-bold text-slate-500">{fmtQty(it.cantidad)}u</div>
+                                                                <div className="py-0.5 pt-1 text-right text-[10px] text-slate-400 hidden sm:block">{fmt(it.precio_unitario)}</div>
+                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-slate-700">{fmt(it.total_linea)}</div>
+                                                            </div>
+                                                            );
+                                                        })}
+                                                        {finalDiscount > 0 && (
+                                                            <div className="grid gap-x-2 mt-1 pt-1 border-t border-amber-100" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
+                                                                <div className="pl-2 py-0.5 flex items-center gap-1.5">
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                    <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
+                                                                </div>
+                                                                <div /><div className="hidden sm:block" />
+                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
+                                        )}
+                                        {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
+                                            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+                                                <div className="flex flex-col gap-0.5 min-w-[180px]">
+                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                        <span>Subtotal (sin IVA)</span>
+                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
+                                                        <span>IVA (13%)</span>
+                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-6 text-[12px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-0.5">
+                                                        <span>Total</span>
+                                                        <span>{fmt(r.total)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
+            </DataTable>
 
             {/* Change tooltip — portaled to document.body to escape transform-gpu containing block */}
             {changeTooltip && ReactDOM.createPortal(

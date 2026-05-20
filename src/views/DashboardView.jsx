@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -217,9 +218,9 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
     <div data-surface="card" className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
       {/* Glass shine */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
-      {/* Top accent bar */}
-      <div className="absolute top-0 inset-x-6 h-[2px] rounded-full pointer-events-none"
-        style={{ background: cat.color, opacity: 0.30 }} />
+      {/* Left category stripe */}
+      <div className="absolute left-0 top-5 bottom-5 w-[3px] rounded-r-full pointer-events-none"
+        style={{ background: cat.color, opacity: 0.55 }} />
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-white/50 shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
@@ -322,6 +323,7 @@ const initTabSizes = (userId) => {
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
   const { user, hasPermission } = useAuth();
+  const { isCompat, isAurora } = useTheme();
   const navigate = useNavigate();
 
   const employees        = useStaff(s => s.employees);
@@ -1088,7 +1090,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
-          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>)}>
+          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme={isAurora?'dark':'light'}/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {shiftStatusData.length===0?(
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
@@ -1117,7 +1119,7 @@ const DashboardView = ({ openModal }) => {
           action={
             <div className="flex items-center gap-2">
               {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
-              <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact/>
+              <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme={isAurora?'dark':'light'}/>
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
                 <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
@@ -1572,7 +1574,13 @@ const DashboardView = ({ openModal }) => {
   const filtersContent = (
     <div className="flex items-center gap-2">
       {/* Pill-button tab container — matches ProductosView style */}
-      <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3">
+      <div className={`relative flex items-center transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 ${
+        isCompat
+          ? 'bg-[#B3D0E8] border border-[#8BAEC8] shadow-sm hover:shadow-md'
+          : isAurora
+          ? 'bg-white/[0.06] backdrop-blur-2xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.45)] hover:bg-white/[0.09]'
+          : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]'
+      }`}>
         {TABS.map(tab => {
           const TabIcon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1580,7 +1588,15 @@ const DashboardView = ({ openModal }) => {
             <button key={tab.id} onClick={() => switchTab(tab.id)}
               className={`px-4 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border flex items-center gap-1.5 active:scale-[0.97] ${
                 isActive
-                  ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                  ? isCompat
+                    ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-md scale-[1.02]'
+                    : isAurora
+                    ? 'bg-white/15 text-white border-white/20 shadow-sm scale-[1.02]'
+                    : 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
+                  : isCompat
+                  ? 'bg-transparent text-[#374B63] border-transparent hover:bg-[#0052CC]/10 hover:text-[#0052CC]'
+                  : isAurora
+                  ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
                   : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
               }`}>
               <TabIcon size={12} strokeWidth={2.2}/>

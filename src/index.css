@@ -118,16 +118,18 @@
 [data-theme="aurora"] .text-slate-100 { color: rgba(255,255,255,0.09) !important; }
 
 /* ── Aurora: fondos — flip light → dark glass (solo en main, no tocar aside) ── */
-[data-theme="aurora"] main .bg-white,
+[data-theme="aurora"] main .bg-white     { background-color: rgba(255,255,255,0.08) !important; }
 [data-theme="aurora"] main [class*="bg-white\/"] { background-color: rgba(255,255,255,0.05) !important; }
-[data-theme="aurora"] main .bg-slate-50  { background-color: rgba(255,255,255,0.03) !important; }
-[data-theme="aurora"] main .bg-slate-100 { background-color: rgba(255,255,255,0.05) !important; }
-[data-theme="aurora"] main .bg-slate-200 { background-color: rgba(255,255,255,0.08) !important; }
+[data-theme="aurora"] main .bg-slate-50  { background-color: rgba(255,255,255,0.02) !important; }
+[data-theme="aurora"] main .bg-slate-100 { background-color: rgba(255,255,255,0.04) !important; }
+[data-theme="aurora"] main .bg-slate-200 { background-color: rgba(255,255,255,0.07) !important; }
 
 /* ── Aurora: bordes — flip light → dark (solo en main) ── */
 [data-theme="aurora"] main [class*="border-white\/"] { border-color: rgba(255,255,255,0.09) !important; }
-[data-theme="aurora"] main .border-slate-100 { border-color: rgba(255,255,255,0.07) !important; }
-[data-theme="aurora"] main .border-slate-200 { border-color: rgba(255,255,255,0.09) !important; }
+[data-theme="aurora"] main .border-white       { border-color: rgba(255,255,255,0.18) !important; }
+[data-theme="aurora"] main .border-slate-50   { border-color: rgba(255,255,255,0.04) !important; }
+[data-theme="aurora"] main .border-slate-100  { border-color: rgba(255,255,255,0.07) !important; }
+[data-theme="aurora"] main .border-slate-200  { border-color: rgba(255,255,255,0.09) !important; }
 
 /* ── Aurora: data-surface explicit overrides ── */
 [data-theme="aurora"] [data-surface="card"] {
@@ -188,6 +190,77 @@
 [data-theme="aurora"] textarea:focus-visible {
   outline: 2px solid rgba(77,148,255,0.60);
 }
+
+/* ── Aurora: sidebar — más distinguible del fondo #030B1C ── */
+[data-theme="aurora"] [data-surface="sidebar"] {
+  background: rgba(4, 10, 30, 0.97) !important;
+  border-color: rgba(77,148,255,0.18) !important;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.65),
+    0 8px 24px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.30),
+    0 0 0 1px rgba(77,148,255,0.10) !important;
+}
+
+/* ── Aurora: fondos semánticos light → dark en widgets ── */
+[data-theme="aurora"] main .bg-red-50      { background-color: rgba(239,68,68,0.08)    !important; }
+[data-theme="aurora"] main .bg-red-100     { background-color: rgba(239,68,68,0.12)    !important; }
+[data-theme="aurora"] main .bg-amber-50    { background-color: rgba(245,158,11,0.08)   !important; }
+[data-theme="aurora"] main .bg-amber-100   { background-color: rgba(245,158,11,0.12)   !important; }
+[data-theme="aurora"] main .bg-green-50    { background-color: rgba(16,185,129,0.08)   !important; }
+[data-theme="aurora"] main .bg-green-100   { background-color: rgba(16,185,129,0.12)   !important; }
+[data-theme="aurora"] main .bg-emerald-50  { background-color: rgba(16,185,129,0.08)   !important; }
+[data-theme="aurora"] main .bg-blue-50     { background-color: rgba(59,130,246,0.08)   !important; }
+[data-theme="aurora"] main .bg-blue-100    { background-color: rgba(59,130,246,0.12)   !important; }
+[data-theme="aurora"] main .bg-purple-50   { background-color: rgba(139,92,246,0.08)   !important; }
+[data-theme="aurora"] main .bg-orange-50   { background-color: rgba(249,115,22,0.08)   !important; }
+[data-theme="aurora"] main .bg-pink-50     { background-color: rgba(236,72,153,0.08)   !important; }
+[data-theme="aurora"] main .bg-gray-50     { background-color: rgba(255,255,255,0.03)  !important; }
+
+/* ── Aurora: dividers (divide-*) → sutiles en dark ── */
+[data-theme="aurora"] main [class*="divide-slate-"] > * + * { border-color: rgba(255,255,255,0.05) !important; }
+[data-theme="aurora"] main [class*="divide-white\/"] > * + * { border-color: rgba(255,255,255,0.05) !important; }
+
+/* ── Aurora: bordes semánticos → sutiles en dark ── */
+[data-theme="aurora"] main .border-red-200    { border-color: rgba(239,68,68,0.28)    !important; }
+[data-theme="aurora"] main .border-amber-200  { border-color: rgba(245,158,11,0.28)   !important; }
+[data-theme="aurora"] main .border-amber-300  { border-color: rgba(245,158,11,0.40)   !important; }
+[data-theme="aurora"] main .border-green-200  { border-color: rgba(16,185,129,0.28)   !important; }
+[data-theme="aurora"] main .border-emerald-200{ border-color: rgba(16,185,129,0.28)   !important; }
+[data-theme="aurora"] main .border-blue-100   { border-color: rgba(59,130,246,0.20)   !important; }
+[data-theme="aurora"] main .border-blue-200   { border-color: rgba(59,130,246,0.28)   !important; }
+[data-theme="aurora"] main .border-purple-200 { border-color: rgba(139,92,246,0.28)   !important; }
+[data-theme="aurora"] main .border-orange-200 { border-color: rgba(249,115,22,0.28)   !important; }
+[data-theme="aurora"] main .border-pink-200   { border-color: rgba(236,72,153,0.28)   !important; }
+
+/* ── Aurora: texto semántico — versión luminosa para dark bg ── */
+[data-theme="aurora"] main .text-red-700     { color: rgba(252,165,165,0.90) !important; }
+[data-theme="aurora"] main .text-amber-700   { color: rgba(252,211,77,0.90)  !important; }
+[data-theme="aurora"] main .text-amber-600   { color: rgba(251,191,36,0.85)  !important; }
+[data-theme="aurora"] main .text-green-700   { color: rgba(52,211,153,0.90)  !important; }
+[data-theme="aurora"] main .text-emerald-700 { color: rgba(52,211,153,0.90)  !important; }
+[data-theme="aurora"] main .text-emerald-600 { color: rgba(52,211,153,0.85)  !important; }
+[data-theme="aurora"] main .text-emerald-500 { color: rgba(52,211,153,0.70)  !important; }
+[data-theme="aurora"] main .text-blue-700    { color: rgba(147,197,253,0.90) !important; }
+[data-theme="aurora"] main .text-blue-400    { color: rgba(147,197,253,0.85) !important; }
+[data-theme="aurora"] main .text-purple-700  { color: rgba(196,181,253,0.90) !important; }
+[data-theme="aurora"] main .text-orange-700  { color: rgba(251,146,60,0.90)  !important; }
+[data-theme="aurora"] main .text-red-400     { color: rgba(248,113,113,0.85) !important; }
+[data-theme="aurora"] main .text-red-300     { color: rgba(252,165,165,0.70) !important; }
+[data-theme="aurora"] main .text-amber-400   { color: rgba(251,191,36,0.80)  !important; }
+
+/* ── Aurora: suprimir sheen blanco en todo main (no solo en data-surface) ── */
+[data-theme="aurora"] main [class*="from-white\/"] {
+  --tw-gradient-from: rgba(255,255,255,0.04) !important;
+}
+[data-theme="aurora"] main [class*="shadow-\[inset_0_1px_0_rgba\(255"] {
+  box-shadow: none !important;
+}
+
+/* ── Aurora: fondos de ring/badge con colores sobre dark ── */
+[data-theme="aurora"] main .ring-white       { --tw-ring-color: rgba(255,255,255,0.25) !important; }
+[data-theme="aurora"] main .ring-2.ring-white { --tw-ring-color: rgba(255,255,255,0.20) !important; }
 
 /* ══ Aurora: keyframes de orbes ══ */
 @keyframes auroraOrb1 {

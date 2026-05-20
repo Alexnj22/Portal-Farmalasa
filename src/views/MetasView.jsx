@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Target, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import GlassViewLayout from '../components/GlassViewLayout';
 
 // ─── Static data from spreadsheet ────────────────────────────────────────────
 
@@ -229,12 +230,12 @@ export default function MetasView() {
   const projAreaFill = isAurora ? 'rgba(77,148,255,0.06)' : 'rgba(99,102,241,0.04)';
 
   return (
+    <GlassViewLayout icon={Target} title="Metas de Ventas">
     <div className="p-5 md:p-6 space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className={`text-[22px] font-black tracking-tight ${txt}`}>Metas de Ventas</h1>
           <p className={`text-[12px] mt-0.5 ${muted}`}>Rendimiento mensual por sucursal · Ene 2025 – Jul 2026 (proyección)</p>
         </div>
         <button
@@ -545,5 +546,6 @@ export default function MetasView() {
       </div>
 
     </div>
+    </GlassViewLayout>
   );
 }

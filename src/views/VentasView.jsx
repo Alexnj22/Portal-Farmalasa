@@ -761,56 +761,68 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const dividerCls = isAurora ? 'border-white/[0.07]' : 'border-slate-100/80';
                                                 const rowHoverCls = isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-white/70';
                                                 return (
-                                                    <div>
-                                                        <div className={`grid gap-x-2 pb-1 mb-0.5 border-b ${dividerCls}`} style={{ gridTemplateColumns: '1fr 52px 68px auto' }}>
-                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider pl-2 ${hdrTxt}`}>Producto</span>
-                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right ${hdrTxt}`}>Cant.</span>
-                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right hidden sm:block ${hdrTxt}`}>P. Unit.</span>
-                                                            <span className={`text-[9px] font-semibold uppercase tracking-wider text-right ${hdrTxt}`}>Total</span>
-                                                        </div>
-                                                        {regularItems.map((it, idx) => {
-                                                            const productPriceRows = pricesCache[it.erp_product_id] || [];
-                                                            const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
-                                                            const bestPriceRow = productPriceRows.find(p => {
-                                                                const pres = p.presentaciones;
-                                                                if (!pres) return false;
-                                                                const arr = Array.isArray(pres) ? pres : [pres];
-                                                                return arr.some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey);
-                                                            }) || productPriceRows[0] || null;
-                                                            const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
-                                                            return (
-                                                            <div key={idx} className={`grid gap-x-2 items-center py-0.5 rounded-lg transition-colors ${rowHoverCls}`} style={{ gridTemplateColumns: '1fr 52px 68px auto' }}>
-                                                                <div className="pl-2 py-0.5">
-                                                                    <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
-                                                                    {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
-                                                                        <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                            {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                            {it.presentacion && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-400'}`}>{it.presentacion}</span>}
-                                                                            {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
-                                                                            {it.fecha_vencimiento && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-500'}`}>Vence {it.fecha_vencimiento}</span>}
+                                                    <table className="w-full border-collapse">
+                                                        <thead>
+                                                            <tr className={`border-b ${dividerCls}`}>
+                                                                <th className={`text-left text-[9px] font-semibold uppercase tracking-wider pb-1.5 pl-2 pr-2 ${hdrTxt}`}>Producto</th>
+                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-12 ${hdrTxt}`}>Cant.</th>
+                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-20 hidden sm:table-cell ${hdrTxt}`}>P. Unit.</th>
+                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-16 ${hdrTxt}`}>Tipo</th>
+                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-20 ${hdrTxt}`}>Total</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {regularItems.map((it, idx) => {
+                                                                const productPriceRows = pricesCache[it.erp_product_id] || [];
+                                                                const itPresKey = it.presentacion ? it.presentacion.toUpperCase().trim() : '';
+                                                                const bestPriceRow = productPriceRows.find(p => {
+                                                                    const pres = p.presentaciones;
+                                                                    if (!pres) return false;
+                                                                    const arr = Array.isArray(pres) ? pres : [pres];
+                                                                    return arr.some(pr => presKey(pr.tipo, pr.descripcion) === itPresKey || pr.tipo?.toUpperCase() === itPresKey);
+                                                                }) || productPriceRows[0] || null;
+                                                                const tier = detectTier(parseFloat(it.precio_unitario), bestPriceRow);
+                                                                const noPrice = productPriceRows.length === 0;
+                                                                return (
+                                                                    <tr key={idx} className={`transition-colors ${rowHoverCls}`}>
+                                                                        <td className="py-1 pl-2 pr-2">
+                                                                            <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
+                                                                            {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
+                                                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
+                                                                                    {it.presentacion && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-400'}`}>{it.presentacion}</span>}
+                                                                                    {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
+                                                                                    {it.fecha_vencimiento && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-500'}`}>Vence {it.fecha_vencimiento}</span>}
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className={`py-1 text-right text-[10px] font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
+                                                                        <td className={`py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</td>
+                                                                        <td className="py-1 text-right whitespace-nowrap">
+                                                                            {tier ? (
+                                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>
+                                                                            ) : noPrice ? (
+                                                                                <span className={`text-[9px] ${isAurora ? 'text-white/20' : 'text-slate-300'}`}>—</span>
+                                                                            ) : null}
+                                                                        </td>
+                                                                        <td className={`py-1 text-right text-[11px] font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                            {finalDiscount > 0 && (
+                                                                <tr className={`border-t ${isAurora ? 'border-amber-500/30' : 'border-amber-100'}`}>
+                                                                    <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                            <span className={`text-[11px] font-semibold ${isAurora ? 'text-amber-300' : 'text-amber-700'}`}>Descuento por puntos</span>
                                                                         </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className={`py-0.5 text-right text-[10px] font-bold ${numTxt}`}>{fmtQty(it.cantidad)}u</div>
-                                                                <div className={`py-0.5 text-right text-[10px] hidden sm:block ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</div>
-                                                                <div className="py-0.5 flex items-center justify-end gap-1.5">
-                                                                    {tier && <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shrink-0 ${tier.color}`}>{tier.label}</span>}
-                                                                    <span className={`text-[11px] font-black ${nameTxt}`}>{fmt(it.total_linea)}</span>
-                                                                </div>
-                                                            </div>
-                                                            );
-                                                        })}
-                                                        {finalDiscount > 0 && (
-                                                            <div className="grid gap-x-2 mt-1 pt-1 border-t border-amber-100" style={{ gridTemplateColumns: '1fr 52px 68px 68px' }}>
-                                                                <div className="pl-2 py-0.5 flex items-center gap-1.5">
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
-                                                                    <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
-                                                                </div>
-                                                                <div /><div className="hidden sm:block" />
-                                                                <div className="py-0.5 pt-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</div>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                                    </td>
+                                                                    <td />
+                                                                    <td className={`pt-1.5 pb-1 text-right text-[11px] font-black ${isAurora ? 'text-amber-300' : 'text-amber-600'}`}>-{fmt(finalDiscount)}</td>
+                                                                </tr>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
                                                 );
                                             })()
                                         )}

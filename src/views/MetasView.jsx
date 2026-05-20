@@ -152,7 +152,7 @@ export default function MetasView() {
   });
 
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(16); // May'26 = current month
-  const [liveSales, setLiveSales] = useState(null);
+  const [liveSales, setLiveSales] = useState(null); // null = loading
 
   useEffect(() => {
     const today = new Date();
@@ -163,23 +163,21 @@ export default function MetasView() {
     const fini = `${y}-${pad(m)}-01`;
     const ffin = `${y}-${pad(m)}-${pad(d)}`;
     const daysInMonth = new Date(y, m, 0).getDate();
+    const branchIds = BRANCHES.map(b => BRANCH_ID_MAP[b]);
 
-    async function fetchLive() {
-      const results = {};
-      await Promise.all(BRANCHES.map(async b => {
-        const { data, error } = await supabase.rpc('get_ventas_stats', {
-          p_fini: fini, p_ffin: ffin,
-          p_branch_id: BRANCH_ID_MAP[b],
-          p_hora_corte: null,
-        });
-        if (!error && data != null) {
-          const actual = parseFloat(data.total_sum || 0);
-          results[b] = { actual, projected: actual / d * daysInMonth, day: d, daysInMonth };
+    supabase
+      .rpc('get_branch_monthly_sales', { p_fini: fini, p_ffin: ffin, p_branch_ids: branchIds })
+      .then(({ data, error }) => {
+        if (error || !Array.isArray(data)) { setLiveSales({}); return; }
+        const results = {};
+        for (const row of data) {
+          const branch = BRANCHES.find(b => BRANCH_ID_MAP[b] === row.branch_id);
+          if (!branch) continue;
+          const actual = parseFloat(row.total_sum || 0);
+          results[branch] = { actual, projected: actual / d * daysInMonth, day: d, daysInMonth };
         }
-      }));
-      setLiveSales(results);
-    }
-    fetchLive();
+        setLiveSales(results);
+      });
   }, []);
 
   // Projections (regression, used for Jun/Jul 2026)
@@ -338,25 +336,28 @@ export default function MetasView() {
       {/* ── KPI Cards ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {BRANCHES.map(b => {
-          const liveData = liveSales?.[b];
-          const cur = current[b];
-          const prev = previous[b];
+          const isLoading = liveSales === null; // still fetching
+          const liveData  = liveSales?.[b];
+          const cur       = current[b];
+          const prev      = previous[b];
 
-          // Use projected end-of-month when live data is available, else last historical value
-          const val = liveData != null ? liveData.projected : (cur?.value ?? null);
+          // While loading: show skeleton. After load: projected if available, else last historical.
+          const val      = isLoading ? null : (liveData != null ? liveData.projected : (cur?.value ?? null));
           const actualVal = liveData?.actual ?? null;
-          const goal = goals[b];
-          const status = getStatus(val, goal);
-          const st = STATUS_STYLES[status] || {};
-          const pct = (val != null && goal) ? val / goal : null;
-          const trend = (liveData == null && cur && prev != null) ? cur.value - prev : null;
+          const goal     = goals[b];
+          const status   = getStatus(val, goal);
+          const st       = STATUS_STYLES[status] || {};
+          const pct      = (val != null && goal) ? val / goal : null;
+          const trend    = (!isLoading && liveData == null && cur && prev != null) ? cur.value - prev : null;
 
           const badgeLabel = status === 'green'  ? 'Cumplió'
                            : status === 'orange' ? pctFmt(pct)
                            : status === 'red'    ? 'No Cumplió'
                            : null;
 
-          const monthLabel = liveData
+          const monthLabel = isLoading
+            ? 'Cargando…'
+            : liveData
             ? `Proy. al ${liveData.daysInMonth} may · día ${liveData.day}`
             : (cur ? MONTHS[cur.idx]?.label : '—');
 
@@ -365,6 +366,8 @@ export default function MetasView() {
                             : status === 'red'    ? 'border-red-400/60'
                             : isAurora ? 'border-[rgba(77,148,255,0.22)]' : 'border-slate-200';
 
+          const pulse = isAurora ? 'bg-[rgba(77,148,255,0.12)]' : 'bg-slate-200/70';
+
           return (
             <div key={b}
               className={`rounded-2xl border p-4 flex flex-col gap-2 ${card} ${shadow} ${borderColor} ring-1 ${st.ring||'ring-transparent'}`}
@@ -372,23 +375,37 @@ export default function MetasView() {
             >
               <div className="flex items-center justify-between gap-1">
                 <span className={`text-[10px] font-black uppercase tracking-wider truncate ${txt}`}>{b}</span>
-                {badgeLabel && (
-                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${st.badge}`}>
-                    {badgeLabel}
-                  </span>
-                )}
+                {isLoading
+                  ? <div className={`h-4 w-12 rounded-full animate-pulse ${pulse}`}/>
+                  : badgeLabel && (
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${st.badge}`}>
+                      {badgeLabel}
+                    </span>
+                  )
+                }
               </div>
 
               <div>
-                <p className={`text-[18px] font-black leading-none ${txt}`}>{fmtK(val)}</p>
-                <p className={`text-[10px] mt-0.5 ${muted}`}>{monthLabel}</p>
-                {actualVal != null && (
-                  <p className={`text-[10px] ${muted}`}>Real: {fmtK(actualVal)}</p>
+                {isLoading ? (
+                  <div className="space-y-1.5 mt-0.5">
+                    <div className={`h-5 w-20 rounded-full animate-pulse ${pulse}`}/>
+                    <div className={`h-3 w-28 rounded-full animate-pulse ${pulse}`}/>
+                  </div>
+                ) : (
+                  <>
+                    <p className={`text-[18px] font-black leading-none ${txt}`}>{fmtK(val)}</p>
+                    <p className={`text-[10px] mt-0.5 ${muted}`}>{monthLabel}</p>
+                    {actualVal != null && (
+                      <p className={`text-[10px] ${muted}`}>Real: {fmtK(actualVal)}</p>
+                    )}
+                  </>
                 )}
               </div>
 
               {/* Progress bar */}
-              {pct != null && goal > 0 && (
+              {isLoading ? (
+                <div className={`h-1.5 rounded-full animate-pulse ${pulse}`}/>
+              ) : pct != null && goal > 0 && (
                 <div className="space-y-0.5">
                   <div className={`h-1.5 rounded-full overflow-hidden ${isAurora ? 'bg-white/10' : 'bg-slate-100'}`}>
                     <div

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1345,130 +1346,197 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     );
 }
 
+// ── AuroraFullscreenModal ─────────────────────────────────────────────────────
+// Portal-based fullscreen overlay for the Aurora theme expanded product detail.
+
+function AuroraFullscreenModal({ product, data, loadingRow, onClose, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, categories, onCategoryCreated, allowedPriceFields }) {
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = prev; };
+    }, []);
+
+    return createPortal(
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 md:p-6">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-[#020810]/88 backdrop-blur-sm cursor-pointer" onClick={onClose} />
+
+            {/* Modal panel */}
+            <div className="relative z-10 w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl overflow-hidden border border-white/[0.10] bg-[#07111e] shadow-[0_32px_80px_rgba(0,0,0,0.85),0_0_80px_rgba(96,165,250,0.06)]">
+                {/* Modal header */}
+                <div className="flex items-center gap-4 px-6 py-4 border-b border-white/[0.08] bg-[#040c1a]/70 backdrop-blur-sm shrink-0 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 via-transparent to-violet-900/15 pointer-events-none" />
+                    {/* Avatar */}
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-blue-400/[0.32] shadow-[0_0_24px_rgba(96,165,250,0.32)]">
+                        {product.foto_url
+                            ? <img src={product.foto_url} alt="" className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-gradient-to-br from-blue-900 to-violet-900 flex items-center justify-center">
+                                <Package size={22} className="text-blue-300/55" />
+                              </div>
+                        }
+                    </div>
+                    <div className="flex-1 min-w-0 relative z-10">
+                        <h2 className="text-[18px] md:text-[20px] font-black text-white/95 leading-tight truncate">{product.nombre}</h2>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            {product.laboratorios?.nombre && <span className="text-[11px] text-white/40">{product.laboratorios.nombre}</span>}
+                            {product.principio_activo && (
+                                <span className="text-[10px] text-violet-400/60 flex items-center gap-1">
+                                    <FlaskConical size={8} className="shrink-0" />
+                                    <span className="truncate max-w-[180px]">{product.principio_activo}</span>
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <button onClick={onClose}
+                        className="relative z-10 w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.14] flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.12] hover:border-white/[0.22] transition-all shrink-0">
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                    <AuroraExpandedPanel
+                        product={product}
+                        data={data}
+                        loadingRow={loadingRow}
+                        branches={branches}
+                        onPhotoUpdated={onPhotoUpdated}
+                        onPrinciplesUpdated={onPrinciplesUpdated}
+                        onCategoryUpdated={onCategoryUpdated}
+                        onClose={onClose}
+                        categories={categories}
+                        onCategoryCreated={onCategoryCreated}
+                        allowedPriceFields={allowedPriceFields}
+                    />
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 // ── AuroraView ────────────────────────────────────────────────────────────────
 // Card-based product list for the Aurora (Cosmos) theme.
 
 function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId }) {
+    const expandedProduct = products.find(p => p.id === expandedId) ?? null;
+
     return (
-        <div className="space-y-2">
-            {products.map((p, index) => {
-                const isExpanded    = expandedId === p.id;
-                const isLoadingThis = loadingExpandedId === p.id;
-                const hasChangesP   = changedIds.has(p.id);
-                const worstM        = marginMap[p.id];
-                const hasLoss       = worstM !== undefined && worstM < 0;
-                const hasWarn       = worstM !== undefined && worstM >= 0 && worstM < 15;
-                const isInactive    = !p.activo && filterActivo === 'todos';
+        <>
+            <div className="space-y-2">
+                {products.map((p, index) => {
+                    const isExpanded    = expandedId === p.id;
+                    const isLoadingThis = loadingExpandedId === p.id;
+                    const hasChangesP   = changedIds.has(p.id);
+                    const worstM        = marginMap[p.id];
+                    const hasLoss       = worstM !== undefined && worstM < 0;
+                    const hasWarn       = worstM !== undefined && worstM >= 0 && worstM < 15;
+                    const isInactive    = !p.activo && filterActivo === 'todos';
 
-                const cardGlow = hasLoss
-                    ? 'aurora-loss-glow'
-                    : hasWarn
-                    ? 'aurora-warn-glow'
-                    : '';
+                    const cardGlow = hasLoss ? 'aurora-loss-glow' : hasWarn ? 'aurora-warn-glow' : '';
+                    const cardBorder = isExpanded
+                        ? 'border-blue-400/[0.38] bg-[#0c1a30]'
+                        : 'border-white/[0.07] bg-[#070d1a] hover:border-blue-400/[0.20] hover:bg-[#0a1525]';
+                    const avatarRing = hasLoss
+                        ? 'ring-2 ring-red-500/[0.55] shadow-[0_0_16px_rgba(239,68,68,0.40)]'
+                        : hasWarn
+                        ? 'ring-2 ring-amber-400/[0.45] shadow-[0_0_14px_rgba(251,191,36,0.30)]'
+                        : isExpanded
+                        ? 'ring-2 ring-blue-400/[0.45] shadow-[0_0_16px_rgba(96,165,250,0.30)]'
+                        : 'ring-1 ring-white/[0.10] group-hover:ring-blue-400/[0.28] group-hover:shadow-[0_0_14px_rgba(96,165,250,0.18)]';
 
-                const cardBorder = isExpanded
-                    ? 'border-blue-400/[0.38] bg-[#0c1a30]'
-                    : 'border-white/[0.07] bg-[#070d1a] hover:border-blue-400/[0.20] hover:bg-[#0a1525]';
+                    return (
+                        <div key={p.id}
+                            className={`group animate-cosmos-in rounded-2xl border overflow-hidden transition-all duration-350 cursor-pointer ${cardGlow} ${cardBorder} ${isInactive ? 'opacity-50' : ''}`}
+                            style={{ animationDelay: `${Math.min(index, 14) * 35}ms`, transitionProperty: 'border-color, background-color, box-shadow' }}>
 
-                const avatarRing = hasLoss
-                    ? 'ring-2 ring-red-500/[0.55] shadow-[0_0_16px_rgba(239,68,68,0.40)]'
-                    : hasWarn
-                    ? 'ring-2 ring-amber-400/[0.45] shadow-[0_0_14px_rgba(251,191,36,0.30)]'
-                    : isExpanded
-                    ? 'ring-2 ring-blue-400/[0.45] shadow-[0_0_16px_rgba(96,165,250,0.30)]'
-                    : 'ring-1 ring-white/[0.10] group-hover:ring-blue-400/[0.28] group-hover:shadow-[0_0_14px_rgba(96,165,250,0.18)]';
+                            {/* Card header */}
+                            <div className="flex items-center gap-4 px-4 py-3.5"
+                                onClick={() => toggleRow(p.id)}
+                                onMouseEnter={() => prefetchRow(p.id)}
+                                onMouseLeave={cancelPrefetch}>
 
-                return (
-                    <div key={p.id}
-                        className={`group animate-cosmos-in rounded-2xl border overflow-hidden transition-all duration-350 cursor-pointer ${cardGlow} ${cardBorder} ${isInactive ? 'opacity-50' : ''}`}
-                        style={{ animationDelay: `${Math.min(index, 14) * 35}ms`, transitionProperty: 'border-color, background-color, box-shadow' }}>
-
-                        {/* ── Card header (always visible) ── */}
-                        <div className="flex items-center gap-4 px-4 py-3.5"
-                            onClick={() => toggleRow(p.id)}
-                            onMouseEnter={() => prefetchRow(p.id)}
-                            onMouseLeave={cancelPrefetch}>
-
-                            {/* Avatar */}
-                            <div className={`relative shrink-0 w-12 h-12 rounded-full overflow-hidden transition-all duration-300 ${avatarRing}`}>
-                                {p.foto_url
-                                    ? <img src={p.foto_url} alt="" className="w-full h-full object-cover" />
-                                    : <div className="w-full h-full bg-gradient-to-br from-blue-900/60 to-violet-900/60 flex items-center justify-center">
-                                        <Package size={18} className={`${hasLoss ? 'text-red-400/70' : hasWarn ? 'text-amber-400/70' : 'text-blue-300/60'}`} />
-                                      </div>
-                                }
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                    <span className={`text-[14px] font-semibold leading-snug ${isInactive ? 'text-white/30 line-through' : 'text-white/90'}`}>{p.nombre}</span>
-                                    {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full aurora-badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
-                                    {!hasLoss && hasWarn && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/[0.20] text-amber-300 border border-amber-400/[0.30] px-1.5 py-0.5 rounded-full"><TrendingDown size={7} /> Margen bajo</span>}
-                                    {hasChangesP && <span className="text-[9px] font-bold bg-amber-500/[0.16] text-amber-300 border border-amber-400/[0.24] px-1.5 py-0.5 rounded-full">cambios</span>}
+                                {/* Avatar */}
+                                <div className={`relative shrink-0 w-12 h-12 rounded-full overflow-hidden transition-all duration-300 ${avatarRing}`}>
+                                    {p.foto_url
+                                        ? <img src={p.foto_url} alt="" className="w-full h-full object-cover" />
+                                        : <div className="w-full h-full bg-gradient-to-br from-blue-900/60 to-violet-900/60 flex items-center justify-center">
+                                            <Package size={18} className={`${hasLoss ? 'text-red-400/70' : hasWarn ? 'text-amber-400/70' : 'text-blue-300/60'}`} />
+                                          </div>
+                                    }
                                 </div>
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    {p.laboratorios?.nombre && <span className="text-[10px] text-white/40">{p.laboratorios.nombre}</span>}
-                                    {p.principio_activo && (
-                                        <span className="text-[10px] text-violet-400/65 flex items-center gap-1">
-                                            <FlaskConical size={8} className="shrink-0" />
-                                            <span className="truncate max-w-[200px]">{p.principio_activo}</span>
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                    {p.tipo_medicamento && <span className="text-[9px] bg-blue-500/[0.14] text-blue-300 border border-blue-400/[0.22] px-1.5 py-0.5 rounded-full">{p.tipo_medicamento}</span>}
-                                    {p.es_antibiotico   && <span className="text-[9px] bg-orange-500/[0.14] text-orange-300 border border-orange-400/[0.22] px-1.5 py-0.5 rounded-full">Antibiótico</span>}
-                                    {p.requiere_receta  && <span className="text-[9px] bg-red-500/[0.14] text-red-300 border border-red-400/[0.22] px-1.5 py-0.5 rounded-full">Receta</span>}
-                                </div>
-                            </div>
 
-                            {/* Right: status + chevron */}
-                            <div className="flex items-center gap-4 shrink-0">
-                                {worstM !== undefined && (
-                                    <div className="text-center hidden sm:block">
-                                        <span className={`text-[13px] font-black tabular-nums ${worstM < 0 ? 'text-red-400' : worstM < 15 ? 'text-amber-400' : 'text-emerald-400'}`}>{worstM.toFixed(1)}%</span>
-                                        <p className="text-[8px] text-white/25 mt-0.5">margen</p>
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                        <span className={`text-[14px] font-semibold leading-snug ${isInactive ? 'text-white/30 line-through' : 'text-white/90'}`}>{p.nombre}</span>
+                                        {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full aurora-badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
+                                        {!hasLoss && hasWarn && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/[0.20] text-amber-300 border border-amber-400/[0.30] px-1.5 py-0.5 rounded-full"><TrendingDown size={7} /> Margen bajo</span>}
+                                        {hasChangesP && <span className="text-[9px] font-bold bg-amber-500/[0.16] text-amber-300 border border-amber-400/[0.24] px-1.5 py-0.5 rounded-full">cambios</span>}
                                     </div>
-                                )}
-                                <div className="text-center">
-                                    <div className={`w-2 h-2 rounded-full mx-auto mb-0.5 ${p.activo ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.65)]' : 'bg-white/20'}`} />
-                                    <span className={`text-[8px] font-bold uppercase ${p.activo ? 'text-emerald-400/70' : 'text-white/25'}`}>{p.activo ? 'Activo' : 'Inactivo'}</span>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        {p.laboratorios?.nombre && <span className="text-[10px] text-white/40">{p.laboratorios.nombre}</span>}
+                                        {p.principio_activo && (
+                                            <span className="text-[10px] text-violet-400/65 flex items-center gap-1">
+                                                <FlaskConical size={8} className="shrink-0" />
+                                                <span className="truncate max-w-[200px]">{p.principio_activo}</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                        {p.tipo_medicamento && <span className="text-[9px] bg-blue-500/[0.14] text-blue-300 border border-blue-400/[0.22] px-1.5 py-0.5 rounded-full">{p.tipo_medicamento}</span>}
+                                        {p.es_antibiotico   && <span className="text-[9px] bg-orange-500/[0.14] text-orange-300 border border-orange-400/[0.22] px-1.5 py-0.5 rounded-full">Antibiótico</span>}
+                                        {p.requiere_receta  && <span className="text-[9px] bg-red-500/[0.14] text-red-300 border border-red-400/[0.22] px-1.5 py-0.5 rounded-full">Receta</span>}
+                                    </div>
                                 </div>
-                                {isLoadingThis
-                                    ? <Loader2 size={15} className="animate-spin text-blue-400 shrink-0" />
-                                    : <ChevronDown size={15} className={`transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-white/25 group-hover:text-white/55'}`} />
-                                }
+
+                                {/* Right: margin + status + chevron */}
+                                <div className="flex items-center gap-4 shrink-0">
+                                    {worstM !== undefined && (
+                                        <div className="text-center hidden sm:block">
+                                            <span className={`text-[13px] font-black tabular-nums ${worstM < 0 ? 'text-red-400' : worstM < 15 ? 'text-amber-400' : 'text-emerald-400'}`}>{worstM.toFixed(1)}%</span>
+                                            <p className="text-[8px] text-white/25 mt-0.5">margen</p>
+                                        </div>
+                                    )}
+                                    <div className="text-center">
+                                        <div className={`w-2 h-2 rounded-full mx-auto mb-0.5 ${p.activo ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.65)]' : 'bg-white/20'}`} />
+                                        <span className={`text-[8px] font-bold uppercase ${p.activo ? 'text-emerald-400/70' : 'text-white/25'}`}>{p.activo ? 'Activo' : 'Inactivo'}</span>
+                                    </div>
+                                    {isLoadingThis
+                                        ? <Loader2 size={15} className="animate-spin text-blue-400 shrink-0" />
+                                        : <ChevronDown size={15} className={`transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-white/25 group-hover:text-white/55'}`} />
+                                    }
+                                </div>
                             </div>
                         </div>
+                    );
+                })}
+            </div>
 
-                        {/* ── Expanded panel ── */}
-                        {isExpanded && (
-                            <AuroraExpandedPanel
-                                product={p}
-                                data={expandedCache[p.id]}
-                                loadingRow={isLoadingThis && !expandedCache[p.id]}
-                                branches={branches}
-                                onPhotoUpdated={handlePhotoUpdated}
-                                onPrinciplesUpdated={handlePrinciplesUpdated}
-                                onCategoryUpdated={handleCategoryUpdated}
-                                onClose={() => setExpandedId(null)}
-                                categories={catOptions.map(o => o.value)}
-                                onCategoryCreated={onCategoryCreated}
-                                allowedPriceFields={allowedPriceFields}
-                            />
-                        )}
-                    </div>
-                );
-            })}
-        </div>
+            {/* Fullscreen modal — rendered via portal to escape CSS containment */}
+            {expandedProduct && (
+                <AuroraFullscreenModal
+                    product={expandedProduct}
+                    data={expandedCache[expandedProduct.id]}
+                    loadingRow={loadingExpandedId === expandedProduct.id && !expandedCache[expandedProduct.id]}
+                    branches={branches}
+                    onPhotoUpdated={handlePhotoUpdated}
+                    onPrinciplesUpdated={handlePrinciplesUpdated}
+                    onCategoryUpdated={handleCategoryUpdated}
+                    onClose={() => setExpandedId(null)}
+                    categories={catOptions.map(o => o.value)}
+                    onCategoryCreated={onCategoryCreated}
+                    allowedPriceFields={allowedPriceFields}
+                />
+            )}
+        </>
     );
 }
 
 // ── CompatExpandedPanel ───────────────────────────────────────────────────────
-// Corporate expanded panel for the Compat (Executive) theme — returns a <tr>.
+// Corporate panel content (div-based) for the Compat (Executive) theme.
 
-function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields, colSpan = 6 }) {
+function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
     const { maxPriceLevel } = useAuth();
     const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
 
@@ -1519,13 +1587,9 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     };
 
     if (loadingRow) return (
-        <tr className="bg-slate-50 border-y border-[#1B3A6B]/15">
-            <td colSpan={colSpan} className="px-4 py-3">
-                <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                    <Loader2 size={12} className="animate-spin text-[#1B3A6B]" /> Cargando detalle…
-                </div>
-            </td>
-        </tr>
+        <div className="px-4 py-3 bg-gray-50 border-t border-[#1B3A6B]/[0.08] flex items-center gap-2 text-[11px] text-gray-400">
+            <Loader2 size={12} className="animate-spin text-[#1B3A6B]" /> Cargando detalle…
+        </div>
     );
 
     const precios    = data?.precios    || [];
@@ -1552,8 +1616,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const inp = 'px-2.5 py-1.5 border border-gray-300 rounded text-[11px] text-gray-800 bg-white focus:outline-none focus:border-[#1B3A6B]/50 focus:ring-1 focus:ring-[#1B3A6B]/20 w-full';
 
     return (
-        <tr className="bg-[#F8FAFB] border-y-2 border-[#1B3A6B]/[0.12]">
-            <td colSpan={colSpan} className="p-0">
+        <div className="divide-y divide-[#1B3A6B]/[0.08] bg-[#F8FAFB]">
                 <div className="divide-y divide-[#1B3A6B]/[0.08]">
 
                     {/* Foto + Precios */}
@@ -1716,8 +1779,88 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         </button>
                     </div>
                 </div>
-            </td>
-        </tr>
+        </div>
+    );
+}
+
+// ── CompatSideDrawer ──────────────────────────────────────────────────────────
+// Portal-based corporate side drawer for the Compat theme.
+
+function CompatSideDrawer({ product, data, loadingRow, onClose, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, categories, onCategoryCreated, allowedPriceFields }) {
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = prev; };
+    }, []);
+
+    const worstM = data && !loadingRow ? (() => {
+        const marginCheckFields = (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7');
+        const precios = data?.precios || [];
+        return precios.reduce((min, pp) => {
+            const w = worstMarginOf(pp, marginCheckFields);
+            return w === null ? min : min === null ? w : Math.min(min, w);
+        }, null);
+    })() : null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[210] flex">
+            {/* Left overlay — click to close */}
+            <div className="flex-1 bg-black/20" onClick={onClose} />
+
+            {/* Drawer panel */}
+            <div className="w-[700px] max-w-[96vw] h-full bg-white flex flex-col shadow-[-16px_0_60px_rgba(0,0,0,0.18)] overflow-hidden">
+                {/* Drawer header */}
+                <div className="bg-[#1B3A6B] px-5 py-4 flex items-center gap-3 shrink-0 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#152d56] to-[#1B3A6B] pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-white/[0.10] pointer-events-none" />
+
+                    {/* Thumbnail */}
+                    <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-white/[0.20] bg-[#152d56] flex items-center justify-center z-10">
+                        {product.foto_url
+                            ? <img src={product.foto_url} alt="" className="w-full h-full object-cover" />
+                            : <Package size={18} className="text-white/40" />
+                        }
+                    </div>
+
+                    <div className="flex-1 min-w-0 z-10">
+                        <h2 className="text-[15px] font-black text-white leading-tight truncate">{product.nombre}</h2>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <p className="text-[10px] text-white/55">{product.laboratorios?.nombre || 'Detalle del producto'}</p>
+                            {worstM !== null && worstM !== undefined && (
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                    worstM < 0 ? 'bg-red-500/30 text-red-200 border-red-400/40' :
+                                    worstM < 15 ? 'bg-amber-500/30 text-amber-200 border-amber-400/40' :
+                                    'bg-emerald-500/25 text-emerald-200 border-emerald-400/35'
+                                }`}>{worstM.toFixed(1)}% margen</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <button onClick={onClose}
+                        className="relative z-10 w-8 h-8 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.12] transition-all shrink-0">
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                    <CompatExpandedPanel
+                        product={product}
+                        data={data}
+                        loadingRow={loadingRow}
+                        branches={branches}
+                        onPhotoUpdated={onPhotoUpdated}
+                        onPrinciplesUpdated={onPrinciplesUpdated}
+                        onCategoryUpdated={onCategoryUpdated}
+                        onClose={onClose}
+                        categories={categories}
+                        onCategoryCreated={onCategoryCreated}
+                        allowedPriceFields={allowedPriceFields}
+                    />
+                </div>
+            </div>
+        </div>,
+        document.body
     );
 }
 
@@ -1725,7 +1868,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
 // Dense corporate table for the Compat (Executive) theme.
 
 function CompatView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId, sortField, sortDir, onSort }) {
-    const ColSpan = 6;
+    const expandedProduct = products.find(p => p.id === expandedId) ?? null;
 
     const CompatTh = ({ field, label, className = '' }) => (
         <th onClick={() => onSort(field)}
@@ -1738,29 +1881,29 @@ function CompatView({ products, expandedId, expandedCache, loadingExpandedId, ch
     );
 
     return (
-        <div className="rounded-lg border border-gray-300 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
-            <table className="min-w-full border-collapse">
-                <thead>
-                    <tr className="bg-[#1B3A6B]">
-                        <CompatTh field="nombre"    label="Producto" />
-                        <CompatTh field="lab"       label="Laboratorio" className="hidden md:table-cell" />
-                        <CompatTh field="categoria" label="Categoría"   className="hidden lg:table-cell" />
-                        <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-white/90 text-center border-r border-white/[0.10] hidden sm:table-cell">Margen</th>
-                        <CompatTh field="activo"    label="Estado"      className="hidden sm:table-cell" />
-                        <th className="px-3 py-2.5 w-8 border-r-0" />
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                    {products.map((p, index) => {
-                        const isExpanded    = expandedId === p.id;
-                        const isLoadingThis = loadingExpandedId === p.id;
-                        const hasChangesP   = changedIds.has(p.id);
-                        const worstM        = marginMap[p.id];
-                        const isInactive    = !p.activo && filterActivo === 'todos';
-                        const isEven        = index % 2 === 0;
-                        return (
-                            <React.Fragment key={p.id}>
-                                <tr
+        <>
+            <div className="rounded-lg border border-gray-300 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+                <table className="min-w-full border-collapse">
+                    <thead>
+                        <tr className="bg-[#1B3A6B]">
+                            <CompatTh field="nombre"    label="Producto" />
+                            <CompatTh field="lab"       label="Laboratorio" className="hidden md:table-cell" />
+                            <CompatTh field="categoria" label="Categoría"   className="hidden lg:table-cell" />
+                            <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-white/90 text-center border-r border-white/[0.10] hidden sm:table-cell">Margen</th>
+                            <CompatTh field="activo"    label="Estado"      className="hidden sm:table-cell" />
+                            <th className="px-3 py-2.5 w-8 border-r-0" />
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {products.map((p, index) => {
+                            const isExpanded    = expandedId === p.id;
+                            const isLoadingThis = loadingExpandedId === p.id;
+                            const hasChangesP   = changedIds.has(p.id);
+                            const worstM        = marginMap[p.id];
+                            const isInactive    = !p.activo && filterActivo === 'todos';
+                            const isEven        = index % 2 === 0;
+                            return (
+                                <tr key={p.id}
                                     onClick={() => toggleRow(p.id)}
                                     onMouseEnter={() => prefetchRow(p.id)}
                                     onMouseLeave={cancelPrefetch}
@@ -1828,28 +1971,29 @@ function CompatView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                         }
                                     </td>
                                 </tr>
-                                {isExpanded && (
-                                    <CompatExpandedPanel
-                                        product={p}
-                                        data={expandedCache[p.id]}
-                                        loadingRow={isLoadingThis && !expandedCache[p.id]}
-                                        branches={branches}
-                                        onPhotoUpdated={handlePhotoUpdated}
-                                        onPrinciplesUpdated={handlePrinciplesUpdated}
-                                        onCategoryUpdated={handleCategoryUpdated}
-                                        onClose={() => setExpandedId(null)}
-                                        categories={catOptions.map(o => o.value)}
-                                        onCategoryCreated={onCategoryCreated}
-                                        allowedPriceFields={allowedPriceFields}
-                                        colSpan={ColSpan}
-                                    />
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-                </tbody>
-            </table>
-        </div>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Side drawer — rendered via portal */}
+            {expandedProduct && (
+                <CompatSideDrawer
+                    product={expandedProduct}
+                    data={expandedCache[expandedProduct.id]}
+                    loadingRow={loadingExpandedId === expandedProduct.id && !expandedCache[expandedProduct.id]}
+                    branches={branches}
+                    onPhotoUpdated={handlePhotoUpdated}
+                    onPrinciplesUpdated={handlePrinciplesUpdated}
+                    onCategoryUpdated={handleCategoryUpdated}
+                    onClose={() => setExpandedId(null)}
+                    categories={catOptions.map(o => o.value)}
+                    onCategoryCreated={onCategoryCreated}
+                    allowedPriceFields={allowedPriceFields}
+                />
+            )}
+        </>
     );
 }
 

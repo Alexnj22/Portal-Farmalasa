@@ -357,6 +357,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
+        // Theme tokens for nav items
+        const navItemInactive = isCompat
+            ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]'
+            : 'text-white/70 hover:text-white hover:bg-white/[0.08]';
+        const iconActiveColor  = isCompat ? 'text-white' : 'text-[#4D94FF]';
+        const iconInactiveColor = isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B]' : 'text-white/55 group-hover:text-white';
+        const accentBarInactive = isCompat ? 'bg-[#C4D9E8]' : 'bg-white/20';
+        const accentBarActive   = isCompat ? 'bg-white/60' : 'bg-[#4D94FF]';
+
         if (comingSoon) {
             return (
                 <div
@@ -366,12 +375,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-10 flex-shrink-0">
-                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/40" />
+                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className={isCompat ? 'text-[#374B63]/35' : 'text-white/40'} />
                     </div>
                     {isExpanded && (
                         <>
-                            <span className="text-[12px] xl:text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{label}</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/80 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className={`text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap ${isCompat ? 'text-[#374B63]/40' : 'text-white/40'}`}>{label}</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-600/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
                         </>
@@ -383,7 +392,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return (
             <button
                 key={key}
-                // In compact mode, indented children are hidden — don't overwrite group header refs
                 ref={(!indent || isExpanded) ? (el => { if (el) itemRefs.current.set(pathSeg, el); else itemRefs.current.delete(pathSeg); }) : null}
                 onClick={() => { navigate(path); if (isMobile) setIsSidebarOpen(false); setFlyout(null); }}
                 onMouseEnter={handleMouseEnter}
@@ -391,19 +399,19 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 type="button"
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
                     ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
-                    ${isActive ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
+                    ${isActive ? 'text-white' : navItemInactive}
                     active:scale-[0.99]`}
             >
                 {/* Left accent for subitems */}
                 {indent && (
-                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? 'bg-[#4D94FF]' : 'bg-white/20'}`} />
+                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? accentBarActive : accentBarInactive}`} />
                 )}
 
                 <div className="relative z-10 flex-shrink-0">
                     <Icon
                         size={indent ? 16 : 20}
                         strokeWidth={isActive ? 2 : 1.5}
-                        className={`transition-all duration-300 ${isActive ? 'text-[#4D94FF] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
+                        className={`transition-all duration-300 ${isActive ? `${iconActiveColor} scale-110` : `${iconInactiveColor} group-hover:scale-110`}`}
                     />
                     {!isExpanded && alert && (
                         <span className="absolute -top-1 -right-1 relative flex h-2 w-2">
@@ -484,13 +492,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                     type="button"
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
-                        ${hasActiveChild ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
+                        ${hasActiveChild
+                            ? (isCompat ? 'text-[#1B3A6B]' : 'text-white')
+                            : (isCompat ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]')}
                         active:scale-[0.99]`}
                 >
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
-                        className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild ? 'text-[#4D94FF] scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
+                        className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
+                            ? (isCompat ? 'text-[#1B3A6B] scale-110' : 'text-[#4D94FF] scale-110')
+                            : (isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B] group-hover:scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110')}`}
                     />
                     {isExpanded && (
                         <>
@@ -511,7 +523,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`text-white/40 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-300 flex-shrink-0 ${isCompat ? 'text-[#374B63]/30' : 'text-white/40'} ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
@@ -572,52 +584,57 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
-                {/* ── Ambient glow layers ── */}
-                <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
-                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
-                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
-                    <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
-                </div>
+                {/* ── Ambient glow layers (dark themes only) ── */}
+                {!isCompat && (
+                    <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
+                        <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
+                        <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
+                        <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
+                        <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
+                    </div>
+                )}
 
-                {/* ── Glass container ── */}
-                <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-[#030B1C]/96
-                    backdrop-blur-3xl
-                    border border-white/14
-                    shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)]
-                    transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]">
+                {/* ── Glass/Corporate container ── */}
+                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
+                    ${isCompat
+                        ? 'bg-white border border-[#C4D9E8] shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.05)]'
+                        : 'bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)] transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]'
+                    }`}>
 
-                    {/* Specular top sheen */}
-                    <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
-                    {/* Left edge highlight */}
-                    <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
-                    {/* Right edge shadow */}
-                    <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/20 via-black/10 to-transparent pointer-events-none z-0" />
-                    {/* Bottom fade */}
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
+                    {/* Dark-theme sheen layers */}
+                    {!isCompat && (
+                        <>
+                            <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
+                            <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
+                            <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/20 via-black/10 to-transparent pointer-events-none z-0" />
+                            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
+                        </>
+                    )}
+                    {/* Compat light top accent */}
+                    {isCompat && (
+                        <div className="absolute inset-x-0 top-0 h-1 bg-[#1B3A6B] pointer-events-none z-0 rounded-t-[2.5rem]" />
+                    )}
 
                     {/* ── Logo header ── */}
-                    <div className={`relative z-10 border-b border-white/10 flex items-center
+                    <div className={`relative z-10 flex items-center
+                        ${isCompat ? 'border-b border-[#C4D9E8]' : 'border-b border-white/10'}
                         ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                        {/* Subtle header glow */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                        {!isCompat && <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />}
 
                         <div className="flex items-center gap-3 relative z-10">
                             {/* Logo mark */}
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
-                                {/* Logo glow */}
-                                <div className="absolute -inset-1.5 rounded-[1.5rem] bg-[#4D94FF]/30 blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500" />
+                                {/* Glow */}
+                                <div className={`absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 ${isCompat ? 'bg-[#1B3A6B]/20' : 'bg-[#4D94FF]/30'}`} />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
-                                    bg-white/12 backdrop-blur-sm
-                                    border border-white/20
-                                    shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)]
-                                    transition-all duration-300 group-hover/logo:scale-105 group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)]
-                                    group-hover/logo:border-white/30
+                                    transition-all duration-300 group-hover/logo:scale-105
+                                    ${isCompat
+                                        ? 'bg-[#1B3A6B]/[0.08] border border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)] group-hover/logo:shadow-[0_4px_16px_rgba(27,58,107,0.18)] group-hover/logo:border-[#B3CCDF]'
+                                        : 'bg-white/12 backdrop-blur-sm border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)] group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)] group-hover/logo:border-white/30'
+                                    }
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                    {/* Inner sheen */}
-                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />
+                                    {!isCompat && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />}
                                     <img src="/LogoFLS.svg" alt="FLS"
                                         className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                 </div>
@@ -625,21 +642,18 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded && (
                                 <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
-                                    <h1 className="text-white font-black text-[15px] leading-tight tracking-tight drop-shadow-sm">Portal</h1>
-                                    <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug">La Salud & La Popular</p>
+                                    <h1 className={`font-black text-[15px] leading-tight tracking-tight drop-shadow-sm ${isCompat ? 'text-[#1B3A6B]' : 'text-white'}`}>Portal</h1>
+                                    <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug ${isCompat ? 'text-[#1B3A6B]/45' : 'text-white/50'}`}>La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
 
                         {isExpanded && (
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                                    bg-white/6 hover:bg-white/15
-                                    border border-white/10 hover:border-white/22
-                                    text-white/50 hover:text-white
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]
-                                    hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]
-                                    transition-all duration-200 active:scale-[0.97]">
+                                className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
+                                    ${isCompat
+                                        ? 'bg-[#1B3A6B]/[0.07] border border-[#C4D9E8] text-[#374B63]/55 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.12] hover:border-[#B3CCDF]'
+                                        : 'bg-white/6 hover:bg-white/15 border border-white/10 hover:border-white/22 text-white/50 hover:text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]'}`}>
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
                         )}
@@ -650,41 +664,42 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {/* Active pill */}
                         <div
                             className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                bg-[#1A3560]/90
-                                border border-[#2D5499]/50
-                                shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                ${isCompat
+                                    ? 'bg-[#1B3A6B] border border-[#1B3A6B]/80 shadow-[0_4px_12px_rgba(27,58,107,0.25)]'
+                                    : 'bg-[#1A3560]/90 border border-[#2D5499]/50 shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]'
+                                }
                                 ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                             style={{ top: pill.top, height: pill.height }}
                         >
-                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />
-                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />
+                            {!isCompat && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />}
+                            <div className={`absolute left-0 inset-y-[20%] w-[3px] rounded-full ${isCompat ? 'bg-white/60' : 'bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]'}`} />
+                            {!isCompat && <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />}
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/8 flex flex-col gap-2.5">
-                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
+                    <div className={`relative z-10 px-3 pb-4 pt-3 border-t flex flex-col gap-2.5 ${isCompat ? 'border-[#C4D9E8]' : 'border-white/8'}`}>
+                        {!isCompat && <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />}
 
                         {isExpanded ? (
                             /* User row expanded */
                             <>
                                 {/* PIN row — expanded */}
                                 {hasPermission('kiosk_pin', 'can_view') && (
-                                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-white/5 border border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12 transition-all">
+                                    <div className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all border ${isCompat ? 'bg-[#F4F8FB] border-[#D1DDE8] hover:bg-[#EBF2F8] hover:border-[#B3CCDF]' : 'bg-white/5 border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12'}`}>
                                         <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
                                             <CheckCircle2 size={13} className="text-[#4D94FF]" strokeWidth={2} />
                                             <div className="relative w-12 flex items-center justify-center">
-                                                <span className={`absolute text-[12px] font-black text-white tracking-widest font-mono transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                <Copy size={13} className={`absolute text-white/80 transition-all duration-300 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
+                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 ${isCompat ? 'text-[#1B3A6B]' : 'text-white'} ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <Copy size={13} className={`absolute transition-all duration-300 ${isCompat ? 'text-[#1B3A6B]/60' : 'text-white/80'} ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
                                                 <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
                                             </div>
                                         </button>
                                         {hasPermission('su_pin', 'can_view') && (
                                             <>
-                                                <div className="h-3.5 w-px bg-white/10" />
+                                                <div className={`h-3.5 w-px ${isCompat ? 'bg-[#D1DDE8]' : 'bg-white/10'}`} />
                                                 <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
                                                     <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
                                                     <div className="relative w-14 flex items-center justify-center">
@@ -701,24 +716,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
-                                        className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left
-                                            hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]
-                                            transition-all duration-200 active:scale-[0.98]"
+                                        className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98]
+                                            ${isCompat ? 'hover:bg-[#1B3A6B]/[0.05]' : 'hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'}`}
                                         type="button">
-                                        <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0
-                                            border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)]
-                                            bg-white/10 flex items-center justify-center text-white/70
-                                            group-hover/user:border-[#4D94FF]/40 transition-all">
+                                        <div className={`h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all
+                                            ${isCompat
+                                                ? 'border border-[#D1DDE8] bg-[#F4F8FB] text-[#374B63]/50 group-hover/user:border-[#B3CCDF]'
+                                                : 'border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)] bg-white/10 text-white/70 group-hover/user:border-[#4D94FF]/40'}`}>
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
-                                            <p className="text-[13px] font-semibold text-white/90 truncate group-hover/user:text-white transition-colors leading-tight">{user?.name || 'Usuario'}</p>
+                                            <p className={`text-[13px] font-semibold truncate transition-colors leading-tight
+                                                ${isCompat ? 'text-[#1B3A6B] group-hover/user:text-[#1B3A6B]' : 'text-white/90 group-hover/user:text-white'}`}>{user?.name || 'Usuario'}</p>
                                         </div>
                                     </button>
                                     <button onClick={handleLogout}
-                                        className="p-2 rounded-[0.85rem] text-white/40 hover:text-red-300 hover:bg-red-500/15
-                                            border border-transparent hover:border-red-500/20
-                                            transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]"
+                                        className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]
+                                            ${isCompat
+                                                ? 'text-[#374B63]/40 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
+                                                : 'text-white/40 hover:text-red-300 hover:bg-red-500/15 hover:border-red-500/20'}`}
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>
@@ -729,26 +745,24 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-500">
                                 {!isMobile && (
                                     <button onClick={() => setIsSidebarOpen(true)}
-                                        className="w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1
-                                            bg-white/6 border border-white/10
-                                            text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]
-                                            hover:scale-105 active:scale-[0.97] transition-all">
+                                        className={`w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
+                                            ${isCompat
+                                                ? 'bg-[#1B3A6B]/[0.06] border border-[#D1DDE8] text-[#374B63]/50 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.10] hover:border-[#B3CCDF] hover:shadow-[0_2px_8px_rgba(27,58,107,0.15)]'
+                                                : 'bg-white/6 border border-white/10 text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]'}`}>
                                         <ChevronRight size={17} strokeWidth={2} />
                                     </button>
                                 )}
                                 {hasPermission('kiosk_pin', 'can_view') && (
                                     <button onClick={handleCopyPin}
-                                        className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
-                                            bg-white/6 border border-white/12
-                                            text-[#4D94FF] hover:bg-white/12 hover:border-white/20
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(77,148,255,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]
-                                            hover:scale-105 active:scale-[0.97] transition-all"
+                                        className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group transition-all hover:scale-105 active:scale-[0.97]
+                                            ${isCompat
+                                                ? 'bg-[#1B3A6B]/[0.06] border border-[#D1DDE8] text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.12] hover:border-[#B3CCDF] hover:shadow-[0_2px_8px_rgba(27,58,107,0.15)]'
+                                                : 'bg-white/6 border border-white/12 text-[#4D94FF] hover:bg-white/12 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(77,148,255,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]'}`}
                                         title="PIN">
                                         {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
                                                 <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-white">{authPin}</span>
+                                                <span className={`absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black ${isCompat ? 'text-[#1B3A6B]' : 'text-white'}`}>{authPin}</span>
                                             </>
                                         )}
                                     </button>
@@ -778,19 +792,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                     }}
                                     onMouseLeave={closeFlyout}
-                                    className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center
-                                        bg-white/10 border border-white/14
-                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.25)]
-                                        hover:bg-white/18 hover:border-white/25 hover:shadow-[0_6px_18px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]
-                                        hover:-translate-y-0.5 active:scale-[0.97] transition-all text-white/75">
+                                    className={`w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                        ${isCompat
+                                            ? 'bg-[#F4F8FB] border border-[#D1DDE8] text-[#374B63]/60 hover:bg-[#EBF2F8] hover:border-[#B3CCDF] shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(27,58,107,0.12)]'
+                                            : 'bg-white/10 border border-white/14 text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.25)] hover:bg-white/18 hover:border-white/25 hover:shadow-[0_6px_18px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]'}`}>
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                 </button>
                                 <button onClick={handleLogout} type="button"
-                                    className="w-11 h-11 rounded-[1.1rem] flex items-center justify-center
-                                        bg-red-500/8 border border-white/10
-                                        text-red-300/70 hover:text-red-200 hover:bg-red-500/18 hover:border-red-500/25
-                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]
-                                        hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                    className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                        ${isCompat
+                                            ? 'bg-red-50 border border-[#FECACA] text-red-400 hover:text-red-600 hover:bg-red-100 hover:border-red-300 hover:shadow-[0_2px_8px_rgba(239,68,68,0.15)]'
+                                            : 'bg-red-500/8 border border-white/10 text-red-300/70 hover:text-red-200 hover:bg-red-500/18 hover:border-red-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]'}`}>
                                     <LogOut size={15} strokeWidth={1.8} />
                                 </button>
                             </div>

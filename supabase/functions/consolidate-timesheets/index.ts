@@ -146,13 +146,36 @@ Deno.serve(async (req) => {
       const entryPunch = empPunches.find(p => ENTRY_TYPES.has(p.type));
       const exitPunch  = [...empPunches].reverse().find(p => EXIT_TYPES.has(p.type));
 
-      const isAbsent    = !entryPunch;
-      const actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
-      const actualEnd   = exitPunch  ? new Date(exitPunch.timestamp)  : null;
+      const isAbsent  = !entryPunch;
+      let actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
+      let actualEnd   = exitPunch  ? new Date(exitPunch.timestamp)  : null;
 
       let regularHours  = 0;
       let overtimeHours = 0;
       let lateMinutes   = 0;
+      let autoPunched   = false;
+
+      // Auto-punch: employee checked in but never out — insert scheduled end as OUT
+      if (actualStart && !actualEnd && scheduledEnd) {
+        const autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
+        const { error: autoErr } = await supabase.from('attendance').insert({
+          employee_id: empId,
+          timestamp:   autoEndTime.toISOString(),
+          type:        'OUT',
+          details:     {
+            autoInserted:    true,
+            pendingHRReview: true,
+            reason:          'Salida no registrada — generada automáticamente',
+          },
+        });
+        if (!autoErr) {
+          actualEnd   = autoEndTime;
+          autoPunched = true;
+          console.log(`Auto-punch OUT for ${empId} at ${scheduledEnd} CST on ${workDate}`);
+        } else {
+          console.error(`Auto-punch failed for ${empId}:`, autoErr.message);
+        }
+      }
 
       if (actualStart && actualEnd) {
         const grossMins  = (actualEnd.getTime() - actualStart.getTime()) / 60000;
@@ -193,7 +216,7 @@ Deno.serve(async (req) => {
         late_minutes:       lateMinutes,
         is_absent:          isAbsent,
         is_holiday_worked:  !isAbsent && isHoliday,
-        status:             'PENDING',
+        status:             autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
         updated_at:         new Date().toISOString(),
       };
 

@@ -614,7 +614,43 @@ const submitEarlyExit = useCallback((e) => {
             const suSuffix = requiresSuPin ? getSuPinSuffix() : '';
             const expectedPin = `${hourlyPin || ''}${suSuffix}`.toUpperCase();
 
-            if (codeToFind === expectedPin) {
+            // Alternative auth: supervisor's personal kiosk_pin
+            const AUTHORIZER_ROLE_TERMS = ['JEFE', 'SUBJEFE', 'ADMIN', 'SUPERVISOR', 'GERENTE'];
+            let kioskPinAuthorizerName = null;
+            const authorizerEmp = (employees || []).find(emp => {
+                if (!emp?.kiosk_pin) return false;
+                const empR  = String(emp?.role || '').toUpperCase();
+                const empSR = String(emp?.secondary_role || '').toUpperCase();
+                return AUTHORIZER_ROLE_TERMS.some(r => empR.includes(r) || empSR.includes(r))
+                    && String(emp.kiosk_pin).toUpperCase() === codeToFind;
+            });
+            if (authorizerEmp) {
+                kioskPinAuthorizerName = authorizerEmp.name;
+            } else {
+                try {
+                    const pinCache = JSON.parse(localStorage.getItem('kiosk_supervisor_pins') || '{}');
+                    const cacheEntry = Object.values(pinCache).find(e => String(e.pin).toUpperCase() === codeToFind);
+                    if (cacheEntry) kioskPinAuthorizerName = cacheEntry.name;
+                } catch { /* ignore */ }
+            }
+
+            if (codeToFind === expectedPin || kioskPinAuthorizerName) {
+                if (kioskPinAuthorizerName) {
+                    appendAuditLog?.(
+                        'AUTORIZACION_KIOSK_PIN',
+                        authPrompt.employee?.id || 'KIOSCO',
+                        {
+                            empleado:          authPrompt.employee?.name || 'Desconocido',
+                            autorizador:       kioskPinAuthorizerName,
+                            accion_autorizada: authPrompt.type,
+                            source:            'KIOSK',
+                            branch_id:         kioskConfig.branchId,
+                            branch_name:       kioskConfig.branchName,
+                            device_name:       kioskConfig.deviceName,
+                        },
+                        kioskPinAuthorizerName
+                    );
+                }
                 if (authPrompt.type === 'SPECIAL_OUT_REQUEST') {
                     setEarlyExitData({
                         employee: authPrompt.employee,

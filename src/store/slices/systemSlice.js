@@ -91,7 +91,7 @@ export const createSystemSlice = (set, get) => ({
                     supabase.from('branches').select('*').order('id', { ascending: true }),
                     supabase.from('roles').select('*').order('name', { ascending: true }),
                     supabase.from('shifts').select('*'),
-                    supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate),
+                    supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
                     supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`),
                     supabase.from('employee_events').select('*'),
                     supabase.from('employee_documents').select('*'),
@@ -1104,6 +1104,20 @@ export const createSystemSlice = (set, get) => ({
                     return safeEmp;
                 });
                 localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(safeKioskEmployees));
+
+                // Supervisor kiosk_pins stored separately so auth still works after page reload
+                const SUPERVISOR_ROLE_TERMS = ['JEFE', 'SUBJEFE', 'ADMIN', 'SUPERVISOR', 'GERENTE'];
+                const supervisorPins = {};
+                for (const emp of mappedEmployees) {
+                    if (!emp.kiosk_pin) continue;
+                    const empRole = String(emp.role || '').toUpperCase();
+                    const empSecRole = String(emp.secondary_role || '').toUpperCase();
+                    if (SUPERVISOR_ROLE_TERMS.some(r => empRole.includes(r) || empSecRole.includes(r))) {
+                        supervisorPins[emp.id] = { pin: emp.kiosk_pin, name: emp.name };
+                    }
+                }
+                localStorage.setItem('kiosk_supervisor_pins', JSON.stringify(supervisorPins));
+
                 if (data.branches) {
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
                 }

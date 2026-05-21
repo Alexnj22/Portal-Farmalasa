@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
     ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Edit2, Edit3,
-    Building2, ListFilter, Trash2
+    Building2, ListFilter, Trash2, Sparkles, ShieldCheck, ArrowRight,
+    MessageSquare, RefreshCw
 } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -17,10 +18,20 @@ const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV'
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 const STATUS_META = {
-    PLANNED:   { label: 'Planificado', bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
-    CONFIRMED: { label: 'Confirmado',  bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
-    TAKEN:     { label: 'Tomado',      bg: 'bg-slate-100',  text: 'text-slate-500',   border: 'border-slate-200',   bar: 'bg-slate-300'   },
-    CANCELLED: { label: 'Cancelado',   bg: 'bg-red-50',     text: 'text-red-500',     border: 'border-red-200',     bar: 'bg-red-300'     },
+    DRAFT:            { label: 'Borrador',      bg: 'bg-slate-50',   text: 'text-slate-500',   border: 'border-slate-200',   bar: 'bg-slate-300'   },
+    PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
+    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   bar: 'bg-amber-400'   },
+    APPROVED:         { label: 'Aprobado',      bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
+    PLANNED:          { label: 'Planificado',   bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
+    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
+    TAKEN:            { label: 'Tomado',        bg: 'bg-slate-100',  text: 'text-slate-500',   border: 'border-slate-200',   bar: 'bg-slate-300'   },
+    CANCELLED:        { label: 'Cancelado',     bg: 'bg-red-50',     text: 'text-red-500',     border: 'border-red-200',     bar: 'bg-red-300'     },
+};
+
+const HEADER_STATUS_META = {
+    DRAFT:        { label: 'Borrador',     color: 'text-slate-500',   bg: 'bg-slate-100'   },
+    PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-blue-700',    bg: 'bg-blue-50'     },
+    FINALIZED:    { label: 'Finalizado',   color: 'text-emerald-700', bg: 'bg-emerald-50'  },
 };
 
 const StatusBadge = ({ status }) => {
@@ -263,16 +274,24 @@ const GanttChart = ({ plans, year }) => {
 const VacationPlanView = () => {
     const { user, rolePerms } = useAuth();
     const canEdit = rolePerms === 'ALL' || !!rolePerms?.['vacation_plan']?.can_edit;
-    const employees              = useStaffStore(s => s.employees);
-    const branches               = useStaffStore(s => s.branches);
-    const holidays               = useStaffStore(s => s.holidays);
-    const vacationPlans          = useStaffStore(s => s.vacationPlans);
-    const isLoadingVacationPlans = useStaffStore(s => s.isLoadingVacationPlans);
-    const fetchVacationPlans     = useStaffStore(s => s.fetchVacationPlans);
-    const createVacationPlan     = useStaffStore(s => s.createVacationPlan);
-    const updateVacationPlan     = useStaffStore(s => s.updateVacationPlan);
-    const updateVacationPlanStatus = useStaffStore(s => s.updateVacationPlanStatus);
-    const deleteVacationPlan       = useStaffStore(s => s.deleteVacationPlan);
+    const employees                  = useStaffStore(s => s.employees);
+    const branches                   = useStaffStore(s => s.branches);
+    const holidays                   = useStaffStore(s => s.holidays);
+    const vacationPlans              = useStaffStore(s => s.vacationPlans);
+    const isLoadingVacationPlans     = useStaffStore(s => s.isLoadingVacationPlans);
+    const vacationHeaders            = useStaffStore(s => s.vacationHeaders);
+    const isGeneratingPlan           = useStaffStore(s => s.isGeneratingPlan);
+    const vacationChangeRequests     = useStaffStore(s => s.vacationChangeRequests);
+    const fetchVacationPlans         = useStaffStore(s => s.fetchVacationPlans);
+    const fetchVacationHeaders       = useStaffStore(s => s.fetchVacationHeaders);
+    const createVacationPlan         = useStaffStore(s => s.createVacationPlan);
+    const updateVacationPlan         = useStaffStore(s => s.updateVacationPlan);
+    const updateVacationPlanStatus   = useStaffStore(s => s.updateVacationPlanStatus);
+    const deleteVacationPlan         = useStaffStore(s => s.deleteVacationPlan);
+    const generateAIPlan             = useStaffStore(s => s.generateAIPlan);
+    const preApprovePlan             = useStaffStore(s => s.preApprovePlan);
+    const fetchVacationChangeRequests = useStaffStore(s => s.fetchVacationChangeRequests);
+    const processChangeRequest       = useStaffStore(s => s.processChangeRequest);
 
     const uniqueBranches = useMemo(() => {
         const seen = new Set();
@@ -301,9 +320,21 @@ const VacationPlanView = () => {
     // Panel edit state — when set, left panel is in edit mode
     const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
     const [confirmingEdit, setConfirmingEdit] = useState(false);
+    const [processingRequestId, setProcessingRequestId] = useState(null);
+
+    // Active header for current year
+    const activeHeader = useMemo(
+        () => vacationHeaders.find(h => h.year === year) || null,
+        [vacationHeaders, year]
+    );
+
+    useEffect(() => {
+        fetchVacationHeaders();
+    }, []);
 
     useEffect(() => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
+        fetchVacationChangeRequests(year);
     }, [year, branchFilter]);
 
     const assignedEmployeeIds = useMemo(() => {
@@ -527,6 +558,44 @@ const VacationPlanView = () => {
         else    useToastStore.getState().showToast('Error', 'No se pudo cancelar el plan.', 'error');
     };
 
+    const handleGenerateAI = async () => {
+        const result = await generateAIPlan(year);
+        if (result.success) {
+            useToastStore.getState().showToast('Plan generado', `${result.count} vacaciones asignadas por IA.`, 'success');
+        } else {
+            useToastStore.getState().showToast('Error', result.error || 'No se pudo generar el plan.', 'error');
+        }
+    };
+
+    const handlePreApprove = async () => {
+        if (!activeHeader) return;
+        const ok = await preApprovePlan(activeHeader.id, year);
+        if (ok) useToastStore.getState().showToast('Pre-aprobado', 'El plan es ahora visible para los empleados.', 'success');
+        else    useToastStore.getState().showToast('Error', 'No se pudo pre-aprobar el plan.', 'error');
+    };
+
+    const handleProcessRequest = async (req, action) => {
+        setProcessingRequestId(req.id);
+        const meta = req.metadata || {};
+        const ok = await processChangeRequest(
+            req.id,
+            action,
+            meta.vacation_plan_id,
+            action === 'APPROVED' ? meta.requested_start : null,
+            action === 'APPROVED' ? meta.requested_end : null,
+        );
+        setProcessingRequestId(null);
+        if (ok) {
+            useToastStore.getState().showToast(
+                action === 'APPROVED' ? 'Cambio aprobado' : 'Cambio rechazado',
+                action === 'APPROVED' ? 'Vacaciones actualizadas.' : 'Se mantienen las fechas originales.',
+                action === 'APPROVED' ? 'success' : 'warning'
+            );
+        } else {
+            useToastStore.getState().showToast('Error', 'No se pudo procesar la solicitud.', 'error');
+        }
+    };
+
     // Sort filtered plans by branch → role → start_date
     const filtered = useMemo(() => {
         const q = searchTerm.trim().toLowerCase();
@@ -605,15 +674,17 @@ const VacationPlanView = () => {
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
                 {/* Status filter */}
-                <div className="w-[170px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                <div className="w-[180px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect
                         value={statusFilter}
                         onChange={val => setStatusFilter(val || 'ALL')}
                         options={[
-                            { value: 'ALL',       label: 'Todos los estados' },
-                            { value: 'PLANNED',   label: 'Planificados'      },
-                            { value: 'CONFIRMED', label: 'Confirmados'       },
-                            { value: 'TAKEN',     label: 'Tomados'           },
+                            { value: 'ALL',              label: 'Todos los estados' },
+                            { value: 'DRAFT',            label: 'Borrador'          },
+                            { value: 'PRE_APPROVED',     label: 'Pre-aprobado'      },
+                            { value: 'CHANGE_REQUESTED', label: 'Cambio sol.'       },
+                            { value: 'APPROVED',         label: 'Aprobado'          },
+                            { value: 'TAKEN',            label: 'Tomado'            },
                         ]}
                         compact
                         clearable={false}
@@ -755,8 +826,61 @@ const VacationPlanView = () => {
                         </div>
                     </div>
 
-                    {/* ── Panel derecho: Gantt + Tabla ── */}
+                    {/* ── Panel derecho: Header + Gantt + Tabla + Solicitudes ── */}
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
+
+                        {/* Plan header status card */}
+                        <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0052CC] to-[#6929C4] flex items-center justify-center shadow-sm">
+                                        <Palmtree size={16} className="text-white" strokeWidth={2} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[13px] font-black text-slate-800">Plan de Vacaciones {year}</p>
+                                        {activeHeader ? (
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-slate-100'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-slate-500'}`}>
+                                                {HEADER_STATUS_META[activeHeader.status]?.label || activeHeader.status}
+                                                {activeHeader.ai_generated && ' · IA'}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sin plan generado</span>
+                                        )}
+                                    </div>
+                                </div>
+                                {canEdit && (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {/* Generate / Regenerate with AI */}
+                                        {(!activeHeader || activeHeader.status === 'DRAFT') && (
+                                            <button
+                                                onClick={handleGenerateAI}
+                                                disabled={isGeneratingPlan}
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#6929C4] to-[#0052CC] text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                                            >
+                                                {isGeneratingPlan
+                                                    ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
+                                                    : <><Sparkles size={12} strokeWidth={2.5} /> {activeHeader ? 'Regenerar con IA' : 'Generar con IA'}</>
+                                                }
+                                            </button>
+                                        )}
+                                        {/* Pre-approve */}
+                                        {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
+                                            <button
+                                                onClick={handlePreApprove}
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 transition-all"
+                                            >
+                                                <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
+                                            </button>
+                                        )}
+                                        {activeHeader?.status === 'PRE_APPROVED' && (
+                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-widest">
+                                                <CheckCircle2 size={12} strokeWidth={2.5} /> Visible para empleados
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Gantt */}
                         <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
@@ -902,6 +1026,71 @@ const VacationPlanView = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Solicitudes de cambio */}
+                        {vacationChangeRequests.length > 0 && (
+                            <div className="bg-white/40 backdrop-blur-[30px] border border-amber-200/60 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5 mb-4">
+                                    <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
+                                </p>
+                                <div className="space-y-3">
+                                    {vacationChangeRequests.map(req => {
+                                        const meta = req.metadata || {};
+                                        const isProcessing = processingRequestId === req.id;
+                                        const emp = req.employee;
+                                        return (
+                                            <div key={req.id} className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-4">
+                                                <div className="flex flex-wrap items-start gap-3 justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
+                                                            {emp?.photo_url
+                                                                ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
+                                                                : (emp?.name || '?').charAt(0).toUpperCase()
+                                                            }
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[12px] font-black text-slate-800">{emp?.name || 'Empleado'}</p>
+                                                            <p className="text-[10px] text-slate-500 font-medium">
+                                                                Solicita: <strong>{fmtShort(meta.requested_start)}</strong>
+                                                                <ArrowRight size={10} className="inline mx-1" strokeWidth={2.5} />
+                                                                <strong>{fmtShort(meta.requested_end)}</strong>
+                                                            </p>
+                                                            {meta.original_start && (
+                                                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                                                    Original: {fmtShort(meta.original_start)} → {fmtShort(meta.original_end)}
+                                                                </p>
+                                                            )}
+                                                            {req.note && (
+                                                                <p className="text-[10px] text-amber-700 mt-1 italic">"{req.note}"</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {canEdit && (
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleProcessRequest(req, 'APPROVED')}
+                                                                disabled={isProcessing}
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                            >
+                                                                {isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
+                                                                Aprobar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleProcessRequest(req, 'REJECTED')}
+                                                                disabled={isProcessing}
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-500 hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                            >
+                                                                <X size={11} strokeWidth={3} /> Rechazar
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </GlassViewLayout>

@@ -3,13 +3,164 @@ import { supabase } from '../../supabaseClient';
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
     isLoadingVacationPlans: false,
+    vacationHeaders: [],         // { id, year, status, ai_generated }
+    isGeneratingPlan: false,
+    vacationChangeRequests: [],  // pending approval_requests type=VACATION_CHANGE
+
+    fetchVacationHeaders: async () => {
+        const { data, error } = await supabase
+            .from('vacation_plan_headers')
+            .select('id, year, status, ai_generated, notes, created_at, updated_at')
+            .order('year', { ascending: false });
+        if (error) { console.error('fetchVacationHeaders:', error); return []; }
+        set({ vacationHeaders: data || [] });
+        return data || [];
+    },
+
+    updateHeaderStatus: async (headerId, status) => {
+        const { error } = await supabase
+            .from('vacation_plan_headers')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', headerId);
+        if (error) { console.error('updateHeaderStatus:', error); return false; }
+        set(state => ({
+            vacationHeaders: state.vacationHeaders.map(h =>
+                h.id === headerId ? { ...h, status } : h
+            ),
+        }));
+        return true;
+    },
+
+    // Bulk-promote all DRAFT plans for a year → PRE_APPROVED + header → PRE_APPROVED
+    preApprovePlan: async (headerId, year) => {
+        const { error: plansErr } = await supabase
+            .from('vacation_plans')
+            .update({ status: 'PRE_APPROVED', updated_at: new Date().toISOString() })
+            .eq('plan_header_id', headerId)
+            .eq('status', 'DRAFT');
+        if (plansErr) { console.error('preApprovePlan plans:', plansErr); return false; }
+
+        const { error: headerErr } = await supabase
+            .from('vacation_plan_headers')
+            .update({ status: 'PRE_APPROVED', updated_at: new Date().toISOString() })
+            .eq('id', headerId);
+        if (headerErr) { console.error('preApprovePlan header:', headerErr); return false; }
+
+        set(state => ({
+            vacationHeaders: state.vacationHeaders.map(h =>
+                h.id === headerId ? { ...h, status: 'PRE_APPROVED' } : h
+            ),
+            vacationPlans: state.vacationPlans.map(vp =>
+                vp.plan_header_id === headerId && vp.status === 'DRAFT'
+                    ? { ...vp, status: 'PRE_APPROVED' }
+                    : vp
+            ),
+        }));
+        return true;
+    },
+
+    generateAIPlan: async (year) => {
+        set({ isGeneratingPlan: true });
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-vacation-plan`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`,
+                },
+                body: JSON.stringify({ year }),
+            });
+            const json = await res.json();
+            if (json.error) throw new Error(json.error);
+            // Reload headers + plans for this year
+            await get().fetchVacationHeaders();
+            await get().fetchVacationPlans(year, null);
+            return { success: true, count: json.count };
+        } catch (err) {
+            console.error('generateAIPlan:', err);
+            return { success: false, error: err.message };
+        } finally {
+            set({ isGeneratingPlan: false });
+        }
+    },
+
+    fetchVacationChangeRequests: async (year) => {
+        const { data, error } = await supabase
+            .from('approval_requests')
+            .select('id, employee_id, status, note, approver_note, metadata, created_at')
+            .eq('type', 'VACATION_CHANGE')
+            .eq('status', 'PENDING')
+            .order('created_at', { ascending: false });
+        if (error) { console.error('fetchVacationChangeRequests:', error); return []; }
+        const employees = get().employees || [];
+        const enriched = (data || [])
+            .filter(r => r.metadata?.year === year)
+            .map(r => ({
+                ...r,
+                employee: employees.find(e => String(e.id) === String(r.employee_id)) || null,
+            }));
+        set({ vacationChangeRequests: enriched });
+        return enriched;
+    },
+
+    processChangeRequest: async (requestId, action, vacationPlanId, newStart, newEnd) => {
+        // action: 'APPROVED' | 'REJECTED'
+        if (action === 'APPROVED' && vacationPlanId && newStart && newEnd) {
+            const days = Math.round((new Date(newEnd + 'T12:00:00') - new Date(newStart + 'T12:00:00')) / 86400000) + 1;
+            const { error: planErr } = await supabase
+                .from('vacation_plans')
+                .update({
+                    start_date: newStart,
+                    end_date: newEnd,
+                    days,
+                    status: 'APPROVED',
+                    change_requested_start: null,
+                    change_requested_end: null,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', vacationPlanId);
+            if (planErr) { console.error('processChangeRequest plan:', planErr); return false; }
+            set(state => ({
+                vacationPlans: state.vacationPlans.map(vp =>
+                    vp.id === vacationPlanId
+                        ? { ...vp, start_date: newStart, end_date: newEnd, days, status: 'APPROVED', change_requested_start: null, change_requested_end: null }
+                        : vp
+                ),
+            }));
+        } else if (action === 'REJECTED' && vacationPlanId) {
+            // Revert plan status to PRE_APPROVED, clear requested dates
+            await supabase
+                .from('vacation_plans')
+                .update({ status: 'PRE_APPROVED', change_requested_start: null, change_requested_end: null, updated_at: new Date().toISOString() })
+                .eq('id', vacationPlanId);
+            set(state => ({
+                vacationPlans: state.vacationPlans.map(vp =>
+                    vp.id === vacationPlanId
+                        ? { ...vp, status: 'PRE_APPROVED', change_requested_start: null, change_requested_end: null }
+                        : vp
+                ),
+            }));
+        }
+        // Update approval_request status
+        const { error } = await supabase
+            .from('approval_requests')
+            .update({ status: action, updated_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) { console.error('processChangeRequest request:', error); return false; }
+        set(state => ({
+            vacationChangeRequests: state.vacationChangeRequests.filter(r => r.id !== requestId),
+        }));
+        return true;
+    },
 
     fetchVacationPlans: async (year, branchId = null) => {
         set({ isLoadingVacationPlans: true });
         try {
             let query = supabase
                 .from('vacation_plans')
-                .select('id, year, employee_id, branch_id, start_date, end_date, days, status, notes, metadata, created_at')
+                .select('id, year, plan_header_id, employee_id, branch_id, start_date, end_date, days, status, notes, metadata, change_requested_start, change_requested_end, created_at')
                 .eq('year', year)
                 .order('start_date', { ascending: true });
             if (branchId) query = query.eq('branch_id', branchId);

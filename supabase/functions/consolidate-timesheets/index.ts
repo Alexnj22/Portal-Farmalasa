@@ -1,12 +1,21 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Punch types stored in the attendance table
-const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY']);
-const EXIT_TYPES  = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS']);
+const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY', 'IN_EXTRA']);
+const EXIT_TYPES  = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS', 'OUT_EXTRA']);
 const LUNCH_OUT   = new Set(['LUNCH_START', 'OUT_LUNCH']);
 const LUNCH_IN    = new Set(['LUNCH_END',   'IN_LUNCH']);
 const LACTAT_OUT  = new Set(['LACTATION_START', 'OUT_LACTATION']);
 const LACTAT_IN   = new Set(['LACTATION_END',   'IN_LACTATION']);
+
+interface DayException {
+  date: string;
+  customStart?: string;
+  customEnd?: string;
+  lunchTime?: string;
+  lactationTime?: string;
+  note?: string;
+}
 
 function toMinutes(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
@@ -108,7 +117,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Load attendance punches in CST day window (UTC-6)
+    // 3. Load per-employee exceptions for workDate.
+    //    The kiosk reads employee.exceptions[] to decide how to handle a punch,
+    //    so we mirror that logic here for accurate timesheet generation.
+    const rosterEmpIds = (rosters || []).map(r => String(r.employee_id));
+    const exceptionMap = new Map<string, DayException>();
+
+    if (rosterEmpIds.length > 0) {
+      const { data: empRows } = await supabase
+        .from('employees')
+        .select('id, exceptions')
+        .in('id', rosterEmpIds);
+
+      for (const emp of empRows || []) {
+        const list: DayException[] = Array.isArray(emp.exceptions) ? emp.exceptions : [];
+        const ex = list.find(e => e.date === workDate);
+        if (ex) exceptionMap.set(String(emp.id), ex);
+      }
+    }
+
+    // 4. Load attendance punches in CST day window (UTC-6)
     const dayStart = workDate + 'T00:00:00-06:00';
     const dayEnd   = workDate + 'T23:59:59-06:00';
     const { data: punches, error: punchErr } = await supabase
@@ -131,19 +159,26 @@ Deno.serve(async (req) => {
     let skipped  = 0;
 
     for (const roster of rosters || []) {
-      const empId   = String(roster.employee_id);
-      const dayData = roster.schedule_data?.[dayKey];
+      const empId    = String(roster.employee_id);
+      const dayData  = roster.schedule_data?.[dayKey];
+      const exception = exceptionMap.get(empId);
 
-      if (!dayData || dayData.isOff) { skipped++; continue; }
+      // If the roster says this is an off day, check for a ShiftException before skipping.
+      // The kiosk uses employee.exceptions[] to allow IN_EXTRA on off days; we mirror that here.
+      const isOffInRoster = !dayData || dayData.isOff;
+      if (isOffInRoster && !exception) {
+        skipped++;
+        continue;
+      }
 
-      // Resolve scheduled start/end:
-      // 1. Prefer customStart/customEnd set directly on the day
-      // 2. Fall back to shift table lookup via shiftId
-      let scheduledStart: string | null = dayData.customStart ?? null;
-      let scheduledEnd:   string | null = dayData.customEnd   ?? null;
+      // Resolve scheduled start/end.
+      // Priority: exception.customStart/End → dayData.customStart/End → shift template
+      let scheduledStart: string | null = exception?.customStart ?? dayData?.customStart ?? null;
+      let scheduledEnd:   string | null = exception?.customEnd   ?? dayData?.customEnd   ?? null;
 
-      const shiftId = dayData.shiftId && dayData.shiftId !== 'LIBRE'
-        ? parseInt(dayData.shiftId, 10) : null;
+      const shiftId = (!isOffInRoster && dayData?.shiftId && dayData.shiftId !== 'LIBRE')
+        ? parseInt(dayData.shiftId, 10)
+        : null;
 
       if ((!scheduledStart || !scheduledEnd) && shiftId !== null && !isNaN(shiftId)) {
         const shift = shiftMap.get(shiftId);
@@ -155,7 +190,8 @@ Deno.serve(async (req) => {
 
       const empPunches = punchMap.get(empId) || [];
 
-      // Entry = first IN-type; exit = last EXIT-type
+      // Entry = first IN-type (includes IN_EXTRA for off-day coverage)
+      // Exit  = last EXIT-type (includes OUT_EXTRA)
       const entryPunch = empPunches.find(p => ENTRY_TYPES.has(p.type));
       const exitPunch  = [...empPunches].reverse().find(p => EXIT_TYPES.has(p.type));
 
@@ -171,20 +207,22 @@ Deno.serve(async (req) => {
       // Auto-punch: employee checked in but never out — insert scheduled end as OUT
       if (actualStart && !actualEnd && scheduledEnd) {
         const autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
+        const punchType   = isOffInRoster ? 'OUT_EXTRA' : 'OUT';
         const { error: autoErr } = await supabase.from('attendance').insert({
           employee_id: empId,
           timestamp:   autoEndTime.toISOString(),
-          type:        'OUT',
+          type:        punchType,
           details:     {
             autoInserted:    true,
             pendingHRReview: true,
             reason:          'Salida no registrada — generada automáticamente',
+            isExceptionDay:  !!exception,
           },
         });
         if (!autoErr) {
           actualEnd   = autoEndTime;
           autoPunched = true;
-          console.log(`Auto-punch OUT for ${empId} at ${scheduledEnd} CST on ${workDate}`);
+          console.log(`Auto-punch ${punchType} for ${empId} at ${scheduledEnd} CST on ${workDate}${exception ? ' [exception]' : ''}`);
         } else {
           console.error(`Auto-punch failed for ${empId}:`, autoErr.message);
         }
@@ -204,7 +242,6 @@ Deno.serve(async (req) => {
         overtimeHours = Math.max(0, netMins - shiftMins) / 60;
 
         if (scheduledStart) {
-          // Build expected entry time in CST, then compare against actual UTC timestamp
           const expectedUTC = cstTimeToUTC(workDate, scheduledStart);
           lateMinutes = Math.max(0, Math.floor((actualStart.getTime() - expectedUTC.getTime()) / 60000));
         }
@@ -240,6 +277,9 @@ Deno.serve(async (req) => {
       }
 
       upserted++;
+      if (exception) {
+        console.log(`Exception applied for ${empId} on ${workDate}: ${scheduledStart}–${scheduledEnd}${isOffInRoster ? ' [was OFF day]' : ' [shift override]'}`);
+      }
     }
 
     return new Response(

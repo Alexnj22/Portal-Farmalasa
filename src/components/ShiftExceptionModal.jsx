@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { X, Calendar as CalendarIcon, Clock, Save, ShieldAlert, Utensils, Baby, Info } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
+import { supabase } from '../supabaseClient';
 
 const ShiftExceptionModal = ({ employee, onClose }) => {
     const { shifts, updateEmployee } = useStaffStore();
+    const [isSaving, setIsSaving] = useState(false);
     
     // Fijamos la fecha a HOY
     const todayObj = new Date();
@@ -38,8 +40,9 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
+        setIsSaving(true);
 
         const newException = {
             id: existingException?.id || Date.now().toString(),
@@ -52,20 +55,107 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
             note: note || 'Cambio manual de turno para el día de hoy'
         };
 
+        // 1. Write to employee.exceptions[] — kiosk reads this for real-time punch decisions
         const filteredExceptions = (employee.exceptions || []).filter(ex => ex.date !== todayStr);
-
-        updateEmployee(employee.id, {
+        await updateEmployee(employee.id, {
             ...employee,
             exceptions: [...filteredExceptions, newException]
         });
 
+        // 2. Also patch the published roster for today — consolidate-timesheets reads this
+        //    for accurate timesheet generation. We find the current week's roster and update
+        //    the dayKey with customStart/customEnd (and flip isOff if it was a day off).
+        try {
+            const todayDate  = new Date(todayStr + 'T12:00:00');
+            const dow        = todayDate.getDay();               // 0=Sun … 6=Sat
+            const diffToMon  = (dow + 6) % 7;                   // days back to Monday
+            const monDate    = new Date(todayDate);
+            monDate.setDate(monDate.getDate() - diffToMon);
+            const weekStart  = monDate.toISOString().split('T')[0];
+            const dayKey     = String(dow);
+
+            const { data: roster } = await supabase
+                .from('employee_rosters')
+                .select('id, schedule_data')
+                .eq('employee_id', employee.id)
+                .eq('week_start_date', weekStart)
+                .eq('status', 'PUBLISHED')
+                .maybeSingle();
+
+            if (roster) {
+                const updatedSchedule = {
+                    ...(roster.schedule_data || {}),
+                    [dayKey]: {
+                        ...(roster.schedule_data?.[dayKey] || {}),
+                        isOff: false,           // activates coverage even on a day off
+                        customStart,
+                        customEnd,
+                        lunchTime: hasLunch ? lunchTime : (roster.schedule_data?.[dayKey]?.lunchTime ?? null),
+                        lactationTime: hasLactation ? lactationTime : (roster.schedule_data?.[dayKey]?.lactationTime ?? null),
+                        exceptionNote: newException.note,
+                        exceptionDate: todayStr,
+                    },
+                };
+                await supabase
+                    .from('employee_rosters')
+                    .update({ schedule_data: updatedSchedule, updated_at: new Date().toISOString() })
+                    .eq('id', roster.id);
+            }
+        } catch (err) {
+            console.error('ShiftExceptionModal: roster patch failed', err);
+            // Non-blocking — kiosk still works via employee.exceptions
+        }
+
+        setIsSaving(false);
         onClose();
     };
 
-    const handleRemoveException = () => {
+    const handleRemoveException = async () => {
         if (!window.confirm("¿Deseas eliminar la excepción y regresar a su horario normal de hoy?")) return;
+
+        // 1. Clear from employee.exceptions[]
         const filteredExceptions = (employee.exceptions || []).filter(ex => ex.date !== todayStr);
-        updateEmployee(employee.id, { ...employee, exceptions: filteredExceptions });
+        await updateEmployee(employee.id, { ...employee, exceptions: filteredExceptions });
+
+        // 2. Restore roster day to original (remove customStart/End/isOff override)
+        try {
+            const todayDate = new Date(todayStr + 'T12:00:00');
+            const dow       = todayDate.getDay();
+            const diffToMon = (dow + 6) % 7;
+            const monDate   = new Date(todayDate);
+            monDate.setDate(monDate.getDate() - diffToMon);
+            const weekStart = monDate.toISOString().split('T')[0];
+            const dayKey    = String(dow);
+
+            const { data: roster } = await supabase
+                .from('employee_rosters')
+                .select('id, schedule_data')
+                .eq('employee_id', employee.id)
+                .eq('week_start_date', weekStart)
+                .eq('status', 'PUBLISHED')
+                .maybeSingle();
+
+            if (roster?.schedule_data?.[dayKey]) {
+                const day = { ...roster.schedule_data[dayKey] };
+                delete day.customStart;
+                delete day.customEnd;
+                delete day.exceptionNote;
+                delete day.exceptionDate;
+                // Restore isOff based on whether the day originally had a shift
+                if (!day.shiftId || day.shiftId === 'LIBRE') day.isOff = true;
+
+                await supabase
+                    .from('employee_rosters')
+                    .update({
+                        schedule_data: { ...roster.schedule_data, [dayKey]: day },
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', roster.id);
+            }
+        } catch (err) {
+            console.error('ShiftExceptionModal: roster restore failed', err);
+        }
+
         onClose();
     };
 
@@ -214,8 +304,8 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                                 />
                             </div>
                             
-                            <button type="submit" className="w-full mt-2 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.97] flex items-center justify-center gap-2">
-                                <Save size={16} /> Aplicar Excepción a HOY
+                            <button type="submit" disabled={isSaving} className="w-full mt-2 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <Save size={16} /> {isSaving ? 'Guardando…' : 'Aplicar Excepción a HOY'}
                             </button>
                         </form>
                     </div>

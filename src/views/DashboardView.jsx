@@ -20,6 +20,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
@@ -1573,44 +1574,24 @@ const DashboardView = ({ openModal }) => {
   // ── filtersContent ─────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2">
-      {/* Pill-button tab container — matches ProductosView style */}
-      <div className={`relative flex items-center transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 ${
-        isCompat
-          ? 'bg-[#B3D0E8] border border-[#8BAEC8] shadow-sm hover:shadow-md'
-          : isAurora
-          ? 'bg-white/[0.06] backdrop-blur-2xl border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.45)] hover:bg-white/[0.09]'
-          : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]'
-      }`}>
-        {TABS.map(tab => {
-          const TabIcon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button key={tab.id} onClick={() => switchTab(tab.id)}
-              className={`px-4 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border flex items-center gap-1.5 active:scale-[0.97] ${
-                isActive
-                  ? isCompat
-                    ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-md scale-[1.02]'
-                    : isAurora
-                    ? 'bg-white/15 text-white border-white/20 shadow-sm scale-[1.02]'
-                    : 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                  : isCompat
-                  ? 'bg-transparent text-[#374B63] border-transparent hover:bg-[#0052CC]/10 hover:text-[#0052CC]'
-                  : isAurora
-                  ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
-                  : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
-              }`}>
-              <TabIcon size={12} strokeWidth={2.2}/>
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <ViewTabBar
+        tabs={TABS.map(t => ({ key: t.id, label: t.label, icon: t.icon }))}
+        activeTab={activeTab}
+        onTabChange={switchTab}
+        showSearch={false}
+      />
 
       {/* Divider */}
-      <div className="w-px h-5 bg-slate-200/70"/>
+      <div className={`w-px h-5 ${isAurora ? 'bg-white/15' : 'bg-slate-200/70'}`} />
 
-      {/* Personalizar — pill shape matching LiquidSelect trigger language */}
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-[background-color,color,border-color] duration-150 active:scale-[0.97] shadow-sm border ${showConfig?'bg-[#0052CC] text-white border-[#0052CC]':'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'}`}>
+      {/* Personalizar */}
+      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
+        showConfig
+          ? 'bg-[#0052CC] text-white border-[#0052CC]'
+          : isAurora
+          ? 'bg-[rgba(77,148,255,0.10)] text-[rgba(150,200,255,0.85)] border-[rgba(77,148,255,0.22)] hover:bg-[rgba(77,148,255,0.20)] backdrop-blur-sm'
+          : 'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'
+      }`}>
         <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar
       </button>
     </div>

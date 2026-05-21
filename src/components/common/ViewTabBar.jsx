@@ -23,6 +23,7 @@ export default function ViewTabBar({
   searchValue = '',
   onSearchChange,
   placeholder = 'Buscar...',
+  showSearch = true,
 }) {
   const { isCompat, isAurora } = useTheme();
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -132,19 +133,21 @@ export default function ViewTabBar({
           );
         })}
 
-        {tabs.length > 0 && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
+        {showSearch && tabs.length > 0 && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
 
-        <button onClick={openSearch}
-          className="w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full
-            flex items-center justify-center shrink-0
-            shadow-[0_3px_8px_rgba(0,82,204,0.4)]
-            transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5
-            active:scale-[0.97] transform-gpu relative">
-          <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-          {searchValue && (
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />
-          )}
-        </button>
+        {showSearch && (
+          <button onClick={openSearch}
+            className="w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full
+              flex items-center justify-center shrink-0
+              shadow-[0_3px_8px_rgba(0,82,204,0.4)]
+              transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5
+              active:scale-[0.97] transform-gpu relative">
+            <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
+            {searchValue && (
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

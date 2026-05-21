@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -77,6 +78,7 @@ function MarginPct({ pct }) {
 // ── SmartPagination ───────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
+    const { isAurora } = useTheme();
     if (total <= 1) return null;
     const buildPages = () => {
         if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -89,26 +91,31 @@ function SmartPagination({ page, total, onChange }) {
         pages.push(total);
         return pages;
     };
+    const navBtn = isAurora
+        ? 'bg-white/[0.09] text-white/65 border-white/[0.20] hover:bg-white/[0.14] hover:border-white/[0.30] hover:text-white'
+        : 'text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm';
     return (
         <div className="flex items-center gap-1.5">
             <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                className={`flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed ${navBtn}`}>
                 <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
             </button>
             <div className="flex items-center gap-1">
                 {buildPages().map((p, i) =>
                     p === '…'
-                        ? <span key={`e${i}`} className="w-6 text-center text-slate-300 text-[12px] font-bold select-none">·</span>
+                        ? <span key={`e${i}`} className={`w-6 text-center text-[12px] font-bold select-none ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>·</span>
                         : <button key={p} onClick={() => onChange(p)}
-                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
+                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 border ${
                                 p === page
-                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
-                                    : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
+                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200/50 scale-110 border-[#0052CC]'
+                                    : isAurora
+                                    ? 'text-white/55 border-white/[0.14] hover:bg-white/[0.12] hover:text-white hover:border-white/[0.28]'
+                                    : 'text-slate-500 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
                             }`}>{p}</button>
                 )}
             </div>
             <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                className={`flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed ${navBtn}`}>
                 Sig. <ChevronRight size={12} strokeWidth={2.5} />
             </button>
         </div>
@@ -118,21 +125,47 @@ function SmartPagination({ page, total, onChange }) {
 // ── MarginStatCards ───────────────────────────────────────────────────────────
 
 function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos }) {
+    const { isAurora, isCompat } = useTheme();
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
 
-    const filterCards = [
+    // Neutral card (info only, not clickable filter)
+    const infoCard = isAurora
+        ? 'bg-white/[0.10] border-white/[0.20] backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
+        : isCompat
+        ? 'bg-white border-[#C4D9E8] shadow-sm'
+        : 'bg-white/70 border-white/80 backdrop-blur-sm shadow-sm';
+
+    const statText   = isAurora ? 'text-white/90' : 'text-slate-700';
+    const statLabel  = isAurora ? 'text-white/65' : 'text-slate-600';
+    const statSub    = isAurora ? 'text-white/40' : 'text-slate-400';
+    const statIconBg = isAurora ? 'bg-white/[0.15]' : 'bg-blue-50';
+    const divider    = isAurora ? 'bg-white/[0.15]' : 'bg-slate-100';
+
+    const filterCardDef = [
         {
             id: 'perdida',
             Icon: ShieldAlert,
             label: 'Con pérdida',
             sub: 'precio < costo',
             count: perdidaCount,
-            activeBg:   'bg-red-50 border-red-300 shadow-red-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/40',
-            iconBg:     filterMargin === 'perdida' ? 'bg-white' : 'bg-red-50',
-            iconColor:  'text-red-500',
-            countColor: perdidaCount > 0 ? 'text-red-600' : 'text-slate-300',
+            activeBg: isAurora
+                ? 'bg-red-500/[0.18] border-red-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
+                : isCompat
+                ? 'bg-red-50 border-red-300 shadow-red-100/80'
+                : 'bg-red-50 border-red-300 shadow-red-100/80',
+            inactiveBg: isAurora
+                ? 'bg-white/[0.08] border-white/[0.16] hover:bg-red-500/[0.10] hover:border-red-400/[0.25]'
+                : isCompat
+                ? 'bg-white border-[#C4D9E8] hover:border-red-200 hover:bg-red-50/40'
+                : 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/40',
+            iconBg: filterMargin === 'perdida'
+                ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
+                : isAurora ? 'bg-red-500/[0.20]' : 'bg-red-50',
+            iconColor: isAurora ? 'text-red-400' : 'text-red-500',
+            countColor: perdidaCount > 0
+                ? isAurora ? 'text-red-400' : 'text-red-600'
+                : isAurora ? 'text-white/25' : 'text-slate-300',
         },
         {
             id: 'bajo',
@@ -140,60 +173,84 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Margen bajo',
             sub: '< 15% en algún precio',
             count: bajoCount,
-            activeBg:   'bg-amber-50 border-amber-300 shadow-amber-100/80',
-            inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
-            iconBg:     filterMargin === 'bajo' ? 'bg-white' : 'bg-amber-50',
-            iconColor:  'text-amber-500',
-            countColor: bajoCount > 0 ? 'text-amber-600' : 'text-slate-300',
+            activeBg: isAurora
+                ? 'bg-amber-500/[0.18] border-amber-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
+                : isCompat
+                ? 'bg-amber-50 border-amber-300 shadow-amber-100/80'
+                : 'bg-amber-50 border-amber-300 shadow-amber-100/80',
+            inactiveBg: isAurora
+                ? 'bg-white/[0.08] border-white/[0.16] hover:bg-amber-500/[0.10] hover:border-amber-400/[0.25]'
+                : isCompat
+                ? 'bg-white border-[#C4D9E8] hover:border-amber-200 hover:bg-amber-50/40'
+                : 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
+            iconBg: filterMargin === 'bajo'
+                ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
+                : isAurora ? 'bg-amber-500/[0.20]' : 'bg-amber-50',
+            iconColor: isAurora ? 'text-amber-400' : 'text-amber-500',
+            countColor: bajoCount > 0
+                ? isAurora ? 'text-amber-400' : 'text-amber-600'
+                : isAurora ? 'text-white/25' : 'text-slate-300',
         },
     ];
 
+    // Nuevos card
+    const nuevosBg = filterNuevos
+        ? isAurora
+            ? 'bg-emerald-500/[0.18] border-emerald-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)] -translate-y-px'
+            : 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
+        : isAurora
+            ? 'bg-white/[0.08] border-white/[0.16] hover:bg-emerald-500/[0.10] hover:border-emerald-400/[0.25]'
+            : isCompat
+            ? 'bg-white border-[#C4D9E8] hover:border-emerald-200 hover:bg-emerald-50/40'
+            : 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40';
+
+    const nuevosIconBg = filterNuevos
+        ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
+        : isAurora ? 'bg-emerald-500/[0.20]' : 'bg-emerald-50';
+
     return (
         <div className="flex gap-3 flex-wrap">
-            {/* Informational cards — total & nuevos */}
-            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[140px]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                    <Package size={15} className="text-[#0052CC]" />
+            {/* Info card — total */}
+            <div className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] ${infoCard}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${statIconBg}`}>
+                    <Package size={15} className={isAurora ? 'text-blue-300' : 'text-[#0052CC]'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.activos ?? 0).toLocaleString()}
+                    <div className={`text-[22px] font-black leading-none tabular-nums ${statText}`}>
+                        {productStatsLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (productStats?.activos ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Productos activos</div>
+                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Productos activos</div>
                     {!productStatsLoading && (productStats?.inactivos ?? 0) > 0 && (
-                        <div className="text-[9px] text-slate-400 tabular-nums">
+                        <div className={`text-[9px] tabular-nums ${statSub}`}>
                             {(productStats.inactivos).toLocaleString()} inactivos
                         </div>
                     )}
                 </div>
             </div>
 
+            {/* Nuevos filter card */}
             <button
                 onClick={onFilterNuevos}
                 disabled={productStatsLoading}
-                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
-                    filterNuevos
-                        ? 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
-                        : 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40'
-                }`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterNuevos ? 'bg-white' : 'bg-emerald-50'}`}>
-                    <Sparkles size={15} className="text-emerald-500" />
+                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${nuevosBg}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${nuevosIconBg}`}>
+                    <Sparkles size={15} className={isAurora ? 'text-emerald-400' : 'text-emerald-500'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className="text-[22px] font-black leading-none tabular-nums text-emerald-600">
-                        {productStatsLoading ? <span className="text-slate-200">–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
+                    <div className={`text-[22px] font-black leading-none tabular-nums ${isAurora ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                        {productStatsLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-[10px] font-bold text-slate-600 leading-tight">Nuevos este mes</div>
-                    <div className="text-[9px] text-slate-400">agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
+                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Nuevos este mes</div>
+                    <div className={`text-[9px] ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
                 </div>
-                {filterNuevos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                {filterNuevos && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
             </button>
 
             {/* Divider */}
-            <div className="w-px h-14 bg-slate-100 self-center hidden sm:block" />
+            <div className={`w-px h-14 self-center hidden sm:block ${divider}`} />
 
             {/* Filter cards */}
-            {filterCards.map(c => {
+            {filterCardDef.map(c => {
                 const active = filterMargin === c.id;
                 return (
                     <button key={c.id}
@@ -207,12 +264,12 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                         </div>
                         <div className="text-left min-w-0">
                             <div className={`text-[22px] font-black leading-none tabular-nums ${c.countColor}`}>
-                                {loading ? <span className="text-slate-200">–</span> : c.count.toLocaleString()}
+                                {loading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : c.count.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-slate-600 leading-tight">{c.label}</div>
-                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                            <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>{c.label}</div>
+                            <div className={`text-[9px] ${statSub}`}>{c.sub}</div>
                         </div>
-                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        {active && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
                     </button>
                 );
             })}
@@ -223,13 +280,16 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 // ── SortTh ────────────────────────────────────────────────────────────────────
 
 function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
+    const { isAurora } = useTheme();
     const active = sortField === field;
     return (
         <th onClick={() => onSort(field)}
-            className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
+            className={`px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
+                active
+                    ? isAurora ? 'text-white' : 'text-[#0052CC]'
+                    : isAurora ? 'text-white/45 hover:text-white/80' : 'text-slate-400 hover:text-slate-600'
             } ${className}`}>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
                 {label}
                 <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
                     {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
@@ -915,6 +975,48 @@ export default function TabCatalogo({
         return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
     }, [maxPriceLevel]);
 
+    const { isAurora, isCompat } = useTheme();
+
+    // ── Theme tokens ────────────────────────────────────────────────────────────
+    const tk = {
+        card: isAurora
+            ? 'bg-white/[0.10] border-white/[0.22] backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]'
+            : isCompat
+            ? 'bg-white border-[#C4D9E8] shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
+            : 'bg-white/65 border-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,82,204,0.06)]',
+        thead: isAurora
+            ? 'bg-white/[0.09] border-b border-white/[0.16]'
+            : isCompat
+            ? 'bg-[#EEF4F9] border-b border-[#C4D9E8]'
+            : 'bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.08]',
+        rowBorder: isAurora ? 'border-t border-white/[0.08]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100/60',
+        rowHover: isAurora ? 'hover:bg-white/[0.07]' : 'hover:bg-slate-50/80',
+        rowExpanded: isAurora ? 'bg-white/[0.12]' : isCompat ? 'bg-blue-50/40' : 'bg-blue-50/50',
+        textStrong: isAurora ? 'text-white/90' : 'text-slate-700',
+        textMid: isAurora ? 'text-white/65' : 'text-slate-500',
+        textInactive: isAurora ? 'text-white/35 line-through decoration-white/20' : 'text-slate-400 line-through decoration-slate-300',
+        avatarBg: isAurora ? 'bg-white/[0.14]' : 'bg-slate-100',
+        avatarIcon: isAurora ? 'text-white/35' : 'text-slate-300',
+        skeleton: isAurora ? 'bg-white/[0.12]' : isCompat ? 'bg-slate-200/60' : 'bg-slate-200/70',
+        emptyBg: isAurora ? 'bg-white/[0.07] border-white/[0.16]' : isCompat ? 'bg-white border-[#C4D9E8]' : 'bg-white/50 border-white/50',
+        emptyIcon: isAurora ? 'text-white/25' : 'text-slate-300',
+        emptyText: isAurora ? 'text-white/45' : 'text-slate-400',
+        filterPill: isAurora
+            ? 'bg-white/[0.09] border-white/[0.18] backdrop-blur-2xl shadow-[0_2px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
+            : isCompat
+            ? 'bg-white border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
+            : 'bg-white/80 border-slate-200/70 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]',
+        filterDivider: isAurora ? 'bg-white/[0.14]' : 'bg-slate-100',
+        filterBtn: isAurora ? 'text-white/55 hover:text-white/85 hover:bg-white/[0.09]' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
+        pageSizeActive: 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
+        pageSizeInactive: isAurora
+            ? 'bg-white/[0.08] text-white/65 border-white/[0.18] hover:border-white/[0.28] hover:text-white'
+            : isCompat
+            ? 'bg-white text-slate-500 border-[#C4D9E8] hover:border-slate-300 hover:text-slate-700'
+            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
+        totalText: isAurora ? 'text-white/40' : 'text-slate-400',
+    };
+
     const branches = useStaff(s => s.branches);
 
     const [products, setProducts]     = useState([]);
@@ -1205,8 +1307,8 @@ export default function TabCatalogo({
                     />
                 </div>
 
-                {/* Filter pill — desktop only, same style as Ventas */}
-                <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                {/* Filter pill — desktop only */}
+                <div className={`hidden lg:flex group items-center gap-0 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 shrink-0 overflow-visible ${tk.filterPill}`}>
 
                     {/* Activos / Todos */}
                     <div className="flex items-center gap-0.5 px-2.5 py-2">
@@ -1214,13 +1316,15 @@ export default function TabCatalogo({
                             <button key={v} onClick={() => setFilterActivo?.(v)}
                                 className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                                     filterActivo === v
-                                        ? 'bg-emerald-100 text-emerald-700 shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                        ? isAurora
+                                            ? 'bg-emerald-500/[0.20] text-emerald-400 shadow-sm'
+                                            : 'bg-emerald-100 text-emerald-700 shadow-sm'
+                                        : tk.filterBtn
                                 }`}>{label}</button>
                         ))}
                     </div>
 
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
 
                     {/* Laboratorio */}
                     <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
@@ -1234,7 +1338,7 @@ export default function TabCatalogo({
                         />
                     </div>
 
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
 
                     {/* Categoría */}
                     <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
@@ -1248,20 +1352,22 @@ export default function TabCatalogo({
                         />
                     </div>
 
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
 
                     {/* Antibiótico */}
                     <button onClick={() => setFilterAntibiotico?.(v => v === true ? null : true)}
                         className={`mx-3 my-2 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                             filterAntibiotico === true
-                                ? 'bg-orange-100 text-orange-700 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                ? isAurora
+                                    ? 'bg-orange-500/[0.20] text-orange-400 shadow-sm'
+                                    : 'bg-orange-100 text-orange-700 shadow-sm'
+                                : tk.filterBtn
                         }`}>Antibiótico</button>
 
                     {/* Clear all */}
                     {hasActiveFilters && (
                         <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
                             <button onClick={resetFilters} title="Limpiar todos los filtros"
                                 className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
                                 <X size={11} strokeWidth={3} />
@@ -1289,45 +1395,45 @@ export default function TabCatalogo({
                     </button>
                 </div>
             ) : loading ? (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
                     <table className="min-w-full">
                         <tbody>
                             {Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i} className="border-b border-slate-50 last:border-0">
-                                    <td className="px-4 py-3">
+                                <tr key={i} className={i > 0 ? tk.rowBorder : ''}>
+                                    <td className="px-4 py-3.5">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg skeleton shrink-0" />
-                                            <div className="space-y-1.5">
-                                                <div className="h-3 w-40 skeleton" />
-                                                <div className="h-2.5 w-24 skeleton" />
+                                            <div className={`w-10 h-10 rounded-xl animate-pulse shrink-0 ${tk.skeleton}`} />
+                                            <div className="space-y-2">
+                                                <div className={`h-3 w-40 rounded-full animate-pulse ${tk.skeleton}`} />
+                                                <div className={`h-2.5 w-24 rounded-full animate-pulse ${tk.skeleton}`} />
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 w-28 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden lg:table-cell"><div className="h-3 w-20 skeleton" /></td>
-                                    <td className="px-4 py-3 hidden sm:table-cell"><div className="h-5 w-14 skeleton" /></td>
-                                    <td className="px-4 py-3 w-10" />
+                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-3 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden lg:table-cell"><div className={`h-3 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-5 w-14 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 w-10" />
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             ) : products.length === 0 ? (
-                <div className="rounded-2xl border border-black/[0.07] bg-white shadow-sm py-20 text-center text-slate-400">
-                    <Package size={32} className="opacity-30 mx-auto mb-3" />
-                    <p className="text-sm">No se encontraron productos</p>
+                <div className={`rounded-2xl border py-20 text-center ${tk.emptyBg}`}>
+                    <Package size={32} className={`mx-auto mb-3 ${tk.emptyIcon}`} />
+                    <p className={`text-sm font-medium ${tk.emptyText}`}>No se encontraron productos</p>
                 </div>
             ) : (
-                <div className="rounded-2xl border border-black/[0.07] overflow-hidden bg-white shadow-sm">
+                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
-                            <thead className="sticky top-0 z-10">
-                                <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
+                            <thead className={`sticky top-0 z-10 ${tk.thead}`}>
+                                <tr>
                                     <SortTh field="nombre"    label="Producto"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     <SortTh field="lab"       label="Laboratorio" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
                                     <SortTh field="categoria" label="Categoría"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
                                     <SortTh field="activo"    label="Estado"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
-                                    <th className="px-4 py-3 w-10" />
+                                    <th className="px-4 py-3.5 w-10" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -1344,25 +1450,25 @@ export default function TabCatalogo({
                                                 onClick={() => toggleRow(p.id)}
                                                 onMouseEnter={() => prefetchRow(p.id)}
                                                 onMouseLeave={cancelPrefetch}
-                                                className={`border-t border-black/[0.04] cursor-pointer transition-colors ${
-                                                    isExpanded   ? 'bg-blue-50/50' :
-                                                    isInactive   ? 'hover:bg-slate-50/60 opacity-55' :
-                                                    'hover:bg-slate-50/70'
+                                                className={`cursor-pointer transition-colors duration-150 ${tk.rowBorder} ${
+                                                    isExpanded   ? tk.rowExpanded :
+                                                    isInactive   ? `${tk.rowHover} opacity-50` :
+                                                    tk.rowHover
                                                 }`}>
 
                                                 {/* Producto */}
-                                                <td className="px-4 py-2.5">
+                                                <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
                                                         {p.foto_url ? (
-                                                            <img src={p.foto_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                                                            <img src={p.foto_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
                                                         ) : (
-                                                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                                                                <Package size={14} className="text-slate-300" />
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}>
+                                                                <Package size={14} className={tk.avatarIcon} />
                                                             </div>
                                                         )}
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className={`text-[12px] font-bold leading-tight ${isInactive ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700'}`}>
+                                                                <span className={`text-[13px] font-bold leading-tight ${isInactive ? tk.textInactive : tk.textStrong}`}>
                                                                     {p.nombre}
                                                                 </span>
                                                                 {mInfo && (
@@ -1378,7 +1484,7 @@ export default function TabCatalogo({
                                                                 )}
                                                             </div>
                                                             {p.principio_activo && (
-                                                                <p className="text-[10px] text-violet-500/70 flex items-center gap-1 mt-0.5">
+                                                                <p className={`text-[10px] flex items-center gap-1 mt-0.5 ${isAurora ? 'text-violet-300/70' : 'text-violet-500/70'}`}>
                                                                     <FlaskConical size={8} className="shrink-0" />
                                                                     <span className="truncate max-w-[240px]">{p.principio_activo}</span>
                                                                 </p>
@@ -1388,50 +1494,54 @@ export default function TabCatalogo({
                                                 </td>
 
                                                 {/* Laboratorio */}
-                                                <td className="px-4 py-2.5 hidden md:table-cell">
-                                                    <span className="text-[11px] text-slate-500">{p.laboratorios?.nombre || '—'}</span>
+                                                <td className="px-4 py-3 hidden md:table-cell">
+                                                    <span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span>
                                                 </td>
 
                                                 {/* Categoría */}
-                                                <td className="px-4 py-2.5 hidden lg:table-cell">
+                                                <td className="px-4 py-3 hidden lg:table-cell">
                                                     <div className="flex flex-wrap gap-1">
                                                         {p.tipo_medicamento && (
-                                                            <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full whitespace-nowrap">
+                                                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border ${isAurora ? 'bg-blue-500/[0.18] text-blue-300 border-blue-400/[0.30]' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                                                                 {p.tipo_medicamento}
                                                             </span>
                                                         )}
                                                         {p.es_antibiotico && (
-                                                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-full">
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-orange-500/[0.18] text-orange-300 border-orange-400/[0.30]' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
                                                                 Antibiótico
                                                             </span>
                                                         )}
                                                         {p.requiere_receta && (
-                                                            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full">
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-red-500/[0.18] text-red-300 border-red-400/[0.30]' : 'bg-red-50 text-red-600 border-red-100'}`}>
                                                                 Receta
                                                             </span>
                                                         )}
                                                         {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && (
-                                                            <span className="text-slate-300 text-[11px]">—</span>
+                                                            <span className={`text-[11px] ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>—</span>
                                                         )}
                                                     </div>
                                                 </td>
 
                                                 {/* Estado */}
-                                                <td className="px-4 py-2.5 hidden sm:table-cell">
+                                                <td className="px-4 py-3 hidden sm:table-cell">
                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${
                                                         p.activo
-                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                            : 'bg-slate-100 text-slate-400 border-slate-200'
+                                                            ? isAurora
+                                                                ? 'bg-emerald-500/[0.18] text-emerald-400 border-emerald-400/[0.30]'
+                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                            : isAurora
+                                                                ? 'bg-white/[0.08] text-white/35 border-white/[0.14]'
+                                                                : 'bg-slate-100 text-slate-400 border-slate-200'
                                                     }`}>
                                                         {p.activo ? 'Activo' : 'Inactivo'}
                                                     </span>
                                                 </td>
 
                                                 {/* Chevron */}
-                                                <td className="px-4 py-2.5">
+                                                <td className="px-4 py-3">
                                                     {isLoadingThis
                                                         ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
-                                                        : <ChevronDown size={13} className={`text-slate-300 transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-blue-400' : ''}`} />
+                                                        : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? `rotate-180 ${isAurora ? 'text-blue-300' : 'text-blue-400'}` : tk.textMid}`} />
                                                     }
                                                 </td>
                                             </tr>
@@ -1467,16 +1577,14 @@ export default function TabCatalogo({
                             <button key={size}
                                 onClick={() => { setPageSize(size); setPage(1); }}
                                 className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    pageSize === size
-                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                    pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive
                                 }`}>
                                 {size}
                             </button>
                         ))}
                     </div>
                     <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                    <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
+                    <span className={`text-[10px] font-semibold w-[80px] text-right ${tk.totalText}`}>
                         {total.toLocaleString()} total
                     </span>
                 </div>

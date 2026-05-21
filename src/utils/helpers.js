@@ -143,19 +143,18 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
     const scheduleBase = employee.weekly_roster || employee.weeklySchedule || {};
     const dayConfig = scheduleBase[dbDay] || scheduleBase[dbDay.toString()];
 
-    if (!dayConfig || dayConfig.isOffDay || (!dayConfig.shiftId && !dayConfig.shift_id)) {
+    if (!dayConfig || dayConfig.isOffDay || dayConfig.isOff || (!dayConfig.shiftId && !dayConfig.shift_id)) {
         return { isOffDay: true, shift: null };
     }
 
     const targetShiftId = dayConfig.shiftId || dayConfig.shift_id;
-    // 🚨 MEJORA: Evitar crash si .toString() intenta ejecutarse sobre undefined/null
     const shift = (shifts || []).find(s => String(s.id) === String(targetShiftId));
-    
+
     return {
         isOffDay: false,
         shift: shift || null,
-        lunchTime: dayConfig.lunchTime || dayConfig.lunch_time,
-        lactationTime: dayConfig.lactationTime || dayConfig.lactation_time
+        lunchTime: dayConfig.lunchTime || dayConfig.lunch_time || dayConfig.lunchStart,
+        lactationTime: dayConfig.lactationTime || dayConfig.lactation_time || dayConfig.lactationStart
     };
 };
 
@@ -179,12 +178,11 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
     const l = p[p.length - 1]; 
     const lastType = l.type || '';
     
-    // 🚨 CORRECCIÓN: Tipos exactos de la BD (PUNCH_IN, LUNCH_END, LACTATION_END = trabajando)
-    if (lastType === 'PUNCH_IN' || lastType === 'LUNCH_END' || lastType === 'LACTATION_END')
+    if (lastType === 'IN' || lastType === 'IN_LUNCH' || lastType === 'IN_LACTATION' || lastType === 'IN_RETURN' || lastType === 'IN_EXTRA')
         return { status: 'WORKING', label: 'En Labores', color: 'bg-green-100 text-green-700 border-green-200' };
-    else if (lastType === 'LUNCH_START')
+    else if (lastType === 'OUT_LUNCH')
         return { status: 'LUNCH', label: 'En Almuerzo', color: 'bg-orange-100 text-orange-700 border-orange-200' };
-    else if (lastType === 'LACTATION_START')
+    else if (lastType === 'OUT_LACTATION')
         return { status: 'LACTATION', label: 'En Lactancia', color: 'bg-pink-100 text-pink-700 border-pink-200' };
     else if (lastType === 'OUT_BUSINESS')
         // 🚨 NUEVO: Etiqueta especial para Gestión Externa

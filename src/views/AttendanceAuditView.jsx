@@ -104,11 +104,12 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const { employees: storeEmployees, branches, setEmployees, shifts: storeShifts,
           appendAuditLog, loadAttendanceLastDays, confirmAttendancePunch, insertAttendancePunchAt } = useStaff();
 
-  // ── Demo mode cuando no hay datos reales ────────────────────────────────
-  const mockData   = useMemo(() => buildMockData(), []);
-  const isDemoMode = !storeEmployees?.length;
-  const employees  = isDemoMode ? mockData.employees : (storeEmployees || []);
-  const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || []);
+  // ── Demo mode ────────────────────────────────────────────────────────────
+  const mockData        = useMemo(() => buildMockData(), []);
+  const [forceDemoMode, setForceDemoMode] = useState(false);
+  const isDemoMode      = !storeEmployees?.length || forceDemoMode;
+  const employees       = isDemoMode ? mockData.employees : (storeEmployees || []);
+  const shifts          = isDemoMode ? mockData.shifts     : (storeShifts    || []);
 
   // ── Estado ───────────────────────────────────────────────────────────────
   const [filterBranch,         setFilterBranch]         = useState('');
@@ -408,6 +409,19 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         icon={Building2}
       />
 
+      {/* Toggle demo */}
+      <button
+        type="button"
+        onClick={() => setForceDemoMode(v => !v)}
+        className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${
+          forceDemoMode
+            ? 'bg-amber-100 border-amber-300 text-amber-700'
+            : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'
+        }`}
+      >
+        {forceDemoMode ? 'Demo ON' : 'Demo'}
+      </button>
+
       {/* Badge de alertas */}
       {totalAlerts > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">
@@ -429,7 +443,20 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         {isDemoMode && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 flex items-center gap-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Modo Demo</span>
-            <span className="text-[11px] text-amber-700/70">Sin empleados reales — mostrando datos de prueba para visualizar la vista.</span>
+            <span className="text-[11px] text-amber-700/70 flex-1">
+              {forceDemoMode
+                ? 'Datos de prueba activos — mostrando los 3 escenarios de alerta para visualizar la vista.'
+                : 'Sin empleados reales — mostrando datos de prueba automáticamente.'}
+            </span>
+            {forceDemoMode && (
+              <button
+                type="button"
+                onClick={() => setForceDemoMode(false)}
+                className="text-[9px] font-black uppercase tracking-widest text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded-xl transition-all shrink-0"
+              >
+                Salir demo
+              </button>
+            )}
           </div>
         )}
 

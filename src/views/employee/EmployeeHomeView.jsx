@@ -385,7 +385,7 @@ const EmployeeHomeView = () => {
                 </div>
             }
             filtersContent={
-                <div className={`flex items-center rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 md:px-4 gap-3 md:gap-4 overflow-hidden border ${tk.pill}`}>
+                <div className={`relative flex items-center border transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full overflow-hidden gap-2 md:gap-3 ${tk.pill}`}>
                     {/* Hora + fecha */}
                     <div className="hidden sm:flex flex-col items-end shrink-0">
                         <span className={`text-[15px] font-black leading-none ${tk.textStrong}`}>{timeLabel}</span>

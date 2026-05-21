@@ -855,3 +855,20 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ── Aurora Cosmos — glow animations ─────────────────────────────────────── */
+@keyframes aurora-loss-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.00), 0 4px 20px rgba(0,0,0,0.55); }
+  50%       { box-shadow: 0 0 20px 3px rgba(239,68,68,0.32), 0 4px 20px rgba(0,0,0,0.55); }
+}
+@keyframes aurora-warn-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.00), 0 4px 20px rgba(0,0,0,0.55); }
+  50%       { box-shadow: 0 0 18px 3px rgba(251,191,36,0.28), 0 4px 20px rgba(0,0,0,0.55); }
+}
+@keyframes aurora-badge-pulse {
+  0%, 100% { opacity: 0.85; }
+  50%       { opacity: 1.00; }
+}
+.aurora-loss-glow { animation: aurora-loss-glow 2.8s ease-in-out infinite; }
+.aurora-warn-glow { animation: aurora-warn-glow 3.2s ease-in-out infinite; }
+.aurora-badge-pulse { animation: aurora-badge-pulse 1.8s ease-in-out infinite; }
+

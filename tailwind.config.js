@@ -21,12 +21,27 @@ export default {
           '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)'   },
         },
+        'cosmos-in': {
+          '0%':   { opacity: '0', transform: 'translateY(14px) scale(0.97)' },
+          '100%': { opacity: '1', transform: 'translateY(0)    scale(1)'    },
+        },
+        'cosmos-panel': {
+          '0%':   { opacity: '0', transform: 'translateY(-6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)'    },
+        },
+        'compat-row': {
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         wiggle:          'wiggle 0.4s ease-in-out infinite',
         'widget-settle': 'widget-settle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
         'kpi-enter':     'kpi-enter 280ms cubic-bezier(0.23,1,0.32,1) both',
         'widget-enter':  'widget-enter 250ms cubic-bezier(0.23,1,0.32,1) both',
+        'cosmos-in':     'cosmos-in 0.45s cubic-bezier(0.23,1,0.32,1) both',
+        'cosmos-panel':  'cosmos-panel 0.30s cubic-bezier(0.23,1,0.32,1) both',
+        'compat-row':    'compat-row 0.12s ease both',
       },
       borderRadius: {
         glass: "2rem",

@@ -346,31 +346,45 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useImperativeHandle(ref, () => ({ save }));
 
+    const { isAurora, isCompat } = useTheme();
+    const inp = isAurora
+        ? 'bg-white/[0.05] border-white/[0.12] text-white/85 placeholder:text-white/25 focus:border-blue-400/[0.45] focus:ring-blue-400/[0.15] focus:bg-white/[0.08]'
+        : isCompat
+        ? 'bg-white border-gray-300 text-gray-800 placeholder:text-gray-400 focus:border-[#1B3A6B]/50 focus:ring-[#1B3A6B]/15'
+        : 'bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-300 focus:ring-[#0052CC]/20';
+    const numCls = isAurora ? 'text-white/25' : 'text-slate-300';
+    const rmBtn  = isAurora
+        ? 'text-white/25 hover:text-red-400 hover:bg-red-500/[0.12]'
+        : 'text-slate-300 hover:text-red-400 hover:bg-red-50';
+    const addCls = isAurora
+        ? 'text-white/35 hover:text-blue-400'
+        : 'text-slate-400 hover:text-[#0052CC]';
+
     return (
         <div className="space-y-2">
             {items.map((item, idx) => (
                 <div key={item._key} className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-slate-300 font-bold w-3 text-right shrink-0">{idx + 1}</span>
+                    <span className={`text-[9px] font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
                     <input
                         value={item.nombre}
                         onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                         placeholder="Nombre del principio"
-                        className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-slate-50 placeholder:text-slate-300"
+                        className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-[11px] focus:outline-none focus:ring-2 transition-colors ${inp}`}
                     />
                     <input
                         value={item.concentracion || ''}
                         onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                         placeholder="Cant."
-                        className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-slate-50 placeholder:text-slate-300 text-center"
+                        className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
                     />
                     <button onClick={() => removeItem(item._key)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all shrink-0">
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
                         <X size={10} />
                     </button>
                 </div>
             ))}
             <button onClick={addItem}
-                className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-[#0052CC] transition-colors pt-1">
+                className={`flex items-center gap-1 text-[10px] font-bold transition-colors pt-1 ${addCls}`}>
                 <Plus size={10} /> Agregar principio
             </button>
         </div>
@@ -482,7 +496,30 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     useImperativeHandle(ref, () => ({ save }));
 
-    if (!locs.length) return <p className="text-[11px] text-slate-300 italic">Sin sucursales.</p>;
+    const { isAurora, isCompat } = useTheme();
+
+    if (!locs.length) return (
+        <p className={`text-[11px] italic ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>Sin sucursales.</p>
+    );
+
+    const cellBg = (hasData) => isAurora
+        ? hasData ? 'bg-blue-500/[0.10] border-blue-400/[0.22]' : 'bg-white/[0.04] border-white/[0.08]'
+        : isCompat
+        ? hasData ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
+        : hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100';
+
+    const labelCls = isAurora ? 'text-white/35' : isCompat ? 'text-gray-500' : 'text-slate-500';
+    const trackCls = isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-gray-100' : 'bg-slate-100';
+
+    const salaActiveBtn  = isAurora ? 'bg-white/[0.12] text-blue-300 shadow-sm' : isCompat ? 'bg-white text-[#1B3A6B] shadow-sm' : 'bg-white text-[#0052CC] shadow-sm';
+    const inactivBtn     = isAurora ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600';
+    const bodegaActiveBtn = isAurora ? 'bg-white/[0.12] text-amber-300 shadow-sm' : 'bg-white text-amber-600 shadow-sm';
+
+    const inp = (sala) => isAurora
+        ? `bg-white/[0.05] text-white/80 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-white/[0.10] focus:ring-blue-400/[0.30] focus:border-blue-400/[0.40]' : 'border-amber-400/[0.20] focus:ring-amber-400/[0.30]'}`
+        : isCompat
+        ? `bg-white text-gray-800 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-gray-300 focus:ring-[#1B3A6B]/25' : 'border-amber-300 focus:ring-amber-400/30'}`
+        : `bg-slate-50 text-slate-700 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'}`;
 
     return (
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
@@ -494,73 +531,53 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasData      = hasSala || hasBodega;
 
                 return (
-                    <div key={loc.branch_id} className={`rounded-xl border p-2.5 transition-colors min-w-0 ${hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100'}`}>
-
-                        {/* Header: name + Sala/Bodega toggle */}
+                    <div key={loc.branch_id} className={`rounded-xl border p-2.5 transition-colors min-w-0 ${cellBg(hasData)}`}>
                         <div className="flex items-start justify-between gap-0.5 mb-2">
-                            <p className="text-[7px] font-black uppercase tracking-wide text-slate-500 truncate leading-tight mt-0.5">{loc.branch_name}</p>
+                            <p className={`text-[7px] font-black uppercase tracking-wide truncate leading-tight mt-0.5 ${labelCls}`}>{loc.branch_name}</p>
                             {!isMainBodega && (
-                                <div className="flex bg-slate-100 rounded-full p-0.5 shrink-0">
+                                <div className={`flex rounded-full p-0.5 shrink-0 ${trackCls}`}>
                                     <button onClick={() => setField(i, 'view', 'sala')}
-                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
-                                            isSala ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                                        }`}>Sala</button>
+                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
                                     <button onClick={() => setField(i, 'view', 'bodega')}
-                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${
-                                            !isSala ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                                        }`}>Bodega</button>
+                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega</button>
                                 </div>
                             )}
                         </div>
-
-                        {/* Vit/Est toggle */}
                         {isSala ? (
-                            <div className="flex items-center bg-slate-100 rounded-full p-0.5 mb-2">
+                            <div className={`flex items-center rounded-full p-0.5 mb-2 ${trackCls}`}>
                                 {['vitrina', 'estante'].map(t => (
                                     <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${
-                                            loc.tipo === t ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400'
-                                        }`}>
+                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
                                         {t === 'vitrina' ? 'Vit.' : 'Est.'}
                                     </button>
                                 ))}
                             </div>
                         ) : (
                             <div className="mb-2 h-[18px] flex items-center justify-center">
-                                <span className="text-[7px] font-bold text-amber-500 uppercase tracking-wide">Bodega interna</span>
+                                <span className={`text-[7px] font-bold uppercase tracking-wide ${isAurora ? 'text-amber-400/70' : 'text-amber-500'}`}>Bodega interna</span>
                             </div>
                         )}
-
-                        {/* N° and Peld inputs */}
                         <div className="flex gap-1">
                             <div className="flex-1 min-w-0">
-                                <p className="text-[6px] text-slate-400 font-semibold leading-none mb-1">N°</p>
-                                <input
-                                    value={isSala ? loc.numero : loc.bodega_numero}
+                                <p className={`text-[6px] font-semibold leading-none mb-1 ${labelCls}`}>N°</p>
+                                <input value={isSala ? loc.numero : loc.bodega_numero}
                                     onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                     maxLength={2}
-                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                        isSala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'
-                                    }`} />
+                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] text-center min-w-0 ${inp(isSala)}`} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[6px] text-slate-400 font-semibold leading-none mb-1">Peld.</p>
-                                <input
-                                    value={isSala ? loc.peldano : loc.bodega_peldano}
+                                <p className={`text-[6px] font-semibold leading-none mb-1 ${labelCls}`}>Peld.</p>
+                                <input value={isSala ? loc.peldano : loc.bodega_peldano}
                                     onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                     maxLength={2}
-                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-1 bg-slate-50 text-center min-w-0 ${
-                                        isSala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'
-                                    }`} />
+                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] text-center min-w-0 ${inp(isSala)}`} />
                             </div>
                         </div>
-
-                        {/* Dot: other view has data */}
                         {!isMainBodega && (
                             <div className="mt-1.5 flex justify-center">
                                 <span className={`w-1 h-1 rounded-full transition-all ${
                                     isSala && hasBodega ? 'bg-amber-400' :
-                                    !isSala && hasSala  ? 'bg-[#0052CC]' : 'bg-transparent'
+                                    !isSala && hasSala  ? isAurora ? 'bg-blue-400' : 'bg-[#0052CC]' : 'bg-transparent'
                                 }`} />
                             </div>
                         )}
@@ -1042,6 +1059,800 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     );
 }
 
+// ── Aurora Expanded Panel ─────────────────────────────────────────────────────
+// Dark-glass expanded detail used inside AuroraView cards (not a <tr>).
+
+function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
+    const { maxPriceLevel } = useAuth();
+    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
+
+    const [photoLoading, setPhotoLoading] = useState(false);
+    const [localFoto, setLocalFoto]       = useState(product.foto_url);
+    const [pendingFile, setPendingFile]   = useState(null);
+    const [saving, setSaving]             = useState(false);
+    const [showSrs, setShowSrs]           = useState(false);
+    const fileRef       = useRef(null);
+    const principiosRef = useRef(null);
+    const locationRef   = useRef(null);
+    const categoryRef   = useRef(null);
+
+    useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        const newCat = categoryRef.current?.getValue() ?? null;
+        try {
+            await Promise.all([
+                principiosRef.current?.save({ quiet: true }),
+                locationRef.current?.save({ quiet: true }),
+                categoryRef.current?.save({ quiet: true }),
+            ]);
+            useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
+            onCategoryUpdated?.(product.id, newCat || null);
+            if (onClose) onClose();
+        } catch (_) {}
+        finally { setSaving(false); }
+    };
+
+    const handlePhotoSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setPendingFile(file);
+        e.target.value = '';
+    };
+
+    const handlePhotoConfirm = async (blob) => {
+        setPendingFile(null);
+        setPhotoLoading(true);
+        try {
+            const resized = await resizeImage(blob, 800, 0.85);
+            const path = `${product.id}.jpg`;
+            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+            if (upErr) throw upErr;
+            const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
+            const cacheBust = `${publicUrl}?t=${Date.now()}`;
+            await supabase.from('products').update({ foto_url: cacheBust }).eq('id', product.id);
+            setLocalFoto(cacheBust);
+            onPhotoUpdated(product.id, cacheBust);
+            useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
+        } catch (err) {
+            useToastStore.getState().showToast('Error', err.message, 'error');
+        } finally { setPhotoLoading(false); }
+    };
+
+    if (loadingRow) return (
+        <div className="px-5 py-4 border-t border-white/[0.08] flex items-center gap-2 text-[11px] text-white/40">
+            <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando detalle…
+        </div>
+    );
+
+    const precios    = data?.precios    || [];
+    const prodLog    = data?.prodLog    || [];
+    const principles = data?.principles || [];
+    const changesMap = {};
+    (data?.changelog || []).forEach(c => {
+        if (!changesMap[c.id_presentacion]) changesMap[c.id_presentacion] = {};
+        const ex = changesMap[c.id_presentacion][c.campo];
+        if (!ex || new Date(c.detected_at) > new Date(ex.detected_at))
+            changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, detected_at: c.detected_at };
+    });
+    const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
+    const worstOverall = precios.reduce((min, pp) => {
+        const w = worstMarginOf(pp, marginCheckFields);
+        return w === null ? min : min === null ? w : Math.min(min, w);
+    }, null);
+
+    const sectionLabel = (
+        <span className="text-[9px] font-black uppercase tracking-widest text-blue-400/80" />
+    );
+    const SL = ({ icon: Icon, children }) => (
+        <p className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-400/80 mb-2.5">
+            {Icon && <Icon size={9} />}{children}
+        </p>
+    );
+    const Divider = () => <div className="h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent my-5" />;
+
+    const priceFields = allowedPriceFields || PRICE_FIELDS;
+
+    return (
+        <div className="animate-cosmos-panel border-t border-white/[0.08] bg-[#050c1d]/80 px-5 py-5 space-y-5">
+
+            {/* Alert */}
+            {worstOverall !== null && worstOverall < 15 && (
+                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium ${
+                    worstOverall < 0
+                        ? 'bg-red-500/[0.15] border-red-500/[0.30] text-red-300'
+                        : 'bg-amber-500/[0.15] border-amber-500/[0.30] text-amber-300'
+                }`}>
+                    {worstOverall < 0
+                        ? <ShieldAlert size={14} className="shrink-0 text-red-400 aurora-badge-pulse" />
+                        : <AlertTriangle size={13} className="shrink-0 text-amber-400" />}
+                    {worstOverall < 0
+                        ? <><strong>Pérdida detectada</strong> — algún precio está por debajo del costo.</>
+                        : <><strong>Margen bajo</strong> — margen inferior al 15 % en alguna presentación.</>}
+                </div>
+            )}
+
+            {/* Foto + Precios */}
+            <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-6">
+                {/* Foto */}
+                <div>
+                    <SL icon={Camera}>Foto del producto</SL>
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
+                    {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
+                    <button onClick={() => fileRef.current?.click()}
+                        className="group relative w-full aspect-square max-w-[180px] rounded-2xl border-2 border-dashed border-white/[0.12] overflow-hidden transition-all duration-200 hover:border-blue-400/[0.40] hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]">
+                        {localFoto ? (
+                            <>
+                                <img src={localFoto} alt="" className="w-full h-full object-contain bg-white/[0.02] p-2" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 group-hover:bg-black/50 transition-all">
+                                    {photoLoading
+                                        ? <Loader2 size={22} className="text-white animate-spin" />
+                                        : <>
+                                            <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
+                                          </>}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-blue-900/20 to-violet-900/20">
+                                {photoLoading
+                                    ? <Loader2 size={24} className="text-blue-400 animate-spin" />
+                                    : <>
+                                        <Camera size={24} className="text-white/25 group-hover:text-blue-400 transition-colors" />
+                                        <span className="text-[10px] font-semibold text-white/30 group-hover:text-blue-300 transition-colors">Subir foto</span>
+                                        <span className="text-[8px] text-white/15">JPG, PNG o WebP</span>
+                                      </>}
+                            </div>
+                        )}
+                    </button>
+                </div>
+
+                {/* Precios */}
+                <div className="min-w-0">
+                    <SL icon={null}>
+                        Presentaciones y precios
+                        {hasChanges && <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/[0.18] text-amber-300 border border-amber-400/[0.28] px-1.5 py-0.5 rounded-full aurora-badge-pulse">⚡ cambios</span>}
+                    </SL>
+                    {precios.length === 0 ? (
+                        <div className="flex items-center gap-2 text-[11px] text-white/35 py-3 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                            <Info size={12} className="text-white/20 shrink-0" /> Sin presentaciones en el ERP.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto rounded-xl border border-white/[0.09] bg-[#0a1628]/60">
+                            <table className="min-w-full text-sm">
+                                <thead>
+                                    <tr className="bg-white/[0.05] border-b border-white/[0.08]">
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white/35 text-left">Presentación</th>
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white/35 text-center">Factor</th>
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white/35 text-right">Costo</th>
+                                        {priceFields.map(f => <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white/35 text-right whitespace-nowrap">{f.label}</th>)}
+                                        <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white/35 text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.05]">
+                                    {precios.map(pp => {
+                                        const pCh = changesMap[pp.id_presentacion] || {};
+                                        const rowChanged = Object.keys(pCh).length > 0;
+                                        const worst = worstMarginOf(pp, marginCheckFields);
+                                        return (
+                                            <tr key={pp.id_presentacion} className={`transition-colors ${rowChanged ? 'bg-amber-500/[0.10]' : worst !== null && worst < 0 ? 'bg-red-500/[0.08]' : 'bg-transparent hover:bg-white/[0.03]'}`}>
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <span className="text-[12px] font-semibold text-white/85">{pp.presentaciones?.tipo || '—'}</span>
+                                                    {pp.descripcion && <span className="text-[9px] text-white/35 ml-1">{pp.descripcion}</span>}
+                                                </td>
+                                                <td className="px-3 py-2 text-center text-[11px] text-white/50">{pp.factor ?? '—'}</td>
+                                                <td className="px-3 py-2 text-right text-[11px] text-white/50">{fmtP(pp.costo)}</td>
+                                                {priceFields.map(f => {
+                                                    const ch = pCh[f.key];
+                                                    const m  = calcMargin(pp[f.key], pp.costo);
+                                                    return (
+                                                        <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-500/[0.12]' : ''}`}>
+                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                <span className={`text-[12px] font-semibold ${ch ? 'text-amber-300' : 'text-white/85'}`}>{fmtP(pp[f.key])}</span>
+                                                                {ch && <span className="text-[9px] text-white/25 line-through">{fmtP(ch.anterior)}</span>}
+                                                                {f.key !== 'precio_7' && <MarginPct pct={m} />}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td className="px-3 py-2 text-center">
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${pp.activo !== false ? 'bg-emerald-500/[0.18] text-emerald-400 border-emerald-500/[0.25]' : 'bg-white/[0.06] text-white/30 border-white/[0.10]'}`}>
+                                                        {pp.activo !== false ? 'Activa' : 'Inactiva'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <Divider />
+
+            {/* Categoría + Cambios */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-5">
+                <div>
+                    <SL icon={Tag}>Categoría</SL>
+                    <CategoryEditor ref={categoryRef} productId={product.id} initial={product.tipo_medicamento} categories={categories} onCategoryCreated={onCategoryCreated} />
+                </div>
+                <div>
+                    <SL icon={History}>Cambios en el producto</SL>
+                    {prodLog.length === 0 ? (
+                        <p className="text-[11px] text-white/25 italic">Sin cambios registrados.</p>
+                    ) : (
+                        <div className="rounded-xl bg-amber-900/[0.18] border border-amber-500/[0.20] px-3.5 py-3 space-y-1.5">
+                            {prodLog.map((c, i) => (
+                                <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
+                                    <span className="font-mono text-[10px] bg-white/[0.07] border border-white/[0.10] text-white/40 px-1.5 py-0.5 rounded shrink-0">{new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}</span>
+                                    <span className="font-semibold text-white/70">{c.campo}</span>
+                                    <span className="text-white/30 line-through text-[10px]">{c.valor_anterior || '—'}</span>
+                                    <span className="text-white/20 text-[9px] font-bold">→</span>
+                                    <span className="text-white/85 font-medium">{c.valor_nuevo || '—'}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <Divider />
+
+            {/* Principios + Ubicaciones */}
+            <div className="flex flex-col md:flex-row gap-5 items-start">
+                <div className="shrink-0 min-w-[220px]">
+                    <div className="flex items-center justify-between mb-2.5">
+                        <SL icon={FlaskConical}>Principios activos</SL>
+                        <button onClick={() => setShowSrs(v => !v)}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                                showSrs ? 'bg-violet-500/[0.20] text-violet-300 border-violet-400/[0.30]' : 'bg-white/[0.06] text-white/45 border-white/[0.14] hover:bg-violet-500/[0.12] hover:text-violet-300 hover:border-violet-400/[0.25]'
+                            }`}>
+                            <Search size={9} strokeWidth={2.5} /> SRS
+                        </button>
+                    </div>
+                    <PrincipiosEditor ref={principiosRef} productId={product.id} initial={principles} onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)} />
+                    {showSrs && (
+                        <div className="mt-3 border-t border-white/[0.07] pt-3">
+                            <SrsBuscadorWidget initialQuery={product.nombre} />
+                        </div>
+                    )}
+                </div>
+                <div className="w-px self-stretch bg-white/[0.07] hidden md:block shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <SL icon={MapPin}>Ubicaciones por sucursal</SL>
+                    <LocationGrid ref={locationRef} productId={product.id} initial={data?.locations} branches={branches} />
+                </div>
+            </div>
+
+            <Divider />
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2">
+                <button onClick={onClose}
+                    className="px-4 h-9 rounded-full text-[11px] font-bold border transition-all bg-white/[0.06] border-white/[0.14] text-white/55 hover:bg-white/[0.12] hover:text-white">
+                    Cancelar
+                </button>
+                <button onClick={handleSave} disabled={saving}
+                    className="flex items-center gap-1.5 px-6 h-9 rounded-full text-[11px] font-black text-white transition-all disabled:opacity-50 disabled:cursor-wait bg-gradient-to-r from-blue-500 to-violet-600 shadow-[0_4px_20px_rgba(139,92,246,0.40)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.60)] hover:-translate-y-0.5 active:scale-[0.97]">
+                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                    Guardar
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ── AuroraView ────────────────────────────────────────────────────────────────
+// Card-based product list for the Aurora (Cosmos) theme.
+
+function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId }) {
+    return (
+        <div className="space-y-2">
+            {products.map((p, index) => {
+                const isExpanded    = expandedId === p.id;
+                const isLoadingThis = loadingExpandedId === p.id;
+                const hasChangesP   = changedIds.has(p.id);
+                const worstM        = marginMap[p.id];
+                const hasLoss       = worstM !== undefined && worstM < 0;
+                const hasWarn       = worstM !== undefined && worstM >= 0 && worstM < 15;
+                const isInactive    = !p.activo && filterActivo === 'todos';
+
+                const cardGlow = hasLoss
+                    ? 'aurora-loss-glow'
+                    : hasWarn
+                    ? 'aurora-warn-glow'
+                    : '';
+
+                const cardBorder = isExpanded
+                    ? 'border-blue-400/[0.38] bg-[#0c1a30]'
+                    : 'border-white/[0.07] bg-[#070d1a] hover:border-blue-400/[0.20] hover:bg-[#0a1525]';
+
+                const avatarRing = hasLoss
+                    ? 'ring-2 ring-red-500/[0.55] shadow-[0_0_16px_rgba(239,68,68,0.40)]'
+                    : hasWarn
+                    ? 'ring-2 ring-amber-400/[0.45] shadow-[0_0_14px_rgba(251,191,36,0.30)]'
+                    : isExpanded
+                    ? 'ring-2 ring-blue-400/[0.45] shadow-[0_0_16px_rgba(96,165,250,0.30)]'
+                    : 'ring-1 ring-white/[0.10] group-hover:ring-blue-400/[0.28] group-hover:shadow-[0_0_14px_rgba(96,165,250,0.18)]';
+
+                return (
+                    <div key={p.id}
+                        className={`group animate-cosmos-in rounded-2xl border overflow-hidden transition-all duration-350 cursor-pointer ${cardGlow} ${cardBorder} ${isInactive ? 'opacity-50' : ''}`}
+                        style={{ animationDelay: `${Math.min(index, 14) * 35}ms`, transitionProperty: 'border-color, background-color, box-shadow' }}>
+
+                        {/* ── Card header (always visible) ── */}
+                        <div className="flex items-center gap-4 px-4 py-3.5"
+                            onClick={() => toggleRow(p.id)}
+                            onMouseEnter={() => prefetchRow(p.id)}
+                            onMouseLeave={cancelPrefetch}>
+
+                            {/* Avatar */}
+                            <div className={`relative shrink-0 w-12 h-12 rounded-full overflow-hidden transition-all duration-300 ${avatarRing}`}>
+                                {p.foto_url
+                                    ? <img src={p.foto_url} alt="" className="w-full h-full object-cover" />
+                                    : <div className="w-full h-full bg-gradient-to-br from-blue-900/60 to-violet-900/60 flex items-center justify-center">
+                                        <Package size={18} className={`${hasLoss ? 'text-red-400/70' : hasWarn ? 'text-amber-400/70' : 'text-blue-300/60'}`} />
+                                      </div>
+                                }
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                    <span className={`text-[14px] font-semibold leading-snug ${isInactive ? 'text-white/30 line-through' : 'text-white/90'}`}>{p.nombre}</span>
+                                    {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full aurora-badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
+                                    {!hasLoss && hasWarn && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/[0.20] text-amber-300 border border-amber-400/[0.30] px-1.5 py-0.5 rounded-full"><TrendingDown size={7} /> Margen bajo</span>}
+                                    {hasChangesP && <span className="text-[9px] font-bold bg-amber-500/[0.16] text-amber-300 border border-amber-400/[0.24] px-1.5 py-0.5 rounded-full">cambios</span>}
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    {p.laboratorios?.nombre && <span className="text-[10px] text-white/40">{p.laboratorios.nombre}</span>}
+                                    {p.principio_activo && (
+                                        <span className="text-[10px] text-violet-400/65 flex items-center gap-1">
+                                            <FlaskConical size={8} className="shrink-0" />
+                                            <span className="truncate max-w-[200px]">{p.principio_activo}</span>
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    {p.tipo_medicamento && <span className="text-[9px] bg-blue-500/[0.14] text-blue-300 border border-blue-400/[0.22] px-1.5 py-0.5 rounded-full">{p.tipo_medicamento}</span>}
+                                    {p.es_antibiotico   && <span className="text-[9px] bg-orange-500/[0.14] text-orange-300 border border-orange-400/[0.22] px-1.5 py-0.5 rounded-full">Antibiótico</span>}
+                                    {p.requiere_receta  && <span className="text-[9px] bg-red-500/[0.14] text-red-300 border border-red-400/[0.22] px-1.5 py-0.5 rounded-full">Receta</span>}
+                                </div>
+                            </div>
+
+                            {/* Right: status + chevron */}
+                            <div className="flex items-center gap-4 shrink-0">
+                                {worstM !== undefined && (
+                                    <div className="text-center hidden sm:block">
+                                        <span className={`text-[13px] font-black tabular-nums ${worstM < 0 ? 'text-red-400' : worstM < 15 ? 'text-amber-400' : 'text-emerald-400'}`}>{worstM.toFixed(1)}%</span>
+                                        <p className="text-[8px] text-white/25 mt-0.5">margen</p>
+                                    </div>
+                                )}
+                                <div className="text-center">
+                                    <div className={`w-2 h-2 rounded-full mx-auto mb-0.5 ${p.activo ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.65)]' : 'bg-white/20'}`} />
+                                    <span className={`text-[8px] font-bold uppercase ${p.activo ? 'text-emerald-400/70' : 'text-white/25'}`}>{p.activo ? 'Activo' : 'Inactivo'}</span>
+                                </div>
+                                {isLoadingThis
+                                    ? <Loader2 size={15} className="animate-spin text-blue-400 shrink-0" />
+                                    : <ChevronDown size={15} className={`transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-white/25 group-hover:text-white/55'}`} />
+                                }
+                            </div>
+                        </div>
+
+                        {/* ── Expanded panel ── */}
+                        {isExpanded && (
+                            <AuroraExpandedPanel
+                                product={p}
+                                data={expandedCache[p.id]}
+                                loadingRow={isLoadingThis && !expandedCache[p.id]}
+                                branches={branches}
+                                onPhotoUpdated={handlePhotoUpdated}
+                                onPrinciplesUpdated={handlePrinciplesUpdated}
+                                onCategoryUpdated={handleCategoryUpdated}
+                                onClose={() => setExpandedId(null)}
+                                categories={catOptions.map(o => o.value)}
+                                onCategoryCreated={onCategoryCreated}
+                                allowedPriceFields={allowedPriceFields}
+                            />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// ── CompatExpandedPanel ───────────────────────────────────────────────────────
+// Corporate expanded panel for the Compat (Executive) theme — returns a <tr>.
+
+function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields, colSpan = 6 }) {
+    const { maxPriceLevel } = useAuth();
+    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
+
+    const [photoLoading, setPhotoLoading] = useState(false);
+    const [localFoto, setLocalFoto]       = useState(product.foto_url);
+    const [pendingFile, setPendingFile]   = useState(null);
+    const [saving, setSaving]             = useState(false);
+    const [showSrs, setShowSrs]           = useState(false);
+    const fileRef       = useRef(null);
+    const principiosRef = useRef(null);
+    const locationRef   = useRef(null);
+    const categoryRef   = useRef(null);
+
+    useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        const newCat = categoryRef.current?.getValue() ?? null;
+        try {
+            await Promise.all([
+                principiosRef.current?.save({ quiet: true }),
+                locationRef.current?.save({ quiet: true }),
+                categoryRef.current?.save({ quiet: true }),
+            ]);
+            useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
+            onCategoryUpdated?.(product.id, newCat || null);
+            if (onClose) onClose();
+        } catch (_) {}
+        finally { setSaving(false); }
+    };
+
+    const handlePhotoSelect = (e) => { const file = e.target.files?.[0]; if (!file) return; setPendingFile(file); e.target.value = ''; };
+    const handlePhotoConfirm = async (blob) => {
+        setPendingFile(null); setPhotoLoading(true);
+        try {
+            const resized = await resizeImage(blob, 800, 0.85);
+            const path = `${product.id}.jpg`;
+            const { error: upErr } = await supabase.storage.from('product-photos').upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
+            if (upErr) throw upErr;
+            const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
+            const cacheBust = `${publicUrl}?t=${Date.now()}`;
+            await supabase.from('products').update({ foto_url: cacheBust }).eq('id', product.id);
+            setLocalFoto(cacheBust);
+            onPhotoUpdated(product.id, cacheBust);
+            useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
+        } catch (err) { useToastStore.getState().showToast('Error', err.message, 'error'); }
+        finally { setPhotoLoading(false); }
+    };
+
+    if (loadingRow) return (
+        <tr className="bg-slate-50 border-y border-[#1B3A6B]/15">
+            <td colSpan={colSpan} className="px-4 py-3">
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                    <Loader2 size={12} className="animate-spin text-[#1B3A6B]" /> Cargando detalle…
+                </div>
+            </td>
+        </tr>
+    );
+
+    const precios    = data?.precios    || [];
+    const prodLog    = data?.prodLog    || [];
+    const principles = data?.principles || [];
+    const changesMap = {};
+    (data?.changelog || []).forEach(c => {
+        if (!changesMap[c.id_presentacion]) changesMap[c.id_presentacion] = {};
+        const ex = changesMap[c.id_presentacion][c.campo];
+        if (!ex || new Date(c.detected_at) > new Date(ex.detected_at))
+            changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, detected_at: c.detected_at };
+    });
+    const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
+    const priceFields = allowedPriceFields || PRICE_FIELDS;
+
+    const Section = ({ title, children, className = '' }) => (
+        <div className={className}>
+            <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 mb-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">{title}</p>
+            </div>
+            <div className="px-4">{children}</div>
+        </div>
+    );
+    const inp = 'px-2.5 py-1.5 border border-gray-300 rounded text-[11px] text-gray-800 bg-white focus:outline-none focus:border-[#1B3A6B]/50 focus:ring-1 focus:ring-[#1B3A6B]/20 w-full';
+
+    return (
+        <tr className="bg-[#F8FAFB] border-y-2 border-[#1B3A6B]/[0.12]">
+            <td colSpan={colSpan} className="p-0">
+                <div className="divide-y divide-[#1B3A6B]/[0.08]">
+
+                    {/* Foto + Precios */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr]">
+                        {/* Foto */}
+                        <div className="border-r border-[#1B3A6B]/[0.08]">
+                            <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">Foto del producto</p>
+                            </div>
+                            <div className="p-4 flex flex-col items-center">
+                                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
+                                {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
+                                <button onClick={() => fileRef.current?.click()}
+                                    className="group relative w-full max-w-[160px] aspect-square rounded border-2 border-dashed border-gray-300 overflow-hidden transition-colors hover:border-[#1B3A6B]/50 hover:bg-blue-50/30">
+                                    {localFoto ? (
+                                        <>
+                                            <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 group-hover:bg-black/40 transition-all">
+                                                {photoLoading ? <Loader2 size={18} className="text-white animate-spin" /> : <>
+                                                    <Camera size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <span className="text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar</span>
+                                                </>}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gray-50">
+                                            {photoLoading ? <Loader2 size={20} className="text-[#1B3A6B] animate-spin" /> : <>
+                                                <Camera size={20} className="text-gray-400 group-hover:text-[#1B3A6B] transition-colors" />
+                                                <span className="text-[9px] text-gray-400 font-semibold">Subir foto</span>
+                                            </>}
+                                        </div>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Precios */}
+                        <div>
+                            <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 flex items-center gap-2">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">Presentaciones y precios</p>
+                                {hasChanges && <span className="text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded">con cambios</span>}
+                            </div>
+                            <div className="p-0">
+                                {precios.length === 0 ? (
+                                    <div className="px-4 py-3 text-[11px] text-gray-400 flex items-center gap-2">
+                                        <Info size={12} className="text-gray-300" /> Sin presentaciones en el ERP.
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-[#1B3A6B]/[0.06] border-b border-[#1B3A6B]/[0.10]">
+                                                    <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-[#1B3A6B]/60 text-left border-r border-[#1B3A6B]/[0.08]">Presentación</th>
+                                                    <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-[#1B3A6B]/60 text-center border-r border-[#1B3A6B]/[0.08]">Factor</th>
+                                                    <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-[#1B3A6B]/60 text-right border-r border-[#1B3A6B]/[0.08]">Costo</th>
+                                                    {priceFields.map(f => <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-[#1B3A6B]/60 text-right whitespace-nowrap border-r border-[#1B3A6B]/[0.08]">{f.label}</th>)}
+                                                    <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-[#1B3A6B]/60 text-center">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {precios.map((pp, ri) => {
+                                                    const pCh = changesMap[pp.id_presentacion] || {};
+                                                    const rowChanged = Object.keys(pCh).length > 0;
+                                                    const worst = worstMarginOf(pp, marginCheckFields);
+                                                    return (
+                                                        <tr key={pp.id_presentacion} className={`${rowChanged ? 'bg-amber-50' : worst !== null && worst < 0 ? 'bg-red-50' : ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}`}>
+                                                            <td className="px-3 py-2 border-r border-gray-100 whitespace-nowrap">
+                                                                <span className="text-[12px] font-semibold text-gray-800">{pp.presentaciones?.tipo || '—'}</span>
+                                                                {pp.descripcion && <span className="text-[9px] text-gray-400 ml-1">{pp.descripcion}</span>}
+                                                            </td>
+                                                            <td className="px-3 py-2 border-r border-gray-100 text-center text-[11px] text-gray-500">{pp.factor ?? '—'}</td>
+                                                            <td className="px-3 py-2 border-r border-gray-100 text-right text-[11px] font-medium text-gray-600">{fmtP(pp.costo)}</td>
+                                                            {priceFields.map(f => {
+                                                                const ch = pCh[f.key];
+                                                                const m  = calcMargin(pp[f.key], pp.costo);
+                                                                return (
+                                                                    <td key={f.key} className={`px-3 py-2 border-r border-gray-100 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                                        <div className="flex flex-col items-end gap-0.5">
+                                                                            <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-gray-800'}`}>{fmtP(pp[f.key])}</span>
+                                                                            {ch && <span className="text-[9px] text-gray-400 line-through">{fmtP(ch.anterior)}</span>}
+                                                                            {f.key !== 'precio_7' && <MarginPct pct={m} />}
+                                                                        </div>
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-sm border ${pp.activo !== false ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-300'}`}>
+                                                                    {pp.activo !== false ? 'Activa' : 'Inact.'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Categoría + Cambios */}
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                        <Section title="Categoría" className="py-3 border-r border-[#1B3A6B]/[0.08]">
+                            <CategoryEditor ref={categoryRef} productId={product.id} initial={product.tipo_medicamento} categories={categories} onCategoryCreated={onCategoryCreated} />
+                        </Section>
+                        <Section title="Cambios en el producto" className="py-3">
+                            {prodLog.length === 0 ? (
+                                <p className="text-[11px] text-gray-400 italic">Sin cambios registrados.</p>
+                            ) : (
+                                <div className="rounded border border-amber-200 bg-amber-50/60 px-3 py-2.5 space-y-1.5">
+                                    {prodLog.map((c, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
+                                            <span className="font-mono text-[9px] bg-white border border-gray-200 text-gray-500 px-1.5 py-0.5 rounded shrink-0">{new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}</span>
+                                            <span className="font-semibold text-gray-700">{c.campo}</span>
+                                            <span className="text-gray-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
+                                            <span className="text-gray-300 text-[9px] font-bold">→</span>
+                                            <span className="text-gray-800 font-medium">{c.valor_nuevo || '—'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Section>
+                    </div>
+
+                    {/* Principios + Ubicaciones */}
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                        <div className="py-3 border-r border-[#1B3A6B]/[0.08]">
+                            <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 mb-3 flex items-center justify-between">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">Principios activos</p>
+                                <button onClick={() => setShowSrs(v => !v)}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold transition-all border ${showSrs ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-[#1B3A6B] border-[#1B3A6B]/30 hover:bg-[#1B3A6B]/5'}`}>
+                                    <Search size={8} strokeWidth={2.5} /> SRS
+                                </button>
+                            </div>
+                            <div className="px-4">
+                                <PrincipiosEditor ref={principiosRef} productId={product.id} initial={principles} onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)} />
+                                {showSrs && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                        <SrsBuscadorWidget initialQuery={product.nombre} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <Section title="Ubicaciones por sucursal" className="py-3">
+                            <LocationGrid ref={locationRef} productId={product.id} initial={data?.locations} branches={branches} />
+                        </Section>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-4 py-3 bg-white flex items-center justify-end gap-2">
+                        <button onClick={onClose}
+                            className="px-4 h-8 rounded text-[11px] font-bold border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
+                            Cancelar
+                        </button>
+                        <button onClick={handleSave} disabled={saving}
+                            className="flex items-center gap-1.5 px-5 h-8 rounded text-[11px] font-black bg-[#1B3A6B] text-white hover:bg-[#152d56] transition-colors disabled:opacity-50 disabled:cursor-wait">
+                            {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
+                            Guardar cambios
+                        </button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+// ── CompatView ────────────────────────────────────────────────────────────────
+// Dense corporate table for the Compat (Executive) theme.
+
+function CompatView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId, sortField, sortDir, onSort }) {
+    const ColSpan = 6;
+
+    const CompatTh = ({ field, label, className = '' }) => (
+        <th onClick={() => onSort(field)}
+            className={`px-3 py-2.5 text-left text-[9px] font-black uppercase tracking-wider text-white/90 cursor-pointer select-none whitespace-nowrap border-r border-white/[0.10] transition-colors hover:bg-white/[0.08] ${className}`}>
+            <span className="flex items-center gap-1">
+                {label}
+                <span className="text-[9px] opacity-60">{sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}</span>
+            </span>
+        </th>
+    );
+
+    return (
+        <div className="rounded-lg border border-gray-300 overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+            <table className="min-w-full border-collapse">
+                <thead>
+                    <tr className="bg-[#1B3A6B]">
+                        <CompatTh field="nombre"    label="Producto" />
+                        <CompatTh field="lab"       label="Laboratorio" className="hidden md:table-cell" />
+                        <CompatTh field="categoria" label="Categoría"   className="hidden lg:table-cell" />
+                        <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-white/90 text-center border-r border-white/[0.10] hidden sm:table-cell">Margen</th>
+                        <CompatTh field="activo"    label="Estado"      className="hidden sm:table-cell" />
+                        <th className="px-3 py-2.5 w-8 border-r-0" />
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                    {products.map((p, index) => {
+                        const isExpanded    = expandedId === p.id;
+                        const isLoadingThis = loadingExpandedId === p.id;
+                        const hasChangesP   = changedIds.has(p.id);
+                        const worstM        = marginMap[p.id];
+                        const isInactive    = !p.activo && filterActivo === 'todos';
+                        const isEven        = index % 2 === 0;
+                        return (
+                            <React.Fragment key={p.id}>
+                                <tr
+                                    onClick={() => toggleRow(p.id)}
+                                    onMouseEnter={() => prefetchRow(p.id)}
+                                    onMouseLeave={cancelPrefetch}
+                                    className={`animate-compat-row cursor-pointer transition-colors duration-100 border-l-[3px] ${
+                                        isExpanded
+                                            ? 'bg-blue-50 border-l-[#1B3A6B]'
+                                            : `${isEven ? 'bg-white' : 'bg-gray-50/70'} border-l-transparent hover:bg-blue-50/70 ${isInactive ? 'opacity-50' : ''}`
+                                    }`}
+                                    style={{ animationDelay: `${Math.min(index, 20) * 12}ms` }}>
+
+                                    {/* Producto */}
+                                    <td className="px-3 py-2 border-r border-gray-200">
+                                        <div className="flex items-center gap-2.5">
+                                            {p.foto_url
+                                                ? <img src={p.foto_url} alt="" className="w-8 h-8 rounded object-cover shrink-0 border border-gray-200" />
+                                                : <div className="w-8 h-8 rounded bg-[#1B3A6B]/[0.07] flex items-center justify-center shrink-0 border border-[#1B3A6B]/[0.12]">
+                                                    <Package size={12} className="text-[#1B3A6B]/40" />
+                                                  </div>
+                                            }
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className={`text-[12px] font-semibold ${isInactive ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{p.nombre}</span>
+                                                    {hasChangesP && <span className="text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-1 py-0.5 rounded uppercase shrink-0">cambios</span>}
+                                                    {worstM !== undefined && worstM < 0 && <span className="text-[8px] font-bold bg-red-100 text-red-700 border border-red-300 px-1 py-0.5 rounded uppercase shrink-0">pérdida</span>}
+                                                </div>
+                                                {p.principio_activo && <div className="text-[9px] text-gray-500 truncate max-w-[220px]">{p.principio_activo}</div>}
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {/* Lab */}
+                                    <td className="px-3 py-2 border-r border-gray-200 hidden md:table-cell">
+                                        <span className="text-[11px] text-gray-600">{p.laboratorios?.nombre || '—'}</span>
+                                    </td>
+
+                                    {/* Categoría */}
+                                    <td className="px-3 py-2 border-r border-gray-200 hidden lg:table-cell">
+                                        <div className="flex gap-1 flex-wrap">
+                                            {p.tipo_medicamento && <span className="text-[8px] font-bold bg-[#1B3A6B]/[0.08] text-[#1B3A6B] px-1.5 py-0.5 rounded uppercase border border-[#1B3A6B]/[0.15]">{p.tipo_medicamento}</span>}
+                                            {p.es_antibiotico   && <span className="text-[8px] font-bold bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded uppercase border border-orange-200">AB</span>}
+                                            {p.requiere_receta  && <span className="text-[8px] font-bold bg-red-50 text-red-700 px-1.5 py-0.5 rounded uppercase border border-red-200">Rx</span>}
+                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[10px] text-gray-300">—</span>}
+                                        </div>
+                                    </td>
+
+                                    {/* Margen */}
+                                    <td className="px-3 py-2 border-r border-gray-200 text-center hidden sm:table-cell">
+                                        {worstM !== undefined
+                                            ? <span className={`text-[11px] font-black tabular-nums ${worstM < 0 ? 'text-red-600' : worstM < 15 ? 'text-amber-600' : 'text-emerald-600'}`}>{worstM.toFixed(1)}%</span>
+                                            : <span className="text-[10px] text-gray-300">—</span>}
+                                    </td>
+
+                                    {/* Estado */}
+                                    <td className="px-3 py-2 border-r border-gray-200 hidden sm:table-cell">
+                                        <span className={`text-[8px] font-black uppercase tracking-wide px-2 py-0.5 rounded-sm border ${
+                                            p.activo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-300'
+                                        }`}>{p.activo ? 'Activo' : 'Inact.'}</span>
+                                    </td>
+
+                                    {/* Chevron */}
+                                    <td className="px-2 py-2 text-center">
+                                        {isLoadingThis
+                                            ? <Loader2 size={11} className="animate-spin text-[#1B3A6B] mx-auto" />
+                                            : <ChevronDown size={11} className={`transition-transform duration-150 mx-auto text-[#1B3A6B]/50 ${isExpanded ? 'rotate-180' : ''}`} />
+                                        }
+                                    </td>
+                                </tr>
+                                {isExpanded && (
+                                    <CompatExpandedPanel
+                                        product={p}
+                                        data={expandedCache[p.id]}
+                                        loadingRow={isLoadingThis && !expandedCache[p.id]}
+                                        branches={branches}
+                                        onPhotoUpdated={handlePhotoUpdated}
+                                        onPrinciplesUpdated={handlePrinciplesUpdated}
+                                        onCategoryUpdated={handleCategoryUpdated}
+                                        onClose={() => setExpandedId(null)}
+                                        categories={catOptions.map(o => o.value)}
+                                        onCategoryCreated={onCategoryCreated}
+                                        allowedPriceFields={allowedPriceFields}
+                                        colSpan={ColSpan}
+                                    />
+                                )}
+                            </React.Fragment>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 // ── TabCatalogo ───────────────────────────────────────────────────────────────
 
 export default function TabCatalogo({
@@ -1515,7 +2326,58 @@ export default function TabCatalogo({
                     <Package size={32} className={`mx-auto mb-3 ${tk.emptyIcon}`} />
                     <p className={`text-sm font-medium ${tk.emptyText}`}>No se encontraron productos</p>
                 </div>
+
+            ) : isAurora ? (
+                /* ── AURORA: animated card list ── */
+                <AuroraView
+                    products={products}
+                    expandedId={expandedId}
+                    expandedCache={expandedCache}
+                    loadingExpandedId={loadingExpandedId}
+                    changedIds={changedIds}
+                    marginMap={marginMap}
+                    filterActivo={filterActivo}
+                    allowedPriceFields={allowedPriceFields}
+                    branches={branches}
+                    catOptions={catOptions}
+                    onCategoryCreated={onCategoryCreated}
+                    toggleRow={toggleRow}
+                    prefetchRow={prefetchRow}
+                    cancelPrefetch={cancelPrefetch}
+                    handlePhotoUpdated={handlePhotoUpdated}
+                    handlePrinciplesUpdated={handlePrinciplesUpdated}
+                    handleCategoryUpdated={handleCategoryUpdated}
+                    setExpandedId={setExpandedId}
+                />
+
+            ) : isCompat ? (
+                /* ── COMPAT: dense corporate table ── */
+                <CompatView
+                    products={products}
+                    expandedId={expandedId}
+                    expandedCache={expandedCache}
+                    loadingExpandedId={loadingExpandedId}
+                    changedIds={changedIds}
+                    marginMap={marginMap}
+                    filterActivo={filterActivo}
+                    allowedPriceFields={allowedPriceFields}
+                    branches={branches}
+                    catOptions={catOptions}
+                    onCategoryCreated={onCategoryCreated}
+                    toggleRow={toggleRow}
+                    prefetchRow={prefetchRow}
+                    cancelPrefetch={cancelPrefetch}
+                    handlePhotoUpdated={handlePhotoUpdated}
+                    handlePrinciplesUpdated={handlePrinciplesUpdated}
+                    handleCategoryUpdated={handleCategoryUpdated}
+                    setExpandedId={setExpandedId}
+                    sortField={sortField}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                />
+
             ) : (
+                /* ── LIQUID: glass table (default) ── */
                 <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
@@ -1542,103 +2404,47 @@ export default function TabCatalogo({
                                                 onClick={() => toggleRow(p.id)}
                                                 onMouseEnter={() => prefetchRow(p.id)}
                                                 onMouseLeave={cancelPrefetch}
-                                                style={{ borderLeftColor: isExpanded ? (isAurora ? 'rgba(96,165,250,0.8)' : '#0052CC') : 'transparent' }}
+                                                style={{ borderLeftColor: isExpanded ? '#0052CC' : 'transparent' }}
                                                 className={`cursor-pointer transition-all duration-150 border-l-[3px] ${tk.rowBorder} ${
-                                                    isExpanded   ? tk.rowExpanded :
-                                                    isInactive   ? `${tk.rowHover} opacity-50` :
-                                                    tk.rowHover
+                                                    isExpanded ? tk.rowExpanded : isInactive ? `${tk.rowHover} opacity-50` : tk.rowHover
                                                 }`}>
-
-                                                {/* Producto */}
                                                 <td className="px-4 py-3.5">
                                                     <div className="flex items-center gap-3.5">
-                                                        {p.foto_url ? (
-                                                            <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
-                                                        ) : (
-                                                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}>
-                                                                <Package size={16} className={tk.avatarIcon} />
-                                                            </div>
-                                                        )}
+                                                        {p.foto_url
+                                                            ? <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
+                                                            : <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}><Package size={16} className={tk.avatarIcon} /></div>
+                                                        }
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>
-                                                                    {p.nombre}
-                                                                </span>
-                                                                {mInfo && (
-                                                                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>
-                                                                        {worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}
-                                                                        {mInfo.label}
-                                                                    </span>
-                                                                )}
-                                                                {hasChanges && (
-                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
-                                                                        <AlertTriangle size={7} /> cambios
-                                                                    </span>
-                                                                )}
+                                                                <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
+                                                                {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
+                                                                {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
                                                             </div>
-                                                            {p.principio_activo && (
-                                                                <p className={`text-[10px] flex items-center gap-1 mt-0.5 ${isAurora ? 'text-violet-300/70' : 'text-violet-500/70'}`}>
-                                                                    <FlaskConical size={8} className="shrink-0" />
-                                                                    <span className="truncate max-w-[240px]">{p.principio_activo}</span>
-                                                                </p>
-                                                            )}
+                                                            {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                                         </div>
                                                     </div>
                                                 </td>
-
-                                                {/* Laboratorio */}
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span>
-                                                </td>
-
-                                                {/* Categoría */}
+                                                <td className="px-4 py-3.5 hidden md:table-cell"><span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></td>
                                                 <td className="px-4 py-3.5 hidden lg:table-cell">
                                                     <div className="flex flex-wrap gap-1">
-                                                        {p.tipo_medicamento && (
-                                                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border ${isAurora ? 'bg-blue-500/[0.18] text-blue-300 border-blue-400/[0.30]' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
-                                                                {p.tipo_medicamento}
-                                                            </span>
-                                                        )}
-                                                        {p.es_antibiotico && (
-                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-orange-500/[0.18] text-orange-300 border-orange-400/[0.30]' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
-                                                                Antibiótico
-                                                            </span>
-                                                        )}
-                                                        {p.requiere_receta && (
-                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-red-500/[0.18] text-red-300 border-red-400/[0.30]' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                                                                Receta
-                                                            </span>
-                                                        )}
-                                                        {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && (
-                                                            <span className={`text-[11px] ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>—</span>
-                                                        )}
+                                                        {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
+                                                        {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Antibiótico</span>}
+                                                        {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-100">Receta</span>}
+                                                        {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-300">—</span>}
                                                     </div>
                                                 </td>
-
-                                                {/* Estado */}
                                                 <td className="px-4 py-3.5 hidden sm:table-cell">
-                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${
-                                                        p.activo
-                                                            ? isAurora
-                                                                ? 'bg-emerald-500/[0.18] text-emerald-400 border-emerald-400/[0.30]'
-                                                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                            : isAurora
-                                                                ? 'bg-white/[0.08] text-white/35 border-white/[0.14]'
-                                                                : 'bg-slate-100 text-slate-400 border-slate-200'
-                                                    }`}>
+                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
                                                         {p.activo ? 'Activo' : 'Inactivo'}
                                                     </span>
                                                 </td>
-
-                                                {/* Chevron */}
                                                 <td className="px-4 py-3.5">
                                                     {isLoadingThis
                                                         ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
-                                                        : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? `rotate-180 ${isAurora ? 'text-blue-300' : 'text-blue-400'}` : tk.textMid}`} />
+                                                        : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-blue-400' : tk.textMid}`} />
                                                     }
                                                 </td>
                                             </tr>
-
                                             {isExpanded && (
                                                 <ExpandedProductRow
                                                     product={p}

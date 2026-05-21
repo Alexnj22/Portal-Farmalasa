@@ -599,6 +599,102 @@ function resizeImage(file, maxPx, quality) {
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
     const { maxPriceLevel } = useAuth();
+    const { isAurora, isCompat } = useTheme();
+
+    // ── Expanded-row theme tokens ────────────────────────────────────────────
+    const xk = {
+        container: isAurora
+            ? 'bg-[#050e1f] border-t border-white/[0.10]'
+            : isCompat
+            ? 'bg-[#F5F7FA] border-t border-[#C4D9E8]'
+            : 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-[#0052CC]/[0.12]',
+        loadingRow: isAurora
+            ? 'bg-[#050e1f] border-t border-white/[0.10]'
+            : isCompat
+            ? 'bg-[#F5F7FA] border-t border-[#C4D9E8]'
+            : 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-blue-100/60',
+        loadingText: isAurora ? 'text-white/45' : 'text-slate-400',
+        alertDanger: isAurora
+            ? 'bg-red-500/[0.15] border-red-500/[0.30] text-red-300'
+            : 'bg-red-50 border-red-200 text-red-700',
+        alertWarning: isAurora
+            ? 'bg-amber-500/[0.15] border-amber-500/[0.30] text-amber-300'
+            : 'bg-amber-50 border-amber-200 text-amber-700',
+        sectionLabel: isAurora
+            ? 'text-[10px] font-black uppercase tracking-widest text-white/35'
+            : isCompat
+            ? 'text-[10px] font-black uppercase tracking-widest text-slate-500'
+            : 'text-[10px] font-black uppercase tracking-widest text-slate-400',
+        photoBtn: isAurora
+            ? 'border-white/[0.20] bg-white/[0.06] hover:bg-white/[0.10] hover:border-white/[0.35]'
+            : 'border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30',
+        photoSubText: isAurora ? 'text-white/25' : 'text-slate-300',
+        photoUploadIcon: isAurora ? 'text-white/25 group-hover:text-white/70' : 'text-slate-300 group-hover:text-[#0052CC]',
+        photoUploadLabel: isAurora ? 'text-white/45 group-hover:text-white/80' : 'text-slate-400 group-hover:text-[#0052CC]',
+        changesBadge: isAurora
+            ? 'bg-amber-500/[0.18] text-amber-300 border-amber-500/[0.25]'
+            : 'bg-amber-100 text-amber-700 border-amber-200',
+        emptyPresentaciones: isAurora
+            ? 'bg-white/[0.06] border-white/[0.10] text-white/45'
+            : isCompat
+            ? 'bg-white border-slate-200 text-slate-400'
+            : 'bg-slate-50 border-slate-100 text-slate-400',
+        pricingWrapper: isAurora
+            ? 'bg-[#0a1628]/80 border-white/[0.10]'
+            : isCompat
+            ? 'bg-white border-slate-200'
+            : 'bg-white border-slate-100 shadow-sm',
+        pricingThead: isAurora
+            ? 'bg-white/[0.06] border-b border-white/[0.10]'
+            : isCompat
+            ? 'bg-slate-100 border-b border-slate-200'
+            : 'bg-[#0052CC]/[0.05] border-b border-[#0052CC]/[0.08]',
+        pricingThText: isAurora ? 'text-white/35' : 'text-slate-400',
+        pricingDivide: isAurora ? 'divide-y divide-white/[0.06]' : 'divide-y divide-slate-50',
+        pricingRowChanged: isAurora ? 'bg-amber-500/[0.12]' : 'bg-amber-50/60',
+        pricingRowLoss: isAurora ? 'bg-red-500/[0.10]' : 'bg-red-50/30',
+        pricingRowNormal: isAurora ? 'bg-transparent' : 'bg-white',
+        pricingCellChanged: isAurora ? 'bg-amber-500/[0.12]' : 'bg-amber-50',
+        pricingValueChanged: isAurora ? 'text-amber-300' : 'text-amber-700',
+        pricingValueNormal: isAurora ? 'text-white/90' : 'text-slate-700',
+        pricingOldValue: isAurora ? 'text-white/35' : 'text-slate-400',
+        pricingFactor: isAurora ? 'text-white/65' : 'text-slate-500',
+        pricingCosto: isAurora ? 'text-white/65' : 'text-slate-500',
+        statusActive: isAurora
+            ? 'bg-emerald-500/[0.18] text-emerald-400 border border-emerald-500/[0.25]'
+            : isCompat
+            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+            : 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+        statusInactive: isAurora
+            ? 'bg-white/[0.08] text-white/35 border border-white/[0.14]'
+            : 'bg-slate-100 text-slate-400',
+        changelog: isAurora
+            ? 'bg-amber-900/[0.20] border border-amber-500/[0.20]'
+            : 'bg-amber-50/50 border border-amber-100',
+        changelogDate: isAurora
+            ? 'bg-white/[0.08] border-white/[0.12] text-white/50'
+            : 'bg-white border-slate-100 text-slate-400',
+        changelogField: isAurora ? 'text-white/80' : 'text-slate-600',
+        changelogOld: isAurora ? 'text-white/35' : 'text-slate-400',
+        changelogArrow: isAurora ? 'text-white/20' : 'text-slate-300',
+        changelogNew: isAurora ? 'text-white/90' : 'text-slate-800',
+        sinCambios: isAurora ? 'text-white/30 italic' : 'text-slate-300 italic',
+        divider: isAurora ? 'border-white/[0.08]' : isCompat ? 'border-[#C4D9E8]' : 'border-slate-100/80',
+        vertDivider: isAurora ? 'bg-white/[0.08]' : 'bg-slate-100',
+        btnCancel: isAurora
+            ? 'bg-white/[0.08] border-white/[0.16] text-white/65 hover:bg-white/[0.14] hover:text-white'
+            : isCompat
+            ? 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700',
+        srsBtnInactive: isAurora
+            ? 'bg-white/[0.07] text-white/55 border-white/[0.16] hover:bg-violet-500/[0.15] hover:text-violet-300 hover:border-violet-400/[0.30]'
+            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200',
+        srsBtnActive: isAurora
+            ? 'bg-violet-500/[0.20] text-violet-300 border-violet-400/[0.30]'
+            : 'bg-violet-100 text-violet-700 border-violet-200',
+        srsDivider: isAurora ? 'border-white/[0.08]' : 'border-slate-100',
+    };
+
     const allowedPriceFields = useMemo(() => {
         if (!maxPriceLevel) return PRICE_FIELDS;
         const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
@@ -663,9 +759,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     if (loadingRow) {
         return (
-            <tr className="border-t border-blue-100/60">
-                <td colSpan={5} className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30">
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <tr className={xk.loadingRow}>
+                <td colSpan={5} className="px-5 py-4">
+                    <div className={`flex items-center gap-2 text-[11px] ${xk.loadingText}`}>
                         <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando detalle…
                     </div>
                 </td>
@@ -693,16 +789,14 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     }, null);
 
     return (
-        <tr className="border-t border-blue-100/60">
-            <td colSpan={5} className="px-0 py-0 bg-gradient-to-br from-blue-50/30 via-white/70 to-slate-50/20">
+        <tr className={xk.container}>
+            <td colSpan={5} className="px-0 py-0">
                 <div className="px-5 py-5 space-y-5">
 
                     {/* ── Alert banner ── */}
                     {worstOverall !== null && worstOverall < 15 && (
                         <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium ${
-                            worstOverall < 0
-                                ? 'bg-red-50 border-red-200 text-red-700'
-                                : 'bg-amber-50 border-amber-200 text-amber-700'
+                            worstOverall < 0 ? xk.alertDanger : xk.alertWarning
                         }`}>
                             {worstOverall < 0
                                 ? <ShieldAlert size={14} className="shrink-0 text-red-500" />
@@ -718,7 +812,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* ── LEFT: Foto ── */}
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                                 <Camera size={9} /> Foto del producto
                             </p>
                             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
@@ -730,8 +824,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 />
                             )}
                             <button onClick={() => fileRef.current?.click()}
-                                className="relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group
-                                    border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30">
+                                className={`relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
                                 {localFoto ? (
                                     <>
                                         <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
@@ -749,9 +842,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                         {photoLoading
                                             ? <Loader2 size={24} className="text-[#0052CC] animate-spin" />
                                             : <>
-                                                <Camera size={24} className="text-slate-300 group-hover:text-[#0052CC] transition-colors" />
-                                                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-[#0052CC] transition-colors">Subir foto</span>
-                                                <span className="text-[8px] text-slate-300">JPG, PNG o WebP</span>
+                                                <Camera size={24} className={`transition-colors ${xk.photoUploadIcon}`} />
+                                                <span className={`text-[10px] font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
+                                                <span className={`text-[8px] ${xk.photoSubText}`}>JPG, PNG o WebP</span>
                                             </>}
                                     </div>
                                 )}
@@ -760,64 +853,64 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* ── RIGHT: Precios ── */}
                         <div className="min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-2">
+                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-2`}>
                                 Presentaciones y precios
                                 {hasChanges && (
-                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold border px-1.5 py-0.5 rounded-full ${xk.changesBadge}`}>
                                         <AlertTriangle size={8} /> cambios
                                     </span>
                                 )}
                             </p>
 
                             {precios.length === 0 ? (
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 py-3 px-3 rounded-xl bg-slate-50 border border-slate-100">
-                                    <Info size={12} className="text-slate-300 shrink-0" />
+                                <div className={`flex items-center gap-2 text-[11px] py-3 px-3 rounded-xl border ${xk.emptyPresentaciones}`}>
+                                    <Info size={12} className="shrink-0 opacity-60" />
                                     Sin presentaciones en el ERP.
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                                <div className={`overflow-x-auto rounded-xl border ${xk.pricingWrapper}`}>
                                     <table className="min-w-full text-sm">
                                         <thead>
-                                            <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-left whitespace-nowrap">Presentación</th>
-                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Factor</th>
-                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Costo</th>
+                                            <tr className={xk.pricingThead}>
+                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-left whitespace-nowrap ${xk.pricingThText}`}>Presentación</th>
+                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Factor</th>
+                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-right ${xk.pricingThText}`}>Costo</th>
                                                 {allowedPriceFields.map(f => (
-                                                    <th key={f.key} className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right whitespace-nowrap">{f.label}</th>
+                                                    <th key={f.key} className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-right whitespace-nowrap ${xk.pricingThText}`}>{f.label}</th>
                                                 ))}
-                                                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-center">Estado</th>
+                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Estado</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-50">
+                                        <tbody className={xk.pricingDivide}>
                                             {precios.map(pp => {
                                                 const pCh = changesMap[pp.id_presentacion] || {};
                                                 const rowChanged = Object.keys(pCh).length > 0;
                                                 const worst = worstMarginOf(pp, marginCheckFields);
                                                 return (
                                                     <tr key={pp.id_presentacion} className={
-                                                        rowChanged ? 'bg-amber-50/60' :
-                                                        worst !== null && worst < 0 ? 'bg-red-50/30' :
-                                                        'bg-white'
+                                                        rowChanged ? xk.pricingRowChanged :
+                                                        worst !== null && worst < 0 ? xk.pricingRowLoss :
+                                                        xk.pricingRowNormal
                                                     }>
                                                         <td className="px-3 py-2.5 whitespace-nowrap">
-                                                            <span className="text-[12px] font-semibold text-slate-700">{pp.presentaciones?.tipo || '—'}</span>
+                                                            <span className={`text-[12px] font-semibold ${xk.pricingValueNormal}`}>{pp.presentaciones?.tipo || '—'}</span>
                                                             {pp.descripcion && (
-                                                                <span className="text-[9px] text-slate-400 ml-1">{pp.descripcion}</span>
+                                                                <span className={`text-[9px] ml-1 ${xk.pricingFactor}`}>{pp.descripcion}</span>
                                                             )}
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-center text-[11px] text-slate-500">{pp.factor ?? '—'}</td>
-                                                        <td className="px-3 py-2.5 text-right text-[11px] font-medium text-slate-500">{fmtP(pp.costo)}</td>
+                                                        <td className={`px-3 py-2.5 text-center text-[11px] ${xk.pricingFactor}`}>{pp.factor ?? '—'}</td>
+                                                        <td className={`px-3 py-2.5 text-right text-[11px] font-medium ${xk.pricingCosto}`}>{fmtP(pp.costo)}</td>
                                                         {allowedPriceFields.map(f => {
                                                             const ch = pCh[f.key];
                                                             const m  = calcMargin(pp[f.key], pp.costo);
                                                             return (
-                                                                <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? 'bg-amber-50' : ''}`}>
+                                                                <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? xk.pricingCellChanged : ''}`}>
                                                                     <div className="flex flex-col items-end gap-0.5">
-                                                                        <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-slate-700'}`}>
+                                                                        <span className={`text-[12px] font-semibold ${ch ? xk.pricingValueChanged : xk.pricingValueNormal}`}>
                                                                             {fmtP(pp[f.key])}
                                                                         </span>
                                                                         {ch && (
-                                                                            <span className="text-[9px] text-slate-400 line-through whitespace-nowrap">
+                                                                            <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
                                                                                 {fmtP(ch.anterior)}
                                                                             </span>
                                                                         )}
@@ -827,7 +920,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                             );
                                                         })}
                                                         <td className="px-3 py-2.5 text-center">
-                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${pp.activo !== false ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${pp.activo !== false ? xk.statusActive : xk.statusInactive}`}>
                                                                 {pp.activo !== false ? 'Activa' : 'Inactiva'}
                                                             </span>
                                                         </td>
@@ -846,7 +939,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* Categoría */}
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                                 <Tag size={9} /> Categoría
                             </p>
                             <CategoryEditor
@@ -860,22 +953,22 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
                         {/* Cambios en el producto */}
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                                 <History size={9} /> Cambios en el producto
                             </p>
                             {prodLog.length === 0 ? (
-                                <p className="text-[11px] text-slate-300 italic">Sin cambios registrados.</p>
+                                <p className={`text-[11px] ${xk.sinCambios}`}>Sin cambios registrados.</p>
                             ) : (
-                                <div className="rounded-xl bg-amber-50/50 border border-amber-100 px-3.5 py-3 space-y-1.5">
+                                <div className={`rounded-xl px-3.5 py-3 space-y-1.5 ${xk.changelog}`}>
                                     {prodLog.map((c, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
-                                            <span className="font-mono text-[10px] text-slate-400 shrink-0 bg-white border border-slate-100 px-1.5 py-0.5 rounded">
+                                            <span className={`font-mono text-[10px] shrink-0 px-1.5 py-0.5 rounded border ${xk.changelogDate}`}>
                                                 {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                             </span>
-                                            <span className="font-semibold text-slate-600">{c.campo}</span>
-                                            <span className="text-slate-400 line-through text-[10px]">{c.valor_anterior || '—'}</span>
-                                            <span className="text-slate-300 text-[9px] font-bold">→</span>
-                                            <span className="text-slate-800 font-medium">{c.valor_nuevo || '—'}</span>
+                                            <span className={`font-semibold ${xk.changelogField}`}>{c.campo}</span>
+                                            <span className={`line-through text-[10px] ${xk.changelogOld}`}>{c.valor_anterior || '—'}</span>
+                                            <span className={`text-[9px] font-bold ${xk.changelogArrow}`}>→</span>
+                                            <span className={`font-medium ${xk.changelogNew}`}>{c.valor_nuevo || '—'}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -884,20 +977,18 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                     </div>
 
                     {/* ── Principios activos + Ubicaciones side by side ── */}
-                    <div className="border-t border-slate-100/80 pt-4 flex flex-col md:flex-row gap-5 items-start">
+                    <div className={`border-t ${xk.divider} pt-4 flex flex-col md:flex-row gap-5 items-start`}>
 
                         {/* Principios activos */}
                         <div className="shrink-0 min-w-[220px]">
                             <div className="flex items-center justify-between mb-2.5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                <p className={`${xk.sectionLabel} flex items-center gap-1.5`}>
                                     <FlaskConical size={9} /> Principios activos
                                 </p>
                                 <button
                                     onClick={() => setShowSrs(v => !v)}
                                     className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
-                                        showSrs
-                                            ? 'bg-violet-100 text-violet-700 border-violet-200'
-                                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200'
+                                        showSrs ? xk.srsBtnActive : xk.srsBtnInactive
                                     }`}
                                 >
                                     <Search size={9} strokeWidth={2.5} /> SRS
@@ -910,17 +1001,17 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
                             />
                             {showSrs && (
-                                <div className="mt-3 border-t border-slate-100 pt-3">
+                                <div className={`mt-3 border-t ${xk.srsDivider} pt-3`}>
                                     <SrsBuscadorWidget initialQuery={product.nombre} />
                                 </div>
                             )}
                         </div>
 
-                        <div className="w-px self-stretch bg-slate-100 hidden md:block shrink-0" />
+                        <div className={`w-px self-stretch hidden md:block shrink-0 ${xk.vertDivider}`} />
 
                         {/* Ubicaciones */}
                         <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
+                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                                 <MapPin size={9} /> Ubicaciones por sucursal
                             </p>
                             <LocationGrid
@@ -933,9 +1024,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                     </div>
 
                     {/* ── Guardar / Cancelar ── */}
-                    <div className="border-t border-slate-100/80 pt-4 flex items-center justify-end gap-2">
+                    <div className={`border-t ${xk.divider} pt-4 flex items-center justify-end gap-2`}>
                         <button onClick={onClose}
-                            className="px-4 h-9 rounded-full text-[11px] font-bold text-slate-500 border border-slate-200 hover:border-slate-300 hover:text-slate-700 transition-all bg-white">
+                            className={`px-4 h-9 rounded-full text-[11px] font-bold border transition-all ${xk.btnCancel}`}>
                             Cancelar
                         </button>
                         <button onClick={handleSave} disabled={saving}
@@ -980,20 +1071,19 @@ export default function TabCatalogo({
     // ── Theme tokens ────────────────────────────────────────────────────────────
     const tk = {
         card: isAurora
-            ? 'bg-white/[0.10] border-white/[0.22] backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]'
+            ? 'bg-[#0a1628] border-white/[0.12] shadow-[0_8px_40px_rgba(0,0,0,0.70),inset_0_1px_0_rgba(255,255,255,0.08)]'
             : isCompat
             ? 'bg-white border-[#C4D9E8] shadow-[0_4px_20px_rgba(0,0,0,0.08)]'
             : 'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
         thead: isAurora
-            ? 'bg-white/[0.09] border-b border-white/[0.16]'
+            ? 'bg-white/[0.06] border-b border-white/[0.10]'
             : isCompat
             ? 'bg-[#EEF4F9] border-b border-[#C4D9E8]'
             : 'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
-        rowBorder: isAurora ? 'border-t border-white/[0.08]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100',
-        rowHover: isAurora
-            ? 'hover:bg-white/[0.07] hover:border-l-white/[0.30]'
-            : 'hover:bg-[#0052CC]/[0.03] hover:border-l-[#0052CC]/40',
-        rowExpanded: isAurora ? 'bg-white/[0.12] border-l-white/[0.40]' : isCompat ? 'bg-blue-50/50 border-l-[#0052CC]' : 'bg-[#0052CC]/[0.05] border-l-[#0052CC]',
+        rowBorder: isAurora ? 'border-t border-white/[0.07]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100',
+        rowHover: isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-[#0052CC]/[0.03]',
+        rowExpanded: isAurora ? 'bg-white/[0.09]' : isCompat ? 'bg-blue-50/50' : 'bg-[#0052CC]/[0.05]',
+        rowAccentColor: isAurora ? 'rgba(96,165,250,0.7)' : '#0052CC',
         textStrong: isAurora ? 'text-white/90' : 'text-slate-800',
         textMid: isAurora ? 'text-white/65' : 'text-slate-500',
         textInactive: isAurora ? 'text-white/35 line-through decoration-white/20' : 'text-slate-400 line-through decoration-slate-300',
@@ -1452,10 +1542,11 @@ export default function TabCatalogo({
                                                 onClick={() => toggleRow(p.id)}
                                                 onMouseEnter={() => prefetchRow(p.id)}
                                                 onMouseLeave={cancelPrefetch}
+                                                style={{ borderLeftColor: isExpanded ? (isAurora ? 'rgba(96,165,250,0.8)' : '#0052CC') : 'transparent' }}
                                                 className={`cursor-pointer transition-all duration-150 border-l-[3px] ${tk.rowBorder} ${
                                                     isExpanded   ? tk.rowExpanded :
-                                                    isInactive   ? `${tk.rowHover} opacity-50 border-l-transparent` :
-                                                    `${tk.rowHover} border-l-transparent`
+                                                    isInactive   ? `${tk.rowHover} opacity-50` :
+                                                    tk.rowHover
                                                 }`}>
 
                                                 {/* Producto */}

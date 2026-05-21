@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import {
+    buildDateFromTime,
     findLastPunchOfTypes,
     format12hNoSeconds,
     formatDuration,
@@ -697,17 +698,15 @@ const submitEarlyExit = useCallback((e) => {
 
         const employee = (employees || []).find((emp) => {
             const empCode = String(emp?.code || emp?.employee_code || '')
-                .trim()
-                .replace(/\s+/g, '')
-                .toUpperCase();
-
+                .trim().replace(/\s+/g, '').toUpperCase();
             if (empCode && empCode === codeToFind) return true;
 
-            const emailPrefix = String(emp?.email || '').split('@')[0]
-                .trim()
-                .replace(/\s+/g, '')
-                .toUpperCase();
+            // kiosk_pin: alternative scanner code printed on secondary badge
+            const kioskPin = String(emp?.kiosk_pin || '').trim().replace(/\s+/g, '').toUpperCase();
+            if (kioskPin && kioskPin === codeToFind) return true;
 
+            const emailPrefix = String(emp?.email || '').split('@')[0]
+                .trim().replace(/\s+/g, '').toUpperCase();
             return emailPrefix && emailPrefix === codeToFind;
         });
 
@@ -721,6 +720,33 @@ const submitEarlyExit = useCallback((e) => {
             });
             setScanCode('');
             scheduleFeedbackClose(2000);
+            return;
+        }
+
+        // Block employees with active VACATION / DISABILITY / PERMIT (not SUPPORT)
+        // A VACATION_RECALL for today is already handled by the RPC clearing active_event_type
+        const EVENT_LABELS = {
+            VACATION: 'Período Vacacional',
+            DISABILITY: 'Incapacidad Médica',
+            PERMIT: 'Permiso Especial',
+        };
+        if (employee.active_event_type && EVENT_LABELS[employee.active_event_type]) {
+            appendAuditLog?.('MARCAJE_BLOQUEADO_EVENTO', employee.id, {
+                empleado: employee.name,
+                motivo: employee.active_event_type,
+                source: 'KIOSK',
+                severity: 'INFO',
+            });
+            setFeedback({
+                status: 'error',
+                message: employee.name,
+                subtext: `En ${EVENT_LABELS[employee.active_event_type]} — Contacta a RRHH`,
+                color: 'orange',
+                icon: ShieldAlert,
+            });
+            setScanCode('');
+            scheduleFeedbackClose(4000);
+            setIsProcessing(false);
             return;
         }
 
@@ -925,8 +951,36 @@ const submitEarlyExit = useCallback((e) => {
         scheduleFeedbackClose,
     ]);
 
+    // Lunch alerts: employees currently working whose scheduled lunch time has arrived
+    const lunchAlerts = useMemo(() => {
+        const todayStr = toLocalISO(time);
+        const alerts = [];
+        for (const emp of employees) {
+            const todayPunches = (emp.attendance || []).filter(a =>
+                a.timestamp && toLocalISODate(new Date(a.timestamp)) === todayStr
+            );
+            const lastPunch = todayPunches[todayPunches.length - 1];
+            // Must be currently working (last punch is an IN-type, not OUT_LUNCH/OUT_LACTATION)
+            if (!lastPunch || !lastPunch.type?.startsWith('IN')) continue;
+            // Skip if already took lunch today
+            if (todayPunches.some(p => p.type === 'OUT_LUNCH')) continue;
+            const cfg = buildCustomConfig({ employee: emp, now: time, shifts, todayPunches });
+            const lunchTime = cfg?.config?.lunchTime;
+            if (!lunchTime) continue;
+            const lunchD = buildDateFromTime(time, lunchTime);
+            if (!lunchD) continue;
+            const diffMins = Math.floor((time - lunchD) / 60000);
+            // Alert window: 10 min before until 60 min after scheduled lunch
+            if (diffMins >= -10 && diffMins <= 60) {
+                alerts.push({ employee: emp, lunchTime, minsOverdue: Math.max(0, diffMins) });
+            }
+        }
+        return alerts;
+    }, [employees, shifts, time]);
+
     return {
         branches,
+        lunchAlerts,
         scanCode,
         setScanCode,
         feedback,

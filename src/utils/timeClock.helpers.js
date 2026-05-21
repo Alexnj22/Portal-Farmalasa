@@ -123,7 +123,17 @@ export const getTodayPunches = (employee, dateObj = new Date()) => {
 
 export const getLastPunchOfDay = (employee, dateObj = new Date()) => {
   const punches = getTodayPunches(employee, dateObj);
-  return punches.length ? punches[punches.length - 1] : null;
+  if (punches.length) return punches[punches.length - 1];
+
+  // Overnight shifts: if no punches today but yesterday's last punch is still an open IN-type,
+  // carry it over so the employee can punch OUT on the next calendar day.
+  const yesterday = new Date(dateObj);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const prevPunches = getTodayPunches(employee, yesterday);
+  const lastPrev = prevPunches.length ? prevPunches[prevPunches.length - 1] : null;
+  if (lastPrev?.type?.startsWith('IN')) return lastPrev;
+
+  return null;
 };
 
 export const resolveAttendanceFlow = ({

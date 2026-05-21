@@ -80,9 +80,11 @@ Deno.serve(async (req) => {
       .select('employee_id, schedule_data');
     if (rosterErr) throw rosterErr;
 
-    // 3. Load all attendance punches for workDate
-    const dayStart = workDate + 'T00:00:00+00:00';
-    const dayEnd   = workDate + 'T23:59:59+00:00';
+    // 3. Load all attendance punches for workDate in CST (UTC-6) boundaries
+    // Punches are stored as UTC; a punch at 22:00 CST = 04:00 UTC next day, so we
+    // filter by the CST day window to correctly capture all punches for that date.
+    const dayStart = workDate + 'T00:00:00-06:00';
+    const dayEnd   = workDate + 'T23:59:59-06:00';
     const { data: punches, error: punchErr } = await supabase
       .from('attendance')
       .select('employee_id, type, timestamp')

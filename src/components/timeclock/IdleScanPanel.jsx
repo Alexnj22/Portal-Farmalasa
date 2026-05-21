@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle } from 'lucide-react';
+import { ScanBarcode, ShieldAlert, LogIn, Utensils, Baby, LogOut, XCircle, Bell } from 'lucide-react';
 
 const ACTION_ITEMS = [
   { icon: LogIn, glassColor: 'bg-green-500/10 border-green-500/30 text-green-400', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20', label: 'Entrada' },
@@ -18,6 +18,7 @@ export default function IdleScanPanel({
   specialOutHandler,
   cancelSpecialModeHandler,
   clearHandler,
+  lunchAlerts = [],
 }) {
 
   useEffect(() => {
@@ -103,6 +104,32 @@ export default function IdleScanPanel({
         </div>
 
       </div>
+
+      {/* Lunch alerts banner */}
+      {!specialMode && lunchAlerts.length > 0 && (
+        <div className="w-full max-w-[420px] mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-orange-500/10 backdrop-blur-xl border border-orange-500/25 rounded-[1.5rem] px-4 py-3 shadow-[0_8px_24px_rgba(249,115,22,0.15)]">
+            <div className="flex items-center gap-2 mb-2">
+              <Bell size={13} className="text-orange-400 shrink-0" strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">
+                Hora de Almuerzo
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {lunchAlerts.map(alert => (
+                <div key={alert.employee.id} className="flex items-center justify-between gap-2">
+                  <span className="text-white/80 text-[11px] font-semibold truncate">
+                    {alert.employee.name}
+                  </span>
+                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-red-400' : 'text-orange-300'}`}>
+                    {alert.minsOverdue > 0 ? `${alert.minsOverdue} min tarde` : `${alert.lunchTime}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 🚨 COMPORTAMIENTO 2: DOCK FLOTANTE DERECHO (PANTALLAS CHAPARRITAS PERO ANCHAS)
           - hidden: por defecto.

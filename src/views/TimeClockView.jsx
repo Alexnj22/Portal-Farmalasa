@@ -32,6 +32,7 @@ const TimeClockView = ({ setView }) => {
     inputRef,
     time,
     branches,
+    lunchAlerts,
 
     // setters
     setSelectedBranchId,
@@ -157,7 +158,7 @@ const TimeClockView = ({ setView }) => {
                 ) : authPrompt ? (
                 <AuthPromptPanel authPrompt={authPrompt} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelHandler={cancelAuth} forceNormalOutHandler={handleForceNormalOut} clearHandler={() => setScanCode('')} skipPinHandler={handleSkipPin} />
                 ) : (
-                <IdleScanPanel specialMode={specialMode} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelSpecialModeHandler={cancelAuth} specialOutHandler={requestSpecialOut} clearHandler={() => setScanCode('')} />
+                <IdleScanPanel specialMode={specialMode} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelSpecialModeHandler={cancelAuth} specialOutHandler={requestSpecialOut} clearHandler={() => setScanCode('')} lunchAlerts={lunchAlerts} />
                 )}
             </div>
 

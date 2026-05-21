@@ -71,6 +71,7 @@ const EmployeeScheduleView = () => {
             .select('schedule_data')
             .eq('employee_id', user.id)
             .eq('week_start_date', weekStartISO)
+            .eq('status', 'PUBLISHED')
             .maybeSingle()
             .then(({ data }) => {
                 setScheduleData(data?.schedule_data || {});

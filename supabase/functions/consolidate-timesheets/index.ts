@@ -45,6 +45,14 @@ function cstTimeToUTC(workDate: string, timeStr: string): Date {
   return new Date(`${workDate}T${timeStr}:00-06:00`);
 }
 
+// ISO date of the Monday of the week containing workDate
+function mondayOfWeek(workDate: string): string {
+  const d = new Date(workDate + 'T12:00:00Z');
+  const dow = d.getUTCDay(); // 0=Sun, 1=Mon … 6=Sat
+  d.setUTCDate(d.getUTCDate() - (dow + 6) % 7);
+  return d.toISOString().split('T')[0];
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -77,10 +85,15 @@ Deno.serve(async (req) => {
       .limit(1);
     const isHoliday = (holidayRows?.length ?? 0) > 0;
 
-    // 2. Load all active rosters + shifts in parallel
+    // 2. Load PUBLISHED rosters for this exact week + shifts in parallel
+    const weekStart = mondayOfWeek(workDate);
+    console.log(`Consolidating ${workDate} (week: ${weekStart})`);
     const [{ data: rosters, error: rosterErr }, { data: shiftsData, error: shiftErr }] =
       await Promise.all([
-        supabase.from('employee_rosters').select('employee_id, schedule_data'),
+        supabase.from('employee_rosters')
+          .select('employee_id, schedule_data')
+          .eq('week_start_date', weekStart)
+          .eq('status', 'PUBLISHED'),
         supabase.from('shifts').select('id, start_time, end_time'),
       ]);
     if (rosterErr) throw rosterErr;

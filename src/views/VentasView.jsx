@@ -664,7 +664,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             <DataRow
                                 index={i}
                                 onClick={() => toggleRow(r.id)}
-                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? (isAurora ? 'bg-white/[0.08]' : 'bg-blue-50/50') : ''}
+                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? (isAurora ? 'bg-white/[0.12]' : 'bg-blue-50/50') : ''}
                             >
                                 <DataCell>
                                     <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
@@ -738,10 +738,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                             </DataRow>
                             {isExpanded && (
-                                <tr className={`border-t ${isAurora ? 'border-white/[0.15]' : isCompat ? 'border-slate-100' : 'border-blue-100/60'}`}>
+                                <tr className={`border-t ${isAurora ? 'border-white/[0.18]' : isCompat ? 'border-slate-100' : 'border-blue-100/60'}`}>
                                     <td colSpan={8}
-                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.35)' } : undefined}
-                                        className={`px-5 py-4 ${isAurora ? 'bg-white/[0.04]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20'}`}>
+                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)' } : undefined}
+                                        className={`px-5 py-4 ${isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20'}`}>
                                         {loadingItems && !cachedItems ? (
                                             <div className={`flex items-center gap-2 text-[11px] py-1 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>
                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
@@ -1085,9 +1085,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
-                    const expandBg     = isAurora ? 'bg-white/[0.04]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
-                    const expandBorder = isAurora ? 'border-white/[0.15]' : isCompat ? 'border-slate-100' : 'border-blue-100/60';
-                    const cardNormal   = isAurora ? 'bg-white/[0.07] border-white/[0.15]' : 'bg-white border-slate-200';
+                    const expandBg     = isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
+                    const expandBorder = isAurora ? 'border-white/[0.20]' : isCompat ? 'border-slate-100' : 'border-blue-100/60';
+                    const cardNormal   = isAurora ? 'bg-white/[0.11] border-white/[0.22]' : 'bg-white border-slate-200';
                     const cardCross    = isAurora ? 'bg-orange-900/20 border-orange-400/30' : 'bg-orange-50 border-orange-200';
 
                     return (
@@ -1140,7 +1140,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             {isOpen && (
                                 <tr className={`border-t ${expandBorder}`}>
                                     <td colSpan={7}
-                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.35)' } : undefined}
+                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)' } : undefined}
                                         className={`px-4 py-3 ${expandBg}`}>
                                         {loadingExpand ? (
                                             <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
@@ -1697,7 +1697,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     {isExpanded && (
                                         <tr className={isAurora ? '' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-b from-blue-50/25 to-slate-50/10'}>
                                             <td colSpan={7}
-                                                style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.04)' } : undefined}
+                                                style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)', background: 'rgba(255,255,255,0.08)' } : undefined}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">

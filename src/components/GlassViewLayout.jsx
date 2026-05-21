@@ -42,7 +42,7 @@ const GlassViewLayout = ({
     const headerPillCls = isCompat
         ? 'bg-white border-[#8BAEC8] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
         : isAurora
-        ? 'bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-[180%] border-white/[0.18] shadow-[0_4px_24px_rgba(0,0,0,0.40)]'
+        ? 'bg-white/[0.11] backdrop-blur-2xl backdrop-saturate-[180%] border-white/[0.25] shadow-[0_4px_28px_rgba(0,0,0,0.50),inset_0_1px_0_rgba(255,255,255,0.22)]'
         : 'bg-white/20 backdrop-blur-[10px] backdrop-saturate-[300%] border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]';
 
     const headerRadius = isCompat ? 'rounded-[1.5rem]' : 'rounded-[2.5rem]';
@@ -56,7 +56,7 @@ const GlassViewLayout = ({
         : isCompat
         ? 'bg-white border border-[#d1dde8] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.06)] rounded-[1rem] lg:rounded-[1.5rem] overflow-hidden'
         : isAurora
-        ? 'bg-white/[0.05] backdrop-blur-[15px] border border-white/[0.09] shadow-[0_8px_32px_rgba(0,0,0,0.35)] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden'
+        ? 'bg-white/[0.09] backdrop-blur-[15px] border border-white/[0.18] shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden'
         : 'bg-white/60 backdrop-blur-[15px] backdrop-saturate-[300%] border border-white/80 shadow-[inset_0_2px_30px_rgba(255,255,255,0.5),0_14px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
 
     const mobileTitleCls = isAurora ? 'text-white' : 'text-slate-800';

@@ -43,7 +43,7 @@ export default function ViewTabBar({
   const pillCls = isCompat
     ? 'bg-[#B3D0E8] border-[#8BAEC8] shadow-sm hover:shadow-md'
     : isAurora
-    ? 'bg-white/[0.08] backdrop-blur-2xl border-white/[0.20] shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.45)] hover:bg-white/[0.12]'
+    ? 'bg-white/[0.12] backdrop-blur-2xl border-white/[0.28] shadow-[0_4px_24px_rgba(0,0,0,0.50),inset_0_1px_0_rgba(255,255,255,0.22)] hover:bg-white/[0.16] hover:shadow-[0_8px_36px_rgba(0,0,0,0.55)]'
     : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]';
 
   const activeTabCls = isCompat

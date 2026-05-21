@@ -273,10 +273,10 @@ export default function MetasView() {
   }, [goals]);
 
   // Theme tokens
-  const card   = isAurora ? 'bg-white/[0.07] border-white/[0.18] backdrop-blur-2xl'
+  const card   = isAurora ? 'bg-white/[0.11] border-white/[0.25] backdrop-blur-2xl'
                : isCompat ? 'bg-white border-slate-200'
                : 'bg-white/60 border-white/55 backdrop-blur-xl';
-  const shadow = isAurora ? 'shadow-[0_8px_32px_rgba(0,0,0,0.35)]' : isCompat ? 'shadow-sm' : 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
+  const shadow = isAurora ? 'shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]' : isCompat ? 'shadow-sm' : 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
   const txt    = isAurora ? 'text-white/85' : 'text-slate-700';
   const muted  = isAurora ? 'text-white/50'  : 'text-slate-400';
   const divider= isAurora ? 'border-white/[0.12]' : isCompat ? 'border-slate-100' : 'border-slate-200/60';
@@ -298,7 +298,7 @@ export default function MetasView() {
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all
             ${showGoalEditor
               ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-[0_3px_10px_rgba(0,82,204,0.35)]'
-              : isAurora ? 'bg-white/[0.08] border-white/[0.20] text-white/80 hover:bg-white/[0.14]'
+              : isAurora ? 'bg-white/[0.12] border-white/[0.28] text-white/85 hover:bg-white/[0.18]'
               : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
             }`}
         >
@@ -323,7 +323,7 @@ export default function MetasView() {
                     defaultValue={goals[b]?.toLocaleString('en-US')}
                     onBlur={e => updateGoal(b, e.target.value)}
                     className={`w-full pl-5 pr-2 py-1.5 rounded-lg text-[11px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40
-                      ${isAurora ? 'bg-white/[0.06] border-white/[0.15] text-white/80'
+                      ${isAurora ? 'bg-white/[0.10] border-white/[0.22] text-white/80'
                                  : 'bg-white border-slate-200 text-slate-700'}`}
                   />
                 </div>
@@ -364,9 +364,9 @@ export default function MetasView() {
           const borderColor = status === 'green'  ? 'border-green-400/60'
                             : status === 'orange' ? 'border-orange-400/60'
                             : status === 'red'    ? 'border-red-400/60'
-                            : isAurora ? 'border-white/[0.18]' : 'border-slate-200';
+                            : isAurora ? 'border-white/[0.25]' : 'border-slate-200';
 
-          const pulse = isAurora ? 'bg-white/[0.09]' : 'bg-slate-200/70';
+          const pulse = isAurora ? 'bg-white/[0.12]' : 'bg-slate-200/70';
 
           return (
             <div key={b}
@@ -564,7 +564,7 @@ export default function MetasView() {
               onClick={() => setSelectedMonthIdx(i => Math.max(0, i - 1))}
               disabled={selectedMonthIdx === 0}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
-                ${isAurora ? 'bg-white/[0.10] text-white/70 hover:bg-white/[0.20] disabled:opacity-20'
+                ${isAurora ? 'bg-white/[0.14] text-white/80 hover:bg-white/[0.22] disabled:opacity-30'
                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
             >
               <ChevronLeft size={16} strokeWidth={2.5}/>
@@ -573,7 +573,7 @@ export default function MetasView() {
               <p className={`text-[14px] font-black ${txt}`}>{MONTHS[selectedMonthIdx].full}</p>
               {MONTHS[selectedMonthIdx].projected && (
                 <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full
-                  ${isAurora ? 'bg-white/[0.12] text-white/70' : 'bg-indigo-100 text-indigo-600'}`}>
+                  ${isAurora ? 'bg-white/[0.16] text-white/80' : 'bg-indigo-100 text-indigo-600'}`}>
                   Proyección
                 </span>
               )}
@@ -582,7 +582,7 @@ export default function MetasView() {
               onClick={() => setSelectedMonthIdx(i => Math.min(MONTHS.length - 1, i + 1))}
               disabled={selectedMonthIdx === MONTHS.length - 1}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
-                ${isAurora ? 'bg-white/[0.10] text-white/70 hover:bg-white/[0.20] disabled:opacity-20'
+                ${isAurora ? 'bg-white/[0.14] text-white/80 hover:bg-white/[0.22] disabled:opacity-30'
                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
             >
               <ChevronRight size={16} strokeWidth={2.5}/>
@@ -622,8 +622,8 @@ export default function MetasView() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" style={{minWidth:'900px'}}>
             <thead>
-              <tr className={`border-b ${divider} ${isAurora ? 'bg-white/[0.05]' : 'bg-slate-50/80'}`}>
-                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 ${isAurora ? 'bg-[#030B1C]/90' : 'bg-slate-50'} ${muted}`}>Sucursal</th>
+              <tr className={`border-b ${divider} ${isAurora ? 'bg-white/[0.09]' : 'bg-slate-50/80'}`}>
+                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 ${isAurora ? 'bg-[#030B1C]/92' : 'bg-slate-50'} ${muted}`}>Sucursal</th>
                 {MONTHS.slice(0,16).map(m => (
                   <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-indigo-50/40' : ''}`}>
                     {m.label}
@@ -638,7 +638,7 @@ export default function MetasView() {
                 const goal = goals[b];
                 const totals = annualTotals[b];
                 return (
-                  <tr key={b} className={`border-b ${divider} transition-colors ${isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-slate-50/60'}`}>
+                  <tr key={b} className={`border-b ${divider} transition-colors ${isAurora ? 'hover:bg-white/[0.08]' : 'hover:bg-slate-50/60'}`}>
                     <td className={`px-4 py-2 sticky left-0 ${isAurora ? 'bg-[#030B1C]/95' : 'bg-white'} border-r ${divider}`}>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{background:COLORS[b]}} />
@@ -676,7 +676,7 @@ export default function MetasView() {
             </tbody>
             {/* Total row */}
             <tfoot>
-              <tr className={`border-t-2 ${divider} ${isAurora ? 'bg-white/[0.05]' : 'bg-slate-50'}`}>
+              <tr className={`border-t-2 ${divider} ${isAurora ? 'bg-white/[0.09]' : 'bg-slate-50'}`}>
                 <td className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest sticky left-0 ${isAurora ? 'bg-[#030B1C]/95' : 'bg-slate-50'} ${txt}`}>Total</td>
                 {Array.from({length:16},(_,mi) => {
                   const total = BRANCHES.reduce((a,b)=>a+(RAW[b][mi]||0),0);

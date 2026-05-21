@@ -37,6 +37,24 @@ const OUT_TYPES = new Set(['OUT','OUT_LATE','OUT_EARLY','OUT_EXTRA','OUT_BUSINES
 const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES_FULL  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
+// Role hierarchy (lower index = higher rank)
+const ROLE_KEYWORDS = [
+  ['JEFE','JEFA','GERENTE','GERENTA'],
+  ['SUBJEFE','SUBJEFA'],
+  ['SUPERVISOR','SUPERVISORA'],
+  ['REGENTE'],
+  ['FARMACéUTICO','FARMACéUTICA','FARMACEUTICO','FARMACEUTICA'],
+  ['DEPENDIENTE'],
+  ['ASISTENTE','AUXILIAR'],
+  ['CAJERO','CAJERA'],
+  ['BODEGUERO','BODEGUERA'],
+];
+function getRoleOrder(role) {
+  const r = (role || '').toUpperCase();
+  const idx = ROLE_KEYWORDS.findIndex(group => group.some(k => r.includes(k)));
+  return idx === -1 ? 99 : idx;
+}
+
 // ── Timezone helpers ──────────────────────────────────────────────────────────
 function getMondayOfCurrentWeek() {
   const cst = new Date(new Date().getTime() - 6 * 3600000);
@@ -178,8 +196,31 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
   const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
 
+  // Punch types available for this shift
+  const availablePunchTypes = useMemo(() => {
+    const base = [
+      { value: 'IN',           label: 'Entrada' },
+      { value: 'OUT',          label: 'Salida' },
+      { value: 'OUT_EARLY',    label: 'Salida Anticipada' },
+      { value: 'OUT_BUSINESS', label: 'Gestión Externa' },
+    ];
+    if (dayConfig?.hasLunch || dayConfig?.lunchStart) {
+      base.splice(2, 0,
+        { value: 'OUT_LUNCH', label: 'Salida Almuerzo' },
+        { value: 'IN_LUNCH',  label: 'Regreso Almuerzo' },
+      );
+    }
+    if (dayConfig?.hasLactation || dayConfig?.lactationStart) {
+      base.push(
+        { value: 'OUT_LACTATION', label: 'Salida Lactancia' },
+        { value: 'IN_LACTATION',  label: 'Regreso Lactancia' },
+      );
+    }
+    return base;
+  }, [dayConfig]);
+
   const handleAdd = async () => {
-    if (!newType || !newTime || !reason.trim()) return;
+    if (!newType || !newTime) return;
     setSaving(true);
     try {
       await onSave({ type: newType, time: newTime, reason: reason.trim() });
@@ -266,7 +307,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <Plus size={10} strokeWidth={3} /> Agregar marcaje
             </p>
             <div className="grid grid-cols-2 gap-2">
-              <LiquidSelect value={newType} onChange={setNewType} options={PUNCH_TYPE_OPTIONS} placeholder="Tipo" compact clearable={false} />
+              <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
               <input
                 type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
                 className="bg-white border border-black/[0.09] rounded-2xl px-3 py-2 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
@@ -274,7 +315,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             </div>
             <textarea
               value={reason} onChange={e => setReason(e.target.value)}
-              placeholder="Razón de la corrección (obligatorio)"
+              placeholder="Razón de la corrección (opcional)"
               rows={2}
               className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
             />
@@ -284,7 +325,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               </p>
               <button
                 onClick={handleAdd}
-                disabled={saving || !newType || !newTime || !reason.trim()}
+                disabled={saving || !newType || !newTime}
                 className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#003fa3] transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
@@ -379,10 +420,10 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
   })());
 
   const cardBg = isToday
-    ? 'bg-[#0052CC]/[0.08] border-[#0052CC]/20 shadow-[inset_0_0_0_1px_rgba(0,82,204,0.1)]'
+    ? 'bg-[#0052CC]/[0.09] border-[#0052CC]/25 shadow-[0_0_0_1px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,82,204,0.08)]'
     : isFuture
-    ? 'bg-white/[0.12] border-white/20'
-    : 'bg-white/[0.45] border-white/50';
+    ? 'bg-white/[0.15] border-black/[0.04]'
+    : 'bg-white/80 border-black/[0.07] shadow-[0_1px_6px_rgba(0,0,0,0.05)]';
 
   return (
     <div className={`rounded-[1.75rem] border p-4 transition-all duration-200 ${cardBg}`}>
@@ -722,7 +763,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   // ── Week helpers ─────────────────────────────────────────────────────────
   const currentWeekStart = getMondayOfCurrentWeek();
   const isCurrentWeek    = selectedWeekStart === currentWeekStart;
-  const canEditWeek      = canEdit && isCurrentWeek;
+  const canEditWeek      = canEdit || isDemoMode;
 
   const weekDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -777,7 +818,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     const filtered = filterBranch
       ? employees.filter(e => String(e.branchId) === filterBranch)
       : employees;
-    filtered.forEach(emp => {
+    // Sort by role hierarchy
+    const sorted = [...filtered].sort((a, b) => getRoleOrder(a.role) - getRoleOrder(b.role));
+    sorted.forEach(emp => {
       const bId = String(emp.branchId || 'sin-sucursal');
       if (!map.has(bId)) map.set(bId, []);
       map.get(bId).push(emp);
@@ -817,7 +860,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   // ── Correction handler ───────────────────────────────────────────────────
   const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
-    if (!canEditWeek) { showToast('Solo lectura','Solo se puede corregir la semana actual.','info'); return; }
+    if (!canEditWeek) { showToast('Sin permisos','No tienes permiso para corregir marcajes.','info'); return; }
     setCorrectionTarget({ emp, dateStr, dayPunches, shift, dayConfig });
   }, [canEditWeek, showToast]);
 
@@ -855,28 +898,28 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
-    <div className="flex items-center gap-2 sm:gap-3">
-      {/* Week nav pill */}
-      <div className="flex items-center gap-0.5 bg-black/[0.06] rounded-2xl px-1 py-1">
+    <div className="flex items-center gap-3">
+      {/* Week nav — prominente, sin pill container */}
+      <div className="flex items-center gap-1">
         <button type="button" onClick={goToPrevWeek}
-          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 transition-all active:scale-[0.92]">
-          <ChevronLeft size={15} strokeWidth={2.5} />
+          className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
+          <ChevronLeft size={16} strokeWidth={2.5} />
         </button>
-        <div className="flex flex-col items-center px-2 min-w-[120px]">
-          <span className="text-[11px] font-black text-slate-700 leading-none">{weekLabel}</span>
+        <button type="button" onClick={() => setSelectedWeekStart(currentWeekStart)}
+          className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
+          <span className="text-[13px] font-black text-slate-800 leading-none">{weekLabel}</span>
           {isCurrentWeek
             ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Semana actual</span>
-            : <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Solo lectura</span>}
-        </div>
+            : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
+        </button>
         <button type="button" onClick={goToNextWeek} disabled={isCurrentWeek}
-          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 transition-all active:scale-[0.92] disabled:opacity-30 disabled:cursor-not-allowed">
-          <ChevronRight size={15} strokeWidth={2.5} />
+          className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
+          <ChevronRight size={16} strokeWidth={2.5} />
         </button>
       </div>
 
       <LiquidSelect value={filterBranch} onChange={v => setFilterBranch(v||'')} options={branchOptions} compact clearable={false} icon={Building2} />
 
-      {/* Demo toggle */}
       <button type="button" onClick={() => setForceDemoMode(v => !v)}
         className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${forceDemoMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'}`}>
         {forceDemoMode ? 'Demo ON' : 'Demo'}

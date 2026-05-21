@@ -387,14 +387,7 @@ Deno.serve(async (req) => {
         presLookup.set(key, p.id);
       }
 
-      for (let { branchId, erpId, username, password } of branches) {
-        // Salud 5 (branchId=29): ERP ID is 7; credentials are shared with all branches
-        if (branchId === 29) {
-          erpId = 7;
-          const ref = branches.find(b => b.branchId !== 29);
-          if (ref) { username = ref.username; password = ref.password; }
-        }
-
+      for (const { branchId, erpId, username, password } of branches) {
         let attempts = 0;
         let lastErr: string | null = null;
         let branchResult: any = null;

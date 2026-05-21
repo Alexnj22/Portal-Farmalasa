@@ -188,96 +188,116 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   };
 
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} title={`Corregir — ${fmtDia}`} maxWidth="max-w-lg">
-      <div className="space-y-4 px-1">
+    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg">
+      {/* Glass card — propio contenedor con liquid glass */}
+      <div className="bg-white/75 backdrop-blur-2xl border border-white/80 rounded-[2rem] shadow-[0_24px_64px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
 
-        {/* Horario planificado */}
-        {shift && (
-          <div className="flex items-start gap-3 bg-[#0052CC]/[0.07] border border-[#0052CC]/20 rounded-2xl px-4 py-3">
-            <Calendar size={16} className="text-[#0052CC] shrink-0 mt-0.5" strokeWidth={2.5} />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] mb-0.5">Horario planificado</p>
-              <p className="text-[13px] font-black text-slate-800">
-                {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
-              </p>
-              {dayConfig?.lunchStart && (
-                <p className="text-[11px] text-slate-500 font-bold mt-0.5">
-                  Almuerzo: {formatTime12h(dayConfig.lunchStart)} – {(() => {
-                    const [h, m] = dayConfig.lunchStart.split(':');
-                    return formatTime12h(`${String(parseInt(h,10)+1).padStart(2,'0')}:${m}`);
-                  })()}
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Corrección de marcaje</p>
+            <p className="text-[16px] font-black text-slate-900">{fmtDia}</p>
+          </div>
+          <button onClick={onClose}
+            className="p-2 rounded-xl hover:bg-black/[0.06] text-slate-400 hover:text-slate-700 transition-all active:scale-[0.94]">
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+
+          {/* Horario planificado */}
+          {shift ? (
+            <div className="flex items-start gap-3 bg-[#0052CC]/[0.07] border border-[#0052CC]/15 rounded-2xl px-4 py-3.5">
+              <Calendar size={15} className="text-[#0052CC] shrink-0 mt-0.5" strokeWidth={2.5} />
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#0052CC] mb-1">Horario planificado</p>
+                <p className="text-[14px] font-black text-slate-800">
+                  {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
                 </p>
-              )}
+                {dayConfig?.lunchStart && (
+                  <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                    Almuerzo {formatTime12h(dayConfig.lunchStart)} – {(() => {
+                      const [h, m] = dayConfig.lunchStart.split(':');
+                      return formatTime12h(`${String(parseInt(h,10)+1).padStart(2,'0')}:${m}`);
+                    })()}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50/80 border border-slate-200/60 rounded-2xl px-4 py-3">
+              <p className="text-[11px] font-bold text-slate-400">Sin horario planificado para este día</p>
+            </div>
+          )}
+
+          {/* Marcajes actuales */}
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-0.5">Marcajes del día</p>
+            {dayPunches.length === 0 ? (
+              <p className="text-[12px] text-slate-400 font-bold">Sin marcajes registrados</p>
+            ) : (
+              <div className="space-y-1.5">
+                {dayPunches.map(p => (
+                  <div key={p.id} className="flex items-center gap-3 bg-white/60 border border-black/[0.06] rounded-2xl px-4 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-black text-slate-800">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
+                      <p className="text-[11px] font-bold text-slate-500">{fmtTimeCSTStr(p.timestamp)}</p>
+                      {p.branch_id && branchNameById.get(String(p.branch_id)) && String(p.branch_id) !== String(emp.branchId) && (
+                        <p className="text-[9px] font-black text-blue-500 flex items-center gap-1 mt-0.5">
+                          <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.branch_id))}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isAutoPunch(p)    && <span className="text-[8px] font-black bg-violet-100 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full">Auto</span>}
+                      {isPendingPunch(p) && <span className="text-[8px] font-black bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
+                      {isEditedPunch(p)  && <span className="text-[8px] font-black bg-emerald-100 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full">Editado</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Agregar marcaje */}
+          <div className="bg-slate-50/70 border border-slate-200/50 rounded-2xl p-4 space-y-3">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+              <Plus size={10} strokeWidth={3} /> Agregar marcaje
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <LiquidSelect value={newType} onChange={setNewType} options={PUNCH_TYPE_OPTIONS} placeholder="Tipo" compact clearable={false} />
+              <input
+                type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+                className="bg-white border border-black/[0.09] rounded-2xl px-3 py-2 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
+              />
+            </div>
+            <textarea
+              value={reason} onChange={e => setReason(e.target.value)}
+              placeholder="Razón de la corrección (obligatorio)"
+              rows={2}
+              className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-bold text-slate-400">
+                Por: <span className="text-slate-700">{user?.name || user?.email || '—'}</span>
+              </p>
+              <button
+                onClick={handleAdd}
+                disabled={saving || !newType || !newTime || !reason.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#003fa3] transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+              >
+                {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Marcajes actuales */}
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Marcajes del día</p>
-          {dayPunches.length === 0 ? (
-            <p className="text-[12px] text-slate-400 font-bold px-1">Sin marcajes registrados</p>
-          ) : (
-            <div className="space-y-1.5">
-              {dayPunches.map(p => (
-                <div key={p.id} className="flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-white/60 rounded-2xl px-3.5 py-2.5 shadow-sm">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-black text-slate-800">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
-                    <p className="text-[11px] font-bold text-slate-500">{fmtTimeCSTStr(p.timestamp)}</p>
-                    {p.branch_id && branchNameById.get(String(p.branch_id)) && p.branch_id !== emp.branchId && (
-                      <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1 mt-0.5">
-                        <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.branch_id))}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {isAutoPunch(p)   && <span className="text-[8px] font-black uppercase tracking-widest bg-violet-100 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full">Auto</span>}
-                    {isPendingPunch(p) && <span className="text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
-                    {isEditedPunch(p) && <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full">Editado</span>}
-                  </div>
-                </div>
-              ))}
+          {isDemoMode && (
+            <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl px-4 py-2.5">
+              <p className="text-[10px] text-amber-600 font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
             </div>
           )}
         </div>
-
-        {/* Agregar marcaje */}
-        <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-4 space-y-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-            <Plus size={11} strokeWidth={3} /> Agregar marcaje
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <LiquidSelect
-              value={newType} onChange={setNewType}
-              options={PUNCH_TYPE_OPTIONS} placeholder="Tipo" compact clearable={false}
-            />
-            <input
-              type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-              className="bg-white/80 backdrop-blur-sm border border-black/[0.09] rounded-2xl px-3 py-2 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
-            />
-          </div>
-          <textarea
-            value={reason} onChange={e => setReason(e.target.value)}
-            placeholder="Razón de la corrección (obligatorio)"
-            rows={2}
-            className="w-full bg-white/80 backdrop-blur-sm border border-black/[0.09] rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
-          />
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-              Corregido por: <span className="text-slate-600">{user?.name || user?.email || '—'}</span>
-            </p>
-            <button
-              onClick={handleAdd} disabled={saving || !newType || !newTime || !reason.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0052CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#003fa3] transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-            >
-              {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
-            </button>
-          </div>
-        </div>
-
-        {isDemoMode && (
-          <p className="text-[10px] text-amber-600 font-bold text-center">Modo demo — guardado simulado</p>
-        )}
       </div>
     </ModalShell>
   );
@@ -359,10 +379,10 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
   })());
 
   const cardBg = isToday
-    ? 'bg-[#0052CC]/[0.07] border-[#0052CC]/20 shadow-[0_0_0_1px_rgba(0,82,204,0.08)]'
+    ? 'bg-[#0052CC]/[0.08] border-[#0052CC]/20 shadow-[inset_0_0_0_1px_rgba(0,82,204,0.1)]'
     : isFuture
-    ? 'bg-white/20 border-white/30'
-    : 'bg-white/35 backdrop-blur-md border-white/45';
+    ? 'bg-white/[0.12] border-white/20'
+    : 'bg-white/[0.45] border-white/50';
 
   return (
     <div className={`rounded-[1.75rem] border p-4 transition-all duration-200 ${cardBg}`}>
@@ -484,7 +504,7 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
 
           {/* Inconsistencies */}
           {inconsistencies.length > 0 && (
-            <div className="bg-red-50/80 backdrop-blur-sm border border-red-100 rounded-xl px-3 py-2 flex flex-wrap gap-2">
+            <div className="bg-red-50/70 border border-red-100/80 rounded-xl px-3 py-2 flex flex-wrap gap-2">
               {inconsistencies.map(inc => (
                 <span key={inc.type} className="text-[10px] font-bold text-red-600 flex items-center gap-1">
                   ⚠ {inc.label} no registrada
@@ -885,7 +905,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         branchNameById={branchNameById}
       />
 
-      <div className="px-4 md:px-6 pb-8 space-y-4">
+      <div className="px-4 md:px-6 pt-5 pb-8 space-y-4">
 
         {/* Demo banner */}
         {isDemoMode && (

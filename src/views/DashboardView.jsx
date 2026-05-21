@@ -854,7 +854,7 @@ const DashboardView = ({ openModal }) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'comercial' || topProductos.length > 0) return;
+    if (topProductos.length > 0) return;
     const now  = new Date();
     const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const ffin = localDateStr();
@@ -866,7 +866,7 @@ const DashboardView = ({ openModal }) => {
         setTopProductos(data || []);
         setTopProdLoading(false);
       });
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Widget helpers ─────────────────────────────────────────────────────────
   const isWidgetOn = id => widgetConfig.find(w=>w.id===id)?.enabled !== false;

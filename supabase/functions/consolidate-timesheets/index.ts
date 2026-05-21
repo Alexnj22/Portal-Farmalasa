@@ -1,12 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Punch types stored in the attendance table
-const ENTRY_TYPES   = new Set(['PUNCH_IN',  'IN',  'IN_EARLY']);
-const EXIT_TYPES    = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS']);
-const LUNCH_OUT     = new Set(['LUNCH_START', 'OUT_LUNCH']);
-const LUNCH_IN      = new Set(['LUNCH_END',   'IN_LUNCH']);
-const LACTAT_OUT    = new Set(['LACTATION_START', 'OUT_LACTATION']);
-const LACTAT_IN     = new Set(['LACTATION_END',   'IN_LACTATION']);
+const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY']);
+const EXIT_TYPES  = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS']);
+const LUNCH_OUT   = new Set(['LUNCH_START', 'OUT_LUNCH']);
+const LUNCH_IN    = new Set(['LUNCH_END',   'IN_LUNCH']);
+const LACTAT_OUT  = new Set(['LACTATION_START', 'OUT_LACTATION']);
+const LACTAT_IN   = new Set(['LACTATION_END',   'IN_LACTATION']);
 
 function toMinutes(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
@@ -35,10 +35,14 @@ function calcBreakMinutes(
 // Yesterday in El Salvador (UTC-6)
 function yesterdayCST(): string {
   const now = new Date();
-  // Shift to UTC-6
   const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
   cst.setUTCDate(cst.getUTCDate() - 1);
   return cst.toISOString().split('T')[0];
+}
+
+// Build a UTC Date from a workDate string and a "HH:MM" time in CST (UTC-6)
+function cstTimeToUTC(workDate: string, timeStr: string): Date {
+  return new Date(`${workDate}T${timeStr}:00-06:00`);
 }
 
 Deno.serve(async (req) => {
@@ -62,11 +66,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    // Day of week key used in schedule_data — matches JS Date.getDay() directly
-    // (1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun)
+    // Day of week key: JS Date.getDay() — 0=Sun, 1=Mon … 6=Sat
     const dayKey = String(new Date(workDate + 'T12:00:00').getDay());
 
-    // 1. Is it a holiday?
+    // 1. Holiday check
     const { data: holidayRows } = await supabase
       .from('holidays')
       .select('id')
@@ -74,15 +77,25 @@ Deno.serve(async (req) => {
       .limit(1);
     const isHoliday = (holidayRows?.length ?? 0) > 0;
 
-    // 2. Load all active rosters
-    const { data: rosters, error: rosterErr } = await supabase
-      .from('employee_rosters')
-      .select('employee_id, schedule_data');
+    // 2. Load all active rosters + shifts in parallel
+    const [{ data: rosters, error: rosterErr }, { data: shiftsData, error: shiftErr }] =
+      await Promise.all([
+        supabase.from('employee_rosters').select('employee_id, schedule_data'),
+        supabase.from('shifts').select('id, start_time, end_time'),
+      ]);
     if (rosterErr) throw rosterErr;
+    if (shiftErr)  throw shiftErr;
 
-    // 3. Load all attendance punches for workDate in CST (UTC-6) boundaries
-    // Punches are stored as UTC; a punch at 22:00 CST = 04:00 UTC next day, so we
-    // filter by the CST day window to correctly capture all punches for that date.
+    // Build shift lookup: id → { start: 'HH:MM', end: 'HH:MM' }
+    const shiftMap = new Map<number, { start: string; end: string }>();
+    for (const s of shiftsData || []) {
+      shiftMap.set(s.id, {
+        start: String(s.start_time).substring(0, 5),
+        end:   String(s.end_time).substring(0, 5),
+      });
+    }
+
+    // 3. Load attendance punches in CST day window (UTC-6)
     const dayStart = workDate + 'T00:00:00-06:00';
     const dayEnd   = workDate + 'T23:59:59-06:00';
     const { data: punches, error: punchErr } = await supabase
@@ -108,27 +121,38 @@ Deno.serve(async (req) => {
       const empId   = String(roster.employee_id);
       const dayData = roster.schedule_data?.[dayKey];
 
-      // Skip if no schedule or explicitly off
       if (!dayData || dayData.isOff) { skipped++; continue; }
 
-      const scheduledStart = dayData.customStart as string | null;
-      const scheduledEnd   = dayData.customEnd   as string | null;
-      const shiftId        = dayData.shiftId && dayData.shiftId !== 'LIBRE'
+      // Resolve scheduled start/end:
+      // 1. Prefer customStart/customEnd set directly on the day
+      // 2. Fall back to shift table lookup via shiftId
+      let scheduledStart: string | null = dayData.customStart ?? null;
+      let scheduledEnd:   string | null = dayData.customEnd   ?? null;
+
+      const shiftId = dayData.shiftId && dayData.shiftId !== 'LIBRE'
         ? parseInt(dayData.shiftId, 10) : null;
+
+      if ((!scheduledStart || !scheduledEnd) && shiftId !== null && !isNaN(shiftId)) {
+        const shift = shiftMap.get(shiftId);
+        if (shift) {
+          scheduledStart = scheduledStart ?? shift.start;
+          scheduledEnd   = scheduledEnd   ?? shift.end;
+        }
+      }
 
       const empPunches = punchMap.get(empId) || [];
 
-      // Entry / exit times
+      // Entry = first IN-type; exit = last EXIT-type
       const entryPunch = empPunches.find(p => ENTRY_TYPES.has(p.type));
       const exitPunch  = [...empPunches].reverse().find(p => EXIT_TYPES.has(p.type));
 
-      const isAbsent      = !entryPunch;
-      const actualStart   = entryPunch ? new Date(entryPunch.timestamp) : null;
-      const actualEnd     = exitPunch  ? new Date(exitPunch.timestamp)  : null;
+      const isAbsent    = !entryPunch;
+      const actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
+      const actualEnd   = exitPunch  ? new Date(exitPunch.timestamp)  : null;
 
-      let regularHours   = 0;
-      let overtimeHours  = 0;
-      let lateMinutes    = 0;
+      let regularHours  = 0;
+      let overtimeHours = 0;
+      let lateMinutes   = 0;
 
       if (actualStart && actualEnd) {
         const grossMins  = (actualEnd.getTime() - actualStart.getTime()) / 60000;
@@ -136,23 +160,21 @@ Deno.serve(async (req) => {
         const lactatMins = calcBreakMinutes(empPunches, LACTAT_OUT, LACTAT_IN);
         const netMins    = Math.max(0, grossMins - lunchMins - lactatMins);
 
-        const shiftMins  = scheduledStart && scheduledEnd
+        const shiftMins = scheduledStart && scheduledEnd
           ? toMinutes(scheduledEnd) - toMinutes(scheduledStart)
-          : netMins; // no schedule info → all hours are regular
+          : netMins; // no schedule → all hours are regular
 
         regularHours  = Math.min(netMins, shiftMins) / 60;
         overtimeHours = Math.max(0, netMins - shiftMins) / 60;
 
         if (scheduledStart) {
-          // Convert scheduledStart to same date as actual punch for comparison
-          const [sh, sm] = scheduledStart.split(':').map(Number);
-          const expected = new Date(actualStart);
-          expected.setHours(sh, sm, 0, 0);
-          lateMinutes = Math.max(0, Math.floor((actualStart.getTime() - expected.getTime()) / 60000));
+          // Build expected entry time in CST, then compare against actual UTC timestamp
+          const expectedUTC = cstTimeToUTC(workDate, scheduledStart);
+          lateMinutes = Math.max(0, Math.floor((actualStart.getTime() - expectedUTC.getTime()) / 60000));
         }
       }
 
-      // Upsert — check for existing row first to avoid PK conflicts
+      // Upsert
       const { data: existing } = await supabase
         .from('timesheets')
         .select('id')
@@ -161,18 +183,18 @@ Deno.serve(async (req) => {
         .limit(1);
 
       const payload = {
-        employee_id:       empId,
-        work_date:         workDate,
-        scheduled_shift_id: isNaN(shiftId as any) ? null : shiftId,
-        actual_start_time: actualStart?.toISOString() ?? null,
-        actual_end_time:   actualEnd?.toISOString()   ?? null,
-        regular_hours:     parseFloat(regularHours.toFixed(2)),
-        overtime_hours:    parseFloat(overtimeHours.toFixed(2)),
-        late_minutes:      lateMinutes,
-        is_absent:         isAbsent,
-        is_holiday_worked: !isAbsent && isHoliday,
-        status:            'PENDING',
-        updated_at:        new Date().toISOString(),
+        employee_id:        empId,
+        work_date:          workDate,
+        scheduled_shift_id: shiftId !== null && !isNaN(shiftId) ? shiftId : null,
+        actual_start_time:  actualStart?.toISOString() ?? null,
+        actual_end_time:    actualEnd?.toISOString()   ?? null,
+        regular_hours:      parseFloat(regularHours.toFixed(2)),
+        overtime_hours:     parseFloat(overtimeHours.toFixed(2)),
+        late_minutes:       lateMinutes,
+        is_absent:          isAbsent,
+        is_holiday_worked:  !isAbsent && isHoliday,
+        status:             'PENDING',
+        updated_at:         new Date().toISOString(),
       };
 
       if (existing && existing.length > 0) {
@@ -184,9 +206,10 @@ Deno.serve(async (req) => {
       upserted++;
     }
 
-    return new Response(JSON.stringify({ ok: true, work_date: workDate, upserted, skipped }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, work_date: workDate, upserted, skipped }),
+      { headers: { 'Content-Type': 'application/json' } },
+    );
   } catch (err) {
     console.error('consolidate-timesheets error:', err);
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {

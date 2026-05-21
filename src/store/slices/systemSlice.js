@@ -1092,7 +1092,8 @@ export const createSystemSlice = (set, get) => ({
                     shifts: mappedShifts,
                     announcements: mappedAnnouncements,
                     employees: mappedEmployees,
-                    branches: data.branches || []
+                    branches: data.branches || [],
+                    attendanceLoaded: false,
                 });
 
                 localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
@@ -1106,6 +1107,9 @@ export const createSystemSlice = (set, get) => ({
                 if (data.branches) {
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));
                 }
+
+                // Load today's attendance so the kiosk knows current punch state after page reloads
+                await get().loadAttendanceLastDays(1);
             }
 
             return true;

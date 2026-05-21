@@ -598,11 +598,7 @@ export const createEmployeeSlice = (set, get) => ({
     registerAttendance: async (employeeId, type, metadata = null) => {
         const timestamp = new Date().toISOString();
 
-        let dbType = type;
-        if (type === 'ENTRY') dbType = 'PUNCH_IN';
-        if (type === 'EXIT') dbType = 'PUNCH_OUT';
-        if (type === 'BREAK_START') dbType = 'LUNCH_START';
-        if (type === 'BREAK_END') dbType = 'LUNCH_END';
+        const dbType = type;
 
         try {
             const { data: newPunch, error } = await supabase
@@ -622,12 +618,15 @@ export const createEmployeeSlice = (set, get) => ({
             const cleanDetails = { ...metadata };
             delete cleanDetails.audit_info;
 
-            const tipoMarcaje = dbType === 'PUNCH_IN' ? 'Entrada' : 
-                                dbType === 'PUNCH_OUT' ? 'Salida' : 
-                                dbType === 'LUNCH_START' ? 'Inicio Almuerzo' : 
-                                dbType === 'LUNCH_END' ? 'Fin Almuerzo' : 
-                                dbType === 'LACTATION_START' ? 'Inicio Lactancia' : 
-                                dbType === 'LACTATION_END' ? 'Fin Lactancia' : dbType;
+            const PUNCH_LABELS = {
+                IN: 'Entrada', OUT: 'Salida',
+                OUT_LUNCH: 'Inicio Almuerzo', IN_LUNCH: 'Fin Almuerzo',
+                OUT_LACTATION: 'Inicio Lactancia', IN_LACTATION: 'Fin Lactancia',
+                OUT_EARLY: 'Salida Anticipada', OUT_BUSINESS: 'Gestión Externa',
+                IN_RETURN: 'Regreso de Gestión', IN_EXTRA: 'Entrada Extra',
+                OUT_EXTRA: 'Salida Extra',
+            };
+            const tipoMarcaje = PUNCH_LABELS[dbType] || dbType;
 
             state.appendAuditLog(
                 `REGISTRO_ASISTENCIA`,

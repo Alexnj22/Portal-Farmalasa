@@ -42,8 +42,8 @@ const GlassViewLayout = ({
     const headerPillCls = isCompat
         ? 'bg-white border-[#8BAEC8] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
         : isAurora
-        ? 'bg-black/25 backdrop-blur-[10px] backdrop-saturate-[200%] border-[rgba(77,148,255,0.20)] shadow-[0_4px_24px_rgba(0,0,0,0.50),0_8px_40px_rgba(0,60,200,0.22)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.55),0_12px_50px_rgba(0,70,220,0.30)]'
-        : 'bg-white/20 backdrop-blur-[10px] backdrop-saturate-[300%] border-white/90 shadow-[0_8px_40px_rgba(0,82,204,0.12),0_24px_50px_-12px_rgba(0,0,0,0.10)] hover:shadow-[0_12px_48px_rgba(0,82,204,0.18),0_32px_64px_-12px_rgba(0,0,0,0.14)]';
+        ? 'bg-black/25 backdrop-blur-[10px] backdrop-saturate-[200%] border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.50)]'
+        : 'bg-white/20 backdrop-blur-[10px] backdrop-saturate-[300%] border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]';
 
     const headerRadius = isCompat ? 'rounded-[1.5rem]' : 'rounded-[2.5rem]';
 
@@ -66,12 +66,6 @@ const GlassViewLayout = ({
 
             {/* ── DESKTOP: header flotante (lg+) ────────────────────────────── */}
             <div className="hidden lg:block absolute top-6 xl:top-7 left-0 right-0 z-40 px-6 xl:px-8 pointer-events-none">
-                {/* Ambient blue glow behind the pill */}
-                {!isCompat && (
-                    <div className={`absolute inset-x-6 xl:inset-x-8 top-0 h-full rounded-[2.5rem] blur-2xl pointer-events-none ${
-                        isAurora ? 'bg-[#0040C8]/20' : 'bg-[#0052CC]/[0.07]'
-                    }`} />
-                )}
                 <div data-surface="page-header"
                     className={`group/header border ${headerRadius} ${headerPillCls} ${headerHover}
                         py-6 px-10 xl:py-7 xl:px-12 relative overflow-hidden pointer-events-auto

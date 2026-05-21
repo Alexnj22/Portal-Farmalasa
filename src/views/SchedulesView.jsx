@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
-    HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft
+    HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft,
+    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -24,8 +25,153 @@ import ConfirmModal from '../components/common/ConfirmModal'; // 🚨 IMPORTADO 
 
 const dayNamesMap = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
 
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const HolidaysPanel = ({
+    holidays, holidayYear, setHolidayYear, currentYear,
+    showForm, setShowForm,
+    hName, setHName, hDate, setHDate, hType, setHType,
+    hMuni, setHMuni, hRecurring, setHRecurring,
+    hSaving, hDeleting, canEdit, onSave, onDelete,
+}) => {
+    const yearHolidays = (holidays || []).filter(h => h.holiday_date?.startsWith(String(holidayYear)));
+    const byMonth = MONTHS_ES.map((month, idx) => ({
+        month, idx,
+        items: yearHolidays.filter(h => parseInt(h.holiday_date?.split('-')[1], 10) === idx + 1),
+    })).filter(m => m.items.length > 0);
+
+    return (
+        <div className="p-4 md:p-6 space-y-5 animate-view-enter">
+
+            {/* Year toggle + Add button */}
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md border border-white/70 rounded-[1.5rem] p-1 shadow-sm">
+                    {[currentYear - 1, currentYear, currentYear + 1].map(y => (
+                        <button key={y} onClick={() => setHolidayYear(y)}
+                            className={`px-4 py-1.5 rounded-[1.2rem] text-[11px] font-black transition-all ${holidayYear === y ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600 hover:bg-white/50'}`}>
+                            {y}
+                        </button>
+                    ))}
+                </div>
+                {canEdit && (
+                    <button onClick={() => setShowForm(v => !v)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-[0_4px_12px_rgba(234,179,8,0.3)] hover:shadow-[0_6px_18px_rgba(234,179,8,0.4)] hover:-translate-y-0.5'}`}>
+                        {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
+                        {showForm ? 'Cancelar' : 'Agregar feriado'}
+                    </button>
+                )}
+            </div>
+
+            {/* Add form */}
+            {showForm && canEdit && (
+                <div className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[1.5rem] p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Nuevo Feriado</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nombre</label>
+                            <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[13px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha</label>
+                            <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[13px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-1.5 bg-slate-100 rounded-full p-1 border border-slate-200">
+                            <button onClick={() => setHType('NATIONAL')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'NATIONAL' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-amber-600'}`}>
+                                <Globe size={11} strokeWidth={2} /> Nacional
+                            </button>
+                            <button onClick={() => setHType('MUNICIPAL')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>
+                                <MapPin size={11} strokeWidth={2} /> Municipal
+                            </button>
+                        </div>
+                        {hType === 'MUNICIPAL' && (
+                            <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
+                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[12px] font-bold text-slate-800 outline-none focus:border-blue-400 transition-all" />
+                        )}
+                        <button onClick={() => setHRecurring(v => !v)}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600'}`}>
+                            <RefreshCw size={11} strokeWidth={2} /> Recurrente
+                        </button>
+                    </div>
+                    <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[0_4px_12px_rgba(234,179,8,0.3)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                        {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
+                        {hSaving ? 'Guardando...' : 'Guardar feriado'}
+                    </button>
+                </div>
+            )}
+
+            {/* Holiday list by month */}
+            {byMonth.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                    <div className="p-5 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
+                        <Star size={32} className="text-amber-200" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-[13px] font-bold text-slate-400">No hay feriados registrados para {holidayYear}</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {byMonth.map(({ month, items }) => (
+                        <div key={month}>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">{month}</p>
+                            <div className="space-y-2">
+                                {items.sort((a,b) => a.holiday_date.localeCompare(b.holiday_date)).map(h => {
+                                    const d = new Date(h.holiday_date + 'T12:00:00Z');
+                                    const dayNum = d.getUTCDate();
+                                    const dayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getUTCDay()];
+                                    return (
+                                        <div key={h.id} className="flex items-center gap-3 bg-white/60 backdrop-blur-md border border-white/70 rounded-[1.25rem] px-4 py-3 shadow-sm group hover:shadow-md hover:-translate-y-0.5 transition-all">
+                                            {/* Date pill */}
+                                            <div className="w-12 h-12 rounded-[0.85rem] bg-amber-50 border border-amber-100 flex flex-col items-center justify-center flex-shrink-0">
+                                                <span className="text-[8px] font-black text-amber-400 uppercase tracking-widest leading-none">{dayName}</span>
+                                                <span className="text-[18px] font-black text-amber-700 leading-tight">{dayNum}</span>
+                                            </div>
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-black text-slate-800 truncate">{h.name}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                    {h.type === 'NATIONAL' ? (
+                                                        <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                                            <Globe size={8} strokeWidth={2} /> Nacional
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                                            <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
+                                                        </span>
+                                                    )}
+                                                    {h.is_recurring && (
+                                                        <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                                                            <RefreshCw size={8} strokeWidth={2} /> Recurrente
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {/* Delete */}
+                                            {canEdit && (
+                                                <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
+                                                    className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
+                                                    {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-red-400" /> : <Trash2 size={14} strokeWidth={2} />}
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const SchedulesView = ({ openModal, setView }) => {
-    const { employees, shifts, branches, fetchWeekRosters, publishWeekRosters, fetchBoot } = useStaff();
+    const { employees, shifts, branches, holidays, fetchWeekRosters, publishWeekRosters, fetchBoot, addHoliday, deleteHoliday } = useStaff();
     const { isJefe, rolePerms } = useAuth();
     const canEdit = rolePerms === 'ALL' || !!rolePerms?.['schedules']?.can_edit;
     const showToast = useToastStore(s => s.showToast);
@@ -49,8 +195,20 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const [viewMode, setViewMode] = useState('calendar');
     const [filterBranch, setFilterBranch] = useState('');
-    
+
     const [shiftTab, setShiftTab] = useState('ACTIVE');
+
+    // ── Feriados state ─────────────────────────────────────────────────────
+    const currentYear = new Date().getFullYear();
+    const [holidayYear, setHolidayYear] = useState(currentYear);
+    const [showHolidayForm, setShowHolidayForm] = useState(false);
+    const [hName, setHName]           = useState('');
+    const [hDate, setHDate]           = useState('');
+    const [hType, setHType]           = useState('NATIONAL');
+    const [hMuni, setHMuni]           = useState('');
+    const [hRecurring, setHRecurring] = useState(false);
+    const [hSaving, setHSaving]       = useState(false);
+    const [hDeleting, setHDeleting]   = useState(null);
 
     const [startDate, setStartDate] = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
@@ -574,6 +732,27 @@ useEffect(() => {
                 </div>
             );
         }
+        if (viewMode === 'holidays') {
+            return (
+                <div className="flex items-center gap-3 md:gap-4 w-full">
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.2)] hover:-translate-y-0.5 z-50 bg-white/70 backdrop-blur-xl"
+                        title="Volver a Calendario"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/20 to-orange-300/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
+                        <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-500 group-hover/back:text-amber-600 transition-colors relative z-10" />
+                    </button>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-[0_8px_20px_rgba(234,179,8,0.3)] shrink-0 border border-white/20">
+                        <Star size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
+                    </div>
+                    <div className="flex flex-col items-start gap-0.5">
+                        <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">Feriados</span>
+                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Días no laborales</span>
+                    </div>
+                </div>
+            );
+        }
         return "Horarios WFM";
     };
 
@@ -604,6 +783,8 @@ useEffect(() => {
                                     <button onClick={() => setViewMode('calendar')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'calendar' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Vista Calendario"><CalendarDays size={16} strokeWidth={2.5} /></button>
                                     <div className="w-px h-5 bg-white/60 mx-0.5"></div>
                                     <button onClick={() => setViewMode('shifts')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'shifts' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Catálogo de Turnos"><BookOpen size={16} strokeWidth={2.5} /></button>
+                                    <div className="w-px h-5 bg-white/60 mx-0.5"></div>
+                                    <button onClick={() => setViewMode('holidays')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'holidays' ? 'bg-amber-50 text-amber-600 shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-amber-600 hover:bg-white/50'}`} title="Feriados"><Star size={16} strokeWidth={2.5} /></button>
                                 </div>
                                 <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 hidden md:block shrink-0"></div>
                                 
@@ -668,11 +849,11 @@ useEffect(() => {
     }
 
    return (
-        <GlassViewLayout 
-            icon={viewMode === 'shifts' ? null : CalendarDays} 
-            title={renderHeaderTitle()} 
-            filtersContent={renderFiltersContent()} 
-            transparentBody={viewMode === 'shifts'}
+        <GlassViewLayout
+            icon={viewMode === 'shifts' ? null : viewMode === 'holidays' ? null : CalendarDays}
+            title={renderHeaderTitle()}
+            filtersContent={renderFiltersContent()}
+            transparentBody={viewMode === 'shifts' || viewMode === 'holidays'}
             fixedScrollMode={viewMode === 'shifts'}
         >
             {viewMode === 'shifts' ? (
@@ -683,6 +864,44 @@ useEffect(() => {
                         shiftTab={shiftTab}
                     />
                 </div>
+            ) : viewMode === 'holidays' ? (
+                <HolidaysPanel
+                    holidays={holidays}
+                    holidayYear={holidayYear}
+                    setHolidayYear={setHolidayYear}
+                    currentYear={currentYear}
+                    showForm={showHolidayForm}
+                    setShowForm={setShowHolidayForm}
+                    hName={hName} setHName={setHName}
+                    hDate={hDate} setHDate={setHDate}
+                    hType={hType} setHType={setHType}
+                    hMuni={hMuni} setHMuni={setHMuni}
+                    hRecurring={hRecurring} setHRecurring={setHRecurring}
+                    hSaving={hSaving}
+                    hDeleting={hDeleting}
+                    canEdit={canEdit}
+                    onSave={async () => {
+                        if (!hDate || !hName.trim()) return;
+                        setHSaving(true);
+                        try {
+                            await addHoliday({ holiday_date: hDate, name: hName.trim(), type: hType, municipality: hMuni.trim() || null, is_recurring: hRecurring });
+                            showToast('Feriado agregado', `${hName} guardado correctamente.`, 'success');
+                            setHName(''); setHDate(''); setHType('NATIONAL'); setHMuni(''); setHRecurring(false);
+                            setShowHolidayForm(false);
+                        } catch(e) {
+                            showToast('Error', e.message, 'error');
+                        } finally { setHSaving(false); }
+                    }}
+                    onDelete={async (id) => {
+                        setHDeleting(id);
+                        try {
+                            await deleteHoliday(id);
+                            showToast('Feriado eliminado', '', 'success');
+                        } catch(e) {
+                            showToast('Error', e.message, 'error');
+                        } finally { setHDeleting(null); }
+                    }}
+                />
             ) : (
                 <div key="calendar" className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 animate-view-enter mx-auto h-full overflow-hidden">
                     {employeesInView.length === 0 ? (

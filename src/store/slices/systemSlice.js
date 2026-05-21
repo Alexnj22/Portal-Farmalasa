@@ -921,6 +921,31 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+    addHoliday: async ({ holiday_date, name, type = 'NATIONAL', municipality = null, is_recurring = false }) => {
+        const { data, error } = await supabase
+            .from('holidays')
+            .insert([{ holiday_date, name, type, municipality: municipality || null, is_recurring }])
+            .select()
+            .single();
+        if (error) throw error;
+        set(state => {
+            const next = [...state.holidays, data].sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
+            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
+            return { holidays: next };
+        });
+        return data;
+    },
+
+    deleteHoliday: async (id) => {
+        const { error } = await supabase.from('holidays').delete().eq('id', id);
+        if (error) throw error;
+        set(state => {
+            const next = state.holidays.filter(h => String(h.id) !== String(id));
+            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(next));
+            return { holidays: next };
+        });
+    },
+
     fetchWeekRosters: async (weekStartDate) => {
         try {
             const { data, error } = await supabase.from('employee_rosters').select('*').eq('week_start_date', weekStartDate);

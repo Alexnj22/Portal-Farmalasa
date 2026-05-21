@@ -12,7 +12,8 @@ export const REQUEST_TYPES = {
     OVERTIME:     { label: 'Horas Extra',        color: 'bg-orange-100 text-orange-800',  border: 'border-orange-200' },
     ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-emerald-100 text-emerald-800', border: 'border-emerald-200' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-blue-100 text-blue-800',      border: 'border-blue-200' },
-    DISABILITY:   { label: 'Incapacidad',        color: 'bg-red-100 text-red-800',        border: 'border-red-200' },
+    DISABILITY:      { label: 'Incapacidad',             color: 'bg-red-100 text-red-800',        border: 'border-red-200' },
+    SHIFT_EXCEPTION: { label: 'Excepción Turno (Kiosk)', color: 'bg-violet-100 text-violet-800',  border: 'border-violet-200' },
 };
 
 export const REQUEST_STATUS = {
@@ -665,6 +666,81 @@ export const createRequestsSlice = (set, get) => ({
                         myShift: meta.targetShift,
                         targetShift: meta.myShift,
                     });
+
+                    // Patch both employees' PUBLISHED rosters for the swap day so that
+                    // consolidate-timesheets honours the swapped hours.
+                    if (meta.date) {
+                        try {
+                            const swapDate  = meta.date;
+                            const swapDateD = new Date(swapDate + 'T12:00:00Z');
+                            const dow       = swapDateD.getUTCDay();
+                            const diffToMon = (dow + 6) % 7;
+                            const monD      = new Date(swapDateD);
+                            monD.setUTCDate(monD.getUTCDate() - diffToMon);
+                            const weekStart = monD.toISOString().split('T')[0];
+                            const dayKey    = String(dow);
+
+                            const [{ data: shiftsRows }, { data: rosters }] = await Promise.all([
+                                supabase.from('shifts').select('id, start_time, end_time'),
+                                supabase.from('employee_rosters')
+                                    .select('id, employee_id, schedule_data')
+                                    .in('employee_id', [String(req.employee.id), String(meta.targetEmployeeId)])
+                                    .eq('week_start_date', weekStart)
+                                    .eq('status', 'PUBLISHED'),
+                            ]);
+
+                            const shiftMap = new Map();
+                            for (const s of shiftsRows || []) {
+                                shiftMap.set(String(s.id), {
+                                    start: String(s.start_time).substring(0, 5),
+                                    end:   String(s.end_time).substring(0, 5),
+                                });
+                            }
+
+                            const rosterA = rosters?.find(r => String(r.employee_id) === String(req.employee.id));
+                            const rosterB = rosters?.find(r => String(r.employee_id) === String(meta.targetEmployeeId));
+
+                            const resolveShiftTimes = (roster) => {
+                                const dayData = roster?.schedule_data?.[dayKey];
+                                if (!dayData) return null;
+                                if (dayData.customStart && dayData.customEnd)
+                                    return { start: dayData.customStart, end: dayData.customEnd };
+                                const sid = dayData.shiftId && dayData.shiftId !== 'LIBRE'
+                                    ? String(dayData.shiftId) : null;
+                                return sid ? shiftMap.get(sid) || null : null;
+                            };
+
+                            const timesA = resolveShiftTimes(rosterA); // A's original shift
+                            const timesB = resolveShiftTimes(rosterB); // B's original shift
+
+                            const patchRoster = async (roster, newTimes) => {
+                                if (!roster || !newTimes) return;
+                                const updated = {
+                                    ...(roster.schedule_data || {}),
+                                    [dayKey]: {
+                                        ...(roster.schedule_data?.[dayKey] || {}),
+                                        isOff: false,
+                                        customStart: newTimes.start,
+                                        customEnd:   newTimes.end,
+                                        exceptionNote: `Cambio de turno aprobado (solicitud #${req.id})`,
+                                        exceptionDate: swapDate,
+                                    },
+                                };
+                                await supabase.from('employee_rosters')
+                                    .update({ schedule_data: updated, updated_at: new Date().toISOString() })
+                                    .eq('id', roster.id);
+                            };
+
+                            // A works B's hours, B works A's hours
+                            await Promise.all([
+                                patchRoster(rosterA, timesB),
+                                patchRoster(rosterB, timesA),
+                            ]);
+                        } catch (rosterErr) {
+                            console.error('SHIFT_CHANGE: roster patch failed', rosterErr);
+                            // Non-blocking — employee_events still records the swap
+                        }
+                    }
                 }
 
                 if (req.type === 'DISABILITY' && meta.startDate && meta.endDate) {

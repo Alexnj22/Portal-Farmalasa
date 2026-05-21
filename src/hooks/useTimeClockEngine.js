@@ -23,6 +23,7 @@ import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClo
 import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
 
@@ -60,6 +61,7 @@ export function useTimeClockEngine(props = {}) {
     const [exitNotes, setExitNotes] = useState('');
 
     const [earlyPendingData, setEarlyPendingData] = useState(null);
+    const [selfDeclareData, setSelfDeclareData] = useState(null);
 
     const [alertConfig, setAlertConfig] = useState(null);
 
@@ -85,6 +87,7 @@ export function useTimeClockEngine(props = {}) {
                 !feedback &&
                 !isProcessing &&
                 !earlyExitData &&
+                !selfDeclareData &&
                 !isConfiguring &&
                 !isRevokeModalOpen
             ) {
@@ -92,7 +95,7 @@ export function useTimeClockEngine(props = {}) {
             }
         }, 1000);
         return () => clearInterval(interval);
-    }, [feedback, isProcessing, earlyExitData, isConfiguring, isRevokeModalOpen]);
+    }, [feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen]);
 
     useEffect(() => {
         return () => {
@@ -362,6 +365,18 @@ export function useTimeClockEngine(props = {}) {
             setAuthPrompt(null);
             setScanCode('');
             setIsProcessing(false);
+        } else if (type === 'IN_EXTRA') {
+            // Off-day entry without supervisor: still ask employee to declare hours
+            setSelfDeclareData({
+                employee,
+                customConfig,
+                kioskData,
+                skipMetadata,
+                punchTime: time,
+            });
+            setAuthPrompt(null);
+            setScanCode('');
+            setIsProcessing(false);
         } else {
             // Clear earlyPendingData BEFORE finalizePunch to prevent double-punch
             // when closeFeedback timer fires after this punch is registered.
@@ -388,6 +403,47 @@ export function useTimeClockEngine(props = {}) {
         setScanCode('');
         requestAnimationFrame(() => { inputRef.current?.focus(); });
     }, [earlyPendingData]);
+
+    // Off-day self-declaration: employee declares expected hours; TH reviews later.
+    // declaredStart / declaredEnd are "HH:MM" strings; pass null to skip declaration.
+    const submitSelfDeclare = useCallback(async (declaredStart, declaredEnd) => {
+        if (!selfDeclareData) return;
+        const { employee, customConfig, kioskData, skipMetadata, punchTime } = selfDeclareData;
+
+        if (declaredStart && declaredEnd) {
+            const workDate = (punchTime || new Date()).toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
+            await supabase.from('approval_requests').insert([{
+                employee_id: employee.id,
+                approver_id: null,
+                type:        'SHIFT_EXCEPTION',
+                status:      'PENDING',
+                note:        'Turno auto-declarado en kiosk — pendiente de revisión TH',
+                metadata: {
+                    date:         workDate,
+                    declaredStart,
+                    declaredEnd,
+                    pinOmitido:   !!skipMetadata,
+                    branchId:     kioskData?.branchId,
+                    branchName:   kioskData?.branchName,
+                    deviceName:   kioskData?.deviceName,
+                    employeeName: employee.name,
+                },
+            }]).then(({ error }) => {
+                if (error) console.error('submitSelfDeclare insert error:', error);
+            });
+        }
+
+        setEarlyPendingData(null);
+        finalizePunch(employee, 'IN_EXTRA', customConfig, skipMetadata, kioskData, punchTime || time);
+        setSelfDeclareData(null);
+        setScanCode('');
+    }, [selfDeclareData, finalizePunch, time]);
+
+    const cancelSelfDeclare = useCallback(() => {
+        setSelfDeclareData(null);
+        setScanCode('');
+        requestAnimationFrame(() => { inputRef.current?.focus(); });
+    }, []);
 
     const executeRevokeConfig = useCallback(async () => {
         setIsProcessing(true);
@@ -687,6 +743,18 @@ const submitEarlyExit = useCallback((e) => {
                     setAuthPrompt(null);
                     setScanCode('');
                     scheduleFeedbackClose(4000);
+                } else if (authPrompt.type === 'IN_EXTRA') {
+                    // Off-day entry: ask employee to declare their expected shift hours
+                    setSelfDeclareData({
+                        employee:    authPrompt.employee,
+                        customConfig: authPrompt.customConfig,
+                        kioskData:   authPrompt.kioskData || kioskConfig,
+                        skipMetadata: null,
+                        punchTime:   time,
+                    });
+                    setAuthPrompt(null);
+                    setScanCode('');
+                    setIsProcessing(false);
                 } else {
                     finalizePunch(
                         authPrompt.employee,
@@ -1051,6 +1119,10 @@ const submitEarlyExit = useCallback((e) => {
         handleForceNormalOut,
         handleAnnouncementRead,
         handleSkipPin,
+        selfDeclareData,
+        setSelfDeclareData,
+        submitSelfDeclare,
+        cancelSelfDeclare,
 
         keyDownHandler: handleKeyDown,
         inputChangeHandler: handleInputChange,

@@ -10,6 +10,7 @@ import AuthPromptPanel from '../components/timeclock/AuthPromptPanel';
 import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
+import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
@@ -56,6 +57,8 @@ const TimeClockView = ({ setView }) => {
     handleAnnouncementRead,
     handleEarlyExtraRequest,
     handleSkipPin,
+    selfDeclareData,
+    submitSelfDeclare,
   } = useTimeClockEngine();
 
   const handleLogout = useCallback(async () => {
@@ -153,7 +156,9 @@ const TimeClockView = ({ setView }) => {
 
             {/* PANELES INFERIORES */}
             <div className="w-full animate-in slide-in-from-bottom-4 fade-in duration-700">
-                {earlyExitData ? (
+                {selfDeclareData ? (
+                <SelfDeclareShiftPanel employee={selfDeclareData.employee} onSubmit={submitSelfDeclare} />
+                ) : earlyExitData ? (
                 <EarlyExitForm earlyExitData={earlyExitData} exitReason={exitReason} exitNotes={exitNotes} onChangeReason={setExitReason} onChangeNotes={setExitNotes} onSubmit={submitEarlyExit} onCancel={cancelAuth} isProcessing={isProcessing} />
                 ) : authPrompt ? (
                 <AuthPromptPanel authPrompt={authPrompt} scanCode={scanCode} inputRef={inputRef} submitHandler={handleScan} keyDownHandler={handleKeyDown} inputChangeHandler={handleInputChange} cancelHandler={cancelAuth} forceNormalOutHandler={handleForceNormalOut} clearHandler={() => setScanCode('')} skipPinHandler={handleSkipPin} />

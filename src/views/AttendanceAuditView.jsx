@@ -760,6 +760,11 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [weekTimesheets,    setWeekTimesheets]    = useState([]);
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
   const [isClosingWeek,     setIsClosingWeek]     = useState(false);
+  const [shiftExceptions,   setShiftExceptions]   = useState([]);
+  const [processingExId,    setProcessingExId]    = useState(null);
+  const [editingExId,       setEditingExId]       = useState(null);
+  const [editStart,         setEditStart]         = useState('');
+  const [editEnd,           setEditEnd]           = useState('');
 
   useEffect(() => {
     if (setOverlayActive) setOverlayActive(!!correctionTarget);
@@ -812,6 +817,25 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, actual_start_time, actual_end_time')
       .gte('work_date', weekDates[0]).lte('work_date', weekDates[6])
       .then(({ data }) => { if (!cancelled) setWeekTimesheets(data || []); });
+    return () => { cancelled = true; };
+  }, [selectedWeekStart, weekDates, isDemoMode]);
+
+  // ── Load SHIFT_EXCEPTION requests for the week ───────────────────────────
+  useEffect(() => {
+    if (isDemoMode) { setShiftExceptions([]); return; }
+    let cancelled = false;
+    supabase.from('approval_requests')
+      .select('id, employee_id, status, note, metadata, created_at')
+      .eq('type', 'SHIFT_EXCEPTION')
+      .eq('status', 'PENDING')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const inWeek = (data || []).filter(r => {
+          const d = r.metadata?.date;
+          return d && d >= weekDates[0] && d <= weekDates[6];
+        });
+        setShiftExceptions(inWeek);
+      });
     return () => { cancelled = true; };
   }, [selectedWeekStart, weekDates, isDemoMode]);
 
@@ -955,6 +979,49 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     }
   }, [isWeekFullyPast, canEditWeek, isDemoMode, weekTimesheets, employeesByBranch, weekDates, filterBranch, user, appendAuditLog, showToast]);
 
+  // ── Process SHIFT_EXCEPTION (confirm or reject) ─────────────────────────
+  const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd) => {
+    setProcessingExId(req.id);
+    try {
+      const meta = req.metadata || {};
+      const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+
+      if (action === 'APPROVE' && confirmedStart && confirmedEnd) {
+        // Write exception to employee record so consolidate-timesheets uses declared hours
+        const { data: empRow } = await supabase
+          .from('employees').select('id, exceptions').eq('id', req.employee_id).single();
+        if (empRow) {
+          const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];
+          const filtered = existing.filter(ex => ex.date !== meta.date);
+          const newEx = {
+            id: Date.now().toString(),
+            date: meta.date,
+            isCustom: true,
+            customStart: confirmedStart,
+            customEnd: confirmedEnd,
+            note: `Turno extra confirmado por TH (${user?.name || 'supervisor'})`,
+          };
+          await supabase.from('employees')
+            .update({ exceptions: [...filtered, newEx], updated_at: new Date().toISOString() })
+            .eq('id', req.employee_id);
+        }
+      }
+
+      await supabase.from('approval_requests')
+        .update({ status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString() })
+        .eq('id', req.id);
+
+      setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
+      setEditingExId(null);
+      appendAuditLog?.(`SHIFT_EXCEPTION_${newStatus}`, { requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd }, { actorId: user?.id, actorName: user?.name });
+      showToast(action === 'APPROVE' ? 'Confirmado' : 'Rechazado', action === 'APPROVE' ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.', action === 'APPROVE' ? 'success' : 'info');
+    } catch (err) {
+      showToast('Error', err.message, 'error');
+    } finally {
+      setProcessingExId(null);
+    }
+  }, [user, appendAuditLog, showToast]);
+
   // ── Branch select options ────────────────────────────────────────────────
   const branchOptions = useMemo(() => [
     { value: '', label: 'Todas las sucursales' },
@@ -1089,6 +1156,82 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                   style={{ width: `${Math.round((approvalSummary.approved / approvalSummary.total) * 100)}%` }} />
               </div>
             )}
+          </div>
+        )}
+
+        {/* SHIFT_EXCEPTION review panel */}
+        {shiftExceptions.length > 0 && (
+          <div className="bg-violet-50/60 backdrop-blur-xl border border-violet-200/70 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-violet-200/50 flex items-center gap-2">
+              <ShieldAlert size={14} className="text-violet-600" strokeWidth={2.5} />
+              <span className="text-[11px] font-black text-violet-700 uppercase tracking-widest">
+                Turnos Extra Sin Autorizar — Revisión TH
+              </span>
+              <span className="ml-auto bg-violet-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
+            </div>
+            <div className="divide-y divide-violet-200/40">
+              {shiftExceptions.map(req => {
+                const meta = req.metadata || {};
+                const emp = employees.find(e => String(e.id) === String(req.employee_id));
+                const isEditing = editingExId === req.id;
+                const isBusy    = processingExId === req.id;
+                const fmtDate = meta.date
+                  ? new Date(meta.date + 'T12:00:00Z').toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long' })
+                  : '—';
+                return (
+                  <div key={req.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-black text-slate-800">{meta.employeeName || emp?.name || `Empleado #${req.employee_id}`}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 capitalize">{fmtDate}</p>
+                      {meta.declaredStart && meta.declaredEnd ? (
+                        <p className="text-[11px] font-bold text-violet-700 mt-1">
+                          Declara: {meta.declaredStart} – {meta.declaredEnd}
+                          {meta.pinOmitido && <span className="ml-2 text-amber-600 text-[9px] uppercase tracking-wider font-black">sin PIN</span>}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-slate-400 mt-1 italic">No declaró horario — solo registró entrada</p>
+                      )}
+                    </div>
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)}
+                          className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
+                        <span className="text-slate-400 text-xs">–</span>
+                        <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)}
+                          className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
+                        <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
+                          {isBusy ? '…' : 'Aplicar'}
+                        </button>
+                        <button onClick={() => setEditingExId(null)}
+                          className="text-[9px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5">
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {meta.declaredStart && meta.declaredEnd && (
+                          <>
+                            <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', meta.declaredStart, meta.declaredEnd)}
+                              className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-emerald-200 disabled:opacity-50 transition-all">
+                              {isBusy ? '…' : 'Confirmar'}
+                            </button>
+                            <button disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}
+                              className="bg-violet-100 hover:bg-violet-200 text-violet-700 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-violet-200 disabled:opacity-50 transition-all">
+                              Editar
+                            </button>
+                          </>
+                        )}
+                        <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-red-200 disabled:opacity-50 transition-all">
+                          {isBusy ? '…' : 'Rechazar'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

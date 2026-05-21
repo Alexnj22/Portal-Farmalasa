@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import {
-  AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
   Baby, Coffee,
@@ -359,11 +359,13 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
   })());
 
   const cardBg = isToday
-    ? 'bg-[#0052CC]/[0.05] border-[#0052CC]/25'
-    : 'bg-white/55 backdrop-blur-xl border-white/60';
+    ? 'bg-[#0052CC]/[0.07] border-[#0052CC]/20 shadow-[0_0_0_1px_rgba(0,82,204,0.08)]'
+    : isFuture
+    ? 'bg-white/20 border-white/30'
+    : 'bg-white/35 backdrop-blur-md border-white/45';
 
   return (
-    <div className={`rounded-[1.75rem] border p-4 transition-all ${cardBg}`}>
+    <div className={`rounded-[1.75rem] border p-4 transition-all duration-200 ${cardBg}`}>
       {/* Header row */}
       <div className="flex items-start gap-3">
         {/* Date pill */}
@@ -405,7 +407,7 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
         {!isOff && !isFuture && (
           <button
             onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-200/80 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/30 hover:bg-[#0052CC]/[0.04] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.96] shadow-sm"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
           >
             <Edit3 size={11} strokeWidth={2.5} /> Corregir
           </button>
@@ -569,58 +571,82 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
   }, [emp, weekDates, shiftById, now]);
 
   const hasCrossBranch = alerts.crossBranch > 0;
+  const alertColor = alerts.inconsistencies > 0 ? 'bg-red-500'
+    : alerts.autoPunched > 0 ? 'bg-violet-500'
+    : alerts.pendingReview > 0 ? 'bg-amber-500'
+    : null;
 
   return (
-    <div className="overflow-hidden">
+    <div className="bg-white/[0.55] backdrop-blur-xl border border-white/65 rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
       {/* Employee row */}
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/40 transition-all active:bg-white/60"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/30 active:bg-white/50 transition-all duration-150"
       >
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center font-black text-slate-500 text-[14px] overflow-hidden shrink-0 shadow-sm">
-          {emp.photo_url ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" /> : emp.name?.charAt(0) || '?'}
-        </div>
-
-        {/* Name + role */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-[13px] font-black text-slate-900 leading-none">{emp.name}</p>
-            {hasCrossBranch && (
-              <span className="text-[8px] font-black uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
-              </span>
-            )}
+        {/* Avatar with alert dot */}
+        <div className="relative shrink-0">
+          <div className="w-11 h-11 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center font-black text-slate-500 text-[14px] overflow-hidden">
+            {emp.photo_url
+              ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
+              : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
           </div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+          {alertColor && (
+            <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-[8px] font-black shadow-sm`}>
+              {alerts.total}
+            </div>
+          )}
+          {!alertColor && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 flex items-center justify-center shadow-sm">
+              <Check size={8} strokeWidth={3} className="text-white" />
+            </div>
+          )}
         </div>
 
-        {/* Alert badges */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {alerts.inconsistencies > 0 && (
-            <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-full">{alerts.inconsistencies}</span>
+        {/* Name + role + badges */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-black text-slate-900 leading-none truncate">{emp.name}</p>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+
+          {/* Alert chips - compact row */}
+          {(alerts.total > 0 || hasCrossBranch) && (
+            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+              {alerts.inconsistencies > 0 && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-red-50 text-red-500 border border-red-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  <AlertTriangle size={7} strokeWidth={3} />
+                  {alerts.inconsistencies} marcaje{alerts.inconsistencies > 1 ? 's' : ''} faltante{alerts.inconsistencies > 1 ? 's' : ''}
+                </span>
+              )}
+              {alerts.autoPunched > 0 && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-violet-50 text-violet-600 border border-violet-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto-marcado{alerts.autoPunched > 1 ? 's' : ''}
+                </span>
+              )}
+              {alerts.pendingReview > 0 && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pendiente{alerts.pendingReview > 1 ? 's' : ''}
+                </span>
+              )}
+              {hasCrossBranch && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo externo
+                </span>
+              )}
+            </div>
           )}
-          {alerts.autoPunched > 0 && (
-            <span className="text-[9px] font-black bg-violet-500 text-white px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <Bot size={8} strokeWidth={2} />{alerts.autoPunched}
-            </span>
-          )}
-          {alerts.pendingReview > 0 && (
-            <span className="text-[9px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <ShieldAlert size={8} strokeWidth={2} />{alerts.pendingReview}
-            </span>
-          )}
-          {alerts.total === 0 && !isDemoMode && (
-            <CheckCircle size={14} className="text-emerald-400" strokeWidth={2} />
-          )}
-          {expanded ? <ChevronUp size={14} className="text-slate-400 ml-1" strokeWidth={2.5} /> : <ChevronDown size={14} className="text-slate-400 ml-1" strokeWidth={2.5} />}
         </div>
+
+        {/* Chevron animado */}
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 transition-transform duration-300 ease-out shrink-0 ${expanded ? 'rotate-180' : ''}`}
+          strokeWidth={2.5}
+        />
       </button>
 
-      {/* Week detail */}
+      {/* Week detail — animated */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-2 border-t border-white/40 pt-3">
+        <div className="animate-in fade-in slide-in-from-top-3 duration-200 ease-out px-3 pb-3 pt-1 space-y-2 border-t border-white/40">
           {weekDates.map(dateStr => (
             <DayCard
               key={dateStr}
@@ -863,14 +889,14 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
         {/* Demo banner */}
         {isDemoMode && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+          <div className="bg-amber-100/50 backdrop-blur-xl border border-amber-200/60 rounded-2xl px-5 py-3 flex items-center gap-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Modo Demo</span>
             <span className="text-[11px] text-amber-700/70 flex-1">
-              {forceDemoMode ? 'Datos de prueba activos — 4 empleados con todos los escenarios.' : 'Sin empleados reales.'}
+              {forceDemoMode ? '4 empleados de prueba — todos los escenarios activos.' : 'Sin empleados reales.'}
             </span>
             {forceDemoMode && (
               <button type="button" onClick={() => setForceDemoMode(false)}
-                className="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-xl transition-all shrink-0">
+                className="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-100/80 border border-amber-200 px-2.5 py-1 rounded-xl transition-all shrink-0 hover:bg-amber-200/70">
                 Salir demo
               </button>
             )}
@@ -879,55 +905,54 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
         {/* Read-only notice */}
         {!isCurrentWeek && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-2.5 flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Solo lectura</span>
+          <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-2xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Solo lectura</span>
             <span className="text-[11px] text-slate-400">Solo se puede corregir la semana actual.</span>
           </div>
         )}
 
-        {/* Branch sections */}
+        {/* Branch sections — sin contenedor, cada empleado es su propia card */}
         {Array.from(employeesByBranch.entries()).map(([branchId, branchEmployees]) => {
           const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
-          const branchAlerts = branchEmployees.reduce((acc, emp) => {
+          const branchTotalAlerts = branchEmployees.reduce((acc, emp) => {
             const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
             return acc + empTs.filter(t => t.status === 'AUTO_PUNCHED').length;
           }, 0);
 
           return (
-            <div key={branchId} className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
-              {/* Branch header */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/50 bg-white/30">
-                <div className="p-2 bg-[#0052CC]/10 rounded-xl">
-                  <Building2 size={16} className="text-[#0052CC]" strokeWidth={2.5} />
+            <div key={branchId} className="space-y-2">
+              {/* Branch label — minimal divider */}
+              <div className="flex items-center gap-3 px-1 pt-1">
+                <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 backdrop-blur-sm flex items-center justify-center shrink-0">
+                  <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-black text-slate-800">{bName}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                     {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
                   </p>
                 </div>
-                {branchAlerts > 0 && (
-                  <span className="text-[9px] font-black bg-violet-500 text-white px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <Bot size={9} strokeWidth={2} /> {branchAlerts} auto
+                <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
+                {branchTotalAlerts > 0 && (
+                  <span className="text-[8px] font-black bg-violet-100/80 text-violet-600 border border-violet-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0 backdrop-blur-sm">
+                    <Bot size={8} strokeWidth={2.5} /> {branchTotalAlerts} auto
                   </span>
                 )}
               </div>
 
-              {/* Employees */}
-              <div className="divide-y divide-white/40">
-                {branchEmployees.map(emp => (
-                  <EmployeeAuditRow
-                    key={emp.id}
-                    emp={emp}
-                    weekDates={weekDates}
-                    shiftById={shiftById}
-                    weekTimesheets={weekTimesheets}
-                    branchNameById={branchNameById}
-                    onCorrect={handleCorrect}
-                    isDemoMode={isDemoMode}
-                  />
-                ))}
-              </div>
+              {/* Employee cards individuales */}
+              {branchEmployees.map(emp => (
+                <EmployeeAuditRow
+                  key={emp.id}
+                  emp={emp}
+                  weekDates={weekDates}
+                  shiftById={shiftById}
+                  weekTimesheets={weekTimesheets}
+                  branchNameById={branchNameById}
+                  onCorrect={handleCorrect}
+                  isDemoMode={isDemoMode}
+                />
+              ))}
             </div>
           );
         })}
@@ -935,7 +960,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         {/* Empty state */}
         {employeesByBranch.size === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="p-5 bg-slate-100 rounded-[2rem]">
+            <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
               <CheckCircle size={32} className="text-slate-300" strokeWidth={1.5} />
             </div>
             <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>

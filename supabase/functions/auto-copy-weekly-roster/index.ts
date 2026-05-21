@@ -1,10 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// HR role ids that receive roster conflict notifications
-const HR_ROLE_IDS = [11, 2, 3]; // Jefe TH, Gerente General, Administrador
-
 // Event types that block a silent roster copy
 const BLOCKING_EVENT_TYPES = ['VACATION', 'DISABILITY', 'PERMIT'];
+
+// Notification priority chain:
+//   1. Talento Humano (role_id = 11) — if any are available (not on vacation/disability/permit today)
+//   2. Fallback: ADMIN + SUPERADMIN system_role AND Supervisor system_role
+const TH_ROLE_ID = 11;
+const FALLBACK_SYSTEM_ROLES = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR'];
 
 /** Next Monday from a given Saturday (CST) */
 function nextMonday(saturdayDate: Date): Date {
@@ -54,6 +57,7 @@ Deno.serve(async (req) => {
       referenceDate = todayCST();
     }
 
+    const todayStr   = toISO(referenceDate);
     const curMonday  = currentMonday(referenceDate);
     const nextMon    = nextMonday(referenceDate);
     const nextSun    = new Date(nextMon);
@@ -63,7 +67,7 @@ Deno.serve(async (req) => {
     const nextWeekStr = toISO(nextMon);
     const nextSunStr  = toISO(nextSun);
 
-    console.log(`Reference: ${toISO(referenceDate)}, current week: ${curWeekStr}, next week: ${nextWeekStr}–${nextSunStr}`);
+    console.log(`Reference: ${todayStr}, current week: ${curWeekStr}, next week: ${nextWeekStr}–${nextSunStr}`);
 
     // 1. Load all rosters for the current week
     const { data: currentRosters, error: crErr } = await supabase
@@ -98,17 +102,16 @@ Deno.serve(async (req) => {
 
     const missingIds = missing.map(r => r.employee_id);
 
-    // 3. Check for active blocking events that overlap next week (Mon–Sun)
+    // 3. Check for blocking events that overlap next week (Mon–Sun) for the missing employees
     const { data: blockingEvents, error: evErr } = await supabase
       .from('employee_events')
       .select('employee_id, type, date, note')
       .in('employee_id', missingIds)
       .in('type', BLOCKING_EVENT_TYPES)
-      .gte('date', curWeekStr)   // event date >= today to catch upcoming ones
-      .lte('date', nextSunStr);  // event date <= next Sunday
+      .gte('date', curWeekStr)
+      .lte('date', nextSunStr);
     if (evErr) throw evErr;
 
-    // Build a set of employees with conflicts and a map for details
     const conflictMap = new Map<string, { type: string; date: string; note: string | null }[]>();
     for (const ev of blockingEvents || []) {
       const empId = String(ev.employee_id);
@@ -117,7 +120,7 @@ Deno.serve(async (req) => {
     }
 
     // 4. Copy rosters for employees without conflicts; collect conflicted ones
-    const toCopy   = missing.filter(r => !conflictMap.has(String(r.employee_id)));
+    const toCopy    = missing.filter(r => !conflictMap.has(String(r.employee_id)));
     const conflicted = missing.filter(r =>  conflictMap.has(String(r.employee_id)));
 
     let copied = 0;
@@ -131,7 +134,6 @@ Deno.serve(async (req) => {
           status:          'PUBLISHED',
         });
       if (insErr) {
-        // If it already exists (race condition), skip silently
         if (!insErr.message.includes('duplicate') && !insErr.message.includes('unique')) {
           console.error(`Failed to copy roster for ${roster.employee_id}:`, insErr.message);
         }
@@ -140,9 +142,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. If there are conflicted employees, notify HR via announcement
+    // 5. Notify about conflicts using the priority chain
     if (conflicted.length > 0) {
-      // Resolve employee names
+      // Resolve names for conflicted employees
       const { data: empRows } = await supabase
         .from('employees')
         .select('id, name, first_names, last_names')
@@ -154,14 +156,47 @@ Deno.serve(async (req) => {
         nameMap.set(String(emp.id), fullName || emp.id);
       }
 
-      // Resolve HR recipient IDs
-      const { data: hrEmps } = await supabase
+      // --- Notification recipient resolution ---
+      // Step 1: get all active TH employees
+      const { data: thEmps } = await supabase
         .from('employees')
         .select('id')
-        .in('role_id', HR_ROLE_IDS)
+        .eq('role_id', TH_ROLE_ID)
         .eq('status', 'ACTIVE');
 
-      const hrIds = (hrEmps || []).map(e => e.id);
+      const thIds = (thEmps || []).map(e => String(e.id));
+
+      // Step 2: filter out TH employees who are themselves on a blocking event today
+      let availableTH: string[] = [];
+      if (thIds.length > 0) {
+        const { data: thBlocked } = await supabase
+          .from('employee_events')
+          .select('employee_id')
+          .in('employee_id', thIds)
+          .in('type', BLOCKING_EVENT_TYPES)
+          .eq('date', todayStr);
+
+        const thBlockedSet = new Set((thBlocked || []).map(e => String(e.employee_id)));
+        availableTH = thIds.filter(id => !thBlockedSet.has(id));
+      }
+
+      // Step 3: if no TH available, fall back to Admin + Supervisor
+      let recipientIds: string[];
+      let recipientLabel: string;
+
+      if (availableTH.length > 0) {
+        recipientIds  = availableTH;
+        recipientLabel = 'Talento Humano';
+      } else {
+        const { data: fallbackEmps } = await supabase
+          .from('employees')
+          .select('id')
+          .in('system_role', FALLBACK_SYSTEM_ROLES)
+          .eq('status', 'ACTIVE');
+
+        recipientIds  = (fallbackEmps || []).map(e => String(e.id));
+        recipientLabel = 'Administración y Supervisión';
+      }
 
       const EVENT_LABELS: Record<string, string> = {
         VACATION:   'Vacaciones',
@@ -177,36 +212,44 @@ Deno.serve(async (req) => {
         return `• ${empName}: ${evDesc}`;
       });
 
-      const title   = `⚠️ Turnos próxima semana requieren revisión (${nextWeekStr})`;
+      const thUnavailableNote = availableTH.length === 0 && thIds.length > 0
+        ? ' (Talento Humano no disponible hoy)'
+        : '';
+
+      const title   = `Turnos próxima semana requieren revisión (${nextWeekStr})`;
       const message =
-        `El sistema copió automáticamente los turnos de la semana actual hacia la semana del ${nextWeekStr}, ` +
-        `pero los siguientes empleados tienen eventos activos que podrían requerir ajustes:\n\n` +
+        `El sistema copió automáticamente los turnos de esta semana hacia la semana del ${nextWeekStr}, ` +
+        `pero los siguientes empleados tienen eventos registrados que podrían requerir ajustes en su horario:\n\n` +
         lines.join('\n') +
-        `\n\nPor favor verifique y realice las modificaciones necesarias en el módulo de Turnos.`;
+        `\n\nPor favor verifique y realice las modificaciones necesarias en el módulo de Turnos antes del lunes.`;
 
       await supabase.from('announcements').insert({
         title,
         message,
-        target_type:  hrIds.length > 0 ? 'EMPLOYEE' : 'ALL',
-        target_value: hrIds.length > 0 ? hrIds : null,
+        target_type:  recipientIds.length > 0 ? 'EMPLOYEE' : 'ALL',
+        target_value: recipientIds.length > 0 ? recipientIds : null,
         priority:     'HIGH',
         metadata:     {
-          source:          'auto-copy-weekly-roster',
-          next_week_start: nextWeekStr,
-          conflicted_count: conflicted.length,
-          copied_count:    copied,
+          source:            'auto-copy-weekly-roster',
+          next_week_start:   nextWeekStr,
+          conflicted_count:  conflicted.length,
+          copied_count:      copied,
+          notified_group:    recipientLabel + thUnavailableNote,
+          th_available:      availableTH.length,
         },
       });
+
+      console.log(`Notified ${recipientLabel}${thUnavailableNote} about ${conflicted.length} conflicts`);
     }
 
     return new Response(
       JSON.stringify({
-        ok:        true,
-        cur_week:  curWeekStr,
-        next_week: nextWeekStr,
-        evaluated: missing.length,
+        ok:                true,
+        cur_week:          curWeekStr,
+        next_week:         nextWeekStr,
+        evaluated:         missing.length,
         copied,
-        conflicts: conflicted.length,
+        conflicts:         conflicted.length,
         conflict_employees: conflicted.map(r => String(r.employee_id)),
       }),
       { headers: { 'Content-Type': 'application/json' } },

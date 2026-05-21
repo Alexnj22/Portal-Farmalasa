@@ -42,7 +42,7 @@ const GlassViewLayout = ({
     const headerPillCls = isCompat
         ? 'bg-white border-[#8BAEC8] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
         : isAurora
-        ? 'bg-[rgba(4,10,40,0.45)] backdrop-blur-2xl backdrop-saturate-[180%] border-[rgba(77,148,255,0.18)] shadow-[0_4px_24px_rgba(0,0,0,0.40)]'
+        ? 'bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-[180%] border-white/[0.18] shadow-[0_4px_24px_rgba(0,0,0,0.40)]'
         : 'bg-white/20 backdrop-blur-[10px] backdrop-saturate-[300%] border-white/90 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]';
 
     const headerRadius = isCompat ? 'rounded-[1.5rem]' : 'rounded-[2.5rem]';

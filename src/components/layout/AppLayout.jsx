@@ -805,7 +805,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className={`flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border ${
                         isAurora
-                            ? 'bg-[rgba(4,10,40,0.80)] backdrop-blur-2xl border-[rgba(77,148,255,0.22)] shadow-[0_12px_40px_rgba(0,20,100,0.5)]'
+                            ? 'bg-white/[0.09] backdrop-blur-2xl border-white/[0.20] shadow-[0_12px_40px_rgba(0,0,0,0.35)]'
                             : isCompat
                             ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
                             : 'bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]'
@@ -825,7 +825,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <button
                                     onClick={() => navigate('/my-announcements')}
                                     className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-[0.97] transition-all flex items-center justify-center hover:shadow-md
-                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : isAurora ? 'bg-[rgba(77,148,255,0.1)] border-[rgba(77,148,255,0.22)]' : 'bg-white border-white/60'}`}
+                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : isAurora ? 'bg-white/[0.10] border-white/[0.20]' : 'bg-white border-white/60'}`}
                                 >
                                     <BellRing
                                         size={18}
@@ -838,7 +838,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-60" />
                                 </button>
                             )}
-                            <button onClick={() => navigate('/profile')} className={`w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border ${isAurora ? 'bg-[rgba(77,148,255,0.1)] border-[rgba(77,148,255,0.22)]' : 'bg-white border-white'}`}>
+                            <button onClick={() => navigate('/profile')} className={`w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border ${isAurora ? 'bg-white/[0.10] border-white/[0.20]' : 'bg-white border-white'}`}>
                                 <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
@@ -902,7 +902,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                     <div className={`flex items-center justify-around rounded-[1.75rem] px-2 py-2 border ${
                         isAurora
-                            ? 'bg-[rgba(4,10,40,0.85)] backdrop-blur-2xl border-[rgba(77,148,255,0.22)] shadow-[0_-4px_30px_rgba(0,20,100,0.3)]'
+                            ? 'bg-white/[0.09] backdrop-blur-2xl border-white/[0.20] shadow-[0_-4px_30px_rgba(0,0,0,0.30)]'
                             : isCompat
                             ? 'bg-white border-slate-200 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'
                             : 'bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'

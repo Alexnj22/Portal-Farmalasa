@@ -78,47 +78,47 @@ const EmployeeHomeView = () => {
 
     const tk = {
         card: isAurora
-            ? 'bg-[rgba(4,10,40,0.60)] backdrop-blur-xl border-[rgba(77,148,255,0.15)] shadow-[0_4px_20px_rgba(0,20,100,0.30)]'
+            ? 'bg-white/[0.07] backdrop-blur-xl border-white/[0.15] shadow-[0_4px_20px_rgba(0,0,0,0.30)]'
             : isCompat
             ? 'bg-white border-slate-200 shadow-sm'
             : 'bg-white/60 backdrop-blur-xl border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]',
         cardHover: isAurora
-            ? 'hover:bg-[rgba(4,10,40,0.78)] hover:border-[rgba(77,148,255,0.28)] hover:shadow-[0_20px_40px_rgba(0,20,100,0.45)]'
+            ? 'hover:bg-white/[0.11] hover:border-white/[0.25] hover:shadow-[0_20px_40px_rgba(0,0,0,0.35)]'
             : isCompat
             ? 'hover:bg-slate-50 hover:shadow-md'
             : 'hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]',
-        textStrong: isAurora ? 'text-[rgba(210,230,255,0.95)]' : 'text-slate-800',
-        textMid:   isAurora ? 'text-[rgba(180,210,255,0.75)]' : 'text-slate-600',
-        textMuted: isAurora ? 'text-[rgba(150,200,255,0.55)]' : 'text-slate-400',
-        divider:   isAurora ? 'border-[rgba(77,148,255,0.12)]' : 'border-slate-100',
+        textStrong: isAurora ? 'text-white/95' : 'text-slate-800',
+        textMid:   isAurora ? 'text-white/75' : 'text-slate-600',
+        textMuted: isAurora ? 'text-white/55' : 'text-slate-400',
+        divider:   isAurora ? 'border-white/[0.12]' : 'border-slate-100',
         pill: isAurora
-            ? 'bg-[rgba(4,10,40,0.72)] backdrop-blur-2xl border-[rgba(77,148,255,0.20)] shadow-[0_4px_20px_rgba(0,20,100,0.4)]'
+            ? 'bg-white/[0.08] backdrop-blur-2xl border-white/[0.20] shadow-[0_4px_20px_rgba(0,0,0,0.35)]'
             : isCompat
             ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.07)]'
             : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)]',
         shiftPill: isAurora
-            ? 'bg-[rgba(77,148,255,0.10)] border-[rgba(77,148,255,0.22)]'
+            ? 'bg-white/[0.10] border-white/[0.20]'
             : isCompat
             ? 'bg-slate-50 border-slate-200'
             : 'bg-white/50 border-white/70',
         ctaBtn: isAurora
-            ? 'bg-[rgba(77,148,255,0.18)] border-[rgba(77,148,255,0.38)] text-[rgba(180,215,255,0.95)] hover:bg-[rgba(77,148,255,0.30)]'
+            ? 'bg-white/[0.15] border-white/[0.30] text-white/95 hover:bg-white/[0.22]'
             : isCompat
             ? 'bg-[#0052CC] border-[#0052CC] text-white hover:bg-[#003D99]'
             : 'bg-white/70 border-white/80 text-slate-700 hover:bg-white/90',
         dayHeaderDefault: isAurora
-            ? 'bg-[rgba(77,148,255,0.10)] text-[rgba(190,220,255,0.80)]'
+            ? 'bg-white/[0.08] text-white/80'
             : isCompat ? 'bg-slate-100 text-slate-600' : 'bg-slate-50 text-slate-600',
-        dayHeaderToday: isAurora ? 'bg-[rgba(77,148,255,0.35)] text-white' : 'bg-slate-800 text-white',
-        dayHeaderNext: isAurora ? 'bg-[rgba(77,148,255,0.06)] text-[rgba(150,200,255,0.60)]' : isCompat ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500',
-        dayBody: isAurora ? 'bg-[rgba(4,10,40,0.40)]' : 'bg-white/40',
-        empRowSelf: isAurora ? 'bg-[rgba(77,148,255,0.15)] border-[rgba(77,148,255,0.30)]' : 'bg-slate-100/80 border-slate-200',
-        empRow:     isAurora ? 'bg-[rgba(77,148,255,0.07)]' : 'bg-white/60',
-        navBtn: isAurora ? 'hover:bg-[rgba(77,148,255,0.12)] text-[rgba(150,200,255,0.65)]' : 'hover:bg-slate-100 text-slate-500',
-        navLabel: isAurora ? 'text-[rgba(150,200,255,0.65)]' : 'text-slate-500',
-        iconBg: isAurora ? 'bg-[rgba(77,148,255,0.12)]' : 'bg-slate-100',
-        progressTrack: isAurora ? 'bg-[rgba(77,148,255,0.12)]' : 'bg-slate-100',
-        progressBar:   isAurora ? 'bg-[rgba(77,148,255,0.60)]' : 'bg-slate-700',
+        dayHeaderToday: isAurora ? 'bg-white/[0.22] text-white' : 'bg-slate-800 text-white',
+        dayHeaderNext: isAurora ? 'bg-white/[0.05] text-white/60' : isCompat ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500',
+        dayBody: isAurora ? 'bg-white/[0.03]' : 'bg-white/40',
+        empRowSelf: isAurora ? 'bg-white/[0.12] border-white/[0.25]' : 'bg-slate-100/80 border-slate-200',
+        empRow:     isAurora ? 'bg-white/[0.05]' : 'bg-white/60',
+        navBtn: isAurora ? 'hover:bg-white/[0.08] text-white/65' : 'hover:bg-slate-100 text-slate-500',
+        navLabel: isAurora ? 'text-white/65' : 'text-slate-500',
+        iconBg: isAurora ? 'bg-white/[0.08]' : 'bg-slate-100',
+        progressTrack: isAurora ? 'bg-white/[0.08]' : 'bg-slate-100',
+        progressBar:   isAurora ? 'bg-white/[0.55]' : 'bg-slate-700',
     };
 
     // Reloj
@@ -394,7 +394,7 @@ const EmployeeHomeView = () => {
                     {/* Turno hoy */}
                     {activeEvent === undefined ? null : activeEvent ? (
                         <div className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black text-[10px] uppercase tracking-widest border ${
-                            isAurora ? 'bg-[rgba(77,148,255,0.15)] text-[rgba(180,215,255,0.90)] border-[rgba(77,148,255,0.30)]' :
+                            isAurora ? 'bg-white/[0.12] text-white/90 border-white/[0.25]' :
                             activeEvent.type === 'VACATION'   ? 'bg-amber-50 text-amber-700 border-amber-200' :
                             activeEvent.type === 'DISABILITY' ? 'bg-red-50 text-red-700 border-red-200' :
                             'bg-purple-50 text-purple-700 border-purple-200'
@@ -420,7 +420,7 @@ const EmployeeHomeView = () => {
                             <p className={`text-[11px] font-bold ${tk.textMid}`}>Día libre</p>
                         </div>
                     )}
-                    <div className={`w-px h-6 shrink-0 hidden sm:block ${isAurora ? 'bg-[rgba(77,148,255,0.20)]' : 'bg-white/40'}`} />
+                    <div className={`w-px h-6 shrink-0 hidden sm:block ${isAurora ? 'bg-white/[0.20]' : 'bg-white/40'}`} />
                     {/* Botón */}
                     <button onClick={() => navigate('/my-requests')}
                         className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-[0.97] shrink-0 border ${tk.ctaBtn}`}>
@@ -561,10 +561,10 @@ const EmployeeHomeView = () => {
                                         <div key={vp.id} className={`p-2 rounded-xl border transition-all ${
                                             vp.status === 'CONFIRMED'
                                                 ? isAurora ? 'border-emerald-500/25 bg-emerald-900/20' : 'border-emerald-200/70 bg-emerald-50/50'
-                                                : isAurora ? 'border-[rgba(77,148,255,0.15)] bg-[rgba(77,148,255,0.06)]' : 'border-white/80 bg-white/40'
+                                                : isAurora ? 'border-white/[0.15] bg-white/[0.05]' : 'border-white/80 bg-white/40'
                                         }`}>
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-[rgba(77,148,255,0.15)] text-[rgba(150,200,255,0.80)] border-[rgba(77,148,255,0.25)]' : s.color}`}>{s.label}</span>
+                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-white/[0.12] text-white/80 border-white/[0.22]' : s.color}`}>{s.label}</span>
                                                 {daysLeft > 0 && daysLeft <= 90 && <span className={`text-[8px] font-black ${tk.textMuted}`}>en {daysLeft}d</span>}
                                             </div>
                                             <p className={`text-[10px] font-black ${tk.textStrong}`}>{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
@@ -678,8 +678,8 @@ const EmployeeHomeView = () => {
                                         return (
                                             <div key={d.id} className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
                                                 d.isToday
-                                                    ? isAurora ? 'border-[rgba(77,148,255,0.45)] shadow-[0_0_0_2px_rgba(77,148,255,0.15)]' : 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
-                                                    : isAurora ? 'border-[rgba(77,148,255,0.12)]' : 'border-white/60'
+                                                    ? isAurora ? 'border-white/[0.35] shadow-[0_0_0_2px_rgba(255,255,255,0.10)]' : 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
+                                                    : isAurora ? 'border-white/[0.12]' : 'border-white/60'
                                             } ${isPast ? 'opacity-40 grayscale' : ''}`}>
 
                                                 {/* Header del día */}
@@ -698,10 +698,10 @@ const EmployeeHomeView = () => {
                                                         <div key={em.id} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all border ${
                                                             String(em.id) === String(user?.id) ? tk.empRowSelf : `${tk.empRow} border-transparent`
                                                         }`}>
-                                                            <div className={`w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border ${isAurora ? 'border-[rgba(77,148,255,0.25)]' : 'border-white/60'}`}>
+                                                            <div className={`w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border ${isAurora ? 'border-white/[0.22]' : 'border-white/60'}`}>
                                                                 {em.photo || em.photo_url
                                                                     ? <img src={em.photo || em.photo_url} className="w-full h-full object-cover" alt="" />
-                                                                    : <div className={`w-full h-full flex items-center justify-center text-[9px] font-black ${isAurora ? 'bg-[rgba(77,148,255,0.20)] text-[rgba(150,200,255,0.80)]' : 'bg-slate-200 text-slate-500'}`}>{em.name?.charAt(0)}</div>
+                                                                    : <div className={`w-full h-full flex items-center justify-center text-[9px] font-black ${isAurora ? 'bg-white/[0.15] text-white/80' : 'bg-slate-200 text-slate-500'}`}>{em.name?.charAt(0)}</div>
                                                                 }
                                                             </div>
                                                             <div className="flex-1 min-w-0">

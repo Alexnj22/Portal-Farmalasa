@@ -31,87 +31,77 @@ import { useTheme } from '../../context/ThemeContext';
 function useTokens() {
   const { isCompat, isAurora } = useTheme();
   return {
-    // Card wrapper — aurora: midnight blue-black glass with aurora-blue glow
     cardBg: isCompat
       ? 'bg-white'
       : isAurora
-      ? 'bg-[rgba(4,10,40,0.82)] backdrop-blur-2xl backdrop-saturate-150'
+      ? 'bg-white/[0.07] backdrop-blur-2xl backdrop-saturate-150'
       : 'bg-white/55 backdrop-blur-xl',
     cardBorder: isCompat
-      ? 'border-slate-200'
+      ? 'border-[#C4D9E8]'
       : isAurora
-      ? 'border-[rgba(77,148,255,0.22)]'
+      ? 'border-white/[0.18]'
       : 'border-white/55',
     cardShadow: isCompat
-      ? 'shadow-sm'
+      ? 'shadow-[0_2px_12px_rgba(0,0,0,0.07),0_1px_3px_rgba(0,0,0,0.05)]'
       : isAurora
-      ? 'shadow-[0_8px_40px_rgba(0,20,100,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]'
+      ? 'shadow-[0_8px_40px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)]'
       : 'shadow-[0_4px_24px_rgba(0,82,204,0.08)]',
-    // Sticky thead — aurora: cobalt-tinted dark
     theadBg: isCompat
       ? 'bg-slate-50'
       : isAurora
-      ? 'bg-[rgba(77,148,255,0.09)]'
+      ? 'bg-white/[0.06]'
       : 'bg-[#0052CC]/[0.04]',
     theadBorderRow: isCompat
       ? 'border-b border-slate-200'
       : isAurora
-      ? 'border-b border-[rgba(77,148,255,0.18)]'
+      ? 'border-b border-white/[0.12]'
       : 'border-b border-[#0052CC]/[0.09]',
-    // th text
-    thText: isAurora ? 'text-[rgba(150,200,255,0.65)]' : 'text-slate-500',
+    thText: isAurora ? 'text-white/55' : 'text-slate-500',
     thHover: isCompat
       ? 'hover:bg-slate-100 hover:text-slate-700'
       : isAurora
-      ? 'hover:bg-[rgba(77,148,255,0.1)] hover:text-white/90'
+      ? 'hover:bg-white/[0.08] hover:text-white'
       : 'hover:bg-white/25 hover:text-slate-700',
-    // toolbar / footer separators
     toolbarBorder: isCompat
       ? 'border-b border-slate-100'
       : isAurora
-      ? 'border-b border-[rgba(77,148,255,0.12)]'
+      ? 'border-b border-white/[0.08]'
       : 'border-b border-white/40',
     footerBorder: isCompat
       ? 'border-t border-slate-100'
       : isAurora
-      ? 'border-t border-[rgba(77,148,255,0.12)]'
+      ? 'border-t border-white/[0.08]'
       : 'border-t border-white/40',
-    // tbody row dividers — aurora: faint blue lines
     divide: isCompat
       ? 'divide-y divide-slate-100'
       : isAurora
-      ? 'divide-y divide-[rgba(77,148,255,0.08)]'
+      ? 'divide-y divide-white/[0.06]'
       : 'divide-y divide-slate-200/50',
-    // row hover — aurora: blue shimmer
     rowHover: isCompat
       ? 'hover:bg-slate-50'
       : isAurora
-      ? 'hover:bg-[rgba(77,148,255,0.09)]'
+      ? 'hover:bg-white/[0.06]'
       : 'hover:bg-[#0052CC]/[0.032]',
-    // cell text
-    cellText: isAurora ? 'text-[rgba(210,230,255,0.85)]' : 'text-slate-700',
-    // skeleton
+    cellText: isAurora ? 'text-white/85' : 'text-slate-700',
     skeletonPulse: isCompat
       ? 'bg-slate-200/70'
       : isAurora
-      ? 'bg-[rgba(77,148,255,0.12)]'
+      ? 'bg-white/[0.09]'
       : 'bg-[#0052CC]/[0.07]',
-    // empty state
-    emptyText: isAurora ? 'text-[rgba(150,200,255,0.45)]' : 'text-slate-400',
-    emptyIcon: isAurora ? 'text-[rgba(77,148,255,0.25)]' : 'text-slate-300',
-    // expanded detail row — aurora: deep void, clearly darker than the row
+    emptyText: isAurora ? 'text-white/40' : 'text-slate-400',
+    emptyIcon: isAurora ? 'text-white/25' : 'text-slate-300',
     expandBg: isCompat
       ? 'bg-slate-50'
       : isAurora
-      ? 'bg-[rgba(1,5,22,0.95)]'
+      ? 'bg-white/[0.04]'
       : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
     expandBorderColor: isCompat
       ? 'border-slate-200'
       : isAurora
-      ? 'border-[rgba(77,148,255,0.22)]'
+      ? 'border-white/[0.14]'
       : 'border-blue-100/60',
-    expandText: isAurora ? 'text-[rgba(150,200,255,0.5)]' : 'text-slate-400',
-    expandTextStrong: isAurora ? 'text-[rgba(210,230,255,0.9)]' : 'text-slate-700',
+    expandText: isAurora ? 'text-white/45' : 'text-slate-400',
+    expandTextStrong: isAurora ? 'text-white/90' : 'text-slate-700',
   };
 }
 

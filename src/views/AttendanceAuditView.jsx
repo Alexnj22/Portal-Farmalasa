@@ -188,15 +188,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
   useEffect(() => { if (isOpen) { setNewType(''); setNewTime(''); setReason(''); } }, [isOpen]);
 
-  if (!isOpen || !emp || !dateStr) return null;
-
-  const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-  const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${new Date(dateStr + 'T12:00:00Z').toLocaleDateString('es-SV', { month: 'long' })}`;
-
-  const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
-  const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
-
-  // Punch types available for this shift
+  // Must be before early return — Rules of Hooks
   const availablePunchTypes = useMemo(() => {
     const base = [
       { value: 'IN',           label: 'Entrada' },
@@ -218,6 +210,14 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
     }
     return base;
   }, [dayConfig]);
+
+  if (!isOpen || !emp || !dateStr) return null;
+
+  const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
+  const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${new Date(dateStr + 'T12:00:00Z').toLocaleDateString('es-SV', { month: 'long' })}`;
+
+  const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
+  const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
 
   const handleAdd = async () => {
     if (!newType || !newTime) return;

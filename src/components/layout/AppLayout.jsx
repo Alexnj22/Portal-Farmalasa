@@ -80,7 +80,6 @@ const AURORA_ORBS = [
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, systemRole } = useAuth();
     const { isAurora, isCompat } = useTheme();
-    const isLiquid = !isAurora && !isCompat;
     const branches = useStaff((state) => state.branches);
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
@@ -361,17 +360,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         // Theme tokens for nav items
         const navItemInactive = isCompat
             ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]'
-            : isLiquid
-            ? 'text-slate-600 hover:text-slate-900 hover:bg-[#0052CC]/[0.07]'
             : 'text-white/70 hover:text-white hover:bg-white/[0.08]';
-        const iconActiveColor  = isCompat ? 'text-white' : isLiquid ? 'text-[#0052CC]' : 'text-[#4D94FF]';
-        const iconInactiveColor = isCompat
-            ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B]'
-            : isLiquid
-            ? 'text-slate-400 group-hover:text-slate-700'
-            : 'text-white/55 group-hover:text-white';
-        const accentBarInactive = isCompat ? 'bg-[#C4D9E8]' : isLiquid ? 'bg-[#0052CC]/20' : 'bg-white/20';
-        const accentBarActive   = isCompat ? 'bg-white/60' : isLiquid ? 'bg-[#0052CC]' : 'bg-[#4D94FF]';
+        const iconActiveColor  = isCompat ? 'text-white' : 'text-[#4D94FF]';
+        const iconInactiveColor = isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B]' : 'text-white/55 group-hover:text-white';
+        const accentBarInactive = isCompat ? 'bg-[#C4D9E8]' : 'bg-white/20';
+        const accentBarActive   = isCompat ? 'bg-white/60' : 'bg-[#4D94FF]';
 
         if (comingSoon) {
             return (
@@ -406,7 +399,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 type="button"
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
                     ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
-                    ${isActive ? (isLiquid ? 'text-[#0052CC]' : 'text-white') : navItemInactive}
+                    ${isActive ? 'text-white' : navItemInactive}
                     active:scale-[0.99]`}
             >
                 {/* Left accent for subitems */}
@@ -500,16 +493,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     type="button"
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild
-                            ? (isCompat ? 'text-[#1B3A6B]' : isLiquid ? 'text-[#0052CC]' : 'text-white')
-                            : (isCompat ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]' : isLiquid ? 'text-slate-600 hover:text-slate-900 hover:bg-[#0052CC]/[0.07]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]')}
+                            ? (isCompat ? 'text-[#1B3A6B]' : 'text-white')
+                            : (isCompat ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]')}
                         active:scale-[0.99]`}
                 >
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? (isCompat ? 'text-[#1B3A6B] scale-110' : isLiquid ? 'text-[#0052CC] scale-110' : 'text-[#4D94FF] scale-110')
-                            : (isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B] group-hover:scale-110' : isLiquid ? 'text-slate-400 group-hover:text-slate-700 group-hover:scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110')}`}
+                            ? (isCompat ? 'text-[#1B3A6B] scale-110' : 'text-[#4D94FF] scale-110')
+                            : (isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B] group-hover:scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110')}`}
                     />
                     {isExpanded && (
                         <>
@@ -530,7 +523,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`transition-transform duration-300 flex-shrink-0 ${isCompat ? 'text-[#374B63]/30' : isLiquid ? 'text-slate-400/70' : 'text-white/40'} ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-300 flex-shrink-0 ${isCompat ? 'text-[#374B63]/30' : 'text-white/40'} ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
@@ -592,7 +585,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
                 {/* ── Ambient glow layers (dark themes only) ── */}
-                {isAurora && (
+                {!isCompat && (
                     <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
                         <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
                         <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
@@ -602,16 +595,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 )}
 
                 {/* ── Glass/Corporate container ── */}
-                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 w-full z-10 flex flex-col
-                    ${isLiquid
-                        ? 'bg-transparent p-2 gap-2.5 overflow-y-auto scrollbar-hide'
-                        : isCompat
-                        ? 'rounded-[2.5rem] overflow-hidden bg-white border border-[#C4D9E8] shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.05)]'
-                        : 'rounded-[2.5rem] overflow-hidden bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)] transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]'
+                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
+                    ${isCompat
+                        ? 'bg-white border border-[#C4D9E8] shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.05)]'
+                        : 'bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)] transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]'
                     }`}>
 
                     {/* Dark-theme sheen layers */}
-                    {isAurora && (
+                    {!isCompat && (
                         <>
                             <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
                             <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
@@ -626,28 +617,24 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* ── Logo header ── */}
                     <div className={`relative z-10 flex items-center
-                        ${isLiquid
-                            ? 'rounded-[1.25rem] bg-white/[0.45] backdrop-blur-[14px] backdrop-saturate-[180%] border border-white/[0.78] shadow-[0_0_0_0.5px_rgba(120,170,255,0.28),inset_0_1.5px_0_rgba(255,255,255,0.90),0_6px_18px_rgba(0,82,204,0.07)] flex-shrink-0'
-                            : isCompat ? 'border-b border-[#C4D9E8]' : 'border-b border-white/10'}
+                        ${isCompat ? 'border-b border-[#C4D9E8]' : 'border-b border-white/10'}
                         ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                        {isAurora && <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />}
+                        {!isCompat && <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />}
 
                         <div className="flex items-center gap-3 relative z-10">
                             {/* Logo mark */}
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
                                 {/* Glow */}
-                                <div className={`absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 ${isCompat ? 'bg-[#1B3A6B]/20' : isLiquid ? 'bg-[#0052CC]/15' : 'bg-[#4D94FF]/30'}`} />
+                                <div className={`absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 ${isCompat ? 'bg-[#1B3A6B]/20' : 'bg-[#4D94FF]/30'}`} />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                     transition-all duration-300 group-hover/logo:scale-105
                                     ${isCompat
                                         ? 'bg-[#1B3A6B]/[0.08] border border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)] group-hover/logo:shadow-[0_4px_16px_rgba(27,58,107,0.18)] group-hover/logo:border-[#B3CCDF]'
-                                        : isLiquid
-                                        ? 'bg-[#0052CC]/[0.08] border border-white/80 shadow-[0_4px_14px_rgba(0,82,204,0.15),inset_0_1px_0_rgba(255,255,255,0.95)] group-hover/logo:shadow-[0_8px_24px_rgba(0,82,204,0.22)] group-hover/logo:border-white/90'
                                         : 'bg-white/12 backdrop-blur-sm border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)] group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)] group-hover/logo:border-white/30'
                                     }
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                    {isAurora && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />}
+                                    {!isCompat && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />}
                                     <img src="/LogoFLS.svg" alt="FLS"
                                         className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                 </div>
@@ -655,8 +642,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded && (
                                 <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
-                                    <h1 className={`font-black text-[15px] leading-tight tracking-tight ${isCompat ? 'text-[#1B3A6B]' : isLiquid ? 'text-slate-900' : 'text-white drop-shadow-sm'}`}>Portal</h1>
-                                    <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug ${isCompat ? 'text-[#1B3A6B]/45' : isLiquid ? 'text-slate-500' : 'text-white/50'}`}>La Salud & La Popular</p>
+                                    <h1 className={`font-black text-[15px] leading-tight tracking-tight drop-shadow-sm ${isCompat ? 'text-[#1B3A6B]' : 'text-white'}`}>Portal</h1>
+                                    <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug ${isCompat ? 'text-[#1B3A6B]/45' : 'text-white/50'}`}>La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
@@ -666,8 +653,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
                                     ${isCompat
                                         ? 'bg-[#1B3A6B]/[0.07] border border-[#C4D9E8] text-[#374B63]/55 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.12] hover:border-[#B3CCDF]'
-                                        : isLiquid
-                                        ? 'bg-white/60 border border-white/80 text-slate-400 hover:text-slate-700 hover:bg-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]'
                                         : 'bg-white/6 hover:bg-white/15 border border-white/10 hover:border-white/22 text-white/50 hover:text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]'}`}>
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
@@ -675,9 +660,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
 
                     {/* ── Nav ── */}
-                    <nav ref={navRef} className={`relative z-10 flex-1 overflow-y-auto scrollbar-hide ${isLiquid ? 'flex flex-col gap-2.5' : 'px-2 py-3 space-y-0.5'}`}>
-                        {/* Active pill — hidden for Liquid (glass cards provide visual separation) */}
-                        {!isLiquid && (
+                    <nav ref={navRef} className="relative z-10 flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
+                        {/* Active pill */}
                         <div
                             className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
                                 ${isCompat
@@ -691,23 +675,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className={`absolute left-0 inset-y-[20%] w-[3px] rounded-full ${isCompat ? 'bg-white/60' : 'bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]'}`} />
                             {!isCompat && <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />}
                         </div>
-                        )}
 
-                        {visibleGroups.map(g => isLiquid ? (
-                                <div key={g.key + '_lc'} className="relative rounded-[1.25rem] bg-white/[0.45] backdrop-blur-[14px] backdrop-saturate-[180%] border border-white/[0.78] shadow-[0_0_0_0.5px_rgba(120,170,255,0.28),inset_0_1.5px_0_rgba(255,255,255,0.90),0_6px_18px_rgba(0,82,204,0.07)] overflow-hidden">
-                                    <div className="absolute left-[14%] right-[14%] top-[1.5px] h-px pointer-events-none" style={{ background: 'linear-gradient(90deg,transparent,rgba(255,180,210,0.50),rgba(170,210,255,0.60),rgba(170,255,220,0.50),transparent)' }} />
-                                    {renderGroup(g)}
-                                </div>
-                            ) : renderGroup(g)
-                        )}
+                        {visibleGroups.map(g => renderGroup(g))}
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className={`relative z-10 px-3 pb-4 pt-3 flex flex-col gap-2.5 flex-shrink-0
-                        ${isLiquid
-                            ? 'rounded-[1.25rem] bg-white/[0.45] backdrop-blur-[14px] backdrop-saturate-[180%] border border-white/[0.78] shadow-[0_0_0_0.5px_rgba(120,170,255,0.28),inset_0_1.5px_0_rgba(255,255,255,0.90),0_6px_18px_rgba(0,82,204,0.07)]'
-                            : isCompat ? 'border-t border-[#C4D9E8]' : 'border-t border-white/8'}`}>
-                        {isAurora && <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />}
+                    <div className={`relative z-10 px-3 pb-4 pt-3 border-t flex flex-col gap-2.5 ${isCompat ? 'border-[#C4D9E8]' : 'border-white/8'}`}>
+                        {!isCompat && <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />}
 
                         {isExpanded ? (
                             /* User row expanded */
@@ -743,27 +717,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
                                         className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98]
-                                            ${isCompat ? 'hover:bg-[#1B3A6B]/[0.05]' : isLiquid ? 'hover:bg-[#0052CC]/[0.05]' : 'hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'}`}
+                                            ${isCompat ? 'hover:bg-[#1B3A6B]/[0.05]' : 'hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'}`}
                                         type="button">
                                         <div className={`h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all
                                             ${isCompat
                                                 ? 'border border-[#D1DDE8] bg-[#F4F8FB] text-[#374B63]/50 group-hover/user:border-[#B3CCDF]'
-                                                : isLiquid
-                                                ? 'border border-white/80 bg-white/60 text-slate-400 group-hover/user:border-[#0052CC]/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]'
                                                 : 'border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)] bg-white/10 text-white/70 group-hover/user:border-[#4D94FF]/40'}`}>
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
                                             <p className={`text-[13px] font-semibold truncate transition-colors leading-tight
-                                                ${isCompat ? 'text-[#1B3A6B] group-hover/user:text-[#1B3A6B]' : isLiquid ? 'text-slate-800 group-hover/user:text-slate-900' : 'text-white/90 group-hover/user:text-white'}`}>{user?.name || 'Usuario'}</p>
+                                                ${isCompat ? 'text-[#1B3A6B] group-hover/user:text-[#1B3A6B]' : 'text-white/90 group-hover/user:text-white'}`}>{user?.name || 'Usuario'}</p>
                                         </div>
                                     </button>
                                     <button onClick={handleLogout}
                                         className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]
                                             ${isCompat
                                                 ? 'text-[#374B63]/40 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
-                                                : isLiquid
-                                                ? 'text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200'
                                                 : 'text-white/40 hover:text-red-300 hover:bg-red-500/15 hover:border-red-500/20'}`}
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
@@ -778,8 +748,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         className={`w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
                                             ${isCompat
                                                 ? 'bg-[#1B3A6B]/[0.06] border border-[#D1DDE8] text-[#374B63]/50 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.10] hover:border-[#B3CCDF] hover:shadow-[0_2px_8px_rgba(27,58,107,0.15)]'
-                                                : isLiquid
-                                                ? 'bg-white/[0.45] backdrop-blur-[14px] border border-white/[0.78] text-slate-400 hover:text-slate-700 hover:bg-white/70 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.90),0_4px_12px_rgba(0,82,204,0.08)]'
                                                 : 'bg-white/6 border border-white/10 text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]'}`}>
                                         <ChevronRight size={17} strokeWidth={2} />
                                     </button>

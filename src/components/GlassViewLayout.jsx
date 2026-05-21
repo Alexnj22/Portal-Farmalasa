@@ -59,7 +59,7 @@ const GlassViewLayout = ({
             {/* ── AURORA: full-width cosmic banner ──────────────────────────── */}
             {isAurora && (
                 <div className="hidden lg:block absolute top-0 left-0 right-0 z-40 pointer-events-none">
-                    <div className="relative bg-[#040f20]/72 backdrop-blur-2xl border-b border-white/[0.10] px-8 xl:px-10 py-4 xl:py-5 overflow-hidden pointer-events-auto">
+                    <div className="relative bg-[#040f20]/92 backdrop-blur-xl border-b border-white/[0.07] px-8 xl:px-10 py-4 xl:py-5 overflow-hidden pointer-events-auto">
                         {/* Ambient orbs */}
                         <div className="absolute -top-12 left-14 w-72 h-36 bg-blue-600/[0.13] rounded-full blur-3xl pointer-events-none" />
                         <div className="absolute -top-8 right-48 w-48 h-28 bg-violet-600/[0.09] rounded-full blur-2xl pointer-events-none" />

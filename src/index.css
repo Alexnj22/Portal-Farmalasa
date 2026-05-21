@@ -87,8 +87,8 @@
   --shadow-card-hover:    inset 0 1px 0 rgba(255,255,255,0.09), 0 16px 48px rgba(0,0,0,0.60);
   --shadow-header:        0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
   --shadow-modal:         0 32px 80px rgba(0,0,0,0.70), inset 0 1px 0 rgba(255,255,255,0.08);
-  --shadow-btn-brand:     0 4px 14px rgba(124,58,237,0.55);
-  --shadow-btn-brand-h:   0 8px 20px rgba(124,58,237,0.70), 0 0 24px rgba(77,148,255,0.35);
+  --shadow-btn-brand:     0 4px 14px rgba(0,82,204,0.55);
+  --shadow-btn-brand-h:   0 8px 20px rgba(0,82,204,0.70);
 
   --radius-card:          1.75rem;
   --radius-modal:         2rem;
@@ -100,21 +100,6 @@
   --backdrop-card:        blur(18px) saturate(160%);
   --backdrop-header:      blur(24px) saturate(180%);
   --backdrop-modal:       blur(40px) saturate(150%);
-
-  /* Aurora brand colors (override cobalt → violet borealis) */
-  --brand:          #7C3AED;
-  --brand-dark:     #6D28D9;
-  --brand-purple:   #C026D3;
-  --brand-sky:      #22D3EE;
-  --brand-glow:     #34D399;
-  --brand-magenta:  #F472B6;
-
-  /* Aurora glow palette */
-  --glow-blue:    0 0 24px rgba(77,148,255,0.45);
-  --glow-purple:  0 0 24px rgba(168,85,247,0.40);
-  --glow-emerald: 0 0 24px rgba(16,185,129,0.40);
-  --glow-amber:   0 0 24px rgba(251,191,36,0.40);
-  --glow-red:     0 0 24px rgba(239,68,68,0.40);
 }
 
 /* Page + root background */
@@ -182,19 +167,6 @@
   border-color: rgba(255,255,255,0.10) !important;
   box-shadow: 0 32px 80px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.08) !important;
 }
-
-/* ── Liquid Glass: chromatic hairline — Apple-style refraction on card top edge ── */
-:root [data-surface="card"] { position: relative; }
-:root [data-surface="card"]::before {
-  content: '';
-  position: absolute;
-  left: 14%; right: 14%; top: 1.5px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,180,210,0.52), rgba(170,210,255,0.62), rgba(170,255,220,0.52), transparent);
-  pointer-events: none;
-  z-index: 2;
-}
-[data-theme="aurora"] [data-surface="card"]::before,
-[data-theme="compat"]  [data-surface="card"]::before { display: none; }
 
 /* Suprimir el sheen blanco en cards y header — reemplazar con sheen oscuro sutil */
 [data-theme="aurora"] [data-surface="card"] [class*="from-white\/"],
@@ -457,12 +429,6 @@
   --backdrop-card:        none;
   --backdrop-header:      none;
   --backdrop-modal:       none;
-
-  /* Compacto brand colors (editorial midnight blue) */
-  --brand:          #1B3A6B;
-  --brand-dark:     #142C52;
-  --brand-purple:   #B45309;
-  --brand-sky:      #475569;
 }
 
 /* ═══════════════════════════════════════════════════════════════

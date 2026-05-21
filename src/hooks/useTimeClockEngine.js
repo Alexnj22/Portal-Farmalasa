@@ -609,7 +609,7 @@ const submitEarlyExit = useCallback((e) => {
 
         if (authPrompt) {
             const empRole = String(authPrompt.employee?.role || '').toUpperCase();
-            const requiresSuPin = SU_ROLES.includes(empRole);
+            const requiresSuPin = SU_ROLES.some(r => empRole.includes(r));
             const suSuffix = requiresSuPin ? getSuPinSuffix() : '';
             const expectedPin = `${hourlyPin || ''}${suSuffix}`.toUpperCase();
 

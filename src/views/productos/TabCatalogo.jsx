@@ -982,30 +982,32 @@ export default function TabCatalogo({
         card: isAurora
             ? 'bg-white/[0.10] border-white/[0.22] backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]'
             : isCompat
-            ? 'bg-white border-[#C4D9E8] shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
-            : 'bg-white/65 border-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,82,204,0.06)]',
+            ? 'bg-white border-[#C4D9E8] shadow-[0_4px_20px_rgba(0,0,0,0.08)]'
+            : 'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
         thead: isAurora
             ? 'bg-white/[0.09] border-b border-white/[0.16]'
             : isCompat
             ? 'bg-[#EEF4F9] border-b border-[#C4D9E8]'
-            : 'bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.08]',
-        rowBorder: isAurora ? 'border-t border-white/[0.08]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100/60',
-        rowHover: isAurora ? 'hover:bg-white/[0.07]' : 'hover:bg-slate-50/80',
-        rowExpanded: isAurora ? 'bg-white/[0.12]' : isCompat ? 'bg-blue-50/40' : 'bg-blue-50/50',
-        textStrong: isAurora ? 'text-white/90' : 'text-slate-700',
+            : 'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
+        rowBorder: isAurora ? 'border-t border-white/[0.08]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100',
+        rowHover: isAurora
+            ? 'hover:bg-white/[0.07] hover:border-l-white/[0.30]'
+            : 'hover:bg-[#0052CC]/[0.03] hover:border-l-[#0052CC]/40',
+        rowExpanded: isAurora ? 'bg-white/[0.12] border-l-white/[0.40]' : isCompat ? 'bg-blue-50/50 border-l-[#0052CC]' : 'bg-[#0052CC]/[0.05] border-l-[#0052CC]',
+        textStrong: isAurora ? 'text-white/90' : 'text-slate-800',
         textMid: isAurora ? 'text-white/65' : 'text-slate-500',
         textInactive: isAurora ? 'text-white/35 line-through decoration-white/20' : 'text-slate-400 line-through decoration-slate-300',
-        avatarBg: isAurora ? 'bg-white/[0.14]' : 'bg-slate-100',
-        avatarIcon: isAurora ? 'text-white/35' : 'text-slate-300',
+        avatarBg: isAurora ? 'bg-white/[0.14]' : isCompat ? 'bg-slate-100' : 'bg-[#0052CC]/[0.07]',
+        avatarIcon: isAurora ? 'text-white/35' : isCompat ? 'text-slate-300' : 'text-[#0052CC]/50',
         skeleton: isAurora ? 'bg-white/[0.12]' : isCompat ? 'bg-slate-200/60' : 'bg-slate-200/70',
-        emptyBg: isAurora ? 'bg-white/[0.07] border-white/[0.16]' : isCompat ? 'bg-white border-[#C4D9E8]' : 'bg-white/50 border-white/50',
+        emptyBg: isAurora ? 'bg-white/[0.07] border-white/[0.16]' : isCompat ? 'bg-white border-[#C4D9E8]' : 'bg-white border-slate-200/80',
         emptyIcon: isAurora ? 'text-white/25' : 'text-slate-300',
         emptyText: isAurora ? 'text-white/45' : 'text-slate-400',
         filterPill: isAurora
             ? 'bg-white/[0.09] border-white/[0.18] backdrop-blur-2xl shadow-[0_2px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
             : isCompat
             ? 'bg-white border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
-            : 'bg-white/80 border-slate-200/70 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]',
+            : 'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
         filterDivider: isAurora ? 'bg-white/[0.14]' : 'bg-slate-100',
         filterBtn: isAurora ? 'text-white/55 hover:text-white/85 hover:bg-white/[0.09]' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
         pageSizeActive: 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
@@ -1399,19 +1401,19 @@ export default function TabCatalogo({
                     <table className="min-w-full">
                         <tbody>
                             {Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i} className={i > 0 ? tk.rowBorder : ''}>
+                                <tr key={i} className={`border-l-[3px] border-l-transparent ${i > 0 ? tk.rowBorder : ''}`}>
                                     <td className="px-4 py-3.5">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl animate-pulse shrink-0 ${tk.skeleton}`} />
+                                        <div className="flex items-center gap-3.5">
+                                            <div className={`w-11 h-11 rounded-2xl animate-pulse shrink-0 ${tk.skeleton}`} />
                                             <div className="space-y-2">
-                                                <div className={`h-3 w-40 rounded-full animate-pulse ${tk.skeleton}`} />
-                                                <div className={`h-2.5 w-24 rounded-full animate-pulse ${tk.skeleton}`} />
+                                                <div className={`h-[13px] w-44 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${140 + (i * 23) % 60}px` }} />
+                                                <div className={`h-2.5 w-24 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${60 + (i * 17) % 40}px` }} />
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-3 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden lg:table-cell"><div className={`h-3 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-5 w-14 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-3 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${80 + (i * 13) % 50}px` }} /></td>
+                                    <td className="px-4 py-3.5 hidden lg:table-cell"><div className={`h-5 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-6 w-14 rounded-full animate-pulse ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 w-10" />
                                 </tr>
                             ))}
@@ -1450,25 +1452,25 @@ export default function TabCatalogo({
                                                 onClick={() => toggleRow(p.id)}
                                                 onMouseEnter={() => prefetchRow(p.id)}
                                                 onMouseLeave={cancelPrefetch}
-                                                className={`cursor-pointer transition-colors duration-150 ${tk.rowBorder} ${
+                                                className={`cursor-pointer transition-all duration-150 border-l-[3px] ${tk.rowBorder} ${
                                                     isExpanded   ? tk.rowExpanded :
-                                                    isInactive   ? `${tk.rowHover} opacity-50` :
-                                                    tk.rowHover
+                                                    isInactive   ? `${tk.rowHover} opacity-50 border-l-transparent` :
+                                                    `${tk.rowHover} border-l-transparent`
                                                 }`}>
 
                                                 {/* Producto */}
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex items-center gap-3.5">
                                                         {p.foto_url ? (
-                                                            <img src={p.foto_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                                                            <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
                                                         ) : (
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}>
-                                                                <Package size={14} className={tk.avatarIcon} />
+                                                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}>
+                                                                <Package size={16} className={tk.avatarIcon} />
                                                             </div>
                                                         )}
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className={`text-[13px] font-bold leading-tight ${isInactive ? tk.textInactive : tk.textStrong}`}>
+                                                                <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>
                                                                     {p.nombre}
                                                                 </span>
                                                                 {mInfo && (
@@ -1494,12 +1496,12 @@ export default function TabCatalogo({
                                                 </td>
 
                                                 {/* Laboratorio */}
-                                                <td className="px-4 py-3 hidden md:table-cell">
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
                                                     <span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span>
                                                 </td>
 
                                                 {/* Categoría */}
-                                                <td className="px-4 py-3 hidden lg:table-cell">
+                                                <td className="px-4 py-3.5 hidden lg:table-cell">
                                                     <div className="flex flex-wrap gap-1">
                                                         {p.tipo_medicamento && (
                                                             <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border ${isAurora ? 'bg-blue-500/[0.18] text-blue-300 border-blue-400/[0.30]' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
@@ -1523,7 +1525,7 @@ export default function TabCatalogo({
                                                 </td>
 
                                                 {/* Estado */}
-                                                <td className="px-4 py-3 hidden sm:table-cell">
+                                                <td className="px-4 py-3.5 hidden sm:table-cell">
                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${
                                                         p.activo
                                                             ? isAurora
@@ -1538,7 +1540,7 @@ export default function TabCatalogo({
                                                 </td>
 
                                                 {/* Chevron */}
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-3.5">
                                                     {isLoadingThis
                                                         ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
                                                         : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? `rotate-180 ${isAurora ? 'text-blue-300' : 'text-blue-400'}` : tk.textMid}`} />

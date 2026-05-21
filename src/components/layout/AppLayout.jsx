@@ -4,7 +4,7 @@ import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, BellRing, LayoutDashboard,
+    Home, Bell, FolderOpen, BellRing, LayoutDashboard, Search,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -106,6 +106,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const itemRefs = useRef(new Map());
     const [pill, setPill] = useState({ top: 0, height: 44, show: false });
     const lastGoodPillRef = useRef({ top: 0, height: 44, show: false });
+
+    // Aurora command palette (⌘K)
+    const [isCommandOpen, setIsCommandOpen] = useState(false);
+    const [commandQuery, setCommandQuery] = useState('');
+    const commandInputRef = useRef(null);
 
     // Current active path segment
     const activePath = location.pathname;
@@ -335,6 +340,26 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => { ro.disconnect(); window.removeEventListener('resize', recomputePill); };
     }, []);
 
+    // ⌘K / Ctrl+K → open Aurora command palette
+    useEffect(() => {
+        const handler = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                if (isAurora) setIsCommandOpen(prev => !prev);
+            }
+            if (e.key === 'Escape') setIsCommandOpen(false);
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [isAurora]);
+
+    useEffect(() => {
+        if (isCommandOpen) {
+            setCommandQuery('');
+            setTimeout(() => commandInputRef.current?.focus(), 60);
+        }
+    }, [isCommandOpen]);
+
     // Bottom tabs: only for users who have ONLY self-service modules
     const allModuleKeys = useMemo(() =>
         visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon).map(m => m.key)),
@@ -343,6 +368,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const selfItems = useMemo(() =>
         visibleGroups.flatMap(g => g.visibleModules.filter(m => SELF_KEYS.includes(m.key))),
     [visibleGroups]);
+
+    const commandResults = useMemo(() => {
+        const all = visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon));
+        if (!commandQuery.trim()) return all;
+        const q = commandQuery.toLowerCase();
+        return all.filter(m => m.label.toLowerCase().includes(q));
+    }, [commandQuery, visibleGroups]);
 
     // ── Render a single nav item button ──
     const renderNavItem = (module, indent = false) => {
@@ -674,6 +706,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         )}
                     </div>
 
+                    {/* ── Aurora: ⌘K search bar (expanded) ── */}
+                    {isAurora && isExpanded && (
+                        <div className="relative z-10 px-3 pb-2 flex-shrink-0">
+                            <button
+                                onClick={() => setIsCommandOpen(true)}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-[0.9rem] bg-white/[0.05] border border-white/[0.09] hover:bg-white/[0.09] hover:border-white/[0.16] transition-all text-left group"
+                                type="button"
+                            >
+                                <Search size={13} strokeWidth={1.8} className="text-white/35 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+                                <span className="flex-1 text-[12px] text-white/30 group-hover:text-white/50 transition-colors">Buscar módulo...</span>
+                                <kbd className="text-[9px] text-white/20 group-hover:text-white/35 font-mono bg-white/5 border border-white/10 rounded px-1.5 py-0.5 transition-colors">⌘K</kbd>
+                            </button>
+                        </div>
+                    )}
+
                     {/* ── Nav ── */}
                     <nav ref={navRef} className={`relative z-10 flex-1 overflow-y-auto scrollbar-hide ${isLiquid ? 'flex flex-col gap-2.5' : 'px-2 py-3 space-y-0.5'}`}>
                         {/* Active pill — hidden for Liquid (glass cards provide visual separation) */}
@@ -782,6 +829,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 ? 'bg-white/[0.45] backdrop-blur-[14px] border border-white/[0.78] text-slate-400 hover:text-slate-700 hover:bg-white/70 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.90),0_4px_12px_rgba(0,82,204,0.08)]'
                                                 : 'bg-white/6 border border-white/10 text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]'}`}>
                                         <ChevronRight size={17} strokeWidth={2} />
+                                    </button>
+                                )}
+                                {/* Aurora compact: ⌘K search button */}
+                                {isAurora && (
+                                    <button
+                                        onClick={() => setIsCommandOpen(true)}
+                                        title="Buscar (⌘K)"
+                                        className="w-10 h-10 rounded-[1rem] flex items-center justify-center transition-all hover:scale-105 active:scale-[0.97] bg-white/6 border border-white/10 text-white/40 hover:text-white/80 hover:bg-white/12 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                                        type="button"
+                                    >
+                                        <Search size={16} strokeWidth={1.8} />
                                     </button>
                                 )}
                                 {hasPermission('kiosk_pin', 'can_view') && (
@@ -971,6 +1029,80 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         })}
                     </div>
                 </nav>
+            )}
+
+            {/* ── Aurora Command Palette (⌘K) ── */}
+            {isAurora && isCommandOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-start justify-center pt-[14vh] px-4"
+                    onClick={() => setIsCommandOpen(false)}
+                >
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-[#030B1C]/65 backdrop-blur-md" />
+
+                    {/* Panel */}
+                    <div
+                        className="relative w-full max-w-[520px] rounded-[1.5rem] bg-[#0A1628]/92 backdrop-blur-3xl border border-white/[0.13] shadow-[0_48px_120px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.10)] overflow-hidden animate-in fade-in zoom-in-[0.97] slide-in-from-top-4 duration-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Sheen */}
+                        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
+                        <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/25 via-white/8 to-transparent pointer-events-none" />
+
+                        {/* Search input row */}
+                        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
+                            <Search size={16} className="text-white/40 flex-shrink-0" strokeWidth={1.8} />
+                            <input
+                                ref={commandInputRef}
+                                value={commandQuery}
+                                onChange={e => setCommandQuery(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' && commandResults.length > 0) {
+                                        navigate(commandResults[0].path);
+                                        setIsCommandOpen(false);
+                                    }
+                                }}
+                                placeholder="Buscar módulo..."
+                                className="flex-1 bg-transparent text-[14px] text-white placeholder-white/30 outline-none font-medium"
+                                spellCheck={false}
+                            />
+                            <kbd className="text-[10px] text-white/20 font-mono border border-white/[0.10] rounded px-1.5 py-0.5 bg-white/[0.04]">ESC</kbd>
+                        </div>
+
+                        {/* Results */}
+                        <div className="max-h-[380px] overflow-y-auto py-1.5 scrollbar-hide">
+                            {commandResults.length === 0 ? (
+                                <div className="px-4 py-10 text-center text-white/25 text-[13px]">Sin resultados</div>
+                            ) : (
+                                commandResults.map(m => {
+                                    const MIcon = m.icon;
+                                    const pathSeg = m.path.replace(/^\//, '').split('/')[0];
+                                    const isActive = activeId === pathSeg || activePath.startsWith(m.path + '/');
+                                    return (
+                                        <button
+                                            key={m.key}
+                                            onClick={() => { navigate(m.path); setIsCommandOpen(false); }}
+                                            className={`w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-100 text-left group hover:bg-white/[0.06] mx-1.5 rounded-[0.85rem] ${isActive ? 'bg-[#1A3560]/60' : ''}`}
+                                            style={{ width: 'calc(100% - 12px)' }}
+                                            type="button"
+                                        >
+                                            <div className={`w-8 h-8 rounded-[0.65rem] flex items-center justify-center flex-shrink-0 transition-all
+                                                ${isActive ? 'bg-[#4D94FF]/25' : 'bg-white/[0.08] group-hover:bg-white/[0.14]'}`}>
+                                                <MIcon size={15} strokeWidth={isActive ? 2 : 1.5}
+                                                    className={isActive ? 'text-[#7DB8FF]' : 'text-white/50 group-hover:text-white/80'} />
+                                            </div>
+                                            <span className={`text-[13px] font-medium flex-1 whitespace-nowrap transition-colors
+                                                ${isActive ? 'text-white' : 'text-white/55 group-hover:text-white/85'}`}>
+                                                {m.label}
+                                            </span>
+                                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* ── Flyout tooltip (desktop compact mode only) ── */}

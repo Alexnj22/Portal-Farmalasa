@@ -7,7 +7,7 @@ const BLOCKING_EVENT_TYPES = ['VACATION', 'DISABILITY', 'PERMIT'];
 //   1. Talento Humano (role_id = 11) — if any are available (not on vacation/disability/permit today)
 //   2. Fallback: ADMIN + SUPERADMIN system_role AND Supervisor system_role
 const TH_ROLE_ID = 11;
-const FALLBACK_SYSTEM_ROLES = ['ADMIN', 'SUPERADMIN', 'SUPERVISOR'];
+const FALLBACK_SYSTEM_ROLES = ['ADMIN', 'SUPERVISOR'];
 
 /** Next Monday from a given Saturday (CST) */
 function nextMonday(saturdayDate: Date): Date {

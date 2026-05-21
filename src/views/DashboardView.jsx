@@ -860,8 +860,12 @@ const DashboardView = ({ openModal }) => {
     const ffin = localDateStr();
     setTopProdLoading(true);
     supabase.rpc('get_product_sales_agg', { p_fini: fini, p_ffin: ffin })
-      .range(0, 9)
-      .then(({ data }) => { setTopProductos(data || []); setTopProdLoading(false); });
+      .limit(10)
+      .then(({ data, error }) => {
+        if (error) console.error('[top_productos]', error);
+        setTopProductos(data || []);
+        setTopProdLoading(false);
+      });
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Widget helpers ─────────────────────────────────────────────────────────

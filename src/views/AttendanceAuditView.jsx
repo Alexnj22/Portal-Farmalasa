@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import {
-  AlertTriangle, Calendar, CheckCircle, Utensils, LogIn, LogOut, Baby,
-  ToggleRight, ToggleLeft, X, Building2, Edit3, ShieldAlert, CheckCircle2,
-  Trash2, Clock, ChevronLeft, ChevronRight, Bot,
+  AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
+  Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
+  Baby, Coffee,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -10,22 +11,35 @@ import { useToastStore } from "../store/toastStore";
 import { supabase } from '../supabaseClient';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ModalShell from "../components/common/ModalShell";
-import ConfirmModal from "../components/common/ConfirmModal";
 import GlassViewLayout from "../components/GlassViewLayout";
-import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
+// ── Constants ─────────────────────────────────────────────────────────────────
 const PUNCH_TYPE_LABELS = {
   IN: 'Entrada', IN_EARLY: 'Entrada Anticipada', IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
-  IN_EXTRA: 'Entrada Extra', IN_RETURN: 'Regreso', IN_LUNCH: 'Regreso Almuerzo',
-  IN_LACTATION: 'Regreso Lactancia', OUT: 'Salida', OUT_LATE: 'Salida con Overtime',
-  OUT_EARLY: 'Salida Anticipada', OUT_LUNCH: 'Salida Almuerzo', OUT_LACTATION: 'Salida Lactancia',
+  IN_EXTRA: 'Entrada Extra', IN_RETURN: 'Regreso de Permiso',
+  IN_LUNCH: 'Regreso Almuerzo', IN_LACTATION: 'Regreso Lactancia',
+  OUT: 'Salida', OUT_LATE: 'Salida con Overtime', OUT_EARLY: 'Salida Anticipada',
+  OUT_LUNCH: 'Salida Almuerzo', OUT_LACTATION: 'Salida Lactancia',
   OUT_BUSINESS: 'Gestión Externa', OUT_EXTRA: 'Salida Extra',
 };
+const PUNCH_TYPE_OPTIONS = [
+  { value: 'IN',            label: 'Entrada' },
+  { value: 'OUT',           label: 'Salida' },
+  { value: 'OUT_LUNCH',     label: 'Salida Almuerzo' },
+  { value: 'IN_LUNCH',      label: 'Regreso Almuerzo' },
+  { value: 'OUT_LACTATION', label: 'Salida Lactancia' },
+  { value: 'IN_LACTATION',  label: 'Regreso Lactancia' },
+  { value: 'OUT_EARLY',     label: 'Salida Anticipada' },
+  { value: 'OUT_BUSINESS',  label: 'Gestión Externa' },
+];
+const IN_TYPES  = new Set(['IN','IN_EARLY','IN_AFTER_SHIFT','IN_EXTRA','IN_RETURN','PUNCH_IN']);
+const OUT_TYPES = new Set(['OUT','OUT_LATE','OUT_EARLY','OUT_EXTRA','OUT_BUSINESS','PUNCH_OUT']);
+const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAY_NAMES_FULL  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
-// ── Timezone helpers ─────────────────────────────────────────────────────────
+// ── Timezone helpers ──────────────────────────────────────────────────────────
 function getMondayOfCurrentWeek() {
-  const now = new Date();
-  const cst = new Date(now.getTime() - 6 * 3600000);
+  const cst = new Date(new Date().getTime() - 6 * 3600000);
   cst.setUTCDate(cst.getUTCDate() - (cst.getUTCDay() + 6) % 7);
   return cst.toISOString().slice(0, 10);
 }
@@ -37,124 +51,646 @@ function buildCSTDate(dateStr, timeStr) {
   if (!dateStr || !timeStr) return null;
   return new Date(`${dateStr}T${timeStr}:00-06:00`);
 }
-function toTimeCSTStr(date) {
-  if (!date) return "";
-  const cst = new Date(date.getTime() - 6 * 3600000);
-  return `${String(cst.getUTCHours()).padStart(2,"0")}:${String(cst.getUTCMinutes()).padStart(2,"0")}`;
+function fmtTimeCSTStr(isoStr) {
+  if (!isoStr) return '–';
+  const d = new Date(new Date(isoStr).getTime() - 6 * 3600000);
+  const h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${String(h % 12 || 12).padStart(2,'0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
 }
+function formatTime12h(t) {
+  if (!t) return '–';
+  let [h, m] = t.split(':'); h = parseInt(h, 10);
+  return `${String(h % 12 || 12).padStart(2,'0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+function toTime24(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(new Date(isoStr).getTime() - 6 * 3600000);
+  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+}
+function isEditedPunch(p) { return !!(p.details?.manualAudit || p.details?.editedBy || p.details?.auditedByName); }
+function isAutoPunch(p)   { return !!(p.details?.autoInserted); }
+function isPendingPunch(p){ return !!(p.details?.pendingHRReview && !p.details?.autoInserted); }
 
-// ── Mock data (demo / prueba) ────────────────────────────────────────────────
-// Calcula "ayer" en CST
-function getYesterdayCST() {
-  const cst = new Date(new Date().getTime() - 6 * 3600000);
-  cst.setUTCDate(cst.getUTCDate() - 1);
-  return cst.toISOString().slice(0, 10);
-}
-const MOCK_SHIFT = { id: 999, name: 'Apertura', start_time: '08:00:00', end_time: '17:00:00', start: '08:00', end: '17:00' };
+// ── Mock data ─────────────────────────────────────────────────────────────────
 function buildMockData() {
-  const ayer = getYesterdayCST();
-  // dayKey para ayer (0=Dom→7)
-  const dow = new Date(ayer + 'T12:00:00Z').getUTCDay();
-  const dayKey = dow === 0 ? 7 : dow;
-  const sched = { [dayKey]: { shiftId: '999', lunchStart: '12:00', hasLunch: true } };
-
+  const monday = getMondayOfCurrentWeek();
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() + i);
+    return d.toISOString().slice(0, 10);
+  });
+  const [mon, tue, wed, thu, fri] = dates;
+  const SHIFT = { id: 999, name: 'Apertura', start_time: '08:00:00', end_time: '17:00:00', start: '08:00', end: '17:00' };
+  const mkDay = (ex = {}) => ({ shiftId: '999', lunchStart: '12:00', hasLunch: true, ...ex });
+  const sched = { 1: mkDay(), 2: mkDay(), 3: mkDay(), 4: mkDay(), 5: mkDay(), 6: { isOff: true }, 0: { isOff: true } };
   return {
+    branches: [{ id: 1, name: 'Sucursal Centro' }, { id: 2, name: 'Sucursal Norte' }],
+    shifts: [SHIFT],
     employees: [
       {
-        id: 'DEMO_1', name: 'Ana García', branchId: 2,
+        id: 'DEMO_1', name: 'Ana García', branchId: 1, role: 'Cajera',
         weeklySchedule: sched,
         attendance: [
-          // Entró 08:10 CST, olvidó salida a almuerzo, regreso almuerzo y salida
-          { id: 'dp1', timestamp: `${ayer}T14:10:00Z`, type: 'IN', details: {} },
+          // Lunes: completo OK, entrada tarde
+          { id: 'd1a', timestamp: `${mon}T14:08:00Z`, type: 'IN',        details: {}, branch_id: 1 },
+          { id: 'd1b', timestamp: `${mon}T18:06:00Z`, type: 'OUT_LUNCH', details: {}, branch_id: 1 },
+          { id: 'd1c', timestamp: `${mon}T19:05:00Z`, type: 'IN_LUNCH',  details: {}, branch_id: 1 },
+          { id: 'd1d', timestamp: `${mon}T23:05:00Z`, type: 'OUT',       details: {}, branch_id: 1 },
+          // Martes: solo entrada → inconsistencia
+          { id: 'd1e', timestamp: `${tue}T14:10:00Z`, type: 'IN',        details: {}, branch_id: 1 },
         ],
       },
       {
-        id: 'DEMO_2', name: 'Carlos Mejía', branchId: 2,
+        id: 'DEMO_2', name: 'Carlos Mejía', branchId: 1, role: 'Bodeguero',
         weeklySchedule: sched,
         attendance: [
-          { id: 'dp2', timestamp: `${ayer}T14:08:00Z`, type: 'IN', details: {} },
-          // Salida temprana sin PIN supervisor
-          { id: 'dp3', timestamp: `${ayer}T19:30:00Z`, type: 'OUT_EARLY', details: { pendingHRReview: true, skipReason: 'Empleado salió sin autorización de supervisor' } },
+          // Lunes: salida corregida manualmente
+          { id: 'd2a', timestamp: `${mon}T14:09:00Z`, type: 'IN',        details: {}, branch_id: 1 },
+          { id: 'd2b', timestamp: `${mon}T18:07:00Z`, type: 'OUT_LUNCH', details: {}, branch_id: 1 },
+          { id: 'd2c', timestamp: `${mon}T19:06:00Z`, type: 'IN_LUNCH',  details: {}, branch_id: 1 },
+          { id: 'd2d', timestamp: `${mon}T23:02:00Z`, type: 'OUT',
+            details: { manualAudit: true, auditedByName: 'Supervisora Gómez', reason: 'Salida ajustada por cierre de caja tarde' }, branch_id: 1 },
+          // Miércoles: OUT_EARLY pendiente TH
+          { id: 'd2e', timestamp: `${wed}T14:07:00Z`, type: 'IN',        details: {}, branch_id: 1 },
+          { id: 'd2f', timestamp: `${wed}T19:30:00Z`, type: 'OUT_EARLY',
+            details: { pendingHRReview: true, skipReason: 'Empleado salió sin autorización de supervisor' }, branch_id: 1 },
         ],
       },
       {
-        id: 'DEMO_3', name: 'María López', branchId: 2,
+        id: 'DEMO_3', name: 'María López', branchId: 2, role: 'Asistente Farmacéutica',
         weeklySchedule: sched,
         attendance: [
-          // Solo entrada — el consolidador generó salida automática
-          { id: 'dp4', timestamp: `${ayer}T14:05:00Z`, type: 'IN', details: {} },
-          { id: 'dp5', timestamp: `${ayer}T23:00:00Z`, type: 'OUT', details: { autoInserted: true, pendingHRReview: true, reason: 'Salida no registrada — generada automáticamente' } },
+          // Jueves: solo entrada, salida auto-generada
+          { id: 'd3a', timestamp: `${thu}T14:05:00Z`, type: 'IN',  details: {}, branch_id: 2 },
+          { id: 'd3b', timestamp: `${thu}T23:00:00Z`, type: 'OUT',
+            details: { autoInserted: true, pendingHRReview: true, reason: 'Salida no registrada — generada automáticamente' }, branch_id: 2 },
+        ],
+      },
+      {
+        id: 'DEMO_4', name: 'Pedro Jiménez', branchId: 2, role: 'Auxiliar',
+        weeklySchedule: sched,
+        attendance: [
+          // Viernes: marcó en Sucursal Centro (cross-branch)
+          { id: 'd4a', timestamp: `${fri}T14:12:00Z`, type: 'IN',  details: {}, branch_id: 1 },
+          { id: 'd4b', timestamp: `${fri}T23:03:00Z`, type: 'OUT', details: {}, branch_id: 1 },
         ],
       },
     ],
-    shifts: [MOCK_SHIFT],
-    autoPunched: [
-      { id: 'ATS_1', employee_id: 'DEMO_3', work_date: ayer, actual_start_time: `${ayer}T14:05:00Z`, actual_end_time: `${ayer}T23:00:00Z`, regular_hours: 9, status: 'AUTO_PUNCHED' },
+    timesheets: [
+      { id:'ts1', employee_id:'DEMO_1', work_date:mon, regular_hours:8.0, overtime_hours:0, late_minutes:8,  status:'PENDING',     actual_start_time:`${mon}T14:08:00Z`, actual_end_time:`${mon}T23:05:00Z` },
+      { id:'ts2', employee_id:'DEMO_2', work_date:mon, regular_hours:8.0, overtime_hours:0, late_minutes:9,  status:'PENDING',     actual_start_time:`${mon}T14:09:00Z`, actual_end_time:`${mon}T23:02:00Z` },
+      { id:'ts3', employee_id:'DEMO_3', work_date:thu, regular_hours:9.0, overtime_hours:0, late_minutes:0,  status:'AUTO_PUNCHED',actual_start_time:`${thu}T14:05:00Z`, actual_end_time:`${thu}T23:00:00Z` },
+      { id:'ts4', employee_id:'DEMO_4', work_date:fri, regular_hours:8.0, overtime_hours:0, late_minutes:12, status:'PENDING',     actual_start_time:`${fri}T14:12:00Z`, actual_end_time:`${fri}T23:03:00Z` },
     ],
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Day analysis ──────────────────────────────────────────────────────────────
+function getExpectedPunches(dateStr, shift, dayConfig) {
+  if (!shift) return [];
+  const shiftStart = buildCSTDate(dateStr, shift.start_time?.substring(0,5) || shift.start);
+  const shiftEnd   = buildCSTDate(dateStr, shift.end_time?.substring(0,5)   || shift.end);
+  const lunchStart = dayConfig?.lunchStart ? buildCSTDate(dateStr, dayConfig.lunchStart) : null;
+  const lunchEnd   = lunchStart ? new Date(lunchStart.getTime() + 3600000) : null;
+  const result = [{ type:'IN', label:'Entrada', expected: shiftStart }];
+  if (lunchStart) {
+    result.push({ type:'OUT_LUNCH', label:'Salida Almuerzo', expected: lunchStart });
+    result.push({ type:'IN_LUNCH',  label:'Regreso Almuerzo', expected: lunchEnd });
+  }
+  result.push({ type:'OUT', label:'Salida', expected: shiftEnd });
+  return result;
+}
 
+// ── DayCorrectionModal ────────────────────────────────────────────────────────
+function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, dayConfig, isDemoMode, onSave, user, branchNameById }) {
+  const [newType, setNewType] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [reason,  setReason]  = useState('');
+  const [saving,  setSaving]  = useState(false);
+
+  useEffect(() => { if (isOpen) { setNewType(''); setNewTime(''); setReason(''); } }, [isOpen]);
+
+  if (!isOpen || !emp || !dateStr) return null;
+
+  const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
+  const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${new Date(dateStr + 'T12:00:00Z').toLocaleDateString('es-SV', { month: 'long' })}`;
+
+  const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
+  const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
+
+  const handleAdd = async () => {
+    if (!newType || !newTime || !reason.trim()) return;
+    setSaving(true);
+    try {
+      await onSave({ type: newType, time: newTime, reason: reason.trim() });
+      setNewType(''); setNewTime(''); setReason('');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <ModalShell isOpen={isOpen} onClose={onClose} title={`Corregir — ${fmtDia}`} maxWidth="max-w-lg">
+      <div className="space-y-4 px-1">
+
+        {/* Horario planificado */}
+        {shift && (
+          <div className="flex items-start gap-3 bg-[#0052CC]/[0.07] border border-[#0052CC]/20 rounded-2xl px-4 py-3">
+            <Calendar size={16} className="text-[#0052CC] shrink-0 mt-0.5" strokeWidth={2.5} />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] mb-0.5">Horario planificado</p>
+              <p className="text-[13px] font-black text-slate-800">
+                {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
+              </p>
+              {dayConfig?.lunchStart && (
+                <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                  Almuerzo: {formatTime12h(dayConfig.lunchStart)} – {(() => {
+                    const [h, m] = dayConfig.lunchStart.split(':');
+                    return formatTime12h(`${String(parseInt(h,10)+1).padStart(2,'0')}:${m}`);
+                  })()}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Marcajes actuales */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Marcajes del día</p>
+          {dayPunches.length === 0 ? (
+            <p className="text-[12px] text-slate-400 font-bold px-1">Sin marcajes registrados</p>
+          ) : (
+            <div className="space-y-1.5">
+              {dayPunches.map(p => (
+                <div key={p.id} className="flex items-center gap-3 bg-white/70 backdrop-blur-sm border border-white/60 rounded-2xl px-3.5 py-2.5 shadow-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-black text-slate-800">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
+                    <p className="text-[11px] font-bold text-slate-500">{fmtTimeCSTStr(p.timestamp)}</p>
+                    {p.branch_id && branchNameById.get(String(p.branch_id)) && p.branch_id !== emp.branchId && (
+                      <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1 mt-0.5">
+                        <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.branch_id))}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isAutoPunch(p)   && <span className="text-[8px] font-black uppercase tracking-widest bg-violet-100 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full">Auto</span>}
+                    {isPendingPunch(p) && <span className="text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
+                    {isEditedPunch(p) && <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full">Editado</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Agregar marcaje */}
+        <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-4 space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+            <Plus size={11} strokeWidth={3} /> Agregar marcaje
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <LiquidSelect
+              value={newType} onChange={setNewType}
+              options={PUNCH_TYPE_OPTIONS} placeholder="Tipo" compact clearable={false}
+            />
+            <input
+              type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+              className="bg-white/80 backdrop-blur-sm border border-black/[0.09] rounded-2xl px-3 py-2 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
+            />
+          </div>
+          <textarea
+            value={reason} onChange={e => setReason(e.target.value)}
+            placeholder="Razón de la corrección (obligatorio)"
+            rows={2}
+            className="w-full bg-white/80 backdrop-blur-sm border border-black/[0.09] rounded-2xl px-3 py-2.5 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+              Corregido por: <span className="text-slate-600">{user?.name || user?.email || '—'}</span>
+            </p>
+            <button
+              onClick={handleAdd} disabled={saving || !newType || !newTime || !reason.trim()}
+              className="flex items-center gap-2 px-4 py-2 bg-[#0052CC] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#003fa3] transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            >
+              {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
+            </button>
+          </div>
+        </div>
+
+        {isDemoMode && (
+          <p className="text-[10px] text-amber-600 font-bold text-center">Modo demo — guardado simulado</p>
+        )}
+      </div>
+    </ModalShell>
+  );
+}
+
+// ── DayCard ───────────────────────────────────────────────────────────────────
+function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branchNameById, onCorrect }) {
+  const now = new Date();
+  const dayD   = new Date(dateStr + 'T12:00:00Z');
+  const dow    = dayD.getUTCDay();
+  const isFuture   = new Date(`${dateStr}T23:59:59-06:00`) > now;
+  const isToday    = getCSTDateStr(now) === dateStr;
+
+  // Schedule for this day
+  const dayKey    = dow === 0 ? 7 : dow;
+  const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+  const isOff     = !dayConfig || dayConfig.isOff;
+  const shiftId   = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
+  const shift     = shiftId ? shiftById.get(shiftId) : null;
+  const customStart = dayConfig?.customStart || null;
+  const customEnd   = dayConfig?.customEnd   || null;
+  const shiftStart  = customStart || shift?.start_time?.substring(0,5) || shift?.start;
+  const shiftEnd    = customEnd   || shift?.end_time?.substring(0,5)   || shift?.end;
+
+  // Punches for this day
+  const dayPunches = useMemo(() =>
+    (emp.attendance || [])
+      .filter(p => getCSTDateStr(p.timestamp) === dateStr)
+      .sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)),
+    [emp.attendance, dateStr]
+  );
+
+  const entryPunch = dayPunches.find(p => IN_TYPES.has(p.type));
+  const exitPunch  = [...dayPunches].reverse().find(p => OUT_TYPES.has(p.type));
+  const lunchOut   = dayPunches.find(p => p.type === 'OUT_LUNCH');
+  const lunchIn    = dayPunches.find(p => p.type === 'IN_LUNCH');
+
+  // Timesheet for this day
+  const ts = weekTimesheets.find(t => String(t.employee_id) === String(emp.id) && t.work_date === dateStr);
+
+  // Status flags
+  const hasInconsistency = useMemo(() => {
+    if (isOff || isFuture || !entryPunch) return false;
+    const expected = getExpectedPunches(dateStr, shift, dayConfig);
+    const punched  = new Set(dayPunches.map(p => p.type));
+    return expected.some(ep => {
+      if (ep.type === 'IN')  return !dayPunches.some(p => IN_TYPES.has(p.type));
+      if (ep.type === 'OUT') return !dayPunches.some(p => OUT_TYPES.has(p.type));
+      return !punched.has(ep.type);
+    }) && new Date(`${dateStr}T23:59:59-06:00`) < now;
+  }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, entryPunch, now]);
+
+  const inconsistencies = useMemo(() => {
+    if (isOff || isFuture || !shift) return [];
+    const expected = getExpectedPunches(dateStr, shift, dayConfig);
+    const punched  = new Set(dayPunches.map(p => p.type));
+    return expected.filter(ep => {
+      if (ep.type === 'IN')  return !dayPunches.some(p => IN_TYPES.has(p.type));
+      if (ep.type === 'OUT') return !dayPunches.some(p => OUT_TYPES.has(p.type));
+      return !punched.has(ep.type);
+    }).filter(ep => ep.expected && ep.expected < now);
+  }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, now]);
+
+  const isAutoDay   = !!exitPunch && isAutoPunch(exitPunch);
+  const isPendDay   = dayPunches.some(p => isPendingPunch(p));
+  const isEditedDay = dayPunches.some(p => isEditedPunch(p));
+  const editedInfo  = dayPunches.find(p => isEditedPunch(p));
+
+  // Cross-branch detection
+  const crossBranchPunch = dayPunches.find(p => p.branch_id && String(p.branch_id) !== String(homeBranchId));
+  const crossBranchName  = crossBranchPunch ? (branchNameById.get(String(crossBranchPunch.branch_id)) || 'otra sucursal') : null;
+
+  // Late minutes (prefer timesheet, else compute)
+  const lateMin = ts?.late_minutes || ((() => {
+    if (!entryPunch || !shiftStart) return 0;
+    const exp = buildCSTDate(dateStr, shiftStart);
+    if (!exp) return 0;
+    return Math.max(0, Math.floor((new Date(entryPunch.timestamp).getTime() - exp.getTime()) / 60000));
+  })());
+
+  const cardBg = isToday
+    ? 'bg-[#0052CC]/[0.05] border-[#0052CC]/25'
+    : 'bg-white/55 backdrop-blur-xl border-white/60';
+
+  return (
+    <div className={`rounded-[1.75rem] border p-4 transition-all ${cardBg}`}>
+      {/* Header row */}
+      <div className="flex items-start gap-3">
+        {/* Date pill */}
+        <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-[#0052CC] text-white' : isOff ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+          <span className="text-[8px] font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
+          <span className="text-[16px] font-black leading-tight">{dayD.getUTCDate()}</span>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+            <span className="text-[12px] font-black text-slate-800">{DAY_NAMES_FULL[dow]}</span>
+            {isToday && <span className="text-[8px] font-black uppercase tracking-widest bg-[#0052CC] text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
+            {isOff && <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>}
+            {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 px-1">Próximo</span>}
+            {!isOff && !isFuture && inconsistencies.length > 0 && (
+              <span className="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
+                {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
+              </span>
+            )}
+            {isAutoDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-violet-100 text-violet-600 border border-violet-200 px-2 py-0.5 rounded-full">Auto-marcado</span>}
+            {isPendDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">Pend. TH</span>}
+            {isEditedDay && <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
+            {crossBranchName && (
+              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <ArrowRightLeft size={8} strokeWidth={2.5} /> Apoyo {crossBranchName}
+              </span>
+            )}
+          </div>
+          {!isOff && shift && (
+            <p className="text-[10px] font-bold text-slate-400">
+              {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
+              {dayConfig?.lunchStart && <span> · Almuerzo {formatTime12h(dayConfig.lunchStart)}</span>}
+            </p>
+          )}
+        </div>
+
+        {/* Corregir button */}
+        {!isOff && !isFuture && (
+          <button
+            onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-slate-200/80 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/30 hover:bg-[#0052CC]/[0.04] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.96] shadow-sm"
+          >
+            <Edit3 size={11} strokeWidth={2.5} /> Corregir
+          </button>
+        )}
+      </div>
+
+      {/* Details section */}
+      {!isOff && !isFuture && (
+        <div className="mt-3 ml-14 space-y-2">
+          {/* Entry / Exit row */}
+          <div className="flex flex-wrap gap-4">
+            {/* Entrada */}
+            <div className="flex items-center gap-2">
+              <LogIn size={13} className={entryPunch ? 'text-emerald-500' : 'text-slate-300'} strokeWidth={2.5} />
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
+                {entryPunch ? (
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[13px] font-black text-slate-800">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
+                    {lateMin > 0 && <span className="text-[9px] font-black text-orange-500 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
+                    {isEditedPunch(entryPunch) && <span className="text-[8px] font-black text-emerald-500">✎</span>}
+                  </div>
+                ) : (
+                  <p className="text-[11px] font-black text-slate-300">—</p>
+                )}
+              </div>
+            </div>
+
+            {/* Salida */}
+            <div className="flex items-center gap-2">
+              <LogOut size={13} className={exitPunch ? 'text-slate-500' : 'text-slate-300'} strokeWidth={2.5} />
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Salida</p>
+                {exitPunch ? (
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[13px] font-black text-slate-800">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
+                    {isAutoPunch(exitPunch)  && <span className="text-[8px] font-black text-violet-500">Auto</span>}
+                    {isPendingPunch(exitPunch) && <span className="text-[8px] font-black text-amber-500">Pend.</span>}
+                    {isEditedPunch(exitPunch) && <span className="text-[8px] font-black text-emerald-500">✎</span>}
+                  </div>
+                ) : (
+                  <p className="text-[11px] font-black text-slate-300">—</p>
+                )}
+              </div>
+            </div>
+
+            {/* Almuerzo */}
+            {dayConfig?.hasLunch && (lunchOut || lunchIn) && (
+              <div className="flex items-center gap-2">
+                <Coffee size={13} className="text-orange-400" strokeWidth={2.5} />
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Almuerzo</p>
+                  <p className="text-[12px] font-black text-slate-700">
+                    {lunchOut ? fmtTimeCSTStr(lunchOut.timestamp) : '—'} → {lunchIn ? fmtTimeCSTStr(lunchIn.timestamp) : '—'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Horas */}
+            {ts && !ts.is_absent && (
+              <div className="flex items-center gap-2">
+                <Clock size={13} className="text-[#0052CC]/50" strokeWidth={2.5} />
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Horas</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[13px] font-black text-slate-800">{(ts.regular_hours||0).toFixed(1)}h</p>
+                    {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-violet-500">+{ts.overtime_hours.toFixed(1)}h OT</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Inconsistencies */}
+          {inconsistencies.length > 0 && (
+            <div className="bg-red-50/80 backdrop-blur-sm border border-red-100 rounded-xl px-3 py-2 flex flex-wrap gap-2">
+              {inconsistencies.map(inc => (
+                <span key={inc.type} className="text-[10px] font-bold text-red-600 flex items-center gap-1">
+                  ⚠ {inc.label} no registrada
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Edited by */}
+          {isEditedDay && editedInfo?.details?.auditedByName && (
+            <p className="text-[9px] font-bold text-emerald-600 flex items-center gap-1">
+              <Check size={9} strokeWidth={3} />
+              Editado por {editedInfo.details.auditedByName}
+              {editedInfo.details.reason && ` — "${editedInfo.details.reason}"`}
+            </p>
+          )}
+
+          {/* Auto-punch note */}
+          {isAutoDay && (
+            <p className="text-[9px] font-bold text-violet-500 flex items-center gap-1">
+              <Bot size={10} strokeWidth={2.5} />
+              Salida generada automáticamente — requiere verificación
+            </p>
+          )}
+
+          {/* Pending review note */}
+          {isPendDay && dayPunches.find(p => isPendingPunch(p))?.details?.skipReason && (
+            <p className="text-[9px] font-bold text-amber-600 flex items-center gap-1">
+              <ShieldAlert size={10} strokeWidth={2.5} />
+              {dayPunches.find(p => isPendingPunch(p)).details.skipReason}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Off day */}
+      {isOff && (
+        <div className="mt-2 ml-14 flex items-center gap-2 text-slate-300">
+          <Palmtree size={14} strokeWidth={1.5} />
+          <span className="text-[11px] font-bold">Día libre</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── EmployeeAuditRow ──────────────────────────────────────────────────────────
+function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNameById, onCorrect, isDemoMode }) {
+  const [expanded, setExpanded] = useState(false);
+  const now = new Date();
+
+  // Compute alert counts for this employee this week
+  const alerts = useMemo(() => {
+    let inconsistencies = 0, autoPunched = 0, pendingReview = 0, crossBranch = 0;
+    weekDates.forEach(dateStr => {
+      if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
+      const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
+      const dow     = new Date(dateStr + 'T12:00:00Z').getUTCDay();
+      const dayKey  = dow === 0 ? 7 : dow;
+      const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+      if (!dayConfig || dayConfig.isOff) return;
+      const shiftId = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
+      const shift   = shiftId ? shiftById.get(shiftId) : null;
+      if (!shift) return;
+
+      const hasEntry = punches.some(p => IN_TYPES.has(p.type));
+      const hasExit  = punches.some(p => OUT_TYPES.has(p.type));
+      if (!hasEntry) { inconsistencies++; return; }
+
+      const expected = getExpectedPunches(dateStr, shift, dayConfig);
+      const punched  = new Set(punches.map(p => p.type));
+      const missing  = expected.filter(ep => {
+        if (ep.type === 'IN')  return !hasEntry;
+        if (ep.type === 'OUT') return !hasExit;
+        return !punched.has(ep.type);
+      }).filter(ep => ep.expected && ep.expected < now);
+      if (missing.length > 0) inconsistencies++;
+
+      if (punches.some(p => isAutoPunch(p)))   autoPunched++;
+      if (punches.some(p => isPendingPunch(p))) pendingReview++;
+      if (punches.some(p => p.branch_id && String(p.branch_id) !== String(emp.branchId))) crossBranch++;
+    });
+    return { inconsistencies, autoPunched, pendingReview, crossBranch, total: inconsistencies + autoPunched + pendingReview };
+  }, [emp, weekDates, shiftById, now]);
+
+  const hasCrossBranch = alerts.crossBranch > 0;
+
+  return (
+    <div className="overflow-hidden">
+      {/* Employee row */}
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/40 transition-all active:bg-white/60"
+      >
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center font-black text-slate-500 text-[14px] overflow-hidden shrink-0 shadow-sm">
+          {emp.photo_url ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" /> : emp.name?.charAt(0) || '?'}
+        </div>
+
+        {/* Name + role */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[13px] font-black text-slate-900 leading-none">{emp.name}</p>
+            {hasCrossBranch && (
+              <span className="text-[8px] font-black uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+        </div>
+
+        {/* Alert badges */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {alerts.inconsistencies > 0 && (
+            <span className="text-[9px] font-black bg-red-500 text-white px-2 py-0.5 rounded-full">{alerts.inconsistencies}</span>
+          )}
+          {alerts.autoPunched > 0 && (
+            <span className="text-[9px] font-black bg-violet-500 text-white px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <Bot size={8} strokeWidth={2} />{alerts.autoPunched}
+            </span>
+          )}
+          {alerts.pendingReview > 0 && (
+            <span className="text-[9px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <ShieldAlert size={8} strokeWidth={2} />{alerts.pendingReview}
+            </span>
+          )}
+          {alerts.total === 0 && !isDemoMode && (
+            <CheckCircle size={14} className="text-emerald-400" strokeWidth={2} />
+          )}
+          {expanded ? <ChevronUp size={14} className="text-slate-400 ml-1" strokeWidth={2.5} /> : <ChevronDown size={14} className="text-slate-400 ml-1" strokeWidth={2.5} />}
+        </div>
+      </button>
+
+      {/* Week detail */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-2 border-t border-white/40 pt-3">
+          {weekDates.map(dateStr => (
+            <DayCard
+              key={dateStr}
+              dateStr={dateStr}
+              emp={emp}
+              shiftById={shiftById}
+              weekTimesheets={weekTimesheets}
+              homeBranchId={emp.branchId}
+              branchNameById={branchNameById}
+              onCorrect={onCorrect}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main view ─────────────────────────────────────────────────────────────────
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
   const { user, rolePerms } = useAuth();
   const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
   const showToast = useToastStore(s => s.showToast);
+  const {
+    employees: storeEmployees, branches: storeBranches, shifts: storeShifts,
+    appendAuditLog, loadAttendanceLastDays, insertAttendancePunchAt,
+  } = useStaff();
 
-  const { employees: storeEmployees, branches, setEmployees, shifts: storeShifts,
-          appendAuditLog, loadAttendanceLastDays, confirmAttendancePunch, insertAttendancePunchAt } = useStaff();
-
-  // ── Demo mode ────────────────────────────────────────────────────────────
+  // ── Demo mode ─────────────────────────────────────────────────────────────
   const mockData        = useMemo(() => buildMockData(), []);
   const [forceDemoMode, setForceDemoMode] = useState(false);
-  const isDemoMode      = !storeEmployees?.length || forceDemoMode;
-  const employees       = isDemoMode ? mockData.employees : (storeEmployees || []);
-  const shifts          = isDemoMode ? mockData.shifts     : (storeShifts    || []);
+  const isDemoMode = !storeEmployees?.length || forceDemoMode;
+  const employees  = isDemoMode ? mockData.employees : (storeEmployees || []);
+  const branches   = isDemoMode ? mockData.branches   : (storeBranches  || []);
+  const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || []);
 
-  // ── Estado ───────────────────────────────────────────────────────────────
-  const [filterBranch,         setFilterBranch]         = useState('');
-  const [selectedAudit,        setSelectedAudit]        = useState(null);
-  const [editForms,            setEditForms]            = useState({});
-  const [selectedWeekStart,    setSelectedWeekStart]    = useState(() => getMondayOfCurrentWeek());
-  const [autoPunchedTimesheets,setAutoPunchedTimesheets]= useState([]);
-  const [pendingReviewTarget,  setPendingReviewTarget]  = useState(null);
-  const [adjustTime,           setAdjustTime]           = useState('');
-  const [isConfirmingAction,   setIsConfirmingAction]   = useState(false);
-  const [isAbsentModalOpen,    setIsAbsentModalOpen]    = useState(false);
-
-  const didLoadRef = useRef(false);
-  useEffect(() => {
-    if (didLoadRef.current || isDemoMode) return;
-    didLoadRef.current = true;
-    loadAttendanceLastDays?.(30);
-  }, [loadAttendanceLastDays, isDemoMode]);
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [filterBranch,      setFilterBranch]      = useState('');
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => getMondayOfCurrentWeek());
+  const [weekTimesheets,    setWeekTimesheets]    = useState([]);
+  const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
 
   useEffect(() => {
-    if (!setOverlayActive) return;
-    setOverlayActive(!!selectedAudit || isAbsentModalOpen || !!pendingReviewTarget);
-    return () => setOverlayActive(false);
-  }, [selectedAudit, isAbsentModalOpen, pendingReviewTarget, setOverlayActive]);
+    if (setOverlayActive) setOverlayActive(!!correctionTarget);
+    return () => setOverlayActive?.(false);
+  }, [correctionTarget, setOverlayActive]);
 
-  // ── Semana ───────────────────────────────────────────────────────────────
+  // Load attendance once
+  useEffect(() => {
+    if (!isDemoMode) loadAttendanceLastDays?.(30);
+  }, [isDemoMode]);
+
+  // ── Week helpers ─────────────────────────────────────────────────────────
   const currentWeekStart = getMondayOfCurrentWeek();
   const isCurrentWeek    = selectedWeekStart === currentWeekStart;
   const canEditWeek      = canEdit && isCurrentWeek;
 
   const weekDates = useMemo(() => {
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(selectedWeekStart + 'T12:00:00Z');
       d.setUTCDate(d.getUTCDate() + i);
-      dates.push(d.toISOString().slice(0, 10));
-    }
-    return dates;
+      return d.toISOString().slice(0, 10);
+    });
   }, [selectedWeekStart]);
 
   const weekLabel = useMemo(() => {
     const s = new Date(weekDates[0] + 'T12:00:00Z');
     const e = new Date(weekDates[6] + 'T12:00:00Z');
-    const fmt = d => d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
-    return `${fmt(s)} – ${fmt(e)}`;
+    const f = d => d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
+    return `${f(s)} – ${f(e)}`;
   }, [weekDates]);
 
   const goToPrevWeek = useCallback(() => {
@@ -170,600 +706,242 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     setSelectedWeekStart(d.toISOString().slice(0, 10));
   }, [selectedWeekStart, isCurrentWeek]);
 
-  // ── Carga timesheets AUTO_PUNCHED ────────────────────────────────────────
+  // ── Load week timesheets ─────────────────────────────────────────────────
   useEffect(() => {
-    if (isDemoMode) { setAutoPunchedTimesheets(mockData.autoPunched); return; }
+    if (isDemoMode) { setWeekTimesheets(mockData.timesheets); return; }
     let cancelled = false;
     supabase.from('timesheets')
-      .select('id, employee_id, work_date, actual_start_time, actual_end_time, regular_hours, status')
-      .eq('status', 'AUTO_PUNCHED')
-      .gte('work_date', selectedWeekStart).lte('work_date', weekDates[6])
-      .order('work_date', { ascending: true })
-      .then(({ data }) => { if (!cancelled) setAutoPunchedTimesheets(data || []); });
+      .select('employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, actual_start_time, actual_end_time')
+      .gte('work_date', weekDates[0]).lte('work_date', weekDates[6])
+      .then(({ data }) => { if (!cancelled) setWeekTimesheets(data || []); });
     return () => { cancelled = true; };
-  }, [selectedWeekStart, weekDates, isDemoMode, mockData.autoPunched]);
+  }, [selectedWeekStart, weekDates, isDemoMode]);
 
-  const now = new Date();
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
-  const formatTime12h = t => {
-    if (!t) return "";
-    let [h, m] = t.split(":"); h = parseInt(h, 10);
-    return `${String(h % 12 || 12).padStart(2,"0")}:${m} ${h >= 12 ? "PM" : "AM"}`;
-  };
-  const buildInputUTC = (dateStr, timeStr) => timeStr ? new Date(`${dateStr}T${timeStr}:00-06:00`) : null;
-  const addHours = (date, h) => new Date(date.getTime() + h * 3600000);
-
-  const employeeById = useMemo(() => {
-    const m = new Map(); employees.forEach(e => m.set(String(e.id), e)); return m;
-  }, [employees]);
-  const branchNameById = useMemo(() => {
-    const m = new Map(); (branches||[]).forEach(b => m.set(String(b.id), b.name)); return m;
-  }, [branches]);
+  // ── Lookup maps ─────────────────────────────────────────────────────────
   const shiftById = useMemo(() => {
     const m = new Map(); shifts.forEach(s => m.set(String(s.id), s)); return m;
   }, [shifts]);
+  const branchNameById = useMemo(() => {
+    const m = new Map(); branches.forEach(b => m.set(String(b.id), b.name)); return m;
+  }, [branches]);
 
-  const goToEmployeeProfile = useCallback((emp) => {
-    if (!emp || isDemoMode) return;
-    setActiveEmployee?.(emp); setView?.("employee-detail");
-  }, [setActiveEmployee, setView, isDemoMode]);
-
-  // ── Generación de auditorías (semana completa, CST-aware) ────────────────
-  const audits = useMemo(() => {
-    const map = {};
-    employees.forEach(emp => {
-      weekDates.forEach(dateStr => {
-        if (new Date(dateStr + 'T23:59:59-06:00') > now) return;
-        const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
-        const hasPunch = type => punches.some(p => {
-          if (type === "IN")  return ["IN","IN_EARLY","IN_AFTER_SHIFT"].includes(p.type);
-          if (type === "OUT") return ["OUT","OUT_EARLY","OUT_LATE"].includes(p.type);
-          return p.type === type;
-        });
-        if (hasPunch("ABSENT")) return;
-
-        const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-        const dayKey = dow === 0 ? 7 : dow;
-        const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
-        const shift = dayConfig?.shiftId ? shiftById.get(String(dayConfig.shiftId)) : null;
-        if (!shift) return;
-
-        const shiftStartD = buildCSTDate(dateStr, shift.start_time?.substring(0,5) || shift.start);
-        const shiftEndD   = buildCSTDate(dateStr, shift.end_time?.substring(0,5)   || shift.end);
-        if (shiftEndD && shiftStartD && shiftEndD < shiftStartD)
-          shiftEndD.setUTCDate(shiftEndD.getUTCDate() + 1);
-
-        const lunchStartD = buildCSTDate(dateStr, dayConfig?.lunchStart || dayConfig?.lunchTime);
-        const lunchEndD   = lunchStartD ? addHours(lunchStartD, 1) : null;
-        const lactStartD  = buildCSTDate(dateStr, dayConfig?.lactationStart || dayConfig?.lactationTime);
-        const lactEndD    = lactStartD ? addHours(lactStartD, 1) : null;
-
-        const isGluedToIn    = lactStartD && shiftStartD && lactStartD.getTime() === shiftStartD.getTime();
-        const isGluedToOut   = lactEndD   && shiftEndD   && lactEndD.getTime()   === shiftEndD.getTime();
-        const isGluedToLunch = lactStartD && lunchEndD   && lactStartD.getTime() === lunchEndD.getTime();
-        const needsSeparateLact = lactStartD && !isGluedToIn && !isGluedToOut && !isGluedToLunch;
-
-        const expected = [
-          { type:"IN",           expectedD: isGluedToIn ? lactEndD : shiftStartD, label:"Entrada Omitida",    icon:LogIn,   color:"text-red-600",   bg:"bg-red-50",    border:"border-red-200" },
-          ...(lunchStartD ? [
-            { type:"OUT_LUNCH",  expectedD: lunchStartD,                           label:"Salida Almuerzo",   icon:Utensils,color:"text-orange-600", bg:"bg-orange-50", border:"border-orange-200" },
-            { type:"IN_LUNCH",   expectedD: isGluedToLunch ? lactEndD : lunchEndD, label:"Regreso Almuerzo",  icon:Utensils,color:"text-[#0052CC]",  bg:"bg-[#0052CC]/10",border:"border-[#0052CC]/20" },
-          ] : []),
-          ...(needsSeparateLact ? [
-            { type:"OUT_LACTATION",expectedD:lactStartD, label:"Inicio Lactancia", icon:Baby, color:"text-pink-600",   bg:"bg-pink-50",   border:"border-pink-200" },
-            { type:"IN_LACTATION", expectedD:lactEndD,   label:"Regreso Lactancia",icon:Baby, color:"text-purple-600", bg:"bg-purple-50", border:"border-purple-200" },
-          ] : []),
-          { type:"OUT",          expectedD: isGluedToOut ? lactStartD : shiftEndD, label:"Salida Olvidada",   icon:LogOut,  color:"text-slate-600",  bg:"bg-slate-100", border:"border-slate-300" },
-        ];
-
-        const inconsistencies = expected
-          .filter(ep => ep.expectedD && !hasPunch(ep.type) && now > addHours(ep.expectedD, 1))
-          .map(ep => ({ ...ep, missingPunch: ep.type, expectedTime24: toTimeCSTStr(ep.expectedD) }));
-
-        if (inconsistencies.length > 0)
-          map[`${emp.id}-${dateStr}`] = { id:`${emp.id}-${dateStr}`, employeeId:emp.id, date:dateStr, shift, inconsistencies, punches };
-      });
+  // ── Group employees by branch ────────────────────────────────────────────
+  const employeesByBranch = useMemo(() => {
+    const map = new Map();
+    const filtered = filterBranch
+      ? employees.filter(e => String(e.branchId) === filterBranch)
+      : employees;
+    filtered.forEach(emp => {
+      const bId = String(emp.branchId || 'sin-sucursal');
+      if (!map.has(bId)) map.set(bId, []);
+      map.get(bId).push(emp);
     });
-    return Object.values(map).sort((a,b) => new Date(a.date)-new Date(b.date));
-  }, [employees, shiftById, weekDates, now]);
+    return map;
+  }, [employees, filterBranch]);
 
-  const pendingAudits = useMemo(() => {
-    if (!filterBranch) return audits;
-    return audits.filter(r => String(employeeById.get(String(r.employeeId))?.branchId) === filterBranch);
-  }, [audits, filterBranch, employeeById]);
-
-  const pendingReviewPunches = useMemo(() => {
-    const weekSet = new Set(weekDates);
-    const results = [];
+  // ── Total alerts badge ───────────────────────────────────────────────────
+  const totalAlerts = useMemo(() => {
+    const now = new Date();
+    let total = 0;
     employees.forEach(emp => {
       if (filterBranch && String(emp.branchId) !== filterBranch) return;
-      (emp.attendance||[]).forEach(p => {
-        if (p.details?.pendingHRReview === true && !p.details?.autoInserted && weekSet.has(getCSTDateStr(p.timestamp)))
-          results.push({ punch:p, emp });
+      weekDates.forEach(dateStr => {
+        if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
+        const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
+        if (punches.some(p => isAutoPunch(p) || isPendingPunch(p))) { total++; return; }
+        const dow = new Date(dateStr + 'T12:00:00Z').getUTCDay();
+        const dayKey = dow === 0 ? 7 : dow;
+        const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+        if (!dayConfig || dayConfig.isOff) return;
+        const shiftId = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
+        const shift   = shiftId ? shiftById.get(shiftId) : null;
+        if (!shift) return;
+        const expected = getExpectedPunches(dateStr, shift, dayConfig);
+        const punched  = new Set(punches.map(p => p.type));
+        const missing  = expected.filter(ep => {
+          if (ep.type === 'IN')  return !punches.some(p => IN_TYPES.has(p.type));
+          if (ep.type === 'OUT') return !punches.some(p => OUT_TYPES.has(p.type));
+          return !punched.has(ep.type);
+        }).filter(ep => ep.expected && ep.expected < now);
+        if (missing.length > 0) total++;
       });
     });
-    return results.sort((a,b) => new Date(b.punch.timestamp)-new Date(a.punch.timestamp));
-  }, [employees, filterBranch, weekDates]);
+    return total;
+  }, [employees, weekDates, shiftById, filterBranch]);
 
-  const filteredAutoP = useMemo(() => {
-    const base = filterBranch
-      ? autoPunchedTimesheets.filter(ts => String(employeeById.get(String(ts.employee_id))?.branchId) === filterBranch)
-      : autoPunchedTimesheets;
-    return base;
-  }, [autoPunchedTimesheets, filterBranch, employeeById]);
+  // ── Correction handler ───────────────────────────────────────────────────
+  const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
+    if (!canEditWeek) { showToast('Solo lectura','Solo se puede corregir la semana actual.','info'); return; }
+    setCorrectionTarget({ emp, dateStr, dayPunches, shift, dayConfig });
+  }, [canEditWeek, showToast]);
 
-  const totalAlerts = pendingReviewPunches.length + filteredAutoP.length + pendingAudits.length;
-
-  // ── Handlers revisión pendiente ─────────────────────────────────────────
-  const openPendingReview = useCallback((punch, emp) => {
-    const cst = new Date(new Date(punch.timestamp).getTime() - 6*3600000);
-    setPendingReviewTarget({ punch, emp });
-    setAdjustTime(`${String(cst.getUTCHours()).padStart(2,'0')}:${String(cst.getUTCMinutes()).padStart(2,'0')}`);
-  }, []);
-
-  const closePendingReview = useCallback(() => {
-    setPendingReviewTarget(null); setAdjustTime(''); setIsConfirmingAction(false);
-  }, []);
-
-  const handlePendingAction = useCallback(async (action) => {
-    if (!pendingReviewTarget) return;
-    if (isDemoMode) { showToast('Demo', 'Acción simulada en modo demo.', 'info'); closePendingReview(); return; }
-    setIsConfirmingAction(true);
-    const { punch, emp } = pendingReviewTarget;
-    try {
-      let adjustedTimestamp;
-      if (action === 'ADJUST' && adjustTime)
-        adjustedTimestamp = new Date(`${getCSTDateStr(punch.timestamp)}T${adjustTime}:00-06:00`).toISOString();
-      await confirmAttendancePunch(punch.id, emp.id, action, { confirmedBy:user?.id, confirmedByName:user?.name||user?.email, adjustedTimestamp });
-      const { data } = await supabase.from('timesheets').select('id,employee_id,work_date,actual_start_time,actual_end_time,regular_hours,status').eq('status','AUTO_PUNCHED').gte('work_date',selectedWeekStart).lte('work_date',weekDates[6]).order('work_date',{ascending:true});
-      setAutoPunchedTimesheets(data||[]);
-      closePendingReview();
-    } catch(err) {
-      console.error(err); showToast('Error','No se pudo procesar la acción.','error');
-    } finally { setIsConfirmingAction(false); }
-  }, [pendingReviewTarget, adjustTime, confirmAttendancePunch, user, closePendingReview, showToast, selectedWeekStart, weekDates, isDemoMode]);
-
-  // ── Handlers modal corrección ────────────────────────────────────────────
-  const openModal = useCallback((record) => {
-    const edits = {};
-    record.inconsistencies.forEach(inc => { edits[inc.missingPunch] = { active:true, time24:inc.expectedTime24 }; });
-    setEditForms(edits); setSelectedAudit(record);
-  }, []);
-
-  const togglePunch = t  => setEditForms(p => ({...p,[t]:{...p[t],active:!p[t].active}}));
-  const updateTime  = (t,v) => setEditForms(p => ({...p,[t]:{...p[t],time24:v}}));
-
-  const handleSaveSelected = async () => {
-    if (!selectedAudit) return;
-    if (isDemoMode) { showToast('Demo','Guardado simulado en modo demo.','info'); setSelectedAudit(null); return; }
-    const shiftStart = buildInputUTC(selectedAudit.date, selectedAudit.shift.start_time?.substring(0,5)||selectedAudit.shift.start);
-    const shiftEnd   = buildInputUTC(selectedAudit.date, selectedAudit.shift.end_time?.substring(0,5)||selectedAudit.shift.end);
-    if (shiftEnd && shiftStart && shiftEnd < shiftStart) shiftEnd.setUTCDate(shiftEnd.getUTCDate()+1);
-    const crosses = shiftEnd && shiftStart && shiftEnd.getUTCDate() !== shiftStart.getUTCDate();
-    const toAdd = selectedAudit.inconsistencies.filter(inc => editForms[inc.missingPunch]?.active).map(inc => {
-      let ts = buildInputUTC(selectedAudit.date, editForms[inc.missingPunch].time24);
-      if (crosses && ts && shiftStart && ts < shiftStart) ts.setUTCDate(ts.getUTCDate()+1);
-      return { timestamp:ts.toISOString(), type:inc.missingPunch, details:{ note:`Ajuste Manual: ${inc.label}`, manualAudit:true, auditedBy:user?.id, auditedByName:user?.name } };
-    });
-    if (toAdd.length > 0) {
-      try {
-        await Promise.all(toAdd.map(p => insertAttendancePunchAt(selectedAudit.employeeId, p.timestamp, p.type, p.details)));
-        appendAuditLog?.("ATTENDANCE_PUNCH_MANUAL_ADDED", { employeeId:selectedAudit.employeeId, date:selectedAudit.date, punchesAdded:toAdd }, { actorId:user?.id, actorName:user?.name });
-        showToast('Guardado',`${toAdd.length} marcaje(s) registrado(s).`,'success');
-      } catch(err) { console.error(err); showToast('Error','No se pudieron guardar.','error'); return; }
+  const handleSaveCorrection = useCallback(async ({ type, time, reason }) => {
+    if (!correctionTarget) return;
+    const { emp, dateStr } = correctionTarget;
+    if (isDemoMode) {
+      showToast('Demo','Marcaje simulado guardado.','info');
+      setCorrectionTarget(null); return;
     }
-    setSelectedAudit(null);
-  };
+    const ts = buildCSTDate(dateStr, time);
+    if (!ts) { showToast('Error','Hora inválida.','error'); return; }
+    try {
+      await insertAttendancePunchAt(emp.id, ts.toISOString(), type, {
+        manualAudit:    true,
+        auditedByName:  user?.name || user?.email,
+        auditedById:    user?.id,
+        reason,
+        editedAt:       new Date().toISOString(),
+      });
+      appendAuditLog?.('ATTENDANCE_PUNCH_MANUAL_ADDED', { employeeId: emp.id, date: dateStr, type, reason }, { actorId: user?.id, actorName: user?.name });
+      showToast('Guardado','Marcaje registrado correctamente.','success');
+      setCorrectionTarget(null);
+    } catch(err) {
+      console.error(err);
+      showToast('Error','No se pudo guardar el marcaje.','error');
+    }
+  }, [correctionTarget, isDemoMode, insertAttendancePunchAt, appendAuditLog, user, showToast]);
 
-  const executeMarkAbsent = () => {
-    if (!selectedAudit) return;
-    if (isDemoMode) { showToast('Demo','Inasistencia simulada.','info'); setIsAbsentModalOpen(false); setSelectedAudit(null); return; }
-    const absentPunch = { timestamp:`${selectedAudit.date}T12:00:00.000Z`, type:"ABSENT", details:{note:"Inasistencia oficial reportada en Auditoría"} };
-    setEmployees(prev => (prev||[]).map(e => {
-      if (String(e.id) !== String(selectedAudit.employeeId)) return e;
-      return { ...e, attendance:[...(e.attendance||[]).filter(p=>getCSTDateStr(p.timestamp)!==selectedAudit.date), absentPunch].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)) };
-    }));
-    appendAuditLog?.("ATTENDANCE_MARK_ABSENT",{employeeId:selectedAudit.employeeId,date:selectedAudit.date},{actorId:user?.id,actorName:user?.name});
-    setIsAbsentModalOpen(false); setSelectedAudit(null);
-  };
-
-  const selectedEmp        = selectedAudit ? employeeById.get(String(selectedAudit.employeeId)) : null;
-  const selectedBranchName = selectedEmp   ? branchNameById.get(String(selectedEmp.branchId)) || "Sucursal" : "";
-
-  // ── Opciones para LiquidSelect de sucursal ───────────────────────────────
+  // ── Branch select options ────────────────────────────────────────────────
   const branchOptions = useMemo(() => [
-    { value:'', label:'Todas las sucursales' },
-    ...(branches||[]).map(b => ({ value:String(b.id), label:b.name })),
+    { value: '', label: 'Todas las sucursales' },
+    ...branches.map(b => ({ value: String(b.id), label: b.name })),
   ], [branches]);
 
-  // ── filtersContent — va en el header flotante ────────────────────────────
+  // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2 sm:gap-3">
-      {/* Navegador de semana compacto */}
+      {/* Week nav pill */}
       <div className="flex items-center gap-0.5 bg-black/[0.06] rounded-2xl px-1 py-1">
         <button type="button" onClick={goToPrevWeek}
-          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 hover:text-slate-900 transition-all active:scale-[0.92]">
+          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 transition-all active:scale-[0.92]">
           <ChevronLeft size={15} strokeWidth={2.5} />
         </button>
         <div className="flex flex-col items-center px-2 min-w-[120px]">
           <span className="text-[11px] font-black text-slate-700 leading-none">{weekLabel}</span>
           {isCurrentWeek
             ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Semana actual</span>
-            : <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Solo lectura</span>
-          }
+            : <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Solo lectura</span>}
         </div>
         <button type="button" onClick={goToNextWeek} disabled={isCurrentWeek}
-          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 hover:text-slate-900 transition-all active:scale-[0.92] disabled:opacity-30 disabled:cursor-not-allowed">
+          className="p-1.5 rounded-xl hover:bg-white/70 text-slate-600 transition-all active:scale-[0.92] disabled:opacity-30 disabled:cursor-not-allowed">
           <ChevronRight size={15} strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Filtro sucursal */}
-      <LiquidSelect
-        value={filterBranch}
-        onChange={val => setFilterBranch(val || '')}
-        options={branchOptions}
-        compact
-        clearable={false}
-        icon={Building2}
-      />
+      <LiquidSelect value={filterBranch} onChange={v => setFilterBranch(v||'')} options={branchOptions} compact clearable={false} icon={Building2} />
 
-      {/* Toggle demo */}
-      <button
-        type="button"
-        onClick={() => setForceDemoMode(v => !v)}
-        className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${
-          forceDemoMode
-            ? 'bg-amber-100 border-amber-300 text-amber-700'
-            : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'
-        }`}
-      >
+      {/* Demo toggle */}
+      <button type="button" onClick={() => setForceDemoMode(v => !v)}
+        className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${forceDemoMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'}`}>
         {forceDemoMode ? 'Demo ON' : 'Demo'}
       </button>
 
-      {/* Badge de alertas */}
       {totalAlerts > 0 && (
-        <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">
-          {totalAlerts}
-        </span>
+        <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
       )}
     </div>
   );
 
   return (
     <GlassViewLayout icon={AlertTriangle} title="Auditoría de Tiempos" filtersContent={filtersContent}>
-      <ConfirmModal isOpen={isAbsentModalOpen} onClose={() => setIsAbsentModalOpen(false)} onConfirm={executeMarkAbsent}
-        title="¿Reportar como Inasistencia?" confirmText="Sí, reportar falta"
-        message="Se borrarán todos los marcajes existentes de este día y quedará registrado oficialmente como una inasistencia (falta)." />
+      {/* Correction modal */}
+      <DayCorrectionModal
+        isOpen={!!correctionTarget}
+        onClose={() => setCorrectionTarget(null)}
+        emp={correctionTarget?.emp}
+        dateStr={correctionTarget?.dateStr}
+        dayPunches={correctionTarget?.dayPunches || []}
+        shift={correctionTarget?.shift}
+        dayConfig={correctionTarget?.dayConfig}
+        isDemoMode={isDemoMode}
+        onSave={handleSaveCorrection}
+        user={user}
+        branchNameById={branchNameById}
+      />
 
-      <div className="px-4 md:px-6 pb-8 space-y-6">
+      <div className="px-4 md:px-6 pb-8 space-y-4">
 
-        {/* Demo mode banner */}
+        {/* Demo banner */}
         {isDemoMode && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 flex items-center gap-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Modo Demo</span>
             <span className="text-[11px] text-amber-700/70 flex-1">
-              {forceDemoMode
-                ? 'Datos de prueba activos — mostrando los 3 escenarios de alerta para visualizar la vista.'
-                : 'Sin empleados reales — mostrando datos de prueba automáticamente.'}
+              {forceDemoMode ? 'Datos de prueba activos — 4 empleados con todos los escenarios.' : 'Sin empleados reales.'}
             </span>
             {forceDemoMode && (
-              <button
-                type="button"
-                onClick={() => setForceDemoMode(false)}
-                className="text-[9px] font-black uppercase tracking-widest text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded-xl transition-all shrink-0"
-              >
+              <button type="button" onClick={() => setForceDemoMode(false)}
+                className="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-xl transition-all shrink-0">
                 Salir demo
               </button>
             )}
           </div>
         )}
 
-        {/* ── AUTO_PUNCHED: salidas automáticas ── */}
-        {filteredAutoP.length > 0 && (
-          <div className="bg-violet-50/80 backdrop-blur-xl rounded-[2rem] border border-violet-200/70 shadow-[0_8px_32px_rgba(139,92,246,0.08)] overflow-hidden">
-            <div className="px-4 md:px-8 py-4 border-b border-violet-200/50 flex items-center gap-3">
-              <div className="p-2 bg-violet-400/20 rounded-xl">
-                <Bot size={18} className="text-violet-600" strokeWidth={2} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-black text-violet-800 uppercase tracking-widest">Salidas Generadas Automáticamente</p>
-                <p className="text-[11px] text-violet-700/70 mt-0.5">El sistema marcó la salida porque el empleado no la registró. Verifique y corrija si es necesario.</p>
-              </div>
-              <span className="bg-violet-500 text-white text-[11px] font-black px-3 py-1 rounded-full shrink-0">{filteredAutoP.length}</span>
-            </div>
-            <div className="divide-y divide-violet-200/40">
-              {filteredAutoP.map(ts => {
-                const emp    = employeeById.get(String(ts.employee_id));
-                const bName  = branchNameById.get(String(emp?.branchId)) || 'Sucursal';
-                const wdDate = new Date(ts.work_date + 'T12:00:00Z');
-                const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit',timeZone:'America/El_Salvador'}) : '–';
-                return (
-                  <div key={ts.id} className="px-4 md:px-8 py-4 flex flex-wrap sm:flex-nowrap items-center gap-3 hover:bg-violet-100/40 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-white border border-violet-200 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden shrink-0">
-                      {emp?.photo_url ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0)||'?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-slate-900 truncate">{emp?.name || `Emp #${ts.employee_id}`}</p>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{bName}</p>
-                    </div>
-                    <div className="text-center shrink-0">
-                      <p className="text-[12px] font-black text-violet-700">
-                        {wdDate.toLocaleDateString('es-SV',{weekday:'short',day:'numeric',month:'short'})}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">
-                        {fmtTime(ts.actual_start_time)} → <span className="text-violet-600">{fmtTime(ts.actual_end_time)} (auto)</span>
-                      </p>
-                    </div>
-                    <span className="hidden lg:inline text-[10px] font-black text-violet-600 bg-violet-100 border border-violet-200 px-2.5 py-1 rounded-full shrink-0">
-                      {(ts.regular_hours||0).toFixed(1)}h reg.
-                    </span>
-                    <button type="button" disabled={!canEditWeek}
-                      onClick={() => {
-                        const emp_ = employeeById.get(String(ts.employee_id));
-                        const autoP = (emp_?.attendance||[]).find(p => p.type==='OUT' && getCSTDateStr(p.timestamp)===ts.work_date && p.details?.autoInserted===true);
-                        if (autoP && emp_) openPendingReview(autoP, emp_);
-                        else showToast('Info','Abre el perfil del empleado para ajustar.','info');
-                      }}
-                      className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-violet-200 text-violet-700 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-violet-400 hover:bg-violet-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
-                      Revisar <Edit3 size={13} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Read-only notice */}
+        {!isCurrentWeek && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-2.5 flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Solo lectura</span>
+            <span className="text-[11px] text-slate-400">Solo se puede corregir la semana actual.</span>
           </div>
         )}
 
-        {/* ── Pendientes sin PIN supervisor ── */}
-        {pendingReviewPunches.length > 0 && (
-          <div className="bg-amber-50/80 backdrop-blur-xl rounded-[2rem] border border-amber-200/70 shadow-[0_8px_32px_rgba(245,158,11,0.08)] overflow-hidden">
-            <div className="px-4 md:px-8 py-4 border-b border-amber-200/50 flex items-center gap-3">
-              <div className="p-2 bg-amber-400/20 rounded-xl"><ShieldAlert size={18} className="text-amber-600" strokeWidth={2} /></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-black text-amber-800 uppercase tracking-widest">Pendientes de Revisión — Talento Humano</p>
-                <p className="text-[11px] text-amber-700/70 mt-0.5">Marcajes sin autorización de supervisor. Confirma, ajusta o rechaza.</p>
-              </div>
-              <span className="bg-amber-500 text-white text-[11px] font-black px-3 py-1 rounded-full shrink-0">{pendingReviewPunches.length}</span>
-            </div>
-            <div className="divide-y divide-amber-200/40">
-              {pendingReviewPunches.map(({ punch, emp }) => {
-                const bName = branchNameById.get(String(emp?.branchId)) || 'Sucursal';
-                const pd = new Date(punch.timestamp);
-                return (
-                  <div key={punch.id} className="px-4 md:px-8 py-4 flex flex-wrap sm:flex-nowrap items-center gap-3 hover:bg-amber-100/40 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden shrink-0">
-                      {emp?.photo ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0)||'?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-slate-900">{emp?.name||'Empleado'}</p>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{bName}</p>
-                    </div>
-                    <div className="text-center shrink-0">
-                      <p className="text-[12px] font-black text-amber-700">{PUNCH_TYPE_LABELS[punch.details?.accionOriginal||punch.type]||punch.type}</p>
-                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">
-                        {pd.toLocaleDateString('es-SV',{weekday:'short',day:'numeric',month:'short',timeZone:'America/El_Salvador'})} · {pd.toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit',timeZone:'America/El_Salvador'})}
-                      </p>
-                    </div>
-                    {punch.details?.skipReason && (
-                      <p className="hidden lg:block text-[10px] text-slate-400 shrink-0 max-w-[160px] truncate">{punch.details.skipReason}</p>
-                    )}
-                    <button type="button" onClick={() => openPendingReview(punch, emp)} disabled={!canEditWeek}
-                      className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-amber-400 hover:bg-amber-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
-                      Revisar <Edit3 size={13} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Branch sections */}
+        {Array.from(employeesByBranch.entries()).map(([branchId, branchEmployees]) => {
+          const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
+          const branchAlerts = branchEmployees.reduce((acc, emp) => {
+            const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
+            return acc + empTs.filter(t => t.status === 'AUTO_PUNCHED').length;
+          }, 0);
 
-        {/* ── Tabla de inconsistencias ── */}
-        <DataTable
-          columns={[
-            { key:'colaborador', label:'Colaborador' },
-            { key:'fecha',       label:'Fecha / Turno' },
-            { key:'issues',      label:'Inconsistencias Detectadas', className:'w-2/5' },
-            { key:'accion',      label:'Acción', align:'right' },
-          ]}
-          empty={{ icon:CheckCircle, message: isCurrentWeek ? 'Todos los marcajes están correctos esta semana' : 'Sin inconsistencias en esta semana' }}
-          minWidth="700px"
-        >
-          {pendingAudits.map((record, i) => {
-            const emp   = employeeById.get(String(record.employeeId));
-            const bName = branchNameById.get(String(emp?.branchId)) || "Sucursal";
-            const sStart = record.shift.start_time?.substring(0,5) || record.shift.start || '';
-            const sEnd   = record.shift.end_time?.substring(0,5)   || record.shift.end   || '';
-            return (
-              <DataRow key={record.id} index={i}>
-                <DataCell>
-                  <button type="button" onClick={() => goToEmployeeProfile(emp)}
-                    className="flex items-center gap-4 text-left group/emp transition-transform active:scale-[0.99]">
-                    <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center font-bold text-slate-500 text-[13px] overflow-hidden group-hover/emp:border-[#0052CC]/30 transition-colors">
-                      {emp?.photo ? <img src={emp.photo} alt={emp?.name} className="w-full h-full object-cover" /> : emp?.name?.charAt(0)||"?"}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 text-[14px] leading-none mb-1.5 group-hover/emp:text-[#0052CC] transition-colors">{emp?.name||"Empleado"}</p>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{bName}</p>
-                    </div>
-                  </button>
-                </DataCell>
-                <DataCell>
-                  <div className="flex flex-col items-start gap-2">
-                    <span className="font-semibold text-slate-800 flex items-center gap-2 text-[13px]">
-                      <Calendar size={14} className="text-[#0052CC]" />
-                      {new Date(record.date+'T12:00:00Z').toLocaleDateString('es-SV',{weekday:'short',day:'numeric',month:'short'})}
-                    </span>
-                    <span className="px-2 py-1 bg-black/[0.04] text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                      {record.shift.name||''}: {formatTime12h(sStart)} – {formatTime12h(sEnd)}
-                    </span>
-                  </div>
-                </DataCell>
-                <DataCell>
-                  <div className="flex flex-wrap gap-2">
-                    {record.inconsistencies.map((inc,j) => {
-                      const Icon = inc.icon;
-                      return (
-                        <div key={j} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${inc.bg} ${inc.color} ${inc.border} shadow-sm bg-white/50`}>
-                          <Icon size={14} strokeWidth={2} />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">{inc.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </DataCell>
-                <DataCell align="right">
-                  <button onClick={() => openModal(record)} disabled={!canEditWeek} type="button"
-                    title={!canEditWeek ? 'Solo editable en semana actual' : ''}
-                    className="bg-white text-[#0052CC] border border-slate-200 px-4 py-2.5 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest hover:border-[#0052CC] hover:bg-[#0052CC]/5 transition-[border-color,background-color] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed">
-                    Corregir <Edit3 size={14} strokeWidth={2} />
-                  </button>
-                </DataCell>
-              </DataRow>
-            );
-          })}
-        </DataTable>
-      </div>
-
-      {/* ── Modal: revisión marcaje (pendiente / auto_punched) ── */}
-      <ModalShell open={!!pendingReviewTarget} onClose={closePendingReview} maxWidthClass="max-w-lg" zClass="z-[110]">
-        {pendingReviewTarget && (() => {
-          const { punch, emp } = pendingReviewTarget;
-          const isAuto = punch.details?.autoInserted === true;
-          const label  = PUNCH_TYPE_LABELS[punch.details?.accionOriginal||punch.type]||punch.type;
-          const pd     = new Date(punch.timestamp);
-          const origTime = pd.toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit',timeZone:'America/El_Salvador'});
           return (
-            <>
-              <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${isAuto?'bg-violet-100':'bg-amber-100'}`}>
-                      {isAuto ? <Bot size={18} className="text-violet-600" strokeWidth={2}/> : <ShieldAlert size={18} className="text-amber-600" strokeWidth={2}/>}
-                    </div>
-                    <h3 className="font-black text-slate-900 text-[16px] tracking-tight">
-                      {isAuto ? 'Revisar Salida Automática' : 'Revisar Marcaje Sin PIN'}
-                    </h3>
-                  </div>
-                  <button onClick={closePendingReview} className="p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors" type="button">
-                    <X size={18} strokeWidth={2}/>
-                  </button>
+            <div key={branchId} className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+              {/* Branch header */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/50 bg-white/30">
+                <div className="p-2 bg-[#0052CC]/10 rounded-xl">
+                  <Building2 size={16} className="text-[#0052CC]" strokeWidth={2.5} />
                 </div>
-                <div className={`border rounded-2xl p-4 flex items-center gap-4 ${isAuto?'bg-violet-50 border-violet-200/60':'bg-amber-50 border-amber-200/60'}`}>
-                  <div className={`w-12 h-12 rounded-full bg-white border flex items-center justify-center font-bold text-slate-500 text-[15px] overflow-hidden shrink-0 ${isAuto?'border-violet-200':'border-amber-200'}`}>
-                    {emp?.photo ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover"/> : emp?.name?.charAt(0)||'?'}
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-black text-slate-900">{emp?.name}</p>
-                    <p className={`text-[11px] font-bold mt-0.5 ${isAuto?'text-violet-700':'text-amber-700'}`}>
-                      {label} · {pd.toLocaleDateString('es-SV',{weekday:'long',day:'numeric',month:'long',timeZone:'America/El_Salvador'})} · {origTime}
-                    </p>
-                    {isAuto && <p className="text-[10px] text-slate-500 mt-1">Generada automáticamente al cierre del turno</p>}
-                    {!isAuto && punch.details?.skipReason && <p className="text-[10px] text-slate-500 mt-1">{punch.details.skipReason}</p>}
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-black text-slate-800">{bName}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
+                  </p>
                 </div>
+                {branchAlerts > 0 && (
+                  <span className="text-[9px] font-black bg-violet-500 text-white px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Bot size={9} strokeWidth={2} /> {branchAlerts} auto
+                  </span>
+                )}
               </div>
-              <div className="p-8 space-y-5 bg-white/40 backdrop-blur-md">
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Hora del Marcaje</label>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl text-[12px] font-bold text-slate-400">
-                      <Clock size={14}/> Original: {origTime}
-                    </div>
-                    <input type="time" value={adjustTime} onChange={e=>setAdjustTime(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 font-mono text-[15px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC] transition-all"/>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {[['REJECT','Rechazar',Trash2,'red'],['ADJUST','Ajustar',Clock,'blue'],['CONFIRM','Confirmar',CheckCircle2,'emerald']].map(([action,label_,Icon,color])=>(
-                    <button key={action} type="button" onClick={()=>handlePendingAction(action)} disabled={isConfirmingAction||!canEditWeek}
-                      className={`flex flex-col items-center gap-2 px-4 py-4 bg-${color}-50 border border-${color}-200 text-${color==='blue'?'[#0052CC]':color+'-600'} rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-${color}-100 hover:border-${color}-300 transition-all active:scale-[0.97] disabled:opacity-40`}>
-                      <Icon size={18} strokeWidth={2}/> {label_}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-slate-400 text-center"><b>Rechazar</b> elimina el marcaje. <b>Ajustar</b> cambia la hora. <b>Confirmar</b> acepta tal como está.</p>
-              </div>
-            </>
-          );
-        })()}
-      </ModalShell>
 
-      {/* ── Modal: corrección de inconsistencias ── */}
-      <ModalShell open={!!selectedAudit} onClose={()=>setSelectedAudit(null)} maxWidthClass="max-w-2xl" zClass="z-[100]">
-        <div className="bg-white/60 backdrop-blur-xl px-8 py-6 border-b border-black/[0.04]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-slate-900 text-[18px] tracking-tight">Corregir Marcajes</h3>
-            <button onClick={()=>setSelectedAudit(null)} className="p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors" type="button">
-              <X size={20} strokeWidth={2}/>
-            </button>
-          </div>
-          <button type="button" onClick={()=>goToEmployeeProfile(selectedEmp)}
-            className="w-full bg-white border border-white/60 shadow-sm rounded-[1.5rem] p-5 flex items-center gap-5 text-left hover:shadow-md hover:border-[#0052CC]/20 hover:scale-[1.01] transition-all group cursor-pointer">
-            <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 group-hover:border-[#0052CC]/20 transition-colors">
-              {selectedEmp?.photo ? <img src={selectedEmp.photo} alt={selectedEmp?.name} className="w-full h-full object-cover"/> : <span className="text-slate-400 font-black text-[18px]">{selectedEmp?.name?.charAt(0)||"?"}</span>}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[16px] font-bold text-slate-900 truncate group-hover:text-[#0052CC] transition-colors">{selectedEmp?.name||"Empleado"}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-slate-600 bg-slate-100 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest">
-                  <Building2 size={12}/> {selectedBranchName}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#0052CC]/15">
-                  <Calendar size={12}/> {selectedAudit ? new Date(selectedAudit.date+'T12:00:00Z').toLocaleDateString('es-SV',{weekday:'short',day:'numeric',month:'short'}) : ""}
-                </span>
+              {/* Employees */}
+              <div className="divide-y divide-white/40">
+                {branchEmployees.map(emp => (
+                  <EmployeeAuditRow
+                    key={emp.id}
+                    emp={emp}
+                    weekDates={weekDates}
+                    shiftById={shiftById}
+                    weekTimesheets={weekTimesheets}
+                    branchNameById={branchNameById}
+                    onCorrect={handleCorrect}
+                    isDemoMode={isDemoMode}
+                  />
+                ))}
               </div>
             </div>
-          </button>
-          <p className="mt-6 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] ml-1">Selecciona la hora real:</p>
-        </div>
-        <div className="p-8 max-h-[55vh] overflow-y-auto scrollbar-hide space-y-4 bg-white/40 backdrop-blur-md">
-          {selectedAudit?.inconsistencies?.map(inc => {
-            const Icon = inc.icon;
-            const fs   = editForms[inc.missingPunch] || { active:false, time24:"" };
-            return (
-              <div key={inc.missingPunch} onClick={()=>togglePunch(inc.missingPunch)}
-                className={`group relative rounded-[1.5rem] p-5 cursor-pointer border-2 transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-[1.02] hover:-translate-y-1 ${fs.active?"bg-white border-[#0052CC] shadow-[0_12px_32px_rgba(0,82,204,0.15)] z-10":"bg-slate-50 border-transparent hover:bg-white hover:border-blue-200 hover:shadow-lg shadow-sm z-0"}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${fs.active?"bg-[#0052CC] text-white shadow-lg shadow-blue-500/30":"bg-white text-slate-400 shadow-sm -rotate-3 group-hover:rotate-0 group-hover:bg-[#0052CC]/10 group-hover:text-[#0052CC]"}`}>
-                      <Icon size={22} strokeWidth={2.5}/>
-                    </div>
-                    <div>
-                      <p className={`text-[15px] font-bold tracking-tight transition-colors duration-300 ${fs.active?"text-[#0052CC]":"text-slate-700 group-hover:text-slate-900"}`}>{inc.label}</p>
-                      <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Corrección Manual</p>
-                    </div>
-                  </div>
-                  <div className={`transition-all duration-300 ${fs.active?"text-[#0052CC] scale-110":"text-slate-300 group-hover:scale-110"}`}>
-                    {fs.active ? <ToggleRight size={44} strokeWidth={1.5}/> : <ToggleLeft size={44} strokeWidth={1.5}/>}
-                  </div>
-                </div>
-                <div className={`transition-all duration-500 overflow-hidden ${fs.active?"max-h-24 opacity-100 mt-5 pt-5 border-t border-[#0052CC]/10":"max-h-0 opacity-0 mt-0 pointer-events-none"}`}>
-                  <div className="flex items-center justify-between" onClick={e=>e.stopPropagation()}>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Hora Real:</span>
-                    <input type="time" value={fs.time24} onChange={e=>updateTime(inc.missingPunch,e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 font-mono text-[16px] font-bold text-slate-800 outline-none focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC] transition-all shadow-inner hover:bg-white"/>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="px-8 py-6 border-t border-black/[0.04] bg-white/60 backdrop-blur-md rounded-b-[2rem]">
-          <div className="flex justify-end gap-4">
-            <button onClick={()=>setIsAbsentModalOpen(true)} disabled={!canEditWeek} type="button"
-              className="px-6 h-12 bg-white border border-slate-200 hover:border-red-200 hover:text-red-600 rounded-[1.25rem] font-bold text-[12px] uppercase tracking-widest transition-all active:scale-[0.98] text-slate-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              Reportar Falta
-            </button>
-            <button onClick={handleSaveSelected} disabled={!canEditWeek||!Object.values(editForms).some(v=>v.active)} type="button"
-              className="px-8 h-12 bg-[#0052CC] hover:bg-[#003D99] active:scale-[0.98] text-white rounded-[1.25rem] font-bold text-[13px] uppercase tracking-widest shadow-[0_8px_20px_rgba(0,82,204,0.25)] transition-all disabled:opacity-30 disabled:grayscale">
-              Confirmar Cambios
-            </button>
+          );
+        })}
+
+        {/* Empty state */}
+        {employeesByBranch.size === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="p-5 bg-slate-100 rounded-[2rem]">
+              <CheckCircle size={32} className="text-slate-300" strokeWidth={1.5} />
+            </div>
+            <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
           </div>
-        </div>
-      </ModalShell>
+        )}
+      </div>
     </GlassViewLayout>
   );
 };

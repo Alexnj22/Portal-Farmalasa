@@ -1,8 +1,10 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
     DollarSign, Plus, Printer, CheckCircle2, Banknote,
     Building2, Search, Edit2, RotateCcw, Download, X, ListFilter,
+    AlertTriangle, LockKeyhole, ExternalLink,
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
@@ -381,10 +383,25 @@ const PayrollView = ({ openModal }) => {
     const [confirming,   setConfirming]   = useState(null);
     const searchInputRef = useRef(null);
 
+    // Timesheet approval check for the active period
+    const [unapprovedCount, setUnapprovedCount] = useState(null); // null = loading, 0 = all approved
+
     const { showToast } = useToastStore();
 
     React.useEffect(() => { fetchPayrollPeriods(); }, []);
     React.useEffect(() => { if (activePeriod) fetchPayrollEntries(activePeriod.id); }, [activePeriod?.id]);
+
+    // Check unapproved timesheets whenever the active period changes
+    useEffect(() => {
+        if (!activePeriod?.start_date || !activePeriod?.end_date) { setUnapprovedCount(null); return; }
+        setUnapprovedCount(null);
+        supabase.from('timesheets')
+            .select('id', { count: 'exact', head: true })
+            .gte('work_date', activePeriod.start_date)
+            .lte('work_date', activePeriod.end_date)
+            .neq('status', 'APPROVED')
+            .then(({ count }) => setUnapprovedCount(count ?? 0));
+    }, [activePeriod?.id, activePeriod?.start_date, activePeriod?.end_date]);
 
     const branchOptions = useMemo(() => [
         { value: '', label: 'Todas las sucursales' },
@@ -613,6 +630,19 @@ const PayrollView = ({ openModal }) => {
                                                     <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {/* Unapproved timesheets warning */}
+                                    {unapprovedCount > 0 && (
+                                        <div className="mt-3 flex items-center gap-3 bg-amber-50/60 border border-amber-200/60 rounded-2xl px-4 py-2.5">
+                                            <AlertTriangle size={14} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                            <p className="text-[11px] font-bold text-amber-700 flex-1">
+                                                {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período
+                                            </p>
+                                            <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                                                Revisa en Auditoría
+                                            </span>
                                         </div>
                                     )}
                                 </div>

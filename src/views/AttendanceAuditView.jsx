@@ -3,7 +3,7 @@ import {
   AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
-  Baby, Coffee,
+  Baby, Coffee, Loader2, ShieldCheck, LockKeyhole,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -637,6 +637,9 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
     : alerts.pendingReview > 0 ? 'bg-amber-500'
     : null;
 
+  const empTimesheets = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
+  const allApproved = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
+
   return (
     <div className="bg-white/[0.55] backdrop-blur-xl border border-white/65 rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
       {/* Employee row */}
@@ -670,6 +673,13 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
 
           {/* Alert chips - compact row */}
+          {allApproved && alerts.total === 0 && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <span className="flex items-center gap-0.5 text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-full">
+                <ShieldCheck size={7} strokeWidth={2.5} /> Aprobado
+              </span>
+            </div>
+          )}
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
@@ -749,6 +759,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => getMondayOfCurrentWeek());
   const [weekTimesheets,    setWeekTimesheets]    = useState([]);
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
+  const [isClosingWeek,     setIsClosingWeek]     = useState(false);
 
   useEffect(() => {
     if (setOverlayActive) setOverlayActive(!!correctionTarget);
@@ -798,7 +809,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     if (isDemoMode) { setWeekTimesheets(mockData.timesheets); return; }
     let cancelled = false;
     supabase.from('timesheets')
-      .select('employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, actual_start_time, actual_end_time')
+      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, actual_start_time, actual_end_time')
       .gte('work_date', weekDates[0]).lte('work_date', weekDates[6])
       .then(({ data }) => { if (!cancelled) setWeekTimesheets(data || []); });
     return () => { cancelled = true; };
@@ -890,6 +901,60 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     }
   }, [correctionTarget, isDemoMode, insertAttendancePunchAt, appendAuditLog, user, showToast]);
 
+  // ── Week fully in the past (can close) ──────────────────────────────────
+  const isWeekFullyPast = useMemo(() => {
+    const now = new Date();
+    return new Date(weekDates[6] + 'T23:59:59-06:00') < now;
+  }, [weekDates]);
+
+  // ── Approval summary for visible timesheets ──────────────────────────────
+  const approvalSummary = useMemo(() => {
+    const visibleEmpIds = new Set(
+      [...employeesByBranch.values()].flat().map(e => String(e.id))
+    );
+    const visible = weekTimesheets.filter(t => visibleEmpIds.has(String(t.employee_id)));
+    const approved = visible.filter(t => t.status === 'APPROVED').length;
+    const pending  = visible.filter(t => ['PENDING', 'AUTO_PUNCHED'].includes(t.status)).length;
+    const total    = visible.length;
+    return { total, approved, pending, allApproved: total > 0 && pending === 0 };
+  }, [weekTimesheets, employeesByBranch]);
+
+  // ── Close week handler ───────────────────────────────────────────────────
+  const handleCloseWeek = useCallback(async () => {
+    if (!isWeekFullyPast || !canEditWeek || isDemoMode) return;
+    const visibleEmpIds = new Set(
+      [...employeesByBranch.values()].flat().map(e => String(e.id))
+    );
+    const toApprove = weekTimesheets.filter(
+      t => ['PENDING', 'AUTO_PUNCHED'].includes(t.status) && visibleEmpIds.has(String(t.employee_id))
+    );
+    if (toApprove.length === 0) {
+      showToast('Sin cambios', 'Todos los timesheets ya están aprobados.', 'info');
+      return;
+    }
+    setIsClosingWeek(true);
+    try {
+      const ids = toApprove.map(t => t.id).filter(Boolean);
+      const { error } = await supabase.from('timesheets')
+        .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
+        .in('id', ids);
+      if (error) throw error;
+      // Refresh local state
+      setWeekTimesheets(prev =>
+        prev.map(t => ids.includes(t.id) ? { ...t, status: 'APPROVED' } : t)
+      );
+      appendAuditLog?.('TIMESHEET_WEEK_APPROVED', {
+        weekStart: weekDates[0], weekEnd: weekDates[6],
+        count: ids.length, branch: filterBranch || 'ALL',
+      }, { actorId: user?.id, actorName: user?.name });
+      showToast('Semana cerrada', `${ids.length} timesheet${ids.length !== 1 ? 's' : ''} aprobado${ids.length !== 1 ? 's' : ''}.`, 'success');
+    } catch(err) {
+      showToast('Error', err.message, 'error');
+    } finally {
+      setIsClosingWeek(false);
+    }
+  }, [isWeekFullyPast, canEditWeek, isDemoMode, weekTimesheets, employeesByBranch, weekDates, filterBranch, user, appendAuditLog, showToast]);
+
   // ── Branch select options ────────────────────────────────────────────────
   const branchOptions = useMemo(() => [
     { value: '', label: 'Todas las sucursales' },
@@ -927,6 +992,23 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
       {totalAlerts > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
+      )}
+
+      {/* Close week button — only for fully past weeks */}
+      {!isDemoMode && isWeekFullyPast && canEditWeek && (
+        approvalSummary.allApproved ? (
+          <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
+            <ShieldCheck size={12} strokeWidth={2.5} /> Semana cerrada
+          </span>
+        ) : (
+          <button type="button" onClick={handleCloseWeek} disabled={isClosingWeek}
+            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+            {isClosingWeek
+              ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
+              : <LockKeyhole size={11} strokeWidth={2.5} />}
+            {isClosingWeek ? 'Cerrando…' : `Cerrar semana (${approvalSummary.pending})`}
+          </button>
+        )
       )}
     </div>
   );
@@ -971,6 +1053,42 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-2xl px-5 py-2.5 flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Solo lectura</span>
             <span className="text-[11px] text-slate-400">Solo se puede corregir la semana actual.</span>
+          </div>
+        )}
+
+        {/* Approval status banner — only for past weeks with timesheets */}
+        {!isDemoMode && isWeekFullyPast && approvalSummary.total > 0 && (
+          <div className={`rounded-2xl px-5 py-3 flex items-center gap-4 border ${
+            approvalSummary.allApproved
+              ? 'bg-emerald-50/60 border-emerald-200/60'
+              : 'bg-white/50 border-white/60'
+          } backdrop-blur-xl`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              approvalSummary.allApproved ? 'bg-emerald-100' : 'bg-[#0052CC]/10'
+            }`}>
+              {approvalSummary.allApproved
+                ? <ShieldCheck size={15} className="text-emerald-600" strokeWidth={2.5} />
+                : <LockKeyhole size={15} className="text-[#0052CC]" strokeWidth={2} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              {approvalSummary.allApproved ? (
+                <p className="text-[12px] font-black text-emerald-700">Semana cerrada — todos los timesheets aprobados</p>
+              ) : (
+                <>
+                  <p className="text-[12px] font-black text-slate-700">
+                    {approvalSummary.approved} de {approvalSummary.total} aprobados · <span className="text-amber-600">{approvalSummary.pending} pendiente{approvalSummary.pending !== 1 ? 's' : ''}</span>
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Revisa y corrige los marcajes antes de cerrar la semana</p>
+                </>
+              )}
+            </div>
+            {/* Mini progress bar */}
+            {!approvalSummary.allApproved && approvalSummary.total > 0 && (
+              <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden flex-shrink-0">
+                <div className="h-full bg-emerald-500 rounded-full transition-all"
+                  style={{ width: `${Math.round((approvalSummary.approved / approvalSummary.total) * 100)}%` }} />
+              </div>
+            )}
           </div>
         )}
 

@@ -699,15 +699,7 @@ const submitEarlyExit = useCallback((e) => {
         const employee = (employees || []).find((emp) => {
             const empCode = String(emp?.code || emp?.employee_code || '')
                 .trim().replace(/\s+/g, '').toUpperCase();
-            if (empCode && empCode === codeToFind) return true;
-
-            // kiosk_pin: alternative scanner code printed on secondary badge
-            const kioskPin = String(emp?.kiosk_pin || '').trim().replace(/\s+/g, '').toUpperCase();
-            if (kioskPin && kioskPin === codeToFind) return true;
-
-            const emailPrefix = String(emp?.email || '').split('@')[0]
-                .trim().replace(/\s+/g, '').toUpperCase();
-            return emailPrefix && emailPrefix === codeToFind;
+            return empCode && empCode === codeToFind;
         });
 
         if (!employee) {

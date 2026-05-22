@@ -195,17 +195,19 @@ export const createPayrollSlice = (set, get) => ({
                 .gte('work_date', period.start_date)
                 .lte('work_date', period.end_date);
 
-            const daysMap   = new Map();
-            const noctMap   = new Map();
-            const noctOTMap = new Map();
+            const daysMap      = new Map();
+            const noctMap      = new Map();
+            const noctOTMap    = new Map();
             const diurnalOTMap = new Map();
             for (const s of sheets || []) {
                 const key = String(s.employee_id);
                 if (!daysMap.has(key)) { daysMap.set(key, 0); noctMap.set(key, 0); noctOTMap.set(key, 0); diurnalOTMap.set(key, 0); }
                 if (!s.is_absent) daysMap.set(key, daysMap.get(key) + 1);
-                noctMap.set(key,      (noctMap.get(key)      || 0) + (s.nocturnal_hours          || 0));
-                noctOTMap.set(key,    (noctOTMap.get(key)    || 0) + (s.nocturnal_overtime_hours || 0));
-                diurnalOTMap.set(key, (diurnalOTMap.get(key) || 0) + (s.overtime_hours           || 0));
+                noctMap.set(key,   (noctMap.get(key)   || 0) + (s.nocturnal_hours          || 0));
+                noctOTMap.set(key, (noctOTMap.get(key) || 0) + (s.nocturnal_overtime_hours  || 0));
+                // Diurnal OT = total OT minus the nocturnal portion (they overlap in the timesheet)
+                const diurnalOT = Math.max(0, (s.overtime_hours || 0) - (s.nocturnal_overtime_hours || 0));
+                diurnalOTMap.set(key, (diurnalOTMap.get(key) || 0) + diurnalOT);
             }
 
             // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')

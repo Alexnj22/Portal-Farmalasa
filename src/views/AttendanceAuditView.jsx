@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
@@ -789,6 +790,7 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
 
 // ── Main view ─────────────────────────────────────────────────────────────────
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
+  const navigate  = useNavigate();
   const { user, rolePerms } = useAuth();
   const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
   const showToast = useToastStore(s => s.showToast);
@@ -798,10 +800,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     appendAuditLog, loadAttendanceLastDays, insertAttendancePunchAt,
   } = useStaff();
 
-  // ── Demo mode ─────────────────────────────────────────────────────────────
-  const mockData        = useMemo(() => buildMockData(), []);
-  const [forceDemoMode, setForceDemoMode] = useState(false);
-  const isDemoMode = !storeEmployees?.length || forceDemoMode;
+  // ── Demo mode (auto — activates only when no real employees exist) ─────────
+  const mockData   = useMemo(() => buildMockData(), []);
+  const isDemoMode = !storeEmployees?.length;
   const employees  = isDemoMode ? mockData.employees : (storeEmployees || []);
   const branches   = isDemoMode ? mockData.branches   : (storeBranches  || []);
   const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || []);
@@ -1286,12 +1287,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         )}
       </div>
 
-      {/* Demo toggle */}
-      <button type="button" onClick={() => setForceDemoMode(v => !v)}
-        className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${forceDemoMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'}`}>
-        {forceDemoMode ? 'Demo ON' : 'Demo'}
-      </button>
-
       {/* Alert badge */}
       {viewMode === 'week' && totalAlerts > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
@@ -1317,9 +1312,15 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       {/* Close quincena button */}
       {viewMode === 'quincena' && !isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
-          <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
-            <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+              <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
+            </span>
+            <button type="button" onClick={() => navigate('/payroll')}
+              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] px-3 py-1.5 rounded-full shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+              Ver planilla →
+            </button>
+          </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
             className="flex items-center gap-1.5 text-[10px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
@@ -1351,22 +1352,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       />
 
       <div className="px-4 md:px-6 pt-5 pb-8 space-y-4">
-
-        {/* Demo banner */}
-        {isDemoMode && (
-          <div className="bg-amber-100/50 backdrop-blur-xl border border-amber-200/60 rounded-2xl px-5 py-3 flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Modo Demo</span>
-            <span className="text-[11px] text-amber-700/70 flex-1">
-              {forceDemoMode ? '4 empleados de prueba — todos los escenarios activos.' : 'Sin empleados reales.'}
-            </span>
-            {forceDemoMode && (
-              <button type="button" onClick={() => setForceDemoMode(false)}
-                className="text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-100/80 border border-amber-200 px-2.5 py-1 rounded-xl transition-all shrink-0 hover:bg-amber-200/70">
-                Salir demo
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Read-only notice */}
         {viewMode === 'week' && !isCurrentWeek && (

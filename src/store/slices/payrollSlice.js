@@ -183,26 +183,34 @@ export const createPayrollSlice = (set, get) => ({
                 return true;
             });
 
-            // Load timesheets for the period to get actual days worked
+            // #5 — employees without base_salary generate $0 entries; collect for warning
+            const noSalary = employees
+                .filter(e => !parseFloat(e.base_salary || 0))
+                .map(e => e.name || String(e.id));
+
+            // #2 — Load timesheets including nocturnal columns
             const { data: sheets } = await supabase
                 .from('timesheets')
-                .select('employee_id, regular_hours, is_absent, work_date')
+                .select('employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours')
                 .gte('work_date', period.start_date)
                 .lte('work_date', period.end_date);
 
-            // Sum days worked per employee from timesheets
-            const daysMap = new Map();
+            const daysMap   = new Map();
+            const noctMap   = new Map();
+            const noctOTMap = new Map();
             for (const s of sheets || []) {
                 const key = String(s.employee_id);
-                if (!daysMap.has(key)) daysMap.set(key, 0);
+                if (!daysMap.has(key)) { daysMap.set(key, 0); noctMap.set(key, 0); noctOTMap.set(key, 0); }
                 if (!s.is_absent) daysMap.set(key, daysMap.get(key) + 1);
+                noctMap.set(key,   (noctMap.get(key)   || 0) + (s.nocturnal_hours          || 0));
+                noctOTMap.set(key, (noctOTMap.get(key) || 0) + (s.nocturnal_overtime_hours || 0));
             }
 
-            // Check for existing advances (salary_advance requests)
+            // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
             const { data: advances } = await supabase
                 .from('approval_requests')
                 .select('employee_id, metadata')
-                .eq('type', 'ADELANTO')
+                .eq('type', 'ADVANCE')
                 .eq('status', 'APPROVED')
                 .gte('created_at', period.start_date)
                 .lte('created_at', period.end_date + 'T23:59:59');
@@ -210,16 +218,40 @@ export const createPayrollSlice = (set, get) => ({
             const advanceMap = new Map();
             for (const adv of advances || []) {
                 const key = String(adv.employee_id);
-                const amt = parseFloat(adv.metadata?.amount || 0);
-                advanceMap.set(key, (advanceMap.get(key) || 0) + amt);
+                advanceMap.set(key, (advanceMap.get(key) || 0) + parseFloat(adv.metadata?.amount || 0));
             }
 
-            // Period working days (for default when no timesheets)
+            // #7 — Vacation plans overlapping period: those days are paid (not absent)
+            const { data: vacPlans } = await supabase
+                .from('vacation_plans')
+                .select('employee_id, start_date, end_date')
+                .in('status', ['CONFIRMED', 'APPROVED', 'TAKEN'])
+                .lte('start_date', period.end_date)
+                .gte('end_date', period.start_date);
+
+            const vacDaysMap  = new Map();
+            const vacBonusMap = new Map();
+            for (const vp of vacPlans || []) {
+                const empId = String(vp.employee_id);
+                if (!daysMap.has(empId)) continue; // skip if no timesheet data
+                const emp = employees.find(e => String(e.id) === empId);
+                if (!emp) continue;
+                // Days of this plan that fall inside the payroll period
+                const planStart = vp.start_date > period.start_date ? vp.start_date : period.start_date;
+                const planEnd   = vp.end_date   < period.end_date   ? vp.end_date   : period.end_date;
+                const vacDays   = Math.round((new Date(planEnd + 'T12:00:00') - new Date(planStart + 'T12:00:00')) / 86400000) + 1;
+                if (vacDays <= 0) continue;
+                vacDaysMap.set(empId, (vacDaysMap.get(empId) || 0) + vacDays);
+                const dailyRate = parseFloat((parseFloat(emp.base_salary || 0) / 30).toFixed(4));
+                vacBonusMap.set(empId, (vacBonusMap.get(empId) || 0) + parseFloat((vacDays * dailyRate * 0.30).toFixed(2)));
+            }
+
+            // Period working days (fallback when no timesheets)
             const start    = new Date(period.start_date + 'T12:00:00');
             const end      = new Date(period.end_date   + 'T12:00:00');
             const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-            // Delete existing draft entries for this period
+            // Delete existing PENDING entries for this period
             await supabase
                 .from('payroll_entries')
                 .delete()
@@ -227,10 +259,21 @@ export const createPayrollSlice = (set, get) => ({
                 .eq('status', 'PENDING');
 
             const rows = employees.map(emp => {
-                const empId   = String(emp.id);
-                const days    = daysMap.has(empId) ? daysMap.get(empId) : diffDays;
-                const advance = advanceMap.get(empId) || 0;
-                const calc    = calcPayrollEntry(emp, days, { salary_advance: advance });
+                const empId      = String(emp.id);
+                const hasTS      = daysMap.has(empId);
+                const workedDays = hasTS ? daysMap.get(empId) : diffDays;
+                const vacDays    = hasTS ? (vacDaysMap.get(empId)  || 0) : 0;
+                const advance    = advanceMap.get(empId)  || 0;
+                const noctOrd    = parseFloat((noctMap.get(empId)   || 0).toFixed(2));
+                const noctExtra  = parseFloat((noctOTMap.get(empId) || 0).toFixed(2));
+                const vacBonus   = vacBonusMap.get(empId) || 0;
+
+                const calc = calcPayrollEntry(emp, workedDays + vacDays, {
+                    salary_advance:        advance,
+                    night_hours_ordinary:  noctOrd,
+                    extra_hours_nocturnal: noctExtra,
+                    vacation_bonus:        vacBonus,
+                });
                 return {
                     period_id:   periodId,
                     employee_id: emp.id,
@@ -246,6 +289,7 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             await get().fetchPayrollEntries(periodId);
+            return { warnings: noSalary };
         } catch (err) {
             console.error('Error generating payroll:', err);
             set({ isLoadingPayroll: false });

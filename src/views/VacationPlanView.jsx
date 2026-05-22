@@ -596,6 +596,18 @@ const VacationPlanView = () => {
         }
     };
 
+    // Vacation balance: days used per employee this year (all non-cancelled plans)
+    const usedDaysByEmpId = useMemo(() => {
+        const map = new Map();
+        vacationPlans
+            .filter(p => p.year === year && p.status !== 'CANCELLED')
+            .forEach(p => {
+                const eid = String(p.employee_id);
+                map.set(eid, (map.get(eid) || 0) + (p.days || 0));
+            });
+        return map;
+    }, [vacationPlans, year]);
+
     // Sort filtered plans by branch → role → start_date
     const filtered = useMemo(() => {
         const q = searchTerm.trim().toLowerCase();
@@ -759,6 +771,18 @@ const VacationPlanView = () => {
 
                                 {/* Eligibility banner — only on create */}
                                 {!editingPlan && selectedEmployee && <EligibilityBanner info={eligibilityInfo} />}
+
+                                {/* Vacation balance — only on create when eligible */}
+                                {!editingPlan && selectedEmployee && eligibilityInfo?.isEligible && (() => {
+                                    const used = usedDaysByEmpId.get(String(selectedEmployee.id)) || 0;
+                                    const remaining = 15 - used;
+                                    return (
+                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-[#0052CC]/5 border-[#0052CC]/15 text-[#0052CC]' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                                            <span className="font-black uppercase tracking-widest text-[9px]">Saldo vacacional {year}</span>
+                                            <span className="font-black text-[14px]">{Math.max(0, remaining)}<span className="text-[9px] font-bold ml-0.5">/ 15 días</span></span>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* RangeDatePicker */}
                                 <div>
@@ -939,7 +963,7 @@ const VacationPlanView = () => {
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
                                             <tr className="border-b border-slate-100">
-                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
+                                                {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
                                                     <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
@@ -947,6 +971,8 @@ const VacationPlanView = () => {
                                         <tbody className="divide-y divide-slate-50">
                                             {filtered.map(p => {
                                                 const isEditing = editingPlan?.id === p.id;
+                                                const usedDays  = usedDaysByEmpId.get(String(p.employee_id)) || 0;
+                                                const remaining = 15 - usedDays;
                                                 return (
                                                     <React.Fragment key={p.id}>
                                                         <tr className={`group/row hover:bg-white/40 transition-colors ${isEditing ? 'bg-amber-50/60' : ''}`}>
@@ -975,6 +1001,11 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 text-slate-500 font-medium">{p.branch?.name || '—'}</td>
                                                             <td className="py-3 pr-4 text-slate-600 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-slate-700">{p.days}</td>
+                                                            <td className="py-3 pr-4">
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-[#0052CC] bg-[#0052CC]/5 border-[#0052CC]/15' : 'text-red-700 bg-red-50 border-red-200'}`}>
+                                                                    {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
+                                                                </span>
+                                                            </td>
                                                             <td className="py-3 pr-4 max-w-[160px]">
                                                                 {p.notes
                                                                     ? <p className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2">{p.notes}</p>

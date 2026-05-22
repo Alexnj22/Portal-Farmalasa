@@ -515,7 +515,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 : <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>
             )}
             {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 px-1">Próximo</span>}
-            {!isOff && !isFuture && inconsistencies.length > 0 && (
+            {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
               <span className="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
                 {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
               </span>
@@ -528,6 +528,10 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 <ArrowRightLeft size={8} strokeWidth={2.5} /> Apoyo {crossBranchName}
               </span>
             )}
+            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
+            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">Incapacidad</span>}
+            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">Permiso</span>}
+            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
             <p className="text-[10px] font-bold text-slate-400">
@@ -676,7 +680,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 }
 
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
-function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect }) {
+function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll }) {
   const [expanded, setExpanded] = useState(false);
   const now = new Date();
 
@@ -826,6 +830,15 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <span className="text-[7px] font-black uppercase tracking-widest text-indigo-400 mt-0.5">noct.</span>
             </div>
           )}
+          {!allApproved && onApproveAll && (
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onApproveAll(); }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all active:scale-[0.96] shrink-0"
+            >
+              <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
+            </button>
+          )}
           <div className="w-px h-8 bg-slate-200/60 mx-0.5" />
           {allApproved ? (
             <div className="flex flex-col items-center min-w-[2.5rem]">
@@ -950,7 +963,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     let cancelled = false;
     const qEnd = getQuincenaEnd(selectedQuincena);
     supabase.from('timesheets')
-      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status')
+      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, nocturnal_hours, nocturnal_overtime_hours, absence_type')
       .gte('work_date', selectedQuincena).lte('work_date', qEnd)
       .then(({ data }) => { if (!cancelled) setQuincenaTS(data || []); });
     return () => { cancelled = true; };
@@ -1009,6 +1022,23 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
     })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
   }, [employees, filterBranch, quincenaByEmployee]);
+
+  const handleApproveAllForEmployee = useCallback(async (emp) => {
+    if (isDemoMode) { showToast('Demo', 'En modo demo los timesheets no se aprueban.', 'info'); return; }
+    const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
+    if (!pending.length) return;
+    const ids = pending.map(ts => ts.id);
+    const { error } = await supabase.from('timesheets')
+      .update({ status: 'APPROVED', approver_id: user?.id, updated_at: new Date().toISOString() })
+      .in('id', ids);
+    if (!error) {
+      setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
+      appendAuditLog?.('TIMESHEETS_BULK_APPROVED', user?.id, { empId: emp.id, count: ids.length, quincena: selectedQuincena, actorName: user?.name });
+      showToast('Aprobado', `${ids.length} día(s) aprobado(s) para ${emp.name}.`, 'success');
+    } else {
+      showToast('Error', 'No se pudo aprobar.', 'error');
+    }
+  }, [isDemoMode, quincenaTS, user, appendAuditLog, selectedQuincena, showToast]);
 
   const handleCloseQuincena = useCallback(async () => {
     if (isClosingQuincena) return;
@@ -1430,6 +1460,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                           timesheets={quincenaTS}
                           branchNameById={branchNameById}
                           onCorrect={handleCorrect}
+                          onApproveAll={canEdit ? () => handleApproveAllForEmployee(emp) : null}
                         />
                       ))}
                     </div>

@@ -98,7 +98,7 @@ function buildBoletaHTML(entry, period, branches) {
   <div><span class="lbl">SUELDO BASE MENSUAL:</span> $${parseFloat(emp.base_salary||0).toFixed(2)}</div>
   <div><span class="lbl">TIPO DE JORNADA:</span> TIEMPO COMPLETO</div>
   <div><span class="lbl">SUELDO POR HORA:</span> $${hourly.toFixed(4)}</div>
-  <div><span class="lbl">FORMA DE PAGO:</span> DEPÓSITO EN ${(emp.bank_name||'').toUpperCase()}</div>
+  <div><span class="lbl">FORMA DE PAGO:</span> ${emp.bank_name ? 'DEPÓSITO EN ' + emp.bank_name.toUpperCase() : 'EFECTIVO / NO ESPECIFICADO'}</div>
 </div>
 <hr/>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 30px">
@@ -437,8 +437,13 @@ const PayrollView = ({ openModal }) => {
         if (!activePeriod) return;
         setGenerating(true);
         try {
-            await generatePayrollEntries(activePeriod.id, filterBranch || null);
-            showToast('Generado', 'Planilla generada correctamente.', 'success');
+            const result = await generatePayrollEntries(activePeriod.id, filterBranch || null);
+            if (result?.warnings?.length > 0) {
+                const names = result.warnings.slice(0, 2).join(', ') + (result.warnings.length > 2 ? ' y más…' : '');
+                showToast('Planilla generada con advertencias', `${result.warnings.length} empleado(s) sin salario base: ${names}`, 'warning');
+            } else {
+                showToast('Generado', 'Planilla generada correctamente.', 'success');
+            }
         } catch(e) { showToast('Error', e.message || 'No se pudo generar la planilla.', 'error'); }
         setGenerating(false);
     };

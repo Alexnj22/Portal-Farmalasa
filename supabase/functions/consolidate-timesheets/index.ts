@@ -208,7 +208,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Load attendance punches in CST day window (UTC-6)
+    // 4a. Load approved absence requests to classify justified absences
+    const { data: absenceRequests } = await supabase
+      .from('approval_requests')
+      .select('employee_id, type, metadata')
+      .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
+      .eq('status', 'APPROVED');
+
+    const absenceTypeMap = new Map<string, string>();
+    for (const req of absenceRequests || []) {
+      const meta   = (typeof req.metadata === 'object' && req.metadata) ? req.metadata as Record<string, unknown> : {};
+      const empId  = String(req.employee_id);
+      const type   = req.type as string;
+      if (type === 'PERMIT') {
+        const dates = Array.isArray(meta.permissionDates) ? meta.permissionDates as string[] : [];
+        if (dates.includes(workDate)) absenceTypeMap.set(empId, 'PERMIT');
+      } else {
+        const startDate = ((meta.startDate || meta.date) as string | undefined);
+        const endDate   = ((meta.endDate   || startDate) as string | undefined);
+        if (startDate && endDate && startDate <= workDate && endDate >= workDate) {
+          absenceTypeMap.set(empId, type);
+        }
+      }
+    }
+
+    // 4b. Load attendance punches in CST day window (UTC-6)
     const dayStart = workDate + 'T00:00:00-06:00';
     const dayEnd   = workDate + 'T23:59:59-06:00';
     const { data: punches, error: punchErr } = await supabase
@@ -360,6 +384,7 @@ Deno.serve(async (req) => {
         nocturnal_overtime_hours:  nocturnalOTHours,
         late_minutes:              lateMinutes,
         is_absent:                 isAbsent,
+        absence_type:              isAbsent ? (absenceTypeMap.get(empId) || null) : null,
         is_holiday_worked:         !isAbsent && isHoliday,
         status:                    autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
         updated_at:                new Date().toISOString(),

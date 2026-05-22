@@ -31,8 +31,10 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     const emp   = entry.employee || {};
     const daily = round2((emp.base_salary || 0) / 30);
 
-    const [otBankHours,    setOtBankHours]    = useState(null); // null = loading
-    const [bankRedeemed,   setBankRedeemed]   = useState(false);
+    const [otBankHours, setOtBankHours] = useState(null); // null = loading
+    const [otPayInput,  setOtPayInput]  = useState('');
+    const [otCompInput, setOtCompInput] = useState('');
+    const [otApplied,   setOtApplied]   = useState(false);
 
     useEffect(() => {
         if (!emp.id) return;
@@ -47,21 +49,23 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             });
     }, [emp.id]);
 
-    const handlePayOT = () => {
-        if (!otBankHours || otBankHours <= 0) return;
+    const otPay  = parseFloat(otPayInput)  || 0;
+    const otComp = parseFloat(otCompInput) || 0;
+    const otUsed = round2(otPay + otComp);
+    const otLeft = round2((otBankHours || 0) - otUsed);
+    const otError = otUsed > (otBankHours || 0) || (otPay < 0) || (otComp < 0);
+
+    const handleApplyOT = () => {
+        if (otError || otUsed === 0) return;
         setFormData(f => ({
             ...f,
-            extra_hours_diurnal: round2((f.extra_hours_diurnal || entry.extra_hours_diurnal || 0) + otBankHours),
-            _otBankPayHours: otBankHours,
-            _otBankType: 'PAID',
+            extra_hours_diurnal: otPay > 0
+                ? round2((f.extra_hours_diurnal || entry.extra_hours_diurnal || 0) + otPay)
+                : (f.extra_hours_diurnal ?? entry.extra_hours_diurnal ?? 0),
+            _otBankPayHours:  otPay  > 0 ? otPay  : undefined,
+            _otBankCompHours: otComp > 0 ? otComp : undefined,
         }));
-        setBankRedeemed('PAID');
-    };
-
-    const handleCompensateOT = () => {
-        if (!otBankHours || otBankHours <= 0) return;
-        setFormData(f => ({ ...f, _otBankPayHours: otBankHours, _otBankType: 'TIME_OFF' }));
-        setBankRedeemed('TIME_OFF');
+        setOtApplied(true);
     };
 
     const numField = (key, label) => (
@@ -89,38 +93,76 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             {/* OT Bank widget */}
-            {otBankHours !== null && otBankHours > 0 && !bankRedeemed && (
-                <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
-                    <div className="flex items-center gap-2 mb-2.5">
-                        <Clock size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2.5} />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-amber-600">Banco de Horas Extra</p>
+            {otBankHours !== null && otBankHours > 0 && !otApplied && (
+                <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Clock size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-amber-600">Banco de Horas Extra</p>
+                        </div>
+                        <span className="text-[18px] font-black text-amber-800 leading-none">
+                            {otBankHours.toFixed(1)}<span className="text-[10px] font-bold ml-1">h disponibles</span>
+                        </span>
                     </div>
-                    <p className="text-[20px] font-black text-amber-800 leading-none mb-0.5">{otBankHours.toFixed(1)}<span className="text-[11px] font-bold ml-1">horas pendientes</span></p>
-                    <p className="text-[9px] text-amber-500 mb-3">Acumuladas de esta quincena — elige cómo liquidarlas</p>
-                    <div className="flex gap-2">
-                        <button type="button" onClick={handlePayOT}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 active:scale-95 transition-all">
-                            <CreditCard size={11} strokeWidth={2.5} /> Pagar en planilla
-                        </button>
-                        <button type="button" onClick={handleCompensateOT}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 active:scale-95 transition-all">
-                            <CalendarOff size={11} strokeWidth={2.5} /> Dar en tiempo
-                        </button>
+                    <p className="text-[9px] text-amber-500">Distribuye las horas — puedes pagar una parte y compensar el resto.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1 flex items-center gap-1">
+                                <CreditCard size={9} strokeWidth={2.5} /> Pagar (h)
+                            </p>
+                            <input type="number" step="0.5" min="0" max={otBankHours}
+                                value={otPayInput}
+                                onChange={e => setOtPayInput(e.target.value)}
+                                placeholder="0"
+                                className="w-full h-9 px-3 bg-white border border-amber-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 rounded-xl text-[13px] font-black text-amber-900 outline-none transition-all" />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-1 flex items-center gap-1">
+                                <CalendarOff size={9} strokeWidth={2.5} /> Tiempo comp. (h)
+                            </p>
+                            <input type="number" step="0.5" min="0" max={otBankHours}
+                                value={otCompInput}
+                                onChange={e => setOtCompInput(e.target.value)}
+                                placeholder="0"
+                                className="w-full h-9 px-3 bg-white border border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-xl text-[13px] font-black text-blue-900 outline-none transition-all" />
+                        </div>
                     </div>
+                    {otUsed > 0 && (
+                        <div className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[10px] font-black ${otError ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-white/70 text-slate-600 border border-amber-100'}`}>
+                            <span>Usadas: {otUsed.toFixed(1)}h · Quedan en banco: {otError ? '—' : `${otLeft.toFixed(1)}h`}</span>
+                            {otError && <span className="text-red-500">Excede el saldo</span>}
+                        </div>
+                    )}
+                    <button type="button" onClick={handleApplyOT}
+                        disabled={otError || otUsed === 0}
+                        className="w-full py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        Aplicar distribución
+                    </button>
                 </div>
             )}
-            {bankRedeemed === 'PAID' && (
-                <div className="col-span-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5">
-                    <p className="text-[11px] font-black text-emerald-700">
-                        ✓ {otBankHours?.toFixed(1)}h HE añadidas a Hrs. Extra Diurnas — se registrarán al guardar.
-                    </p>
-                </div>
-            )}
-            {bankRedeemed === 'TIME_OFF' && (
-                <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5">
-                    <p className="text-[11px] font-black text-blue-700">
-                        ✓ {otBankHours?.toFixed(1)}h marcadas como tiempo compensado — se registrarán al guardar.
-                    </p>
+            {otApplied && (
+                <div className="col-span-2 space-y-1.5">
+                    {otPay > 0 && (
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5">
+                            <p className="text-[11px] font-black text-emerald-700">
+                                ✓ {otPay.toFixed(1)}h añadidas a Hrs. Extra Diurnas — se pagarán en esta planilla.
+                            </p>
+                        </div>
+                    )}
+                    {otComp > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5">
+                            <p className="text-[11px] font-black text-blue-700">
+                                ✓ {otComp.toFixed(1)}h marcadas como tiempo compensado — quedan en banco para programar.
+                            </p>
+                        </div>
+                    )}
+                    {otLeft > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5">
+                            <p className="text-[11px] font-black text-amber-700">
+                                {otLeft.toFixed(1)}h permanecen en banco para la siguiente quincena.
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 

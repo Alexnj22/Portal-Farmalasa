@@ -91,7 +91,7 @@ export const createSystemSlice = (set, get) => ({
                     supabase.from('branches').select('*').order('id', { ascending: true }),
                     supabase.from('roles').select('*').order('name', { ascending: true }),
                     supabase.from('shifts').select('*'),
-                    supabase.from('employee_rosters').select('employee_id, schedule_data, status').eq('week_start_date', weekStartDate).in('status', ['PUBLISHED', 'DRAFT']).order('status', { ascending: true }),
+                    supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
                     supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`),
                     supabase.from('employee_events').select('*'),
                     supabase.from('employee_documents').select('*'),

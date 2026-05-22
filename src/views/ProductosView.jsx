@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, LayoutList, Boxes } from 'lucide-react';
+import { Package, LayoutList, Boxes, BarChart2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabCatalogo     from './productos/TabCatalogo';
 import TabInventario   from './productos/TabInventario';
+import TabMinMax       from './productos/TabMinMax';
 import { supabase }    from '../supabaseClient';
 import { useAuth }     from '../context/AuthContext';
 
 const TABS = [
     { key: 'catalogo',   label: 'Catálogo',   icon: LayoutList },
     { key: 'inventario', label: 'Inventario',  icon: Boxes      },
+    { key: 'minmax',     label: 'Min/Max',     icon: BarChart2  },
 ];
 
 export default function ProductosView() {
     // ── Tab + search ────────────────────────────────────────────────────────
     const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
-    const VALID        = new Set(['catalogo', 'inventario']);
+    const VALID        = new Set(['catalogo', 'inventario', 'minmax']);
     const allowedTabs  = TABS.filter(t => hasPermission(`productos_tab_${t.key}`));
     const defaultTab   = allowedTabs[0]?.key ?? 'catalogo';
     const rawTab       = searchParams.get('tab');
@@ -55,6 +57,8 @@ export default function ProductosView() {
 
     const searchPlaceholder = activeTab === 'catalogo'
         ? 'Buscar producto o principio activo...'
+        : activeTab === 'minmax'
+        ? 'Buscar en Min/Max...'
         : 'Buscar en inventario...';
 
     const filtersContent = (
@@ -88,6 +92,9 @@ export default function ProductosView() {
             </div>
             <div className={activeTab === 'inventario' ? '' : 'hidden'}>
                 <TabInventario searchTerm={debouncedSearch} />
+            </div>
+            <div className={activeTab === 'minmax' ? '' : 'hidden'}>
+                <TabMinMax searchTerm={debouncedSearch} />
             </div>
         </GlassViewLayout>
     );

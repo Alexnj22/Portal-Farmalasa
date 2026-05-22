@@ -59,6 +59,7 @@ const TimeClockView = ({ setView }) => {
     handleSkipPin,
     selfDeclareData,
     submitSelfDeclare,
+    cancelSelfDeclare,
   } = useTimeClockEngine();
 
   const handleLogout = useCallback(async () => {
@@ -83,6 +84,10 @@ const TimeClockView = ({ setView }) => {
           setIsRevokeModalOpen(false);
           return;
         }
+        if (selfDeclareData) {
+          cancelSelfDeclare();
+          return;
+        }
         if (isConfiguring || earlyExitData || authPrompt || specialMode) {
           cancelAuth();
           return;
@@ -97,9 +102,9 @@ const TimeClockView = ({ setView }) => {
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [
-    feedback, isRevokeModalOpen, isConfiguring, earlyExitData, 
-    authPrompt, specialMode, scanCode, closeFeedback, 
-    setIsRevokeModalOpen, cancelAuth, setScanCode, handleLogout
+    feedback, isRevokeModalOpen, isConfiguring, earlyExitData, selfDeclareData,
+    authPrompt, specialMode, scanCode, closeFeedback,
+    setIsRevokeModalOpen, cancelAuth, setScanCode, handleLogout, cancelSelfDeclare
   ]);
 
  return (

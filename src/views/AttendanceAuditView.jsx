@@ -931,7 +931,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const handleCloseQuincena = useCallback(async () => {
     if (isClosingQuincena) return;
     const unapproved = quincenaTS.filter(ts => ts.status !== 'APPROVED');
-    if (unapproved.length === 0) { alert('Todos los registros ya están aprobados.'); return; }
+    if (unapproved.length === 0) { showToast('Sin cambios', 'Todos los registros ya están aprobados.', 'info'); return; }
     setIsClosingQuincena(true);
     const ids = unapproved.map(ts => ts.id);
     const { error } = await supabase.from('timesheets').update({ status: 'APPROVED' }).in('id', ids);
@@ -1107,7 +1107,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
       setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
       setEditingExId(null);
-      appendAuditLog?.(`SHIFT_EXCEPTION_${newStatus}`, { requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd }, { actorId: user?.id, actorName: user?.name });
+      appendAuditLog?.(`SHIFT_EXCEPTION_${newStatus}`, user?.id, { requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd, actorName: user?.name });
       showToast(action === 'APPROVE' ? 'Confirmado' : 'Rechazado', action === 'APPROVE' ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.', action === 'APPROVE' ? 'success' : 'info');
     } catch (err) {
       showToast('Error', err.message, 'error');
@@ -1259,7 +1259,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         )}
 
         {/* Read-only notice */}
-        {!isCurrentWeek && (
+        {viewMode === 'week' && !isCurrentWeek && (
           <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-2xl px-5 py-2.5 flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Solo lectura</span>
             <span className="text-[11px] text-slate-400">Solo se puede corregir la semana actual.</span>
@@ -1267,7 +1267,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         )}
 
         {/* Approval status banner — only for past weeks with timesheets */}
-        {!isDemoMode && isWeekFullyPast && approvalSummary.total > 0 && (
+        {viewMode === 'week' && !isDemoMode && isWeekFullyPast && approvalSummary.total > 0 && (
           <div className={`rounded-2xl px-5 py-3 flex items-center gap-4 border ${
             approvalSummary.allApproved
               ? 'bg-emerald-50/60 border-emerald-200/60'

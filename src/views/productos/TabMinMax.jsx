@@ -1,65 +1,65 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, TrendingDown, TrendingUp, Loader2,
-    Building2, BarChart2, Package, X, Download,
-    PackageX, CheckCircle2, Edit3, Check, Info,
+    Building2, BarChart2, Package, X, Download, PackageX,
+    CheckCircle2, Edit3, Check, Info, RotateCcw,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
-// La Popular, Salud 1-4, Salud 5, Bodega
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
-const ALERT_CFG = {
-    out_of_stock: { label: 'Sin stock',      bg: 'bg-red-100 text-red-700 border-red-200',         dot: 'bg-red-500',     icon: AlertTriangle },
-    below_min:    { label: 'Bajo mínimo',    bg: 'bg-orange-100 text-orange-700 border-orange-200', dot: 'bg-orange-500',  icon: TrendingDown  },
-    approaching:  { label: 'Próx. mínimo',   bg: 'bg-amber-100 text-amber-700 border-amber-200',    dot: 'bg-amber-400',   icon: TrendingDown  },
-    dead_stock:   { label: 'Sin movimiento', bg: 'bg-slate-100 text-slate-600 border-slate-200',    dot: 'bg-slate-400',   icon: PackageX      },
-    overstocked:  { label: 'Exceso',         bg: 'bg-blue-100 text-blue-700 border-blue-200',       dot: 'bg-blue-400',    icon: TrendingUp    },
-    ok:           { label: 'OK',             bg: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', icon: CheckCircle2  },
+const ALERT = {
+    out_of_stock: { label: 'Sin stock',       pill: 'bg-red-100 text-red-700 border-red-200',           dot: 'bg-red-500',     left: 'border-l-red-500',    row: 'bg-red-50/40'     },
+    below_min:    { label: 'Bajo mínimo',     pill: 'bg-orange-100 text-orange-700 border-orange-200',  dot: 'bg-orange-500',  left: 'border-l-orange-400', row: 'bg-orange-50/20'  },
+    approaching:  { label: 'Próx. mínimo',    pill: 'bg-amber-100 text-amber-700 border-amber-200',     dot: 'bg-amber-400',   left: 'border-l-amber-300',  row: ''                 },
+    ok:           { label: 'OK',              pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', left: 'border-l-emerald-400', row: ''               },
+    overstocked:  { label: 'Exceso',          pill: 'bg-blue-100 text-blue-700 border-blue-200',         dot: 'bg-blue-400',    left: 'border-l-blue-400',   row: 'bg-blue-50/10'   },
+    dead_stock:   { label: 'Sin movimiento',  pill: 'bg-slate-100 text-slate-500 border-slate-200',      dot: 'bg-slate-300',   left: 'border-l-slate-200',  row: 'bg-slate-50/60'  },
 };
+
+const STAT_CFGS = [
+    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-red-500',     active: 'bg-red-50 border-red-300 text-red-700'        },
+    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-50 border-orange-300 text-orange-700' },
+    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-50 border-amber-300 text-amber-700'   },
+    { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
+    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-50 border-blue-300 text-blue-700'     },
+    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100 border-slate-300 text-slate-600' },
+];
 
 const ABC_CFG = {
     A: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', title: 'Clase A — top 70% ingresos' },
-    B: { bg: 'bg-blue-50 text-blue-700 border-blue-200',          title: 'Clase B — siguiente 20%' },
-    C: { bg: 'bg-amber-50 text-amber-700 border-amber-200',        title: 'Clase C — restante 10%' },
-    D: { bg: 'bg-slate-50 text-slate-500 border-slate-200',        title: 'Sin ventas en 6 meses' },
+    B: { bg: 'bg-blue-50 text-blue-700 border-blue-200',          title: 'Clase B — siguiente 20%'    },
+    C: { bg: 'bg-amber-50 text-amber-700 border-amber-200',       title: 'Clase C — restante 10%'     },
+    D: { bg: 'bg-slate-50 text-slate-400 border-slate-200',       title: 'Sin ventas en 6 meses'      },
 };
 
 const VAR_CFG = {
-    stable:   { label: 'Estable',  bg: 'text-emerald-600' },
-    moderate: { label: 'Moderada', bg: 'text-amber-600'   },
-    erratic:  { label: 'Errática', bg: 'text-red-500'     },
+    stable:   { label: 'Estable',  cls: 'text-emerald-600' },
+    moderate: { label: 'Moderada', cls: 'text-amber-600'   },
+    erratic:  { label: 'Errática', cls: 'text-red-500'     },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatUnits(units, presentations) {
     const n = Number(units);
-    if (n === 0) return '0 und';
-
-    const pres = [...new Map(
-        (presentations || []).map(p => [p.factor, p])
-    ).values()]
-        .filter(p => p.factor > 1)
-        .sort((a, b) => b.factor - a.factor);
-
-    if (pres.length === 0) return `${n.toLocaleString()} und`;
-
+    if (n === 0) return '0';
+    const pres = [...new Map((presentations || []).map(p => [p.factor, p])).values()]
+        .filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor);
+    if (!pres.length) return `${n.toLocaleString()} und`;
     let rem = n;
     const parts = [];
     for (const { tipo, factor } of pres) {
         if (rem >= factor) {
-            const count = Math.floor(rem / factor);
-            parts.push(`${count} ${tipo.trim()}`);
-            rem -= count * factor;
+            parts.push(`${Math.floor(rem / factor)} ${tipo.trim()}`);
+            rem %= factor;
         }
     }
     if (rem > 0) parts.push(`${rem} und`);
@@ -68,140 +68,169 @@ function formatUnits(units, presentations) {
 
 function relativeTime(iso) {
     if (!iso) return null;
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
+    const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
     if (mins < 2)  return 'hace un momento';
     if (mins < 60) return `hace ${mins} min`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24)  return `hace ${hrs}h`;
-    return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
 }
 
-function exportCsv(rows, erpName) {
-    const headers = ['Producto','Clase','Alerta','Variabilidad','Stock','MIN','MAX','Vendidas 6m','Ingresos 6m'];
+function exportCsv(rows, name) {
+    const h = ['Producto','Clase','Estado','Variab.','Stock actual','MIN (und)','MAX (und)','Ventas 6m','Ingresos 6m'];
     const lines = rows.map(r => [
-        `"${(r.product_name || '').replace(/"/g, '""')}"`,
+        `"${(r.product_name||'').replace(/"/g,'""')}"`,
         r.abc_class,
-        ALERT_CFG[r.alert_status]?.label || r.alert_status,
+        ALERT[r.alert_status]?.label || r.alert_status,
         VAR_CFG[r.demand_variability]?.label || '',
-        r.current_stock,
-        r.effective_min,
-        r.effective_max,
+        r.current_stock, r.effective_min, r.effective_max,
         r.units_sold_6m,
         Number(r.revenue_6m).toFixed(2),
     ].join(','));
-    const csv = [headers.join(','), ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `stock_minmax_${erpName}_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const blob = new Blob([[h.join(','),...lines].join('\n')], { type:'text/csv;charset=utf-8;' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
+    a.click(); URL.revokeObjectURL(a.href);
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+// ─── Stock mini-bar ───────────────────────────────────────────────────────────
 
-function StatCard({ count, label, sub, color, active, onClick }) {
+function StockBar({ current, min, max }) {
+    const c  = Number(current) || 0;
+    const mn = Number(min)     || 0;
+    const mx = Number(max)     || 0;
+    if (!mx && !mn) return null;
+    const ceil = Math.max(mx * 1.3, c * 1.15, mn * 3, 1);
+    const pct  = v => `${Math.min(100, (v / ceil) * 100).toFixed(2)}%`;
+    const fill = c === 0 ? 'bg-red-400' : c < mn ? 'bg-orange-400' : c > mx ? 'bg-blue-400' : 'bg-emerald-400';
     return (
-        <button onClick={onClick}
-            className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[110px] text-left ${
-                active
-                    ? `${color.activeBg} shadow-md -translate-y-px`
-                    : `bg-white border-slate-100 hover:border-slate-200 hover:shadow-sm`
-            }`}>
-            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${color.dot}`} />
-            <div>
-                <div className={`text-[22px] font-black leading-none tabular-nums ${color.text}`}>{count}</div>
-                <div className="text-[10px] font-bold text-slate-600 mt-0.5">{label}</div>
-                {sub && <div className="text-[9px] text-slate-400">{sub}</div>}
-            </div>
-            {active && <X size={10} className="text-slate-400 ml-auto shrink-0" />}
-        </button>
+        <div className="relative h-[3px] w-full bg-slate-100 rounded-full mt-1.5">
+            <div className={`absolute left-0 top-0 h-full rounded-full ${fill} transition-all`} style={{ width: pct(c) }} />
+            {mn > 0 && <div className="absolute top-[-2px] h-[7px] w-[2px] bg-orange-400/80 rounded-full" style={{ left: pct(mn) }} />}
+            {mx > 0 && <div className="absolute top-[-2px] h-[7px] w-[2px] bg-blue-400/70 rounded-full"   style={{ left: pct(mx) }} />}
+        </div>
     );
 }
 
-// ─── Manual Override Modal ─────────────────────────────────────────────────
+// ─── Inline edit row ──────────────────────────────────────────────────────────
 
-function OverrideModal({ row, onSave, onClose }) {
-    const [minVal, setMinVal] = useState(row.effective_min ?? '');
-    const [maxVal, setMaxVal] = useState(row.effective_max ?? '');
+function EditRow({ row, onSave, onCancel }) {
+    const [mn, setMn]         = useState(String(row.effective_min ?? ''));
+    const [mx, setMx]         = useState(String(row.effective_max ?? ''));
     const [saving, setSaving] = useState(false);
     const [err, setErr]       = useState('');
+    const mnRef = useRef();
+    useEffect(() => { mnRef.current?.select(); }, []);
 
-    const handleSave = async () => {
-        const mn = minVal === '' ? null : parseInt(minVal);
-        const mx = maxVal === '' ? null : parseInt(maxVal);
-        if (mn !== null && mx !== null && mx <= mn) { setErr('El MAX debe ser mayor al MIN'); return; }
+    const save = async (clearManual = false) => {
+        const newMin = clearManual ? null : (mn === '' ? null : parseInt(mn, 10));
+        const newMax = clearManual ? null : (mx === '' ? null : parseInt(mx, 10));
+        if (!clearManual && newMin !== null && newMax !== null && newMax <= newMin) {
+            setErr('MAX debe ser mayor al MIN'); return;
+        }
         setSaving(true);
         try {
             const { error } = await supabase
                 .from('product_stock_params')
-                .update({ manual_min: mn, manual_max: mx, updated_at: new Date().toISOString() })
+                .update({ manual_min: newMin, manual_max: newMax, updated_at: new Date().toISOString() })
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row._erp_sucursal_id);
             if (error) throw error;
             onSave();
-        } catch (e) { setErr(e.message); }
-        finally { setSaving(false); }
+        } catch (e) { setErr(e.message); setSaving(false); }
     };
 
-    const handleClear = async () => {
-        setSaving(true);
-        try {
-            const { error } = await supabase
-                .from('product_stock_params')
-                .update({ manual_min: null, manual_max: null, updated_at: new Date().toISOString() })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row._erp_sucursal_id);
-            if (error) throw error;
-            onSave();
-        } catch (e) { setErr(e.message); }
-        finally { setSaving(false); }
-    };
+    const pres   = row.presentations || [];
+    const abc    = ABC_CFG[row.abc_class] ?? ABC_CFG.D;
+    const varCfg = VAR_CFG[row.demand_variability];
+    const alert  = ALERT[row.alert_status] ?? ALERT.ok;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
-                <div className="mb-4">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ajuste manual</p>
-                    <p className="text-[15px] font-bold text-slate-800 leading-tight">{row.product_name}</p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                        Calculado: MIN={Number(row.effective_min||0).toLocaleString()} / MAX={Number(row.effective_max||0).toLocaleString()} und
-                    </p>
+        <div className={`border-l-4 ${alert.left} bg-blue-50/40 border-b border-blue-100`}>
+            {/* Main row grid */}
+            <div className="grid items-center px-4 py-2"
+                style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
+
+                {/* Product */}
+                <div className="min-w-0 pr-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[13px] font-semibold text-slate-800 truncate">{row.product_name || '—'}</span>
+                        {row.has_manual && (
+                            <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>
+                        )}
+                    </div>
+                    <span className="text-[10px] text-slate-400">{Number(row.daily_velocity||0).toFixed(1)} und/día</span>
+                    <StockBar current={row.current_stock} min={parseInt(mn)||row.effective_min} max={parseInt(mx)||row.effective_max} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    {[['MIN', minVal, setMinVal], ['MAX', maxVal, setMaxVal]].map(([label, val, set]) => (
-                        <div key={label}>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label} (und)</label>
-                            <input
-                                type="number" min="0" value={val}
-                                onChange={e => set(e.target.value)}
-                                placeholder="Auto"
-                                className="mt-1 w-full px-3 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
-                            />
-                        </div>
-                    ))}
+
+                {/* ABC */}
+                <div className="flex justify-center">
+                    <span title={abc.title} className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${abc.bg}`}>{row.abc_class}</span>
                 </div>
-                {err && <p className="text-[11px] text-red-500 font-semibold mb-3">{err}</p>}
-                <div className="flex gap-2">
+
+                {/* Variab */}
+                <div className="text-center">
+                    {varCfg
+                        ? <span className={`text-[10px] font-semibold ${varCfg.cls}`}>{varCfg.label} <span className="text-slate-300 font-mono">({Number(row.cv||0).toFixed(0)}%)</span></span>
+                        : <span className="text-slate-200 text-xs">—</span>}
+                </div>
+
+                {/* Stock actual */}
+                <div className="text-right">
+                    <span className={`text-[12px] font-bold tabular-nums ${Number(row.current_stock)===0?'text-red-500':'text-slate-700'}`}>
+                        {formatUnits(row.current_stock, pres)}
+                    </span>
+                    <div className="text-[9px] text-slate-400">{Number(row.current_stock).toLocaleString()} und</div>
+                </div>
+
+                {/* MIN input */}
+                <div className="px-1.5">
+                    <input ref={mnRef} type="number" min="0" value={mn}
+                        onChange={e => { setMn(e.target.value); setErr(''); }}
+                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
+                        placeholder={String(row.effective_min)}
+                        className="w-full text-right text-[12px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+                    />
+                    <div className="text-[9px] text-slate-400 text-right mt-0.5">und</div>
+                </div>
+
+                {/* MAX input */}
+                <div className="px-1.5">
+                    <input type="number" min="0" value={mx}
+                        onChange={e => { setMx(e.target.value); setErr(''); }}
+                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
+                        placeholder={String(row.effective_max)}
+                        className="w-full text-right text-[12px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                    />
+                    <div className="text-[9px] text-slate-400 text-right mt-0.5">und</div>
+                </div>
+
+                {/* Save / Cancel */}
+                <div className="flex items-center justify-center gap-1.5">
+                    <button onClick={() => save()} disabled={saving}
+                        className="h-7 px-3 rounded-lg text-[11px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center gap-1">
+                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Guardar
+                    </button>
+                    <button onClick={onCancel} disabled={saving}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                        <X size={13} />
+                    </button>
+                </div>
+
+                {/* Restablecer */}
+                <div className="flex justify-end">
                     {row.has_manual && (
-                        <button onClick={handleClear} disabled={saving}
-                            className="px-3 py-2 text-[11px] font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50">
-                            Restablecer
+                        <button onClick={() => save(true)} disabled={saving} title="Restablecer valores calculados"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+                            <RotateCcw size={12} />
                         </button>
                     )}
-                    <button onClick={onClose} disabled={saving}
-                        className="flex-1 py-2 text-[12px] font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50">
-                        Cancelar
-                    </button>
-                    <button onClick={handleSave} disabled={saving}
-                        className="flex-1 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
-                        {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                        Guardar
-                    </button>
                 </div>
             </div>
+
+            {/* Error */}
+            {err && (
+                <div className="px-4 pb-2 text-[11px] font-semibold text-red-500">{err}</div>
+            )}
         </div>
     );
 }
@@ -209,24 +238,25 @@ function OverrideModal({ row, onSave, onClose }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TabMinMax({ searchTerm = '' }) {
-    const [selectedErp,   setSelectedErp]   = useState(1);
-    const [filterAbc,     setFilterAbc]     = useState('all');
-    const [filterAlert,   setFilterAlert]   = useState('all');
-    const [data,          setData]          = useState([]);
-    const [loading,       setLoading]       = useState(false);
-    const [calculating,   setCalculating]   = useState(false);
-    const [calcResult,    setCalcResult]    = useState(null);
-    const [error,         setError]         = useState(null);
-    const [editingRow,    setEditingRow]     = useState(null);
+    const [selectedErp, setSelectedErp] = useState(5); // La Popular primero
+    const [filterAbc,   setFilterAbc]   = useState('all');
+    const [filterAlert, setFilterAlert] = useState('all');
+    const [data,        setData]        = useState([]);
+    const [loading,     setLoading]     = useState(false);
+    const [calculating, setCalculating] = useState(false);
+    const [calcResult,  setCalcResult]  = useState(null);
+    const [error,       setError]       = useState(null);
+    const [editId,      setEditId]      = useState(null);
     const loadRef = useRef(0);
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true);
-        setError(null);
+        setLoading(true); setError(null); setEditId(null);
         try {
+            // .range(0,9999) bypasses the PostgREST 1000-row default cap
             const { data: rows, error: e } = await supabase
-                .rpc('get_stock_analysis', { p_erp_sucursal_id: erpId });
+                .rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
+                .range(0, 9999);
             if (e) throw e;
             if (rid !== loadRef.current) return;
             setData((rows || []).map(r => ({ ...r, _erp_sucursal_id: erpId })));
@@ -240,44 +270,32 @@ export default function TabMinMax({ searchTerm = '' }) {
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
     const handleRecalcular = async () => {
-        setCalculating(true);
-        setCalcResult(null);
-        setError(null);
+        setCalculating(true); setCalcResult(null); setError(null);
         try {
             const { data: res, error: e } = await supabase
                 .rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
             setCalcResult(res);
             await loadData(selectedErp);
-        } catch (e) {
-            setError(e.message);
-        } finally {
-            setCalculating(false);
-        }
+        } catch (e) { setError(e.message); }
+        finally { setCalculating(false); }
     };
 
-    const handleOverrideSave = useCallback(async () => {
-        setEditingRow(null);
-        await loadData(selectedErp);
+    const handleEditSave = useCallback(() => {
+        setEditId(null);
+        loadData(selectedErp);
     }, [selectedErp, loadData]);
 
-    // ── Stats ────────────────────────────────────────────────────────────────
-    const stats = useMemo(() => ({
-        out_of_stock: data.filter(d => d.alert_status === 'out_of_stock').length,
-        below_min:    data.filter(d => d.alert_status === 'below_min').length,
-        approaching:  data.filter(d => d.alert_status === 'approaching').length,
-        ok:           data.filter(d => d.alert_status === 'ok').length,
-        overstocked:  data.filter(d => d.alert_status === 'overstocked').length,
-        dead_stock:   data.filter(d => d.alert_status === 'dead_stock').length,
-    }), [data]);
+    // ── Derived ──────────────────────────────────────────────────────────────
+    const stats = useMemo(() => Object.fromEntries(
+        STAT_CFGS.map(s => [s.key, data.filter(d => d.alert_status === s.key).length])
+    ), [data]);
 
-    const lastCalcAt = useMemo(() =>
-        data.find(d => d.calculated_at)?.calculated_at ?? null, [data]);
+    const lastCalcAt    = useMemo(() => data.find(d => d.calculated_at)?.calculated_at ?? null, [data]);
+    const isBodega      = selectedErp === 6;
+    const neverCalc     = !isBodega && data.length > 0 && data.every(d => d.is_dead_stock);
+    const hasActiveData = data.some(d => !d.is_dead_stock);
 
-    const isBodega        = selectedErp === 6;
-    const neverCalculated = !isBodega && data.length > 0 && data.every(d => d.is_dead_stock);
-
-    // ── Filter ───────────────────────────────────────────────────────────────
     const filtered = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
@@ -288,286 +306,294 @@ export default function TabMinMax({ searchTerm = '' }) {
         });
     }, [data, filterAbc, filterAlert, searchTerm]);
 
-    // ── ERP select options ───────────────────────────────────────────────────
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
-    // ─── Render ──────────────────────────────────────────────────────────────
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
             {/* ── Top bar ── */}
-            <div className="flex items-center gap-3 flex-wrap">
-
-                {/* Sucursal selector */}
+            <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="overflow-visible" style={{ width: '175px' }}>
                     <LiquidSelect
                         value={String(selectedErp)}
                         onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterAlert('all'); } }}
-                        options={erpOptions}
-                        icon={Building2}
-                        clearable={false}
-                        compact
+                        options={erpOptions} icon={Building2} clearable={false} compact
                     />
                 </div>
 
-                {/* ABC filter */}
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80">
+                {/* ABC pills */}
+                <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-slate-100/80">
                     {['all','A','B','C','D'].map(cls => (
                         <button key={cls} onClick={() => setFilterAbc(cls)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all ${
-                                filterAbc === cls
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600'
+                            className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-black transition-all duration-150 ${
+                                filterAbc === cls ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                             }`}>
-                            {cls === 'all' ? 'Todos' : `Clase ${cls}`}
+                            {cls === 'all' ? 'Todos' : cls}
                         </button>
                     ))}
                 </div>
 
                 <div className="flex-1" />
 
-                {lastCalcAt && (
+                {lastCalcAt && !loading && (
                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <RefreshCw size={9} /> {relativeTime(lastCalcAt)}
                     </span>
                 )}
-
-                {/* Export */}
                 {data.length > 0 && !loading && (
-                    <button onClick={() => exportCsv(filtered.length ? filtered : data, ERP_NAMES[selectedErp])}
+                    <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp])}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white rounded-xl hover:border-slate-300 hover:shadow-sm transition-all">
                         <Download size={11} /> CSV
                     </button>
                 )}
-
-                {/* Recalcular */}
                 {!isBodega && (
-                    <button
-                        onClick={handleRecalcular}
-                        disabled={calculating || loading}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200 transition-all disabled:opacity-60">
-                        {calculating
-                            ? <><Loader2 size={13} className="animate-spin" /> Calculando…</>
-                            : <><RefreshCw size={13} /> Recalcular</>
-                        }
+                    <button onClick={handleRecalcular} disabled={calculating || loading}
+                        className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200/60 transition-all disabled:opacity-60">
+                        {calculating ? <><Loader2 size={13} className="animate-spin" /> Calculando…</> : <><RefreshCw size={13} /> Recalcular</>}
                     </button>
                 )}
             </div>
 
-            {/* ── Formula info ── */}
-            {!isBodega && !neverCalculated && data.some(d => !d.is_dead_stock) && (
+            {/* ── Alert stat chips ── */}
+            <div className="flex items-center gap-2 flex-wrap">
+                {STAT_CFGS.map(cfg => {
+                    const active = filterAlert === cfg.key;
+                    return (
+                        <button key={cfg.key}
+                            onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all ${
+                                active
+                                    ? `${cfg.active} shadow-sm`
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
+                            }`}>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                            <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>
+                                {loading ? '–' : stats[cfg.key]}
+                            </span>
+                            <span className="opacity-80">{cfg.label}</span>
+                            {active && <X size={9} className="ml-0.5 opacity-60" />}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ── Formula info strip ── */}
+            {!isBodega && hasActiveData && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] text-slate-400">
-                    <Info size={11} className="shrink-0 text-slate-300" />
+                    <Info size={10} className="shrink-0 text-slate-300" />
                     <span>
-                        <strong className="text-slate-500">MIN</strong> = traslado (3d) + seguridad (2–7d) &nbsp;·&nbsp;
-                        <strong className="text-slate-500">MAX</strong> = MIN + ciclo de pedido (4d) &nbsp;·&nbsp;
-                        Estable: MIN ~5d / MAX ~9d &nbsp;·&nbsp; Moderado: ~7d / ~11d &nbsp;·&nbsp; Errático: ~10d / ~14d
+                        <span className="text-slate-500 font-bold">MIN</span> = traslado 3d + seguridad ·
+                        <span className="text-slate-500 font-bold"> MAX</span> = MIN + ciclo 4d ·
+                        Estable <span className="text-slate-500">5/9d</span> · Moderado <span className="text-slate-500">7/11d</span> · Errático <span className="text-slate-500">10/14d</span>
                     </span>
                 </div>
             )}
 
-            {/* ── Stat cards ── */}
-            <div className="flex items-start gap-2.5 flex-wrap">
-                {[
-                    { key: 'out_of_stock', label: 'Sin stock',      sub: 'agotados',      dot: 'bg-red-500',     text: 'text-red-600',     activeBg: 'bg-red-50 border-red-200' },
-                    { key: 'below_min',    label: 'Bajo mínimo',    sub: 'críticos',       dot: 'bg-orange-500',  text: 'text-orange-600',  activeBg: 'bg-orange-50 border-orange-200' },
-                    { key: 'approaching',  label: 'Próx. mínimo',   sub: '< 25% sobre min',dot: 'bg-amber-400',   text: 'text-amber-600',   activeBg: 'bg-amber-50 border-amber-200' },
-                    { key: 'ok',           label: 'OK',             sub: 'nivel correcto', dot: 'bg-emerald-500', text: 'text-emerald-600', activeBg: 'bg-emerald-50 border-emerald-200' },
-                    { key: 'overstocked',  label: 'Exceso',         sub: 'sobre máximo',   dot: 'bg-blue-400',    text: 'text-blue-600',    activeBg: 'bg-blue-50 border-blue-200' },
-                    { key: 'dead_stock',   label: 'Sin movimiento', sub: '0 ventas 6m',    dot: 'bg-slate-400',   text: 'text-slate-600',   activeBg: 'bg-slate-100 border-slate-300' },
-                ].map(cfg => (
-                    <StatCard
-                        key={cfg.key}
-                        count={loading ? '–' : stats[cfg.key]}
-                        label={cfg.label}
-                        sub={cfg.sub}
-                        color={cfg}
-                        active={filterAlert === cfg.key}
-                        onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                    />
-                ))}
-            </div>
-
-            {/* ── Calc result banner ── */}
+            {/* ── Banners ── */}
             {calcResult?.ok && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-700 font-semibold">
                     <CheckCircle2 size={14} />
-                    Cálculo completado — {calcResult.rows?.toLocaleString()} productos actualizados
-                    <button onClick={() => setCalcResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600">
-                        <X size={12} />
-                    </button>
+                    Cálculo completado — {calcResult.rows?.toLocaleString()} productos actualizados en {ERP_NAMES[selectedErp]}
+                    <button onClick={() => setCalcResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
                 </div>
             )}
-
-            {/* ── Error ── */}
             {error && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
-                    <AlertTriangle size={14} />
-                    {error}
+                    <AlertTriangle size={14} /> {error}
                     <button onClick={() => setError(null)} className="ml-auto"><X size={12} /></button>
                 </div>
             )}
-
-            {/* ── Bodega info banner ── */}
             {!loading && isBodega && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800">
                     <Info size={14} className="shrink-0 mt-0.5" />
-                    <span>
-                        <strong>Bodega</strong> no tiene ventas directas — el cálculo de Min/Max por traslados a sucursales es <strong>Fase 2</strong>.
-                        Aquí se muestra el inventario actual de bodega para referencia.
-                    </span>
+                    <span><strong>Bodega</strong> no tiene ventas directas — Min/Max basado en traslados es Fase 2. Se muestra el inventario actual como referencia.</span>
                 </div>
             )}
-
-            {/* ── Never calculated state ── */}
-            {!loading && neverCalculated && (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 py-14 text-center">
-                    <BarChart2 size={32} className="opacity-20 mx-auto mb-3 text-slate-500" />
-                    <p className="text-[14px] font-bold text-slate-600 mb-1">Sin datos calculados para {ERP_NAMES[selectedErp]}</p>
-                    <p className="text-[12px] text-slate-400 mb-5 max-w-xs mx-auto">
-                        Haz clic en <strong>Recalcular</strong> para analizar 6 meses de ventas y
-                        generar los parámetros MIN/MAX automáticamente.
+            {!loading && neverCalc && (
+                <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white py-16 text-center">
+                    <BarChart2 size={36} className="opacity-15 mx-auto mb-4 text-slate-500" />
+                    <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
+                    <p className="text-[12px] text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
+                        Haz clic en <strong>Recalcular</strong> para analizar 6 meses de ventas y generar automáticamente los parámetros MIN/MAX con clasificación ABC.
                     </p>
                     <button onClick={handleRecalcular} disabled={calculating}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
+                        className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
                         {calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                        Calcular ahora
+                        Calcular {ERP_NAMES[selectedErp]}
                     </button>
                 </div>
             )}
 
             {/* ── Table ── */}
-            {!neverCalculated && (
+            {!neverCalc && (
                 <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-                    {/* Table header */}
-                    <div className="grid gap-0 text-[9px] font-black uppercase tracking-widest text-slate-400 px-4 py-2.5 border-b border-slate-100 bg-slate-50/70"
-                        style={{ gridTemplateColumns: '1fr 60px 80px 110px 110px 110px 90px 70px' }}>
+
+                    {/* Header */}
+                    <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-5 pr-4 py-2.5 border-b border-slate-100 bg-slate-50/80"
+                        style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
                         <span>Producto</span>
                         <span className="text-center">Clase</span>
-                        <span className="text-center">Variab.</span>
+                        <span className="text-center">Variabilidad</span>
                         <span className="text-right">Stock actual</span>
-                        <span className="text-right">Mínimo</span>
-                        <span className="text-right">Máximo</span>
+                        <span className="text-right pr-2">
+                            <span className="inline-flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> MIN
+                            </span>
+                        </span>
+                        <span className="text-right pr-2">
+                            <span className="inline-flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> MAX
+                            </span>
+                        </span>
                         <span className="text-center">Estado</span>
-                        <span className="text-right">Vtas 6m</span>
+                        <span className="text-right">Ventas 6m</span>
                     </div>
 
                     {loading ? (
-                        <div className="flex items-center justify-center gap-2 py-20 text-slate-400">
-                            <Loader2 size={18} className="animate-spin" />
-                            <span className="text-sm">Cargando análisis…</span>
+                        <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
+                            <Loader2 size={20} className="animate-spin" />
+                            <span className="text-[13px]">Cargando análisis de {ERP_NAMES[selectedErp]}…</span>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="py-16 text-center">
-                            <Package size={28} className="opacity-20 mx-auto mb-2 text-slate-400" />
-                            <p className="text-sm text-slate-400 font-medium">Sin resultados</p>
+                        <div className="py-20 text-center">
+                            <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
+                            <p className="text-[13px] text-slate-400 font-medium">Sin productos con ese filtro</p>
+                            <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); }}
+                                className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">
+                                Quitar filtros
+                            </button>
                         </div>
                     ) : (
-                        <div className="divide-y divide-slate-50">
+                        <div>
                             {filtered.map((row, i) => {
-                                const alert  = ALERT_CFG[row.alert_status] ?? ALERT_CFG.ok;
-                                const abc    = ABC_CFG[row.abc_class]      ?? ABC_CFG.D;
+                                const isEditing = editId === row.erp_product_id;
+                                if (isEditing) return (
+                                    <EditRow key={`${row.erp_product_id}_edit`} row={row}
+                                        onSave={handleEditSave} onCancel={() => setEditId(null)} />
+                                );
+
+                                const alert  = ALERT[row.alert_status] ?? ALERT.ok;
+                                const abc    = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
                                 const varCfg = VAR_CFG[row.demand_variability];
                                 const pres   = row.presentations || [];
-                                const stockFmt = formatUnits(row.current_stock, pres);
-                                const minFmt   = row.is_dead_stock ? '—' : formatUnits(row.effective_min, pres);
-                                const maxFmt   = row.is_dead_stock ? '—' : formatUnits(row.effective_max, pres);
+                                const dead   = row.is_dead_stock;
+                                const stock  = Number(row.current_stock);
+                                const minN   = Number(row.effective_min);
+                                const maxN   = Number(row.effective_max);
 
                                 return (
                                     <div key={`${row.erp_product_id}_${i}`}
-                                        className={`grid gap-0 items-center px-4 py-2.5 transition-colors hover:bg-slate-50/60 ${
-                                            row.alert_status === 'out_of_stock' ? 'bg-red-50/30' :
-                                            row.alert_status === 'below_min'    ? 'bg-orange-50/20' :
-                                            row.alert_status === 'dead_stock'   ? 'bg-slate-50/40' : ''
-                                        }`}
-                                        style={{ gridTemplateColumns: '1fr 60px 80px 110px 110px 110px 90px 70px' }}>
+                                        className={`border-l-4 ${alert.left} ${alert.row} border-b border-slate-50 hover:brightness-[0.98] transition-all`}>
+                                        <div className="grid items-center pr-4 pl-1 py-2.5"
+                                            style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
 
-                                        {/* Product name */}
-                                        <div className="min-w-0 pr-3">
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">
-                                                    {row.product_name || '—'}
-                                                </span>
-                                                {row.has_manual && (
-                                                    <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">
-                                                        MANUAL
+                                            {/* Product */}
+                                            <div className="min-w-0 pl-3 pr-3">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">
+                                                        {row.product_name || '—'}
+                                                    </span>
+                                                    {row.has_manual && (
+                                                        <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>
+                                                    )}
+                                                </div>
+                                                {!dead && (
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {Number(row.daily_velocity||0).toFixed(1)} und/día
                                                     </span>
                                                 )}
+                                                {!dead && <StockBar current={stock} min={minN} max={maxN} />}
                                             </div>
-                                            {!row.is_dead_stock && (
-                                                <span className="text-[10px] text-slate-400">
-                                                    {Number(row.daily_velocity || 0).toFixed(1)} und/día
+
+                                            {/* ABC */}
+                                            <div className="flex justify-center">
+                                                <span title={abc.title}
+                                                    className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${abc.bg}`}>
+                                                    {row.abc_class}
                                                 </span>
-                                            )}
-                                        </div>
+                                            </div>
 
-                                        {/* ABC class */}
-                                        <div className="flex justify-center">
-                                            <span title={abc.title}
-                                                className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${abc.bg}`}>
-                                                {row.abc_class}
-                                            </span>
-                                        </div>
+                                            {/* Variab */}
+                                            <div className="text-center">
+                                                {!dead && varCfg
+                                                    ? <span className={`text-[10px] font-semibold ${varCfg.cls}`}>
+                                                        {varCfg.label}
+                                                        <span className="text-slate-300 ml-1 font-mono">({Number(row.cv||0).toFixed(0)}%)</span>
+                                                      </span>
+                                                    : <span className="text-slate-200 text-xs">—</span>}
+                                            </div>
 
-                                        {/* Variabilidad */}
-                                        <div className="text-center">
-                                            {!row.is_dead_stock && varCfg ? (
-                                                <span className={`text-[10px] font-semibold ${varCfg.bg}`}>
-                                                    {varCfg.label}
-                                                    <span className="text-slate-300 ml-1 font-mono">({Number(row.cv || 0).toFixed(0)}%)</span>
+                                            {/* Stock actual */}
+                                            <div className="text-right">
+                                                <div className={`text-[13px] font-bold tabular-nums leading-tight ${
+                                                    stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'
+                                                }`}>
+                                                    {stock === 0 ? '0' : formatUnits(stock, pres)}
+                                                </div>
+                                                {!dead && stock > 0 && (
+                                                    <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>
+                                                )}
+                                            </div>
+
+                                            {/* MIN */}
+                                            <div className="text-right">
+                                                {dead
+                                                    ? <span className="text-slate-200 text-xs">—</span>
+                                                    : <>
+                                                        <div className={`text-[12px] font-semibold tabular-nums ${
+                                                            stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'
+                                                        }`}>
+                                                            {formatUnits(minN, pres)}
+                                                        </div>
+                                                        <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
+                                                      </>
+                                                }
+                                            </div>
+
+                                            {/* MAX */}
+                                            <div className="text-right">
+                                                {dead
+                                                    ? <span className="text-slate-200 text-xs">—</span>
+                                                    : <>
+                                                        <div className={`text-[12px] font-semibold tabular-nums ${
+                                                            stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'
+                                                        }`}>
+                                                            {formatUnits(maxN, pres)}
+                                                        </div>
+                                                        <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
+                                                      </>
+                                                }
+                                            </div>
+
+                                            {/* Alert */}
+                                            <div className="flex justify-center">
+                                                <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                                    {alert.label}
                                                 </span>
-                                            ) : <span className="text-slate-200 text-xs">—</span>}
-                                        </div>
+                                            </div>
 
-                                        {/* Stock actual */}
-                                        <div className="text-right">
-                                            <span className={`text-[12px] font-bold tabular-nums ${
-                                                Number(row.current_stock) === 0 ? 'text-red-500' : 'text-slate-700'
-                                            }`}>
-                                                {stockFmt}
-                                            </span>
-                                        </div>
-
-                                        {/* MIN */}
-                                        <div className="text-right">
-                                            <span className={`text-[12px] font-semibold tabular-nums ${
-                                                row.is_dead_stock ? 'text-slate-200' :
-                                                Number(row.current_stock) < Number(row.effective_min) ? 'text-orange-600' : 'text-slate-500'
-                                            }`}>
-                                                {minFmt}
-                                            </span>
-                                        </div>
-
-                                        {/* MAX */}
-                                        <div className="text-right">
-                                            <span className={`text-[12px] font-semibold tabular-nums ${
-                                                row.is_dead_stock ? 'text-slate-200' : 'text-slate-500'
-                                            }`}>
-                                                {maxFmt}
-                                            </span>
-                                        </div>
-
-                                        {/* Alert badge */}
-                                        <div className="flex justify-center">
-                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.bg}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${alert.dot}`} />
-                                                {alert.label}
-                                            </span>
-                                        </div>
-
-                                        {/* Ventas 6m + edit */}
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <span className="text-[11px] font-semibold tabular-nums text-slate-500">
-                                                {Number(row.units_sold_6m || 0).toLocaleString()}
-                                            </span>
-                                            {!row.is_dead_stock && (
-                                                <button
-                                                    onClick={() => setEditingRow(row)}
-                                                    title="Ajuste manual"
-                                                    className="w-6 h-6 flex items-center justify-center rounded-full text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
-                                                    <Edit3 size={11} />
-                                                </button>
-                                            )}
+                                            {/* Ventas + edit */}
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <div className="text-right">
+                                                    <div className="text-[11px] font-semibold tabular-nums text-slate-500">
+                                                        {Number(row.units_sold_6m||0).toLocaleString()}
+                                                    </div>
+                                                    {!dead && (
+                                                        <div className="text-[9px] text-slate-400">
+                                                            ${Number(row.revenue_6m||0).toLocaleString('en-US',{maximumFractionDigits:0})}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {!dead && (
+                                                    <button onClick={() => setEditId(row.erp_product_id)}
+                                                        title="Ajustar MIN/MAX"
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
+                                                        <Edit3 size={13} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -577,26 +603,16 @@ export default function TabMinMax({ searchTerm = '' }) {
 
                     {/* Footer */}
                     {!loading && filtered.length > 0 && (
-                        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+                        <div className="pl-5 pr-4 py-2.5 border-t border-slate-100 bg-slate-50/60 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
                             <span>{filtered.length.toLocaleString()} productos</span>
-                            <span>
-                                {filterAlert !== 'all' || filterAbc !== 'all' || searchTerm
-                                    ? `filtrado de ${data.length.toLocaleString()}`
-                                    : `${ERP_NAMES[selectedErp]}`}
+                            <span className="text-slate-300">
+                                {(filterAlert !== 'all' || filterAbc !== 'all' || searchTerm)
+                                    ? `filtrado de ${data.length.toLocaleString()} · ${ERP_NAMES[selectedErp]}`
+                                    : ERP_NAMES[selectedErp]}
                             </span>
                         </div>
                     )}
                 </div>
-            )}
-
-            {/* ── Manual override modal ── */}
-            {editingRow && createPortal(
-                <OverrideModal
-                    row={editingRow}
-                    onSave={handleOverrideSave}
-                    onClose={() => setEditingRow(null)}
-                />,
-                document.body
             )}
         </div>
     );

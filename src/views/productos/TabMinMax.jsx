@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, TrendingDown, TrendingUp, Loader2,
-    Building2, BarChart2, Package, X, Download, ChevronDown,
-    PackageX, CheckCircle2, Edit3, Check,
+    Building2, BarChart2, Package, X, Download,
+    PackageX, CheckCircle2, Edit3, Check, Info,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -11,9 +12,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 7: 'Salud 5',
+    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
-const ERP_ORDER = [1, 2, 3, 4, 5, 7];
+// La Popular, Salud 1-4, Salud 5, Bodega
+const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const ALERT_CFG = {
     out_of_stock: { label: 'Sin stock',      bg: 'bg-red-100 text-red-700 border-red-200',         dot: 'bg-red-500',     icon: AlertTriangle },
@@ -272,7 +274,8 @@ export default function TabMinMax({ searchTerm = '' }) {
     const lastCalcAt = useMemo(() =>
         data.find(d => d.calculated_at)?.calculated_at ?? null, [data]);
 
-    const neverCalculated = data.length > 0 && data.every(d => d.is_dead_stock);
+    const isBodega        = selectedErp === 6;
+    const neverCalculated = !isBodega && data.length > 0 && data.every(d => d.is_dead_stock);
 
     // ── Filter ───────────────────────────────────────────────────────────────
     const filtered = useMemo(() => {
@@ -296,16 +299,15 @@ export default function TabMinMax({ searchTerm = '' }) {
             <div className="flex items-center gap-3 flex-wrap">
 
                 {/* Sucursal selector */}
-                <div className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <Building2 size={14} className="text-slate-400 shrink-0" />
-                    <select
-                        value={selectedErp}
-                        onChange={e => { setSelectedErp(Number(e.target.value)); setFilterAbc('all'); setFilterAlert('all'); }}
-                        className="text-[12px] font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
-                        {erpOptions.map(o => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                    </select>
+                <div className="overflow-visible" style={{ width: '175px' }}>
+                    <LiquidSelect
+                        value={String(selectedErp)}
+                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterAlert('all'); } }}
+                        options={erpOptions}
+                        icon={Building2}
+                        clearable={false}
+                        compact
+                    />
                 </div>
 
                 {/* ABC filter */}
@@ -339,16 +341,30 @@ export default function TabMinMax({ searchTerm = '' }) {
                 )}
 
                 {/* Recalcular */}
-                <button
-                    onClick={handleRecalcular}
-                    disabled={calculating || loading}
-                    className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200 transition-all disabled:opacity-60">
-                    {calculating
-                        ? <><Loader2 size={13} className="animate-spin" /> Calculando…</>
-                        : <><RefreshCw size={13} /> Recalcular</>
-                    }
-                </button>
+                {!isBodega && (
+                    <button
+                        onClick={handleRecalcular}
+                        disabled={calculating || loading}
+                        className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200 transition-all disabled:opacity-60">
+                        {calculating
+                            ? <><Loader2 size={13} className="animate-spin" /> Calculando…</>
+                            : <><RefreshCw size={13} /> Recalcular</>
+                        }
+                    </button>
+                )}
             </div>
+
+            {/* ── Formula info ── */}
+            {!isBodega && !neverCalculated && data.some(d => !d.is_dead_stock) && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] text-slate-400">
+                    <Info size={11} className="shrink-0 text-slate-300" />
+                    <span>
+                        <strong className="text-slate-500">MIN</strong> = traslado (3d) + seguridad (2–7d) &nbsp;·&nbsp;
+                        <strong className="text-slate-500">MAX</strong> = MIN + ciclo de pedido (4d) &nbsp;·&nbsp;
+                        Estable: MIN ~5d / MAX ~9d &nbsp;·&nbsp; Moderado: ~7d / ~11d &nbsp;·&nbsp; Errático: ~10d / ~14d
+                    </span>
+                </div>
+            )}
 
             {/* ── Stat cards ── */}
             <div className="flex items-start gap-2.5 flex-wrap">
@@ -392,14 +408,25 @@ export default function TabMinMax({ searchTerm = '' }) {
                 </div>
             )}
 
+            {/* ── Bodega info banner ── */}
+            {!loading && isBodega && (
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800">
+                    <Info size={14} className="shrink-0 mt-0.5" />
+                    <span>
+                        <strong>Bodega</strong> no tiene ventas directas — el cálculo de Min/Max por traslados a sucursales es <strong>Fase 2</strong>.
+                        Aquí se muestra el inventario actual de bodega para referencia.
+                    </span>
+                </div>
+            )}
+
             {/* ── Never calculated state ── */}
             {!loading && neverCalculated && (
                 <div className="rounded-2xl border border-slate-100 bg-slate-50 py-14 text-center">
                     <BarChart2 size={32} className="opacity-20 mx-auto mb-3 text-slate-500" />
-                    <p className="text-[14px] font-bold text-slate-600 mb-1">Datos no calculados</p>
+                    <p className="text-[14px] font-bold text-slate-600 mb-1">Sin datos calculados para {ERP_NAMES[selectedErp]}</p>
                     <p className="text-[12px] text-slate-400 mb-5 max-w-xs mx-auto">
-                        Haz clic en <strong>Recalcular</strong> para analizar las ventas de los últimos 6 meses
-                        y generar los parámetros MIN/MAX para {ERP_NAMES[selectedErp]}.
+                        Haz clic en <strong>Recalcular</strong> para analizar 6 meses de ventas y
+                        generar los parámetros MIN/MAX automáticamente.
                     </p>
                     <button onClick={handleRecalcular} disabled={calculating}
                         className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
@@ -563,12 +590,13 @@ export default function TabMinMax({ searchTerm = '' }) {
             )}
 
             {/* ── Manual override modal ── */}
-            {editingRow && (
+            {editingRow && createPortal(
                 <OverrideModal
                     row={editingRow}
                     onSave={handleOverrideSave}
                     onClose={() => setEditingRow(null)}
-                />
+                />,
+                document.body
             )}
         </div>
     );

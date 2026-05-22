@@ -35,10 +35,10 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
     const ordinarySalary = parseFloat((daysWorked * dailyRate).toFixed(2));
 
     // Section B — not subject to retention (Labor Code art. 169, 190)
-    const nightOrdinaryAmt  = parseFloat((nightOrdinaryHrs  * hourlyRate * 0.25).toFixed(2)); // 25% surcharge
-    const nightExtraAmt     = parseFloat((nightExtraHrs     * hourlyRate * 0.50).toFixed(2)); // 50% surcharge
-    const extraDiurnalAmt   = parseFloat((extraDiurnalHrs   * hourlyRate * 2.00).toFixed(2)); // double
-    const extraNocturnalAmt = parseFloat((extraNocturnalHrs * hourlyRate * 2.00).toFixed(2)); // double
+    const nightOrdinaryAmt  = parseFloat((nightOrdinaryHrs  * hourlyRate * 0.25).toFixed(2)); // Art.168: solo el 25% de recargo sobre tarifa diurna
+    const nightExtraAmt     = parseFloat((nightExtraHrs     * hourlyRate * 0.50).toFixed(2)); // campo legacy — no usado por consolidación automática
+    const extraDiurnalAmt   = parseFloat((extraDiurnalHrs   * hourlyRate * 2.00).toFixed(2)); // Art.169: 100% OT diurna = doble
+    const extraNocturnalAmt = parseFloat((extraNocturnalHrs * hourlyRate * 2.25).toFixed(2)); // Art.169: 100% OT + 25% nocturnal = ×2.25
 
     const subtotalA = ordinarySalary;
     const subtotalB = parseFloat((

@@ -592,9 +592,19 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 <Clock size={13} className="text-[#0052CC]/50" strokeWidth={2.5} />
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Horas</p>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-[13px] font-black text-slate-800">{(ts.regular_hours||0).toFixed(1)}h</p>
                     {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-violet-500">+{ts.overtime_hours.toFixed(1)}h OT</span>}
+                    {(ts.nocturnal_hours > 0) && (
+                      <span className="text-[9px] font-black text-indigo-500 flex items-center gap-0.5">
+                        🌙 {ts.nocturnal_hours.toFixed(1)}h noct.
+                      </span>
+                    )}
+                    {(ts.nocturnal_overtime_hours > 0) && (
+                      <span className="text-[9px] font-black text-indigo-700 flex items-center gap-0.5">
+                        🌙 +{ts.nocturnal_overtime_hours.toFixed(1)}h OT noct.
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -690,11 +700,13 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
   }, [emp, quinceaDates, shiftById, now]);
 
   const empTimesheets = timesheets.filter(t => String(t.employee_id) === String(emp.id));
-  const allApproved   = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
-  const totalReg  = empTimesheets.reduce((s, t) => s + (t.regular_hours  || 0), 0);
-  const totalOT   = empTimesheets.reduce((s, t) => s + (t.overtime_hours || 0), 0);
-  const totalLate = empTimesheets.reduce((s, t) => s + (t.late_minutes   || 0), 0);
-  const totalAbs  = empTimesheets.reduce((s, t) => s + (t.is_absent ? 1 : 0), 0);
+  const allApproved    = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
+  const totalReg       = empTimesheets.reduce((s, t) => s + (t.regular_hours          || 0), 0);
+  const totalOT        = empTimesheets.reduce((s, t) => s + (t.overtime_hours         || 0), 0);
+  const totalLate      = empTimesheets.reduce((s, t) => s + (t.late_minutes           || 0), 0);
+  const totalAbs       = empTimesheets.reduce((s, t) => s + (t.is_absent ? 1 : 0),           0);
+  const totalNocturnal = empTimesheets.reduce((s, t) => s + (t.nocturnal_hours        || 0), 0);
+  const totalNoctOT    = empTimesheets.reduce((s, t) => s + (t.nocturnal_overtime_hours || 0), 0);
 
   const hasCrossBranch = alerts.crossBranch > 0;
   const alertColor = alerts.inconsistencies > 0 ? 'bg-red-500'
@@ -788,6 +800,14 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             <div className="flex flex-col items-end min-w-[2rem]">
               <span className="text-[15px] font-black text-red-600 tabular-nums leading-none">{totalAbs}</span>
               <span className="text-[7px] font-black uppercase tracking-widest text-red-400 mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          {(totalNocturnal + totalNoctOT) > 0 && (
+            <div className="flex flex-col items-end min-w-[2.5rem]">
+              <span className="text-[13px] font-black text-indigo-500 tabular-nums leading-none flex items-center gap-0.5">
+                🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-indigo-400 ml-0.5">h</span>
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-indigo-400 mt-0.5">noct.</span>
             </div>
           )}
           <div className="w-px h-8 bg-slate-200/60 mx-0.5" />

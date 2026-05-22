@@ -8,6 +8,10 @@ const LUNCH_IN    = new Set(['LUNCH_END',   'IN_LUNCH']);
 const LACTAT_OUT  = new Set(['LACTATION_START', 'OUT_LACTATION']);
 const LACTAT_IN   = new Set(['LACTATION_END',   'IN_LACTATION']);
 
+// El Salvador nocturnal boundary: 19:00-06:00 CST (UTC-6)
+// In UTC: nocturnal = 01:00 UTC – 12:00 UTC (19:00 CST = 01:00 UTC next UTC-day, 06:00 CST = 12:00 UTC)
+const CST_OFFSET_MS = 6 * 60 * 60 * 1000; // 6 hours in ms
+
 interface DayException {
   date: string;
   customStart?: string;
@@ -41,10 +45,80 @@ function calcBreakMinutes(
   return Math.max(0, total);
 }
 
+// Split a work interval into nocturnal (19:00-06:00 CST) and diurnal (06:00-19:00 CST) minutes.
+// Uses UTC boundary times: 06:00 CST = 12:00 UTC, 19:00 CST = 01:00 UTC (next UTC-day).
+// Works for shifts crossing midnight.
+function splitNocturnal(startUTC: Date, endUTC: Date): { diurnalMins: number; nocturnalMins: number } {
+  const totalMs = endUTC.getTime() - startUTC.getTime();
+  if (totalMs <= 0) return { diurnalMins: 0, nocturnalMins: 0 };
+
+  // Build boundary set: all 12:00 UTC and 01:00 UTC timestamps that fall strictly inside [start, end]
+  const boundaries: number[] = [startUTC.getTime(), endUTC.getTime()];
+
+  // Iterate UTC days overlapping the range
+  const iterStart = new Date(startUTC); iterStart.setUTCHours(0, 0, 0, 0);
+  const iterEnd   = new Date(endUTC);   iterEnd.setUTCDate(iterEnd.getUTCDate() + 1); iterEnd.setUTCHours(0, 0, 0, 0);
+
+  for (let d = new Date(iterStart); d.getTime() < iterEnd.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+    // 12:00 UTC = 06:00 CST — start of diurnal window
+    const twelveUTC = d.getTime() + 12 * 3600000;
+    // 01:00 UTC = 19:00 CST (previous CST-calendar-day) — start of nocturnal window
+    const oneUTC    = d.getTime() +  1 * 3600000;
+
+    if (twelveUTC > startUTC.getTime() && twelveUTC < endUTC.getTime()) boundaries.push(twelveUTC);
+    if (oneUTC    > startUTC.getTime() && oneUTC    < endUTC.getTime()) boundaries.push(oneUTC);
+  }
+
+  boundaries.sort((a, b) => a - b);
+
+  let nocturnalMs = 0;
+  for (let i = 0; i < boundaries.length - 1; i++) {
+    const segStart = boundaries[i];
+    const segEnd   = boundaries[i + 1];
+    if (segStart >= segEnd) continue;
+
+    // Classify segment by its midpoint CST hour
+    const midCST  = new Date(((segStart + segEnd) / 2) - CST_OFFSET_MS);
+    const hourCST = midCST.getUTCHours();
+    // Nocturnal: 19:00 <= hour < 24 OR 0 <= hour < 6
+    if (hourCST >= 19 || hourCST < 6) nocturnalMs += segEnd - segStart;
+  }
+
+  const totalMins     = totalMs / 60000;
+  const nocturnalMins = Math.max(0, nocturnalMs / 60000);
+  return { diurnalMins: Math.max(0, totalMins - nocturnalMins), nocturnalMins };
+}
+
+// Build actual work segments from punches (break periods are excluded).
+// Returns [{start, end}] covering only time-at-work.
+function getWorkSegments(
+  punches: { type: string; timestamp: string }[],
+  actualStart: Date,
+  actualEnd: Date,
+): { start: Date; end: Date }[] {
+  const segments: { start: Date; end: Date }[] = [];
+  let segStart = new Date(actualStart);
+
+  for (const p of punches) {
+    const t = new Date(p.timestamp);
+    if (t.getTime() <= actualStart.getTime() || t.getTime() >= actualEnd.getTime()) continue;
+
+    if (LUNCH_OUT.has(p.type) || LACTAT_OUT.has(p.type)) {
+      if (segStart < t) segments.push({ start: new Date(segStart), end: t });
+      segStart = t; // placeholder — will be replaced by the matching IN
+    } else if (LUNCH_IN.has(p.type) || LACTAT_IN.has(p.type)) {
+      segStart = t; // resume work after break
+    }
+  }
+
+  if (segStart < actualEnd) segments.push({ start: segStart, end: new Date(actualEnd) });
+  return segments;
+}
+
 // Yesterday in El Salvador (UTC-6)
 function yesterdayCST(): string {
   const now = new Date();
-  const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const cst = new Date(now.getTime() - CST_OFFSET_MS);
   cst.setUTCDate(cst.getUTCDate() - 1);
   return cst.toISOString().split('T')[0];
 }
@@ -118,8 +192,6 @@ Deno.serve(async (req) => {
     }
 
     // 3. Load per-employee exceptions for workDate.
-    //    The kiosk reads employee.exceptions[] to decide how to handle a punch,
-    //    so we mirror that logic here for accurate timesheet generation.
     const rosterEmpIds = (rosters || []).map(r => String(r.employee_id));
     const exceptionMap = new Map<string, DayException>();
 
@@ -163,16 +235,13 @@ Deno.serve(async (req) => {
       const dayData  = roster.schedule_data?.[dayKey];
       const exception = exceptionMap.get(empId);
 
-      // If the roster says this is an off day, check for a ShiftException before skipping.
-      // The kiosk uses employee.exceptions[] to allow IN_EXTRA on off days; we mirror that here.
       const isOffInRoster = !dayData || dayData.isOff;
       if (isOffInRoster && !exception) {
         skipped++;
         continue;
       }
 
-      // Resolve scheduled start/end.
-      // Priority: exception.customStart/End → dayData.customStart/End → shift template
+      // Resolve scheduled start/end
       let scheduledStart: string | null = exception?.customStart ?? dayData?.customStart ?? null;
       let scheduledEnd:   string | null = exception?.customEnd   ?? dayData?.customEnd   ?? null;
 
@@ -190,8 +259,6 @@ Deno.serve(async (req) => {
 
       const empPunches = punchMap.get(empId) || [];
 
-      // Entry = first IN-type (includes IN_EXTRA for off-day coverage)
-      // Exit  = last EXIT-type (includes OUT_EXTRA)
       const entryPunch = empPunches.find(p => ENTRY_TYPES.has(p.type));
       const exitPunch  = [...empPunches].reverse().find(p => EXIT_TYPES.has(p.type));
 
@@ -199,12 +266,14 @@ Deno.serve(async (req) => {
       let actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
       let actualEnd   = exitPunch  ? new Date(exitPunch.timestamp)  : null;
 
-      let regularHours  = 0;
-      let overtimeHours = 0;
-      let lateMinutes   = 0;
-      let autoPunched   = false;
+      let regularHours         = 0;
+      let overtimeHours        = 0;
+      let nocturnalHours       = 0;
+      let nocturnalOTHours     = 0;
+      let lateMinutes          = 0;
+      let autoPunched          = false;
 
-      // Auto-punch: employee checked in but never out — insert scheduled end as OUT
+      // Auto-punch: employee checked in but never out
       if (actualStart && !actualEnd && scheduledEnd) {
         const autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
         const punchType   = isOffInRoster ? 'OUT_EXTRA' : 'OUT';
@@ -236,7 +305,7 @@ Deno.serve(async (req) => {
 
         const shiftMins = scheduledStart && scheduledEnd
           ? toMinutes(scheduledEnd) - toMinutes(scheduledStart)
-          : netMins; // no schedule → all hours are regular
+          : netMins;
 
         regularHours  = Math.min(netMins, shiftMins) / 60;
         overtimeHours = Math.max(0, netMins - shiftMins) / 60;
@@ -245,6 +314,30 @@ Deno.serve(async (req) => {
           const expectedUTC = cstTimeToUTC(workDate, scheduledStart);
           lateMinutes = Math.max(0, Math.floor((actualStart.getTime() - expectedUTC.getTime()) / 60000));
         }
+
+        // ── Nocturnal split (Art. 168 & 169, Código de Trabajo SV) ──────────
+        // Actual nocturnal: sum nocturnal mins across all real work segments
+        const workSegments = getWorkSegments(empPunches, actualStart, actualEnd);
+        let actualNocturnalMins = 0;
+        for (const seg of workSegments) {
+          actualNocturnalMins += splitNocturnal(seg.start, seg.end).nocturnalMins;
+        }
+
+        // Scheduled nocturnal: how many nocturnal mins are in the planned shift
+        let scheduledNocturnalMins = 0;
+        if (scheduledStart && scheduledEnd) {
+          const schedStartUTC = cstTimeToUTC(workDate, scheduledStart);
+          const schedEndUTC   = cstTimeToUTC(workDate, scheduledEnd);
+          scheduledNocturnalMins = splitNocturnal(schedStartUTC, schedEndUTC).nocturnalMins;
+        }
+
+        // Regular nocturnal = nocturnal hours within the planned shift cap
+        // OT nocturnal = nocturnal hours beyond the planned shift
+        const nocturnalRegularMins = Math.min(actualNocturnalMins, scheduledNocturnalMins);
+        const nocturnalOTMins      = Math.max(0, actualNocturnalMins - scheduledNocturnalMins);
+
+        nocturnalHours   = parseFloat((nocturnalRegularMins / 60).toFixed(2));
+        nocturnalOTHours = parseFloat((nocturnalOTMins      / 60).toFixed(2));
       }
 
       // Upsert
@@ -256,18 +349,20 @@ Deno.serve(async (req) => {
         .limit(1);
 
       const payload = {
-        employee_id:        empId,
-        work_date:          workDate,
-        scheduled_shift_id: shiftId !== null && !isNaN(shiftId) ? shiftId : null,
-        actual_start_time:  actualStart?.toISOString() ?? null,
-        actual_end_time:    actualEnd?.toISOString()   ?? null,
-        regular_hours:      parseFloat(regularHours.toFixed(2)),
-        overtime_hours:     parseFloat(overtimeHours.toFixed(2)),
-        late_minutes:       lateMinutes,
-        is_absent:          isAbsent,
-        is_holiday_worked:  !isAbsent && isHoliday,
-        status:             autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
-        updated_at:         new Date().toISOString(),
+        employee_id:               empId,
+        work_date:                 workDate,
+        scheduled_shift_id:        shiftId !== null && !isNaN(shiftId) ? shiftId : null,
+        actual_start_time:         actualStart?.toISOString() ?? null,
+        actual_end_time:           actualEnd?.toISOString()   ?? null,
+        regular_hours:             parseFloat(regularHours.toFixed(2)),
+        overtime_hours:            parseFloat(overtimeHours.toFixed(2)),
+        nocturnal_hours:           nocturnalHours,
+        nocturnal_overtime_hours:  nocturnalOTHours,
+        late_minutes:              lateMinutes,
+        is_absent:                 isAbsent,
+        is_holiday_worked:         !isAbsent && isHoliday,
+        status:                    autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
+        updated_at:                new Date().toISOString(),
       };
 
       if (existing && existing.length > 0) {

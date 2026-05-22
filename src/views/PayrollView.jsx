@@ -114,7 +114,7 @@ function buildBoletaHTML(entry, period, branches) {
       <tr><td>HORAS NOCT. ORDINARIAS (25%):</td><td class="right">$${round2(entry.night_hours_ordinary*hourly*0.25).toFixed(2)} +</td></tr>
       <tr><td>HORAS NOCT. EXTRAORDINARIAS (50%):</td><td class="right">$${round2(entry.night_hours_extra*hourly*0.50).toFixed(2)} +</td></tr>
       <tr><td>HORAS EXTRA DIURNAS:</td><td class="right">$${round2(entry.extra_hours_diurnal*hourly*2).toFixed(2)} +</td></tr>
-      <tr><td>HORAS EXTRA NOCTURNAS:</td><td class="right">$${round2(entry.extra_hours_nocturnal*hourly*2).toFixed(2)} +</td></tr>
+      <tr><td>HORAS EXTRA NOCTURNAS (×2.25):</td><td class="right">$${round2(entry.extra_hours_nocturnal*hourly*2.25).toFixed(2)} +</td></tr>
       <tr><td>RECARGO DE ASUETOS:</td><td class="right">$${round2(entry.holiday_surcharge).toFixed(2)} +</td></tr>
       <tr><td>BONIFICACIONES:</td><td class="right">$${round2(entry.bonifications).toFixed(2)} +</td></tr>
       <tr><td>BONO VACACIONAL (30%):</td><td class="right">$${round2(entry.vacation_bonus).toFixed(2)} +</td></tr>

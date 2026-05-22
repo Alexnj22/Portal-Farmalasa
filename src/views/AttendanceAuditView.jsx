@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import {
   AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
@@ -9,10 +9,12 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
 import { useToastStore } from "../store/toastStore";
+import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../supabaseClient';
-import LiquidSelect from '../components/common/LiquidSelect';
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
+import ViewTabBar from '../components/common/ViewTabBar';
+import LiquidSelect from '../components/common/LiquidSelect';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PUNCH_TYPE_LABELS = {
@@ -116,6 +118,20 @@ function nextQuincena(start) {
   if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-16`;
   const nxt = new Date(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
   return nxt.toISOString().slice(0, 10);
+}
+
+// ── Branch sort ───────────────────────────────────────────────────────────────
+function getBranchSortKey(name, id) {
+  if (!id || id === 'sin-sucursal') return 'zz_sin';
+  const n = (name || '').toLowerCase().trim();
+  if (n.includes('popular'))  return '00_popular';
+  if (n.includes('salud')) {
+    const num = (n.match(/\d+/) || ['0'])[0].padStart(3, '0');
+    return `10_salud_${num}`;
+  }
+  if (n.includes('bodega'))   return '80_bodega';
+  if (n.includes('admin'))    return '90_admin';
+  return `50_${n}`;
 }
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -383,8 +399,10 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
 
   // Schedule for this day
   const dayKey    = dow === 0 ? 7 : dow;
-  const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
-  const isOff     = !dayConfig || dayConfig.isOff;
+  const dayConfig    = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
+  const isNoSchedule = !dayConfig;
+  const isExplicitOff = !isNoSchedule && (dayConfig.isOff || dayConfig.isOffDay || dayConfig.shiftId === 'LIBRE');
+  const isOff = isNoSchedule || isExplicitOff;
   const shiftId   = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
   const shift     = shiftId ? shiftById.get(shiftId) : null;
   const customStart = dayConfig?.customStart || null;
@@ -469,7 +487,11 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
           <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
             <span className="text-[12px] font-black text-slate-800">{DAY_NAMES_FULL[dow]}</span>
             {isToday && <span className="text-[8px] font-black uppercase tracking-widest bg-[#0052CC] text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
-            {isOff && <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>}
+            {isOff && (
+              isNoSchedule
+                ? <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-dashed border-slate-300 px-2 py-0.5 rounded-full">Sin turno</span>
+                : <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>
+            )}
             {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && (
               <span className="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
@@ -770,6 +792,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const { user, rolePerms } = useAuth();
   const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
   const showToast = useToastStore(s => s.showToast);
+  const { isCompat, isAurora } = useTheme();
   const {
     employees: storeEmployees, branches: storeBranches, shifts: storeShifts,
     appendAuditLog, loadAttendanceLastDays, insertAttendancePunchAt,
@@ -798,6 +821,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [editingExId,       setEditingExId]       = useState(null);
   const [editStart,         setEditStart]         = useState('');
   const [editEnd,           setEditEnd]           = useState('');
+  const [branchDropOpen,    setBranchDropOpen]    = useState(false);
+  const branchDropRef = useRef(null);
 
   useEffect(() => {
     if (setOverlayActive) setOverlayActive(!!correctionTarget);
@@ -1116,78 +1141,135 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     }
   }, [user, appendAuditLog, showToast]);
 
-  // ── Branch select options ────────────────────────────────────────────────
-  const branchOptions = useMemo(() => [
-    { value: '', label: 'Todas las sucursales' },
-    ...branches.map(b => ({ value: String(b.id), label: b.name })),
-  ], [branches]);
+  // ── Branch options sorted by custom order ───────────────────────────────
+  const sortedBranchOptions = useMemo(() => {
+    const opts = branches.map(b => ({ value: String(b.id), label: b.name }));
+    opts.sort((a, b) =>
+      getBranchSortKey(a.label, a.value).localeCompare(getBranchSortKey(b.label, b.value))
+    );
+    return [{ value: '', label: 'Todas' }, ...opts];
+  }, [branches]);
+
+  const currentBranchLabel = filterBranch
+    ? (branches.find(b => String(b.id) === filterBranch)?.name || 'Sucursal')
+    : 'Todas';
+
+  // Close branch dropdown on outside click
+  useEffect(() => {
+    if (!branchDropOpen) return;
+    const handler = (e) => {
+      if (branchDropRef.current && !branchDropRef.current.contains(e.target)) {
+        setBranchDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [branchDropOpen]);
+
+  // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
+  const pillWrap = isCompat
+    ? 'flex items-center gap-1 border border-[#C4D9E8] bg-white rounded-md shadow-[0_1px_4px_rgba(0,0,0,0.07)] px-2 h-9'
+    : isAurora
+      ? 'flex items-center border border-blue-400/[0.18] bg-white/[0.08] backdrop-blur-2xl rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1'
+      : 'flex items-center border border-white/90 bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
+
+  const pillBtn = (active) => isCompat
+    ? `px-2.5 h-7 rounded text-[9px] font-black uppercase tracking-widest transition-colors ${active ? 'bg-[#1B3A6B] text-white' : 'text-[#374B63] hover:bg-[#1B3A6B]/10'}`
+    : isAurora
+      ? `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white/[0.14] text-white border-blue-400/[0.25] shadow-sm scale-[1.02]' : 'bg-transparent text-white/45 border-transparent hover:bg-white/10 hover:text-white'}`
+      : `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`;
+
+  const pillDivider = isCompat ? 'h-4 w-px bg-[#C4D9E8] mx-1' : isAurora ? 'h-5 w-px bg-blue-400/[0.15] mx-1' : 'h-5 w-px bg-white/40 mx-1';
+
+  const pillIconBtn = isCompat
+    ? 'h-7 w-7 rounded flex items-center justify-center text-[#374B63] hover:bg-[#1B3A6B]/10 transition-colors shrink-0'
+    : isAurora
+      ? 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white/45 hover:bg-white/10 hover:text-white transition-all duration-300 shrink-0'
+      : 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
+
+  const pillLabelText = isAurora ? 'text-white' : 'text-slate-800';
+  const pillSubText   = (ok) => ok ? (isAurora ? 'text-emerald-400' : 'text-emerald-600') : (isAurora ? 'text-sky-400' : 'text-[#0052CC]');
+
+  // Period nav computed values — shared between week and quincena modes
+  const periodLabel     = viewMode === 'week' ? weekLabel : quincenaLabel;
+  const isCurrentPeriod = viewMode === 'week' ? isCurrentWeek : isCurrentQuincena;
+  const goPrev = viewMode === 'week'
+    ? goToPrevWeek
+    : () => setSelectedQuincena(prevQuincena(selectedQuincena));
+  const goNext = viewMode === 'week'
+    ? goToNextWeek
+    : () => setSelectedQuincena(nextQuincena(selectedQuincena));
+  const goNow  = viewMode === 'week'
+    ? () => setSelectedWeekStart(currentWeekStart)
+    : () => setSelectedQuincena(getCurrentQuincenaStart());
 
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
-    <div className="flex items-center gap-3">
-      {/* Mode toggle: Semana / Quincena */}
-      <div className="flex items-center bg-black/[0.06] border border-black/[0.08] rounded-xl p-0.5 shrink-0">
-        <button type="button" onClick={() => setViewMode('week')}
-          className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-[10px] transition-all ${viewMode === 'week' ? 'bg-white shadow text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-          Semana
+    <div className="flex items-center gap-2 flex-wrap">
+
+      {/* 1. Mode tabs */}
+      <ViewTabBar
+        tabs={[{ key: 'week', label: 'Semana' }, { key: 'quincena', label: 'Quincena' }]}
+        activeTab={viewMode}
+        onTabChange={setViewMode}
+        showSearch={false}
+      />
+
+      {/* 2. Period nav pill */}
+      <div className={pillWrap}>
+        <button type="button" onClick={goPrev} className={`${pillIconBtn} active:scale-[0.90]`}>
+          <ChevronLeft size={14} strokeWidth={2.5} />
         </button>
-        <button type="button" onClick={() => setViewMode('quincena')}
-          className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-[10px] transition-all ${viewMode === 'quincena' ? 'bg-white shadow text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-          Quincena
+        <div className={pillDivider} />
+        <button type="button" onClick={goNow}
+          className={`flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all`}>
+          <span className={`text-[12px] font-black leading-none whitespace-nowrap ${pillLabelText}`}>{periodLabel}</span>
+          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentPeriod)}`}>
+            {isCurrentPeriod ? 'Actual' : '← Ir a hoy'}
+          </span>
+        </button>
+        <div className={pillDivider} />
+        <button type="button" onClick={goNext} disabled={isCurrentPeriod}
+          className={`${pillIconBtn} active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed`}>
+          <ChevronRight size={14} strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Period nav — week or quincena */}
-      {viewMode === 'week' ? (
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={goToPrevWeek}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
-            <ChevronLeft size={16} strokeWidth={2.5} />
-          </button>
-          <button type="button" onClick={() => setSelectedWeekStart(currentWeekStart)}
-            className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
-            <span className="text-[13px] font-black text-slate-800 leading-none">{weekLabel}</span>
-            {isCurrentWeek
-              ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Semana actual</span>
-              : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
-          </button>
-          <button type="button" onClick={goToNextWeek} disabled={isCurrentWeek}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
-            <ChevronRight size={16} strokeWidth={2.5} />
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
-            <ChevronLeft size={16} strokeWidth={2.5} />
-          </button>
-          <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
-            className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
-            <span className="text-[12px] font-black text-slate-800 leading-none">{quincenaLabel}</span>
-            {isCurrentQuincena
-              ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Quincena actual</span>
-              : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
-          </button>
-          <button type="button" onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))} disabled={isCurrentQuincena}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
-            <ChevronRight size={16} strokeWidth={2.5} />
-          </button>
-        </div>
-      )}
+      {/* 3. Branch dropdown pill */}
+      <div className="relative shrink-0" ref={branchDropRef}>
+        <button type="button" onClick={() => setBranchDropOpen(v => !v)}
+          className={`${pillWrap} cursor-pointer`}>
+          <Building2 size={13} className="opacity-60 shrink-0" />
+          <span className={`text-[10px] font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
+            {currentBranchLabel}
+          </span>
+          <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {branchDropOpen && (
+          <div className="absolute left-0 top-full mt-2 z-50 min-w-[190px] rounded-2xl border border-black/[0.08] bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden py-1">
+            {sortedBranchOptions.map(opt => (
+              <button key={opt.value} type="button"
+                onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
+                className={`w-full text-left px-4 py-2 text-[11px] font-bold tracking-wide transition-colors hover:bg-[#0052CC]/[0.07] ${filterBranch === opt.value ? 'text-[#0052CC] bg-[#0052CC]/[0.05]' : 'text-slate-700'}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <LiquidSelect value={filterBranch} onChange={v => setFilterBranch(v||'')} options={branchOptions} compact clearable={false} icon={Building2} />
-
+      {/* Demo toggle */}
       <button type="button" onClick={() => setForceDemoMode(v => !v)}
         className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-all shrink-0 ${forceDemoMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-black/[0.04] border-black/[0.08] text-slate-400 hover:text-slate-600'}`}>
         {forceDemoMode ? 'Demo ON' : 'Demo'}
       </button>
 
+      {/* Alert badge */}
       {viewMode === 'week' && totalAlerts > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
       )}
 
-      {/* Close week button — only for fully past weeks in week mode */}
+      {/* Close week button */}
       {viewMode === 'week' && !isDemoMode && isWeekFullyPast && canEditWeek && (
         approvalSummary.allApproved ? (
           <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
@@ -1475,7 +1557,10 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           /* ── Week view ─────────────────────────────────────────────── */
           <>
             {/* Branch sections — sin contenedor, cada empleado es su propia card */}
-            {Array.from(employeesByBranch.entries()).map(([branchId, branchEmployees]) => {
+            {Array.from(employeesByBranch.entries()).sort(([aId], [bId]) =>
+              getBranchSortKey(branchNameById.get(aId) || '', aId)
+                .localeCompare(getBranchSortKey(branchNameById.get(bId) || '', bId))
+            ).map(([branchId, branchEmployees]) => {
               const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
               const branchTotalAlerts = branchEmployees.reduce((acc, emp) => {
                 const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));

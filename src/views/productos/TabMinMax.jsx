@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-    RefreshCw, AlertTriangle, TrendingDown, TrendingUp, Loader2,
-    Building2, BarChart2, Package, X, Download, PackageX,
+    RefreshCw, AlertTriangle, Loader2,
+    Building2, BarChart2, Package, X, Download,
     CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
+    DollarSign, TrendingUp, TrendingDown, Layers,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -97,6 +98,13 @@ function getBreakdown(units, presentations) {
     return result;
 }
 
+function fmtMoney(n) {
+    const v = Number(n) || 0;
+    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
+    if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
+    return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function relativeTime(iso) {
     if (!iso) return null;
     const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
@@ -121,6 +129,97 @@ function exportCsv(rows, name) {
     const blob = new Blob([[h.join(','),...lines].join('\n')], { type:'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ─── Cost summary cards ───────────────────────────────────────────────────────
+
+function CostCards({ summary, isBodega }) {
+    const total   = Number(summary.total_cost)  || 0;
+    const useful  = Number(summary.useful_cost) || 0;
+    const excess  = Number(summary.excess_cost) || 0;
+    const dead    = Number(summary.dead_cost)   || 0;
+    const covPct  = Number(summary.coverage_pct) || 0;
+    const costedPct = Number(summary.costed_pct) || 0;
+
+    // Bar widths (proportional to total)
+    const usefulPct = total > 0 ? (useful / total) * 100 : 0;
+    const excessPct = total > 0 ? (excess / total) * 100 : 0;
+    const deadPct   = total > 0 ? (dead   / total) * 100 : 0;
+
+    const CARDS = [
+        {
+            label: 'Total retenido',
+            value: fmtMoney(total),
+            sub:   `${costedPct}% productos con costo`,
+            icon:  DollarSign,
+            iconCls: 'text-slate-500',
+            cardCls: 'border-slate-200 bg-white',
+            valCls:  'text-slate-800',
+        },
+        ...(!isBodega ? [
+            {
+                label: 'Inventario útil',
+                value: fmtMoney(useful),
+                sub:   `${covPct}% del total · dentro de MIN/MAX`,
+                icon:  TrendingUp,
+                iconCls: 'text-emerald-500',
+                cardCls: 'border-emerald-200 bg-emerald-50/60',
+                valCls:  'text-emerald-700',
+            },
+            {
+                label: 'Capital excedente',
+                value: fmtMoney(excess),
+                sub:   `${total > 0 ? ((excess/total)*100).toFixed(1) : 0}% del total · por encima del MAX`,
+                icon:  TrendingDown,
+                iconCls: 'text-orange-500',
+                cardCls: 'border-orange-200 bg-orange-50/50',
+                valCls:  'text-orange-700',
+            },
+        ] : []),
+        {
+            label: 'Sin movimiento',
+            value: fmtMoney(dead),
+            sub:   `${total > 0 ? ((dead/total)*100).toFixed(1) : 0}% del total · sin historial de ventas`,
+            icon:  Layers,
+            iconCls: 'text-slate-400',
+            cardCls: 'border-slate-200 bg-slate-50/60',
+            valCls:  'text-slate-600',
+        },
+    ];
+
+    return (
+        <div className="flex flex-col gap-2">
+            {/* Cards row */}
+            <div className={`grid gap-3 ${isBodega ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                {CARDS.map(({ label, value, sub, icon: Icon, iconCls, cardCls, valCls }) => (
+                    <div key={label} className={`rounded-2xl border px-4 py-3 flex flex-col gap-1 ${cardCls}`}>
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+                            <Icon size={14} className={`shrink-0 ${iconCls}`} />
+                        </div>
+                        <div className={`text-[22px] font-black tabular-nums leading-none ${valCls}`}>{value}</div>
+                        <div className="text-[9px] text-slate-400 leading-tight">{sub}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Breakdown bar — só para sucursales con MIN/MAX */}
+            {!isBodega && total > 0 && (
+                <div className="flex flex-col gap-1">
+                    <div className="flex h-2 rounded-full overflow-hidden bg-slate-100 gap-px">
+                        <div className="bg-emerald-400 transition-all"   style={{ width: `${usefulPct.toFixed(2)}%` }} />
+                        <div className="bg-orange-400/80 transition-all" style={{ width: `${excessPct.toFixed(2)}%` }} />
+                        <div className="bg-slate-300 transition-all"     style={{ width: `${deadPct.toFixed(2)}%`  }} />
+                    </div>
+                    <div className="flex items-center gap-4 text-[9px] text-slate-400 flex-wrap">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> Útil {covPct}%</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400/80 inline-block" /> Exceso {(excessPct).toFixed(1)}%</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 inline-block" /> Sin mov. {(deadPct).toFixed(1)}%</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 // ─── Expanded breakdown panel ─────────────────────────────────────────────────
@@ -349,6 +448,7 @@ export default function TabMinMax({ searchTerm = '' }) {
     const [filterAbc,    setFilterAbc]    = useState('all');
     const [filterAlert,  setFilterAlert]  = useState('all');
     const [data,         setData]         = useState([]);
+    const [costSummary,  setCostSummary]  = useState(null);
     const [loading,      setLoading]      = useState(false);
     const [calculating,  setCalculating]  = useState(false);
     const [calcResult,   setCalcResult]   = useState(null);
@@ -369,13 +469,16 @@ export default function TabMinMax({ searchTerm = '' }) {
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setEditId(null); setExpandedIds(new Set());
         try {
-            // .range(0,9999) bypasses the PostgREST 1000-row default cap
-            const { data: rows, error: e } = await supabase
-                .rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
-                .range(0, 9999);
-            if (e) throw e;
+            // both queries in parallel — .range(0,9999) bypasses PostgREST 1000-row cap
+            const [{ data: rows, error: e1 }, { data: cost, error: e2 }] = await Promise.all([
+                supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId }).range(0, 9999),
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
+            ]);
+            if (e1) throw e1;
+            if (e2) throw e2;
             if (rid !== loadRef.current) return;
             setData((rows || []).map(r => ({ ...r, _erp_sucursal_id: erpId })));
+            setCostSummary(cost || null);
         } catch (e) {
             if (rid === loadRef.current) setError(e.message);
         } finally {
@@ -493,6 +596,11 @@ export default function TabMinMax({ searchTerm = '' }) {
                     );
                 })}
             </div>
+
+            {/* ── Cost summary cards ── */}
+            {!loading && costSummary && (
+                <CostCards summary={costSummary} isBodega={isBodega} />
+            )}
 
             {/* ── Formula info strip ── */}
             {!isBodega && hasActiveData && (

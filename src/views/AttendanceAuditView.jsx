@@ -329,11 +329,11 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-black text-slate-800">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
                       <p className="text-[11px] font-bold text-slate-500">{fmtTimeCSTStr(p.timestamp)}</p>
-                      {p.details?.audit_info?.branchId && branchNameById.get(String(p.details.audit_info.branchId)) && String(p.details.audit_info.branchId) !== String(emp.branchId) && (
+                      {(() => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && branchNameById.get(String(bid)) && String(bid) !== String(emp.branchId) ? (
                         <p className="text-[9px] font-black text-blue-500 flex items-center gap-1 mt-0.5">
-                          <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.details.audit_info.branchId))}
+                          <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(bid))}
                         </p>
-                      )}
+                      ) : null; })()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {isAutoPunch(p)    && <span className="text-[8px] font-black bg-violet-100 text-violet-600 border border-violet-200 px-1.5 py-0.5 rounded-full">Auto</span>}
@@ -454,14 +454,16 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const isEditedDay = dayPunches.some(p => isEditedPunch(p));
   const editedInfo  = dayPunches.find(p => isEditedPunch(p));
 
-  // Cross-branch detection (branchId stored inside details.audit_info by the kiosk)
+  // Cross-branch detection — kiosk writes branchId inside details.audit_info;
+  // demo mode has it at p.branch_id directly — support both.
   const crossBranchPunch = dayPunches.find(p => {
-    const bid = p.details?.audit_info?.branchId;
+    const bid = p.details?.audit_info?.branchId ?? p.branch_id;
     return bid && String(bid) !== String(homeBranchId);
   });
-  const crossBranchName  = crossBranchPunch
-    ? (branchNameById.get(String(crossBranchPunch.details.audit_info.branchId)) || 'otra sucursal')
-    : null;
+  const crossBranchName = crossBranchPunch ? (() => {
+    const bid = crossBranchPunch.details?.audit_info?.branchId ?? crossBranchPunch.branch_id;
+    return branchNameById.get(String(bid)) || 'otra sucursal';
+  })() : null;
 
   // Late minutes (prefer timesheet, else compute)
   const lateMin = ts?.late_minutes || ((() => {
@@ -682,7 +684,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 
       if (punches.some(p => isAutoPunch(p)))   autoPunched++;
       if (punches.some(p => isPendingPunch(p))) pendingReview++;
-      if (punches.some(p => p.branch_id && String(p.branch_id) !== String(emp.branchId))) crossBranch++;
+      if (punches.some(p => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && String(bid) !== String(emp.branchId); })) crossBranch++;
     });
     return { inconsistencies, autoPunched, pendingReview, crossBranch, total: inconsistencies + autoPunched + pendingReview };
   }, [emp, quinceaDates, shiftById, now]);

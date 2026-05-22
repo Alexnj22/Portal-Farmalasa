@@ -238,20 +238,21 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                 </span>
                             </div>
                         )}
-                        {meta.docUrl ? (
+                        {meta.docUrl && (
                             <a href={meta.docUrl} target="_blank" rel="noreferrer"
                                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 hover:text-[#0052CC] hover:border-[#0052CC]/30 transition-all">
                                 <FileImage size={13} strokeWidth={2} />
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
-                        ) : req.status === 'PENDING' && uploadFileToStorage ? (
+                        )}
+                        {req.status === 'PENDING' && uploadFileToStorage && (
                             <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${uploadingDoc ? 'border-slate-200 opacity-60' : 'border-amber-200 hover:border-amber-400 hover:bg-amber-50/40'}`}>
                                 {uploadingDoc
                                     ? <Loader2 size={13} className="text-amber-500 animate-spin flex-shrink-0" />
                                     : <Upload size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2} />
                                 }
                                 <span className="text-[11px] font-bold text-amber-700">
-                                    {uploadingDoc ? 'Subiendo...' : 'Adjuntar certificado / boleta ISSS'}
+                                    {uploadingDoc ? 'Subiendo...' : meta.docUrl ? 'Reemplazar documento' : 'Adjuntar certificado / boleta ISSS'}
                                 </span>
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" disabled={uploadingDoc}
                                     onChange={async (e) => {
@@ -263,14 +264,14 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                             const newMeta = { ...meta, docUrl: url, docName: file.name };
                                             await supabase.from('approval_requests').update({ metadata: newMeta }).eq('id', req.id);
                                             setMeta(newMeta);
-                                            useToastStore.getState().showToast('Documento adjuntado', 'El certificado fue adjuntado correctamente.', 'success');
+                                            useToastStore.getState().showToast('Documento actualizado', 'El certificado fue reemplazado correctamente.', 'success');
                                         }
                                         setUploadingDoc(false);
                                         e.target.value = '';
                                     }}
                                 />
                             </label>
-                        ) : null}
+                        )}
                     </div>
                 )}
 

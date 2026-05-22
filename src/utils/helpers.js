@@ -150,9 +150,14 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
     const targetShiftId = dayConfig.shiftId || dayConfig.shift_id;
     const shift = (shifts || []).find(s => String(s.id) === String(targetShiftId));
 
+    // Honour per-day overrides written by SHIFT_CHANGE approval or TH manual edits.
+    // customStart/customEnd take precedence over the base shift's published times.
+    const resolvedStart = dayConfig.customStart || shift?.start || shift?.start_time || null;
+    const resolvedEnd   = dayConfig.customEnd   || shift?.end   || shift?.end_time   || null;
+
     return {
         isOffDay: false,
-        shift: shift || null,
+        shift: { ...(shift || {}), id: targetShiftId, name: shift?.name || 'Turno Modificado', start: resolvedStart, end: resolvedEnd },
         lunchTime: dayConfig.lunchTime || dayConfig.lunch_time || dayConfig.lunchStart,
         lactationTime: dayConfig.lactationTime || dayConfig.lactation_time || dayConfig.lactationStart
     };

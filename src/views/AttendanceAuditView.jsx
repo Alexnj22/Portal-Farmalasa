@@ -329,9 +329,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-black text-slate-800">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
                       <p className="text-[11px] font-bold text-slate-500">{fmtTimeCSTStr(p.timestamp)}</p>
-                      {p.branch_id && branchNameById.get(String(p.branch_id)) && String(p.branch_id) !== String(emp.branchId) && (
+                      {p.details?.audit_info?.branchId && branchNameById.get(String(p.details.audit_info.branchId)) && String(p.details.audit_info.branchId) !== String(emp.branchId) && (
                         <p className="text-[9px] font-black text-blue-500 flex items-center gap-1 mt-0.5">
-                          <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.branch_id))}
+                          <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(p.details.audit_info.branchId))}
                         </p>
                       )}
                     </div>
@@ -454,9 +454,14 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const isEditedDay = dayPunches.some(p => isEditedPunch(p));
   const editedInfo  = dayPunches.find(p => isEditedPunch(p));
 
-  // Cross-branch detection
-  const crossBranchPunch = dayPunches.find(p => p.branch_id && String(p.branch_id) !== String(homeBranchId));
-  const crossBranchName  = crossBranchPunch ? (branchNameById.get(String(crossBranchPunch.branch_id)) || 'otra sucursal') : null;
+  // Cross-branch detection (branchId stored inside details.audit_info by the kiosk)
+  const crossBranchPunch = dayPunches.find(p => {
+    const bid = p.details?.audit_info?.branchId;
+    return bid && String(bid) !== String(homeBranchId);
+  });
+  const crossBranchName  = crossBranchPunch
+    ? (branchNameById.get(String(crossBranchPunch.details.audit_info.branchId)) || 'otra sucursal')
+    : null;
 
   // Late minutes (prefer timesheet, else compute)
   const lateMin = ts?.late_minutes || ((() => {

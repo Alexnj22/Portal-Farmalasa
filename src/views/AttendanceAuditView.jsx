@@ -405,7 +405,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 }
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
-function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed }) {
+function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed, reviewedPunchIds }) {
   const now = new Date();
   const dayD   = new Date(dateStr + 'T12:00:00Z');
   const dow    = dayD.getUTCDay();
@@ -465,7 +465,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, now]);
 
   const isAutoDay   = !!exitPunch && isAutoPunch(exitPunch);
-  const isPendDay   = dayPunches.some(p => isPendingPunch(p));
+  const isPendDay   = dayPunches.some(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id));
   const isEditedDay = dayPunches.some(p => isEditedPunch(p));
   const editedInfo  = dayPunches.find(p => isEditedPunch(p));
 
@@ -552,7 +552,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             </button>
             {isPendDay && onMarkReviewed && (
               <button
-                onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p)))}
+                onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-500 hover:text-white hover:border-amber-500 rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
               >
                 <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
@@ -669,10 +669,10 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           )}
 
           {/* Pending review note */}
-          {isPendDay && dayPunches.find(p => isPendingPunch(p))?.details?.skipReason && (
+          {isPendDay && dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id))?.details?.skipReason && (
             <p className="text-[9px] font-bold text-amber-600 flex items-center gap-1">
               <ShieldAlert size={10} strokeWidth={2.5} />
-              {dayPunches.find(p => isPendingPunch(p)).details.skipReason}
+              {dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)).details.skipReason}
             </p>
           )}
         </div>
@@ -690,7 +690,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 }
 
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
-function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed }) {
+function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed, reviewedPunchIds }) {
   const [expanded, setExpanded] = useState(false);
   const now = new Date();
 
@@ -722,11 +722,11 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
       if (missing.length > 0) inconsistencies++;
 
       if (punches.some(p => isAutoPunch(p)))   autoPunched++;
-      if (punches.some(p => isPendingPunch(p))) pendingReview++;
+      if (punches.some(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id))) pendingReview++;
       if (punches.some(p => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && String(bid) !== String(emp.branchId); })) crossBranch++;
     });
     return { inconsistencies, autoPunched, pendingReview, crossBranch, total: inconsistencies + autoPunched + pendingReview };
-  }, [emp, quinceaDates, shiftById, now]);
+  }, [emp, quinceaDates, shiftById, now, reviewedPunchIds]);
 
   const empTimesheets = timesheets.filter(t => String(t.employee_id) === String(emp.id));
   const allApproved    = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
@@ -895,6 +895,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                   branchNameById={branchNameById}
                   onCorrect={onCorrect}
                   onMarkReviewed={onMarkReviewed}
+                  reviewedPunchIds={reviewedPunchIds}
                 />
               </React.Fragment>
             );
@@ -928,6 +929,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [filterBranch,      setFilterBranch]      = useState('');
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
   const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
+  const [reviewedPunchIds,  setReviewedPunchIds]  = useState(() => new Set());
   const [quincenaTS,        setQuincenaTS]        = useState([]);
   const [isClosingQuincena, setIsClosingQuincena] = useState(false);
   const [shiftExceptions,   setShiftExceptions]   = useState([]);
@@ -1155,11 +1157,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         empId: emp.id, date: dateStr, count: pendingPunches.length, actorName: user?.name
       });
       showToast('Revisado', `${pendingPunches.length} marcaje(s) marcado(s) como revisado(s).`, 'success');
-      // Patch local emp.attendance so the badge disappears without refetch
-      const ids = new Set(pendingPunches.map(p => p.id));
-      emp.attendance = (emp.attendance || []).map(p =>
-        ids.has(p.id) ? { ...p, details: { ...p.details, pendingHRReview: false } } : p
-      );
+      const ids = pendingPunches.map(p => p.id);
+      setReviewedPunchIds(prev => new Set([...prev, ...ids]));
     } catch (err) {
       console.error(err);
       showToast('Error', 'No se pudo marcar como revisado.', 'error');
@@ -1499,6 +1498,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                           onCorrect={handleCorrect}
                           onApproveAll={canEdit ? () => handleApproveAllForEmployee(emp) : null}
                           onMarkReviewed={canEdit ? handleMarkReviewed : null}
+                          reviewedPunchIds={reviewedPunchIds}
                         />
                       ))}
                     </div>

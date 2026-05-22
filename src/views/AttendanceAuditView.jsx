@@ -4,7 +4,7 @@ import {
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
   Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
-  Users, TrendingUp,
+  Users, TrendingUp, Download,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -966,6 +966,34 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     setIsClosingQuincena(false);
   }, [isClosingQuincena, quincenaTS]);
 
+  // ── Export quincena CSV ──────────────────────────────────────────────────
+  const handleExportCSVQuincena = useCallback(() => {
+    const rows = [
+      ['Sucursal', 'Nombre', 'Cargo', 'Horas Regulares', 'Horas Extra', 'Tardanzas (min)', 'Ausencias', 'Aprobados', 'Total días'],
+    ];
+    quincenaSummary.forEach(({ emp, stats }) => {
+      rows.push([
+        branchNameById.get(String(emp.branchId)) || '—',
+        emp.name,
+        emp.role || '—',
+        stats.regular.toFixed(1),
+        stats.overtime.toFixed(1),
+        stats.late,
+        stats.absent,
+        stats.approved,
+        stats.total,
+      ]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quincena-${selectedQuincena}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [quincenaSummary, branchNameById, selectedQuincena]);
+
   // ── Group employees by branch ────────────────────────────────────────────
   const employeesByBranch = useMemo(() => {
     const map = new Map();
@@ -1462,97 +1490,183 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
         {viewMode === 'quincena' ? (
           /* ── Quincena view ─────────────────────────────────────────── */
-          quincenaSummary.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
-                <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
+          (() => {
+            const totReg  = quincenaSummary.reduce((s, { stats }) => s + stats.regular, 0);
+            const totOT   = quincenaSummary.reduce((s, { stats }) => s + stats.overtime, 0);
+            const totLate = quincenaSummary.reduce((s, { stats }) => s + stats.late, 0);
+            const totAbs  = quincenaSummary.reduce((s, { stats }) => s + stats.absent, 0);
+            const totAppr = quincenaSummary.reduce((s, { stats }) => s + stats.approved, 0);
+            const totAll  = quincenaSummary.reduce((s, { stats }) => s + stats.total, 0);
+            const withData = quincenaSummary.filter(({ stats }) => stats.total > 0).length;
+
+            const colGrid = 'grid grid-cols-[1fr_5.5rem_5.5rem_5.5rem_5.5rem_6.5rem] gap-2 items-center';
+            const colHdr  = 'text-[9px] font-black uppercase tracking-widest text-slate-500';
+
+            if (quincenaSummary.length === 0) return (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
+                  <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
+                </div>
+                <p className="text-[14px] font-bold text-slate-400">Sin timesheets para esta quincena</p>
               </div>
-              <p className="text-[14px] font-bold text-slate-400">Sin timesheets para esta quincena</p>
-            </div>
-          ) : (
-            <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-sm">
-              {/* Table header */}
-              <div className="px-5 py-3 border-b border-slate-200/60 bg-slate-50/40 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                  <Users size={10} strokeWidth={2.5} /> Colaborador
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Regular</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Extra</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Tardanzas</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-14">Ausencias</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-20">Estado</span>
-              </div>
-              <div className="divide-y divide-slate-200/40">
-                {quincenaSummary.map(({ emp, stats }) => {
-                  const allApproved = stats.total > 0 && stats.approved === stats.total;
-                  return (
-                    <div key={emp.id} className="px-5 py-3.5 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center hover:bg-black/[0.02] transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-[12px] font-black text-slate-800 truncate">{emp.name}</p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">
-                          {branchNameById.get(String(emp.branchId)) || '—'}
-                        </p>
+            );
+
+            return (
+              <div className="space-y-4">
+
+                {/* ── Stat cards ── */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { Icon: Users,        label: 'Colaboradores',   val: withData,              unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
+                    { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1),     unit: 'h', c: 'text-slate-700',  bg: 'bg-slate-100' },
+                    { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),      unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-400', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
+                    { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,                unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-400', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
+                  ].map(({ Icon, label, val, unit, c, bg }) => (
+                    <div key={label} className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
+                          <Icon size={13} className={c} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 leading-tight">{label}</span>
                       </div>
-                      <span className="text-[12px] font-bold text-slate-700 tabular-nums text-right w-16">
-                        {stats.regular.toFixed(1)}h
-                      </span>
-                      <span className={`text-[12px] font-bold tabular-nums text-right w-16 ${stats.overtime > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                        {stats.overtime > 0 ? `${stats.overtime.toFixed(1)}h` : '—'}
-                      </span>
-                      <span className={`text-[12px] font-bold tabular-nums text-right w-16 ${stats.late > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {stats.late > 0 ? `${stats.late}m` : '—'}
-                      </span>
-                      <span className={`text-[12px] font-bold tabular-nums text-right w-14 ${stats.absent > 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                        {stats.absent > 0 ? stats.absent : '—'}
-                      </span>
-                      <div className="text-right w-20">
-                        {stats.total === 0 ? (
-                          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Sin datos</span>
-                        ) : allApproved ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            <ShieldCheck size={8} strokeWidth={2.5} /> OK
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-bold text-amber-600">
-                            {stats.approved}/{stats.total}
-                          </span>
-                        )}
-                      </div>
+                      <p className={`text-[1.85rem] font-black leading-none tabular-nums tracking-tight ${c}`}>
+                        {val}<span className="text-[14px] font-bold opacity-50 ml-0.5">{unit}</span>
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-              {/* Quincena totals footer */}
-              {(() => {
-                const totReg  = quincenaSummary.reduce((s, { stats }) => s + stats.regular, 0);
-                const totOT   = quincenaSummary.reduce((s, { stats }) => s + stats.overtime, 0);
-                const totLate = quincenaSummary.reduce((s, { stats }) => s + stats.late, 0);
-                const totAbs  = quincenaSummary.reduce((s, { stats }) => s + stats.absent, 0);
-                const totAppr = quincenaSummary.reduce((s, { stats }) => s + stats.approved, 0);
-                const totAll  = quincenaSummary.reduce((s, { stats }) => s + stats.total, 0);
-                return (
-                  <div className="px-5 py-3 border-t border-slate-200/60 bg-slate-50/40 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
-                      <TrendingUp size={10} strokeWidth={2.5} /> Totales quincena
-                    </span>
-                    <span className="text-[12px] font-black text-slate-800 tabular-nums text-right w-16">{totReg.toFixed(1)}h</span>
-                    <span className={`text-[12px] font-black tabular-nums text-right w-16 ${totOT > 0 ? 'text-amber-700' : 'text-slate-400'}`}>
-                      {totOT > 0 ? `${totOT.toFixed(1)}h` : '—'}
-                    </span>
-                    <span className={`text-[12px] font-black tabular-nums text-right w-16 ${totLate > 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {totLate > 0 ? `${totLate}m` : '—'}
-                    </span>
-                    <span className={`text-[12px] font-black tabular-nums text-right w-14 ${totAbs > 0 ? 'text-red-700' : 'text-slate-400'}`}>
-                      {totAbs > 0 ? totAbs : '—'}
-                    </span>
-                    <span className="text-[9px] font-black text-slate-600 text-right w-20">
-                      {totAppr}/{totAll}
-                    </span>
+                  ))}
+                </div>
+
+                {/* ── Branch sections ── */}
+                {Array.from(employeesByBranch.entries())
+                  .sort(([aId], [bId]) =>
+                    getBranchSortKey(branchNameById.get(aId) || '', aId)
+                      .localeCompare(getBranchSortKey(branchNameById.get(bId) || '', bId))
+                  )
+                  .map(([branchId, branchEmployees]) => {
+                    const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
+                    const rows = branchEmployees.map(emp => ({
+                      emp,
+                      stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
+                    }));
+                    const bReg  = rows.reduce((s, r) => s + r.stats.regular, 0);
+                    const bOT   = rows.reduce((s, r) => s + r.stats.overtime, 0);
+                    const bLate = rows.reduce((s, r) => s + r.stats.late, 0);
+                    const bAbs  = rows.reduce((s, r) => s + r.stats.absent, 0);
+                    const bAppr = rows.reduce((s, r) => s + r.stats.approved, 0);
+                    const bTot  = rows.reduce((s, r) => s + r.stats.total, 0);
+
+                    return (
+                      <div key={branchId} className="space-y-2">
+                        {/* Branch header */}
+                        <div className="flex items-center gap-3 px-1 pt-1">
+                          <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 flex items-center justify-center shrink-0">
+                            <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                              {rows.length} colaborador{rows.length !== 1 ? 'es' : ''}
+                            </p>
+                          </div>
+                          <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
+                          <span className="text-[11px] font-black text-slate-500 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
+                        </div>
+
+                        {/* Table card */}
+                        <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-sm">
+                          <div className="overflow-x-auto">
+                            {/* Column headers */}
+                            <div className={`${colGrid} px-4 py-2.5 border-b border-slate-200/60 bg-slate-50/40 min-w-[560px]`}>
+                              <span className={`${colHdr} flex items-center gap-1`}><Users size={9} strokeWidth={2.5} /> Colaborador</span>
+                              <span className={`${colHdr} text-right`}>Regular</span>
+                              <span className={`${colHdr} text-right`}>Extra</span>
+                              <span className={`${colHdr} text-right`}>Tardanzas</span>
+                              <span className={`${colHdr} text-right`}>Ausencias</span>
+                              <span className={`${colHdr} text-right`}>Estado</span>
+                            </div>
+
+                            {/* Employee rows */}
+                            <div className="divide-y divide-slate-200/40">
+                              {rows.map(({ emp, stats }) => {
+                                const allOK = stats.total > 0 && stats.approved === stats.total;
+                                return (
+                                  <div key={emp.id} className={`${colGrid} px-4 py-3.5 hover:bg-black/[0.02] transition-colors min-w-[560px]`}>
+                                    <div className="min-w-0">
+                                      <p className="text-[12px] font-black text-slate-800 truncate">{emp.name}</p>
+                                      {emp.role && <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 truncate">{emp.role}</p>}
+                                    </div>
+                                    <span className="text-[13px] font-bold text-slate-800 tabular-nums text-right">
+                                      {stats.regular.toFixed(1)}h
+                                    </span>
+                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.overtime > 0 ? 'text-amber-600' : 'text-slate-300'}`}>
+                                      {stats.overtime > 0 ? `${stats.overtime.toFixed(1)}h` : '—'}
+                                    </span>
+                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.late > 0 ? 'text-red-500' : 'text-slate-300'}`}>
+                                      {stats.late > 0 ? `${stats.late}m` : '—'}
+                                    </span>
+                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.absent > 0 ? 'text-red-600' : 'text-slate-300'}`}>
+                                      {stats.absent > 0 ? stats.absent : '—'}
+                                    </span>
+                                    <div className="text-right">
+                                      {stats.total === 0 ? (
+                                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Sin datos</span>
+                                      ) : allOK ? (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                          <ShieldCheck size={8} strokeWidth={2.5} /> OK
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                          {stats.approved}/{stats.total}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Branch subtotal */}
+                            <div className={`${colGrid} px-4 py-2.5 border-t border-slate-200/70 bg-slate-50/50 min-w-[560px]`}>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Subtotal</span>
+                              <span className="text-[12px] font-black text-slate-800 tabular-nums text-right">{bReg.toFixed(1)}h</span>
+                              <span className={`text-[12px] font-black tabular-nums text-right ${bOT > 0 ? 'text-amber-700' : 'text-slate-300'}`}>{bOT > 0 ? `${bOT.toFixed(1)}h` : '—'}</span>
+                              <span className={`text-[12px] font-black tabular-nums text-right ${bLate > 0 ? 'text-red-600' : 'text-slate-300'}`}>{bLate > 0 ? `${bLate}m` : '—'}</span>
+                              <span className={`text-[12px] font-black tabular-nums text-right ${bAbs > 0 ? 'text-red-700' : 'text-slate-300'}`}>{bAbs > 0 ? bAbs : '—'}</span>
+                              <span className="text-[9px] font-black text-slate-500 text-right">{bAppr}/{bTot}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* ── Grand total + Export ── */}
+                <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl shadow-sm">
+                  <div className="overflow-x-auto">
+                    <div className={`${colGrid} px-4 py-3.5 min-w-[560px]`}>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-700 flex items-center gap-1.5">
+                        <TrendingUp size={10} strokeWidth={2.5} /> Total quincena
+                      </span>
+                      <span className="text-[14px] font-black text-slate-800 tabular-nums text-right">{totReg.toFixed(1)}h</span>
+                      <span className={`text-[14px] font-black tabular-nums text-right ${totOT > 0 ? 'text-amber-700' : 'text-slate-300'}`}>{totOT > 0 ? `${totOT.toFixed(1)}h` : '—'}</span>
+                      <span className={`text-[14px] font-black tabular-nums text-right ${totLate > 0 ? 'text-red-600' : 'text-slate-300'}`}>{totLate > 0 ? `${totLate}m` : '—'}</span>
+                      <span className={`text-[14px] font-black tabular-nums text-right ${totAbs > 0 ? 'text-red-700' : 'text-slate-300'}`}>{totAbs > 0 ? totAbs : '—'}</span>
+                      <span className="text-[10px] font-black text-slate-600 text-right">{totAppr}/{totAll}</span>
+                    </div>
                   </div>
-                );
-              })()}
-            </div>
-          )
+                </div>
+
+                {/* Export button */}
+                <div className="flex justify-end pb-2">
+                  <button type="button" onClick={handleExportCSVQuincena}
+                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-white/50 text-slate-600 hover:bg-white hover:text-[#0052CC] hover:border-[#0052CC]/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                    <Download size={11} strokeWidth={2.5} /> Exportar CSV
+                  </button>
+                </div>
+
+              </div>
+            );
+          })()
         ) : (
           /* ── Week view ─────────────────────────────────────────────── */
           <>

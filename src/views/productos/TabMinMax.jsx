@@ -126,56 +126,57 @@ function exportCsv(rows, name) {
 // ─── Expanded breakdown panel ─────────────────────────────────────────────────
 
 function ExpandedPanel({ row }) {
-    const pres  = row.presentations || [];
-    const stock = Number(row.current_stock);
-    const minN  = Number(row.effective_min);
-    const maxN  = Number(row.effective_max);
-    const breakdown = getBreakdown(stock, pres);
-    if (!breakdown.length) return null;
-
+    const pres        = row.presentations || [];
+    const stock       = Number(row.current_stock);
+    const minN        = Number(row.effective_min);
+    const maxN        = Number(row.effective_max);
+    const breakdown   = getBreakdown(stock, pres);
     const hasDominant = sortedPres(pres).length > 0;
 
     return (
         <div className="mx-4 mb-2 rounded-xl border border-slate-100 bg-slate-50/70 overflow-hidden">
-            {/* Tier rows */}
-            <div className="divide-y divide-slate-100">
-                {breakdown.map(({ tipo, factor, qty, base }, i) => {
-                    const pct = stock > 0 ? (base / stock) * 100 : 0;
-                    return (
-                        <div key={i} className="grid items-center px-4 py-2.5"
-                            style={{ gridTemplateColumns: '120px 1fr 72px 64px' }}>
-                            {/* Presentation label */}
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
-                                {factor > 1 && (
-                                    <span className="text-[9px] font-mono text-slate-400 bg-slate-200/60 px-1 rounded">×{factor}</span>
-                                )}
-                            </div>
-                            {/* Bar + qty */}
-                            <div className="flex items-center gap-2.5 pr-4">
-                                <div className="flex-1 h-[5px] bg-slate-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-emerald-400/70 rounded-full transition-all"
-                                        style={{ width: `${pct.toFixed(1)}%` }} />
+            {/* Breakdown tiers — or empty state when no stock */}
+            {breakdown.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                    {breakdown.map(({ tipo, factor, qty, base }, i) => {
+                        const pct = stock > 0 ? (base / stock) * 100 : 0;
+                        return (
+                            <div key={i} className="grid items-center px-4 py-2.5"
+                                style={{ gridTemplateColumns: '120px 1fr 72px 64px' }}>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
+                                    {factor > 1 && (
+                                        <span className="text-[9px] font-mono text-slate-400 bg-slate-200/60 px-1 rounded">×{factor}</span>
+                                    )}
                                 </div>
-                                <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0 w-8 text-right">{qty}</span>
+                                <div className="flex items-center gap-2.5 pr-4">
+                                    <div className="flex-1 h-[5px] bg-slate-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-400/70 rounded-full transition-all"
+                                            style={{ width: `${pct.toFixed(1)}%` }} />
+                                    </div>
+                                    <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0 w-8 text-right">{qty}</span>
+                                </div>
+                                <div className="text-right text-[10px] text-slate-500 tabular-nums font-mono">
+                                    {base.toLocaleString()} und
+                                </div>
+                                <div className="text-right text-[10px] text-slate-400 tabular-nums">
+                                    {pct.toFixed(0)}%
+                                </div>
                             </div>
-                            {/* Base units */}
-                            <div className="text-right text-[10px] text-slate-500 tabular-nums font-mono">
-                                {base.toLocaleString()} und
-                            </div>
-                            {/* % share */}
-                            <div className="text-right text-[10px] text-slate-400 tabular-nums">
-                                {pct.toFixed(0)}%
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-400 italic">
+                    <Package size={13} className="shrink-0 text-slate-300" />
+                    Sin existencias en inventario actualmente
+                </div>
+            )}
 
-            {/* MIN / MAX reference line */}
+            {/* MIN / MAX reference */}
             {!row.is_dead_stock && minN > 0 && (
-                <div className="px-4 py-2 border-t border-slate-200/60 bg-white/60 flex items-center gap-5 flex-wrap">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia</span>
+                <div className="px-4 py-2.5 border-t border-slate-200/60 bg-white/50 flex items-center gap-5 flex-wrap">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia pedido</span>
                     <span className="flex items-center gap-1.5 text-[11px]">
                         <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
                         <span className="text-slate-500 font-semibold">MIN</span>
@@ -588,36 +589,33 @@ export default function TabMinMax({ searchTerm = '' }) {
                                         onSave={handleEditSave} onCancel={() => setEditId(null)} />
                                 );
 
-                                const alert       = ALERT[row.alert_status] ?? ALERT.ok;
-                                const abc         = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
-                                const varCfg      = VAR_CFG[row.demand_variability];
-                                const pres        = row.presentations || [];
-                                const dead        = row.is_dead_stock;
-                                const stock       = Number(row.current_stock);
-                                const minN        = Number(row.effective_min);
-                                const maxN        = Number(row.effective_max);
-                                const hasBreakdown = stock > 0 && pres.length > 0;
-                                const isExpanded  = expandedIds.has(row.erp_product_id);
+                                const alert      = ALERT[row.alert_status] ?? ALERT.ok;
+                                const abc        = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
+                                const varCfg     = VAR_CFG[row.demand_variability];
+                                const pres       = row.presentations || [];
+                                const dead       = row.is_dead_stock;
+                                const stock      = Number(row.current_stock);
+                                const minN       = Number(row.effective_min);
+                                const maxN       = Number(row.effective_max);
+                                const canExpand  = !dead || stock > 0;
+                                const isExpanded = expandedIds.has(row.erp_product_id);
 
                                 return (
                                     <React.Fragment key={`${row.erp_product_id}_${i}`}>
-                                        <div className={`border-l-4 ${alert.left} ${alert.row} border-b border-slate-50 hover:brightness-[0.98] transition-all`}>
+                                        {/* Whole row is clickable */}
+                                        <div
+                                            className={`border-l-4 ${alert.left} ${alert.row} border-b border-slate-50 transition-all ${canExpand ? 'cursor-pointer hover:brightness-[0.97]' : 'hover:brightness-[0.98]'}`}
+                                            onClick={() => canExpand && toggleExpand(row.erp_product_id)}
+                                        >
                                             <div className="grid items-center pr-4 pl-1 py-2.5"
                                                 style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
 
-                                                {/* Product + expand toggle */}
+                                                {/* Product + chevron indicator */}
                                                 <div className="min-w-0 pr-3 flex items-start gap-1">
-                                                    <button
-                                                        onClick={() => hasBreakdown && toggleExpand(row.erp_product_id)}
-                                                        className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center rounded transition-colors ${
-                                                            hasBreakdown
-                                                                ? 'text-slate-300 hover:text-slate-500 cursor-pointer'
-                                                                : 'opacity-0 pointer-events-none'
-                                                        }`}
-                                                    >
+                                                    <div className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
                                                         <ChevronRight size={12}
-                                                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
-                                                    </button>
+                                                            className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                    </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-1.5 min-w-0">
                                                             <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">
@@ -717,7 +715,8 @@ export default function TabMinMax({ searchTerm = '' }) {
                                                         )}
                                                     </div>
                                                     {!dead && (
-                                                        <button onClick={() => setEditId(row.erp_product_id)}
+                                                        <button
+                                                            onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }}
                                                             title="Ajustar MIN/MAX"
                                                             className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
                                                             <Edit3 size={13} />
@@ -726,7 +725,7 @@ export default function TabMinMax({ searchTerm = '' }) {
                                                 </div>
                                             </div>
                                         </div>
-                                        {isExpanded && hasBreakdown && <ExpandedPanel row={row} />}
+                                        {isExpanded && canExpand && <ExpandedPanel row={row} />}
                                     </React.Fragment>
                                 );
                             })}

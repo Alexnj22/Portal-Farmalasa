@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, TrendingDown, TrendingUp, Loader2,
     Building2, BarChart2, Package, X, Download, PackageX,
-    CheckCircle2, Edit3, Check, Info, RotateCcw,
+    CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -48,11 +48,16 @@ const VAR_CFG = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function sortedPres(presentations) {
+    return [...new Map((presentations || []).map(p => [p.factor, p])).values()]
+        .filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor);
+}
+
+// Full breakdown: "1 CAJA + 5 BLISTER + 2 und" — used for current stock
 function formatUnits(units, presentations) {
     const n = Number(units);
     if (n === 0) return '0';
-    const pres = [...new Map((presentations || []).map(p => [p.factor, p])).values()]
-        .filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor);
+    const pres = sortedPres(presentations);
     if (!pres.length) return `${n.toLocaleString()} und`;
     let rem = n;
     const parts = [];
@@ -64,6 +69,32 @@ function formatUnits(units, presentations) {
     }
     if (rem > 0) parts.push(`${rem} und`);
     return parts.length ? parts.join(' + ') : `${n.toLocaleString()} und`;
+}
+
+// Dominant presentation rounded UP — used for MIN/MAX (ordering unit)
+function formatDominant(units, presentations) {
+    const n = Number(units);
+    if (!n) return '0';
+    const pres = sortedPres(presentations);
+    if (!pres.length) return `${n.toLocaleString()} und`;
+    const { tipo, factor } = pres[0];
+    return `${Math.ceil(n / factor)} ${tipo.trim()}`;
+}
+
+// Returns [{tipo, factor, qty, base}] for the expand panel
+function getBreakdown(units, presentations) {
+    const n = Number(units);
+    if (!n) return [];
+    const pres = sortedPres(presentations);
+    if (!pres.length) return [{ tipo: 'und', factor: 1, qty: n, base: n }];
+    let rem = n;
+    const result = [];
+    for (const { tipo, factor } of pres) {
+        const qty = Math.floor(rem / factor);
+        if (qty > 0) { result.push({ tipo: tipo.trim(), factor, qty, base: qty * factor }); rem %= factor; }
+    }
+    if (rem > 0) result.push({ tipo: 'und', factor: 1, qty: rem, base: rem });
+    return result;
 }
 
 function relativeTime(iso) {
@@ -90,6 +121,81 @@ function exportCsv(rows, name) {
     const blob = new Blob([[h.join(','),...lines].join('\n')], { type:'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ─── Expanded breakdown panel ─────────────────────────────────────────────────
+
+function ExpandedPanel({ row }) {
+    const pres  = row.presentations || [];
+    const stock = Number(row.current_stock);
+    const minN  = Number(row.effective_min);
+    const maxN  = Number(row.effective_max);
+    const breakdown = getBreakdown(stock, pres);
+    if (!breakdown.length) return null;
+
+    const hasDominant = sortedPres(pres).length > 0;
+
+    return (
+        <div className="mx-4 mb-2 rounded-xl border border-slate-100 bg-slate-50/70 overflow-hidden">
+            {/* Tier rows */}
+            <div className="divide-y divide-slate-100">
+                {breakdown.map(({ tipo, factor, qty, base }, i) => {
+                    const pct = stock > 0 ? (base / stock) * 100 : 0;
+                    return (
+                        <div key={i} className="grid items-center px-4 py-2.5"
+                            style={{ gridTemplateColumns: '120px 1fr 72px 64px' }}>
+                            {/* Presentation label */}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
+                                {factor > 1 && (
+                                    <span className="text-[9px] font-mono text-slate-400 bg-slate-200/60 px-1 rounded">×{factor}</span>
+                                )}
+                            </div>
+                            {/* Bar + qty */}
+                            <div className="flex items-center gap-2.5 pr-4">
+                                <div className="flex-1 h-[5px] bg-slate-200 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-400/70 rounded-full transition-all"
+                                        style={{ width: `${pct.toFixed(1)}%` }} />
+                                </div>
+                                <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0 w-8 text-right">{qty}</span>
+                            </div>
+                            {/* Base units */}
+                            <div className="text-right text-[10px] text-slate-500 tabular-nums font-mono">
+                                {base.toLocaleString()} und
+                            </div>
+                            {/* % share */}
+                            <div className="text-right text-[10px] text-slate-400 tabular-nums">
+                                {pct.toFixed(0)}%
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* MIN / MAX reference line */}
+            {!row.is_dead_stock && minN > 0 && (
+                <div className="px-4 py-2 border-t border-slate-200/60 bg-white/60 flex items-center gap-5 flex-wrap">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia</span>
+                    <span className="flex items-center gap-1.5 text-[11px]">
+                        <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                        <span className="text-slate-500 font-semibold">MIN</span>
+                        <span className="font-black text-orange-600">
+                            {hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString()} und`}
+                        </span>
+                        {hasDominant && <span className="text-slate-400 text-[10px]">({minN.toLocaleString()} und)</span>}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px]">
+                        <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                        <span className="text-slate-500 font-semibold">MAX</span>
+                        <span className="font-black text-blue-600">
+                            {hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString()} und`}
+                        </span>
+                        {hasDominant && <span className="text-slate-400 text-[10px]">({maxN.toLocaleString()} und)</span>}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
 }
 
 // ─── Stock mini-bar ───────────────────────────────────────────────────────────
@@ -238,20 +344,29 @@ function EditRow({ row, onSave, onCancel }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TabMinMax({ searchTerm = '' }) {
-    const [selectedErp, setSelectedErp] = useState(5); // La Popular primero
-    const [filterAbc,   setFilterAbc]   = useState('all');
-    const [filterAlert, setFilterAlert] = useState('all');
-    const [data,        setData]        = useState([]);
-    const [loading,     setLoading]     = useState(false);
-    const [calculating, setCalculating] = useState(false);
-    const [calcResult,  setCalcResult]  = useState(null);
-    const [error,       setError]       = useState(null);
-    const [editId,      setEditId]      = useState(null);
+    const [selectedErp,  setSelectedErp]  = useState(5); // La Popular primero
+    const [filterAbc,    setFilterAbc]    = useState('all');
+    const [filterAlert,  setFilterAlert]  = useState('all');
+    const [data,         setData]         = useState([]);
+    const [loading,      setLoading]      = useState(false);
+    const [calculating,  setCalculating]  = useState(false);
+    const [calcResult,   setCalcResult]   = useState(null);
+    const [error,        setError]        = useState(null);
+    const [editId,       setEditId]       = useState(null);
+    const [expandedIds,  setExpandedIds]  = useState(new Set());
     const loadRef = useRef(0);
+
+    const toggleExpand = useCallback((id) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    }, []);
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setEditId(null);
+        setLoading(true); setError(null); setEditId(null); setExpandedIds(new Set());
         try {
             // .range(0,9999) bypasses the PostgREST 1000-row default cap
             const { data: rows, error: e } = await supabase
@@ -473,129 +588,146 @@ export default function TabMinMax({ searchTerm = '' }) {
                                         onSave={handleEditSave} onCancel={() => setEditId(null)} />
                                 );
 
-                                const alert  = ALERT[row.alert_status] ?? ALERT.ok;
-                                const abc    = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
-                                const varCfg = VAR_CFG[row.demand_variability];
-                                const pres   = row.presentations || [];
-                                const dead   = row.is_dead_stock;
-                                const stock  = Number(row.current_stock);
-                                const minN   = Number(row.effective_min);
-                                const maxN   = Number(row.effective_max);
+                                const alert       = ALERT[row.alert_status] ?? ALERT.ok;
+                                const abc         = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
+                                const varCfg      = VAR_CFG[row.demand_variability];
+                                const pres        = row.presentations || [];
+                                const dead        = row.is_dead_stock;
+                                const stock       = Number(row.current_stock);
+                                const minN        = Number(row.effective_min);
+                                const maxN        = Number(row.effective_max);
+                                const hasBreakdown = stock > 0 && pres.length > 0;
+                                const isExpanded  = expandedIds.has(row.erp_product_id);
 
                                 return (
-                                    <div key={`${row.erp_product_id}_${i}`}
-                                        className={`border-l-4 ${alert.left} ${alert.row} border-b border-slate-50 hover:brightness-[0.98] transition-all`}>
-                                        <div className="grid items-center pr-4 pl-1 py-2.5"
-                                            style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
+                                    <React.Fragment key={`${row.erp_product_id}_${i}`}>
+                                        <div className={`border-l-4 ${alert.left} ${alert.row} border-b border-slate-50 hover:brightness-[0.98] transition-all`}>
+                                            <div className="grid items-center pr-4 pl-1 py-2.5"
+                                                style={{ gridTemplateColumns: '1fr 52px 76px 100px 105px 105px 88px 56px' }}>
 
-                                            {/* Product */}
-                                            <div className="min-w-0 pl-3 pr-3">
-                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                    <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">
-                                                        {row.product_name || '—'}
+                                                {/* Product + expand toggle */}
+                                                <div className="min-w-0 pr-3 flex items-start gap-1">
+                                                    <button
+                                                        onClick={() => hasBreakdown && toggleExpand(row.erp_product_id)}
+                                                        className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center rounded transition-colors ${
+                                                            hasBreakdown
+                                                                ? 'text-slate-300 hover:text-slate-500 cursor-pointer'
+                                                                : 'opacity-0 pointer-events-none'
+                                                        }`}
+                                                    >
+                                                        <ChevronRight size={12}
+                                                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                    </button>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                            <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">
+                                                                {row.product_name || '—'}
+                                                            </span>
+                                                            {row.has_manual && (
+                                                                <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>
+                                                            )}
+                                                        </div>
+                                                        {!dead && (
+                                                            <span className="text-[10px] text-slate-400">
+                                                                {Number(row.daily_velocity||0).toFixed(1)} und/día
+                                                            </span>
+                                                        )}
+                                                        {!dead && <StockBar current={stock} min={minN} max={maxN} />}
+                                                    </div>
+                                                </div>
+
+                                                {/* ABC */}
+                                                <div className="flex justify-center">
+                                                    <span title={abc.title}
+                                                        className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${abc.bg}`}>
+                                                        {row.abc_class}
                                                     </span>
-                                                    {row.has_manual && (
-                                                        <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>
+                                                </div>
+
+                                                {/* Variab */}
+                                                <div className="text-center">
+                                                    {!dead && varCfg
+                                                        ? <span className={`text-[10px] font-semibold ${varCfg.cls}`}>
+                                                            {varCfg.label}
+                                                            <span className="text-slate-300 ml-1 font-mono">({Number(row.cv||0).toFixed(0)}%)</span>
+                                                          </span>
+                                                        : <span className="text-slate-200 text-xs">—</span>}
+                                                </div>
+
+                                                {/* Stock actual */}
+                                                <div className="text-right">
+                                                    <div className={`text-[13px] font-bold tabular-nums leading-tight ${
+                                                        stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'
+                                                    }`}>
+                                                        {stock === 0 ? '0' : formatUnits(stock, pres)}
+                                                    </div>
+                                                    {!dead && stock > 0 && (
+                                                        <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>
                                                     )}
                                                 </div>
-                                                {!dead && (
-                                                    <span className="text-[10px] text-slate-400">
-                                                        {Number(row.daily_velocity||0).toFixed(1)} und/día
-                                                    </span>
-                                                )}
-                                                {!dead && <StockBar current={stock} min={minN} max={maxN} />}
-                                            </div>
 
-                                            {/* ABC */}
-                                            <div className="flex justify-center">
-                                                <span title={abc.title}
-                                                    className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${abc.bg}`}>
-                                                    {row.abc_class}
-                                                </span>
-                                            </div>
-
-                                            {/* Variab */}
-                                            <div className="text-center">
-                                                {!dead && varCfg
-                                                    ? <span className={`text-[10px] font-semibold ${varCfg.cls}`}>
-                                                        {varCfg.label}
-                                                        <span className="text-slate-300 ml-1 font-mono">({Number(row.cv||0).toFixed(0)}%)</span>
-                                                      </span>
-                                                    : <span className="text-slate-200 text-xs">—</span>}
-                                            </div>
-
-                                            {/* Stock actual */}
-                                            <div className="text-right">
-                                                <div className={`text-[13px] font-bold tabular-nums leading-tight ${
-                                                    stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'
-                                                }`}>
-                                                    {stock === 0 ? '0' : formatUnits(stock, pres)}
-                                                </div>
-                                                {!dead && stock > 0 && (
-                                                    <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>
-                                                )}
-                                            </div>
-
-                                            {/* MIN */}
-                                            <div className="text-right">
-                                                {dead
-                                                    ? <span className="text-slate-200 text-xs">—</span>
-                                                    : <>
-                                                        <div className={`text-[12px] font-semibold tabular-nums ${
-                                                            stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'
-                                                        }`}>
-                                                            {formatUnits(minN, pres)}
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
-                                                      </>
-                                                }
-                                            </div>
-
-                                            {/* MAX */}
-                                            <div className="text-right">
-                                                {dead
-                                                    ? <span className="text-slate-200 text-xs">—</span>
-                                                    : <>
-                                                        <div className={`text-[12px] font-semibold tabular-nums ${
-                                                            stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'
-                                                        }`}>
-                                                            {formatUnits(maxN, pres)}
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
-                                                      </>
-                                                }
-                                            </div>
-
-                                            {/* Alert */}
-                                            <div className="flex justify-center">
-                                                <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
-                                                    {alert.label}
-                                                </span>
-                                            </div>
-
-                                            {/* Ventas + edit */}
-                                            <div className="flex items-center justify-end gap-1.5">
+                                                {/* MIN — dominant presentation, rounded UP */}
                                                 <div className="text-right">
-                                                    <div className="text-[11px] font-semibold tabular-nums text-slate-500">
-                                                        {Number(row.units_sold_6m||0).toLocaleString()}
+                                                    {dead
+                                                        ? <span className="text-slate-200 text-xs">—</span>
+                                                        : <>
+                                                            <div className={`text-[12px] font-semibold tabular-nums ${
+                                                                stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'
+                                                            }`}>
+                                                                {formatDominant(minN, pres)}
+                                                            </div>
+                                                            <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
+                                                          </>
+                                                    }
+                                                </div>
+
+                                                {/* MAX — dominant presentation, rounded UP */}
+                                                <div className="text-right">
+                                                    {dead
+                                                        ? <span className="text-slate-200 text-xs">—</span>
+                                                        : <>
+                                                            <div className={`text-[12px] font-semibold tabular-nums ${
+                                                                stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'
+                                                            }`}>
+                                                                {formatDominant(maxN, pres)}
+                                                            </div>
+                                                            <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
+                                                          </>
+                                                    }
+                                                </div>
+
+                                                {/* Alert */}
+                                                <div className="flex justify-center">
+                                                    <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                                        {alert.label}
+                                                    </span>
+                                                </div>
+
+                                                {/* Ventas + edit */}
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <div className="text-right">
+                                                        <div className="text-[11px] font-semibold tabular-nums text-slate-500">
+                                                            {Number(row.units_sold_6m||0).toLocaleString()}
+                                                        </div>
+                                                        {!dead && (
+                                                            <div className="text-[9px] text-slate-400">
+                                                                ${Number(row.revenue_6m||0).toLocaleString('en-US',{maximumFractionDigits:0})}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     {!dead && (
-                                                        <div className="text-[9px] text-slate-400">
-                                                            ${Number(row.revenue_6m||0).toLocaleString('en-US',{maximumFractionDigits:0})}
-                                                        </div>
+                                                        <button onClick={() => setEditId(row.erp_product_id)}
+                                                            title="Ajustar MIN/MAX"
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
+                                                            <Edit3 size={13} />
+                                                        </button>
                                                     )}
                                                 </div>
-                                                {!dead && (
-                                                    <button onClick={() => setEditId(row.erp_product_id)}
-                                                        title="Ajustar MIN/MAX"
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
-                                                        <Edit3 size={13} />
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
-                                    </div>
+                                        {isExpanded && hasBreakdown && <ExpandedPanel row={row} />}
+                                    </React.Fragment>
                                 );
                             })}
                         </div>

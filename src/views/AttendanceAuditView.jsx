@@ -3,7 +3,8 @@ import {
   AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
-  Baby, Coffee, Loader2, ShieldCheck, LockKeyhole,
+  Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
+  Users, TrendingUp,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -88,6 +89,34 @@ function toTime24(isoStr) {
 function isEditedPunch(p) { return !!(p.details?.manualAudit || p.details?.editedBy || p.details?.auditedByName); }
 function isAutoPunch(p)   { return !!(p.details?.autoInserted); }
 function isPendingPunch(p){ return !!(p.details?.pendingHRReview && !p.details?.autoInserted); }
+
+// ── Quincena helpers ──────────────────────────────────────────────────────────
+function getCurrentQuincenaStart() {
+  const cst = new Date(new Date().getTime() - 6 * 3600000);
+  const y = cst.getUTCFullYear(), m = String(cst.getUTCMonth() + 1).padStart(2, '0');
+  const d = cst.getUTCDate();
+  return `${y}-${m}-${d <= 15 ? '01' : '16'}`;
+}
+function getQuincenaEnd(start) {
+  const d = new Date(start + 'T12:00:00Z');
+  if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-15`;
+  const lastDay = new Date(d.getUTCFullYear(), d.getUTCMonth() + 1, 0).getDate();
+  return `${start.slice(0, 7)}-${String(lastDay).padStart(2, '0')}`;
+}
+function prevQuincena(start) {
+  const d = new Date(start + 'T12:00:00Z');
+  if (d.getUTCDate() === 1) {
+    const prev = new Date(d.getUTCFullYear(), d.getUTCMonth() - 1, 16);
+    return prev.toISOString().slice(0, 10);
+  }
+  return `${start.slice(0, 7)}-01`;
+}
+function nextQuincena(start) {
+  const d = new Date(start + 'T12:00:00Z');
+  if (d.getUTCDate() === 1) return `${start.slice(0, 7)}-16`;
+  const nxt = new Date(d.getUTCFullYear(), d.getUTCMonth() + 1, 1);
+  return nxt.toISOString().slice(0, 10);
+}
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 function buildMockData() {
@@ -760,6 +789,10 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const [weekTimesheets,    setWeekTimesheets]    = useState([]);
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
   const [isClosingWeek,     setIsClosingWeek]     = useState(false);
+  const [viewMode,          setViewMode]          = useState('week');
+  const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
+  const [quincenaTS,        setQuincenaTS]        = useState([]);
+  const [isClosingQuincena, setIsClosingQuincena] = useState(false);
   const [shiftExceptions,   setShiftExceptions]   = useState([]);
   const [processingExId,    setProcessingExId]    = useState(null);
   const [editingExId,       setEditingExId]       = useState(null);
@@ -839,6 +872,18 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     return () => { cancelled = true; };
   }, [selectedWeekStart, weekDates, isDemoMode]);
 
+  // ── Load quincena timesheets ─────────────────────────────────────────────
+  useEffect(() => {
+    if (viewMode !== 'quincena' || isDemoMode) return;
+    let cancelled = false;
+    const qEnd = getQuincenaEnd(selectedQuincena);
+    supabase.from('timesheets')
+      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status')
+      .gte('work_date', selectedQuincena).lte('work_date', qEnd)
+      .then(({ data }) => { if (!cancelled) setQuincenaTS(data || []); });
+    return () => { cancelled = true; };
+  }, [viewMode, selectedQuincena, isDemoMode]);
+
   // ── Lookup maps ─────────────────────────────────────────────────────────
   const shiftById = useMemo(() => {
     const m = new Map(); shifts.forEach(s => m.set(String(s.id), s)); return m;
@@ -846,6 +891,55 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const branchNameById = useMemo(() => {
     const m = new Map(); branches.forEach(b => m.set(String(b.id), b.name)); return m;
   }, [branches]);
+
+  // ── Quincena memos ──────────────────────────────────────────────────────
+  const quincenaEnd = useMemo(() => getQuincenaEnd(selectedQuincena), [selectedQuincena]);
+  const quincenaLabel = useMemo(() => {
+    const s = new Date(selectedQuincena + 'T12:00:00');
+    const e = new Date(quincenaEnd + 'T12:00:00');
+    return `${s.getDate()} – ${e.getDate()} ${e.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}`;
+  }, [selectedQuincena, quincenaEnd]);
+  const isCurrentQuincena = useMemo(() => selectedQuincena === getCurrentQuincenaStart(), [selectedQuincena]);
+  const isQuincenaPast = useMemo(() => selectedQuincena < getCurrentQuincenaStart(), [selectedQuincena]);
+
+  const quincenaByEmployee = useMemo(() => {
+    const map = new Map();
+    quincenaTS.forEach(ts => {
+      const eid = String(ts.employee_id);
+      if (!map.has(eid)) map.set(eid, { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 });
+      const acc = map.get(eid);
+      acc.regular += ts.regular_hours || 0;
+      acc.overtime += ts.overtime_hours || 0;
+      acc.late += ts.late_minutes || 0;
+      if (ts.is_absent) acc.absent += 1;
+      if (ts.status === 'APPROVED') acc.approved += 1;
+      acc.total += 1;
+    });
+    return map;
+  }, [quincenaTS]);
+
+  const quincenaSummary = useMemo(() => {
+    const filtered = filterBranch
+      ? employees.filter(e => String(e.branchId) === filterBranch)
+      : employees;
+    return filtered.map(emp => ({
+      emp,
+      stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
+    })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
+  }, [employees, filterBranch, quincenaByEmployee]);
+
+  const handleCloseQuincena = useCallback(async () => {
+    if (isClosingQuincena) return;
+    const unapproved = quincenaTS.filter(ts => ts.status !== 'APPROVED');
+    if (unapproved.length === 0) { alert('Todos los registros ya están aprobados.'); return; }
+    setIsClosingQuincena(true);
+    const ids = unapproved.map(ts => ts.id);
+    const { error } = await supabase.from('timesheets').update({ status: 'APPROVED' }).in('id', ids);
+    if (!error) {
+      setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
+    }
+    setIsClosingQuincena(false);
+  }, [isClosingQuincena, quincenaTS]);
 
   // ── Group employees by branch ────────────────────────────────────────────
   const employeesByBranch = useMemo(() => {
@@ -1031,24 +1125,56 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-3">
-      {/* Week nav — prominente, sin pill container */}
-      <div className="flex items-center gap-1">
-        <button type="button" onClick={goToPrevWeek}
-          className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
-          <ChevronLeft size={16} strokeWidth={2.5} />
+      {/* Mode toggle: Semana / Quincena */}
+      <div className="flex items-center bg-black/[0.06] border border-black/[0.08] rounded-xl p-0.5 shrink-0">
+        <button type="button" onClick={() => setViewMode('week')}
+          className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-[10px] transition-all ${viewMode === 'week' ? 'bg-white shadow text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+          Semana
         </button>
-        <button type="button" onClick={() => setSelectedWeekStart(currentWeekStart)}
-          className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
-          <span className="text-[13px] font-black text-slate-800 leading-none">{weekLabel}</span>
-          {isCurrentWeek
-            ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Semana actual</span>
-            : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
-        </button>
-        <button type="button" onClick={goToNextWeek} disabled={isCurrentWeek}
-          className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
-          <ChevronRight size={16} strokeWidth={2.5} />
+        <button type="button" onClick={() => setViewMode('quincena')}
+          className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-[10px] transition-all ${viewMode === 'quincena' ? 'bg-white shadow text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+          Quincena
         </button>
       </div>
+
+      {/* Period nav — week or quincena */}
+      {viewMode === 'week' ? (
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={goToPrevWeek}
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
+            <ChevronLeft size={16} strokeWidth={2.5} />
+          </button>
+          <button type="button" onClick={() => setSelectedWeekStart(currentWeekStart)}
+            className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
+            <span className="text-[13px] font-black text-slate-800 leading-none">{weekLabel}</span>
+            {isCurrentWeek
+              ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Semana actual</span>
+              : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
+          </button>
+          <button type="button" onClick={goToNextWeek} disabled={isCurrentWeek}
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
+            <ChevronRight size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))}
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90]">
+            <ChevronLeft size={16} strokeWidth={2.5} />
+          </button>
+          <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
+            className="flex flex-col items-center px-2 min-w-[130px] hover:bg-black/[0.04] rounded-xl py-1 transition-all">
+            <span className="text-[12px] font-black text-slate-800 leading-none">{quincenaLabel}</span>
+            {isCurrentQuincena
+              ? <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Quincena actual</span>
+              : <span className="text-[8px] font-black uppercase tracking-widest text-[#0052CC] mt-0.5">← Ir a hoy</span>}
+          </button>
+          <button type="button" onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))} disabled={isCurrentQuincena}
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/[0.07] text-slate-700 transition-all active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed">
+            <ChevronRight size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       <LiquidSelect value={filterBranch} onChange={v => setFilterBranch(v||'')} options={branchOptions} compact clearable={false} icon={Building2} />
 
@@ -1057,12 +1183,12 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         {forceDemoMode ? 'Demo ON' : 'Demo'}
       </button>
 
-      {totalAlerts > 0 && (
+      {viewMode === 'week' && totalAlerts > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
       )}
 
-      {/* Close week button — only for fully past weeks */}
-      {!isDemoMode && isWeekFullyPast && canEditWeek && (
+      {/* Close week button — only for fully past weeks in week mode */}
+      {viewMode === 'week' && !isDemoMode && isWeekFullyPast && canEditWeek && (
         approvalSummary.allApproved ? (
           <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
             <ShieldCheck size={12} strokeWidth={2.5} /> Semana cerrada
@@ -1076,6 +1202,23 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
             {isClosingWeek ? 'Cerrando…' : `Cerrar semana (${approvalSummary.pending})`}
           </button>
         )
+      )}
+
+      {/* Close quincena button */}
+      {viewMode === 'quincena' && !isDemoMode && isQuincenaPast && (
+        quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
+          <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
+            <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
+          </span>
+        ) : quincenaTS.length > 0 ? (
+          <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
+            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+            {isClosingQuincena
+              ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
+              : <LockKeyhole size={11} strokeWidth={2.5} />}
+            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}
+          </button>
+        ) : null
       )}
     </div>
   );
@@ -1235,60 +1378,158 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           </div>
         )}
 
-        {/* Branch sections — sin contenedor, cada empleado es su propia card */}
-        {Array.from(employeesByBranch.entries()).map(([branchId, branchEmployees]) => {
-          const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
-          const branchTotalAlerts = branchEmployees.reduce((acc, emp) => {
-            const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
-            return acc + empTs.filter(t => t.status === 'AUTO_PUNCHED').length;
-          }, 0);
-
-          return (
-            <div key={branchId} className="space-y-2">
-              {/* Branch label — minimal divider */}
-              <div className="flex items-center gap-3 px-1 pt-1">
-                <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 backdrop-blur-sm flex items-center justify-center shrink-0">
-                  <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                    {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
-                  </p>
-                </div>
-                <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
-                {branchTotalAlerts > 0 && (
-                  <span className="text-[8px] font-black bg-violet-100/80 text-violet-600 border border-violet-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0 backdrop-blur-sm">
-                    <Bot size={8} strokeWidth={2.5} /> {branchTotalAlerts} auto
-                  </span>
-                )}
+        {viewMode === 'quincena' ? (
+          /* ── Quincena view ─────────────────────────────────────────── */
+          quincenaSummary.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
+                <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
               </div>
-
-              {/* Employee cards individuales */}
-              {branchEmployees.map(emp => (
-                <EmployeeAuditRow
-                  key={emp.id}
-                  emp={emp}
-                  weekDates={weekDates}
-                  shiftById={shiftById}
-                  weekTimesheets={weekTimesheets}
-                  branchNameById={branchNameById}
-                  onCorrect={handleCorrect}
-                  isDemoMode={isDemoMode}
-                />
-              ))}
+              <p className="text-[14px] font-bold text-slate-400">Sin timesheets para esta quincena</p>
             </div>
-          );
-        })}
-
-        {/* Empty state */}
-        {employeesByBranch.size === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
-              <CheckCircle size={32} className="text-slate-300" strokeWidth={1.5} />
+          ) : (
+            <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-sm">
+              {/* Table header */}
+              <div className="px-5 py-3 border-b border-slate-200/60 bg-slate-50/40 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                  <Users size={10} strokeWidth={2.5} /> Colaborador
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Regular</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Extra</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-16">Tardanzas</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-14">Ausencias</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 text-right w-20">Estado</span>
+              </div>
+              <div className="divide-y divide-slate-200/40">
+                {quincenaSummary.map(({ emp, stats }) => {
+                  const allApproved = stats.total > 0 && stats.approved === stats.total;
+                  return (
+                    <div key={emp.id} className="px-5 py-3.5 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center hover:bg-black/[0.02] transition-colors">
+                      <div className="min-w-0">
+                        <p className="text-[12px] font-black text-slate-800 truncate">{emp.name}</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">
+                          {branchNameById.get(String(emp.branchId)) || '—'}
+                        </p>
+                      </div>
+                      <span className="text-[12px] font-bold text-slate-700 tabular-nums text-right w-16">
+                        {stats.regular.toFixed(1)}h
+                      </span>
+                      <span className={`text-[12px] font-bold tabular-nums text-right w-16 ${stats.overtime > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {stats.overtime > 0 ? `${stats.overtime.toFixed(1)}h` : '—'}
+                      </span>
+                      <span className={`text-[12px] font-bold tabular-nums text-right w-16 ${stats.late > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {stats.late > 0 ? `${stats.late}m` : '—'}
+                      </span>
+                      <span className={`text-[12px] font-bold tabular-nums text-right w-14 ${stats.absent > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                        {stats.absent > 0 ? stats.absent : '—'}
+                      </span>
+                      <div className="text-right w-20">
+                        {stats.total === 0 ? (
+                          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Sin datos</span>
+                        ) : allApproved ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <ShieldCheck size={8} strokeWidth={2.5} /> OK
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-amber-600">
+                            {stats.approved}/{stats.total}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Quincena totals footer */}
+              {(() => {
+                const totReg  = quincenaSummary.reduce((s, { stats }) => s + stats.regular, 0);
+                const totOT   = quincenaSummary.reduce((s, { stats }) => s + stats.overtime, 0);
+                const totLate = quincenaSummary.reduce((s, { stats }) => s + stats.late, 0);
+                const totAbs  = quincenaSummary.reduce((s, { stats }) => s + stats.absent, 0);
+                const totAppr = quincenaSummary.reduce((s, { stats }) => s + stats.approved, 0);
+                const totAll  = quincenaSummary.reduce((s, { stats }) => s + stats.total, 0);
+                return (
+                  <div className="px-5 py-3 border-t border-slate-200/60 bg-slate-50/40 grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                      <TrendingUp size={10} strokeWidth={2.5} /> Totales quincena
+                    </span>
+                    <span className="text-[12px] font-black text-slate-800 tabular-nums text-right w-16">{totReg.toFixed(1)}h</span>
+                    <span className={`text-[12px] font-black tabular-nums text-right w-16 ${totOT > 0 ? 'text-amber-700' : 'text-slate-400'}`}>
+                      {totOT > 0 ? `${totOT.toFixed(1)}h` : '—'}
+                    </span>
+                    <span className={`text-[12px] font-black tabular-nums text-right w-16 ${totLate > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                      {totLate > 0 ? `${totLate}m` : '—'}
+                    </span>
+                    <span className={`text-[12px] font-black tabular-nums text-right w-14 ${totAbs > 0 ? 'text-red-700' : 'text-slate-400'}`}>
+                      {totAbs > 0 ? totAbs : '—'}
+                    </span>
+                    <span className="text-[9px] font-black text-slate-600 text-right w-20">
+                      {totAppr}/{totAll}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
-            <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
-          </div>
+          )
+        ) : (
+          /* ── Week view ─────────────────────────────────────────────── */
+          <>
+            {/* Branch sections — sin contenedor, cada empleado es su propia card */}
+            {Array.from(employeesByBranch.entries()).map(([branchId, branchEmployees]) => {
+              const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
+              const branchTotalAlerts = branchEmployees.reduce((acc, emp) => {
+                const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
+                return acc + empTs.filter(t => t.status === 'AUTO_PUNCHED').length;
+              }, 0);
+
+              return (
+                <div key={branchId} className="space-y-2">
+                  {/* Branch label — minimal divider */}
+                  <div className="flex items-center gap-3 px-1 pt-1">
+                    <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 backdrop-blur-sm flex items-center justify-center shrink-0">
+                      <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                        {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
+                      </p>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
+                    {branchTotalAlerts > 0 && (
+                      <span className="text-[8px] font-black bg-violet-100/80 text-violet-600 border border-violet-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0 backdrop-blur-sm">
+                        <Bot size={8} strokeWidth={2.5} /> {branchTotalAlerts} auto
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Employee cards individuales */}
+                  {branchEmployees.map(emp => (
+                    <EmployeeAuditRow
+                      key={emp.id}
+                      emp={emp}
+                      weekDates={weekDates}
+                      shiftById={shiftById}
+                      weekTimesheets={weekTimesheets}
+                      branchNameById={branchNameById}
+                      onCorrect={handleCorrect}
+                      isDemoMode={isDemoMode}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Empty state */}
+            {employeesByBranch.size === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
+                  <CheckCircle size={32} className="text-slate-300" strokeWidth={1.5} />
+                </div>
+                <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </GlassViewLayout>

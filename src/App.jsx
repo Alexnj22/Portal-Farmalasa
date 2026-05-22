@@ -151,8 +151,9 @@ function MainApp() {
     const updateBranch = useStaff((state) => state.updateBranch);
     const fetchBoot = useStaff((state) => state.fetchBoot);
     const fetchKioskBoot = useStaff((state) => state.fetchKioskBoot);
-    const createPayrollPeriod = useStaff((state) => state.createPayrollPeriod);
-    const updatePayrollEntry = useStaff((state) => state.updatePayrollEntry);
+    const createPayrollPeriod      = useStaff((state) => state.createPayrollPeriod);
+    const updatePayrollEntry       = useStaff((state) => state.updatePayrollEntry);
+    const redeemOvertimeBank       = useStaff((state) => state.redeemOvertimeBank);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -351,11 +352,23 @@ function MainApp() {
                         showToast('Error', 'Escribe el motivo de la edición.', 'error');
                         return;
                     }
-                    const entryId = dataToSave._entry?.id;
-                    const by = user?.name || user?.email || 'Admin';
+                    const entryId  = dataToSave._entry?.id;
+                    const empId    = dataToSave._entry?.employee_id;
+                    const periodId = dataToSave._entry?.period_id;
+                    const by       = user?.name || user?.email || 'Admin';
                     const ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
-                    if (ok) showToast('Guardado', 'Entrada actualizada.', 'success');
-                    else showToast('Error', 'No se pudo guardar.', 'error');
+                    if (ok) {
+                        // Persist OT bank redemption if HR chose pay or time-off
+                        if (dataToSave._otBankPayHours > 0 && dataToSave._otBankType && redeemOvertimeBank) {
+                            await redeemOvertimeBank(
+                                empId, dataToSave._otBankPayHours, dataToSave._otBankType,
+                                periodId, dataToSave._reason, user?.id
+                            ).catch(console.error);
+                        }
+                        showToast('Guardado', 'Entrada actualizada.', 'success');
+                    } else {
+                        showToast('Error', 'No se pudo guardar.', 'error');
+                    }
                     break;
                 }
             }

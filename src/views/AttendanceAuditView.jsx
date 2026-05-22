@@ -405,7 +405,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 }
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
-function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect }) {
+function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed }) {
   const now = new Date();
   const dayD   = new Date(dateStr + 'T12:00:00Z');
   const dow    = dayD.getUTCDay();
@@ -541,14 +541,24 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           )}
         </div>
 
-        {/* Corregir button */}
+        {/* Action buttons */}
         {!isOff && !isFuture && (
-          <button
-            onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
-          >
-            <Edit3 size={11} strokeWidth={2.5} /> Corregir
-          </button>
+          <div className="flex flex-col gap-1.5 shrink-0">
+            <button
+              onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/70 backdrop-blur-sm border border-white/80 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/25 hover:bg-[#0052CC]/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
+            >
+              <Edit3 size={11} strokeWidth={2.5} /> Corregir
+            </button>
+            {isPendDay && onMarkReviewed && (
+              <button
+                onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p)))}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-500 hover:text-white hover:border-amber-500 rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
+              >
+                <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -680,7 +690,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 }
 
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
-function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll }) {
+function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed }) {
   const [expanded, setExpanded] = useState(false);
   const now = new Date();
 
@@ -884,6 +894,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                   homeBranchId={emp.branchId}
                   branchNameById={branchNameById}
                   onCorrect={onCorrect}
+                  onMarkReviewed={onMarkReviewed}
                 />
               </React.Fragment>
             );
@@ -1128,6 +1139,32 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       showToast('Error','No se pudo guardar el marcaje.','error');
     }
   }, [correctionTarget, isDemoMode, insertAttendancePunchAt, appendAuditLog, user, showToast]);
+
+  // ── Mark pending HR review punches as reviewed ──────────────────────────
+  const handleMarkReviewed = useCallback(async (emp, dateStr, pendingPunches) => {
+    if (isDemoMode) { showToast('Demo', 'En modo demo no se puede marcar como revisado.', 'info'); return; }
+    if (!canEdit) { showToast('Sin permisos', 'No tienes permiso para revisar marcajes.', 'info'); return; }
+    if (!pendingPunches.length) return;
+    try {
+      const now = new Date().toISOString();
+      for (const p of pendingPunches) {
+        const newDetails = { ...p.details, pendingHRReview: false, hrReviewedBy: user?.name, hrReviewedAt: now };
+        await supabase.from('attendance').update({ details: newDetails }).eq('id', p.id);
+      }
+      appendAuditLog?.('ATTENDANCE_HR_REVIEW_CLEARED', user?.id, {
+        empId: emp.id, date: dateStr, count: pendingPunches.length, actorName: user?.name
+      });
+      showToast('Revisado', `${pendingPunches.length} marcaje(s) marcado(s) como revisado(s).`, 'success');
+      // Patch local emp.attendance so the badge disappears without refetch
+      const ids = new Set(pendingPunches.map(p => p.id));
+      emp.attendance = (emp.attendance || []).map(p =>
+        ids.has(p.id) ? { ...p, details: { ...p.details, pendingHRReview: false } } : p
+      );
+    } catch (err) {
+      console.error(err);
+      showToast('Error', 'No se pudo marcar como revisado.', 'error');
+    }
+  }, [isDemoMode, canEdit, user, appendAuditLog, showToast]);
 
   // ── Process SHIFT_EXCEPTION (confirm or reject) ─────────────────────────
   const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd) => {
@@ -1461,6 +1498,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                           branchNameById={branchNameById}
                           onCorrect={handleCorrect}
                           onApproveAll={canEdit ? () => handleApproveAllForEmployee(emp) : null}
+                          onMarkReviewed={canEdit ? handleMarkReviewed : null}
                         />
                       ))}
                     </div>

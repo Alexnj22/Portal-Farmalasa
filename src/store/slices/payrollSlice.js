@@ -188,22 +188,24 @@ export const createPayrollSlice = (set, get) => ({
                 .filter(e => !parseFloat(e.base_salary || 0))
                 .map(e => e.name || String(e.id));
 
-            // #2 — Load timesheets including nocturnal columns
+            // #2 — Load timesheets including nocturnal + diurnal OT columns
             const { data: sheets } = await supabase
                 .from('timesheets')
-                .select('employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours')
+                .select('employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
                 .gte('work_date', period.start_date)
                 .lte('work_date', period.end_date);
 
             const daysMap   = new Map();
             const noctMap   = new Map();
             const noctOTMap = new Map();
+            const diurnalOTMap = new Map();
             for (const s of sheets || []) {
                 const key = String(s.employee_id);
-                if (!daysMap.has(key)) { daysMap.set(key, 0); noctMap.set(key, 0); noctOTMap.set(key, 0); }
+                if (!daysMap.has(key)) { daysMap.set(key, 0); noctMap.set(key, 0); noctOTMap.set(key, 0); diurnalOTMap.set(key, 0); }
                 if (!s.is_absent) daysMap.set(key, daysMap.get(key) + 1);
-                noctMap.set(key,   (noctMap.get(key)   || 0) + (s.nocturnal_hours          || 0));
-                noctOTMap.set(key, (noctOTMap.get(key) || 0) + (s.nocturnal_overtime_hours || 0));
+                noctMap.set(key,      (noctMap.get(key)      || 0) + (s.nocturnal_hours          || 0));
+                noctOTMap.set(key,    (noctOTMap.get(key)    || 0) + (s.nocturnal_overtime_hours || 0));
+                diurnalOTMap.set(key, (diurnalOTMap.get(key) || 0) + (s.overtime_hours           || 0));
             }
 
             // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
@@ -288,6 +290,19 @@ export const createPayrollSlice = (set, get) => ({
                 if (error) throw error;
             }
 
+            // OT Bank — seed EARNED entries for diurnal overtime hours in this period.
+            // Delete any prior EARNED entries for this period first (idempotent regeneration).
+            await supabase.from('overtime_bank').delete().eq('period_id', periodId).eq('type', 'EARNED');
+            const bankRows = employees
+                .map(emp => {
+                    const hours = parseFloat((diurnalOTMap.get(String(emp.id)) || 0).toFixed(2));
+                    return hours > 0 ? { employee_id: emp.id, hours, type: 'EARNED', period_id: periodId } : null;
+                })
+                .filter(Boolean);
+            if (bankRows.length > 0) {
+                await supabase.from('overtime_bank').insert(bankRows);
+            }
+
             await get().fetchPayrollEntries(periodId);
             return { warnings: noSalary };
         } catch (err) {
@@ -295,6 +310,33 @@ export const createPayrollSlice = (set, get) => ({
             set({ isLoadingPayroll: false });
             throw err;
         }
+    },
+
+    // ── OT Bank ───────────────────────────────────────────────────────────────
+
+    fetchOvertimeBankBalance: async (employeeId) => {
+        const { data } = await supabase
+            .from('overtime_bank')
+            .select('hours, type')
+            .eq('employee_id', employeeId);
+        let pending = 0;
+        for (const row of data || []) {
+            if (row.type === 'EARNED') pending += row.hours;
+            else                       pending -= row.hours;
+        }
+        return parseFloat(Math.max(0, pending).toFixed(2));
+    },
+
+    redeemOvertimeBank: async (employeeId, hours, type, periodId, notes, createdBy) => {
+        const { error } = await supabase.from('overtime_bank').insert({
+            employee_id: employeeId,
+            hours:       parseFloat(hours.toFixed(2)),
+            type,
+            period_id:   periodId || null,
+            notes:       notes || null,
+            created_by:  createdBy || null,
+        });
+        if (error) throw error;
     },
 
     updatePayrollEntry: async (entryId, updates, editedBy, editReason) => {

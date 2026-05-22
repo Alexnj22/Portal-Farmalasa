@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { Info } from 'lucide-react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { Info, Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
+import { supabase } from '../../supabaseClient';
 
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -30,6 +31,39 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     const emp   = entry.employee || {};
     const daily = round2((emp.base_salary || 0) / 30);
 
+    const [otBankHours,    setOtBankHours]    = useState(null); // null = loading
+    const [bankRedeemed,   setBankRedeemed]   = useState(false);
+
+    useEffect(() => {
+        if (!emp.id) return;
+        supabase.from('overtime_bank').select('hours, type').eq('employee_id', emp.id)
+            .then(({ data }) => {
+                let pending = 0;
+                for (const row of data || []) {
+                    if (row.type === 'EARNED') pending += row.hours;
+                    else                       pending -= row.hours;
+                }
+                setOtBankHours(parseFloat(Math.max(0, pending).toFixed(2)));
+            });
+    }, [emp.id]);
+
+    const handlePayOT = () => {
+        if (!otBankHours || otBankHours <= 0) return;
+        setFormData(f => ({
+            ...f,
+            extra_hours_diurnal: round2((f.extra_hours_diurnal || entry.extra_hours_diurnal || 0) + otBankHours),
+            _otBankPayHours: otBankHours,
+            _otBankType: 'PAID',
+        }));
+        setBankRedeemed('PAID');
+    };
+
+    const handleCompensateOT = () => {
+        if (!otBankHours || otBankHours <= 0) return;
+        setFormData(f => ({ ...f, _otBankPayHours: otBankHours, _otBankType: 'TIME_OFF' }));
+        setBankRedeemed('TIME_OFF');
+    };
+
     const numField = (key, label) => (
         <div key={key}>
             <InputLabel>{label}</InputLabel>
@@ -53,6 +87,42 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     {emp.name} — Salario diario: ${daily.toFixed(2)}
                 </p>
             </div>
+
+            {/* OT Bank widget */}
+            {otBankHours !== null && otBankHours > 0 && !bankRedeemed && (
+                <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
+                    <div className="flex items-center gap-2 mb-2.5">
+                        <Clock size={13} className="text-amber-500 flex-shrink-0" strokeWidth={2.5} />
+                        <p className="text-[9px] font-black uppercase tracking-widest text-amber-600">Banco de Horas Extra</p>
+                    </div>
+                    <p className="text-[20px] font-black text-amber-800 leading-none mb-0.5">{otBankHours.toFixed(1)}<span className="text-[11px] font-bold ml-1">horas pendientes</span></p>
+                    <p className="text-[9px] text-amber-500 mb-3">Acumuladas de esta quincena — elige cómo liquidarlas</p>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={handlePayOT}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 active:scale-95 transition-all">
+                            <CreditCard size={11} strokeWidth={2.5} /> Pagar en planilla
+                        </button>
+                        <button type="button" onClick={handleCompensateOT}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 active:scale-95 transition-all">
+                            <CalendarOff size={11} strokeWidth={2.5} /> Dar en tiempo
+                        </button>
+                    </div>
+                </div>
+            )}
+            {bankRedeemed === 'PAID' && (
+                <div className="col-span-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5">
+                    <p className="text-[11px] font-black text-emerald-700">
+                        ✓ {otBankHours?.toFixed(1)}h HE añadidas a Hrs. Extra Diurnas — se registrarán al guardar.
+                    </p>
+                </div>
+            )}
+            {bankRedeemed === 'TIME_OFF' && (
+                <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5">
+                    <p className="text-[11px] font-black text-blue-700">
+                        ✓ {otBankHours?.toFixed(1)}h marcadas como tiempo compensado — se registrarán al guardar.
+                    </p>
+                </div>
+            )}
 
             <div className="col-span-2">
                 <InputLabel>Días Trabajados</InputLabel>

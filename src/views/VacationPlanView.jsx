@@ -596,11 +596,11 @@ const VacationPlanView = () => {
         }
     };
 
-    // Vacation balance: days used per employee this year (all non-cancelled plans)
+    // Vacation balance: only count confirmed/approved/taken — not pending or cancelled
     const usedDaysByEmpId = useMemo(() => {
         const map = new Map();
         vacationPlans
-            .filter(p => p.year === year && p.status !== 'CANCELLED')
+            .filter(p => p.year === year && ['APPROVED', 'CONFIRMED', 'TAKEN'].includes(p.status))
             .forEach(p => {
                 const eid = String(p.employee_id);
                 map.set(eid, (map.get(eid) || 0) + (p.days || 0));

@@ -14,7 +14,6 @@ import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../supabaseClient';
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
-import ViewTabBar from '../components/common/ViewTabBar';
 import LiquidSelect from '../components/common/LiquidSelect';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -391,7 +390,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 }
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
-function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branchNameById, onCorrect }) {
+function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect }) {
   const now = new Date();
   const dayD   = new Date(dateStr + 'T12:00:00Z');
   const dow    = dayD.getUTCDay();
@@ -425,7 +424,7 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
   const lunchIn    = dayPunches.find(p => p.type === 'IN_LUNCH');
 
   // Timesheet for this day
-  const ts = weekTimesheets.find(t => String(t.employee_id) === String(emp.id) && t.work_date === dateStr);
+  const ts = timesheets.find(t => String(t.employee_id) === String(emp.id) && t.work_date === dateStr);
 
   // Status flags
   const hasInconsistency = useMemo(() => {
@@ -645,14 +644,14 @@ function DayCard({ dateStr, emp, shiftById, weekTimesheets, homeBranchId, branch
 }
 
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
-function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNameById, onCorrect, isDemoMode }) {
+function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect }) {
   const [expanded, setExpanded] = useState(false);
   const now = new Date();
 
-  // Compute alert counts for this employee this week
+  // Alert counts across the quincena
   const alerts = useMemo(() => {
     let inconsistencies = 0, autoPunched = 0, pendingReview = 0, crossBranch = 0;
-    weekDates.forEach(dateStr => {
+    quinceaDates.forEach(dateStr => {
       if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
       const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
       const dow     = new Date(dateStr + 'T12:00:00Z').getUTCDay();
@@ -681,7 +680,14 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
       if (punches.some(p => p.branch_id && String(p.branch_id) !== String(emp.branchId))) crossBranch++;
     });
     return { inconsistencies, autoPunched, pendingReview, crossBranch, total: inconsistencies + autoPunched + pendingReview };
-  }, [emp, weekDates, shiftById, now]);
+  }, [emp, quinceaDates, shiftById, now]);
+
+  const empTimesheets = timesheets.filter(t => String(t.employee_id) === String(emp.id));
+  const allApproved   = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
+  const totalReg  = empTimesheets.reduce((s, t) => s + (t.regular_hours  || 0), 0);
+  const totalOT   = empTimesheets.reduce((s, t) => s + (t.overtime_hours || 0), 0);
+  const totalLate = empTimesheets.reduce((s, t) => s + (t.late_minutes   || 0), 0);
+  const totalAbs  = empTimesheets.reduce((s, t) => s + (t.is_absent ? 1 : 0), 0);
 
   const hasCrossBranch = alerts.crossBranch > 0;
   const alertColor = alerts.inconsistencies > 0 ? 'bg-red-500'
@@ -689,77 +695,110 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
     : alerts.pendingReview > 0 ? 'bg-amber-500'
     : null;
 
-  const empTimesheets = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
-  const allApproved = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
-
   return (
     <div className="bg-white/[0.55] backdrop-blur-xl border border-white/65 rounded-[1.75rem] shadow-[0_2px_16px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-200 hover:shadow-[0_4px_24px_rgba(0,0,0,0.07)]">
-      {/* Employee row */}
+      {/* Collapsed header row */}
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/30 active:bg-white/50 transition-all duration-150"
       >
-        {/* Avatar with alert dot */}
+        {/* Avatar + alert dot */}
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center font-black text-slate-500 text-[14px] overflow-hidden">
             {emp.photo_url
               ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
               : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
           </div>
-          {alertColor && (
+          {alertColor ? (
             <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-[8px] font-black shadow-sm`}>
               {alerts.total}
             </div>
-          )}
-          {!alertColor && (
+          ) : (
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 flex items-center justify-center shadow-sm">
               <Check size={8} strokeWidth={3} className="text-white" />
             </div>
           )}
         </div>
 
-        {/* Name + role + badges */}
+        {/* Name + role + alert chips */}
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-black text-slate-900 leading-none truncate">{emp.name}</p>
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
-
-          {/* Alert chips - compact row */}
-          {allApproved && alerts.total === 0 && (
-            <div className="flex items-center gap-1 mt-1.5">
-              <span className="flex items-center gap-0.5 text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-full">
-                <ShieldCheck size={7} strokeWidth={2.5} /> Aprobado
-              </span>
-            </div>
-          )}
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
                 <span className="flex items-center gap-0.5 text-[8px] font-black bg-red-50 text-red-500 border border-red-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <AlertTriangle size={7} strokeWidth={3} />
-                  {alerts.inconsistencies} marcaje{alerts.inconsistencies > 1 ? 's' : ''} faltante{alerts.inconsistencies > 1 ? 's' : ''}
+                  <AlertTriangle size={7} strokeWidth={3} /> {alerts.inconsistencies} faltante{alerts.inconsistencies > 1 ? 's' : ''}
                 </span>
               )}
               {alerts.autoPunched > 0 && (
                 <span className="flex items-center gap-0.5 text-[8px] font-black bg-violet-50 text-violet-600 border border-violet-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto-marcado{alerts.autoPunched > 1 ? 's' : ''}
+                  <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto
                 </span>
               )}
               {alerts.pendingReview > 0 && (
                 <span className="flex items-center gap-0.5 text-[8px] font-black bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pendiente{alerts.pendingReview > 1 ? 's' : ''}
+                  <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pend.
                 </span>
               )}
               {hasCrossBranch && (
                 <span className="flex items-center gap-0.5 text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo externo
+                  <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
                 </span>
               )}
             </div>
           )}
         </div>
 
-        {/* Chevron animado */}
+        {/* Quincena stats strip — sm+ */}
+        <div className="hidden sm:flex items-center gap-3 shrink-0">
+          {totalReg > 0 && (
+            <div className="flex flex-col items-end min-w-[3.5rem]">
+              <span className="text-[15px] font-black text-slate-800 tabular-nums leading-none">
+                {totalReg.toFixed(1)}<span className="text-[10px] font-bold text-slate-400 ml-0.5">h</span>
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">regular</span>
+            </div>
+          )}
+          {totalOT > 0 && (
+            <div className="flex flex-col items-end min-w-[3rem]">
+              <span className="text-[15px] font-black text-amber-600 tabular-nums leading-none">
+                {totalOT.toFixed(1)}<span className="text-[10px] font-bold text-amber-400 ml-0.5">h</span>
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-amber-400 mt-0.5">extra</span>
+            </div>
+          )}
+          {totalLate > 0 && (
+            <div className="flex flex-col items-end min-w-[2.5rem]">
+              <span className="text-[15px] font-black text-orange-500 tabular-nums leading-none">
+                {totalLate}<span className="text-[10px] font-bold text-orange-300 ml-0.5">m</span>
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-orange-400 mt-0.5">tardanza</span>
+            </div>
+          )}
+          {totalAbs > 0 && (
+            <div className="flex flex-col items-end min-w-[2rem]">
+              <span className="text-[15px] font-black text-red-600 tabular-nums leading-none">{totalAbs}</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-red-400 mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          <div className="w-px h-8 bg-slate-200/60 mx-0.5" />
+          {allApproved ? (
+            <div className="flex flex-col items-center min-w-[2.5rem]">
+              <ShieldCheck size={16} className="text-emerald-500" strokeWidth={2} />
+              <span className="text-[7px] font-black uppercase tracking-widest text-emerald-500 mt-0.5">OK</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-end min-w-[2.5rem]">
+              <span className="text-[13px] font-black text-slate-500 tabular-nums leading-none">
+                {empTimesheets.filter(t => t.status === 'APPROVED').length}/{empTimesheets.length}
+              </span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">aprob.</span>
+            </div>
+          )}
+        </div>
+
         <ChevronDown
           size={16}
           className={`text-slate-400 transition-transform duration-300 ease-out shrink-0 ${expanded ? 'rotate-180' : ''}`}
@@ -767,21 +806,32 @@ function EmployeeAuditRow({ emp, weekDates, shiftById, weekTimesheets, branchNam
         />
       </button>
 
-      {/* Week detail — animated */}
+      {/* 15-day quincena detail */}
       {expanded && (
         <div className="animate-in fade-in slide-in-from-top-3 duration-200 ease-out px-3 pb-3 pt-1 space-y-2 border-t border-white/40">
-          {weekDates.map(dateStr => (
-            <DayCard
-              key={dateStr}
-              dateStr={dateStr}
-              emp={emp}
-              shiftById={shiftById}
-              weekTimesheets={weekTimesheets}
-              homeBranchId={emp.branchId}
-              branchNameById={branchNameById}
-              onCorrect={onCorrect}
-            />
-          ))}
+          {quinceaDates.map((dateStr, idx) => {
+            const isMonday = new Date(dateStr + 'T12:00:00Z').getUTCDay() === 1;
+            return (
+              <React.Fragment key={dateStr}>
+                {isMonday && idx > 0 && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="h-px flex-1 bg-gradient-to-r from-slate-200/60 to-transparent" />
+                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-300">nueva semana</span>
+                    <div className="h-px w-8 bg-slate-200/60" />
+                  </div>
+                )}
+                <DayCard
+                  dateStr={dateStr}
+                  emp={emp}
+                  shiftById={shiftById}
+                  timesheets={timesheets}
+                  homeBranchId={emp.branchId}
+                  branchNameById={branchNameById}
+                  onCorrect={onCorrect}
+                />
+              </React.Fragment>
+            );
+          })}
         </div>
       )}
     </div>
@@ -809,11 +859,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [filterBranch,      setFilterBranch]      = useState('');
-  const [selectedWeekStart, setSelectedWeekStart] = useState(() => getMondayOfCurrentWeek());
-  const [weekTimesheets,    setWeekTimesheets]    = useState([]);
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
-  const [isClosingWeek,     setIsClosingWeek]     = useState(false);
-  const [viewMode,          setViewMode]          = useState('week');
   const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
   const [quincenaTS,        setQuincenaTS]        = useState([]);
   const [isClosingQuincena, setIsClosingQuincena] = useState(false);
@@ -830,58 +876,15 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     return () => setOverlayActive?.(false);
   }, [correctionTarget, setOverlayActive]);
 
-  // Load attendance once
+  // Load attendance once — 62 days covers ~4 quincenas back
   useEffect(() => {
-    if (!isDemoMode) loadAttendanceLastDays?.(30);
+    if (!isDemoMode) loadAttendanceLastDays?.(62);
   }, [isDemoMode]);
 
-  // ── Week helpers ─────────────────────────────────────────────────────────
-  const currentWeekStart = getMondayOfCurrentWeek();
-  const isCurrentWeek    = selectedWeekStart === currentWeekStart;
-  const canEditWeek      = canEdit || isDemoMode;
-
-  const weekDates = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(selectedWeekStart + 'T12:00:00Z');
-      d.setUTCDate(d.getUTCDate() + i);
-      return d.toISOString().slice(0, 10);
-    });
-  }, [selectedWeekStart]);
-
-  const weekLabel = useMemo(() => {
-    const s = new Date(weekDates[0] + 'T12:00:00Z');
-    const e = new Date(weekDates[6] + 'T12:00:00Z');
-    const f = d => d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
-    return `${f(s)} – ${f(e)}`;
-  }, [weekDates]);
-
-  const goToPrevWeek = useCallback(() => {
-    const d = new Date(selectedWeekStart + 'T12:00:00Z');
-    d.setUTCDate(d.getUTCDate() - 7);
-    setSelectedWeekStart(d.toISOString().slice(0, 10));
-  }, [selectedWeekStart]);
-
-  const goToNextWeek = useCallback(() => {
-    if (isCurrentWeek) return;
-    const d = new Date(selectedWeekStart + 'T12:00:00Z');
-    d.setUTCDate(d.getUTCDate() + 7);
-    setSelectedWeekStart(d.toISOString().slice(0, 10));
-  }, [selectedWeekStart, isCurrentWeek]);
-
-  // ── Load week timesheets ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (isDemoMode) { setWeekTimesheets(mockData.timesheets); return; }
-    let cancelled = false;
-    supabase.from('timesheets')
-      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, actual_start_time, actual_end_time')
-      .gte('work_date', weekDates[0]).lte('work_date', weekDates[6])
-      .then(({ data }) => { if (!cancelled) setWeekTimesheets(data || []); });
-    return () => { cancelled = true; };
-  }, [selectedWeekStart, weekDates, isDemoMode]);
-
-  // ── Load SHIFT_EXCEPTION requests for the week ───────────────────────────
+  // ── Load SHIFT_EXCEPTION requests for the quincena ──────────────────────
   useEffect(() => {
     if (isDemoMode) { setShiftExceptions([]); return; }
+    const qEnd = getQuincenaEnd(selectedQuincena);
     let cancelled = false;
     supabase.from('approval_requests')
       .select('id, employee_id, status, note, metadata, created_at')
@@ -889,18 +892,18 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       .eq('status', 'PENDING')
       .then(({ data }) => {
         if (cancelled) return;
-        const inWeek = (data || []).filter(r => {
+        const inQuincena = (data || []).filter(r => {
           const d = r.metadata?.date;
-          return d && d >= weekDates[0] && d <= weekDates[6];
+          return d && d >= selectedQuincena && d <= qEnd;
         });
-        setShiftExceptions(inWeek);
+        setShiftExceptions(inQuincena);
       });
     return () => { cancelled = true; };
-  }, [selectedWeekStart, weekDates, isDemoMode]);
+  }, [selectedQuincena, isDemoMode]);
 
   // ── Load quincena timesheets ─────────────────────────────────────────────
   useEffect(() => {
-    if (viewMode !== 'quincena' || isDemoMode) return;
+    if (isDemoMode) return;
     let cancelled = false;
     const qEnd = getQuincenaEnd(selectedQuincena);
     supabase.from('timesheets')
@@ -908,7 +911,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       .gte('work_date', selectedQuincena).lte('work_date', qEnd)
       .then(({ data }) => { if (!cancelled) setQuincenaTS(data || []); });
     return () => { cancelled = true; };
-  }, [viewMode, selectedQuincena, isDemoMode]);
+  }, [selectedQuincena, isDemoMode]);
 
   // ── Lookup maps ─────────────────────────────────────────────────────────
   const shiftById = useMemo(() => {
@@ -919,7 +922,17 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   }, [branches]);
 
   // ── Quincena memos ──────────────────────────────────────────────────────
-  const quincenaEnd = useMemo(() => getQuincenaEnd(selectedQuincena), [selectedQuincena]);
+  const quincenaEnd   = useMemo(() => getQuincenaEnd(selectedQuincena), [selectedQuincena]);
+  const quinceaDates  = useMemo(() => {
+    const dates = [];
+    let d = new Date(selectedQuincena + 'T12:00:00Z');
+    const end = new Date(quincenaEnd + 'T12:00:00Z');
+    while (d <= end) {
+      dates.push(d.toISOString().slice(0, 10));
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    return dates;
+  }, [selectedQuincena, quincenaEnd]);
   const quincenaLabel = useMemo(() => {
     const s = new Date(selectedQuincena + 'T12:00:00');
     const e = new Date(quincenaEnd + 'T12:00:00');
@@ -1011,41 +1024,11 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
     return map;
   }, [employees, filterBranch]);
 
-  // ── Total alerts badge ───────────────────────────────────────────────────
-  const totalAlerts = useMemo(() => {
-    const now = new Date();
-    let total = 0;
-    employees.forEach(emp => {
-      if (filterBranch && String(emp.branchId) !== filterBranch) return;
-      weekDates.forEach(dateStr => {
-        if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
-        const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
-        if (punches.some(p => isAutoPunch(p) || isPendingPunch(p))) { total++; return; }
-        const dow = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-        const dayKey = dow === 0 ? 7 : dow;
-        const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[String(dayKey)];
-        if (!dayConfig || dayConfig.isOff) return;
-        const shiftId = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
-        const shift   = shiftId ? shiftById.get(shiftId) : null;
-        if (!shift) return;
-        const expected = getExpectedPunches(dateStr, shift, dayConfig);
-        const punched  = new Set(punches.map(p => p.type));
-        const missing  = expected.filter(ep => {
-          if (ep.type === 'IN')  return !punches.some(p => IN_TYPES.has(p.type));
-          if (ep.type === 'OUT') return !punches.some(p => OUT_TYPES.has(p.type));
-          return !punched.has(ep.type);
-        }).filter(ep => ep.expected && ep.expected < now);
-        if (missing.length > 0) total++;
-      });
-    });
-    return total;
-  }, [employees, weekDates, shiftById, filterBranch]);
-
   // ── Correction handler ───────────────────────────────────────────────────
   const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
-    if (!canEditWeek) { showToast('Sin permisos','No tienes permiso para corregir marcajes.','info'); return; }
+    if (!(canEdit || isDemoMode)) { showToast('Sin permisos','No tienes permiso para corregir marcajes.','info'); return; }
     setCorrectionTarget({ emp, dateStr, dayPunches, shift, dayConfig });
-  }, [canEditWeek, showToast]);
+  }, [canEdit, isDemoMode, showToast]);
 
   const handleSaveCorrection = useCallback(async ({ type, time, reason }) => {
     if (!correctionTarget) return;
@@ -1072,60 +1055,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       showToast('Error','No se pudo guardar el marcaje.','error');
     }
   }, [correctionTarget, isDemoMode, insertAttendancePunchAt, appendAuditLog, user, showToast]);
-
-  // ── Week fully in the past (can close) ──────────────────────────────────
-  const isWeekFullyPast = useMemo(() => {
-    const now = new Date();
-    return new Date(weekDates[6] + 'T23:59:59-06:00') < now;
-  }, [weekDates]);
-
-  // ── Approval summary for visible timesheets ──────────────────────────────
-  const approvalSummary = useMemo(() => {
-    const visibleEmpIds = new Set(
-      [...employeesByBranch.values()].flat().map(e => String(e.id))
-    );
-    const visible = weekTimesheets.filter(t => visibleEmpIds.has(String(t.employee_id)));
-    const approved = visible.filter(t => t.status === 'APPROVED').length;
-    const pending  = visible.filter(t => ['PENDING', 'AUTO_PUNCHED'].includes(t.status)).length;
-    const total    = visible.length;
-    return { total, approved, pending, allApproved: total > 0 && pending === 0 };
-  }, [weekTimesheets, employeesByBranch]);
-
-  // ── Close week handler ───────────────────────────────────────────────────
-  const handleCloseWeek = useCallback(async () => {
-    if (!isWeekFullyPast || !canEditWeek || isDemoMode) return;
-    const visibleEmpIds = new Set(
-      [...employeesByBranch.values()].flat().map(e => String(e.id))
-    );
-    const toApprove = weekTimesheets.filter(
-      t => ['PENDING', 'AUTO_PUNCHED'].includes(t.status) && visibleEmpIds.has(String(t.employee_id))
-    );
-    if (toApprove.length === 0) {
-      showToast('Sin cambios', 'Todos los timesheets ya están aprobados.', 'info');
-      return;
-    }
-    setIsClosingWeek(true);
-    try {
-      const ids = toApprove.map(t => t.id).filter(Boolean);
-      const { error } = await supabase.from('timesheets')
-        .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
-        .in('id', ids);
-      if (error) throw error;
-      // Refresh local state
-      setWeekTimesheets(prev =>
-        prev.map(t => ids.includes(t.id) ? { ...t, status: 'APPROVED' } : t)
-      );
-      appendAuditLog?.('TIMESHEET_WEEK_APPROVED', {
-        weekStart: weekDates[0], weekEnd: weekDates[6],
-        count: ids.length, branch: filterBranch || 'ALL',
-      }, { actorId: user?.id, actorName: user?.name });
-      showToast('Semana cerrada', `${ids.length} timesheet${ids.length !== 1 ? 's' : ''} aprobado${ids.length !== 1 ? 's' : ''}.`, 'success');
-    } catch(err) {
-      showToast('Error', err.message, 'error');
-    } finally {
-      setIsClosingWeek(false);
-    }
-  }, [isWeekFullyPast, canEditWeek, isDemoMode, weekTimesheets, employeesByBranch, weekDates, filterBranch, user, appendAuditLog, showToast]);
 
   // ── Process SHIFT_EXCEPTION (confirm or reject) ─────────────────────────
   const handleProcessShiftException = useCallback(async (req, action, confirmedStart, confirmedEnd) => {
@@ -1219,52 +1148,33 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const pillLabelText = isAurora ? 'text-white' : 'text-slate-800';
   const pillSubText   = (ok) => ok ? (isAurora ? 'text-emerald-400' : 'text-emerald-600') : (isAurora ? 'text-sky-400' : 'text-[#0052CC]');
 
-  // Period nav computed values — shared between week and quincena modes
-  const periodLabel     = viewMode === 'week' ? weekLabel : quincenaLabel;
-  const isCurrentPeriod = viewMode === 'week' ? isCurrentWeek : isCurrentQuincena;
-  const goPrev = viewMode === 'week'
-    ? goToPrevWeek
-    : () => setSelectedQuincena(prevQuincena(selectedQuincena));
-  const goNext = viewMode === 'week'
-    ? goToNextWeek
-    : () => setSelectedQuincena(nextQuincena(selectedQuincena));
-  const goNow  = viewMode === 'week'
-    ? () => setSelectedWeekStart(currentWeekStart)
-    : () => setSelectedQuincena(getCurrentQuincenaStart());
-
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
     <div className="flex items-center gap-2 flex-wrap">
 
-      {/* 1. Mode tabs */}
-      <ViewTabBar
-        tabs={[{ key: 'week', label: 'Semana' }, { key: 'quincena', label: 'Quincena' }]}
-        activeTab={viewMode}
-        onTabChange={setViewMode}
-        showSearch={false}
-      />
-
-      {/* 2. Period nav pill */}
+      {/* Period nav pill — quincena */}
       <div className={pillWrap}>
-        <button type="button" onClick={goPrev} className={`${pillIconBtn} active:scale-[0.90]`}>
+        <button type="button" onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))}
+          className={`${pillIconBtn} active:scale-[0.90]`}>
           <ChevronLeft size={14} strokeWidth={2.5} />
         </button>
         <div className={pillDivider} />
-        <button type="button" onClick={goNow}
-          className={`flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all`}>
-          <span className={`text-[12px] font-black leading-none whitespace-nowrap ${pillLabelText}`}>{periodLabel}</span>
-          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentPeriod)}`}>
-            {isCurrentPeriod ? 'Actual' : '← Ir a hoy'}
+        <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
+          className="flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all">
+          <span className={`text-[12px] font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
+          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
+            {isCurrentQuincena ? 'Actual' : '← Ir a hoy'}
           </span>
         </button>
         <div className={pillDivider} />
-        <button type="button" onClick={goNext} disabled={isCurrentPeriod}
+        <button type="button" onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))}
+          disabled={isCurrentQuincena}
           className={`${pillIconBtn} active:scale-[0.90] disabled:opacity-25 disabled:cursor-not-allowed`}>
           <ChevronRight size={14} strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* 3. Branch dropdown pill */}
+      {/* Branch dropdown pill */}
       <div className="relative shrink-0" ref={branchDropRef}>
         <button type="button" onClick={() => setBranchDropOpen(v => !v)}
           className={`${pillWrap} cursor-pointer`}>
@@ -1287,30 +1197,8 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
         )}
       </div>
 
-      {/* Alert badge */}
-      {viewMode === 'week' && totalAlerts > 0 && (
-        <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shrink-0">{totalAlerts}</span>
-      )}
-
-      {/* Close week button */}
-      {viewMode === 'week' && !isDemoMode && isWeekFullyPast && canEditWeek && (
-        approvalSummary.allApproved ? (
-          <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full shrink-0">
-            <ShieldCheck size={12} strokeWidth={2.5} /> Semana cerrada
-          </span>
-        ) : (
-          <button type="button" onClick={handleCloseWeek} disabled={isClosingWeek}
-            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-[#0052CC] hover:bg-[#003D99] disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.45)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
-            {isClosingWeek
-              ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
-              : <LockKeyhole size={11} strokeWidth={2.5} />}
-            {isClosingWeek ? 'Cerrando…' : `Cerrar semana (${approvalSummary.pending})`}
-          </button>
-        )
-      )}
-
-      {/* Close quincena button */}
-      {viewMode === 'quincena' && !isDemoMode && isQuincenaPast && (
+      {/* Close quincena / Ver planilla */}
+      {!isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
           <div className="flex items-center gap-2 shrink-0">
             <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
@@ -1352,50 +1240,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       />
 
       <div className="px-4 md:px-6 pt-5 pb-8 space-y-4">
-
-        {/* Read-only notice */}
-        {viewMode === 'week' && !isCurrentWeek && (
-          <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-2xl px-5 py-2.5 flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Solo lectura</span>
-            <span className="text-[11px] text-slate-400">Solo se puede corregir la semana actual.</span>
-          </div>
-        )}
-
-        {/* Approval status banner — only for past weeks with timesheets */}
-        {viewMode === 'week' && !isDemoMode && isWeekFullyPast && approvalSummary.total > 0 && (
-          <div className={`rounded-2xl px-5 py-3 flex items-center gap-4 border ${
-            approvalSummary.allApproved
-              ? 'bg-emerald-50/60 border-emerald-200/60'
-              : 'bg-white/50 border-white/60'
-          } backdrop-blur-xl`}>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              approvalSummary.allApproved ? 'bg-emerald-100' : 'bg-[#0052CC]/10'
-            }`}>
-              {approvalSummary.allApproved
-                ? <ShieldCheck size={15} className="text-emerald-600" strokeWidth={2.5} />
-                : <LockKeyhole size={15} className="text-[#0052CC]" strokeWidth={2} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              {approvalSummary.allApproved ? (
-                <p className="text-[12px] font-black text-emerald-700">Semana cerrada — todos los timesheets aprobados</p>
-              ) : (
-                <>
-                  <p className="text-[12px] font-black text-slate-700">
-                    {approvalSummary.approved} de {approvalSummary.total} aprobados · <span className="text-amber-600">{approvalSummary.pending} pendiente{approvalSummary.pending !== 1 ? 's' : ''}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Revisa y corrige los marcajes antes de cerrar la semana</p>
-                </>
-              )}
-            </div>
-            {/* Mini progress bar */}
-            {!approvalSummary.allApproved && approvalSummary.total > 0 && (
-              <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden flex-shrink-0">
-                <div className="h-full bg-emerald-500 rounded-full transition-all"
-                  style={{ width: `${Math.round((approvalSummary.approved / approvalSummary.total) * 100)}%` }} />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (
@@ -1473,248 +1317,105 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
           </div>
         )}
 
-        {viewMode === 'quincena' ? (
-          /* ── Quincena view ─────────────────────────────────────────── */
-          (() => {
-            const totReg  = quincenaSummary.reduce((s, { stats }) => s + stats.regular, 0);
-            const totOT   = quincenaSummary.reduce((s, { stats }) => s + stats.overtime, 0);
-            const totLate = quincenaSummary.reduce((s, { stats }) => s + stats.late, 0);
-            const totAbs  = quincenaSummary.reduce((s, { stats }) => s + stats.absent, 0);
-            const totAppr = quincenaSummary.reduce((s, { stats }) => s + stats.approved, 0);
-            const totAll  = quincenaSummary.reduce((s, { stats }) => s + stats.total, 0);
-            const withData = quincenaSummary.filter(({ stats }) => stats.total > 0).length;
+        {/* ── Quincena accordion view ──────────────────────────────── */}
+        {(() => {
+          const totReg  = quincenaSummary.reduce((s, { stats }) => s + stats.regular, 0);
+          const totOT   = quincenaSummary.reduce((s, { stats }) => s + stats.overtime, 0);
+          const totAbs  = quincenaSummary.reduce((s, { stats }) => s + stats.absent, 0);
+          const withData = quincenaSummary.filter(({ stats }) => stats.total > 0).length;
 
-            const colGrid = 'grid grid-cols-[1fr_5.5rem_5.5rem_5.5rem_5.5rem_6.5rem] gap-2 items-center';
-            const colHdr  = 'text-[9px] font-black uppercase tracking-widest text-slate-500';
+          return (
+            <div className="space-y-4">
 
-            if (quincenaSummary.length === 0) return (
-              <div className="flex flex-col items-center justify-center py-16 gap-4">
-                <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
-                  <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
-                </div>
-                <p className="text-[14px] font-bold text-slate-400">Sin timesheets para esta quincena</p>
-              </div>
-            );
-
-            return (
-              <div className="space-y-4">
-
-                {/* ── Stat cards ── */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { Icon: Users,        label: 'Colaboradores',   val: withData,              unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
-                    { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1),     unit: 'h', c: 'text-slate-700',  bg: 'bg-slate-100' },
-                    { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),      unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-400', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
-                    { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,                unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-400', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
-                  ].map(({ Icon, label, val, unit, c, bg }) => (
-                    <div key={label} className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
-                          <Icon size={13} className={c} strokeWidth={2.5} />
-                        </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 leading-tight">{label}</span>
+              {/* Stat cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { Icon: Users,        label: 'Colaboradores',   val: withData,          unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
+                  { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-slate-700',  bg: 'bg-slate-100' },
+                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-400', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
+                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-400', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
+                ].map(({ Icon, label, val, unit, c, bg }) => (
+                  <div key={label} className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
+                        <Icon size={13} className={c} strokeWidth={2.5} />
                       </div>
-                      <p className={`text-[1.85rem] font-black leading-none tabular-nums tracking-tight ${c}`}>
-                        {val}<span className="text-[14px] font-bold opacity-50 ml-0.5">{unit}</span>
-                      </p>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 leading-tight">{label}</span>
                     </div>
-                  ))}
-                </div>
-
-                {/* ── Branch sections ── */}
-                {Array.from(employeesByBranch.entries())
-                  .sort(([aId], [bId]) =>
-                    getBranchSortKey(branchNameById.get(aId) || '', aId)
-                      .localeCompare(getBranchSortKey(branchNameById.get(bId) || '', bId))
-                  )
-                  .map(([branchId, branchEmployees]) => {
-                    const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
-                    const rows = branchEmployees.map(emp => ({
-                      emp,
-                      stats: quincenaByEmployee.get(String(emp.id)) || { regular: 0, overtime: 0, late: 0, absent: 0, approved: 0, total: 0 },
-                    }));
-                    const bReg  = rows.reduce((s, r) => s + r.stats.regular, 0);
-                    const bOT   = rows.reduce((s, r) => s + r.stats.overtime, 0);
-                    const bLate = rows.reduce((s, r) => s + r.stats.late, 0);
-                    const bAbs  = rows.reduce((s, r) => s + r.stats.absent, 0);
-                    const bAppr = rows.reduce((s, r) => s + r.stats.approved, 0);
-                    const bTot  = rows.reduce((s, r) => s + r.stats.total, 0);
-
-                    return (
-                      <div key={branchId} className="space-y-2">
-                        {/* Branch header */}
-                        <div className="flex items-center gap-3 px-1 pt-1">
-                          <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 flex items-center justify-center shrink-0">
-                            <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                              {rows.length} colaborador{rows.length !== 1 ? 'es' : ''}
-                            </p>
-                          </div>
-                          <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
-                          <span className="text-[11px] font-black text-slate-500 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
-                        </div>
-
-                        {/* Table card */}
-                        <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl overflow-hidden shadow-sm">
-                          <div className="overflow-x-auto">
-                            {/* Column headers */}
-                            <div className={`${colGrid} px-4 py-2.5 border-b border-slate-200/60 bg-slate-50/40 min-w-[560px]`}>
-                              <span className={`${colHdr} flex items-center gap-1`}><Users size={9} strokeWidth={2.5} /> Colaborador</span>
-                              <span className={`${colHdr} text-right`}>Regular</span>
-                              <span className={`${colHdr} text-right`}>Extra</span>
-                              <span className={`${colHdr} text-right`}>Tardanzas</span>
-                              <span className={`${colHdr} text-right`}>Ausencias</span>
-                              <span className={`${colHdr} text-right`}>Estado</span>
-                            </div>
-
-                            {/* Employee rows */}
-                            <div className="divide-y divide-slate-200/40">
-                              {rows.map(({ emp, stats }) => {
-                                const allOK = stats.total > 0 && stats.approved === stats.total;
-                                return (
-                                  <div key={emp.id} className={`${colGrid} px-4 py-3.5 hover:bg-black/[0.02] transition-colors min-w-[560px]`}>
-                                    <div className="min-w-0">
-                                      <p className="text-[12px] font-black text-slate-800 truncate">{emp.name}</p>
-                                      {emp.role && <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 truncate">{emp.role}</p>}
-                                    </div>
-                                    <span className="text-[13px] font-bold text-slate-800 tabular-nums text-right">
-                                      {stats.regular.toFixed(1)}h
-                                    </span>
-                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.overtime > 0 ? 'text-amber-600' : 'text-slate-300'}`}>
-                                      {stats.overtime > 0 ? `${stats.overtime.toFixed(1)}h` : '—'}
-                                    </span>
-                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.late > 0 ? 'text-red-500' : 'text-slate-300'}`}>
-                                      {stats.late > 0 ? `${stats.late}m` : '—'}
-                                    </span>
-                                    <span className={`text-[13px] font-bold tabular-nums text-right ${stats.absent > 0 ? 'text-red-600' : 'text-slate-300'}`}>
-                                      {stats.absent > 0 ? stats.absent : '—'}
-                                    </span>
-                                    <div className="text-right">
-                                      {stats.total === 0 ? (
-                                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Sin datos</span>
-                                      ) : allOK ? (
-                                        <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                          <ShieldCheck size={8} strokeWidth={2.5} /> OK
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                          {stats.approved}/{stats.total}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Branch subtotal */}
-                            <div className={`${colGrid} px-4 py-2.5 border-t border-slate-200/70 bg-slate-50/50 min-w-[560px]`}>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Subtotal</span>
-                              <span className="text-[12px] font-black text-slate-800 tabular-nums text-right">{bReg.toFixed(1)}h</span>
-                              <span className={`text-[12px] font-black tabular-nums text-right ${bOT > 0 ? 'text-amber-700' : 'text-slate-300'}`}>{bOT > 0 ? `${bOT.toFixed(1)}h` : '—'}</span>
-                              <span className={`text-[12px] font-black tabular-nums text-right ${bLate > 0 ? 'text-red-600' : 'text-slate-300'}`}>{bLate > 0 ? `${bLate}m` : '—'}</span>
-                              <span className={`text-[12px] font-black tabular-nums text-right ${bAbs > 0 ? 'text-red-700' : 'text-slate-300'}`}>{bAbs > 0 ? bAbs : '—'}</span>
-                              <span className="text-[9px] font-black text-slate-500 text-right">{bAppr}/{bTot}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                {/* ── Grand total + Export ── */}
-                <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl shadow-sm">
-                  <div className="overflow-x-auto">
-                    <div className={`${colGrid} px-4 py-3.5 min-w-[560px]`}>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-700 flex items-center gap-1.5">
-                        <TrendingUp size={10} strokeWidth={2.5} /> Total quincena
-                      </span>
-                      <span className="text-[14px] font-black text-slate-800 tabular-nums text-right">{totReg.toFixed(1)}h</span>
-                      <span className={`text-[14px] font-black tabular-nums text-right ${totOT > 0 ? 'text-amber-700' : 'text-slate-300'}`}>{totOT > 0 ? `${totOT.toFixed(1)}h` : '—'}</span>
-                      <span className={`text-[14px] font-black tabular-nums text-right ${totLate > 0 ? 'text-red-600' : 'text-slate-300'}`}>{totLate > 0 ? `${totLate}m` : '—'}</span>
-                      <span className={`text-[14px] font-black tabular-nums text-right ${totAbs > 0 ? 'text-red-700' : 'text-slate-300'}`}>{totAbs > 0 ? totAbs : '—'}</span>
-                      <span className="text-[10px] font-black text-slate-600 text-right">{totAppr}/{totAll}</span>
-                    </div>
+                    <p className={`text-[1.85rem] font-black leading-none tabular-nums tracking-tight ${c}`}>
+                      {val}<span className="text-[14px] font-bold opacity-50 ml-0.5">{unit}</span>
+                    </p>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Export button */}
+              {/* Branch sections — accordion */}
+              {Array.from(employeesByBranch.entries())
+                .sort(([aId], [bId]) =>
+                  getBranchSortKey(branchNameById.get(aId) || '', aId)
+                    .localeCompare(getBranchSortKey(branchNameById.get(bId) || '', bId))
+                )
+                .map(([branchId, branchEmployees]) => {
+                  const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
+                  const bReg  = branchEmployees.reduce((s, e) => {
+                    const stats = quincenaByEmployee.get(String(e.id));
+                    return s + (stats?.regular || 0);
+                  }, 0);
+                  return (
+                    <div key={branchId} className="space-y-2">
+                      <div className="flex items-center gap-3 px-1 pt-1">
+                        <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 flex items-center justify-center shrink-0">
+                          <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
+                          </p>
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
+                        {bReg > 0 && (
+                          <span className="text-[11px] font-black text-slate-500 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
+                        )}
+                      </div>
+                      {branchEmployees.map(emp => (
+                        <EmployeeAuditRow
+                          key={emp.id}
+                          emp={emp}
+                          quinceaDates={quinceaDates}
+                          shiftById={shiftById}
+                          timesheets={quincenaTS}
+                          branchNameById={branchNameById}
+                          onCorrect={handleCorrect}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+
+              {/* Empty state */}
+              {employeesByBranch.size === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
+                    <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
+                </div>
+              )}
+
+              {/* Export CSV */}
+              {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
                   <button type="button" onClick={handleExportCSVQuincena}
                     className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-white/50 text-slate-600 hover:bg-white hover:text-[#0052CC] hover:border-[#0052CC]/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                     <Download size={11} strokeWidth={2.5} /> Exportar CSV
                   </button>
                 </div>
+              )}
 
-              </div>
-            );
-          })()
-        ) : (
-          /* ── Week view ─────────────────────────────────────────────── */
-          <>
-            {/* Branch sections — sin contenedor, cada empleado es su propia card */}
-            {Array.from(employeesByBranch.entries()).sort(([aId], [bId]) =>
-              getBranchSortKey(branchNameById.get(aId) || '', aId)
-                .localeCompare(getBranchSortKey(branchNameById.get(bId) || '', bId))
-            ).map(([branchId, branchEmployees]) => {
-              const bName = branchNameById.get(branchId) || `Sucursal ${branchId}`;
-              const branchTotalAlerts = branchEmployees.reduce((acc, emp) => {
-                const empTs = weekTimesheets.filter(t => String(t.employee_id) === String(emp.id));
-                return acc + empTs.filter(t => t.status === 'AUTO_PUNCHED').length;
-              }, 0);
-
-              return (
-                <div key={branchId} className="space-y-2">
-                  {/* Branch label — minimal divider */}
-                  <div className="flex items-center gap-3 px-1 pt-1">
-                    <div className="w-7 h-7 rounded-xl bg-[#0052CC]/10 backdrop-blur-sm flex items-center justify-center shrink-0">
-                      <Building2 size={13} className="text-[#0052CC]" strokeWidth={2.5} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                        {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
-                      </p>
-                    </div>
-                    <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />
-                    {branchTotalAlerts > 0 && (
-                      <span className="text-[8px] font-black bg-violet-100/80 text-violet-600 border border-violet-200/60 px-2 py-0.5 rounded-full flex items-center gap-0.5 shrink-0 backdrop-blur-sm">
-                        <Bot size={8} strokeWidth={2.5} /> {branchTotalAlerts} auto
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Employee cards individuales */}
-                  {branchEmployees.map(emp => (
-                    <EmployeeAuditRow
-                      key={emp.id}
-                      emp={emp}
-                      weekDates={weekDates}
-                      shiftById={shiftById}
-                      weekTimesheets={weekTimesheets}
-                      branchNameById={branchNameById}
-                      onCorrect={handleCorrect}
-                      isDemoMode={isDemoMode}
-                    />
-                  ))}
-                </div>
-              );
-            })}
-
-            {/* Empty state */}
-            {employeesByBranch.size === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 gap-4">
-                <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
-                  <CheckCircle size={32} className="text-slate-300" strokeWidth={1.5} />
-                </div>
-                <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
-              </div>
-            )}
-          </>
-        )}
+            </div>
+          );
+        })()}
       </div>
     </GlassViewLayout>
   );

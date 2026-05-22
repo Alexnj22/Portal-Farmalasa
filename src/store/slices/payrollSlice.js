@@ -264,17 +264,16 @@ export const createPayrollSlice = (set, get) => ({
                 const empId      = String(emp.id);
                 const hasTS      = daysMap.has(empId);
                 const workedDays = hasTS ? daysMap.get(empId) : diffDays;
-                const vacDays    = hasTS ? (vacDaysMap.get(empId)  || 0) : 0;
-                const advance    = advanceMap.get(empId)  || 0;
-                const noctOrd    = parseFloat((noctMap.get(empId)   || 0).toFixed(2));
-                const noctExtra  = parseFloat((noctOTMap.get(empId) || 0).toFixed(2));
+                const vacDays    = hasTS ? (vacDaysMap.get(empId) || 0) : 0;
+                const advance    = advanceMap.get(empId) || 0;
+                const noctOrd    = parseFloat((noctMap.get(empId) || 0).toFixed(2));
                 const vacBonus   = vacBonusMap.get(empId) || 0;
 
+                // Nocturnal OT goes to the bank — HR decides pay vs compensate
                 const calc = calcPayrollEntry(emp, workedDays + vacDays, {
-                    salary_advance:        advance,
-                    night_hours_ordinary:  noctOrd,
-                    extra_hours_nocturnal: noctExtra,
-                    vacation_bonus:        vacBonus,
+                    salary_advance:       advance,
+                    night_hours_ordinary: noctOrd,
+                    vacation_bonus:       vacBonus,
                 });
                 return {
                     period_id:   periodId,
@@ -290,15 +289,17 @@ export const createPayrollSlice = (set, get) => ({
                 if (error) throw error;
             }
 
-            // OT Bank — seed EARNED entries for diurnal overtime hours in this period.
-            // Delete any prior EARNED entries for this period first (idempotent regeneration).
+            // OT Bank — seed EARNED entries for both diurnal and nocturnal OT.
+            // Idempotent: delete prior EARNED entries for this period before re-inserting.
             await supabase.from('overtime_bank').delete().eq('period_id', periodId).eq('type', 'EARNED');
-            const bankRows = employees
-                .map(emp => {
-                    const hours = parseFloat((diurnalOTMap.get(String(emp.id)) || 0).toFixed(2));
-                    return hours > 0 ? { employee_id: emp.id, hours, type: 'EARNED', period_id: periodId } : null;
-                })
-                .filter(Boolean);
+            const bankRows = [];
+            for (const emp of employees) {
+                const empId    = String(emp.id);
+                const diurnal  = parseFloat((diurnalOTMap.get(empId) || 0).toFixed(2));
+                const nocturnal = parseFloat((noctOTMap.get(empId)   || 0).toFixed(2));
+                if (diurnal  > 0) bankRows.push({ employee_id: emp.id, hours: diurnal,   type: 'EARNED', subtype: 'DIURNAL',   period_id: periodId });
+                if (nocturnal > 0) bankRows.push({ employee_id: emp.id, hours: nocturnal, type: 'EARNED', subtype: 'NOCTURNAL', period_id: periodId });
+            }
             if (bankRows.length > 0) {
                 await supabase.from('overtime_bank').insert(bankRows);
             }
@@ -327,11 +328,12 @@ export const createPayrollSlice = (set, get) => ({
         return parseFloat(Math.max(0, pending).toFixed(2));
     },
 
-    redeemOvertimeBank: async (employeeId, hours, type, periodId, notes, createdBy) => {
+    redeemOvertimeBank: async (employeeId, hours, type, subtype, periodId, notes, createdBy) => {
         const { error } = await supabase.from('overtime_bank').insert({
             employee_id: employeeId,
             hours:       parseFloat(hours.toFixed(2)),
             type,
+            subtype:     subtype || 'DIURNAL',
             period_id:   periodId || null,
             notes:       notes || null,
             created_by:  createdBy || null,

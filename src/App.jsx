@@ -358,11 +358,14 @@ function MainApp() {
                     const by       = user?.name || user?.email || 'Admin';
                     const ok = await updatePayrollEntry(entryId, dataToSave, by, dataToSave._reason);
                     if (ok) {
-                        // Persist OT bank redemptions (pay and/or time-off can both exist)
-                        if (redeemOvertimeBank) {
-                            const { _otBankPayHours: payH, _otBankCompHours: compH } = dataToSave;
-                            if (payH  > 0) await redeemOvertimeBank(empId, payH,  'PAID',     periodId, dataToSave._reason, user?.id).catch(console.error);
-                            if (compH > 0) await redeemOvertimeBank(empId, compH, 'TIME_OFF',  periodId, dataToSave._reason, user?.id).catch(console.error);
+                        // Persist OT bank redemptions — diurnal and nocturnal, pay and/or time-off
+                        if (redeemOvertimeBank && dataToSave._otBank) {
+                            const { dPay, dComp, nPay, nComp } = dataToSave._otBank;
+                            const note = dataToSave._reason;
+                            if (dPay  > 0) await redeemOvertimeBank(empId, dPay,  'PAID',     'DIURNAL',   periodId, note, user?.id).catch(console.error);
+                            if (dComp > 0) await redeemOvertimeBank(empId, dComp, 'TIME_OFF', 'DIURNAL',   periodId, note, user?.id).catch(console.error);
+                            if (nPay  > 0) await redeemOvertimeBank(empId, nPay,  'PAID',     'NOCTURNAL', periodId, note, user?.id).catch(console.error);
+                            if (nComp > 0) await redeemOvertimeBank(empId, nComp, 'TIME_OFF', 'NOCTURNAL', periodId, note, user?.id).catch(console.error);
                         }
                         showToast('Guardado', 'Entrada actualizada.', 'success');
                     } else {

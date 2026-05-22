@@ -5,7 +5,7 @@ import {
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
   Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
-  Users, TrendingUp, Download,
+  Users, TrendingUp, Download, Info,
 } from "lucide-react";
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
@@ -57,6 +57,21 @@ function getRoleOrder(role) {
   const idx = ROLE_KEYWORDS.findIndex(group => group.some(k => r.includes(k)));
   return idx === -1 ? 99 : idx;
 }
+
+// ── Nocturnal legal info tooltip ──────────────────────────────────────────────
+const NocturnalLegalInfo = () => (
+  <div className="relative group inline-flex items-center">
+    <Info size={10} className="text-indigo-400 cursor-help" strokeWidth={2} />
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+      <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
+      <p className="text-slate-300 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
+      <p className="text-slate-200">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
+      <p className="text-slate-200">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
+      <p className="text-slate-200">• Jornada noct. máx: 7h/día, 39h/sem</p>
+      <p className="text-slate-200">• Si &gt;4h son nocturnas → turno nocturno</p>
+    </div>
+  </div>
+);
 
 // ── Timezone helpers ──────────────────────────────────────────────────────────
 function getMondayOfCurrentWeek() {
@@ -597,7 +612,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                     {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-violet-500">+{ts.overtime_hours.toFixed(1)}h OT</span>}
                     {(ts.nocturnal_hours > 0) && (
                       <span className="text-[9px] font-black text-indigo-500 flex items-center gap-0.5">
-                        🌙 {ts.nocturnal_hours.toFixed(1)}h noct.
+                        🌙 {ts.nocturnal_hours.toFixed(1)}h noct. <NocturnalLegalInfo />
                       </span>
                     )}
                     {(ts.nocturnal_overtime_hours > 0) && (
@@ -806,6 +821,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             <div className="flex flex-col items-end min-w-[2.5rem]">
               <span className="text-[13px] font-black text-indigo-500 tabular-nums leading-none flex items-center gap-0.5">
                 🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-indigo-400 ml-0.5">h</span>
+                <NocturnalLegalInfo />
               </span>
               <span className="text-[7px] font-black uppercase tracking-widest text-indigo-400 mt-0.5">noct.</span>
             </div>

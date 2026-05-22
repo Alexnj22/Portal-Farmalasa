@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Info } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -9,6 +10,20 @@ const InputLabel = ({ children }) => (
 );
 
 const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#0052CC]/40 focus:border-[#0052CC]/50 focus:ring-4 focus:ring-[#0052CC]/10 rounded-[1rem] text-[13px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+
+const NocturnalLegalInfo = () => (
+    <div className="relative group inline-flex items-center ml-1.5">
+        <Info size={11} className="text-indigo-400 cursor-help" strokeWidth={2} />
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+            <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
+            <p className="text-slate-300 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
+            <p className="text-slate-200">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
+            <p className="text-slate-200">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
+            <p className="text-slate-200">• Jornada noct. máx: 7h/día, 39h/sem</p>
+            <p className="text-slate-200">• Si &gt;4h son nocturnas → turno nocturno</p>
+        </div>
+    </div>
+);
 
 const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
     const entry = formData._entry || {};
@@ -50,7 +65,9 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Horas adicionales</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center">
+                    Horas adicionales <NocturnalLegalInfo />
+                </p>
             </div>
             {numField('night_hours_ordinary',  'Hrs. Nocturnas Ord. (25%)')}
             {numField('night_hours_extra',     'Hrs. Noct. Extra (50%)')}

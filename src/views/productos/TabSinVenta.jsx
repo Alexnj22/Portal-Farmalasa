@@ -42,29 +42,22 @@ function getSuggestion(row) {
     const soldIn = row.sold_in || [];
     const today  = new Date();
     let daysToExpiry = null;
-    if (row.fecha_vencimiento_min) {
+    if (row.fecha_vencimiento_min)
         daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - today) / 86_400_000);
-    }
-    if (daysToExpiry !== null && daysToExpiry <= 30) {
+    if (daysToExpiry !== null && daysToExpiry <= 30)
         return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-red-50 text-red-700 border-red-200' };
-    }
     const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
-    if (soldIn.length === 0) {
+    if (soldIn.length === 0)
         return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200' };
-    }
-    const best      = soldIn[0];
-    const bestUnits = Number(best.units);
-    const bestName  = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
-    if (bestUnits < 5) {
+    const best = soldIn[0], bestUnits = Number(best.units), bestName = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
+    if (bestUnits < 5)
         return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200' };
-    }
-    if (bestUnits < 20) {
+    if (bestUnits < 20)
         return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200' };
-    }
     return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
 
-// ─── SmartPagination (same as TabCatalogo, Liquid theme) ──────────────────────
+// ─── SmartPagination ──────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
     if (total <= 1) return null;
@@ -105,52 +98,62 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
+// ─── SortTh ───────────────────────────────────────────────────────────────────
+
+function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
+    const active = sortField === field;
+    return (
+        <th onClick={() => onSort(field)}
+            className={`px-4 py-3.5 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
+                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
+            } ${className}`}>
+            <span className="flex items-center gap-1.5">
+                {label}
+                <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
+                    {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                </span>
+            </span>
+        </th>
+    );
+}
+
 // ─── SinVentaStatCards ────────────────────────────────────────────────────────
 
-function SinVentaStatCards({ counts, loading, filterMode, onFilter }) {
-    const CARDS = [
+function SinVentaStatCards({ counts, loading, filterMode, onFilter, totalCost, filteredCost }) {
+    const FILTER_CARDS = [
         {
-            id:         'con_stock',
-            Icon:       PackageX,
-            label:      'Con stock retenido',
-            sub:        'sin venta aquí',
+            id: 'con_stock', Icon: PackageX,
+            label: 'Con stock retenido', sub: 'sin venta aquí',
+            count: counts.con_stock,
             activeBg:   'bg-orange-50 border-orange-300 shadow-orange-100/80 -translate-y-px',
             inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
-            iconActive: 'bg-white',
-            iconInact:  'bg-orange-50',
-            iconColor:  'text-orange-500',
-            numColor:   (n) => n > 0 ? 'text-orange-600' : 'text-slate-300',
+            iconActive: 'bg-white', iconInact: 'bg-orange-50', iconColor: 'text-orange-500',
+            numColor: (n) => n > 0 ? 'text-orange-600' : 'text-slate-300',
         },
         {
-            id:         'otras_suc',
-            Icon:       TrendingDown,
-            label:      'Vendido en otras',
-            sub:        'demanda en la red',
+            id: 'otras_suc', Icon: TrendingDown,
+            label: 'Vendido en otras', sub: 'demanda en la red',
+            count: counts.otras_suc,
             activeBg:   'bg-blue-50 border-blue-300 shadow-blue-100/80 -translate-y-px',
             inactiveBg: 'bg-white border-slate-200 hover:border-blue-200 hover:bg-blue-50/40',
-            iconActive: 'bg-white',
-            iconInact:  'bg-blue-50',
-            iconColor:  'text-blue-500',
-            numColor:   (n) => n > 0 ? 'text-blue-600' : 'text-slate-300',
+            iconActive: 'bg-white', iconInact: 'bg-blue-50', iconColor: 'text-blue-500',
+            numColor: (n) => n > 0 ? 'text-blue-600' : 'text-slate-300',
         },
         {
-            id:         'sin_historial',
-            Icon:       Archive,
-            label:      'Sin historial',
-            sub:        'sin ventas en la red',
+            id: 'sin_historial', Icon: Archive,
+            label: 'Sin historial', sub: 'sin ventas en la red',
+            count: counts.sin_historial,
             activeBg:   'bg-slate-100 border-slate-300 shadow-slate-100/80 -translate-y-px',
             inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-            iconActive: 'bg-white',
-            iconInact:  'bg-slate-50',
-            iconColor:  'text-slate-400',
-            numColor:   (n) => n > 0 ? 'text-slate-600' : 'text-slate-300',
+            iconActive: 'bg-white', iconInact: 'bg-slate-50', iconColor: 'text-slate-400',
+            numColor: (n) => n > 0 ? 'text-slate-600' : 'text-slate-300',
         },
     ];
 
     return (
         <div className="flex gap-3 flex-wrap">
 
-            {/* Info card — total */}
+            {/* Info: total sin venta */}
             <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.07]">
                     <Package size={15} className="text-[#0052CC]/50" />
@@ -164,10 +167,29 @@ function SinVentaStatCards({ counts, loading, filterMode, onFilter }) {
                 </div>
             </div>
 
+            {/* Info: costo retenido */}
+            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[150px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
+                    <DollarSign size={15} className="text-orange-500" />
+                </div>
+                <div className="text-left min-w-0">
+                    <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
+                        {loading ? <span className="text-slate-200">–</span> : fmtMoney(totalCost)}
+                    </div>
+                    <div className="text-[10px] font-bold leading-tight text-slate-600">Costo retenido</div>
+                    {filteredCost > 0 && filteredCost !== totalCost && (
+                        <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
+                    )}
+                    {(filteredCost === 0 || filteredCost === totalCost) && (
+                        <div className="text-[9px] text-slate-400">total en la sucursal</div>
+                    )}
+                </div>
+            </div>
+
             <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
 
             {/* Filter cards */}
-            {CARDS.map(c => {
+            {FILTER_CARDS.map(c => {
                 const active = filterMode === c.id;
                 return (
                     <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
@@ -178,8 +200,8 @@ function SinVentaStatCards({ counts, loading, filterMode, onFilter }) {
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(c.id === 'con_stock' ? counts.con_stock : c.id === 'otras_suc' ? counts.otras_suc : counts.sin_historial)}`}>
-                                {loading ? <span className="text-slate-200">–</span> : (c.id === 'con_stock' ? counts.con_stock : c.id === 'otras_suc' ? counts.otras_suc : counts.sin_historial).toLocaleString()}
+                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(c.count)}`}>
+                                {loading ? <span className="text-slate-200">–</span> : c.count.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
                             <div className="text-[9px] text-slate-400">{c.sub}</div>
@@ -198,41 +220,66 @@ export default function TabSinVenta({ searchTerm = '' }) {
     const [selectedErp, setSelectedErp] = useState(5);
     const [filterMode,  setFilterMode]  = useState('con_stock');
     const [data,        setData]        = useState([]);
-    const [loading,     setLoading]     = useState(false);
+    const [loading,     setLoading]     = useState(false);      // skeleton — no data yet
+    const [refreshing,  setRefreshing]  = useState(false);      // spinner — have stale data
     const [error,       setError]       = useState(null);
     const [page,        setPage]        = useState(1);
     const [pageSize,    setPageSize]    = useState(25);
-    const loadRef = useRef(0);
+    const [sortField,   setSortField]   = useState('product_name');
+    const [sortDir,     setSortDir]     = useState('asc');
+    const loadRef  = useRef(0);
+    const dataRef  = useRef([]);   // tracks current data length without stale closure
 
-    // ── Theme tokens — Liquid (same as TabCatalogo default) ───────────────────
+    const handleSort = useCallback((field) => {
+        if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortField(field); setSortDir('asc'); }
+        setPage(1);
+    }, [sortField]);
+
+    // ── Theme tokens (Liquid — matches TabCatalogo) ───────────────────────────
     const tk = {
-        card:            'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
-        thead:           'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
-        rowBorder:       'border-t border-slate-100',
-        rowHover:        'hover:bg-[#0052CC]/[0.03]',
-        skeleton:        'bg-slate-200/70',
-        emptyBg:         'bg-white border-slate-200/80',
-        filterPill:      'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
-        pageSizeActive:  'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
-        pageSizeInactive:'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
-        totalText:       'text-slate-400',
+        card:             'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
+        thead:            'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
+        rowBorder:        'border-t border-slate-100',
+        rowHover:         'hover:bg-[#0052CC]/[0.03]',
+        skeleton:         'bg-slate-200/70',
+        emptyBg:          'bg-white border-slate-200/80',
+        filterPill:       'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
+        pageSizeActive:   'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
+        pageSizeInactive: 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
+        totalText:        'text-slate-400',
     };
 
-    // ── Data loading ──────────────────────────────────────────────────────────
+    // ── Load data — paginated to bypass PostgREST 1000-row cap ───────────────
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setPage(1);
+        setError(null); setPage(1);
+
+        // Keep stale data visible if we have it; show skeleton only on first load
+        if (dataRef.current.length === 0) setLoading(true);
+        else setRefreshing(true);
+
         try {
-            const { data: rows, error: e } = await supabase
-                .rpc('get_no_sales_products', { p_erp_sucursal_id: erpId })
-                .range(0, 9999);
-            if (e) throw e;
-            if (rid !== loadRef.current) return;
-            setData(rows || []);
+            const BATCH = 1000;
+            let all = [];
+            let from = 0;
+            while (true) {
+                const { data: rows, error: e } = await supabase
+                    .rpc('get_no_sales_products', { p_erp_sucursal_id: erpId })
+                    .range(from, from + BATCH - 1);
+                if (e) throw e;
+                if (rid !== loadRef.current) return;
+                all = [...all, ...(rows || [])];
+                // Show partial results immediately as each page arrives
+                dataRef.current = all;
+                setData([...all]);
+                if (!rows || rows.length < BATCH) break;
+                from += BATCH;
+            }
         } catch (e) {
             if (rid === loadRef.current) setError(e.message);
         } finally {
-            if (rid === loadRef.current) setLoading(false);
+            if (rid === loadRef.current) { setLoading(false); setRefreshing(false); }
         }
     }, []);
 
@@ -248,7 +295,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
     }), [data]);
 
     const totalRetainedCost = useMemo(() =>
-        data.reduce((acc, r) => acc + Number(r.cost_value || 0), 0), [data]);
+        data.reduce((a, r) => a + Number(r.cost_value || 0), 0), [data]);
 
     const filtered = useMemo(() => {
         let rows = data;
@@ -257,8 +304,16 @@ export default function TabSinVenta({ searchTerm = '' }) {
         else if (filterMode === 'sin_historial') rows = rows.filter(r => (r.sold_in || []).length === 0);
         const q = searchTerm.toLowerCase();
         if (q) rows = rows.filter(r => r.product_name?.toLowerCase().includes(q));
-        return rows;
-    }, [data, filterMode, searchTerm]);
+        // Client-side sort
+        return [...rows].sort((a, b) => {
+            if (sortField === 'product_name') {
+                const cmp = (a.product_name || '').localeCompare(b.product_name || '', 'es');
+                return sortDir === 'asc' ? cmp : -cmp;
+            }
+            const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
+            return sortDir === 'asc' ? av - bv : bv - av;
+        });
+    }, [data, filterMode, searchTerm, sortField, sortDir]);
 
     const filteredCost = useMemo(() =>
         filtered.reduce((a, r) => a + Number(r.cost_value || 0), 0), [filtered]);
@@ -273,19 +328,24 @@ export default function TabSinVenta({ searchTerm = '' }) {
 
             {/* ── Stats + filter pill row ── */}
             <div className="flex items-start gap-3 flex-wrap">
-
-                {/* Stat cards — act as filters */}
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
                     <SinVentaStatCards
                         counts={counts}
                         loading={loading}
                         filterMode={filterMode}
                         onFilter={(id) => setFilterMode(prev => prev === id ? 'todos' : id)}
+                        totalCost={totalRetainedCost}
+                        filteredCost={filteredCost}
                     />
                 </div>
 
-                {/* Filter pill — sucursal selector */}
+                {/* Filter pill — sucursal + refresh indicator */}
                 <div className={`flex items-center rounded-2xl border transition-all duration-300 shrink-0 overflow-visible ${tk.filterPill}`}>
+                    {refreshing && (
+                        <div className="pl-3">
+                            <Loader2 size={13} className="animate-spin text-slate-300" />
+                        </div>
+                    )}
                     <div className="px-2.5 py-2 overflow-visible" style={{ width: '185px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
@@ -299,22 +359,6 @@ export default function TabSinVenta({ searchTerm = '' }) {
                 </div>
             </div>
 
-            {/* ── Cost banner ── */}
-            {!loading && totalRetainedCost > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-200">
-                    <DollarSign size={14} className="text-orange-400 shrink-0" />
-                    <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <span className="text-[20px] font-black text-orange-700 tabular-nums">{fmtMoney(totalRetainedCost)}</span>
-                        <span className="text-[11px] text-orange-500 font-semibold">retenidos sin mover en {ERP_NAMES[selectedErp]}</span>
-                    </div>
-                    {filteredCost > 0 && filteredCost !== totalRetainedCost && (
-                        <span className="ml-auto text-[10px] text-orange-400 font-semibold shrink-0">
-                            {fmtMoney(filteredCost)} en filtro
-                        </span>
-                    )}
-                </div>
-            )}
-
             {/* ── Error ── */}
             {error && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
@@ -324,23 +368,23 @@ export default function TabSinVenta({ searchTerm = '' }) {
             )}
 
             {/* ── Table ── */}
-            {loading ? (
-                /* Skeleton */
+            {loading && data.length === 0 ? (
+                /* Skeleton — first load only */
                 <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
                     <table className="min-w-full">
                         <tbody>
-                            {Array.from({ length: 8 }).map((_, i) => (
+                            {Array.from({ length: 10 }).map((_, i) => (
                                 <tr key={i} className={`border-l-[3px] border-l-transparent ${i > 0 ? tk.rowBorder : ''}`}>
                                     <td className="px-4 py-3.5">
                                         <div className="space-y-2">
-                                            <div className={`h-[13px] rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${140 + (i * 23) % 60}px` }} />
-                                            <div className={`h-2.5 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${60 + (i * 17) % 40}px` }} />
+                                            <div className={`h-[13px] rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${140 + (i * 23) % 80}px` }} />
+                                            <div className={`h-2.5 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${50 + (i * 17) % 50}px` }} />
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-16 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5"><div className={`h-5 w-32 rounded-full animate-pulse ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5"><div className={`h-5 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -363,17 +407,21 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     )}
                 </div>
             ) : (
-                /* Data table */
-                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
+                /* Data table — stays visible (may be faded during refresh) */
+                <div className={`rounded-2xl border overflow-hidden transition-opacity duration-300 ${tk.card} ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
                             <thead className={`sticky top-0 z-10 ${tk.thead}`}>
                                 <tr>
-                                    <th className="px-4 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Producto</th>
-                                    <th className="px-4 py-3.5 text-right  text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden sm:table-cell">Stock aquí</th>
-                                    <th className="px-4 py-3.5 text-right  text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden sm:table-cell">Costo retenido</th>
-                                    <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden md:table-cell">Sugerencia</th>
-                                    <th className="px-4 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Vendido en (últimos 6m)</th>
+                                    <SortTh field="product_name"  label="Producto"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                    <SortTh field="current_stock" label="Stock aquí"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                    <SortTh field="cost_value"    label="Costo retenido"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                    <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden md:table-cell">
+                                        Sugerencia
+                                    </th>
+                                    <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
+                                        Vendido en (últimos 6m)
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -415,7 +463,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                                 )}
                                             </td>
 
-                                            {/* Costo retenido */}
+                                            {/* Costo */}
                                             <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
                                                 {cost > 0 ? (
                                                     <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
@@ -464,7 +512,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
                 </div>
             )}
 
-            {/* ── Pagination — identical structure to TabCatalogo ── */}
+            {/* ── Pagination — identical to TabCatalogo ── */}
             {!loading && filtered.length > 0 && (
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">

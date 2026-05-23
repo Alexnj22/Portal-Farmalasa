@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
-    ChevronLeft, ChevronRight, AlertCircle, Truck, Archive, PackageX,
-    TrendingDown, TrendingUp, CheckCircle2, CircleDashed,
+    ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
+    TrendingUp, CheckCircle2, CircleDashed,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -28,17 +28,6 @@ const SUC_COLORS = {
 const PAGE_SIZES = [25, 50, 100];
 
 const MODES = [
-    {
-        key:    'sin_venta',
-        label:  'Sin Venta',
-        sub:    'con min/max, sin rotación 6m',
-        Icon:   PackageX,
-        rpc:    'get_no_sales_products',
-        activeBg:   'bg-orange-50 border-orange-300 shadow-orange-100/80 -translate-y-px',
-        inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/30',
-        numColor:   'text-orange-600',
-        iconColor:  'text-orange-500',
-    },
     {
         key:    'sin_gestion',
         label:  'Sin Min/Max',
@@ -156,50 +145,6 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-function SinVentaFilters({ data, filterMode, onFilter, loading }) {
-    const counts = useMemo(() => ({
-        con_stock:     data.filter(r => Number(r.current_stock) > 0).length,
-        otras_suc:     data.filter(r => (r.sold_in || []).length > 0).length,
-        sin_historial: data.filter(r => (r.sold_in || []).length === 0).length,
-    }), [data]);
-
-    const CARDS = [
-        { id: 'con_stock', Icon: PackageX, label: 'Con stock retenido', sub: 'sin venta aquí',
-          activeBg: 'bg-orange-50 border-orange-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
-          iconColor: 'text-orange-500', numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
-        { id: 'otras_suc', Icon: TrendingDown, label: 'Vendido en otras', sub: 'demanda en la red',
-          activeBg: 'bg-blue-50 border-blue-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-blue-200 hover:bg-blue-50/40',
-          iconColor: 'text-blue-500', numColor: n => n > 0 ? 'text-blue-600' : 'text-slate-300' },
-        { id: 'sin_historial', Icon: Archive, label: 'Sin historial', sub: 'sin ventas en la red',
-          activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-          iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-300' },
-    ];
-
-    return (
-        <>
-            {CARDS.map(c => {
-                const active = filterMode === c.id;
-                return (
-                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
-                            <c.Icon size={15} className={c.iconColor} />
-                        </div>
-                        <div className="text-left min-w-0">
-                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
-                            </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
-                            <div className="text-[9px] text-slate-400">{c.sub}</div>
-                        </div>
-                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
-                    </button>
-                );
-            })}
-        </>
-    );
-}
-
 function StockRetFilters({ data, filterMode, onFilter, loading }) {
     const counts = useMemo(() => ({
         con_minmax: data.filter(r => r.in_minmax).length,
@@ -243,29 +188,28 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TabGestionStock({ searchTerm = '' }) {
-    const [mode,        setMode]        = useState('sin_venta');
+    const [mode,        setMode]        = useState('stock_ret');
     const [selectedErp, setSelectedErp] = useState(5);
-    const [filterMode,  setFilterMode]  = useState('con_stock');
+    const [filterMode,  setFilterMode]  = useState('todos');
 
     // One data store per view — keyed so switching back doesn't re-fetch
-    const [sinVenta,   setSinVenta]   = useState([]);
     const [sinGestion, setSinGestion] = useState([]);
     const [stockRet,   setStockRet]   = useState([]);
 
-    const [loadingMap,   setLoadingMap]   = useState({ sin_venta: false, sin_gestion: false, stock_ret: false });
-    const [refreshingMap, setRefreshingMap] = useState({ sin_venta: false, sin_gestion: false, stock_ret: false });
-    const [errorMap,     setErrorMap]     = useState({ sin_venta: null, sin_gestion: null, stock_ret: null });
+    const [loadingMap,    setLoadingMap]    = useState({ sin_gestion: false, stock_ret: false });
+    const [refreshingMap, setRefreshingMap] = useState({ sin_gestion: false, stock_ret: false });
+    const [errorMap,      setErrorMap]      = useState({ sin_gestion: null,  stock_ret: null  });
 
     const [page,      setPage]      = useState(1);
     const [pageSize,  setPageSize]  = useState(25);
     const [sortField, setSortField] = useState('product_name');
     const [sortDir,   setSortDir]   = useState('asc');
 
-    const loadRefs = useRef({ sin_venta: 0, sin_gestion: 0, stock_ret: 0 });
-    const dataRefs = useRef({ sin_venta: [], sin_gestion: [], stock_ret: [] });
+    const loadRefs = useRef({ sin_gestion: 0, stock_ret: 0 });
+    const dataRefs = useRef({ sin_gestion: [], stock_ret: [] });
 
-    const setterFor = (m) => m === 'sin_venta' ? setSinVenta : m === 'sin_gestion' ? setSinGestion : setStockRet;
-    const dataFor   = (m) => m === 'sin_venta' ? sinVenta    : m === 'sin_gestion' ? sinGestion    : stockRet;
+    const setterFor = (m) => m === 'sin_gestion' ? setSinGestion : setStockRet;
+    const dataFor   = (m) => m === 'sin_gestion' ? sinGestion    : stockRet;
 
     const handleSort = useCallback((field) => {
         setSortField(prev => {
@@ -279,8 +223,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
     // Reset default sort when mode changes
     useEffect(() => {
         if (mode === 'sin_gestion') { setSortField('revenue'); setSortDir('desc'); }
-        else if (mode === 'stock_ret') { setSortField('cost_value'); setSortDir('desc'); }
-        else { setSortField('product_name'); setSortDir('asc'); }
+        else { setSortField('cost_value'); setSortDir('desc'); }
         setPage(1);
     }, [mode]);
 
@@ -333,11 +276,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
         }
     }, []);
 
-    // When sucursal changes: clear all and reload all 3 modes
+    // When sucursal changes: clear all and reload both modes
     useEffect(() => {
-        dataRefs.current = { sin_venta: [], sin_gestion: [], stock_ret: [] };
-        setSinVenta([]); setSinGestion([]); setStockRet([]);
-        setFilterMode('con_stock');
+        dataRefs.current = { sin_gestion: [], stock_ret: [] };
+        setSinGestion([]); setStockRet([]);
+        setFilterMode('todos');
         MODES.forEach(m => loadMode(erpId, m.key));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedErp]);
@@ -357,11 +300,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const filtered = useMemo(() => {
         let rows = activeData;
 
-        if (mode === 'sin_venta') {
-            if      (filterMode === 'con_stock')     rows = rows.filter(r => Number(r.current_stock) > 0);
-            else if (filterMode === 'otras_suc')     rows = rows.filter(r => (r.sold_in || []).length > 0);
-            else if (filterMode === 'sin_historial') rows = rows.filter(r => (r.sold_in || []).length === 0);
-        } else if (mode === 'stock_ret') {
+        if (mode === 'stock_ret') {
             if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
             else if (filterMode === 'sin_minmax') rows = rows.filter(r => !r.in_minmax);
         }
@@ -407,14 +346,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 {activeLoading ? <span className="text-slate-200">–</span> : activeData.length.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-600">
-                                {mode === 'sin_venta' ? 'Sin venta (6m)' : mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
+                                {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
                             <div className="text-[9px] text-slate-400">en la sucursal activa</div>
                         </div>
                     </div>
 
-                    {/* Costo retenido (sin_venta + stock_ret) */}
-                    {mode !== 'sin_gestion' && (
+                    {/* Costo retenido */}
+                    {mode === 'stock_ret' && (
                         <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
                                 <DollarSign size={15} className="text-orange-500" />
@@ -448,16 +387,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                         </div>
                     )}
 
-                    {/* Sub-filter cards — only for modes that have them */}
-                    {mode !== 'sin_gestion' && <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />}
-                    {mode === 'sin_venta' && (
-                        <SinVentaFilters data={activeData} filterMode={filterMode}
-                            onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
-                    )}
-                    {mode === 'stock_ret' && (
+                    {/* Sub-filter cards — stock_ret only */}
+                    {mode === 'stock_ret' && <>
+                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
-                    )}
+                    </>}
                 </div>
 
                 {/* Right: filter pill — mode selector + sucursal */}
@@ -467,10 +402,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     <div className="flex items-center gap-0.5 px-2.5 py-2">
                         {MODES.map(m => {
                             const active = mode === m.key;
-                            const count  = m.key === 'sin_venta' ? sinVenta.length : m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
+                            const count  = m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
                             return (
                                 <button key={m.key}
-                                    onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_venta' ? 'con_stock' : 'todos'); }}
+                                    onClick={() => { setMode(m.key); setFilterMode('todos'); }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${
                                         active ? 'bg-[#0052CC]/[0.10] text-[#0052CC]' : tk.filterBtn
                                     }`}>
@@ -547,75 +482,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
 
-                            {/* ── Sin Venta table ── */}
-                            {mode === 'sin_venta' && (
-                                <>
-                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
-                                    <tr>
-                                        <SortTh field="product_name"  label="Producto"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                        <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <SortTh field="min_qty"       label="Min / Max"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
-                                        <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
-                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pageRows.map(row => {
-                                        const stock    = Number(row.current_stock);
-                                        const cost     = Number(row.cost_value || 0);
-                                        const soldIn   = row.sold_in || [];
-                                        const hasStock = stock > 0;
-                                        const sug      = hasStock ? getSuggestion(row) : null;
-                                        return (
-                                            <tr key={row.erp_product_id}
-                                                style={{ borderLeftColor: hasStock ? '#f97316' : 'transparent' }}
-                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${hasStock ? 'bg-orange-50/20' : ''}`}>
-                                                <td className="px-4 py-3.5">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px]">{row.product_name || '—'}</span>
-                                                    {row.fecha_vencimiento_min && (() => {
-                                                        const exp = new Date(row.fecha_vencimiento_min);
-                                                        const expired = exp < new Date();
-                                                        return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
-                                                            {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                                        </span>;
-                                                    })()}
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                    {hasStock ? <><span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span><span className="text-[10px] text-orange-400 ml-1">und</span></> : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 text-center whitespace-nowrap hidden md:table-cell">
-                                                    {row.min_qty != null || row.max_qty != null
-                                                        ? <span className="text-[11px] font-bold tabular-nums text-slate-600">{row.min_qty ?? '—'}<span className="text-slate-300 mx-1">/</span>{row.max_qty ?? '—'}</span>
-                                                        : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                    {cost > 0 ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span> : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
-                                                    {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
-                                                         : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5">
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        {soldIn.length === 0
-                                                            ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
-                                                            : soldIn.map(s => (
-                                                                <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                                                    {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
-                                                                </span>
-                                                            ))}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                                </>
-                            )}
-
-                            {/* ── Sin Gestión ERP table ── */}
+                            {/* ── Sin Min/Max table ── */}
                             {mode === 'sin_gestion' && (
                                 <>
                                 <thead className={`sticky top-0 z-10 ${tk.thead}`}>

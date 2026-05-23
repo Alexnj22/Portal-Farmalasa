@@ -154,45 +154,6 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     );
 }
 
-// ─── ModeSelector ─────────────────────────────────────────────────────────────
-
-function ModeSelector({ mode, onMode, data, loading }) {
-    const counts = useMemo(() => ({
-        sin_venta:   data.sinVenta.length,
-        sin_gestion: data.sinGestion.length,
-        stock_ret:   data.stockRet.length,
-    }), [data]);
-
-    return (
-        <div className="flex gap-2">
-            {MODES.map(m => {
-                const active = mode === m.key;
-                const count  = counts[m.key];
-                const loaded = count > 0 || (!loading[m.key] && data[m.key === 'sin_venta' ? 'sinVenta' : m.key === 'sin_gestion' ? 'sinGestion' : 'stockRet'].length === 0);
-                return (
-                    <button key={m.key} onClick={() => onMode(m.key)}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 shadow-sm flex-1 min-w-0 ${active ? m.activeBg : m.inactiveBg}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-white/60'}`}>
-                            <m.Icon size={15} className={m.iconColor} />
-                        </div>
-                        <div className="text-left min-w-0">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${m.numColor}`}>
-                                {loading[m.key]
-                                    ? <span className="text-slate-200">–</span>
-                                    : loaded ? count.toLocaleString() : <span className="text-slate-200">–</span>
-                                }
-                            </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-700">{m.label}</div>
-                            <div className="text-[9px] text-slate-400">{m.sub}</div>
-                        </div>
-                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
-                    </button>
-                );
-            })}
-        </div>
-    );
-}
-
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
 function SinVentaFilters({ data, filterMode, onFilter, loading }) {
@@ -331,6 +292,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
         skeleton:         'bg-slate-200/70',
         emptyBg:          'bg-white border-slate-200/80',
         filterPill:       'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
+        filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-slate-50',
+        filterDivider:    'bg-slate-100',
         pageSizeActive:   'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
         pageSizeInactive: 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
         totalText:        'text-slate-400',
@@ -424,20 +387,17 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
-    const allData = { sinVenta, sinGestion, stockRet };
-
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Mode selector ── */}
-            <ModeSelector mode={mode} onMode={(m) => { setMode(m); setFilterMode(m === 'sin_venta' ? 'con_stock' : 'todos'); }} data={allData} loading={loadingMap} />
-
-            {/* ── Sub-filters + pill ── */}
+            {/* ── Filters row: stat cards (left) + filter pill (right) ── */}
             <div className="flex items-start gap-3 flex-wrap">
+
+                {/* Left: summary + cost/revenue + sub-filter cards */}
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
-                    {/* Info cards (total + cost/revenue) */}
+                    {/* Total count card */}
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.07]">
                             <Package size={15} className="text-[#0052CC]/50" />
@@ -453,6 +413,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                         </div>
                     </div>
 
+                    {/* Costo retenido (sin_venta + stock_ret) */}
                     {mode !== 'sin_gestion' && (
                         <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
@@ -471,6 +432,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                         </div>
                     )}
 
+                    {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
                         <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50">
@@ -486,9 +448,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                         </div>
                     )}
 
-                    <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
-
-                    {/* Sub-filters by mode */}
+                    {/* Sub-filter cards — only for modes that have them */}
+                    {mode !== 'sin_gestion' && <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />}
                     {mode === 'sin_venta' && (
                         <SinVentaFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
@@ -499,12 +460,36 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     )}
                 </div>
 
-                {/* Sucursal selector */}
+                {/* Right: filter pill — mode selector + sucursal */}
                 <div className={`flex items-center rounded-2xl border transition-all duration-300 shrink-0 overflow-visible ${tk.filterPill}`}>
-                    {(activeRefreshing) && (
-                        <div className="pl-3"><Loader2 size={13} className="animate-spin text-slate-300" /></div>
-                    )}
-                    <div className="px-2.5 py-2 overflow-visible" style={{ width: '185px' }}>
+
+                    {/* Mode pills */}
+                    <div className="flex items-center gap-0.5 px-2.5 py-2">
+                        {MODES.map(m => {
+                            const active = mode === m.key;
+                            const count  = m.key === 'sin_venta' ? sinVenta.length : m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
+                            return (
+                                <button key={m.key}
+                                    onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_venta' ? 'con_stock' : 'todos'); }}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${
+                                        active ? 'bg-[#0052CC]/[0.10] text-[#0052CC]' : tk.filterBtn
+                                    }`}>
+                                    {m.label}
+                                    <span className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-tight ${
+                                        active ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                        {loadingMap[m.key] ? '…' : count.toLocaleString()}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
+
+                    {/* Sucursal */}
+                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-300" /></div>}
+                    <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
                             onChange={v => { if (v) setSelectedErp(Number(v)); }}

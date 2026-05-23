@@ -4,6 +4,7 @@ import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
     TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus, ShoppingBag,
+    EyeOff, Eye,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -189,18 +190,19 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
-function SinMinMaxFilters({ data, filterMode, onFilter, loading }) {
+function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
     const counts = useMemo(() => {
-        let agregar = 0, evaluar = 0, encargo = 0, omitir = 0;
+        let agregar = 0, evaluar = 0, encargo = 0, omitir = 0, ignorado = 0;
         for (const r of data) {
+            if (ignoredSet.has(r.erp_product_id)) { ignorado++; continue; }
             const s = getSinMinMaxSugg(r);
             if      (s.level === 'agregar') agregar++;
             else if (s.level === 'evaluar') evaluar++;
             else if (s.level === 'encargo') encargo++;
             else                            omitir++;
         }
-        return { agregar, evaluar, encargo, omitir };
-    }, [data]);
+        return { agregar, evaluar, encargo, omitir, ignorado };
+    }, [data, ignoredSet]);
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
@@ -215,6 +217,9 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading }) {
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
           activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
           iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-500' : 'text-slate-300' },
+        { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados de sugerencias',
+          activeBg: 'bg-slate-100 border-slate-400 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+          iconColor: 'text-slate-500', numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-300' },
     ];
 
     return (
@@ -302,6 +307,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const [sortField, setSortField] = useState('product_name');
     const [sortDir,   setSortDir]   = useState('asc');
 
+    // Per-sucursal set of erp_product_ids excluded from suggestions
+    const [ignoredSet, setIgnoredSet] = useState(() => new Set());
+
     const loadRefs = useRef({ sin_gestion: 0, stock_ret: 0 });
     const dataRefs = useRef({ sin_gestion: [], stock_ret: [] });
 
@@ -373,17 +381,40 @@ export default function TabGestionStock({ searchTerm = '' }) {
         }
     }, []);
 
-    // When sucursal changes: clear all and reload both modes
+    // When sucursal changes: clear all, reload ignored list and both modes
     useEffect(() => {
         dataRefs.current = { sin_gestion: [], stock_ret: [] };
         setSinGestion([]); setStockRet([]);
+        setIgnoredSet(new Set());
         setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos');
-        MODES.forEach(m => loadMode(erpId, m.key));
+
+        supabase
+            .from('minmax_ignored')
+            .select('erp_product_id')
+            .eq('erp_sucursal_id', selectedErp)
+            .then(({ data }) => {
+                if (data) setIgnoredSet(new Set(data.map(r => r.erp_product_id)));
+            });
+
+        MODES.forEach(m => loadMode(selectedErp, m.key));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedErp]);
 
-    // Alias for the effect above
-    const erpId = selectedErp;
+    const handleIgnore = useCallback(async (erp_product_id) => {
+        setIgnoredSet(prev => new Set([...prev, erp_product_id]));
+        await supabase.from('minmax_ignored').upsert(
+            { erp_sucursal_id: selectedErp, erp_product_id },
+            { onConflict: 'erp_sucursal_id,erp_product_id' }
+        );
+    }, [selectedErp]);
+
+    const handleRestore = useCallback(async (erp_product_id) => {
+        setIgnoredSet(prev => { const s = new Set(prev); s.delete(erp_product_id); return s; });
+        await supabase.from('minmax_ignored')
+            .delete()
+            .eq('erp_sucursal_id', selectedErp)
+            .eq('erp_product_id', erp_product_id);
+    }, [selectedErp]);
 
     useEffect(() => { setPage(1); }, [filterMode, searchTerm, pageSize]);
 
@@ -397,8 +428,16 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const filtered = useMemo(() => {
         let rows = activeData;
 
-        if (mode === 'sin_gestion' && filterMode !== 'todos') {
-            rows = rows.filter(r => getSinMinMaxSugg(r).level === filterMode);
+        if (mode === 'sin_gestion') {
+            if (filterMode === 'ignorado') {
+                rows = rows.filter(r => ignoredSet.has(r.erp_product_id));
+            } else {
+                // Exclude ignored from all other filters (including 'todos')
+                rows = rows.filter(r => !ignoredSet.has(r.erp_product_id));
+                if (filterMode !== 'todos') {
+                    rows = rows.filter(r => getSinMinMaxSugg(r).level === filterMode);
+                }
+            }
         } else if (mode === 'stock_ret') {
             if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
             else if (filterMode === 'sin_minmax') rows = rows.filter(r => !r.in_minmax);
@@ -415,7 +454,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
             const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
             return sortDir === 'asc' ? av - bv : bv - av;
         });
-    }, [activeData, mode, filterMode, searchTerm, sortField, sortDir]);
+    }, [activeData, mode, filterMode, searchTerm, sortField, sortDir, ignoredSet]);
 
     const totalCost     = useMemo(() => activeData.reduce((s, r) => s + Number(r.cost_value || 0), 0), [activeData]);
     const filteredCost  = useMemo(() => filtered.reduce((s, r) => s + Number(r.cost_value || 0), 0), [filtered]);
@@ -490,7 +529,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {mode === 'sin_gestion' && <>
                         <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
-                            onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
+                            onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
+                            loading={activeLoading} ignoredSet={ignoredSet} />
                     </>}
                     {mode === 'stock_ret' && <>
                         <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
@@ -577,8 +617,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     <p className="text-sm font-medium text-slate-400">
                         {activeData.length === 0 ? '¡Sin productos para este criterio!' : 'Sin productos con ese filtro'}
                     </p>
-                    {activeData.length > 0 && filterMode !== 'todos' && (
-                        <button onClick={() => setFilterMode('todos')} className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">Ver todos</button>
+                    {activeData.length > 0 && filterMode !== 'todos' && filterMode !== 'agregar' && (
+                        <button onClick={() => setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos')} className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">Ver todos</button>
                     )}
                 </div>
             ) : (
@@ -596,17 +636,19 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <SortTh field="units_sold"        label="Uds. comerc. (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <SortTh field="revenue"           label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
                                         <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
+                                        <th className="w-10 hidden md:table-cell" />
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {pageRows.map(row => {
+                                        const isIgnored = ignoredSet.has(row.erp_product_id);
                                         const sugg  = getSinMinMaxSugg(row);
                                         const lvl   = sugg.level;
-                                        const leftColor = lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : lvl === 'encargo' ? '#f97316' : '#cbd5e1';
+                                        const leftColor = isIgnored ? '#94a3b8' : lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : lvl === 'encargo' ? '#f97316' : '#cbd5e1';
                                         return (
                                             <tr key={row.erp_product_id}
                                                 style={{ borderLeftColor: leftColor }}
-                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
+                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${isIgnored ? 'opacity-50' : ''}`}>
                                                 <td className="px-4 py-3.5">
                                                     <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[340px]">{row.product_name || '—'}</span>
                                                     <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
@@ -627,7 +669,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
                                                 </td>
                                                 <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <div className="flex flex-col gap-1">
+                                                    {isIgnored ? (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
+                                                            <EyeOff size={9} />No sugerir
+                                                        </span>
+                                                    ) : (<div className="flex flex-col gap-1">
                                                         {lvl === 'agregar' && (<>
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit">
                                                                 <PlusCircle size={9} />Agregar Min/Max
@@ -655,7 +701,22 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                                 <Minus size={9} />Sin acción
                                                             </span>
                                                         )}
-                                                    </div>
+                                                    </div>)}
+                                                </td>
+                                                <td className="px-2 py-3.5 text-center hidden md:table-cell">
+                                                    {isIgnored ? (
+                                                        <button onClick={() => handleRestore(row.erp_product_id)}
+                                                            title="Restaurar sugerencia"
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                                                            <Eye size={13} />
+                                                        </button>
+                                                    ) : (
+                                                        <button onClick={() => handleIgnore(row.erp_product_id)}
+                                                            title="No sugerir"
+                                                            className="p-1.5 rounded-lg text-slate-200 hover:text-slate-500 hover:bg-slate-100 transition-colors">
+                                                            <EyeOff size={13} />
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, LayoutList, Boxes, BarChart2, PackageX } from 'lucide-react';
+import { Package, LayoutList, Boxes, BarChart2, Activity } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabCatalogo     from './productos/TabCatalogo';
@@ -14,7 +14,7 @@ const TABS = [
     { key: 'catalogo',   label: 'Catálogo',   icon: LayoutList },
     { key: 'inventario', label: 'Inventario',  icon: Boxes      },
     { key: 'minmax',     label: 'Min/Max',     icon: BarChart2  },
-    { key: 'sinventa',   label: 'Sin Venta',   icon: PackageX   },
+    { key: 'sinventa',   label: 'Gestión de Stock', icon: Activity },
 ];
 
 export default function ProductosView() {
@@ -62,7 +62,7 @@ export default function ProductosView() {
         : activeTab === 'minmax'
         ? 'Buscar en Min/Max...'
         : activeTab === 'sinventa'
-        ? 'Buscar en Sin Venta...'
+        ? 'Buscar en Gestión de Stock...'
         : 'Buscar en inventario...';
 
     const filtersContent = (

@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive, PackageX,
-    TrendingDown,
+    TrendingDown, TrendingUp, CheckCircle2, CircleDashed,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -27,6 +27,42 @@ const SUC_COLORS = {
 
 const PAGE_SIZES = [25, 50, 100];
 
+const MODES = [
+    {
+        key:    'sin_venta',
+        label:  'Sin Venta',
+        sub:    'asignados en ERP, sin rotación',
+        Icon:   PackageX,
+        rpc:    'get_no_sales_products',
+        activeBg:   'bg-orange-50 border-orange-300 shadow-orange-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/30',
+        numColor:   'text-orange-600',
+        iconColor:  'text-orange-500',
+    },
+    {
+        key:    'sin_gestion',
+        label:  'Sin Gestión ERP',
+        sub:    'se venden pero sin min/max',
+        Icon:   AlertTriangle,
+        rpc:    'get_products_sold_no_minmax',
+        activeBg:   'bg-amber-50 border-amber-300 shadow-amber-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/30',
+        numColor:   'text-amber-600',
+        iconColor:  'text-amber-500',
+    },
+    {
+        key:    'stock_ret',
+        label:  'Stock Retenido',
+        sub:    'stock físico sin venta 6m',
+        Icon:   Archive,
+        rpc:    'get_stagnant_inventory',
+        activeBg:   'bg-slate-100 border-slate-300 shadow-slate-100/80 -translate-y-px',
+        inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+        numColor:   'text-slate-700',
+        iconColor:  'text-slate-500',
+    },
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmtMoney(n) {
@@ -37,13 +73,12 @@ function fmtMoney(n) {
 }
 
 function getSuggestion(row) {
-    const stock = Number(row.current_stock);
+    const stock  = Number(row.current_stock);
     if (!stock) return null;
     const soldIn = row.sold_in || [];
-    const today  = new Date();
     let daysToExpiry = null;
     if (row.fecha_vencimiento_min)
-        daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - today) / 86_400_000);
+        daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - new Date()) / 86_400_000);
     if (daysToExpiry !== null && daysToExpiry < 0)
         return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-red-100 text-red-800 border-red-300' };
     if (daysToExpiry !== null && daysToExpiry <= 30)
@@ -119,94 +154,36 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     );
 }
 
-// ─── SinVentaStatCards ────────────────────────────────────────────────────────
+// ─── ModeSelector ─────────────────────────────────────────────────────────────
 
-function SinVentaStatCards({ counts, loading, filterMode, onFilter, totalCost, filteredCost }) {
-    const FILTER_CARDS = [
-        {
-            id: 'con_stock', Icon: PackageX,
-            label: 'Con stock retenido', sub: 'sin venta aquí',
-            count: counts.con_stock,
-            activeBg:   'bg-orange-50 border-orange-300 shadow-orange-100/80 -translate-y-px',
-            inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
-            iconActive: 'bg-white', iconInact: 'bg-orange-50', iconColor: 'text-orange-500',
-            numColor: (n) => n > 0 ? 'text-orange-600' : 'text-slate-300',
-        },
-        {
-            id: 'otras_suc', Icon: TrendingDown,
-            label: 'Vendido en otras', sub: 'demanda en la red',
-            count: counts.otras_suc,
-            activeBg:   'bg-blue-50 border-blue-300 shadow-blue-100/80 -translate-y-px',
-            inactiveBg: 'bg-white border-slate-200 hover:border-blue-200 hover:bg-blue-50/40',
-            iconActive: 'bg-white', iconInact: 'bg-blue-50', iconColor: 'text-blue-500',
-            numColor: (n) => n > 0 ? 'text-blue-600' : 'text-slate-300',
-        },
-        {
-            id: 'sin_historial', Icon: Archive,
-            label: 'Sin historial', sub: 'sin ventas en la red',
-            count: counts.sin_historial,
-            activeBg:   'bg-slate-100 border-slate-300 shadow-slate-100/80 -translate-y-px',
-            inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-            iconActive: 'bg-white', iconInact: 'bg-slate-50', iconColor: 'text-slate-400',
-            numColor: (n) => n > 0 ? 'text-slate-600' : 'text-slate-300',
-        },
-    ];
+function ModeSelector({ mode, onMode, data, loading }) {
+    const counts = useMemo(() => ({
+        sin_venta:   data.sinVenta.length,
+        sin_gestion: data.sinGestion.length,
+        stock_ret:   data.stockRet.length,
+    }), [data]);
 
     return (
-        <div className="flex gap-3 flex-wrap">
-
-            {/* Info: total sin venta */}
-            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.07]">
-                    <Package size={15} className="text-[#0052CC]/50" />
-                </div>
-                <div className="text-left min-w-0">
-                    <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
-                        {loading ? <span className="text-slate-200">–</span> : counts.total.toLocaleString()}
-                    </div>
-                    <div className="text-[10px] font-bold leading-tight text-slate-600">Sin venta (6m)</div>
-                    <div className="text-[9px] text-slate-400">en la sucursal activa</div>
-                </div>
-            </div>
-
-            {/* Info: costo retenido */}
-            <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[150px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
-                    <DollarSign size={15} className="text-orange-500" />
-                </div>
-                <div className="text-left min-w-0">
-                    <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
-                        {loading ? <span className="text-slate-200">–</span> : fmtMoney(totalCost)}
-                    </div>
-                    <div className="text-[10px] font-bold leading-tight text-slate-600">Costo retenido</div>
-                    {filteredCost > 0 && filteredCost !== totalCost && (
-                        <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
-                    )}
-                    {(filteredCost === 0 || filteredCost === totalCost) && (
-                        <div className="text-[9px] text-slate-400">total en la sucursal</div>
-                    )}
-                </div>
-            </div>
-
-            <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
-
-            {/* Filter cards */}
-            {FILTER_CARDS.map(c => {
-                const active = filterMode === c.id;
+        <div className="flex gap-2 flex-wrap">
+            {MODES.map(m => {
+                const active = mode === m.key;
+                const count  = counts[m.key];
+                const loaded = count > 0 || (!loading[m.key] && data[m.key === 'sin_venta' ? 'sinVenta' : m.key === 'sin_gestion' ? 'sinGestion' : 'stockRet'].length === 0);
                 return (
-                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[160px] shadow-sm disabled:opacity-40 disabled:cursor-wait ${
-                            active ? c.activeBg : c.inactiveBg
-                        }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? c.iconActive : c.iconInact}`}>
-                            <c.Icon size={15} className={c.iconColor} />
+                    <button key={m.key} onClick={() => onMode(m.key)}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 shadow-sm min-w-[190px] ${active ? m.activeBg : m.inactiveBg}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-white/60'}`}>
+                            <m.Icon size={15} className={m.iconColor} />
                         </div>
                         <div className="text-left min-w-0">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(c.count)}`}>
-                                {loading ? <span className="text-slate-200">–</span> : c.count.toLocaleString()}
+                            <div className={`text-[22px] font-black leading-none tabular-nums ${m.numColor}`}>
+                                {loading[m.key]
+                                    ? <span className="text-slate-200">–</span>
+                                    : loaded ? count.toLocaleString() : <span className="text-slate-200">–</span>
+                                }
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
-                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-700">{m.label}</div>
+                            <div className="text-[9px] text-slate-400">{m.sub}</div>
                         </div>
                         {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
@@ -216,29 +193,136 @@ function SinVentaStatCards({ counts, loading, filterMode, onFilter, totalCost, f
     );
 }
 
+// ─── Sub-filter cards ─────────────────────────────────────────────────────────
+
+function SinVentaFilters({ data, filterMode, onFilter, loading }) {
+    const counts = useMemo(() => ({
+        con_stock:     data.filter(r => Number(r.current_stock) > 0).length,
+        otras_suc:     data.filter(r => (r.sold_in || []).length > 0).length,
+        sin_historial: data.filter(r => (r.sold_in || []).length === 0).length,
+    }), [data]);
+
+    const CARDS = [
+        { id: 'con_stock', Icon: PackageX, label: 'Con stock retenido', sub: 'sin venta aquí',
+          activeBg: 'bg-orange-50 border-orange-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
+          iconColor: 'text-orange-500', numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
+        { id: 'otras_suc', Icon: TrendingDown, label: 'Vendido en otras', sub: 'demanda en la red',
+          activeBg: 'bg-blue-50 border-blue-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-blue-200 hover:bg-blue-50/40',
+          iconColor: 'text-blue-500', numColor: n => n > 0 ? 'text-blue-600' : 'text-slate-300' },
+        { id: 'sin_historial', Icon: Archive, label: 'Sin historial', sub: 'sin ventas en la red',
+          activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+          iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-300' },
+    ];
+
+    return (
+        <>
+            {CARDS.map(c => {
+                const active = filterMode === c.id;
+                return (
+                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
+                            <c.Icon size={15} className={c.iconColor} />
+                        </div>
+                        <div className="text-left min-w-0">
+                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
+                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                        </div>
+                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                    </button>
+                );
+            })}
+        </>
+    );
+}
+
+function StockRetFilters({ data, filterMode, onFilter, loading }) {
+    const counts = useMemo(() => ({
+        con_minmax: data.filter(r => r.in_minmax).length,
+        sin_minmax: data.filter(r => !r.in_minmax).length,
+    }), [data]);
+
+    const CARDS = [
+        { id: 'con_minmax', Icon: CheckCircle2, label: 'Con gestión ERP', sub: 'tiene min/max asignado',
+          activeBg: 'bg-emerald-50 border-emerald-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40',
+          iconColor: 'text-emerald-500', numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin gestión ERP', sub: 'no tiene min/max',
+          activeBg: 'bg-red-50 border-red-200 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/30',
+          iconColor: 'text-red-400', numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
+    ];
+
+    return (
+        <>
+            {CARDS.map(c => {
+                const active = filterMode === c.id;
+                return (
+                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
+                            <c.Icon size={15} className={c.iconColor} />
+                        </div>
+                        <div className="text-left min-w-0">
+                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
+                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                        </div>
+                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                    </button>
+                );
+            })}
+        </>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function TabSinVenta({ searchTerm = '' }) {
+export default function TabGestionStock({ searchTerm = '' }) {
+    const [mode,        setMode]        = useState('sin_venta');
     const [selectedErp, setSelectedErp] = useState(5);
     const [filterMode,  setFilterMode]  = useState('con_stock');
-    const [data,        setData]        = useState([]);
-    const [loading,     setLoading]     = useState(false);      // skeleton — no data yet
-    const [refreshing,  setRefreshing]  = useState(false);      // spinner — have stale data
-    const [error,       setError]       = useState(null);
-    const [page,        setPage]        = useState(1);
-    const [pageSize,    setPageSize]    = useState(25);
-    const [sortField,   setSortField]   = useState('product_name');
-    const [sortDir,     setSortDir]     = useState('asc');
-    const loadRef  = useRef(0);
-    const dataRef  = useRef([]);   // tracks current data length without stale closure
+
+    // One data store per view — keyed so switching back doesn't re-fetch
+    const [sinVenta,   setSinVenta]   = useState([]);
+    const [sinGestion, setSinGestion] = useState([]);
+    const [stockRet,   setStockRet]   = useState([]);
+
+    const [loadingMap,   setLoadingMap]   = useState({ sin_venta: false, sin_gestion: false, stock_ret: false });
+    const [refreshingMap, setRefreshingMap] = useState({ sin_venta: false, sin_gestion: false, stock_ret: false });
+    const [errorMap,     setErrorMap]     = useState({ sin_venta: null, sin_gestion: null, stock_ret: null });
+
+    const [page,      setPage]      = useState(1);
+    const [pageSize,  setPageSize]  = useState(25);
+    const [sortField, setSortField] = useState('product_name');
+    const [sortDir,   setSortDir]   = useState('asc');
+
+    const loadRefs = useRef({ sin_venta: 0, sin_gestion: 0, stock_ret: 0 });
+    const dataRefs = useRef({ sin_venta: [], sin_gestion: [], stock_ret: [] });
+
+    const setterFor = (m) => m === 'sin_venta' ? setSinVenta : m === 'sin_gestion' ? setSinGestion : setStockRet;
+    const dataFor   = (m) => m === 'sin_venta' ? sinVenta    : m === 'sin_gestion' ? sinGestion    : stockRet;
 
     const handleSort = useCallback((field) => {
-        if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-        else { setSortField(field); setSortDir('asc'); }
+        setSortField(prev => {
+            if (prev === field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return prev; }
+            setSortDir('asc');
+            return field;
+        });
         setPage(1);
-    }, [sortField]);
+    }, []);
 
-    // ── Theme tokens (Liquid — matches TabCatalogo) ───────────────────────────
+    // Reset default sort when mode changes
+    useEffect(() => {
+        if (mode === 'sin_gestion') { setSortField('revenue'); setSortDir('desc'); }
+        else if (mode === 'stock_ret') { setSortField('cost_value'); setSortDir('desc'); }
+        else { setSortField('product_name'); setSortDir('asc'); }
+        setPage(1);
+    }, [mode]);
+
     const tk = {
         card:             'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
         thead:            'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
@@ -252,61 +336,76 @@ export default function TabSinVenta({ searchTerm = '' }) {
         totalText:        'text-slate-400',
     };
 
-    // ── Load data — paginated to bypass PostgREST 1000-row cap ───────────────
-    const loadData = useCallback(async (erpId) => {
-        const rid = ++loadRef.current;
-        setError(null); setPage(1);
+    const loadMode = useCallback(async (erpId, m) => {
+        const rid = ++loadRefs.current[m];
+        setErrorMap(prev => ({ ...prev, [m]: null }));
+        setPage(1);
+        const setter = setterFor(m);
+        if (dataRefs.current[m].length === 0) setLoadingMap(prev => ({ ...prev, [m]: true }));
+        else setRefreshingMap(prev => ({ ...prev, [m]: true }));
 
-        // Keep stale data visible if we have it; show skeleton only on first load
-        if (dataRef.current.length === 0) setLoading(true);
-        else setRefreshing(true);
-
+        const rpcName = MODES.find(mx => mx.key === m).rpc;
         try {
             const BATCH = 1000;
-            let all = [];
-            let from = 0;
+            let all = [], from = 0;
             while (true) {
                 const { data: rows, error: e } = await supabase
-                    .rpc('get_no_sales_products', { p_erp_sucursal_id: erpId })
+                    .rpc(rpcName, { p_erp_sucursal_id: erpId })
                     .range(from, from + BATCH - 1);
                 if (e) throw e;
-                if (rid !== loadRef.current) return;
+                if (rid !== loadRefs.current[m]) return;
                 all = [...all, ...(rows || [])];
-                // Show partial results immediately as each page arrives
-                dataRef.current = all;
-                setData([...all]);
+                dataRefs.current[m] = all;
+                setter([...all]);
                 if (!rows || rows.length < BATCH) break;
                 from += BATCH;
             }
         } catch (e) {
-            if (rid === loadRef.current) setError(e.message);
+            if (rid === loadRefs.current[m]) setErrorMap(prev => ({ ...prev, [m]: e.message }));
         } finally {
-            if (rid === loadRef.current) { setLoading(false); setRefreshing(false); }
+            if (rid === loadRefs.current[m]) {
+                setLoadingMap(prev => ({ ...prev, [m]: false }));
+                setRefreshingMap(prev => ({ ...prev, [m]: false }));
+            }
         }
     }, []);
 
-    useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
+    // When sucursal changes: clear all and reload all 3 modes
+    useEffect(() => {
+        dataRefs.current = { sin_venta: [], sin_gestion: [], stock_ret: [] };
+        setSinVenta([]); setSinGestion([]); setStockRet([]);
+        setFilterMode('con_stock');
+        MODES.forEach(m => loadMode(erpId, m.key));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedErp]);
+
+    // Alias for the effect above
+    const erpId = selectedErp;
+
     useEffect(() => { setPage(1); }, [filterMode, searchTerm, pageSize]);
 
-    // ── Derived ───────────────────────────────────────────────────────────────
-    const counts = useMemo(() => ({
-        total:         data.length,
-        con_stock:     data.filter(r => Number(r.current_stock) > 0).length,
-        otras_suc:     data.filter(r => (r.sold_in || []).length > 0).length,
-        sin_historial: data.filter(r => (r.sold_in || []).length === 0).length,
-    }), [data]);
+    // Active dataset
+    const activeData      = dataFor(mode);
+    const activeLoading   = loadingMap[mode];
+    const activeRefreshing = refreshingMap[mode];
+    const activeError     = errorMap[mode];
 
-    const totalRetainedCost = useMemo(() =>
-        data.reduce((a, r) => a + Number(r.cost_value || 0), 0), [data]);
-
+    // Filtered + sorted
     const filtered = useMemo(() => {
-        let rows = data;
-        if      (filterMode === 'con_stock')     rows = rows.filter(r => Number(r.current_stock) > 0);
-        else if (filterMode === 'otras_suc')     rows = rows.filter(r => (r.sold_in || []).length > 0);
-        else if (filterMode === 'sin_historial') rows = rows.filter(r => (r.sold_in || []).length === 0);
-        const q = searchTerm.toLowerCase();
+        let rows = activeData;
+
+        if (mode === 'sin_venta') {
+            if      (filterMode === 'con_stock')     rows = rows.filter(r => Number(r.current_stock) > 0);
+            else if (filterMode === 'otras_suc')     rows = rows.filter(r => (r.sold_in || []).length > 0);
+            else if (filterMode === 'sin_historial') rows = rows.filter(r => (r.sold_in || []).length === 0);
+        } else if (mode === 'stock_ret') {
+            if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
+            else if (filterMode === 'sin_minmax') rows = rows.filter(r => !r.in_minmax);
+        }
+
+        const q = (searchTerm || '').toLowerCase();
         if (q) rows = rows.filter(r => r.product_name?.toLowerCase().includes(q));
-        // Client-side sort
+
         return [...rows].sort((a, b) => {
             if (sortField === 'product_name') {
                 const cmp = (a.product_name || '').localeCompare(b.product_name || '', 'es');
@@ -315,43 +414,100 @@ export default function TabSinVenta({ searchTerm = '' }) {
             const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
             return sortDir === 'asc' ? av - bv : bv - av;
         });
-    }, [data, filterMode, searchTerm, sortField, sortDir]);
+    }, [activeData, mode, filterMode, searchTerm, sortField, sortDir]);
 
-    const filteredCost = useMemo(() =>
-        filtered.reduce((a, r) => a + Number(r.cost_value || 0), 0), [filtered]);
+    const totalCost     = useMemo(() => activeData.reduce((s, r) => s + Number(r.cost_value || 0), 0), [activeData]);
+    const filteredCost  = useMemo(() => filtered.reduce((s, r) => s + Number(r.cost_value || 0), 0), [filtered]);
+    const totalRevenue  = useMemo(() => activeData.reduce((s, r) => s + Number(r.revenue || 0), 0), [activeData]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
+    const allData = { sinVenta, sinGestion, stockRet };
+
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Stats + filter pill row ── */}
+            {/* ── Mode selector ── */}
+            <ModeSelector mode={mode} onMode={(m) => { setMode(m); setFilterMode(m === 'sin_venta' ? 'con_stock' : 'todos'); }} data={allData} loading={loadingMap} />
+
+            {/* ── Sub-filters + pill ── */}
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
-                    <SinVentaStatCards
-                        counts={counts}
-                        loading={loading}
-                        filterMode={filterMode}
-                        onFilter={(id) => setFilterMode(prev => prev === id ? 'todos' : id)}
-                        totalCost={totalRetainedCost}
-                        filteredCost={filteredCost}
-                    />
+
+                    {/* Info cards (total + cost/revenue) */}
+                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.07]">
+                            <Package size={15} className="text-[#0052CC]/50" />
+                        </div>
+                        <div className="text-left min-w-0">
+                            <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
+                                {activeLoading ? <span className="text-slate-200">–</span> : activeData.length.toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-600">
+                                {mode === 'sin_venta' ? 'Sin venta (6m)' : mode === 'sin_gestion' ? 'Sin gestión ERP' : 'Stock retenido'}
+                            </div>
+                            <div className="text-[9px] text-slate-400">en la sucursal activa</div>
+                        </div>
+                    </div>
+
+                    {mode !== 'sin_gestion' && (
+                        <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
+                                <DollarSign size={15} className="text-orange-500" />
+                            </div>
+                            <div className="text-left min-w-0">
+                                <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
+                                    {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalCost)}
+                                </div>
+                                <div className="text-[10px] font-bold leading-tight text-slate-600">Costo retenido</div>
+                                {filteredCost > 0 && filteredCost !== totalCost
+                                    ? <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
+                                    : <div className="text-[9px] text-slate-400">total sucursal</div>
+                                }
+                            </div>
+                        </div>
+                    )}
+
+                    {mode === 'sin_gestion' && (
+                        <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50">
+                                <TrendingUp size={15} className="text-amber-500" />
+                            </div>
+                            <div className="text-left min-w-0">
+                                <div className="text-[22px] font-black leading-none tabular-nums text-amber-600">
+                                    {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalRevenue)}
+                                </div>
+                                <div className="text-[10px] font-bold leading-tight text-slate-600">Revenue 6m</div>
+                                <div className="text-[9px] text-slate-400">sin parámetros ERP</div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+
+                    {/* Sub-filters by mode */}
+                    {mode === 'sin_venta' && (
+                        <SinVentaFilters data={activeData} filterMode={filterMode}
+                            onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
+                    )}
+                    {mode === 'stock_ret' && (
+                        <StockRetFilters data={activeData} filterMode={filterMode}
+                            onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
+                    )}
                 </div>
 
-                {/* Filter pill — sucursal + refresh indicator */}
+                {/* Sucursal selector */}
                 <div className={`flex items-center rounded-2xl border transition-all duration-300 shrink-0 overflow-visible ${tk.filterPill}`}>
-                    {refreshing && (
-                        <div className="pl-3">
-                            <Loader2 size={13} className="animate-spin text-slate-300" />
-                        </div>
+                    {(activeRefreshing) && (
+                        <div className="pl-3"><Loader2 size={13} className="animate-spin text-slate-300" /></div>
                     )}
                     <div className="px-2.5 py-2 overflow-visible" style={{ width: '185px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
-                            onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterMode('con_stock'); } }}
+                            onChange={v => { if (v) setSelectedErp(Number(v)); }}
                             options={erpOptions}
                             icon={Building2}
                             clearable={false}
@@ -362,16 +518,15 @@ export default function TabSinVenta({ searchTerm = '' }) {
             </div>
 
             {/* ── Error ── */}
-            {error && (
+            {activeError && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
-                    <AlertTriangle size={14} /> {error}
-                    <button onClick={() => loadData(selectedErp)} className="ml-auto text-red-500 hover:text-red-700 font-bold">Reintentar</button>
+                    <AlertTriangle size={14} /> {activeError}
+                    <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-red-500 hover:text-red-700 font-bold">Reintentar</button>
                 </div>
             )}
 
             {/* ── Table ── */}
-            {loading && data.length === 0 ? (
-                /* Skeleton — first load only */
+            {activeLoading && activeData.length === 0 ? (
                 <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
                     <table className="min-w-full">
                         <tbody>
@@ -384,7 +539,6 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5"><div className={`h-5 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
@@ -394,156 +548,197 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     </table>
                 </div>
             ) : filtered.length === 0 ? (
-                /* Empty state */
                 <div className={`rounded-2xl border py-20 text-center ${tk.emptyBg}`}>
                     <Package size={32} className="mx-auto mb-3 text-slate-300" />
                     <p className="text-sm font-medium text-slate-400">
-                        {data.length === 0
-                            ? `¡Todos los productos tienen ventas en ${ERP_NAMES[selectedErp]}!`
-                            : 'Sin productos con ese filtro'}
+                        {activeData.length === 0 ? '¡Sin productos para este criterio!' : 'Sin productos con ese filtro'}
                     </p>
-                    {data.length > 0 && filterMode !== 'todos' && (
-                        <button onClick={() => setFilterMode('todos')}
-                            className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">
-                            Ver todos
-                        </button>
+                    {activeData.length > 0 && filterMode !== 'todos' && (
+                        <button onClick={() => setFilterMode('todos')} className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">Ver todos</button>
                     )}
                 </div>
             ) : (
-                /* Data table — stays visible (may be faded during refresh) */
-                <div className={`rounded-2xl border overflow-hidden transition-opacity duration-300 ${tk.card} ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
+                <div className={`rounded-2xl border overflow-hidden transition-opacity duration-300 ${tk.card} ${activeRefreshing ? 'opacity-60' : 'opacity-100'}`}>
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full text-sm">
-                            <thead className={`sticky top-0 z-10 ${tk.thead}`}>
-                                <tr>
-                                    <SortTh field="product_name"  label="Producto"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                    <SortTh field="current_stock" label="Stock aquí"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                    <SortTh field="min_qty"       label="Min / Max"         sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
-                                    <SortTh field="cost_value"    label="Costo retenido"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                    <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden md:table-cell">
-                                        Sugerencia
-                                    </th>
-                                    <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
-                                        Vendido en (últimos 6m)
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pageRows.map((row) => {
-                                    const stock     = Number(row.current_stock);
-                                    const cost      = Number(row.cost_value || 0);
-                                    const soldIn    = row.sold_in || [];
-                                    const hasStock  = stock > 0;
-                                    const noHistory = soldIn.length === 0;
-                                    const sug       = hasStock ? getSuggestion(row) : null;
-                                    return (
-                                        <tr key={row.erp_product_id}
-                                            style={{ borderLeftColor: hasStock ? '#f97316' : 'transparent' }}
-                                            className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${hasStock ? 'bg-orange-50/20' : ''}`}>
 
-                                            {/* Producto */}
-                                            <td className="px-4 py-3.5">
-                                                <div className="min-w-0">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[300px]">
-                                                        {row.product_name || '—'}
-                                                    </span>
+                            {/* ── Sin Venta table ── */}
+                            {mode === 'sin_venta' && (
+                                <>
+                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
+                                    <tr>
+                                        <SortTh field="product_name"  label="Producto"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="min_qty"       label="Min / Max"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
+                                        <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
+                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pageRows.map(row => {
+                                        const stock    = Number(row.current_stock);
+                                        const cost     = Number(row.cost_value || 0);
+                                        const soldIn   = row.sold_in || [];
+                                        const hasStock = stock > 0;
+                                        const sug      = hasStock ? getSuggestion(row) : null;
+                                        return (
+                                            <tr key={row.erp_product_id}
+                                                style={{ borderLeftColor: hasStock ? '#f97316' : 'transparent' }}
+                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${hasStock ? 'bg-orange-50/20' : ''}`}>
+                                                <td className="px-4 py-3.5">
+                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px]">{row.product_name || '—'}</span>
                                                     {row.fecha_vencimiento_min && (() => {
                                                         const exp = new Date(row.fecha_vencimiento_min);
                                                         const expired = exp < new Date();
-                                                        return (
-                                                            <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                {expired ? 'Vencido: ' : 'Vence: '}
-                                                                {exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                                            </span>
-                                                        );
+                                                        return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
+                                                            {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                                        </span>;
                                                     })()}
-                                                </div>
-                                            </td>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                    {hasStock ? <><span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span><span className="text-[10px] text-orange-400 ml-1">und</span></> : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center whitespace-nowrap hidden md:table-cell">
+                                                    {row.min_qty != null || row.max_qty != null
+                                                        ? <span className="text-[11px] font-bold tabular-nums text-slate-600">{row.min_qty ?? '—'}<span className="text-slate-300 mx-1">/</span>{row.max_qty ?? '—'}</span>
+                                                        : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                    {cost > 0 ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span> : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                    {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
+                                                         : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {soldIn.length === 0
+                                                            ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                            : soldIn.map(s => (
+                                                                <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                                    {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
+                                                                </span>
+                                                            ))}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                </>
+                            )}
 
-                                            {/* Stock */}
-                                            <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                {hasStock ? (
-                                                    <>
-                                                        <span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span>
-                                                        <span className="text-[10px] text-orange-400 ml-1">und</span>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-[11px] text-slate-200">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Min / Max */}
-                                            <td className="px-4 py-3.5 text-center whitespace-nowrap hidden md:table-cell">
-                                                {row.min_qty != null || row.max_qty != null ? (
-                                                    <span className="text-[11px] font-bold tabular-nums text-slate-600">
-                                                        {row.min_qty ?? '—'}
-                                                        <span className="text-slate-300 mx-1">/</span>
-                                                        {row.max_qty ?? '—'}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[11px] text-slate-200">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Costo */}
-                                            <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                {cost > 0 ? (
-                                                    <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
-                                                ) : (
-                                                    <span className="text-[11px] text-slate-200">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Sugerencia */}
-                                            <td className="px-4 py-3.5 text-center hidden md:table-cell">
-                                                {sug ? (
-                                                    <span title={sug.detail}
-                                                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}>
-                                                        <sug.icon size={9} className="shrink-0" />
-                                                        <span className="truncate max-w-[110px]">{sug.label}</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[11px] text-slate-200">—</span>
-                                                )}
-                                            </td>
-
-                                            {/* Vendido en */}
+                            {/* ── Sin Gestión ERP table ── */}
+                            {mode === 'sin_gestion' && (
+                                <>
+                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
+                                    <tr>
+                                        <SortTh field="product_name" label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="units_sold"   label="Und. vendidas (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="revenue"      label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pageRows.map(row => (
+                                        <tr key={row.erp_product_id} className={`border-l-[3px] border-l-amber-300 ${tk.rowBorder} ${tk.rowHover} transition-colors bg-amber-50/10`}>
                                             <td className="px-4 py-3.5">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    {noHistory ? (
-                                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">
-                                                            Sin historial
-                                                        </span>
-                                                    ) : soldIn.map(s => (
-                                                        <span key={s.esid}
-                                                            title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                                            {ERP_NAMES[s.esid] || `Suc.${s.esid}`}
-                                                            <span className="opacity-50 font-normal">·</span>
-                                                            <span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
-                                                        </span>
-                                                    ))}
-                                                </div>
+                                                <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[380px]">{row.product_name || '—'}</span>
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
+                                                <span className="text-[10px] text-amber-400 ml-1">und</span>
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                                                <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
                                             </td>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
+                                    ))}
+                                </tbody>
+                                </>
+                            )}
+
+                            {/* ── Stock Retenido table ── */}
+                            {mode === 'stock_ret' && (
+                                <>
+                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
+                                    <tr>
+                                        <SortTh field="product_name"  label="Producto"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Gestión ERP</th>
+                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
+                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pageRows.map(row => {
+                                        const stock  = Number(row.current_stock);
+                                        const cost   = Number(row.cost_value || 0);
+                                        const soldIn = row.sold_in || [];
+                                        const sug    = getSuggestion(row);
+                                        return (
+                                            <tr key={row.erp_product_id}
+                                                style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
+                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
+                                                <td className="px-4 py-3.5">
+                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px]">{row.product_name || '—'}</span>
+                                                    {row.fecha_vencimiento_min && (() => {
+                                                        const exp = new Date(row.fecha_vencimiento_min);
+                                                        const expired = exp < new Date();
+                                                        return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
+                                                            {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                                        </span>;
+                                                    })()}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-slate-400 ml-1">und</span>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                    {cost > 0 ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span> : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                    {row.in_minmax
+                                                        ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                        : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin gestión</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                    {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
+                                                         : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {soldIn.length === 0
+                                                            ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                            : soldIn.map(s => (
+                                                                <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                                    {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
+                                                                </span>
+                                                            ))}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                </>
+                            )}
+
                         </table>
                     </div>
                 </div>
             )}
 
-            {/* ── Pagination — identical to TabCatalogo ── */}
-            {!loading && filtered.length > 0 && (
+            {/* ── Pagination ── */}
+            {!activeLoading && filtered.length > 0 && (
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                         {PAGE_SIZES.map(size => (
-                            <button key={size}
-                                onClick={() => { setPageSize(size); setPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive
-                                }`}>
+                            <button key={size} onClick={() => { setPageSize(size); setPage(1); }}
+                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive}`}>
                                 {size}
                             </button>
                         ))}

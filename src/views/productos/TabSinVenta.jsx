@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Loader2, Building2, Package, AlertTriangle, X, DollarSign } from 'lucide-react';
+import {
+    Loader2, Building2, Package, AlertTriangle, X, DollarSign,
+    ChevronLeft, ChevronRight, ArrowRight, AlertCircle, Truck, Archive,
+} from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -21,13 +24,139 @@ const SUC_COLORS = {
     6: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
+const PAGE_SIZE = 50;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmtMoney(n) {
     const v = Number(n) || 0;
     if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-    if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
+    if (v >= 100_000)   return `$${Math.round(v / 1_000)}k`;
     return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Returns suggestion object for a row that has stock > 0
+function getSuggestion(row) {
+    const stock  = Number(row.current_stock);
+    if (!stock) return null;
+
+    const soldIn = row.sold_in || [];
+    const today  = new Date();
+
+    // Days to earliest expiry
+    let daysToExpiry = null;
+    if (row.fecha_vencimiento_min) {
+        const expDate = new Date(row.fecha_vencimiento_min);
+        daysToExpiry = Math.floor((expDate - today) / 86_400_000);
+    }
+
+    // Imminent expiry — do not transfer
+    if (daysToExpiry !== null && daysToExpiry <= 30) {
+        return {
+            label:  `Vence en ${daysToExpiry}d`,
+            detail: 'No transferir — gestionar baja o liquidación',
+            icon:   AlertCircle,
+            cls:    'bg-red-50 text-red-700 border-red-200',
+            dot:    'bg-red-400',
+        };
+    }
+
+    // Expiry warning (31–90 days) — can still transfer but urgent
+    const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
+
+    // No sales anywhere in the network
+    if (soldIn.length === 0) {
+        return {
+            label:  'Sin demanda',
+            detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja',
+            icon:   Archive,
+            cls:    'bg-slate-50 text-slate-500 border-slate-200',
+            dot:    'bg-slate-300',
+        };
+    }
+
+    const best      = soldIn[0]; // sorted by revenue DESC from SQL
+    const bestUnits = Number(best.units);
+    const bestName  = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
+
+    // Very low demand — not worth logistics, consolidate in Bodega
+    if (bestUnits < 5) {
+        return {
+            label:  'Baja demanda',
+            detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`,
+            icon:   Archive,
+            cls:    urgentExpiry
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-slate-50 text-slate-500 border-slate-200',
+            dot:    urgentExpiry ? 'bg-amber-400' : 'bg-slate-300',
+        };
+    }
+
+    // Moderate demand — possible transfer
+    if (bestUnits < 20) {
+        return {
+            label:  `→ ${bestName}`,
+            detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente, vence pronto)' : ''}`,
+            icon:   Truck,
+            cls:    urgentExpiry
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-blue-50 text-blue-700 border-blue-200',
+            dot:    urgentExpiry ? 'bg-amber-400' : 'bg-blue-400',
+        };
+    }
+
+    // Good demand — clear transfer candidate
+    return {
+        label:  `→ ${bestName}`,
+        detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente (vence pronto)' : ''}`,
+        icon:   Truck,
+        cls:    urgentExpiry
+            ? 'bg-amber-50 text-amber-700 border-amber-200'
+            : 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dot:    urgentExpiry ? 'bg-amber-400' : 'bg-emerald-500',
+    };
+}
+
+// ─── Pagination controls ──────────────────────────────────────────────────────
+
+function Pagination({ page, totalPages, onChange }) {
+    if (totalPages <= 1) return null;
+    return (
+        <div className="flex items-center justify-center gap-1.5 px-4 py-3 border-t border-slate-100 bg-slate-50/60">
+            <button onClick={() => onChange(page - 1)} disabled={page === 0}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronLeft size={14} />
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                // Show first, last, current ±1, with ellipsis
+                let pg;
+                if (totalPages <= 7) pg = i;
+                else if (i === 0) pg = 0;
+                else if (i === 6) pg = totalPages - 1;
+                else pg = Math.max(1, Math.min(page - 2 + i, totalPages - 2));
+                return pg;
+            }).filter((pg, i, arr) => arr.indexOf(pg) === i).map((pg, i, arr) => {
+                const showEllipsisBefore = i > 0 && pg - arr[i - 1] > 1;
+                return (
+                    <React.Fragment key={pg}>
+                        {showEllipsisBefore && <span className="text-[11px] text-slate-300 px-1">…</span>}
+                        <button onClick={() => onChange(pg)}
+                            className={`w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold transition-colors ${
+                                pg === page
+                                    ? 'bg-[#0052CC] text-white shadow-sm'
+                                    : 'text-slate-500 hover:bg-slate-100'
+                            }`}>
+                            {pg + 1}
+                        </button>
+                    </React.Fragment>
+                );
+            })}
+            <button onClick={() => onChange(page + 1)} disabled={page >= totalPages - 1}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronRight size={14} />
+            </button>
+        </div>
+    );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -38,12 +167,14 @@ export default function TabSinVenta({ searchTerm = '' }) {
     const [data,        setData]        = useState([]);
     const [loading,     setLoading]     = useState(false);
     const [error,       setError]       = useState(null);
+    const [page,        setPage]        = useState(0);
     const loadRef = useRef(0);
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null);
+        setLoading(true); setError(null); setPage(0);
         try {
+            // .range(0, 9999) — required to bypass PostgREST 1000-row cap
             const { data: rows, error: e } = await supabase
                 .rpc('get_no_sales_products', { p_erp_sucursal_id: erpId })
                 .range(0, 9999);
@@ -59,6 +190,9 @@ export default function TabSinVenta({ searchTerm = '' }) {
 
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
+    // Reset page when filter/search changes
+    useEffect(() => { setPage(0); }, [filterMode, searchTerm]);
+
     // ── Derived ──────────────────────────────────────────────────────────────
     const counts = useMemo(() => ({
         total:         data.length,
@@ -67,7 +201,6 @@ export default function TabSinVenta({ searchTerm = '' }) {
         sin_historial: data.filter(r => (r.sold_in || []).length === 0).length,
     }), [data]);
 
-    // total cost only for rows with stock (rows without stock have cost_value = 0)
     const totalRetainedCost = useMemo(() =>
         data.reduce((acc, r) => acc + Number(r.cost_value || 0), 0)
     , [data]);
@@ -82,9 +215,9 @@ export default function TabSinVenta({ searchTerm = '' }) {
         return rows;
     }, [data, filterMode, searchTerm]);
 
-    const filteredCost = useMemo(() =>
-        filtered.reduce((acc, r) => acc + Number(r.cost_value || 0), 0)
-    , [filtered]);
+    const filteredCost  = useMemo(() => filtered.reduce((a, r) => a + Number(r.cost_value || 0), 0), [filtered]);
+    const totalPages    = Math.ceil(filtered.length / PAGE_SIZE);
+    const pageRows      = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -99,7 +232,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
           active: 'bg-white border-slate-300 text-slate-700',       dot: 'bg-slate-300'  },
     ];
 
-    const COLS = '1fr 110px 120px 1fr';
+    const COLS = '1fr 100px 115px 140px 1fr';
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -136,21 +269,21 @@ export default function TabSinVenta({ searchTerm = '' }) {
                 })}
             </div>
 
-            {/* ── Cost summary banner ── */}
+            {/* ── Cost banner ── */}
             {!loading && totalRetainedCost > 0 && (
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-200">
                     <DollarSign size={14} className="text-orange-400 shrink-0" />
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
                         <span className="text-[20px] font-black text-orange-700 tabular-nums">
                             {fmtMoney(totalRetainedCost)}
                         </span>
                         <span className="text-[11px] text-orange-500 font-semibold">
-                            retenidos en inventario sin mover en {ERP_NAMES[selectedErp]}
+                            retenidos sin mover en {ERP_NAMES[selectedErp]}
                         </span>
                     </div>
-                    {filterMode !== 'todos' && filteredCost !== totalRetainedCost && filteredCost > 0 && (
+                    {filteredCost > 0 && filteredCost !== totalRetainedCost && (
                         <span className="ml-auto text-[10px] text-orange-400 font-semibold shrink-0">
-                            {fmtMoney(filteredCost)} en filtro actual
+                            {fmtMoney(filteredCost)} en filtro
                         </span>
                     )}
                 </div>
@@ -158,12 +291,12 @@ export default function TabSinVenta({ searchTerm = '' }) {
 
             {/* ── Context note ── */}
             {!loading && counts.total > 0 && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] text-slate-400">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] text-slate-400 flex-wrap">
                     <Package size={10} className="shrink-0 text-slate-300" />
-                    Productos sin ninguna venta en <span className="text-slate-500 font-bold mx-1">{ERP_NAMES[selectedErp]}</span>
-                    en los últimos 6 meses ·
-                    <span className="text-orange-600 font-bold ml-1">{counts.con_stock}</span> con inventario retenido ·
-                    <span className="text-blue-600 font-bold ml-1">{counts.otras_suc}</span> vendidos en otras sucursales
+                    Sin venta en <span className="text-slate-500 font-bold mx-0.5">{ERP_NAMES[selectedErp]}</span> últimos 6 meses ·
+                    <span className="text-orange-600 font-bold">{counts.con_stock}</span> con stock retenido ·
+                    <span className="text-blue-600 font-bold">{counts.otras_suc}</span> vendidos en otras sucursales ·
+                    <span className="text-slate-500 font-bold">{counts.sin_historial}</span> sin historial en la red
                 </div>
             )}
 
@@ -183,14 +316,15 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     style={{ gridTemplateColumns: COLS }}>
                     <span>Producto</span>
                     <span className="text-right">Stock aquí</span>
-                    <span className="text-right pr-4">Costo retenido</span>
+                    <span className="text-right pr-3">Costo retenido</span>
+                    <span className="text-center">Sugerencia</span>
                     <span className="pl-4">Vendido en (últimos 6m)</span>
                 </div>
 
                 {loading ? (
                     <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
                         <Loader2 size={20} className="animate-spin" />
-                        <span className="text-[13px]">Cargando productos sin venta en {ERP_NAMES[selectedErp]}…</span>
+                        <span className="text-[13px]">Cargando en {ERP_NAMES[selectedErp]}…</span>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="py-20 text-center">
@@ -209,36 +343,40 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     </div>
                 ) : (
                     <div>
-                        {filtered.map((row) => {
-                            const stock      = Number(row.current_stock);
-                            const cost       = Number(row.cost_value || 0);
-                            const soldIn     = row.sold_in || [];
-                            const hasStock   = stock > 0;
-                            const noHistory  = soldIn.length === 0;
+                        {pageRows.map((row) => {
+                            const stock     = Number(row.current_stock);
+                            const cost      = Number(row.cost_value || 0);
+                            const soldIn    = row.sold_in || [];
+                            const hasStock  = stock > 0;
+                            const noHistory = soldIn.length === 0;
+                            const sug       = hasStock ? getSuggestion(row) : null;
 
                             return (
                                 <div key={row.erp_product_id}
                                     className={`grid items-center pl-5 pr-4 py-2.5 border-b border-slate-50 transition-colors ${
                                         hasStock
-                                            ? 'bg-orange-50/30 border-l-2 border-l-orange-300'
+                                            ? 'bg-orange-50/25 border-l-2 border-l-orange-300'
                                             : 'border-l-2 border-l-transparent'
                                     }`}
                                     style={{ gridTemplateColumns: COLS }}>
 
                                     {/* Product */}
-                                    <div className="min-w-0 pr-4">
+                                    <div className="min-w-0 pr-3">
                                         <span className="text-[13px] font-medium text-slate-800 block truncate leading-tight">
                                             {row.product_name || '—'}
                                         </span>
+                                        {row.fecha_vencimiento_min && (
+                                            <span className="text-[9px] text-slate-400">
+                                                Vence: {new Date(row.fecha_vencimiento_min).toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {/* Stock aquí */}
+                                    {/* Stock */}
                                     <div className="text-right">
                                         {hasStock ? (
                                             <>
-                                                <span className="text-[13px] font-bold text-orange-600 tabular-nums">
-                                                    {stock.toLocaleString()}
-                                                </span>
+                                                <span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span>
                                                 <span className="text-[10px] text-orange-400 ml-1">und</span>
                                             </>
                                         ) : (
@@ -247,10 +385,21 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                     </div>
 
                                     {/* Costo retenido */}
-                                    <div className="text-right pr-4">
+                                    <div className="text-right pr-3">
                                         {cost > 0 ? (
-                                            <span className="text-[12px] font-bold text-orange-700 tabular-nums">
-                                                {fmtMoney(cost)}
+                                            <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
+                                        ) : (
+                                            <span className="text-[11px] text-slate-200">—</span>
+                                        )}
+                                    </div>
+
+                                    {/* Sugerencia */}
+                                    <div className="flex justify-center">
+                                        {sug ? (
+                                            <span title={sug.detail}
+                                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border cursor-default max-w-[130px] ${sug.cls}`}>
+                                                <sug.icon size={9} className="shrink-0" />
+                                                <span className="truncate">{sug.label}</span>
                                             </span>
                                         ) : (
                                             <span className="text-[11px] text-slate-200">—</span>
@@ -269,9 +418,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                                 className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                 {ERP_NAMES[s.esid] || `Suc.${s.esid}`}
                                                 <span className="opacity-50 font-normal">·</span>
-                                                <span className="tabular-nums opacity-80">
-                                                    {Number(s.units).toLocaleString()}
-                                                </span>
+                                                <span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                             </span>
                                         ))}
                                     </div>
@@ -281,13 +428,21 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     </div>
                 )}
 
+                {/* Pagination */}
+                <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+
                 {/* Footer */}
                 {!loading && filtered.length > 0 && (
-                    <div className="pl-5 pr-4 py-2.5 border-t border-slate-100 bg-slate-50/60 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-                        <span>{filtered.length.toLocaleString()} productos</span>
-                        <span className="text-slate-500 font-bold">
-                            {filteredCost > 0 ? fmtMoney(filteredCost) : ''}
-                            {filterMode !== 'todos' && <span className="text-slate-300 font-normal ml-2">de {data.length.toLocaleString()} total · {fmtMoney(totalRetainedCost)}</span>}
+                    <div className="pl-5 pr-4 py-2 border-t border-slate-100 bg-slate-50/40 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+                        <span>
+                            {filtered.length.toLocaleString()} productos
+                            {totalPages > 1 && <span className="text-slate-300 ml-1.5">· pág. {page + 1}/{totalPages}</span>}
+                        </span>
+                        <span>
+                            {filteredCost > 0 && <span className="text-slate-500 font-bold">{fmtMoney(filteredCost)}</span>}
+                            {filterMode !== 'todos' && data.length !== filtered.length && (
+                                <span className="text-slate-300 font-normal ml-2">de {data.length.toLocaleString()} · {fmtMoney(totalRetainedCost)}</span>
+                            )}
                         </span>
                     </div>
                 )}

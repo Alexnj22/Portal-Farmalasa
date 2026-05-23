@@ -31,7 +31,7 @@ const MODES = [
     {
         key:    'sin_venta',
         label:  'Sin Venta',
-        sub:    'asignados en ERP, sin rotación',
+        sub:    'con min/max, sin rotación 6m',
         Icon:   PackageX,
         rpc:    'get_no_sales_products',
         activeBg:   'bg-orange-50 border-orange-300 shadow-orange-100/80 -translate-y-px',
@@ -41,8 +41,8 @@ const MODES = [
     },
     {
         key:    'sin_gestion',
-        label:  'Sin Gestión ERP',
-        sub:    'se venden pero sin min/max',
+        label:  'Sin Min/Max',
+        sub:    'se venden pero sin parámetros',
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
         activeBg:   'bg-amber-50 border-amber-300 shadow-amber-100/80 -translate-y-px',
@@ -164,14 +164,14 @@ function ModeSelector({ mode, onMode, data, loading }) {
     }), [data]);
 
     return (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2">
             {MODES.map(m => {
                 const active = mode === m.key;
                 const count  = counts[m.key];
                 const loaded = count > 0 || (!loading[m.key] && data[m.key === 'sin_venta' ? 'sinVenta' : m.key === 'sin_gestion' ? 'sinGestion' : 'stockRet'].length === 0);
                 return (
                     <button key={m.key} onClick={() => onMode(m.key)}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 shadow-sm min-w-[190px] ${active ? m.activeBg : m.inactiveBg}`}>
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 shadow-sm flex-1 min-w-0 ${active ? m.activeBg : m.inactiveBg}`}>
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-white/60'}`}>
                             <m.Icon size={15} className={m.iconColor} />
                         </div>
@@ -246,10 +246,10 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
     }), [data]);
 
     const CARDS = [
-        { id: 'con_minmax', Icon: CheckCircle2, label: 'Con gestión ERP', sub: 'tiene min/max asignado',
+        { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max', sub: 'tiene parámetros asignados',
           activeBg: 'bg-emerald-50 border-emerald-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40',
           iconColor: 'text-emerald-500', numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
-        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin gestión ERP', sub: 'no tiene min/max',
+        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max', sub: 'sin parámetros asignados',
           activeBg: 'bg-red-50 border-red-200 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/30',
           iconColor: 'text-red-400', numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
     ];
@@ -447,7 +447,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 {activeLoading ? <span className="text-slate-200">–</span> : activeData.length.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-600">
-                                {mode === 'sin_venta' ? 'Sin venta (6m)' : mode === 'sin_gestion' ? 'Sin gestión ERP' : 'Stock retenido'}
+                                {mode === 'sin_venta' ? 'Sin venta (6m)' : mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
                             <div className="text-[9px] text-slate-400">en la sucursal activa</div>
                         </div>
@@ -481,7 +481,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalRevenue)}
                                 </div>
                                 <div className="text-[10px] font-bold leading-tight text-slate-600">Revenue 6m</div>
-                                <div className="text-[9px] text-slate-400">sin parámetros ERP</div>
+                                <div className="text-[9px] text-slate-400">sin parámetros min/max</div>
                             </div>
                         </div>
                     )}
@@ -667,7 +667,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <SortTh field="product_name"  label="Producto"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
                                         <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Gestión ERP</th>
+                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Min/Max</th>
                                         <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
                                         <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
                                     </tr>
@@ -702,7 +702,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <td className="px-4 py-3.5 text-center hidden md:table-cell">
                                                     {row.in_minmax
                                                         ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
-                                                        : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin gestión</span>}
+                                                        : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>}
                                                 </td>
                                                 <td className="px-4 py-3.5 text-center hidden md:table-cell">
                                                     {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>

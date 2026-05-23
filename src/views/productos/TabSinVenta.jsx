@@ -384,6 +384,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
+                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5"><div className={`h-5 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
@@ -417,6 +418,7 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                 <tr>
                                     <SortTh field="product_name"  label="Producto"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
                                     <SortTh field="current_stock" label="Stock aquí"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                    <SortTh field="min_qty"       label="Min / Max"         sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
                                     <SortTh field="cost_value"    label="Costo retenido"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                     <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap hidden md:table-cell">
                                         Sugerencia
@@ -465,6 +467,19 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                                         <span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span>
                                                         <span className="text-[10px] text-orange-400 ml-1">und</span>
                                                     </>
+                                                ) : (
+                                                    <span className="text-[11px] text-slate-200">—</span>
+                                                )}
+                                            </td>
+
+                                            {/* Min / Max */}
+                                            <td className="px-4 py-3.5 text-center whitespace-nowrap hidden md:table-cell">
+                                                {row.min_qty != null || row.max_qty != null ? (
+                                                    <span className="text-[11px] font-bold tabular-nums text-slate-600">
+                                                        {row.min_qty ?? '—'}
+                                                        <span className="text-slate-300 mx-1">/</span>
+                                                        {row.max_qty ?? '—'}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-[11px] text-slate-200">—</span>
                                                 )}

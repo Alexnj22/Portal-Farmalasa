@@ -83,36 +83,41 @@ function getSuggestion(row) {
     return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
 
+// units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
+// Los umbrales están calibrados para eso: 2 cajas/mes es demanda real.
 function getSinMinMaxSugg(row) {
-    const units        = Number(row.units_sold) || 0;
-    const undMes       = units / 6;
-    const revMes       = Number(row.revenue) / 6;
-    const months       = Number(row.months_with_sales) || 0;
-    const invoices     = Number(row.invoice_count) || 1;
-    const avgPerInv    = units / invoices;
+    const units     = Number(row.units_sold) || 0;
+    const undMes    = units / 6;                       // uds. comerciales/mes
+    const revMes    = Number(row.revenue) / 6;
+    const months    = Number(row.months_with_sales) || 0;
+    const invoices  = Number(row.invoice_count) || 1;
+    const avgPerInv = units / invoices;
 
-    // Encargo check PRIMERO — pocas transacciones con volumen alto por transacción
-    // Ej: 1 factura de 50 und, 2 facturas de 25 und → pedido especial, no demanda retail
+    // ── Encargo: pocas facturas, muchas unidades por factura ──────────────────
+    // En uds. comerc.: >5 uds/factura con ≤3 facturas = pedido especial
     if (invoices <= 3 && avgPerInv > 5) {
         return {
             level: 'encargo',
             label: 'Posible encargo',
-            reason: `${invoices} transacc. · ${avgPerInv.toFixed(1)} und/transacc. promedio`,
+            reason: `${invoices} factura${invoices > 1 ? 's' : ''} · ${avgPerInv.toFixed(1)} uds/factura promedio`,
             months, invoices, avgPerInv,
         };
     }
 
-    // Demanda retail confirmada
-    const consistent   = months >= 6;
-    const highRotation = revMes >= 20 && undMes >= 5;
-    const moderate     = revMes >= 8  || undMes >= 3 || months >= 4;
+    // ── Demanda retail ────────────────────────────────────────────────────────
+    const consistent   = months >= 6;                       // vendido todos los meses
+    const highRotation = revMes >= 15 && undMes >= 2;       // ≥2 uds/mes + ≥$15/mes
+    const highVolume   = undMes >= 5;                       // ≥5 uds/mes sin importar precio
+    const moderate     = revMes >= 5 || undMes >= 1 || months >= 4;
 
-    if (highRotation || consistent) {
+    if (highRotation || highVolume || consistent) {
         const minSug = Math.max(1, Math.round(undMes));
         const maxSug = Math.max(2, Math.round(undMes * 2));
-        const reason = consistent && !highRotation
+        const reason = consistent && !highRotation && !highVolume
             ? 'Venta constante todos los meses'
-            : 'Alta rotación';
+            : highVolume && !highRotation
+            ? 'Alto volumen'
+            : 'Buena rotación';
         return { level: 'agregar', label: 'Agregar Min/Max', reason, minSug, maxSug, months, invoices, avgPerInv };
     }
     if (moderate) {
@@ -588,7 +593,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     <tr>
                                         <SortTh field="product_name"      label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
                                         <SortTh field="months_with_sales" label="Meses c/venta"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
-                                        <SortTh field="units_sold"        label="Und. vendidas (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="units_sold"        label="Uds. comerc. (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <SortTh field="revenue"           label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
                                         <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
                                     </tr>
@@ -604,7 +609,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
                                                 <td className="px-4 py-3.5">
                                                     <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[340px]">{row.product_name || '—'}</span>
-                                                    <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} und/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                                    <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-center hidden md:table-cell">
                                                     <div className="flex items-center justify-center gap-0.5">
@@ -616,7 +621,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 </td>
                                                 <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
                                                     <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                                    <span className="text-[10px] text-amber-400 ml-1">und</span>
+                                                    <span className="text-[10px] text-amber-400 ml-1">uds.</span>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-right whitespace-nowrap">
                                                     <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
@@ -629,14 +634,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                             </span>
                                                             <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
                                                             <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} und/factura</span>
+                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                         </>)}
                                                         {lvl === 'evaluar' && (<>
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit">
                                                                 <AlertTriangle size={9} />Evaluar
                                                             </span>
                                                             <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} und/factura</span>
+                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                         </>)}
                                                         {lvl === 'encargo' && (<>
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit">

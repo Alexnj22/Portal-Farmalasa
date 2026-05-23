@@ -6,6 +6,7 @@ import {
     CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
     DollarSign, TrendingUp, TrendingDown, Layers,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -46,6 +47,214 @@ const VAR_CFG = {
     moderate: { label: 'Moderada', cls: 'text-amber-600'   },
     erratic:  { label: 'Errática', cls: 'text-red-500'     },
 };
+
+const ALERT_FILL = {
+    out_of_stock: '#ef4444',
+    below_min:    '#f97316',
+    approaching:  '#f59e0b',
+    ok:           '#10b981',
+    overstocked:  '#3b82f6',
+    dead_stock:   '#cbd5e1',
+};
+const ABC_FILL = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#94a3b8' };
+const VAR_FILL = { stable: '#10b981', moderate: '#f59e0b', erratic: '#ef4444' };
+
+// ─── StockCharts ──────────────────────────────────────────────────────────────
+
+function ChartTooltip({ label, value, color }) {
+    return (
+        <div className="bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3 py-2 shadow-lg">
+            <div className="text-[10px] font-semibold text-slate-500">{label}</div>
+            <div className="text-[15px] font-black leading-tight" style={{ color }}>{value}</div>
+        </div>
+    );
+}
+
+function StockCharts({ data, stats, filterAlert, setFilterAlert, filterAbc, setFilterAbc, isBodega }) {
+    const fmtRev = n => n >= 1_000_000 ? `$${(n/1_000_000).toFixed(1)}M` : n >= 1000 ? `$${(n/1000).toFixed(0)}k` : `$${n.toFixed(0)}`;
+
+    // ── Dataset 1: stock health by alert_status ───────────────────────────────
+    const healthData = useMemo(() =>
+        STAT_CFGS.map(s => ({
+            name: s.label, key: s.key,
+            value: stats[s.key] || 0,
+            fill: ALERT_FILL[s.key],
+        })).filter(d => d.value > 0),
+    [stats]);
+
+    // ── Dataset 2: ABC with revenue ───────────────────────────────────────────
+    const abcData = useMemo(() =>
+        ['A','B','C','D'].map(cls => ({
+            cls,
+            label: cls === 'D' ? 'Sin venta' : `Clase ${cls}`,
+            revenue: data.filter(r => r.abc_class === cls).reduce((s, r) => s + (Number(r.revenue_6m) || 0), 0),
+            count:   data.filter(r => r.abc_class === cls).length,
+            fill: ABC_FILL[cls],
+        })).filter(d => d.count > 0),
+    [data]);
+
+    // ── Dataset 3: demand variability (active products only) ──────────────────
+    const varData = useMemo(() => {
+        const active = data.filter(r => !r.is_dead_stock);
+        return [
+            { name: 'Estable',  key: 'stable',   fill: VAR_FILL.stable,   value: active.filter(r => r.demand_variability === 'stable').length   },
+            { name: 'Moderada', key: 'moderate',  fill: VAR_FILL.moderate, value: active.filter(r => r.demand_variability === 'moderate').length },
+            { name: 'Errática', key: 'erratic',   fill: VAR_FILL.erratic,  value: active.filter(r => r.demand_variability === 'erratic').length  },
+        ].filter(d => d.value > 0);
+    }, [data]);
+
+    const totalAll    = data.length;
+    const totalActive = data.filter(d => !d.is_dead_stock).length;
+
+    const glassPanel = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)] p-4 flex flex-col gap-3';
+
+    return (
+        <div className={`grid gap-3 ${isBodega ? 'grid-cols-2' : 'grid-cols-3'}`}>
+
+            {/* ── Panel 1: Estado de stock (donut interactivo) ── */}
+            <div className={glassPanel}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Estado de stock</span>
+                <div className="flex items-center gap-3">
+                    {/* Donut */}
+                    <div className="relative shrink-0" style={{ width: 104, height: 104 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={healthData} cx="50%" cy="50%"
+                                    innerRadius={30} outerRadius={48}
+                                    paddingAngle={2} dataKey="value"
+                                    onClick={d => setFilterAlert(p => p === d.key ? 'all' : d.key)}
+                                    style={{ cursor: 'pointer' }}>
+                                    {healthData.map((d, i) => (
+                                        <Cell key={i} fill={d.fill}
+                                            opacity={filterAlert === 'all' || filterAlert === d.key ? 1 : 0.22}
+                                            stroke={filterAlert === d.key ? d.fill : 'white'}
+                                            strokeWidth={filterAlert === d.key ? 2 : 1} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    content={({ active, payload }) => active && payload?.[0]
+                                        ? <ChartTooltip label={payload[0].name} value={payload[0].value} color={payload[0].payload.fill} />
+                                        : null}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-[16px] font-black text-slate-700 leading-none">{totalAll}</span>
+                            <span className="text-[8px] text-slate-400 font-semibold">total</span>
+                        </div>
+                    </div>
+                    {/* Leyenda clickable */}
+                    <div className="flex flex-col gap-[3px] flex-1 min-w-0">
+                        {healthData.map(d => (
+                            <button key={d.key}
+                                onClick={() => setFilterAlert(p => p === d.key ? 'all' : d.key)}
+                                className={`flex items-center gap-1.5 text-[10px] rounded-lg px-1.5 py-[3px] text-left w-full transition-all ${
+                                    filterAlert === d.key ? 'bg-slate-100/80' : 'hover:bg-slate-50'
+                                }`}>
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.fill }} />
+                                <span className="text-slate-500 truncate flex-1">{d.name}</span>
+                                <span className="font-black tabular-nums shrink-0" style={{ color: d.fill }}>{d.value}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Panel 2: ABC × Revenue (barras horizontales) ── */}
+            <div className={glassPanel}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">ABC — Revenue 6 meses</span>
+                <ResponsiveContainer width="100%" height={96}>
+                    <BarChart data={abcData} layout="vertical" barCategoryGap={5} margin={{ left: 0, right: 8, top: 0, bottom: 0 }}>
+                        <XAxis type="number" hide />
+                        <YAxis type="category" dataKey="cls" width={14}
+                            tick={{ fontSize: 10, fontWeight: 900, fill: '#64748b' }}
+                            axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ fill: 'rgba(0,82,204,0.04)', radius: 6 }}
+                            content={({ active, payload }) => active && payload?.[0]
+                                ? <ChartTooltip
+                                    label={`${payload[0].payload.label} · ${payload[0].payload.count} productos`}
+                                    value={fmtRev(payload[0].value)}
+                                    color={payload[0].payload.fill} />
+                                : null}
+                        />
+                        <Bar dataKey="revenue" radius={[0, 6, 6, 0]} maxBarSize={18}
+                            onClick={d => setFilterAbc(p => p === d.cls ? 'all' : d.cls)}
+                            style={{ cursor: 'pointer' }}>
+                            {abcData.map((d, i) => (
+                                <Cell key={i} fill={d.fill}
+                                    opacity={filterAbc === 'all' || filterAbc === d.cls ? 1 : 0.22} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {abcData.map(d => (
+                        <button key={d.cls}
+                            onClick={() => setFilterAbc(p => p === d.cls ? 'all' : d.cls)}
+                            className={`flex items-center gap-1 text-[9px] rounded-lg px-1.5 py-0.5 transition-all ${
+                                filterAbc === d.cls ? 'bg-slate-100/80' : 'hover:bg-slate-50'
+                            }`}>
+                            <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: d.fill }} />
+                            <span className="font-black" style={{ color: d.fill }}>{d.cls}</span>
+                            <span className="text-slate-400">{d.count} prods · {fmtRev(d.revenue)}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Panel 3: Variabilidad de demanda ── */}
+            {!isBodega && (
+                <div className={glassPanel}>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Variabilidad de demanda</span>
+                    <div className="flex items-center gap-3">
+                        {/* Mini donut */}
+                        <div className="relative shrink-0" style={{ width: 104, height: 104 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={varData} cx="50%" cy="50%"
+                                        innerRadius={30} outerRadius={48}
+                                        paddingAngle={2} dataKey="value">
+                                        {varData.map((d, i) => (
+                                            <Cell key={i} fill={d.fill} stroke="white" strokeWidth={1} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        content={({ active, payload }) => active && payload?.[0]
+                                            ? <ChartTooltip label={payload[0].name} value={payload[0].value} color={payload[0].payload.fill} />
+                                            : null}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-[16px] font-black text-slate-700 leading-none">{totalActive}</span>
+                                <span className="text-[8px] text-slate-400 font-semibold">activos</span>
+                            </div>
+                        </div>
+                        {/* Barras de progreso */}
+                        <div className="flex flex-col gap-3 flex-1 min-w-0">
+                            {varData.map(d => {
+                                const pct = totalActive > 0 ? (d.value / totalActive) * 100 : 0;
+                                return (
+                                    <div key={d.key} className="flex flex-col gap-1">
+                                        <div className="flex items-center justify-between gap-1">
+                                            <span className="text-[9px] text-slate-500 font-semibold truncate">{d.name}</span>
+                                            <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: d.fill }}>{d.value}</span>
+                                        </div>
+                                        <div className="h-[4px] rounded-full bg-slate-100 overflow-hidden">
+                                            <div className="h-full rounded-full transition-all duration-500"
+                                                style={{ width: `${pct.toFixed(1)}%`, background: d.fill }} />
+                                        </div>
+                                        <div className="text-[8px] text-slate-400">{pct.toFixed(0)}% de activos</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -600,6 +809,16 @@ export default function TabMinMax({ searchTerm = '' }) {
             {/* ── Cost summary cards ── */}
             {!loading && costSummary && (
                 <CostCards summary={costSummary} isBodega={isBodega} />
+            )}
+
+            {/* ── Charts ── */}
+            {!loading && data.length > 0 && (
+                <StockCharts
+                    data={data} stats={stats}
+                    filterAlert={filterAlert} setFilterAlert={setFilterAlert}
+                    filterAbc={filterAbc}    setFilterAbc={setFilterAbc}
+                    isBodega={isBodega}
+                />
             )}
 
             {/* ── Formula info strip ── */}

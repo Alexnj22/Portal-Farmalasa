@@ -7,8 +7,6 @@ const REPOSI_BASE = "https://clientesdte3.oss.com.sv/farma_salud/reporte_reposic
 const CHUNK       = 500;
 
 // ERP sucursal_id (erpId in secret) → ERP ubicacion_id for the reposicion report
-// The ubicaciones field in ERP_INV_BRANCH_MAP uses id=0 (placeholder for inventory sync),
-// so we derive the correct ubicacion_id from erpId directly.
 const ERPSUC_TO_UBICACION: Record<number, number> = {
   1: 3,  // Salud 1
   2: 4,  // Salud 2
@@ -42,7 +40,7 @@ async function syncBranch(
   username: string,
   password: string,
   now: string,
-): Promise<{ erp_sucursal_id: number; inserted: number; errors: string[] }> {
+): Promise<{ erp_sucursal_id: number; inserted: number; skipped: number; errors: string[] }> {
   const ubicacionId = ERPSUC_TO_UBICACION[erpId];
   if (!ubicacionId) throw new Error(`No ubicacion mapping for erpId ${erpId}`);
 
@@ -59,22 +57,34 @@ async function syncBranch(
   const items: any[] = payload?.items ?? [];
   if (items.length === 0) throw new Error(`Empty payload for erpId ${erpId} (ubicacion ${ubicacionId})`);
 
-  // erp_sucursal_id IS the erpId (they are the same value in this system)
   const erp_sucursal_id = erpId;
-
+  const errors: string[] = [];
   const rows: any[] = [];
+
   for (const item of items) {
     const erp_product_id = parseInt(item.id_producto, 10);
     if (!erp_product_id) continue;
+
     for (const d of (item.detalles ?? [])) {
+      const erp_presentacion_id = d.id_presentacion ? parseInt(d.id_presentacion, 10) : null;
+
+      // id_presentacion es obligatorio — si el ERP no lo envía, reportar y omitir la fila.
+      if (!erp_presentacion_id) {
+        errors.push(
+          `[suc=${erp_sucursal_id}] producto ${erp_product_id} ("${item.producto}"): ` +
+          `presentación "${d.presentacion ?? "?"}" sin id_presentacion en ERP`
+        );
+        continue;
+      }
+
       rows.push({
         erp_sucursal_id,
         erp_product_id,
-        presentacion: (d.presentacion ?? "").trim(),
-        detalle:      (d.detalle ?? null),
-        min_qty:      d.min ?? null,
-        max_qty:      d.max ?? null,
-        synced_at:    now,
+        erp_presentacion_id,    // FK → presentaciones(id), datos disponibles via JOIN
+        detalle:   d.detalle ?? null,
+        min_qty:   d.min    ?? null,
+        max_qty:   d.max    ?? null,
+        synced_at: now,
       });
     }
   }
@@ -86,13 +96,14 @@ async function syncBranch(
     .eq("erp_sucursal_id", erp_sucursal_id);
   if (delErr) throw new Error(`Delete erp_minmax[${erp_sucursal_id}]: ${delErr.message}`);
 
-  const errors: string[] = [];
   for (let i = 0; i < rows.length; i += CHUNK) {
     const { error } = await supabase.from("erp_minmax").insert(rows.slice(i, i + CHUNK));
-    if (error) errors.push(`insert[${erp_sucursal_id}][${i}]: ${error.message}`);
+    // FK violation (erp_presentacion_id no existe en presentaciones) se reporta aquí.
+    if (error) errors.push(`insert[suc=${erp_sucursal_id}][offset=${i}]: ${error.message}`);
   }
 
-  return { erp_sucursal_id, inserted: rows.length, errors };
+  const skipped = items.reduce((s: number, item: any) => s + (item.detalles?.length ?? 0), 0) - rows.length;
+  return { erp_sucursal_id, inserted: rows.length, skipped, errors };
 }
 
 Deno.serve(async (req) => {
@@ -113,7 +124,6 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    // Optional: only sync a specific erpId (for debugging)
     const onlyErpId: number | null = body.erp_id ? Number(body.erp_id) : null;
 
     const INV_MAP = getErpInvMap();
@@ -123,7 +133,7 @@ Deno.serve(async (req) => {
 
     for (const entry of INV_MAP) {
       if (onlyErpId && entry.erpId !== onlyErpId) continue;
-      if (!ERPSUC_TO_UBICACION[entry.erpId]) continue; // unknown branch, skip
+      if (!ERPSUC_TO_UBICACION[entry.erpId]) continue;
 
       try {
         const r = await syncBranch(supabase, entry.erpId, entry.username, entry.password, now);

@@ -6,15 +6,17 @@ const LOGIN_URL   = "https://clientesdte3.oss.com.sv/farma_salud/login.php";
 const REPOSI_BASE = "https://clientesdte3.oss.com.sv/farma_salud/reporte_reposicion_json.php";
 const CHUNK       = 500;
 
-// ERP ubicacion ID → portal erp_sucursal_id
-const UBICACION_TO_SUCURSAL: Record<number, number> = {
-  3: 1, // Salud 1
-  4: 2, // Salud 2
-  5: 3, // Salud 3
-  6: 4, // Salud 4
-  7: 5, // La Popular
-  1: 6, // Bodega
-  8: 7, // Salud 5
+// ERP sucursal_id (erpId in secret) → ERP ubicacion_id for the reposicion report
+// The ubicaciones field in ERP_INV_BRANCH_MAP uses id=0 (placeholder for inventory sync),
+// so we derive the correct ubicacion_id from erpId directly.
+const ERPSUC_TO_UBICACION: Record<number, number> = {
+  1: 3,  // Salud 1
+  2: 4,  // Salud 2
+  3: 5,  // Salud 3
+  4: 6,  // Salud 4
+  5: 7,  // La Popular
+  6: 1,  // Bodega
+  7: 8,  // Salud 5
 };
 
 async function getSessionCookie(username: string, password: string): Promise<string> {
@@ -34,14 +36,17 @@ async function getSessionCookie(username: string, password: string): Promise<str
   return cookie;
 }
 
-async function syncUbicacion(
+async function syncBranch(
   supabase: any,
-  cookie: string,
-  ubicacionId: number,
+  erpId: number,
+  username: string,
+  password: string,
   now: string,
 ): Promise<{ erp_sucursal_id: number; inserted: number; errors: string[] }> {
-  const erp_sucursal_id = UBICACION_TO_SUCURSAL[ubicacionId];
-  if (!erp_sucursal_id) throw new Error(`Unknown ubicacion id: ${ubicacionId}`);
+  const ubicacionId = ERPSUC_TO_UBICACION[erpId];
+  if (!ubicacionId) throw new Error(`No ubicacion mapping for erpId ${erpId}`);
+
+  const cookie = await getSessionCookie(username, password);
 
   const url = `${REPOSI_BASE}?id_ubicacion=${ubicacionId}`;
   const res = await fetch(url, {
@@ -52,9 +57,11 @@ async function syncUbicacion(
 
   const payload = await res.json();
   const items: any[] = payload?.items ?? [];
-  if (items.length === 0) throw new Error(`Empty payload for ubicacion ${ubicacionId}`);
+  if (items.length === 0) throw new Error(`Empty payload for erpId ${erpId} (ubicacion ${ubicacionId})`);
 
-  // Build rows — one per product+presentacion combination
+  // erp_sucursal_id IS the erpId (they are the same value in this system)
+  const erp_sucursal_id = erpId;
+
   const rows: any[] = [];
   for (const item of items) {
     const erp_product_id = parseInt(item.id_producto, 10);
@@ -106,8 +113,8 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    // Optional: only sync a specific ubicacion (for debugging)
-    const onlyUbicacion: number | null = body.ubicacion_id ? Number(body.ubicacion_id) : null;
+    // Optional: only sync a specific erpId (for debugging)
+    const onlyErpId: number | null = body.erp_id ? Number(body.erp_id) : null;
 
     const INV_MAP = getErpInvMap();
     const now = new Date().toISOString();
@@ -115,38 +122,20 @@ Deno.serve(async (req) => {
     const allErrors: string[] = [];
 
     for (const entry of INV_MAP) {
-      // Filter to non-vencidos ubicaciones only (main inventory)
-      const targets = entry.ubicaciones.filter((u) => !u.isVencidos);
-      if (targets.length === 0) continue;
-      if (onlyUbicacion && !targets.some((u) => u.id === onlyUbicacion)) continue;
+      if (onlyErpId && entry.erpId !== onlyErpId) continue;
+      if (!ERPSUC_TO_UBICACION[entry.erpId]) continue; // unknown branch, skip
 
-      let cookie: string;
       try {
-        cookie = await getSessionCookie(entry.username, entry.password);
+        const r = await syncBranch(supabase, entry.erpId, entry.username, entry.password, now);
+        results.push(r);
+        if (r.errors.length > 0) allErrors.push(...r.errors);
       } catch (e: any) {
-        allErrors.push(`login[erpId=${entry.erpId}]: ${e.message}`);
-        continue;
-      }
-
-      for (const ub of targets) {
-        if (onlyUbicacion && ub.id !== onlyUbicacion) continue;
-        try {
-          const r = await syncUbicacion(supabase, cookie, ub.id, now);
-          results.push(r);
-          if (r.errors.length > 0) allErrors.push(...r.errors);
-        } catch (e: any) {
-          allErrors.push(`sync[ubicacion=${ub.id}]: ${e.message}`);
-        }
+        allErrors.push(`sync[erpId=${entry.erpId}]: ${e.message}`);
       }
     }
 
     return new Response(
-      JSON.stringify({
-        ok:     allErrors.length === 0,
-        synced: results.length,
-        results,
-        errors: allErrors,
-      }),
+      JSON.stringify({ ok: allErrors.length === 0, synced: results.length, results, errors: allErrors }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: any) {

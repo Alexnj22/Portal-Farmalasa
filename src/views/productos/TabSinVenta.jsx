@@ -44,6 +44,8 @@ function getSuggestion(row) {
     let daysToExpiry = null;
     if (row.fecha_vencimiento_min)
         daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - today) / 86_400_000);
+    if (daysToExpiry !== null && daysToExpiry < 0)
+        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-red-100 text-red-800 border-red-300' };
     if (daysToExpiry !== null && daysToExpiry <= 30)
         return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-red-50 text-red-700 border-red-200' };
     const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
@@ -443,11 +445,16 @@ export default function TabSinVenta({ searchTerm = '' }) {
                                                     <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[300px]">
                                                         {row.product_name || '—'}
                                                     </span>
-                                                    {row.fecha_vencimiento_min && (
-                                                        <span className="text-[9px] text-slate-400 mt-0.5 block">
-                                                            Vence: {new Date(row.fecha_vencimiento_min).toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                                        </span>
-                                                    )}
+                                                    {row.fecha_vencimiento_min && (() => {
+                                                        const exp = new Date(row.fecha_vencimiento_min);
+                                                        const expired = exp < new Date();
+                                                        return (
+                                                            <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                {expired ? 'Vencido: ' : 'Vence: '}
+                                                                {exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </td>
 

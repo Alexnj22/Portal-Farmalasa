@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
-    ChevronLeft, ChevronRight, ArrowRight, AlertCircle, Truck, Archive,
+    ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -232,8 +232,6 @@ export default function TabSinVenta({ searchTerm = '' }) {
           active: 'bg-white border-slate-300 text-slate-700',       dot: 'bg-slate-300'  },
     ];
 
-    const COLS = '1fr 100px 115px 140px 1fr';
-
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
@@ -309,131 +307,133 @@ export default function TabSinVenta({ searchTerm = '' }) {
             )}
 
             {/* ── Table ── */}
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-2xl border overflow-hidden bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]">
+                <div className="overflow-x-auto w-full">
+                    <table className="min-w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]">
+                            <tr>
+                                <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Producto</th>
+                                <th className="px-4 py-3.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Stock aquí</th>
+                                <th className="px-4 py-3.5 text-right text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Costo retenido</th>
+                                <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Sugerencia</th>
+                                <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Vendido en (últimos 6m)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="py-24">
+                                        <div className="flex items-center justify-center gap-2.5 text-slate-400">
+                                            <Loader2 size={20} className="animate-spin" />
+                                            <span className="text-[13px]">Cargando en {ERP_NAMES[selectedErp]}…</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-20 text-center">
+                                        <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
+                                        <p className="text-[13px] text-slate-400 font-medium">
+                                            {data.length === 0
+                                                ? `¡Todos los productos tienen ventas en ${ERP_NAMES[selectedErp]}!`
+                                                : 'Sin productos con ese filtro'}
+                                        </p>
+                                        {data.length > 0 && filterMode !== 'todos' && (
+                                            <button onClick={() => setFilterMode('todos')}
+                                                className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">
+                                                Ver todos
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ) : pageRows.map((row) => {
+                                const stock     = Number(row.current_stock);
+                                const cost      = Number(row.cost_value || 0);
+                                const soldIn    = row.sold_in || [];
+                                const hasStock  = stock > 0;
+                                const noHistory = soldIn.length === 0;
+                                const sug       = hasStock ? getSuggestion(row) : null;
+                                return (
+                                    <tr key={row.erp_product_id}
+                                        style={{ borderLeftColor: hasStock ? '#f97316' : 'transparent' }}
+                                        className={`border-l-[3px] border-t border-slate-100 transition-colors hover:bg-[#0052CC]/[0.03] ${hasStock ? 'bg-orange-50/20' : ''}`}>
 
-                {/* Header */}
-                <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-5 pr-4 py-2.5 border-b border-slate-100 bg-slate-50/80"
-                    style={{ gridTemplateColumns: COLS }}>
-                    <span>Producto</span>
-                    <span className="text-right">Stock aquí</span>
-                    <span className="text-right pr-3">Costo retenido</span>
-                    <span className="text-center">Sugerencia</span>
-                    <span className="pl-4">Vendido en (últimos 6m)</span>
+                                        {/* Product */}
+                                        <td className="px-4 py-3.5">
+                                            <div className="min-w-0">
+                                                <span className="text-[13px] font-semibold text-slate-800 block truncate leading-tight max-w-[280px]">
+                                                    {row.product_name || '—'}
+                                                </span>
+                                                {row.fecha_vencimiento_min && (
+                                                    <span className="text-[9px] text-slate-400 mt-0.5 block">
+                                                        Vence: {new Date(row.fecha_vencimiento_min).toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+
+                                        {/* Stock */}
+                                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                                            {hasStock ? (
+                                                <>
+                                                    <span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-orange-400 ml-1">und</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-200">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Costo retenido */}
+                                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                                            {cost > 0 ? (
+                                                <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-200">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Sugerencia */}
+                                        <td className="px-4 py-3.5 text-center">
+                                            {sug ? (
+                                                <span title={sug.detail}
+                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border cursor-default max-w-[130px] ${sug.cls}`}>
+                                                    <sug.icon size={9} className="shrink-0" />
+                                                    <span className="truncate">{sug.label}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-200">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Vendido en */}
+                                        <td className="px-4 py-3.5">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                {noHistory ? (
+                                                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">
+                                                        Sin historial
+                                                    </span>
+                                                ) : soldIn.map(s => (
+                                                    <span key={s.esid}
+                                                        title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                        {ERP_NAMES[s.esid] || `Suc.${s.esid}`}
+                                                        <span className="opacity-50 font-normal">·</span>
+                                                        <span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
-
-                {loading ? (
-                    <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
-                        <Loader2 size={20} className="animate-spin" />
-                        <span className="text-[13px]">Cargando en {ERP_NAMES[selectedErp]}…</span>
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div className="py-20 text-center">
-                        <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
-                        <p className="text-[13px] text-slate-400 font-medium">
-                            {data.length === 0
-                                ? `¡Todos los productos tienen ventas en ${ERP_NAMES[selectedErp]}!`
-                                : 'Sin productos con ese filtro'}
-                        </p>
-                        {data.length > 0 && filterMode !== 'todos' && (
-                            <button onClick={() => setFilterMode('todos')}
-                                className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">
-                                Ver todos
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div>
-                        {pageRows.map((row) => {
-                            const stock     = Number(row.current_stock);
-                            const cost      = Number(row.cost_value || 0);
-                            const soldIn    = row.sold_in || [];
-                            const hasStock  = stock > 0;
-                            const noHistory = soldIn.length === 0;
-                            const sug       = hasStock ? getSuggestion(row) : null;
-
-                            return (
-                                <div key={row.erp_product_id}
-                                    className={`grid items-center pl-5 pr-4 py-2.5 border-b border-slate-50 transition-colors ${
-                                        hasStock
-                                            ? 'bg-orange-50/25 border-l-2 border-l-orange-300'
-                                            : 'border-l-2 border-l-transparent'
-                                    }`}
-                                    style={{ gridTemplateColumns: COLS }}>
-
-                                    {/* Product */}
-                                    <div className="min-w-0 pr-3">
-                                        <span className="text-[13px] font-medium text-slate-800 block truncate leading-tight">
-                                            {row.product_name || '—'}
-                                        </span>
-                                        {row.fecha_vencimiento_min && (
-                                            <span className="text-[9px] text-slate-400">
-                                                Vence: {new Date(row.fecha_vencimiento_min).toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Stock */}
-                                    <div className="text-right">
-                                        {hasStock ? (
-                                            <>
-                                                <span className="text-[13px] font-bold text-orange-600 tabular-nums">{stock.toLocaleString()}</span>
-                                                <span className="text-[10px] text-orange-400 ml-1">und</span>
-                                            </>
-                                        ) : (
-                                            <span className="text-[11px] text-slate-200">—</span>
-                                        )}
-                                    </div>
-
-                                    {/* Costo retenido */}
-                                    <div className="text-right pr-3">
-                                        {cost > 0 ? (
-                                            <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
-                                        ) : (
-                                            <span className="text-[11px] text-slate-200">—</span>
-                                        )}
-                                    </div>
-
-                                    {/* Sugerencia */}
-                                    <div className="flex justify-center">
-                                        {sug ? (
-                                            <span title={sug.detail}
-                                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border cursor-default max-w-[130px] ${sug.cls}`}>
-                                                <sug.icon size={9} className="shrink-0" />
-                                                <span className="truncate">{sug.label}</span>
-                                            </span>
-                                        ) : (
-                                            <span className="text-[11px] text-slate-200">—</span>
-                                        )}
-                                    </div>
-
-                                    {/* Vendido en */}
-                                    <div className="pl-4 flex items-center gap-1.5 flex-wrap">
-                                        {noHistory ? (
-                                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">
-                                                Sin historial
-                                            </span>
-                                        ) : soldIn.map(s => (
-                                            <span key={s.esid}
-                                                title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                                {ERP_NAMES[s.esid] || `Suc.${s.esid}`}
-                                                <span className="opacity-50 font-normal">·</span>
-                                                <span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Pagination */}
-                <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
                 {/* Footer */}
                 {!loading && filtered.length > 0 && (
-                    <div className="pl-5 pr-4 py-2 border-t border-slate-100 bg-slate-50/40 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+                    <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/40 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
                         <span>
                             {filtered.length.toLocaleString()} productos
                             {totalPages > 1 && <span className="text-slate-300 ml-1.5">· pág. {page + 1}/{totalPages}</span>}
@@ -447,6 +447,9 @@ export default function TabSinVenta({ searchTerm = '' }) {
                     </div>
                 )}
             </div>
+
+            {/* Pagination — outside card, like Catálogo */}
+            <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
     );
 }

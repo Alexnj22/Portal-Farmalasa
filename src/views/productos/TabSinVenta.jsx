@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
-    TrendingUp, CheckCircle2, CircleDashed,
+    TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -83,6 +83,31 @@ function getSuggestion(row) {
     return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
 
+function getSinMinMaxSugg(row) {
+    const undMes = Number(row.units_sold) / 6;
+    const revMes = Number(row.revenue)    / 6;
+    const months = Number(row.months_with_sales) || 0;
+
+    // "Venta todos los meses" — cliente siempre lo pide, aunque el volumen sea bajo
+    const consistent   = months >= 6;
+    const highRotation = revMes >= 20 && undMes >= 5;
+    const moderate     = revMes >= 8  || undMes >= 3 || months >= 4;
+
+    if (highRotation || consistent) {
+        const minSug = Math.max(1, Math.round(undMes));
+        const maxSug = Math.max(2, Math.round(undMes * 2));
+        const reason = consistent && !highRotation
+            ? 'Venta constante todos los meses'
+            : 'Alta rotación';
+        return { level: 'agregar', label: 'Agregar Min/Max', reason, minSug, maxSug, months };
+    }
+    if (moderate) {
+        const reason = months >= 4 ? `${months}/6 meses con venta` : 'Rotación moderada';
+        return { level: 'evaluar', label: 'Evaluar', reason, months };
+    }
+    return { level: 'omitir', label: 'Omitir', reason: 'Rotación insuficiente', months };
+}
+
 // ─── SmartPagination ──────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
@@ -144,6 +169,55 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 }
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
+
+function SinMinMaxFilters({ data, filterMode, onFilter, loading }) {
+    const counts = useMemo(() => {
+        let agregar = 0, evaluar = 0, omitir = 0;
+        for (const r of data) {
+            const s = getSinMinMaxSugg(r);
+            if      (s.level === 'agregar') agregar++;
+            else if (s.level === 'evaluar') evaluar++;
+            else                            omitir++;
+        }
+        return { agregar, evaluar, omitir };
+    }, [data]);
+
+    const CARDS = [
+        { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
+          activeBg: 'bg-emerald-50 border-emerald-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40',
+          iconColor: 'text-emerald-500', numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+        { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada o semi-constante',
+          activeBg: 'bg-amber-50 border-amber-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
+          iconColor: 'text-amber-500', numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-300' },
+        { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
+          activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
+          iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-500' : 'text-slate-300' },
+    ];
+
+    return (
+        <>
+            {CARDS.map(c => {
+                const active = filterMode === c.id;
+                return (
+                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
+                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
+                            <c.Icon size={15} className={c.iconColor} />
+                        </div>
+                        <div className="text-left min-w-0">
+                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
+                            </div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
+                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                        </div>
+                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                    </button>
+                );
+            })}
+        </>
+    );
+}
 
 function StockRetFilters({ data, filterMode, onFilter, loading }) {
     const counts = useMemo(() => ({
@@ -280,7 +354,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
     useEffect(() => {
         dataRefs.current = { sin_gestion: [], stock_ret: [] };
         setSinGestion([]); setStockRet([]);
-        setFilterMode('todos');
+        setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos');
         MODES.forEach(m => loadMode(erpId, m.key));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedErp]);
@@ -300,7 +374,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const filtered = useMemo(() => {
         let rows = activeData;
 
-        if (mode === 'stock_ret') {
+        if (mode === 'sin_gestion' && filterMode !== 'todos') {
+            rows = rows.filter(r => getSinMinMaxSugg(r).level === filterMode);
+        } else if (mode === 'stock_ret') {
             if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
             else if (filterMode === 'sin_minmax') rows = rows.filter(r => !r.in_minmax);
         }
@@ -387,7 +463,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                         </div>
                     )}
 
-                    {/* Sub-filter cards — stock_ret only */}
+                    {/* Sub-filter cards */}
+                    {mode === 'sin_gestion' && <>
+                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+                        <SinMinMaxFilters data={activeData} filterMode={filterMode}
+                            onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
+                    </>}
                     {mode === 'stock_ret' && <>
                         <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
@@ -405,7 +486,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             const count  = m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
                             return (
                                 <button key={m.key}
-                                    onClick={() => { setMode(m.key); setFilterMode('todos'); }}
+                                    onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${
                                         active ? 'bg-[#0052CC]/[0.10] text-[#0052CC]' : tk.filterBtn
                                     }`}>
@@ -487,26 +568,72 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <>
                                 <thead className={`sticky top-0 z-10 ${tk.thead}`}>
                                     <tr>
-                                        <SortTh field="product_name" label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                        <SortTh field="units_sold"   label="Und. vendidas (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <SortTh field="revenue"      label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                        <SortTh field="product_name"      label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="months_with_sales" label="Meses c/venta"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
+                                        <SortTh field="units_sold"        label="Und. vendidas (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="revenue"           label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                        <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pageRows.map(row => (
-                                        <tr key={row.erp_product_id} className={`border-l-[3px] border-l-amber-300 ${tk.rowBorder} ${tk.rowHover} transition-colors bg-amber-50/10`}>
-                                            <td className="px-4 py-3.5">
-                                                <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[380px]">{row.product_name || '—'}</span>
-                                            </td>
-                                            <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                                <span className="text-[10px] text-amber-400 ml-1">und</span>
-                                            </td>
-                                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                                                <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {pageRows.map(row => {
+                                        const sugg  = getSinMinMaxSugg(row);
+                                        const lvl   = sugg.level;
+                                        const leftColor = lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : '#cbd5e1';
+                                        return (
+                                            <tr key={row.erp_product_id}
+                                                style={{ borderLeftColor: leftColor }}
+                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
+                                                <td className="px-4 py-3.5">
+                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[340px]">{row.product_name || '—'}</span>
+                                                    <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} und/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                    <div className="flex items-center justify-center gap-0.5">
+                                                        {Array.from({ length: 6 }).map((_, i) => (
+                                                            <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
+                                                        ))}
+                                                    </div>
+                                                    <div className="text-[9px] text-slate-400 mt-0.5 text-center">{sugg.months}/6</div>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
+                                                    <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
+                                                    <span className="text-[10px] text-amber-400 ml-1">und</span>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
+                                                </td>
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
+                                                    <div className="flex flex-col gap-1">
+                                                        {lvl === 'agregar' && (
+                                                            <>
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit">
+                                                                <PlusCircle size={9} />Agregar Min/Max
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-500 font-semibold">
+                                                                Min {sugg.minSug} / Max {sugg.maxSug} sugerido
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
+                                                            </>
+                                                        )}
+                                                        {lvl === 'evaluar' && (
+                                                            <>
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit">
+                                                                <AlertTriangle size={9} />Evaluar
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
+                                                            </>
+                                                        )}
+                                                        {lvl === 'omitir' && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
+                                                                <Minus size={9} />Sin acción
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                                 </>
                             )}

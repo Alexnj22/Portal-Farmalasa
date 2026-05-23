@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
-    TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus,
+    TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus, ShoppingBag,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -84,11 +84,25 @@ function getSuggestion(row) {
 }
 
 function getSinMinMaxSugg(row) {
-    const undMes = Number(row.units_sold) / 6;
-    const revMes = Number(row.revenue)    / 6;
-    const months = Number(row.months_with_sales) || 0;
+    const units        = Number(row.units_sold) || 0;
+    const undMes       = units / 6;
+    const revMes       = Number(row.revenue) / 6;
+    const months       = Number(row.months_with_sales) || 0;
+    const invoices     = Number(row.invoice_count) || 1;
+    const avgPerInv    = units / invoices;
 
-    // "Venta todos los meses" — cliente siempre lo pide, aunque el volumen sea bajo
+    // Encargo check PRIMERO — pocas transacciones con volumen alto por transacción
+    // Ej: 1 factura de 50 und, 2 facturas de 25 und → pedido especial, no demanda retail
+    if (invoices <= 3 && avgPerInv > 5) {
+        return {
+            level: 'encargo',
+            label: 'Posible encargo',
+            reason: `${invoices} transacc. · ${avgPerInv.toFixed(1)} und/transacc. promedio`,
+            months, invoices, avgPerInv,
+        };
+    }
+
+    // Demanda retail confirmada
     const consistent   = months >= 6;
     const highRotation = revMes >= 20 && undMes >= 5;
     const moderate     = revMes >= 8  || undMes >= 3 || months >= 4;
@@ -99,13 +113,13 @@ function getSinMinMaxSugg(row) {
         const reason = consistent && !highRotation
             ? 'Venta constante todos los meses'
             : 'Alta rotación';
-        return { level: 'agregar', label: 'Agregar Min/Max', reason, minSug, maxSug, months };
+        return { level: 'agregar', label: 'Agregar Min/Max', reason, minSug, maxSug, months, invoices, avgPerInv };
     }
     if (moderate) {
         const reason = months >= 4 ? `${months}/6 meses con venta` : 'Rotación moderada';
-        return { level: 'evaluar', label: 'Evaluar', reason, months };
+        return { level: 'evaluar', label: 'Evaluar', reason, months, invoices, avgPerInv };
     }
-    return { level: 'omitir', label: 'Omitir', reason: 'Rotación insuficiente', months };
+    return { level: 'omitir', label: 'Sin acción', reason: 'Rotación insuficiente', months, invoices, avgPerInv };
 }
 
 // ─── SmartPagination ──────────────────────────────────────────────────────────
@@ -172,14 +186,15 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 function SinMinMaxFilters({ data, filterMode, onFilter, loading }) {
     const counts = useMemo(() => {
-        let agregar = 0, evaluar = 0, omitir = 0;
+        let agregar = 0, evaluar = 0, encargo = 0, omitir = 0;
         for (const r of data) {
             const s = getSinMinMaxSugg(r);
             if      (s.level === 'agregar') agregar++;
             else if (s.level === 'evaluar') evaluar++;
+            else if (s.level === 'encargo') encargo++;
             else                            omitir++;
         }
-        return { agregar, evaluar, omitir };
+        return { agregar, evaluar, encargo, omitir };
     }, [data]);
 
     const CARDS = [
@@ -189,6 +204,9 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading }) {
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada o semi-constante',
           activeBg: 'bg-amber-50 border-amber-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
           iconColor: 'text-amber-500', numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-300' },
+        { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc. con volumen alto',
+          activeBg: 'bg-orange-50 border-orange-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
+          iconColor: 'text-orange-500', numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
           activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
           iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-500' : 'text-slate-300' },
@@ -579,7 +597,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     {pageRows.map(row => {
                                         const sugg  = getSinMinMaxSugg(row);
                                         const lvl   = sugg.level;
-                                        const leftColor = lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : '#cbd5e1';
+                                        const leftColor = lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : lvl === 'encargo' ? '#f97316' : '#cbd5e1';
                                         return (
                                             <tr key={row.erp_product_id}
                                                 style={{ borderLeftColor: leftColor }}
@@ -605,25 +623,28 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 </td>
                                                 <td className="px-4 py-3.5 hidden md:table-cell">
                                                     <div className="flex flex-col gap-1">
-                                                        {lvl === 'agregar' && (
-                                                            <>
+                                                        {lvl === 'agregar' && (<>
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit">
                                                                 <PlusCircle size={9} />Agregar Min/Max
                                                             </span>
-                                                            <span className="text-[9px] text-slate-500 font-semibold">
-                                                                Min {sugg.minSug} / Max {sugg.maxSug} sugerido
-                                                            </span>
+                                                            <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
                                                             <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            </>
-                                                        )}
-                                                        {lvl === 'evaluar' && (
-                                                            <>
+                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} und/factura</span>
+                                                        </>)}
+                                                        {lvl === 'evaluar' && (<>
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit">
                                                                 <AlertTriangle size={9} />Evaluar
                                                             </span>
                                                             <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            </>
-                                                        )}
+                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} und/factura</span>
+                                                        </>)}
+                                                        {lvl === 'encargo' && (<>
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit">
+                                                                <ShoppingBag size={9} />Posible encargo
+                                                            </span>
+                                                            <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
+                                                            <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                        </>)}
                                                         {lvl === 'omitir' && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
                                                                 <Minus size={9} />Sin acción

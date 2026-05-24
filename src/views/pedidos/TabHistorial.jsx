@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2,
-    X, Package, Building2, AlertTriangle,
+    X, Package, Building2, AlertTriangle, Ban,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
@@ -10,20 +10,37 @@ const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
+const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 const STATUS_PILL = {
-    confirmado:     'bg-emerald-100 text-emerald-700 border-emerald-200',
+    // Pedido-level
+    confirmado:     'bg-blue-100 text-blue-700 border-blue-200',
     parcial:        'bg-amber-100 text-amber-700 border-amber-200',
-    anulado:        'bg-red-100 text-red-700 border-red-200',
+    completado:     'bg-emerald-100 text-emerald-700 border-emerald-200',
+    anulado:        'bg-red-100 text-red-600 border-red-200',
+    // Item-level
     pendiente:      'bg-slate-100 text-slate-500 border-slate-200',
     recibido:       'bg-emerald-100 text-emerald-700 border-emerald-200',
     con_diferencia: 'bg-amber-100 text-amber-700 border-amber-200',
 };
 
 const STATUS_LABEL = {
-    confirmado: 'Confirmado', parcial: 'Parcial', anulado: 'Anulado',
-    pendiente: 'Pendiente', recibido: 'Recibido', con_diferencia: 'Con diferencia',
+    confirmado:     'Pendiente recepción',
+    parcial:        'Con diferencias',
+    completado:     'Completado',
+    anulado:        'Anulado',
+    pendiente:      'Pendiente',
+    recibido:       'Recibido',
+    con_diferencia: 'Con diferencia',
 };
+
+const FILTER_TABS = [
+    { key: 'todos',      label: 'Todos' },
+    { key: 'confirmado', label: 'Pendiente recepción' },
+    { key: 'parcial',    label: 'Con diferencias' },
+    { key: 'completado', label: 'Completados' },
+    { key: 'anulado',    label: 'Anulados' },
+];
 
 function fmtDate(iso) {
     if (!iso) return '—';
@@ -34,15 +51,18 @@ function fmtDate(iso) {
 }
 
 export default function TabHistorial() {
-    const [pedidos, setPedidos]             = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [expanded, setExpanded]           = useState(null);
-    const [items, setItems]                 = useState({});
-    const [loadingItems, setLoadingItems]   = useState(false);
-    const [modal, setModal]                 = useState(null);
-    const [recepVals, setRecepVals]         = useState({});
-    const [saving, setSaving]               = useState(false);
-    const [saveError, setSaveError]         = useState(null);
+    const [pedidos, setPedidos]           = useState([]);
+    const [loading, setLoading]           = useState(true);
+    const [filterTab, setFilterTab]       = useState('todos');
+    const [expanded, setExpanded]         = useState(null);
+    const [items, setItems]               = useState({});
+    const [loadingItems, setLoadingItems] = useState(false);
+    const [modal, setModal]               = useState(null);   // { pedidoId, sucursalId, rows }
+    const [recepVals, setRecepVals]       = useState({});     // itemId → cantidad_recibida
+    const [notaVals, setNotaVals]         = useState({});     // itemId → nota_diferencia
+    const [saving, setSaving]             = useState(false);
+    const [saveError, setSaveError]       = useState(null);
+    const [anulando, setAnulando]         = useState(null);   // pedido id being cancelled
 
     const loadPedidos = useCallback(async () => {
         setLoading(true);
@@ -57,8 +77,7 @@ export default function TabHistorial() {
 
     useEffect(() => { loadPedidos(); }, [loadPedidos]);
 
-    const loadItems = useCallback(async (pedidoId) => {
-        if (items[pedidoId]) return;
+    const fetchPedidoItems = useCallback(async (pedidoId) => {
         setLoadingItems(true);
         const { data } = await supabase
             .from('pedido_items')
@@ -73,7 +92,12 @@ export default function TabHistorial() {
             .range(0, 9999);
         setItems(prev => ({ ...prev, [pedidoId]: data || [] }));
         setLoadingItems(false);
-    }, [items]);
+    }, []);
+
+    const loadItems = useCallback(async (pedidoId) => {
+        if (items[pedidoId]) return;
+        await fetchPedidoItems(pedidoId);
+    }, [items, fetchPedidoItems]);
 
     const toggleExpand = useCallback(async (pedidoId) => {
         if (expanded === pedidoId) {
@@ -86,11 +110,19 @@ export default function TabHistorial() {
 
     const openRecepcion = useCallback((pedidoId, sucursalId) => {
         const rows = (items[pedidoId] || []).filter(
-            r => r.erp_sucursal_id === sucursalId && r.status === 'pendiente'
+            r => r.erp_sucursal_id === sucursalId
+              && r.status === 'pendiente'
+              && r.cantidad_asignada > 0
         );
+        if (rows.length === 0) return;
         const vals = {};
-        for (const r of rows) vals[r.id] = r.cantidad_asignada;
+        const notas = {};
+        for (const r of rows) {
+            vals[r.id]  = r.cantidad_asignada;
+            notas[r.id] = '';
+        }
         setRecepVals(vals);
+        setNotaVals(notas);
         setSaveError(null);
         setModal({ pedidoId, sucursalId, rows });
     }, [items]);
@@ -102,9 +134,9 @@ export default function TabHistorial() {
         const { pedidoId, sucursalId, rows } = modal;
 
         const p_items = rows.map(r => ({
-            pedido_item_id:   r.id,
+            pedido_item_id:    r.id,
             cantidad_recibida: recepVals[r.id] ?? r.cantidad_asignada,
-            nota_diferencia:  null,
+            nota_diferencia:   notaVals[r.id] || null,
         }));
 
         try {
@@ -117,32 +149,42 @@ export default function TabHistorial() {
 
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedidoId, {
                 sucursal_id: sucursalId,
-            });
-
-            // Update local items state
-            setItems(prev => {
-                const updated = (prev[pedidoId] || []).map(r => {
-                    if (r.erp_sucursal_id !== sucursalId || r.status !== 'pendiente') return r;
-                    const recibida = recepVals[r.id] ?? r.cantidad_asignada;
-                    const hasDiff  = recibida !== r.cantidad_asignada;
-                    return {
-                        ...r,
-                        cantidad_recibida: recibida,
-                        status: hasDiff ? 'con_diferencia' : 'recibido',
-                        received_at: new Date().toISOString(),
-                    };
-                });
-                return { ...prev, [pedidoId]: updated };
+                items_count: p_items.length,
             });
 
             setModal(null);
-            loadPedidos();
+            // Force refetch of items (invalidate cache) and pedido list
+            await fetchPedidoItems(pedidoId);
+            await loadPedidos();
         } catch (e) {
             setSaveError(e.message);
         } finally {
             setSaving(false);
         }
-    }, [modal, recepVals, loadPedidos]);
+    }, [modal, recepVals, notaVals, fetchPedidoItems, loadPedidos]);
+
+    const handleAnular = useCallback(async (pedidoId, numeroPedido) => {
+        if (!window.confirm(`¿Anular el Pedido #${numeroPedido}? Se cancelarán todos los items pendientes.`)) return;
+        setAnulando(pedidoId);
+        try {
+            const { error } = await supabase.rpc('anular_pedido', { p_pedido_id: pedidoId });
+            if (error) throw error;
+
+            useStaff.getState().appendAuditLog('ANULAR_PEDIDO', pedidoId, { numero: numeroPedido });
+
+            // Invalidate items cache and refresh pedidos
+            setItems(prev => { const n = { ...prev }; delete n[pedidoId]; return n; });
+            await loadPedidos();
+        } catch (e) {
+            window.alert(e.message);
+        } finally {
+            setAnulando(null);
+        }
+    }, [loadPedidos]);
+
+    const filtered = filterTab === 'todos'
+        ? pedidos
+        : pedidos.filter(p => p.status === filterTab);
 
     if (loading) {
         return (
@@ -153,54 +195,105 @@ export default function TabHistorial() {
         );
     }
 
-    if (pedidos.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-                <Package size={40} />
-                <p className="font-medium text-[15px]">No hay pedidos generados todavía</p>
-                <p className="text-[13px]">Usa la pestaña Generar para crear el primer pedido.</p>
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-3 p-4">
-            {pedidos.map(p => {
+            {/* Filter tabs */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/70 w-fit">
+                {FILTER_TABS.map(ft => (
+                    <button
+                        key={ft.key}
+                        onClick={() => setFilterTab(ft.key)}
+                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
+                            filterTab === ft.key
+                                ? 'bg-white text-slate-800 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {ft.label}
+                        {ft.key !== 'todos' && (
+                            <span className="ml-1.5 text-[10px] text-slate-400">
+                                ({pedidos.filter(p => p.status === ft.key).length})
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            {filtered.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+                    <Package size={40} />
+                    <p className="font-medium text-[15px]">
+                        {filterTab === 'todos'
+                            ? 'No hay pedidos generados todavía'
+                            : `No hay pedidos con estado "${STATUS_LABEL[filterTab] ?? filterTab}"`
+                        }
+                    </p>
+                    {filterTab === 'todos' && (
+                        <p className="text-[13px]">Usa la pestaña Generar para crear el primer pedido.</p>
+                    )}
+                </div>
+            )}
+
+            {filtered.map(p => {
                 const isExp    = expanded === p.id;
                 const pedItems = items[p.id] || [];
+                const canAnul  = p.status === 'confirmado' || p.status === 'parcial';
 
-                // Group by sucursal
-                const sucGroups = {};
+                // Group by sucursal, sorted by ERP_ORDER
+                const sucMap = {};
                 for (const row of pedItems) {
                     const s = row.erp_sucursal_id;
-                    if (!sucGroups[s]) sucGroups[s] = [];
-                    sucGroups[s].push(row);
+                    if (!sucMap[s]) sucMap[s] = [];
+                    sucMap[s].push(row);
+                }
+                const sucGroups = ERP_ORDER
+                    .filter(id => sucMap[id])
+                    .map(id => [id, sucMap[id]]);
+                // Include any sucursal IDs not in ERP_ORDER at the end
+                for (const id of Object.keys(sucMap).map(Number)) {
+                    if (!ERP_ORDER.includes(id)) sucGroups.push([id, sucMap[id]]);
                 }
 
                 return (
-                    <div key={p.id} className="rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)] overflow-hidden">
+                    <div
+                        key={p.id}
+                        className="rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)] overflow-hidden"
+                    >
                         {/* Pedido header */}
-                        <button
-                            className="w-full flex items-center justify-between px-5 py-3 hover:bg-blue-50/30 transition-colors"
-                            onClick={() => toggleExpand(p.id)}
-                        >
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between px-5 py-3 hover:bg-blue-50/20 transition-colors">
+                            <button
+                                className="flex items-center gap-3 flex-1 text-left"
+                                onClick={() => toggleExpand(p.id)}
+                            >
                                 {isExp
-                                    ? <ChevronDown size={16} className="text-slate-400" />
-                                    : <ChevronRight size={16} className="text-slate-400" />
+                                    ? <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
+                                    : <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
                                 }
                                 <span className="font-bold text-slate-700 text-[15px]">Pedido #{p.numero}</span>
                                 <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${STATUS_PILL[p.status] ?? ''}`}>
                                     {STATUS_LABEL[p.status] ?? p.status}
                                 </span>
-                            </div>
-                            <div className="flex items-center gap-4 text-[13px] text-slate-400">
                                 {p.notes && (
-                                    <span className="text-slate-500 truncate max-w-[220px] italic">"{p.notes}"</span>
+                                    <span className="text-slate-400 text-[13px] truncate max-w-[220px] italic">"{p.notes}"</span>
                                 )}
-                                <span>{fmtDate(p.created_at)}</span>
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[13px] text-slate-400 whitespace-nowrap">{fmtDate(p.created_at)}</span>
+                                {canAnul && (
+                                    <button
+                                        onClick={() => handleAnular(p.id, p.numero)}
+                                        disabled={anulando === p.id}
+                                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                    >
+                                        {anulando === p.id
+                                            ? <Loader2 size={11} className="animate-spin" />
+                                            : <Ban size={11} />
+                                        }
+                                        Anular
+                                    </button>
+                                )}
                             </div>
-                        </button>
+                        </div>
 
                         {/* Expanded detail */}
                         {isExp && (
@@ -210,12 +303,19 @@ export default function TabHistorial() {
                                         <Loader2 size={16} className="animate-spin" />
                                         <span className="text-[13px]">Cargando items…</span>
                                     </div>
-                                ) : Object.keys(sucGroups).length === 0 ? (
+                                ) : sucGroups.length === 0 ? (
                                     <p className="text-[13px] text-slate-400 py-2">Sin items registrados.</p>
                                 ) : (
-                                    Object.entries(sucGroups).map(([sucId, rows]) => {
+                                    sucGroups.map(([sucId, rows]) => {
                                         const suc        = Number(sucId);
-                                        const hasPending = rows.some(r => r.status === 'pendiente');
+                                        // Only show "Confirmar recepción" if there are actionable pending items
+                                        const pendingRows = rows.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+                                        const hasPending  = pendingRows.length > 0;
+
+                                        // Separate normal from sin_stock/revision items for display
+                                        const normalRows  = rows.filter(r => !r.sin_stock && !r.revision_minmax);
+                                        const specialRows = rows.filter(r => r.sin_stock || r.revision_minmax);
+
                                         return (
                                             <div key={suc} className="border border-slate-100 rounded-xl overflow-hidden">
                                                 <div className="flex items-center justify-between px-3 py-2.5 bg-slate-50/60">
@@ -237,33 +337,46 @@ export default function TabHistorial() {
                                                         </button>
                                                     )}
                                                 </div>
+
                                                 <table className="w-full text-[12px]">
                                                     <tbody>
-                                                        {rows.map(row => (
+                                                        {normalRows.map(row => (
                                                             <tr key={row.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
                                                                 <td className="px-3 py-2 text-slate-700 font-medium max-w-[200px]">
                                                                     <span className="block truncate">{row.products?.nombre}</span>
                                                                 </td>
                                                                 <td className="px-3 py-2 text-center text-slate-500 tabular-nums whitespace-nowrap">
-                                                                    {row.cantidad_asignada} packs asignados
+                                                                    {row.cantidad_asignada} asignados
                                                                 </td>
                                                                 {row.cantidad_recibida !== null && (
                                                                     <td className="px-3 py-2 text-center text-slate-500 tabular-nums whitespace-nowrap">
                                                                         {row.cantidad_recibida} recibidos
                                                                     </td>
                                                                 )}
-                                                                <td className="px-2 py-2 text-center">
-                                                                    {row.sin_stock && (
-                                                                        <span className="text-[10px] text-red-500 font-medium">Sin stock</span>
-                                                                    )}
-                                                                    {row.revision_minmax && (
-                                                                        <span className="text-[10px] text-amber-500 font-medium">Revisar Min/Max</span>
-                                                                    )}
-                                                                </td>
+                                                                {row.nota_diferencia && (
+                                                                    <td className="px-3 py-2 text-slate-400 text-[11px] italic max-w-[160px]">
+                                                                        <span className="block truncate">"{row.nota_diferencia}"</span>
+                                                                    </td>
+                                                                )}
                                                                 <td className="px-3 py-2 text-center">
                                                                     <span className={`px-1.5 py-0.5 rounded-full border text-[10px] font-medium ${STATUS_PILL[row.status] ?? ''}`}>
                                                                         {STATUS_LABEL[row.status] ?? row.status}
                                                                     </span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+
+                                                        {/* Sin stock / revisión items at bottom, muted */}
+                                                        {specialRows.map(row => (
+                                                            <tr key={row.id} className="border-t border-slate-50 opacity-50">
+                                                                <td className="px-3 py-2 text-slate-600 font-medium max-w-[200px]">
+                                                                    <span className="block truncate">{row.products?.nombre}</span>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center" colSpan={3}>
+                                                                    {row.sin_stock
+                                                                        ? <span className="text-[11px] text-slate-400">Sin stock en Bodega</span>
+                                                                        : <span className="text-[11px] text-amber-500">Revisión Min/Max</span>
+                                                                    }
                                                                 </td>
                                                             </tr>
                                                         ))}
@@ -285,37 +398,56 @@ export default function TabHistorial() {
                     <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                             <h3 className="font-bold text-slate-800 text-[16px]">
-                                Confirmar recepción — {ERP_NAMES[modal.sucursalId]}
+                                Recepción — {ERP_NAMES[modal.sucursalId] ?? `Sucursal ${modal.sucursalId}`}
                             </h3>
                             <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <div className="p-4 space-y-2 max-h-[55vh] overflow-y-auto">
-                            <p className="text-[12px] text-slate-400 mb-3">
-                                Ingresa la cantidad realmente recibida. Si coincide con lo asignado se marca como recibido; de lo contrario como "con diferencia".
+                        <div className="p-4 space-y-3 max-h-[55vh] overflow-y-auto">
+                            <p className="text-[12px] text-slate-400">
+                                Ingresa la cantidad realmente recibida. Si difiere de lo asignado, agrega una nota opcional.
                             </p>
-                            {modal.rows.map(row => (
-                                <div key={row.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <span className="flex-1 text-[13px] text-slate-700 font-medium truncate">
-                                        {row.products?.nombre}
-                                    </span>
-                                    <span className="text-[11px] text-slate-400 whitespace-nowrap">
-                                        asignado: {row.cantidad_asignada}
-                                    </span>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        value={recepVals[row.id] ?? row.cantidad_asignada}
-                                        onChange={e => setRecepVals(prev => ({
-                                            ...prev,
-                                            [row.id]: parseInt(e.target.value) || 0,
-                                        }))}
-                                        className="w-16 text-center border border-slate-200 rounded-lg px-1 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 tabular-nums"
-                                    />
-                                </div>
-                            ))}
+                            {modal.rows.map(row => {
+                                const recibida  = recepVals[row.id] ?? row.cantidad_asignada;
+                                const hasDiff   = recibida !== row.cantidad_asignada;
+                                return (
+                                    <div key={row.id} className={`rounded-xl px-3 py-2.5 border transition-colors ${hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'}`}>
+                                        <div className="flex items-center gap-3 mb-1.5">
+                                            <span className="flex-1 text-[13px] text-slate-700 font-medium truncate">
+                                                {row.products?.nombre}
+                                            </span>
+                                            <span className="text-[11px] text-slate-400 whitespace-nowrap">
+                                                asignado: {row.cantidad_asignada}
+                                            </span>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                value={recibida}
+                                                onChange={e => setRecepVals(prev => ({
+                                                    ...prev,
+                                                    [row.id]: parseInt(e.target.value) || 0,
+                                                }))}
+                                                className={`w-16 text-center border rounded-lg px-1 py-1 text-[13px] focus:outline-none tabular-nums ${
+                                                    hasDiff
+                                                        ? 'border-amber-400 bg-amber-50 focus:border-amber-500'
+                                                        : 'border-slate-200 focus:border-blue-400'
+                                                }`}
+                                            />
+                                        </div>
+                                        {hasDiff && (
+                                            <input
+                                                type="text"
+                                                placeholder="Nota sobre la diferencia (opcional)…"
+                                                value={notaVals[row.id] ?? ''}
+                                                onChange={e => setNotaVals(prev => ({ ...prev, [row.id]: e.target.value }))}
+                                                className="w-full text-[12px] border border-amber-200 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {saveError && (
@@ -340,7 +472,7 @@ export default function TabHistorial() {
                                     ? <Loader2 size={14} className="animate-spin" />
                                     : <CheckCircle2 size={14} />
                                 }
-                                Confirmar
+                                Confirmar recepción
                             </button>
                         </div>
                     </div>

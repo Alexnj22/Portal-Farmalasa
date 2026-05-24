@@ -149,13 +149,24 @@ BEGIN
 
   -- Aplica rondeo de dispatch_rules: multiplo primero, luego blister
   -- Formula: FLOOR(FLOOR(raw / mult) * mult / blist) * blist
+  -- Columnas explícitas (no d.*) para evitar ambigüedad de erp_product_id al hacer JOIN
   con_reglas AS (
     SELECT
-      d.*,
-      (dr.erp_product_id IS NOT NULL)   AS tiene_regla,
-      dr.multiplo                        AS regla_multiplo,
-      dr.blister                         AS regla_blister,
-      COALESCE(dr.solo_cajas, false)     AS regla_solo_cajas,
+      d.erp_sucursal_id,
+      d.erp_product_id,
+      d.erp_presentacion_id,
+      d.stock_pk,
+      d.min_qty,
+      d.max_qty,
+      d.presentacion_tipo,
+      d.factor,
+      d.reponer,
+      d.bodega_disponible,
+      d.asignado_raw,
+      (dr.erp_product_id IS NOT NULL)  AS tiene_regla,
+      dr.multiplo                       AS regla_multiplo,
+      dr.blister                        AS regla_blister,
+      COALESCE(dr.solo_cajas, false)    AS regla_solo_cajas,
       CASE
         WHEN d.asignado_raw <= 0 OR d.bodega_disponible <= 0 THEN 0
         ELSE (

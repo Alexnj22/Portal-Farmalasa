@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, RefreshCw, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info, ChevronDown, ChevronRight, Clock,
+    FlaskConical,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -44,6 +45,50 @@ function fmtSyncedAt(iso) {
     return new Date(iso).toLocaleDateString('es-SV', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
     });
+}
+
+function fmtMesAnio(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' });
+}
+
+// Allocates packs from FEFO-ordered lotes up to `qty` and renders compact pills.
+function LotesPill({ lotes, qty }) {
+    if (!lotes || lotes.length === 0 || qty <= 0) return null;
+    const today = new Date();
+    let remaining = qty;
+    const usados = [];
+    for (const lot of lotes) {
+        if (remaining <= 0) break;
+        const take = Math.min(Number(lot.packs), remaining);
+        if (take > 0) { usados.push({ ...lot, take }); remaining -= take; }
+    }
+    if (usados.length === 0) return null;
+    return (
+        <div className="flex flex-wrap gap-1 mt-1">
+            {usados.map((lot, i) => {
+                const fv       = lot.fecha_vencimiento ? new Date(lot.fecha_vencimiento) : null;
+                const daysLeft = fv ? Math.floor((fv - today) / 86_400_000) : null;
+                const expCls   = daysLeft === null ? 'text-slate-400'
+                    : daysLeft < 30  ? 'text-red-500 font-semibold'
+                    : daysLeft < 90  ? 'text-amber-500'
+                    : 'text-emerald-600';
+                return (
+                    <span key={i} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+                        <span className="text-slate-500 font-medium">{lot.lote || '—'}</span>
+                        {fv && <span className={expCls}>{fmtMesAnio(lot.fecha_vencimiento)}</span>}
+                        <span className="text-blue-600 font-semibold">{lot.take}p</span>
+                    </span>
+                );
+            })}
+            {remaining > 0 && (
+                <span className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 border border-red-200 text-red-500 font-medium">
+                    {remaining}p sin lote disponible
+                </span>
+            )}
+        </div>
+    );
 }
 
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
@@ -241,10 +286,22 @@ export default function TabGenerar() {
                                   'hover:bg-blue-50/30'
                 }`}
             >
-                <td className="px-4 py-2 font-medium text-slate-700 max-w-[220px]">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="block truncate text-[13px]">{row.product_name}</span>
-                        <RulesTag row={row} />
+                <td className="px-4 py-2 font-medium text-slate-700 max-w-[240px]">
+                    <div className="flex items-start gap-1.5 min-w-0">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="block truncate text-[13px]">{row.product_name}</span>
+                                {row.es_antibiotico && (
+                                    <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
+                                        <FlaskConical size={9} className="text-violet-600" />
+                                    </span>
+                                )}
+                                <RulesTag row={row} />
+                            </div>
+                            {!isSinStock && (
+                                <LotesPill lotes={row.lotes_bodega} qty={adj} />
+                            )}
+                        </div>
                     </div>
                 </td>
                 <td className="px-3 py-2 text-slate-500 text-[13px] whitespace-nowrap">{row.presentacion_tipo}</td>

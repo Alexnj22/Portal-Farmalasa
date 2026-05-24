@@ -39,11 +39,9 @@ RETURNS TABLE (
   regla_blister        smallint,
   regla_solo_cajas     boolean
 )
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
 AS $$
-BEGIN
-  RETURN QUERY
   WITH
 
   stock_sucursal AS (
@@ -209,7 +207,6 @@ BEGIN
   FROM con_reglas cr
   JOIN products p ON p.id = cr.erp_product_id
   ORDER BY cr.erp_sucursal_id, urgencia_pct DESC, p.nombre;
-END;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_pedido_preview(integer[]) TO authenticated;

@@ -190,6 +190,16 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
+const GLASS_CARD = 'bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-white/80';
+
+const FILTER_CARD_CSS = `
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.filter-card-anim { animation: cardIn 0.22s cubic-bezier(0.22,1,0.36,1) both; }
+`;
+
 function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
     const counts = useMemo(() => {
         let agregar = 0, evaluar = 0, encargo = 0, omitir = 0, ignorado = 0;
@@ -206,40 +216,52 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-emerald-50 border-emerald-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40',
-          iconColor: 'text-emerald-500', numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
-        { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada o semi-constante',
-          activeBg: 'bg-amber-50 border-amber-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
-          iconColor: 'text-amber-500', numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-300' },
-        { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc. con volumen alto',
-          activeBg: 'bg-orange-50 border-orange-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-orange-200 hover:bg-orange-50/40',
-          iconColor: 'text-orange-500', numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
+          activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
+          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+        { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
+          activeBg: 'bg-amber-50/80 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
+          iconBgActive: 'bg-amber-100', iconColor: 'text-amber-500',
+          numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-300' },
+        { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
+          activeBg: 'bg-orange-50/80 border-orange-300 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
+          iconBgActive: 'bg-orange-100', iconColor: 'text-orange-500',
+          numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
-          activeBg: 'bg-slate-100 border-slate-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-          iconColor: 'text-slate-400', numColor: n => n > 0 ? 'text-slate-500' : 'text-slate-300' },
-        { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados de sugerencias',
-          activeBg: 'bg-slate-100 border-slate-400 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50',
-          iconColor: 'text-slate-500', numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-300' },
+          activeBg: 'bg-slate-100/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          iconBgActive: 'bg-slate-200', iconColor: 'text-slate-500',
+          numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-300' },
+        { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
+          activeBg: 'bg-slate-100/80 border-slate-400 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
+          iconBgActive: 'bg-slate-200', iconColor: 'text-slate-600',
+          numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-300' },
     ];
 
     return (
         <>
-            {CARDS.map(c => {
+            <style>{FILTER_CARD_CSS}</style>
+            {CARDS.map((c, i) => {
                 const active = filterMode === c.id;
                 return (
                     <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
+                        style={{ animationDelay: `${i * 45}ms` }}
+                        className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
+                            ${active ? c.activeBg : GLASS_CARD}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-white/70'}`}>
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
-                        <div className="text-left min-w-0">
-                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
+                        <div className="text-left min-w-0 flex-1">
+                            <div className={`text-[21px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
-                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
+                            <div className="text-[9px] text-slate-400 leading-tight">{c.sub}</div>
                         </div>
-                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        {active && (
+                            <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">
+                                <X size={10} className="text-slate-500" />
+                            </div>
+                        )}
                     </button>
                 );
             })}
@@ -255,31 +277,39 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max', sub: 'tiene parámetros asignados',
-          activeBg: 'bg-emerald-50 border-emerald-300 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40',
-          iconColor: 'text-emerald-500', numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+          activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
+          iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
+          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max', sub: 'sin parámetros asignados',
-          activeBg: 'bg-red-50 border-red-200 -translate-y-px', inactiveBg: 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/30',
-          iconColor: 'text-red-400', numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
+          activeBg: 'bg-red-50/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
+          iconBgActive: 'bg-red-100', iconColor: 'text-red-500',
+          numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
     ];
 
     return (
         <>
-            {CARDS.map(c => {
+            {CARDS.map((c, i) => {
                 const active = filterMode === c.id;
                 return (
                     <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[155px] shadow-sm disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-slate-50'}`}>
+                        style={{ animationDelay: `${i * 45}ms` }}
+                        className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
+                            ${active ? c.activeBg : GLASS_CARD}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-white/70'}`}>
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
-                        <div className="text-left min-w-0">
-                            <div className={`text-[20px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-slate-200">–</span> : counts[c.id].toLocaleString()}
+                        <div className="text-left min-w-0 flex-1">
+                            <div className={`text-[21px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">{c.label}</div>
-                            <div className="text-[9px] text-slate-400">{c.sub}</div>
+                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
+                            <div className="text-[9px] text-slate-400 leading-tight">{c.sub}</div>
                         </div>
-                        {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        {active && (
+                            <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">
+                                <X size={10} className="text-slate-500" />
+                            </div>
+                        )}
                     </button>
                 );
             })}
@@ -333,17 +363,17 @@ export default function TabGestionStock({ searchTerm = '' }) {
     }, [mode]);
 
     const tk = {
-        card:             'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
+        card:             'bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm',
         thead:            'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
         rowBorder:        'border-t border-slate-100',
         rowHover:         'hover:bg-[#0052CC]/[0.03]',
         skeleton:         'bg-slate-200/70',
-        emptyBg:          'bg-white border-slate-200/80',
-        filterPill:       'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
-        filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-slate-50',
-        filterDivider:    'bg-slate-100',
+        emptyBg:          'bg-white/80 border-slate-200/70 backdrop-blur-sm',
+        filterPill:       'bg-white/60 border-white/50 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
+        filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-white/60',
+        filterDivider:    'bg-slate-200/60',
         pageSizeActive:   'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
-        pageSizeInactive: 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
+        pageSizeInactive: 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80',
         totalText:        'text-slate-400',
     };
 
@@ -475,15 +505,15 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
 
                     {/* Total count card */}
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.07]">
-                            <Package size={15} className="text-[#0052CC]/50" />
+                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#0052CC]/[0.08]">
+                            <Package size={15} className="text-[#0052CC]/60" />
                         </div>
                         <div className="text-left min-w-0">
                             <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
                                 {activeLoading ? <span className="text-slate-200">–</span> : activeData.length.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-slate-600">
+                            <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">
                                 {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
                             <div className="text-[9px] text-slate-400">en la sucursal activa</div>
@@ -492,15 +522,15 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50">
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-50/80">
                                 <DollarSign size={15} className="text-orange-500" />
                             </div>
                             <div className="text-left min-w-0">
                                 <div className="text-[22px] font-black leading-none tabular-nums text-orange-600">
                                     {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalCost)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-slate-600">Costo retenido</div>
+                                <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Costo retenido</div>
                                 {filteredCost > 0 && filteredCost !== totalCost
                                     ? <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
                                     : <div className="text-[9px] text-slate-400">total sucursal</div>
@@ -511,51 +541,53 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50">
+                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)]" style={{ animationDelay: '40ms' }}>
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-50/80">
                                 <TrendingUp size={15} className="text-amber-500" />
                             </div>
                             <div className="text-left min-w-0">
                                 <div className="text-[22px] font-black leading-none tabular-nums text-amber-600">
                                     {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalRevenue)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-slate-600">Revenue 6m</div>
+                                <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Revenue 6m</div>
                                 <div className="text-[9px] text-slate-400">sin parámetros min/max</div>
                             </div>
                         </div>
                     )}
 
                     {/* Sub-filter cards */}
-                    {mode === 'sin_gestion' && <>
-                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+                    {mode === 'sin_gestion' && <React.Fragment key="sin_gestion_filters">
+                        <div className="w-px h-12 self-center hidden sm:block bg-slate-200/50" />
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
                             loading={activeLoading} ignoredSet={ignoredSet} />
-                    </>}
-                    {mode === 'stock_ret' && <>
-                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
+                    </React.Fragment>}
+                    {mode === 'stock_ret' && <React.Fragment key="stock_ret_filters">
+                        <div className="w-px h-12 self-center hidden sm:block bg-slate-200/50" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
-                    </>}
+                    </React.Fragment>}
                 </div>
 
                 {/* Right: filter pill — mode selector + sucursal */}
                 <div className={`flex items-center rounded-2xl border transition-all duration-300 shrink-0 overflow-visible ${tk.filterPill}`}>
 
                     {/* Mode pills */}
-                    <div className="flex items-center gap-0.5 px-2.5 py-2">
+                    <div className="flex items-center gap-1 px-2.5 py-2">
                         {MODES.map(m => {
                             const active = mode === m.key;
                             const count  = m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
                             return (
                                 <button key={m.key}
                                     onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${
-                                        active ? 'bg-[#0052CC]/[0.10] text-[#0052CC]' : tk.filterBtn
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${
+                                        active
+                                            ? 'bg-[#0052CC]/[0.12] text-[#0052CC] shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
+                                            : tk.filterBtn
                                     }`}>
                                     {m.label}
-                                    <span className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-tight ${
-                                        active ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-500'
+                                    <span className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[22px] text-center leading-tight transition-all duration-200 ${
+                                        active ? 'bg-[#0052CC] text-white shadow-sm' : 'bg-slate-100/80 text-slate-500'
                                     }`}>
                                         {loadingMap[m.key] ? '…' : count.toLocaleString()}
                                     </span>

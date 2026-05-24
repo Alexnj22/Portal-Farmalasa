@@ -44,6 +44,7 @@ const MODULE_MAP = {
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icon: Package      },
+    pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
 };
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
@@ -63,7 +64,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos']                            },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'pedidos']                 },
 ];
 
 // Self-service module keys (for bottom tabs logic)

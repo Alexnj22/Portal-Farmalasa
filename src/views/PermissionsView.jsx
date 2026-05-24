@@ -80,6 +80,11 @@ const MODULE_GROUPS = [
                 { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
                 { key: 'productos_tab_inventario', label: 'Inventario' },
             ]},
+            { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
+                { key: 'pedidos_tab_generar',   label: 'Generar'           },
+                { key: 'pedidos_tab_historial', label: 'Historial'         },
+                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'},
+            ]},
         ],
     },
     {

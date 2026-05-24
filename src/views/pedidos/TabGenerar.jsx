@@ -5,6 +5,7 @@ import {
     Package, AlertTriangle, Info,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -25,6 +26,7 @@ function UrgenciaBar({ pct }) {
 }
 
 export default function TabGenerar() {
+    const { user } = useAuth();
     const [selected, setSelected]       = useState(new Set(SUCURSALES));
     const [preview, setPreview]         = useState(null);
     const [loading, setLoading]         = useState(false);
@@ -111,7 +113,6 @@ export default function TabGenerar() {
         setConfirming(true);
         setError(null);
         try {
-            const empId = useStaff.getState().currentEmployee?.id;
             const items = preview.map(row => ({
                 erp_sucursal_id:     row.erp_sucursal_id,
                 erp_product_id:      row.erp_product_id,
@@ -122,7 +123,7 @@ export default function TabGenerar() {
             }));
 
             const { data: pedidoId, error: rpcErr } = await supabase.rpc('confirm_pedido', {
-                p_created_by: empId ?? null,
+                p_created_by: user?.id ?? null,
                 p_notes:      notes || null,
                 p_items:      items,
             });

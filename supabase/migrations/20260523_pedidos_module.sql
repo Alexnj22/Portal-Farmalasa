@@ -42,7 +42,7 @@ CREATE TABLE pedidos (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   numero      integer     NOT NULL DEFAULT nextval('pedidos_numero_seq') UNIQUE,
   created_at  timestamptz NOT NULL DEFAULT now(),
-  created_by  integer     REFERENCES employees(id) ON DELETE SET NULL,
+  created_by  uuid        REFERENCES employees(id) ON DELETE SET NULL,
   status      text        NOT NULL DEFAULT 'confirmado'
               CHECK (status IN ('confirmado', 'parcial', 'anulado')),
   notes       text
@@ -311,7 +311,7 @@ COMMENT ON FUNCTION get_pedido_preview IS
 -- Recibe el resultado ya revisado/ajustado desde el frontend y lo persiste.
 
 CREATE OR REPLACE FUNCTION confirm_pedido(
-  p_created_by  integer,
+  p_created_by  uuid,
   p_notes       text,
   p_items       jsonb    -- [{erp_sucursal_id, erp_product_id, erp_presentacion_id,
                          --   cantidad_asignada, sin_stock, revision_minmax}]
@@ -350,7 +350,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION confirm_pedido(integer, text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION confirm_pedido(uuid, text, jsonb) TO authenticated;
 COMMENT ON FUNCTION confirm_pedido IS
   'Persiste un pedido ya revisado. Retorna el uuid del pedido creado.';
 

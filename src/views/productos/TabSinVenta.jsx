@@ -354,6 +354,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
     const [pageSize,  setPageSize]  = useState(25);
     const [sortField, setSortField] = useState('product_name');
     const [sortDir,   setSortDir]   = useState('asc');
+    const [copiedId,  setCopiedId]  = useState(null);
+
+    const handleCopyName = useCallback((id, name) => {
+        navigator.clipboard.writeText(name).then(() => {
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 1500);
+        });
+    }, []);
 
     // Per-sucursal set of erp_product_ids excluded from suggestions
     const [ignoredSet, setIgnoredSet] = useState(() => new Set());
@@ -710,7 +718,17 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 style={{ borderLeftColor: leftColor }}
                                                 className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${isIgnored ? 'opacity-50' : ''}`}>
                                                 <td className="px-4 py-3.5">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[300px]">{row.product_name || '—'}</span>
+                                                    <button
+                                                        onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                                        title="Copiar nombre"
+                                                        className="group/copy flex items-center gap-1.5 text-left w-full">
+                                                        <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                            {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                        </span>
+                                                        <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                            {copiedId === row.erp_product_id ? '✓' : '⎘'}
+                                                        </span>
+                                                    </button>
                                                     <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                                 </td>
                                                 <td className="px-4 py-3.5 hidden md:table-cell">
@@ -820,7 +838,17 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
                                                 className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
                                                 <td className="px-4 py-3.5">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[240px]">{row.product_name || '—'}</span>
+                                                    <button
+                                                        onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                                        title="Copiar nombre"
+                                                        className="group/copy flex items-center gap-1.5 text-left w-full">
+                                                        <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[220px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                            {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                        </span>
+                                                        <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                            {copiedId === row.erp_product_id ? '✓' : '⎘'}
+                                                        </span>
+                                                    </button>
                                                     {row.fecha_vencimiento_min && (() => {
                                                         const exp = new Date(row.fecha_vencimiento_min);
                                                         const expired = exp < new Date();

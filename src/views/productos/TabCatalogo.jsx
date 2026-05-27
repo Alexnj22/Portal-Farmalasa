@@ -125,7 +125,7 @@ function SmartPagination({ page, total, onChange }) {
 
 // ── MarginStatCards ───────────────────────────────────────────────────────────
 
-function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos }) {
+function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos, filterModificados, onFilterModificados, modificadosStats, modificadosLoading }) {
     const { isAurora, isCompat } = useTheme();
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
@@ -245,6 +245,42 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <div className={`text-[9px] ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
                 </div>
                 {filterNuevos && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
+            </button>
+
+            {/* Modificados este mes filter card */}
+            <button
+                onClick={onFilterModificados}
+                disabled={modificadosLoading}
+                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
+                    filterModificados
+                        ? isAurora
+                            ? 'bg-amber-500/[0.18] border-amber-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)] -translate-y-px'
+                            : 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px'
+                        : isAurora
+                            ? 'bg-white/[0.08] border-white/[0.16] hover:bg-amber-500/[0.10] hover:border-amber-400/[0.25]'
+                            : isCompat
+                            ? 'bg-white border-[#C4D9E8] hover:border-amber-200 hover:bg-amber-50/40'
+                            : 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40'
+                }`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    filterModificados
+                        ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
+                        : isAurora ? 'bg-amber-500/[0.20]' : 'bg-amber-50'
+                }`}>
+                    <History size={15} className={isAurora ? 'text-amber-400' : 'text-amber-500'} />
+                </div>
+                <div className="text-left min-w-0">
+                    <div className={`text-[22px] font-black leading-none tabular-nums ${
+                        (modificadosStats?.count ?? 0) > 0
+                            ? isAurora ? 'text-amber-400' : 'text-amber-600'
+                            : isAurora ? 'text-white/25' : 'text-slate-300'
+                    }`}>
+                        {modificadosLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
+                    </div>
+                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Modificados este mes</div>
+                    <div className={`text-[9px] ${statSub}`}>precios o datos cambiados</div>
+                </div>
+                {filterModificados && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
             </button>
 
             {/* Divider */}
@@ -749,6 +785,18 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
 
+    useEffect(() => {
+        const onPaste = (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) { setPendingFile(f); break; } }
+            }
+        };
+        document.addEventListener('paste', onPaste);
+        return () => document.removeEventListener('paste', onPaste);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const handlePhotoSelect = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -1078,6 +1126,18 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const categoryRef   = useRef(null);
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
+
+    useEffect(() => {
+        const onPaste = (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) { setPendingFile(f); break; } }
+            }
+        };
+        document.addEventListener('paste', onPaste);
+        return () => document.removeEventListener('paste', onPaste);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSave = async () => {
         setSaving(true);
@@ -1567,6 +1627,18 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         } catch (_) {}
         finally { setSaving(false); }
     };
+
+    useEffect(() => {
+        const onPaste = (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) { setPendingFile(f); break; } }
+            }
+        };
+        document.addEventListener('paste', onPaste);
+        return () => document.removeEventListener('paste', onPaste);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handlePhotoSelect = (e) => { const file = e.target.files?.[0]; if (!file) return; setPendingFile(file); e.target.value = ''; };
     const handlePhotoConfirm = async (blob) => {
@@ -2080,6 +2152,11 @@ export default function TabCatalogo({
     // Margin filter (controlled by stat cards in body)
     const [filterMargin, setFilterMargin] = useState('all');
     const [filterNuevos, setFilterNuevos] = useState(false);
+    const [filterModificados, setFilterModificados] = useState(false);
+
+    // Modificados stats (products with changelog entries this month)
+    const [modificadosStats, setModificadosStats] = useState(null);
+    const [modificadosLoading, setModificadosLoading] = useState(false);
 
     // Sort
     const [sortField, setSortField] = useState('nombre');
@@ -2158,8 +2235,34 @@ export default function TabCatalogo({
         });
     }, []);
 
+    // ── Load products modified this month (via changelogs) ────────────────
+    useEffect(() => {
+        let cancelled = false;
+        setModificadosLoading(true);
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const PAGE = 1000;
+        const ids = new Set();
+
+        const fetchPage = async (table, from) => {
+            const { data } = await supabase.from(table)
+                .select('product_id')
+                .gte('detected_at', startOfMonth)
+                .range(from, from + PAGE - 1);
+            if (cancelled) return;
+            (data || []).forEach(r => ids.add(r.product_id));
+            if ((data || []).length === PAGE) await fetchPage(table, from + PAGE);
+        };
+
+        Promise.all([fetchPage('products_changelog', 0), fetchPage('product_precios_changelog', 0)])
+            .then(() => { if (!cancelled) { setModificadosStats({ ids, count: ids.size }); setModificadosLoading(false); } })
+            .catch(() => { if (!cancelled) { setModificadosStats({ ids: new Set(), count: 0 }); setModificadosLoading(false); } });
+
+        return () => { cancelled = true; };
+    }, []);
+
     // ── loadProducts ────────────────────────────────────────────────────────
-    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir, fNuevos) => {
+    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir, fNuevos, modBids = null) => {
         const rid = ++loadRef.current;
         setLoading(true);
         setLoadError(null);
@@ -2182,12 +2285,22 @@ export default function TabCatalogo({
                 const now = new Date();
                 qb = qb.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
             }
-            if (bids !== null) {
-                if (bids.length === 0) {
+            // Combine margin bids and modificados bids (intersection if both active)
+            let effectiveBids = bids;
+            if (modBids !== null) {
+                if (effectiveBids !== null) {
+                    const modSet = new Set(modBids);
+                    effectiveBids = effectiveBids.filter(id => modSet.has(id));
+                } else {
+                    effectiveBids = modBids;
+                }
+            }
+            if (effectiveBids !== null) {
+                if (effectiveBids.length === 0) {
                     if (rid === loadRef.current) { setProducts([]); setTotal(0); setLoading(false); }
                     return;
                 }
-                qb = qb.in('id', bids);
+                qb = qb.in('id', effectiveBids);
             }
 
             if (sField === 'nombre')          qb = qb.order('nombre', { ascending: sDir === 'asc' });
@@ -2234,31 +2347,35 @@ export default function TabCatalogo({
     }, [allowedPriceFields]);
 
     // Reset page on filter/sort changes
-    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, filterLab, filterCategoria, filterAntibiotico, sortField]);
 
     // Trigger load — normal (no margin filter). marginStats/statsLoading intentionally
     // excluded from deps to prevent reloading the list when stats finish loading.
     useEffect(() => {
         if (filterMargin !== 'all') return;
+        if (filterModificados && !modificadosStats) return;
+        const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
         const t = setTimeout(() =>
-            loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
+            loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
 
     // Trigger load — margin filter active. Waits for stats to be ready.
     useEffect(() => {
         if (filterMargin === 'all') return;
         if (statsLoading || marginStats === null) return;
+        if (filterModificados && !modificadosStats) return;
         const bids = filterMargin === 'perdida' ? [...(marginStats.perdidaIds || [])]
                                                 : [...(marginStats.bajoIds    || [])];
+        const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
         const t = setTimeout(() =>
-            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos),
+            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
 
     // ── Sort handler ────────────────────────────────────────────────────────
     const handleSort = useCallback((field) => {
@@ -2351,6 +2468,10 @@ export default function TabCatalogo({
                         productStatsLoading={productStatsLoading}
                         filterNuevos={filterNuevos}
                         onFilterNuevos={() => setFilterNuevos(v => !v)}
+                        filterModificados={filterModificados}
+                        onFilterModificados={() => setFilterModificados(v => !v)}
+                        modificadosStats={modificadosStats}
+                        modificadosLoading={modificadosLoading}
                     />
                 </div>
 

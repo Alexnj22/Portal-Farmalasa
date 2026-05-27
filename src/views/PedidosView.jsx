@@ -26,19 +26,20 @@ export default function PedidosView() {
 
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
+    const filtersContent = (
+        <ViewTabBar
+            tabs={allowedTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            showSearch={false}
+        />
+    );
+
     return (
-        <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales">
-            <ViewTabBar
-                tabs={allowedTabs}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                showSearch={false}
-            />
-            <div className="flex-1 overflow-y-auto">
-                {activeTab === 'generar'   && <TabGenerar />}
-                {activeTab === 'historial' && <TabHistorial />}
-                {activeTab === 'reglas'    && <TabReglas />}
-            </div>
+        <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
+            <div className={activeTab === 'generar'   ? '' : 'hidden'}><TabGenerar /></div>
+            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial /></div>
+            <div className={activeTab === 'reglas'    ? '' : 'hidden'}><TabReglas /></div>
         </GlassViewLayout>
     );
 }

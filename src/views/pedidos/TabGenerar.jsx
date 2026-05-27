@@ -104,9 +104,9 @@ function BarTooltip({ active, payload, label }) {
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-[12px]">
             <p className="font-semibold text-slate-700 mb-1">{label}</p>
-            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> packs</p>
-            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> packs</p>
-            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> packs</p>
+            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> productos</p>
+            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> productos</p>
+            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> productos</p>
         </div>
     );
 }
@@ -348,15 +348,17 @@ export default function TabGenerar({ searchTerm = '' }) {
         }
     }, [preview, notes, selected, getAdjusted, user]);
 
-    // ── Chart data ─────────────────────────────────────────────
+    // ── Chart data — sorted ascending so highest urgency renders at top ──────
     const chartData = useMemo(() => {
         const m = {};
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
-        return SUCURSALES.map(id => ({
-            name:             ERP_NAMES[id],
-            con_bodega_packs: m[id]?.con_bodega_packs ?? 0,
-            sin_bodega_packs: m[id]?.sin_bodega_packs ?? 0,
-        }));
+        return SUCURSALES
+            .map(id => ({
+                name:             ERP_NAMES[id],
+                con_bodega_packs: m[id]?.con_bodega_packs ?? 0,
+                sin_bodega_packs: m[id]?.sin_bodega_packs ?? 0,
+            }))
+            .sort((a, b) => (a.con_bodega_packs + a.sin_bodega_packs) - (b.con_bodega_packs + b.sin_bodega_packs));
     }, [dashStats]);
 
     const statMap = useMemo(() => {
@@ -364,6 +366,14 @@ export default function TabGenerar({ searchTerm = '' }) {
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
         return m;
     }, [dashStats]);
+
+    // Sucursales sorted by total need descending (most urgent first)
+    const sortedSucursales = useMemo(() => {
+        if (dashLoading || !dashStats.length) return SUCURSALES;
+        return [...SUCURSALES].sort(
+            (a, b) => (statMap[b]?.necesidad_packs ?? 0) - (statMap[a]?.necesidad_packs ?? 0)
+        );
+    }, [dashStats, dashLoading, statMap]);
 
     // ── Sin-bodega filtered (client-side on current page) ──────
     const filteredSinBodega = useMemo(() => {
@@ -516,7 +526,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     <Building2 size={15} className="text-blue-500 flex-shrink-0" />
                                     <span className="font-semibold text-slate-700">{ERP_NAMES[suc]}</span>
                                     <span className="text-[12px] text-slate-400 whitespace-nowrap">
-                                        · {normal.length + revision.length + sinStock.length} productos · {totalPacks} packs asignados
+                                        · {normal.length + revision.length + sinStock.length} productos · {totalPacks} asignados
                                     </span>
                                 </button>
                                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -606,7 +616,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 <span className="text-blue-300">·</span>
                                 <span>{globalTotals.productos} productos</span>
                                 <span className="text-blue-300">·</span>
-                                <span className="font-bold">{globalTotals.packs} packs en total</span>
+                                <span className="font-bold">{globalTotals.packs} productos en total</span>
                             </div>
                         </div>
                         <div>
@@ -655,25 +665,39 @@ export default function TabGenerar({ searchTerm = '' }) {
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                    {SUCURSALES.map(id => {
+                    {sortedSucursales.map((id, rank) => {
                         const stat     = statMap[id];
                         const isOn     = selected.has(id);
                         const needPct  = stat ? Math.round((stat.sin_bodega_packs / Math.max(stat.necesidad_packs, 1)) * 100) : null;
-                        const urgColor = needPct == null ? '' : needPct >= 50 ? 'text-red-500' : needPct >= 25 ? 'text-amber-500' : 'text-emerald-500';
+                        const urgColor = needPct == null ? 'text-slate-400'
+                            : needPct >= 50 ? 'text-red-500'
+                            : needPct >= 25 ? 'text-amber-500'
+                            : 'text-emerald-500';
+                        const urgBorder = !isOn && stat && needPct != null
+                            ? needPct >= 50 ? 'border-red-200 hover:border-red-300'
+                            : needPct >= 25 ? 'border-amber-200 hover:border-amber-300'
+                            : 'border-slate-200 hover:border-blue-300'
+                            : 'border-slate-200 hover:border-blue-300';
                         return (
                             <button key={id} onClick={() => toggleSuc(id)}
                                 className={`relative flex flex-col items-center gap-1 rounded-xl px-3 py-3 border-2 transition-all duration-150 text-center group ${
                                     isOn
                                         ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
-                                        : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:shadow-sm'
+                                        : `bg-white ${urgBorder} text-slate-700 hover:shadow-sm`
                                 }`}>
+                                {/* urgency rank */}
+                                {!dashLoading && stat && (
+                                    <span className={`absolute top-1.5 left-2 text-[9px] font-black leading-none ${isOn ? 'text-white/50' : urgColor}`}>
+                                        #{rank + 1}
+                                    </span>
+                                )}
                                 <Building2 size={18} className={isOn ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-400'} />
                                 <span className={`text-[12px] font-bold leading-tight ${isOn ? 'text-white' : 'text-slate-700'}`}>
                                     {ERP_NAMES[id]}
                                 </span>
                                 {stat && !dashLoading ? (
-                                    <div className={`text-[10px] font-medium mt-0.5 ${isOn ? 'text-blue-100' : urgColor}`}>
-                                        {stat.necesidad_packs.toLocaleString()} packs
+                                    <div className={`text-[10px] font-semibold mt-0.5 ${isOn ? 'text-blue-100' : urgColor}`}>
+                                        {stat.necesidad_packs.toLocaleString()} prod.
                                     </div>
                                 ) : (
                                     <div className="h-3 w-12 rounded bg-slate-100 animate-pulse mt-0.5" />
@@ -713,7 +737,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' p-4'}>
                 <h3 className="font-semibold text-slate-700 text-[14px] mb-1">Necesidad de reposición por sucursal</h3>
                 <p className="text-[11px] text-slate-400 mb-4">
-                    Packs (unidades de empaque según presentación) pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega.
+                    Productos pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor urgencia.
                 </p>
                 {dashLoading ? (
                     <div className="h-48 flex items-center justify-center">
@@ -760,7 +784,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 <th className={`${TH} text-left`}>Producto</th>
                                 <th className={`${TH} text-left px-3`}>Laboratorio</th>
                                 <th className={`${TH} text-left px-3`}>Sucursales que solicitan</th>
-                                <th className={`${TH} text-center px-3`}>Total packs</th>
+                                <th className={`${TH} text-center px-3`}>Total</th>
                                 <th className={`${TH} text-center px-3`}>Ventas 6m</th>
                             </tr>
                         </thead>
@@ -789,10 +813,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         <div className="flex flex-wrap gap-1">
                                             {(row.sucursales || []).map(s => (
                                                 <span key={s.erp_sucursal_id}
-                                                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap">
+                                                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
+                                                    title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer} productos${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6 meses` : ''}`}>
                                                     <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                                    <span className="text-red-500 font-semibold">{s.reponer}pk</span>
-                                                    {s.ventas_6m > 0 && <span className="text-slate-400">↻{Math.round(s.ventas_6m)}</span>}
+                                                    <span className="text-red-500 font-semibold">{s.reponer}</span>
+                                                    {s.ventas_6m > 0 && (
+                                                        <span className="text-slate-400 flex items-center gap-0.5">
+                                                            ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                            <span className="text-[7px] text-slate-300">/6m</span>
+                                                        </span>
+                                                    )}
                                                 </span>
                                             ))}
                                         </div>

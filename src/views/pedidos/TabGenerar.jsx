@@ -348,28 +348,33 @@ export default function TabGenerar({ searchTerm = '' }) {
         }
     }, [preview, notes, selected, getAdjusted, user]);
 
-    // ── Chart data — sorted by urgency % descending (most urgent at top) ────
-    const chartData = useMemo(() => {
-        const m = {};
-        for (const s of dashStats) m[s.erp_sucursal_id] = s;
-        return SUCURSALES
-            .map(id => ({
-                name:             ERP_NAMES[id],
-                con_bodega_packs: m[id]?.con_bodega_packs ?? 0,
-                sin_bodega_packs: m[id]?.sin_bodega_packs ?? 0,
-            }))
-            .sort((a, b) => {
-                const total_a = a.con_bodega_packs + a.sin_bodega_packs || 1;
-                const total_b = b.con_bodega_packs + b.sin_bodega_packs || 1;
-                return (b.sin_bodega_packs / total_b) - (a.sin_bodega_packs / total_a);
-            });
-    }, [dashStats]);
-
     const statMap = useMemo(() => {
         const m = {};
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
         return m;
     }, [dashStats]);
+
+    // Rank sucursales 0–5 by total_productos desc (0 = most products = most urgent)
+    const urgRank = useMemo(() => {
+        const sorted = [...SUCURSALES].sort(
+            (a, b) => (statMap[b]?.total_productos ?? 0) - (statMap[a]?.total_productos ?? 0)
+        );
+        const r = {};
+        sorted.forEach((id, i) => { r[id] = i; });
+        return r;
+    }, [statMap]);
+
+    // ── Chart data — sorted by total_productos desc (most urgent at top) ──────
+    const chartData = useMemo(() => {
+        return SUCURSALES
+            .map(id => ({
+                name:             ERP_NAMES[id],
+                con_bodega_packs: statMap[id]?.con_bodega_packs ?? 0,
+                sin_bodega_packs: statMap[id]?.sin_bodega_packs ?? 0,
+                _total:           statMap[id]?.total_productos ?? 0,
+            }))
+            .sort((a, b) => b._total - a._total);
+    }, [statMap]);
 
 
     // ── Sin-bodega filtered (client-side on current page) ──────
@@ -664,34 +669,36 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {SUCURSALES.map((id) => {
                         const stat     = statMap[id];
-                        const isOn     = selected.has(id);
-                        const needPct  = stat ? Math.round((stat.sin_bodega_packs / Math.max(stat.necesidad_packs, 1)) * 100) : null;
-                        const urgColor = needPct == null ? 'text-slate-400'
-                            : needPct >= 50 ? 'text-red-500'
-                            : needPct >= 25 ? 'text-amber-500'
-                            : 'text-emerald-500';
-                        const urgBorder = !isOn && stat && needPct != null
-                            ? needPct >= 50 ? 'border-red-200 hover:border-red-300'
-                            : needPct >= 25 ? 'border-amber-200 hover:border-amber-300'
-                            : 'border-slate-200 hover:border-blue-300'
+                        const isOn  = selected.has(id);
+                        const rank  = urgRank[id] ?? 5;
+                        const urgColor  = rank < 2 ? 'text-red-500'   : rank < 4 ? 'text-amber-500' : 'text-emerald-500';
+                        const urgBorder = !isOn && stat
+                            ? rank < 2 ? 'border-red-200 hover:border-red-300'
+                            : rank < 4 ? 'border-amber-200 hover:border-amber-300'
+                            : 'border-emerald-200 hover:border-emerald-300'
                             : 'border-slate-200 hover:border-blue-300';
                         return (
                             <button key={id} onClick={() => toggleSuc(id)}
-                                className={`relative flex flex-col items-center gap-1 rounded-xl px-3 py-3 border-2 transition-all duration-150 text-center group ${
+                                className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-3 border-2 transition-all duration-150 text-center group ${
                                     isOn
                                         ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
                                         : `bg-white ${urgBorder} text-slate-700 hover:shadow-sm`
                                 }`}>
                                 <Building2 size={18} className={isOn ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-400'} />
-                                <span className={`text-[12px] font-bold leading-tight ${isOn ? 'text-white' : 'text-slate-700'}`}>
+                                <span className={`text-[12px] font-bold leading-tight mb-1 ${isOn ? 'text-white' : 'text-slate-700'}`}>
                                     {ERP_NAMES[id]}
                                 </span>
-                                {stat && !dashLoading ? (
-                                    <div className={`text-[10px] font-semibold mt-0.5 ${isOn ? 'text-blue-100' : urgColor}`}>
-                                        {stat.total_productos.toLocaleString()} productos
+                                {stat && !dashLoading ? (<>
+                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-blue-100' : 'text-emerald-500'}`}>
+                                        <span className="text-[9px] font-black">✓</span>
+                                        {stat.con_bodega_productos.toLocaleString()}
                                     </div>
-                                ) : (
-                                    <div className="h-3 w-12 rounded bg-slate-100 animate-pulse mt-0.5" />
+                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-red-200' : 'text-red-500'}`}>
+                                        <span className="text-[9px] font-black">✗</span>
+                                        {stat.sin_bodega_productos.toLocaleString()}
+                                    </div>
+                                </>) : (
+                                    <div className="h-6 w-12 rounded bg-slate-100 animate-pulse mt-1" />
                                 )}
                                 {isOn && (
                                     <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
@@ -728,7 +735,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' p-4'}>
                 <h3 className="font-semibold text-slate-700 text-[14px] mb-1">Necesidad de reposición por sucursal</h3>
                 <p className="text-[11px] text-slate-400 mb-4">
-                    Unidades pendientes de reponer por producto — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor necesidad.
+                    Unidades pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor cantidad de productos.
                 </p>
                 {dashLoading ? (
                     <div className="h-48 flex items-center justify-center">

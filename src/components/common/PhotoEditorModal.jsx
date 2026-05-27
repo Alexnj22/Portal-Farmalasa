@@ -3,7 +3,7 @@ import Cropper from 'react-easy-crop';
 import { createPortal } from 'react-dom';
 import {
     X, ZoomIn, ZoomOut, Scissors, Loader2, Check,
-    RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft,
+    RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,
 } from 'lucide-react';
 
 // ── Canvas helpers ─────────────────────────────────────────────────────────────
@@ -26,7 +26,6 @@ async function getCroppedBlob(imageSrc, cropPx, rotation = 0) {
     const bBoxW = Math.round(cos * img.width  + sin * img.height);
     const bBoxH = Math.round(sin * img.width  + cos * img.height);
 
-    // Draw rotated image onto intermediate canvas
     const rotCanvas = document.createElement('canvas');
     rotCanvas.width  = bBoxW;
     rotCanvas.height = bBoxH;
@@ -36,7 +35,6 @@ async function getCroppedBlob(imageSrc, cropPx, rotation = 0) {
     rotCtx.translate(-img.width / 2, -img.height / 2);
     rotCtx.drawImage(img, 0, 0);
 
-    // Crop from rotated canvas
     const canvas = document.createElement('canvas');
     canvas.width  = cropPx.width;
     canvas.height = cropPx.height;
@@ -63,7 +61,6 @@ function readExifRotation(file) {
                     const marker = view.getUint16(offset, false);
                     offset += 2;
                     if (marker === 0xFFE1) {
-                        // Check 'Exif\0\0'
                         if (view.getUint32(offset + 2, false) !== 0x45786966) { offset += view.getUint16(offset, false); continue; }
                         const tiff   = offset + 8;
                         const little = view.getUint16(tiff, false) === 0x4949;
@@ -91,36 +88,64 @@ function readExifRotation(file) {
     });
 }
 
-// ── Checkerboard background (indicates transparent areas) ─────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
+
 const CHECKER = {
     backgroundImage: 'repeating-conic-gradient(#d0d0d0 0% 25%, #f8f8f8 0% 50%)',
     backgroundSize: '18px 18px',
 };
 
+const ZOOM_LEVELS = [1, 1.5, 2, 3, 4];
+
+// ── Cursor preview ─────────────────────────────────────────────────────────────
+// Renders the brush shape at the cursor position as an overlay on the canvas.
+// Positioned in display pixels relative to the canvas element's top-left.
+
+function BrushCursor({ pos, shape, size, type }) {
+    const color = type === 'erase' ? 'rgba(239,68,68,0.85)' : 'rgba(0,82,204,0.85)';
+    const fill  = type === 'erase' ? 'rgba(239,68,68,0.10)' : 'rgba(0,82,204,0.10)';
+    const base  = { position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', pointerEvents: 'none', zIndex: 20, border: `1.5px solid ${color}`, backgroundColor: fill };
+
+    let extra;
+    if (shape === 'round') extra = { width: size * 2, height: size * 2, borderRadius: '50%' };
+    else if (shape === 'h')  extra = { width: size * 4, height: size, borderRadius: 3 };
+    else                     extra = { width: size, height: size * 4, borderRadius: 3 };
+
+    return <div style={{ ...base, ...extra }} />;
+}
+
 // ── PhotoEditorModal ───────────────────────────────────────────────────────────
+
 export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const originalUrl    = useRef(null);
-    const originalImgRef = useRef(null); // preloaded img element for brush restore
+    const originalImgRef = useRef(null);
     const brushCanvasRef = useRef(null);
     const isDrawingRef   = useRef(false);
 
+    // Crop mode state
     const [imageSrc, setImageSrc]     = useState(null);
     const [crop, setCrop]             = useState({ x: 0, y: 0 });
     const [zoom, setZoom]             = useState(1);
     const [cropPx, setCropPx]         = useState(null);
     const [rotation, setRotation]     = useState(0);
 
+    // Background removal state
     const [bgRemoving, setBgRemoving] = useState(false);
     const [bgRemoved, setBgRemoved]   = useState(false);
     const [bgError, setBgError]       = useState(false);
 
+    // Brush mode state
     const [brushMode, setBrushMode]   = useState(false);
-    const [brushType, setBrushType]   = useState('erase'); // 'erase' | 'restore'
+    const [brushType, setBrushType]   = useState('erase');  // 'erase' | 'restore'
+    const [brushShape, setBrushShape] = useState('round');  // 'round' | 'h' | 'v'
     const [brushSize, setBrushSize]   = useState(24);
+    const [brushZoom, setBrushZoom]   = useState(1);
+    const [canvasDims, setCanvasDims] = useState({ w: 0, h: 0 });
+    const [cursorPos, setCursorPos]   = useState(null);     // {x,y} relative to canvas el, display px
 
     const [confirming, setConfirming] = useState(false);
 
-    // Load file → object URL; auto-detect EXIF rotation for phones
+    // ── File load + EXIF ───────────────────────────────────────────────────────
     useEffect(() => {
         const url = URL.createObjectURL(file);
         originalUrl.current = url;
@@ -141,10 +166,13 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     useEffect(() => {
         if (!brushMode || !brushCanvasRef.current || !imageSrc) return;
         const canvas = brushCanvasRef.current;
+        setBrushZoom(1);
+        setCursorPos(null);
         const img = new Image();
         img.onload = () => {
             canvas.width  = img.naturalWidth;
             canvas.height = img.naturalHeight;
+            setCanvasDims({ w: img.naturalWidth, h: img.naturalHeight });
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
@@ -188,44 +216,52 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
         setBgRemoved(false);
         setBgError(false);
         setBrushMode(false);
+        setBrushZoom(1);
+        setCursorPos(null);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
         setRotation(0);
     };
 
-    // ── Brush painting ─────────────────────────────────────────────────────────
+    // ── Brush drawing ──────────────────────────────────────────────────────────
+    // brushSize is in display pixels; r converts it to canvas pixels via scale.
     const drawBrush = useCallback((e) => {
         const canvas = brushCanvasRef.current;
         if (!canvas) return;
-        const rect    = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const scaleX  = canvas.width  / rect.width;
-        const scaleY  = canvas.height / rect.height;
-        const x       = (clientX - rect.left) * scaleX;
-        const y       = (clientY - rect.top)  * scaleY;
-        const radius  = brushSize * ((scaleX + scaleY) / 2);
+        const rect     = canvas.getBoundingClientRect();
+        const clientX  = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY  = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX   = canvas.width  / rect.width;
+        const scaleY   = canvas.height / rect.height;
+        const x        = (clientX - rect.left) * scaleX;
+        const y        = (clientY - rect.top)  * scaleY;
+        const avgScale = (scaleX + scaleY) / 2;
+        const r        = brushSize * avgScale; // canvas pixels
 
         const ctx = canvas.getContext('2d');
         ctx.save();
+        ctx.beginPath();
+        if (brushShape === 'round') {
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+        } else if (brushShape === 'h') {
+            // Horizontal stripe: 4:1 width:height ratio
+            ctx.rect(x - r * 2, y - r * 0.5, r * 4, r);
+        } else {
+            // Vertical stripe: 1:4 width:height ratio
+            ctx.rect(x - r * 0.5, y - r * 2, r, r * 4);
+        }
+
         if (brushType === 'erase') {
             ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,1)';
             ctx.fill();
         } else {
-            // Restore: clip to circle, paste original pixels
             ctx.globalCompositeOperation = 'source-over';
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.clip();
-            if (originalImgRef.current) {
-                ctx.drawImage(originalImgRef.current, 0, 0, canvas.width, canvas.height);
-            }
+            if (originalImgRef.current) ctx.drawImage(originalImgRef.current, 0, 0, canvas.width, canvas.height);
         }
         ctx.restore();
-    }, [brushType, brushSize]);
+    }, [brushType, brushSize, brushShape]);
 
     const onBrushStart = useCallback((e) => {
         e.preventDefault();
@@ -235,14 +271,36 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
     const onBrushMove = useCallback((e) => {
         e.preventDefault();
+        // Update live cursor position for preview
+        const canvas = brushCanvasRef.current;
+        if (canvas) {
+            const rect    = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            setCursorPos({ x: clientX - rect.left, y: clientY - rect.top });
+        }
         if (!isDrawingRef.current) return;
         drawBrush(e);
     }, [drawBrush]);
 
-    const onBrushEnd = useCallback(() => { isDrawingRef.current = false; }, []);
+    const onBrushEnd   = useCallback(() => { isDrawingRef.current = false; }, []);
+    const onBrushLeave = useCallback(() => { isDrawingRef.current = false; setCursorPos(null); }, []);
 
+    // ── Brush zoom ─────────────────────────────────────────────────────────────
+    const handleZoomIn = () => {
+        setBrushZoom(z => { const i = ZOOM_LEVELS.indexOf(z); return i < ZOOM_LEVELS.length - 1 ? ZOOM_LEVELS[i + 1] : z; });
+        setCursorPos(null);
+    };
+    const handleZoomOut = () => {
+        setBrushZoom(z => { const i = ZOOM_LEVELS.indexOf(z); return i > 0 ? ZOOM_LEVELS[i - 1] : z; });
+        setCursorPos(null);
+    };
+
+    // ── Exit brush mode (commit canvas → new imageSrc) ─────────────────────────
     const exitBrushMode = () => {
         const canvas = brushCanvasRef.current;
+        setBrushZoom(1);
+        setCursorPos(null);
         if (!canvas) { setBrushMode(false); return; }
         canvas.toBlob(blob => {
             if (blob) {
@@ -267,11 +325,15 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
     if (!imageSrc) return null;
 
+    // ── Canvas CSS dimensions (zoom applied via CSS, canvas pixel size stays fixed) ──
+    const cW = canvasDims.w ? canvasDims.w * brushZoom : undefined;
+    const cH = canvasDims.h ? canvasDims.h * brushZoom : undefined;
+
     return createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
 
-                {/* Header */}
+                {/* ── Header ── */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
                     <div>
                         <p className="text-[14px] font-black text-slate-800">
@@ -279,7 +341,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
                             {brushMode
-                                ? 'Pinta para borrar o restaurar áreas del fondo'
+                                ? 'Pinta para borrar o restaurar áreas · usa zoom para precisión'
                                 : 'Ajusta el encuadre y aplica ediciones'}
                         </p>
                     </div>
@@ -290,26 +352,61 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     </button>
                 </div>
 
-                {/* Crop / Brush area */}
-                <div className="relative shrink-0 flex items-center justify-center overflow-hidden" style={{ height: 340, background: brushMode ? undefined : undefined }}>
+                {/* ── Canvas / Crop area ── */}
+                <div
+                    className="relative shrink-0"
+                    style={{
+                        height: 340,
+                        overflow: brushMode ? 'auto' : 'hidden',
+                        ...(brushMode ? CHECKER : {}),
+                    }}
+                >
                     {brushMode ? (
-                        <>
-                            <div className="absolute inset-0" style={CHECKER} />
-                            <canvas
-                                ref={brushCanvasRef}
-                                style={{ maxWidth: '100%', maxHeight: '340px', position: 'relative', cursor: 'crosshair', touchAction: 'none', display: 'block' }}
-                                onMouseDown={onBrushStart}
-                                onMouseMove={onBrushMove}
-                                onMouseUp={onBrushEnd}
-                                onMouseLeave={onBrushEnd}
-                                onTouchStart={onBrushStart}
-                                onTouchMove={onBrushMove}
-                                onTouchEnd={onBrushEnd}
-                            />
-                        </>
+                        /* Scrollable brush canvas with zoom */
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '100%',
+                            minHeight: '100%',
+                            width: 'max-content',
+                            height: 'max-content',
+                        }}>
+                            {/* Canvas wrapper — position:relative anchors the cursor preview */}
+                            <div style={{ position: 'relative', lineHeight: 0 }}>
+                                <canvas
+                                    ref={brushCanvasRef}
+                                    style={{
+                                        display: 'block',
+                                        cursor: 'none',
+                                        touchAction: 'none',
+                                        ...(cW ? { width: cW, height: cH, maxWidth: 'none' }
+                                              : { maxWidth: '100%', maxHeight: 340 }),
+                                    }}
+                                    onMouseDown={onBrushStart}
+                                    onMouseMove={onBrushMove}
+                                    onMouseUp={onBrushEnd}
+                                    onMouseLeave={onBrushLeave}
+                                    onTouchStart={onBrushStart}
+                                    onTouchMove={onBrushMove}
+                                    onTouchEnd={onBrushEnd}
+                                />
+                                {cursorPos && (
+                                    <BrushCursor
+                                        pos={cursorPos}
+                                        shape={brushShape}
+                                        size={brushSize}
+                                        type={brushType}
+                                    />
+                                )}
+                            </div>
+                        </div>
                     ) : (
                         <>
-                            <div className={`absolute inset-0 ${bgRemoved ? '' : 'bg-[#111]'}`} style={bgRemoved ? CHECKER : undefined} />
+                            <div
+                                className={`absolute inset-0 ${bgRemoved ? '' : 'bg-[#111]'}`}
+                                style={bgRemoved ? CHECKER : undefined}
+                            />
                             <Cropper
                                 image={imageSrc}
                                 crop={crop}
@@ -325,28 +422,24 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     )}
                 </div>
 
-                {/* Controls */}
+                {/* ── Controls ── */}
                 <div className="px-5 py-4 flex flex-col gap-3 shrink-0">
                     {brushMode ? (
                         <>
-                            {/* Brush type + done */}
+                            {/* Row 1: Erase / Restore + Listo */}
                             <div className="flex items-center gap-2">
                                 <div className="flex rounded-2xl border border-slate-200 p-0.5 gap-0.5">
                                     <button
                                         onClick={() => setBrushType('erase')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                            brushType === 'erase'
-                                                ? 'bg-slate-800 text-white'
-                                                : 'text-slate-500 hover:text-slate-700'
+                                            brushType === 'erase' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-700'
                                         }`}>
                                         <Eraser size={11} strokeWidth={2} /> Borrar
                                     </button>
                                     <button
                                         onClick={() => setBrushType('restore')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                            brushType === 'restore'
-                                                ? 'bg-[#0052CC] text-white'
-                                                : 'text-slate-500 hover:text-slate-700'
+                                            brushType === 'restore' ? 'bg-[#0052CC] text-white' : 'text-slate-500 hover:text-slate-700'
                                         }`}>
                                         <Paintbrush size={11} strokeWidth={2} /> Restaurar
                                     </button>
@@ -358,9 +451,74 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 </button>
                             </div>
 
-                            {/* Brush size */}
+                            {/* Row 2: Brush shape + Zoom */}
                             <div className="flex items-center gap-3">
-                                <span className="shrink-0 w-3 h-3 rounded-full bg-slate-300 block" style={{ width: 6, height: 6 }} />
+
+                                {/* Shape selector */}
+                                <span className="text-[10px] font-bold text-slate-400 shrink-0">Forma</span>
+                                <div className="flex rounded-xl border border-slate-200 p-0.5 gap-0.5">
+                                    {/* Round */}
+                                    <button
+                                        onClick={() => setBrushShape('round')}
+                                        title="Redonda"
+                                        className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
+                                            brushShape === 'round' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-700'
+                                        }`}>
+                                        <span style={{
+                                            display: 'inline-block', width: 9, height: 9,
+                                            borderRadius: '50%', background: 'currentColor',
+                                        }} />
+                                    </button>
+                                    {/* Horizontal */}
+                                    <button
+                                        onClick={() => setBrushShape('h')}
+                                        title="Recta horizontal"
+                                        className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
+                                            brushShape === 'h' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-700'
+                                        }`}>
+                                        <span style={{
+                                            display: 'inline-block', width: 16, height: 3,
+                                            background: 'currentColor', borderRadius: 1.5,
+                                        }} />
+                                    </button>
+                                    {/* Vertical */}
+                                    <button
+                                        onClick={() => setBrushShape('v')}
+                                        title="Recta vertical"
+                                        className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
+                                            brushShape === 'v' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-700'
+                                        }`}>
+                                        <span style={{
+                                            display: 'inline-block', width: 3, height: 16,
+                                            background: 'currentColor', borderRadius: 1.5,
+                                        }} />
+                                    </button>
+                                </div>
+
+                                {/* Zoom */}
+                                <div className="ml-auto flex items-center gap-1">
+                                    <span className="text-[10px] font-bold text-slate-400 shrink-0 mr-1">Zoom</span>
+                                    <button
+                                        onClick={handleZoomOut}
+                                        disabled={brushZoom === ZOOM_LEVELS[0]}
+                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                                        <Minus size={10} strokeWidth={2.5} />
+                                    </button>
+                                    <span className="text-[11px] font-black text-slate-700 w-8 text-center tabular-nums">
+                                        {brushZoom}×
+                                    </span>
+                                    <button
+                                        onClick={handleZoomIn}
+                                        disabled={brushZoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                                        <Plus size={10} strokeWidth={2.5} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Row 3: Brush size slider */}
+                            <div className="flex items-center gap-3">
+                                <span className="shrink-0 rounded-full bg-slate-300 block" style={{ width: 6, height: 6 }} />
                                 <input
                                     type="range" min={6} max={60} step={1}
                                     value={brushSize}
@@ -372,14 +530,10 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     style={{ width: Math.max(8, brushSize * 0.5), height: Math.max(8, brushSize * 0.5) }}
                                 />
                             </div>
-
-                            <p className="text-[10px] text-slate-400 text-center -mt-1">
-                                {brushType === 'erase' ? 'Pinta sobre el fondo para eliminarlo' : 'Pinta sobre áreas eliminadas para restaurarlas'}
-                            </p>
                         </>
                     ) : (
                         <>
-                            {/* Zoom */}
+                            {/* Zoom slider */}
                             <div className="flex items-center gap-2.5">
                                 <ZoomOut size={13} className="text-slate-400 shrink-0" />
                                 <input
@@ -427,8 +581,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                             ? <><Check size={13} /> Fondo eliminado</>
                                             : bgError
                                                 ? 'Error — intentar de nuevo'
-                                                : <><Scissors size={13} /> Quitar fondo</>
-                                    }
+                                                : <><Scissors size={13} /> Quitar fondo</>}
                                 </button>
 
                                 {bgRemoved && (
@@ -459,7 +612,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     )}
                 </div>
 
-                {/* Footer — only in crop mode */}
+                {/* ── Footer — only in crop mode ── */}
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 shrink-0">
                         <button onClick={onCancel}
@@ -472,8 +625,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-[#0052CC] hover:bg-[#003D99] transition-colors disabled:opacity-50 flex items-center gap-2">
                             {confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
-                                : 'Guardar foto'
-                            }
+                                : 'Guardar foto'}
                         </button>
                     </div>
                 )}

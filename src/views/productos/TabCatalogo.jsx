@@ -939,7 +939,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             )}
                             <button onClick={() => fileRef.current?.click()}
                                 onContextMenu={handlePhotoContextMenu}
-                                className={`relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
+                                className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
                                 {localFoto ? (
                                     <>
                                         <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />
@@ -1298,7 +1298,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
                     <button onClick={() => fileRef.current?.click()}
                         onContextMenu={handlePhotoContextMenu}
-                        className="group relative w-full aspect-square max-w-[180px] rounded-2xl border-2 border-dashed border-white/[0.12] overflow-hidden transition-all duration-200 hover:border-blue-400/[0.40] hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]">
+                        className="group relative w-full h-[180px] max-w-[180px] rounded-2xl border-2 border-dashed border-white/[0.12] overflow-hidden transition-all duration-200 hover:border-blue-400/[0.40] hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]">
                         {localFoto ? (
                             <>
                                 <img src={localFoto} alt="" className="w-full h-full object-contain bg-white/[0.02] p-2" />
@@ -1764,7 +1764,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                 {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
                                 <button onClick={() => fileRef.current?.click()}
                                     onContextMenu={handlePhotoContextMenu}
-                                    className="group relative w-full max-w-[160px] aspect-square rounded border-2 border-dashed border-gray-300 overflow-hidden transition-colors hover:border-[#1B3A6B]/50 hover:bg-blue-50/30">
+                                    className="group relative w-[160px] h-[160px] rounded border-2 border-dashed border-gray-300 overflow-hidden transition-colors hover:border-[#1B3A6B]/50 hover:bg-blue-50/30">
                                     {localFoto ? (
                                         <>
                                             <img src={localFoto} alt="" className="w-full h-full object-contain bg-white p-2" />

@@ -298,6 +298,11 @@ export default function TabGenerar() {
                                 )}
                                 <RulesTag row={row} />
                             </div>
+                            {row.ventas_6m > 0 && (
+                                <span className="text-[10px] text-slate-400 mt-0.5 block tabular-nums">
+                                    ↻ {Number(row.ventas_6m).toLocaleString('es-SV')} u/6m
+                                </span>
+                            )}
                             {!isSinStock && (
                                 <LotesPill lotes={row.lotes_bodega} qty={adj} />
                             )}
@@ -398,7 +403,7 @@ export default function TabGenerar() {
                 </div>
                 <p className="mt-3 text-[12px] text-slate-400 flex items-center gap-1">
                     <Info size={12} />
-                    Necesidad = Max − Stock actual en packs. El stock de Bodega se distribuye proporcionalmente por urgencia. Las reglas de despacho (múltiplos, blíster) se aplican al redondear hacia abajo.
+                    Necesidad = Max − Stock actual en packs. El stock de Bodega se distribuye ponderado por urgencia y rotación de ventas de los últimos 6 meses (↻ u/6m). Las reglas de despacho (múltiplos, blíster) redondean hacia abajo.
                 </p>
             </div>
 

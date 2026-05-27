@@ -2079,8 +2079,6 @@ export default function TabCatalogo({
     setFilterLab,
     filterCategoria   = null,
     setFilterCategoria,
-    filterAntibiotico = null,
-    setFilterAntibiotico,
     labOptions        = [],
     catOptions        = [],
     onCategoryCreated = null,
@@ -2262,7 +2260,7 @@ export default function TabCatalogo({
     }, []);
 
     // ── loadProducts ────────────────────────────────────────────────────────
-    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, anti, sField, sDir, fNuevos, modBids = null) => {
+    const loadProducts = useCallback(async (q, pg, ps, fa, bids, lab, cat, sField, sDir, fNuevos, modBids = null) => {
         const rid = ++loadRef.current;
         setLoading(true);
         setLoadError(null);
@@ -2280,7 +2278,6 @@ export default function TabCatalogo({
             if (fa === 'activos') qb = qb.eq('activo', true);
             if (lab)  qb = qb.eq('laboratorio_id', lab);
             if (cat)  qb = qb.eq('tipo_medicamento', cat);
-            if (anti !== null) qb = qb.eq('es_antibiotico', anti);
             if (fNuevos) {
                 const now = new Date();
                 qb = qb.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
@@ -2347,7 +2344,7 @@ export default function TabCatalogo({
     }, [allowedPriceFields]);
 
     // Reset page on filter/sort changes
-    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, filterLab, filterCategoria, filterAntibiotico, sortField]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, filterLab, filterCategoria, sortField]);
 
     // Trigger load — normal (no margin filter). marginStats/statsLoading intentionally
     // excluded from deps to prevent reloading the list when stats finish loading.
@@ -2356,11 +2353,11 @@ export default function TabCatalogo({
         if (filterModificados && !modificadosStats) return;
         const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
         const t = setTimeout(() =>
-            loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos, modBids),
+            loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
 
     // Trigger load — margin filter active. Waits for stats to be ready.
     useEffect(() => {
@@ -2371,11 +2368,11 @@ export default function TabCatalogo({
                                                 : [...(marginStats.bajoIds    || [])];
         const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
         const t = setTimeout(() =>
-            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos, modBids),
+            loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, marginStats, statsLoading, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, marginStats, statsLoading, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
 
     // ── Sort handler ────────────────────────────────────────────────────────
     const handleSort = useCallback((field) => {
@@ -2441,11 +2438,9 @@ export default function TabCatalogo({
     const selectedLab = labOptions.find(o => o.value === String(filterLab));
     const labW = selectedLab ? Math.max(185, Math.min(260, 90 + selectedLab.label.length * 7)) : 185;
     const catW = filterCategoria ? Math.max(165, Math.min(220, 90 + filterCategoria.length * 7)) : 165;
-    const hasActiveFilters = filterLab !== null || filterCategoria !== null
-                           || filterAntibiotico !== null || filterActivo === 'todos';
+    const hasActiveFilters = filterLab !== null || filterCategoria !== null || filterActivo === 'todos';
     const resetFilters = () => {
-        setFilterLab?.(null); setFilterCategoria?.(null);
-        setFilterAntibiotico?.(null); setFilterActivo?.('activos');
+        setFilterLab?.(null); setFilterCategoria?.(null); setFilterActivo?.('activos');
     };
 
     return (
@@ -2520,18 +2515,6 @@ export default function TabCatalogo({
                         />
                     </div>
 
-                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-
-                    {/* Antibiótico */}
-                    <button onClick={() => setFilterAntibiotico?.(v => v === true ? null : true)}
-                        className={`mx-3 my-2 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-                            filterAntibiotico === true
-                                ? isAurora
-                                    ? 'bg-orange-500/[0.20] text-orange-400 shadow-sm'
-                                    : 'bg-orange-100 text-orange-700 shadow-sm'
-                                : tk.filterBtn
-                        }`}>Antibiótico</button>
-
                     {/* Clear all */}
                     {hasActiveFilters && (
                         <>
@@ -2557,7 +2540,7 @@ export default function TabCatalogo({
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-red-400" />
                     <p className="text-sm font-semibold text-red-600 mb-1">Error al cargar productos</p>
                     <p className="text-[11px] text-red-400 mb-4">{loadError}</p>
-                    <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, filterAntibiotico, sortField, sortDir, filterNuevos); }}
+                    <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}
                         className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
                         Reintentar
                     </button>

@@ -39,7 +39,6 @@ export default function ProductosView() {
     const [filterActivo,      setFilterActivo]      = useState('activos');
     const [filterLab,         setFilterLab]          = useState(null);
     const [filterCategoria,   setFilterCategoria]    = useState(null);
-    const [filterAntibiotico, setFilterAntibiotico]  = useState(null);
     const [labs,              setLabs]               = useState([]);
     const [categorias,        setCategorias]         = useState([]);
 
@@ -87,8 +86,6 @@ export default function ProductosView() {
                     setFilterLab={setFilterLab}
                     filterCategoria={filterCategoria}
                     setFilterCategoria={setFilterCategoria}
-                    filterAntibiotico={filterAntibiotico}
-                    setFilterAntibiotico={setFilterAntibiotico}
                     labOptions={labOptions}
                     catOptions={catOptions}
                     onCategoryCreated={handleCategoryCreated}

@@ -474,11 +474,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
         }
 
         const q = (searchTerm || '').toLowerCase();
-        if (q) rows = rows.filter(r => r.product_name?.toLowerCase().includes(q));
+        if (q) rows = rows.filter(r =>
+            r.product_name?.toLowerCase().includes(q) ||
+            r.laboratorio?.toLowerCase().includes(q)
+        );
 
         return [...rows].sort((a, b) => {
-            if (sortField === 'product_name') {
-                const cmp = (a.product_name || '').localeCompare(b.product_name || '', 'es');
+            if (sortField === 'product_name' || sortField === 'laboratorio') {
+                const cmp = (a[sortField] || '').localeCompare(b[sortField] || '', 'es');
                 return sortDir === 'asc' ? cmp : -cmp;
             }
             const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
@@ -634,6 +637,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <div className={`h-2.5 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${50 + (i * 17) % 50}px` }} />
                                         </div>
                                     </td>
+                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${60 + (i * 13) % 50}px` }} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
@@ -664,9 +668,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <thead className={`sticky top-0 z-10 ${tk.thead}`}>
                                     <tr>
                                         <SortTh field="product_name"      label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                        <SortTh field="months_with_sales" label="Meses c/venta"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden md:table-cell" />
-                                        <SortTh field="units_sold"        label="Uds. comerc. (6m)" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <SortTh field="revenue"           label="Revenue (6m)"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
+                                        <SortTh field="laboratorio"       label="Laboratorio"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
+                                        <SortTh field="months_with_sales" label="Meses c/venta"     sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden lg:table-cell" />
+                                        <SortTh field="units_sold"        label="Uds. (6m)"         sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
+                                        <SortTh field="revenue"           label="Revenue (6m)"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
                                         <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
                                         <th className="w-10 hidden md:table-cell" />
                                     </tr>
@@ -682,10 +687,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 style={{ borderLeftColor: leftColor }}
                                                 className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${isIgnored ? 'opacity-50' : ''}`}>
                                                 <td className="px-4 py-3.5">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[340px]">{row.product_name || '—'}</span>
+                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[300px]">{row.product_name || '—'}</span>
                                                     <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                                 </td>
-                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
+                                                    <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center hidden lg:table-cell">
                                                     <div className="flex items-center justify-center gap-0.5">
                                                         {Array.from({ length: 6 }).map((_, i) => (
                                                             <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
@@ -762,11 +770,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <>
                                 <thead className={`sticky top-0 z-10 ${tk.thead}`}>
                                     <tr>
-                                        <SortTh field="product_name"  label="Producto"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="product_name"  label="Producto"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
+                                        <SortTh field="laboratorio"   label="Laboratorio"     sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
                                         <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Min/Max</th>
-                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
+                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
                                         <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
                                     </tr>
                                 </thead>
@@ -781,7 +790,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
                                                 className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
                                                 <td className="px-4 py-3.5">
-                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px]">{row.product_name || '—'}</span>
+                                                    <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[240px]">{row.product_name || '—'}</span>
                                                     {row.fecha_vencimiento_min && (() => {
                                                         const exp = new Date(row.fecha_vencimiento_min);
                                                         const expired = exp < new Date();
@@ -789,6 +798,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                             {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
                                                         </span>;
                                                     })()}
+                                                </td>
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
+                                                    <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
                                                     <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
@@ -802,7 +814,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                         ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
                                                         : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>}
                                                 </td>
-                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
                                                     {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
                                                          : <span className="text-[11px] text-slate-200">—</span>}
                                                 </td>

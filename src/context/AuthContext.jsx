@@ -63,9 +63,10 @@ export const AuthProvider = ({ children }) => {
     const priceLevelQuery = roleId
       ? supabase.from('roles').select('max_price_level').eq('id', roleId).single()
       : Promise.resolve({ data: null });
-    Promise.all([permsQuery, priceLevelQuery]).then(([{ data }, { data: roleData }]) => {
+    Promise.all([permsQuery, priceLevelQuery]).then(([{ data, error }, { data: roleData }]) => {
+      if (error || !data) { setPermsLoading(false); return; }
       const map = {};
-      (data || []).forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' }; });
+      data.forEach(p => { map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' }; });
       setRolePerms(map);
       setMaxPriceLevel(roleData?.max_price_level ?? null);
       setPermsLoading(false);
@@ -249,10 +250,10 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        setPermsLoading(true);
         setUser(u);
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
+        refreshPermissions(u);
       } catch {
         // Silencioso, seguimos confiando en el caché local
       }
@@ -307,10 +308,10 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        setPermsLoading(true);
         setUser(u);
         localStorage.setItem(LS_USER, JSON.stringify(u));
         startIdleWatcher(u);
+        refreshPermissions(u);
       } catch {
         // silencioso
       }

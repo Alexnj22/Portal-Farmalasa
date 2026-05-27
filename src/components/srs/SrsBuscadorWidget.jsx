@@ -162,19 +162,51 @@ export default function SrsBuscadorWidget({
 
 // ── SrsResultCard ─────────────────────────────────────────────────────────────
 
+// Strips non-printable characters and Private Use Area / Object Replacement glyphs
+// that macOS fonts substitute silently but Windows/Edge renders as OBJ boxes.
+function sanitize(v) {
+    if (v == null) return '';
+    const s = typeof v === 'object'
+        ? String(v.nombre ?? v.name ?? v.value ?? '')
+        : String(v);
+    // Strip: control chars, Unicode PUA (E000-F8FF), Specials incl. OBJ char (FFF0-FFFF)
+    // Using new RegExp() so the build tool doesn't try to parse supplementary chars
+    return s.replace(
+        new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\uE000-\uF8FF\uFFF0-\uFFFF]', 'g'),
+        ''
+    ).trim();
+}
+
 function SrsResultCard({ product: p, onSelect }) {
-    const activo = (p.estatus ?? p.Activo) === 'A';
+    const estatus    = sanitize(p.estatus ?? p.Activo ?? '');
+    const activo     = estatus === 'A';
+    const nombre     = sanitize(p.nombre_comercial ?? p.nombreComercial ?? '');
+    const lab        = sanitize(p.laboratorio ?? '');
+    const forma      = sanitize(p.NOMBRE_FORMA_FARMACEUTICA ?? '');
+    const principio  = sanitize(p.principio_activo ?? p.formula ?? '');
+    const conc       = sanitize(p.concentracion ?? '');
+    const noregistro = sanitize(p.noregistro ?? '');
+
+    let fechaStr = '';
+    try {
+        if (p.FECHA_INSCRIPCION) {
+            fechaStr = new Date(p.FECHA_INSCRIPCION).toLocaleDateString('es-SV', {
+                year: 'numeric', month: 'short', day: 'numeric',
+            });
+        }
+    } catch { /* invalid date — skip */ }
 
     return (
-        <div className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
-            onSelect ? 'cursor-pointer hover:border-[#0052CC]/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
-        }`}
+        <div
+            className={`rounded-2xl border bg-white p-3.5 flex flex-col gap-2 transition-all ${
+                onSelect ? 'cursor-pointer hover:border-[#0052CC]/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-slate-200'
+            }`}
             onClick={onSelect || undefined}
         >
             {/* Header row */}
             <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-black text-slate-800 leading-tight flex-1">
-                    {p.nombre_comercial || p.nombreComercial}
+                    {nombre || <span className="text-slate-400 font-normal italic">Sin nombre</span>}
                 </p>
                 <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
                     activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
@@ -184,45 +216,45 @@ function SrsResultCard({ product: p, onSelect }) {
             </div>
 
             {/* Lab + forma */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {p.laboratorio && (
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                        <Building2 size={10} className="text-slate-400 shrink-0" />
-                        {p.laboratorio}
-                    </span>
-                )}
-                {p.NOMBRE_FORMA_FARMACEUTICA && (
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                        <Pill size={10} className="text-slate-400 shrink-0" />
-                        {p.NOMBRE_FORMA_FARMACEUTICA}
-                    </span>
-                )}
-            </div>
+            {(lab || forma) && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {lab && (
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                            <Building2 size={10} className="text-slate-400 shrink-0" />
+                            {lab}
+                        </span>
+                    )}
+                    {forma && (
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                            <Pill size={10} className="text-slate-400 shrink-0" />
+                            {forma}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Principio activo + concentración */}
-            {(p.principio_activo || p.formula) && (
+            {principio && (
                 <div className="flex items-start gap-1.5 bg-violet-50 rounded-xl px-3 py-2">
                     <FlaskConical size={11} className="text-violet-400 shrink-0 mt-0.5" />
                     <div className="text-[11px] text-violet-700 font-medium leading-snug">
-                        <span>{p.principio_activo || p.formula}</span>
-                        {p.concentracion && (
-                            <span className="ml-1.5 text-violet-500 font-bold">{p.concentracion}</span>
-                        )}
+                        <span>{principio}</span>
+                        {conc && <span className="ml-1.5 text-violet-500 font-bold">{conc}</span>}
                     </div>
                 </div>
             )}
 
             {/* Footer: registro + fecha */}
-            <div className="flex items-center gap-3 pt-0.5">
-                {p.noregistro && (
-                    <span className="text-[10px] text-slate-400 font-mono">{p.noregistro}</span>
-                )}
-                {p.FECHA_INSCRIPCION && (
-                    <span className="text-[10px] text-slate-400">
-                        {new Date(p.FECHA_INSCRIPCION).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </span>
-                )}
-            </div>
+            {(noregistro || fechaStr) && (
+                <div className="flex items-center gap-3 pt-0.5">
+                    {noregistro && (
+                        <span className="text-[10px] text-slate-400 font-mono">{noregistro}</span>
+                    )}
+                    {fechaStr && (
+                        <span className="text-[10px] text-slate-400">{fechaStr}</span>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

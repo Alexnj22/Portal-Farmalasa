@@ -140,6 +140,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const [brushShape, setBrushShape] = useState('round');  // 'round' | 'h' | 'v'
     const [brushSize, setBrushSize]   = useState(24);
     const [brushZoom, setBrushZoom]   = useState(1);
+    const [baseScale, setBaseScale]   = useState(1);        // scale so image fits 340px at zoom=1
     const [canvasDims, setCanvasDims] = useState({ w: 0, h: 0 });
     const [cursorPos, setCursorPos]   = useState(null);     // {x,y} relative to canvas el, display px
 
@@ -172,6 +173,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
         img.onload = () => {
             canvas.width  = img.naturalWidth;
             canvas.height = img.naturalHeight;
+            // Scale so the image fits within the 340px canvas area at zoom=1
+            const scale = (img.naturalWidth > 0 && img.naturalHeight > 0)
+                ? Math.min(340 / img.naturalWidth, 340 / img.naturalHeight)
+                : 1;
+            setBaseScale(scale);
             setCanvasDims({ w: img.naturalWidth, h: img.naturalHeight });
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -216,8 +222,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
         setBgRemoved(false);
         setBgError(false);
         setBrushMode(false);
-        setBrushZoom(1);
-        setCursorPos(null);
+        setBrushZoom(1); setBaseScale(1); setCursorPos(null);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
         setRotation(0);
@@ -299,8 +304,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     // ── Exit brush mode (commit canvas → new imageSrc) ─────────────────────────
     const exitBrushMode = () => {
         const canvas = brushCanvasRef.current;
-        setBrushZoom(1);
-        setCursorPos(null);
+        setBrushZoom(1); setBaseScale(1); setCursorPos(null);
         if (!canvas) { setBrushMode(false); return; }
         canvas.toBlob(blob => {
             if (blob) {
@@ -325,9 +329,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
     if (!imageSrc) return null;
 
-    // ── Canvas CSS dimensions (zoom applied via CSS, canvas pixel size stays fixed) ──
-    const cW = canvasDims.w ? canvasDims.w * brushZoom : undefined;
-    const cH = canvasDims.h ? canvasDims.h * brushZoom : undefined;
+    // ── Canvas CSS dimensions ──
+    // baseScale shrinks the canvas so it fits 340px at zoom=1.
+    // brushZoom multiplies from that base. Canvas pixel size never changes (only CSS size).
+    const cW = canvasDims.w ? Math.round(canvasDims.w * baseScale * brushZoom) : undefined;
+    const cH = canvasDims.h ? Math.round(canvasDims.h * baseScale * brushZoom) : undefined;
 
     return createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">

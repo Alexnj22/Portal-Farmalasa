@@ -104,9 +104,9 @@ function BarTooltip({ active, payload, label }) {
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-[12px]">
             <p className="font-semibold text-slate-700 mb-1">{label}</p>
-            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> productos</p>
-            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> productos</p>
-            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> productos</p>
+            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> unidades</p>
+            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> unidades</p>
+            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> unidades</p>
         </div>
     );
 }
@@ -367,13 +367,6 @@ export default function TabGenerar({ searchTerm = '' }) {
         return m;
     }, [dashStats]);
 
-    // Sucursales sorted by total need descending (most urgent first)
-    const sortedSucursales = useMemo(() => {
-        if (dashLoading || !dashStats.length) return SUCURSALES;
-        return [...SUCURSALES].sort(
-            (a, b) => (statMap[b]?.necesidad_packs ?? 0) - (statMap[a]?.necesidad_packs ?? 0)
-        );
-    }, [dashStats, dashLoading, statMap]);
 
     // ── Sin-bodega filtered (client-side on current page) ──────
     const filteredSinBodega = useMemo(() => {
@@ -665,7 +658,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                    {sortedSucursales.map((id, rank) => {
+                    {SUCURSALES.map((id) => {
                         const stat     = statMap[id];
                         const isOn     = selected.has(id);
                         const needPct  = stat ? Math.round((stat.sin_bodega_packs / Math.max(stat.necesidad_packs, 1)) * 100) : null;
@@ -685,19 +678,13 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
                                         : `bg-white ${urgBorder} text-slate-700 hover:shadow-sm`
                                 }`}>
-                                {/* urgency rank */}
-                                {!dashLoading && stat && (
-                                    <span className={`absolute top-1.5 left-2 text-[9px] font-black leading-none ${isOn ? 'text-white/50' : urgColor}`}>
-                                        #{rank + 1}
-                                    </span>
-                                )}
                                 <Building2 size={18} className={isOn ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-400'} />
                                 <span className={`text-[12px] font-bold leading-tight ${isOn ? 'text-white' : 'text-slate-700'}`}>
                                     {ERP_NAMES[id]}
                                 </span>
                                 {stat && !dashLoading ? (
                                     <div className={`text-[10px] font-semibold mt-0.5 ${isOn ? 'text-blue-100' : urgColor}`}>
-                                        {stat.necesidad_packs.toLocaleString()} prod.
+                                        {stat.total_productos.toLocaleString()} productos
                                     </div>
                                 ) : (
                                     <div className="h-3 w-12 rounded bg-slate-100 animate-pulse mt-0.5" />
@@ -737,7 +724,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' p-4'}>
                 <h3 className="font-semibold text-slate-700 text-[14px] mb-1">Necesidad de reposición por sucursal</h3>
                 <p className="text-[11px] text-slate-400 mb-4">
-                    Productos pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor urgencia.
+                    Unidades pendientes de reponer por producto — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor necesidad.
                 </p>
                 {dashLoading ? (
                     <div className="h-48 flex items-center justify-center">

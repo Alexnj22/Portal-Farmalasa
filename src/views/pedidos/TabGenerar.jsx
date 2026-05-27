@@ -137,17 +137,18 @@ function MiniPager({ page, total, pageSize, onChange }) {
 
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
+const TH = 'px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500';
 const TABLE_HEAD = (
     <thead>
-        <tr className="text-[11px] text-slate-400 uppercase tracking-wide bg-slate-50/40">
-            <th className="text-left px-4 py-2 font-medium">Producto</th>
-            <th className="text-left px-3 py-2 font-medium">Presentación</th>
-            <th className="text-center px-3 py-2 font-medium">Stock</th>
-            <th className="text-center px-3 py-2 font-medium">Max</th>
-            <th className="text-center px-3 py-2 font-medium">Necesidad</th>
-            <th className="text-center px-3 py-2 font-medium">En Bodega</th>
-            <th className="text-center px-3 py-2 font-medium">Asignar</th>
-            <th className="text-center px-3 py-2 font-medium">Urgencia</th>
+        <tr className="bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.09]">
+            <th className={`${TH} text-left`}>Producto</th>
+            <th className={`${TH} text-left px-3`}>Presentación</th>
+            <th className={`${TH} text-center px-3`}>Stock</th>
+            <th className={`${TH} text-center px-3`}>Max</th>
+            <th className={`${TH} text-center px-3`}>Necesidad</th>
+            <th className={`${TH} text-center px-3`}>En Bodega</th>
+            <th className={`${TH} text-center px-3`}>Asignar</th>
+            <th className={`${TH} text-center px-3`}>Urgencia</th>
         </tr>
     </thead>
 );
@@ -387,10 +388,10 @@ export default function TabGenerar({ searchTerm = '' }) {
         const overStock  = adj > Number(row.bodega_stock_packs) && Number(row.bodega_stock_packs) > 0;
 
         return (
-            <tr key={k} className={`border-t border-slate-50 transition-colors ${
+            <tr key={k} className={`border-t border-[#0052CC]/[0.06] transition-colors ${
                 isSinStock ? 'bg-slate-50/40 opacity-55' :
                 isRevision ? 'bg-amber-50/30 hover:bg-amber-50/60' :
-                             'hover:bg-blue-50/20'
+                             'hover:bg-[#0052CC]/[0.032]'
             }`}>
                 <td className="px-4 py-2 max-w-[240px]">
                     <div className="min-w-0">
@@ -755,20 +756,20 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="text-[11px] text-slate-400 uppercase tracking-wide bg-slate-50/40">
-                                <th className="text-left px-4 py-2 font-medium">Producto</th>
-                                <th className="text-left px-3 py-2 font-medium">Laboratorio</th>
-                                <th className="text-left px-3 py-2 font-medium">Sucursales que solicitan</th>
-                                <th className="text-center px-3 py-2 font-medium">Total packs</th>
-                                <th className="text-center px-3 py-2 font-medium">Ventas 6m</th>
+                            <tr className="bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.09]">
+                                <th className={`${TH} text-left`}>Producto</th>
+                                <th className={`${TH} text-left px-3`}>Laboratorio</th>
+                                <th className={`${TH} text-left px-3`}>Sucursales que solicitan</th>
+                                <th className={`${TH} text-center px-3`}>Total packs</th>
+                                <th className={`${TH} text-center px-3`}>Ventas 6m</th>
                             </tr>
                         </thead>
                         <tbody>
                             {sinBodegaLoad ? (
                                 Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="border-t border-slate-50">
+                                    <tr key={i} className="border-t border-[#0052CC]/[0.06]">
                                         <td colSpan={5} className="px-4 py-3">
-                                            <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
+                                            <div className="h-4 bg-[#0052CC]/[0.06] rounded animate-pulse w-3/4" />
                                         </td>
                                     </tr>
                                 ))
@@ -779,7 +780,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     </td>
                                 </tr>
                             ) : filteredSinBodega.map(row => (
-                                <tr key={row.erp_product_id} className="border-t border-slate-50 hover:bg-red-50/20 transition-colors">
+                                <tr key={row.erp_product_id} className="border-t border-[#0052CC]/[0.06] hover:bg-[#0052CC]/[0.032] transition-colors">
                                     <td className="px-4 py-2.5 max-w-[220px]">
                                         <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
                                     </td>

@@ -343,9 +343,18 @@ export default function TabHistorial({ searchTerm = '' }) {
                                                 </div>
 
                                                 <table className="w-full text-[12px]">
+                                                    <thead>
+                                                        <tr className="bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.09]">
+                                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 text-left">Producto</th>
+                                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Asignado</th>
+                                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Recibido</th>
+                                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 text-left">Nota</th>
+                                                            <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Estado</th>
+                                                        </tr>
+                                                    </thead>
                                                     <tbody>
                                                         {normalRows.map(row => (
-                                                            <tr key={row.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                                            <tr key={row.id} className="border-t border-[#0052CC]/[0.06] hover:bg-[#0052CC]/[0.032] transition-colors">
                                                                 <td className="px-3 py-2 text-slate-700 font-medium max-w-[200px]">
                                                                     <span className="block truncate">{row.products?.nombre}</span>
                                                                 </td>
@@ -372,7 +381,7 @@ export default function TabHistorial({ searchTerm = '' }) {
 
                                                         {/* Sin stock / revisión items at bottom, muted */}
                                                         {specialRows.map(row => (
-                                                            <tr key={row.id} className="border-t border-slate-50 opacity-50">
+                                                            <tr key={row.id} className="border-t border-[#0052CC]/[0.06] opacity-50">
                                                                 <td className="px-3 py-2 text-slate-600 font-medium max-w-[200px]">
                                                                     <span className="block truncate">{row.products?.nombre}</span>
                                                                 </td>

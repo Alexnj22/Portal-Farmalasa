@@ -2,13 +2,26 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Check, X, Plus, Pencil, Trash2,
-    AlertTriangle, ChevronLeft, ChevronRight, FlaskConical,
+    AlertTriangle, ChevronLeft, ChevronRight, FlaskConical, Package,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { DataTable, DataRow } from '../../components/common/DataTable';
 
 const PAGE_SIZE  = 50;
 const EMPTY_VALS = { solo_cajas: false, multiplo: '', blister: '', notes: '' };
 const GLASS      = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+
+const COLS = [
+    { key: 'lab',      label: 'Laboratorio', align: 'left'   },
+    { key: 'producto', label: 'Producto',     align: 'left'   },
+    { key: 'ab',       label: 'AB',           align: 'center', className: 'w-12' },
+    { key: 'estado',   label: 'Estado',       align: 'center' },
+    { key: 'cajas',    label: 'Solo cajas',   align: 'center' },
+    { key: 'multiplo', label: 'Múltiplo',     align: 'center' },
+    { key: 'blister',  label: 'Blíster',      align: 'center' },
+    { key: 'notas',    label: 'Notas',        align: 'left'   },
+    { key: '_',        label: '',             align: 'right',  className: 'w-28' },
+];
 
 export default function TabReglas({ searchTerm = '' }) {
     // Rules — loaded once, O(1) lookup
@@ -146,206 +159,163 @@ export default function TabReglas({ searchTerm = '' }) {
             </div>
 
             {/* Table */}
-            <div className={`${GLASS} overflow-hidden`}>
-                {(loadingProducts || loadingRules) ? (
-                    <div className="flex items-center justify-center py-14 gap-2 text-slate-400">
-                        <Loader2 size={18} className="animate-spin" />
-                        <span className="text-[14px]">Cargando…</span>
-                    </div>
-                ) : products.length === 0 ? (
-                    <div className="p-12 text-center text-slate-400">
-                        <p className="text-[14px]">
-                            {searchTerm.length >= 2
-                                ? `No se encontraron productos para "${searchTerm}".`
-                                : 'Sin productos en catálogo.'
-                            }
-                        </p>
-                    </div>
-                ) : (
-                    <table className="w-full text-[13px]">
-                        <thead>
-                            <tr className="text-[11px] text-slate-400 uppercase tracking-wide bg-slate-50/70 border-b border-slate-100">
-                                <th className="text-left px-4 py-2.5 font-medium">Laboratorio</th>
-                                <th className="text-left px-4 py-2.5 font-medium">Producto</th>
-                                <th className="text-center px-3 py-2.5 font-medium w-12">AB</th>
-                                <th className="text-center px-3 py-2.5 font-medium">Estado</th>
-                                <th className="text-center px-3 py-2.5 font-medium">Solo cajas</th>
-                                <th className="text-center px-3 py-2.5 font-medium">Múltiplo</th>
-                                <th className="text-center px-3 py-2.5 font-medium">Blíster</th>
-                                <th className="text-left px-3 py-2.5 font-medium">Notas</th>
-                                <th className="w-28 px-3 py-2.5" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map(prod => {
-                                const isEditing = editingId === prod.id;
-                                const rule      = rulesMap[prod.id] ?? null;
-                                const hasRule   = !!rule;
+            <DataTable
+                columns={COLS}
+                loading={loadingProducts || loadingRules}
+                empty={{
+                    icon: Package,
+                    message: searchTerm.length >= 2
+                        ? `No se encontraron productos para "${searchTerm}".`
+                        : 'Sin productos en catálogo.',
+                }}
+                minWidth="700px"
+            >
+                {products.map((prod, i) => {
+                    const isEditing = editingId === prod.id;
+                    const rule      = rulesMap[prod.id] ?? null;
+                    const hasRule   = !!rule;
 
-                                return (
-                                    <React.Fragment key={prod.id}>
-                                        {/* Read row */}
-                                        <tr className={`border-t border-slate-50 transition-colors ${
-                                            isEditing ? 'bg-blue-50/50'
-                                            : hasRule  ? 'hover:bg-blue-50/20'
-                                            : 'hover:bg-slate-50/60'
-                                        }`}>
-                                            <td className="px-4 py-2.5 text-slate-400 text-[12px] max-w-[140px]">
-                                                <span className="block truncate">{prod.laboratorio_nombre ?? '—'}</span>
-                                            </td>
-                                            <td className="px-4 py-2.5 font-medium text-slate-700 max-w-[240px]">
-                                                <span className="block truncate">{prod.nombre}</span>
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center">
-                                                {prod.es_antibiotico && (
-                                                    <span
-                                                        title="Antibiótico"
-                                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 border border-violet-200"
-                                                    >
-                                                        <FlaskConical size={10} className="text-violet-600" />
-                                                    </span>
+                    return (
+                        <React.Fragment key={prod.id}>
+                            <DataRow index={i} className={isEditing ? 'bg-blue-50/50' : ''}>
+                                <td className="px-4 py-2.5 text-slate-400 text-[12px] max-w-[140px]">
+                                    <span className="block truncate">{prod.laboratorio_nombre ?? '—'}</span>
+                                </td>
+                                <td className="px-4 py-2.5 font-medium text-slate-700 max-w-[240px]">
+                                    <span className="block truncate">{prod.nombre}</span>
+                                </td>
+                                <td className="px-3 py-2.5 text-center">
+                                    {prod.es_antibiotico && (
+                                        <span title="Antibiótico" className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 border border-violet-200">
+                                            <FlaskConical size={10} className="text-violet-600" />
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-3 py-2.5 text-center">
+                                    {hasRule ? (
+                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium">
+                                            <Check size={9} /> Con regla
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 font-medium">
+                                            Sin regla
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-3 py-2.5 text-center">
+                                    {hasRule
+                                        ? rule.solo_cajas
+                                            ? <Check size={14} className="text-emerald-500 mx-auto" />
+                                            : <X size={14} className="text-slate-300 mx-auto" />
+                                        : <span className="text-slate-300">—</span>
+                                    }
+                                </td>
+                                <td className="px-3 py-2.5 text-center text-slate-600">
+                                    {hasRule ? (rule.multiplo ? `×${rule.multiplo}` : '—') : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="px-3 py-2.5 text-center text-slate-600">
+                                    {hasRule ? (rule.blister ? `×${rule.blister}` : '—') : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="px-3 py-2.5 text-slate-400 italic text-[12px] max-w-[140px]">
+                                    {hasRule ? (rule.notes || '—') : <span className="text-slate-300">—</span>}
+                                </td>
+                                <td className="px-3 py-2.5">
+                                    <div className="flex items-center gap-1 justify-end">
+                                        {isEditing ? (
+                                            <button onClick={cancelEdit} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" title="Cancelar">
+                                                <X size={14} />
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => startEdit(prod.id, rule)}
+                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
+                                                        hasRule
+                                                            ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
+                                                            : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                                    }`}
+                                                >
+                                                    {hasRule ? <Pencil size={11} /> : <Plus size={11} />}
+                                                    {hasRule ? 'Editar' : 'Asignar'}
+                                                </button>
+                                                {hasRule && (
+                                                    <button onClick={() => handleDelete(prod.id)} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar regla">
+                                                        <Trash2 size={12} />
+                                                    </button>
                                                 )}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center">
-                                                {hasRule ? (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium">
-                                                        <Check size={9} /> Con regla
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 font-medium">
-                                                        Sin regla
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center">
-                                                {hasRule
-                                                    ? rule.solo_cajas
-                                                        ? <Check size={14} className="text-emerald-500 mx-auto" />
-                                                        : <X size={14} className="text-slate-300 mx-auto" />
-                                                    : <span className="text-slate-300">—</span>
-                                                }
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center text-slate-600">
-                                                {hasRule ? (rule.multiplo ? `×${rule.multiplo}` : '—') : <span className="text-slate-300">—</span>}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center text-slate-600">
-                                                {hasRule ? (rule.blister ? `×${rule.blister}` : '—') : <span className="text-slate-300">—</span>}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-slate-400 italic text-[12px] max-w-[140px]">
-                                                {hasRule ? (rule.notes || '—') : <span className="text-slate-300">—</span>}
-                                            </td>
-                                            <td className="px-3 py-2.5">
-                                                <div className="flex items-center gap-1 justify-end">
-                                                    {isEditing ? (
-                                                        <button
-                                                            onClick={cancelEdit}
-                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                                                            title="Cancelar"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    ) : (
-                                                        <>
-                                                            <button
-                                                                onClick={() => startEdit(prod.id, rule)}
-                                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
-                                                                    hasRule
-                                                                        ? 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'
-                                                                        : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                                                                }`}
-                                                            >
-                                                                {hasRule ? <Pencil size={11} /> : <Plus size={11} />}
-                                                                {hasRule ? 'Editar' : 'Asignar'}
-                                                            </button>
-                                                            {hasRule && (
-                                                                <button
-                                                                    onClick={() => handleDelete(prod.id)}
-                                                                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                                                    title="Eliminar regla"
-                                                                >
-                                                                    <Trash2 size={12} />
-                                                                </button>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        {/* Inline edit form */}
-                                        {isEditing && (
-                                            <tr className="bg-blue-50/70 border-t border-blue-100">
-                                                <td colSpan={9} className="px-4 py-4">
-                                                    <div className="flex flex-wrap items-end gap-4">
-                                                        <label className="flex items-center gap-2 cursor-pointer select-none min-w-[140px]">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={editVals.solo_cajas}
-                                                                onChange={e => setEditVals(p => ({ ...p, solo_cajas: e.target.checked }))}
-                                                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                                            />
-                                                            <span className="text-[13px] text-slate-700 font-medium">Solo cajas completas</span>
-                                                        </label>
-                                                        <div>
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N packs</p>
-                                                            <input
-                                                                type="number" min={1} placeholder="Ej: 6"
-                                                                value={editVals.multiplo}
-                                                                onChange={e => setEditVals(p => ({ ...p, multiplo: e.target.value }))}
-                                                                className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N blísters</p>
-                                                            <input
-                                                                type="number" min={1} placeholder="Ej: 10"
-                                                                value={editVals.blister}
-                                                                onChange={e => setEditVals(p => ({ ...p, blister: e.target.value }))}
-                                                                className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-[160px]">
-                                                            <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Notas</p>
-                                                            <input
-                                                                type="text" placeholder="Observación interna…"
-                                                                value={editVals.notes}
-                                                                onChange={e => setEditVals(p => ({ ...p, notes: e.target.value }))}
-                                                                className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center gap-2 shrink-0">
-                                                            {saveError && (
-                                                                <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[180px]">
-                                                                    <AlertTriangle size={11} className="shrink-0" />
-                                                                    {saveError}
-                                                                </span>
-                                                            )}
-                                                            <button
-                                                                onClick={cancelEdit}
-                                                                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white text-[12px] transition-colors"
-                                                            >
-                                                                Cancelar
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleSave(prod.id)}
-                                                                disabled={saving}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[12px] font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                                                            >
-                                                                {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                                                                {hasRule ? 'Actualizar' : 'Crear regla'}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                            </>
                                         )}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                                    </div>
+                                </td>
+                            </DataRow>
+
+                            {isEditing && (
+                                <tr className="bg-blue-50/70">
+                                    <td colSpan={9} className="px-4 py-4">
+                                        <div className="flex flex-wrap items-end gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer select-none min-w-[140px]">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={editVals.solo_cajas}
+                                                    onChange={e => setEditVals(p => ({ ...p, solo_cajas: e.target.checked }))}
+                                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-[13px] text-slate-700 font-medium">Solo cajas completas</span>
+                                            </label>
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N packs</p>
+                                                <input
+                                                    type="number" min={1} placeholder="Ej: 6"
+                                                    value={editVals.multiplo}
+                                                    onChange={e => setEditVals(p => ({ ...p, multiplo: e.target.value }))}
+                                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N blísters</p>
+                                                <input
+                                                    type="number" min={1} placeholder="Ej: 10"
+                                                    value={editVals.blister}
+                                                    onChange={e => setEditVals(p => ({ ...p, blister: e.target.value }))}
+                                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-[160px]">
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Notas</p>
+                                                <input
+                                                    type="text" placeholder="Observación interna…"
+                                                    value={editVals.notes}
+                                                    onChange={e => setEditVals(p => ({ ...p, notes: e.target.value }))}
+                                                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {saveError && (
+                                                    <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[180px]">
+                                                        <AlertTriangle size={11} className="shrink-0" />
+                                                        {saveError}
+                                                    </span>
+                                                )}
+                                                <button onClick={cancelEdit} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white text-[12px] transition-colors">
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    onClick={() => handleSave(prod.id)}
+                                                    disabled={saving}
+                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-[12px] font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                                >
+                                                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                    {hasRule ? 'Actualizar' : 'Crear regla'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
+            </DataTable>
 
             {/* Pagination */}
             {totalPages > 1 && (

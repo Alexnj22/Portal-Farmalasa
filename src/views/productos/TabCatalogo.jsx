@@ -9,7 +9,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search,
+    Sparkles, History, MapPin, Search, Clipboard,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
@@ -625,6 +625,49 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     );
 });
 
+// ── PhotoContextMenu ──────────────────────────────────────────────────────────
+// Right-click context menu for photo areas; reads image from clipboard.
+
+function PhotoContextMenu({ pos, onPaste, onClose }) {
+    useEffect(() => {
+        const close = () => onClose();
+        document.addEventListener('mousedown', close);
+        return () => document.removeEventListener('mousedown', close);
+    }, [onClose]);
+
+    return createPortal(
+        <div
+            className="fixed z-[99999] bg-white rounded-xl shadow-xl border border-slate-100 py-1 min-w-[170px] overflow-hidden"
+            style={{ top: pos.y, left: pos.x }}
+            onMouseDown={e => e.stopPropagation()}>
+            <button
+                onClick={onPaste}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left">
+                <Clipboard size={13} className="shrink-0 text-slate-400" />
+                Pegar imagen
+                <span className="ml-auto text-[10px] text-slate-300 font-normal">Ctrl+V</span>
+            </button>
+        </div>,
+        document.body
+    );
+}
+
+async function pasteImageFromClipboard() {
+    if (!navigator.clipboard?.read) return null;
+    try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            for (const type of item.types) {
+                if (type.startsWith('image/')) {
+                    const blob = await item.getType(type);
+                    return new File([blob], 'paste.png', { type });
+                }
+            }
+        }
+    } catch { /* Permission denied or no image */ }
+    return null;
+}
+
 // Resize + compress an image File to a JPEG Blob (max side = maxPx)
 function resizeImage(file, maxPx, quality) {
     return new Promise((resolve, reject) => {
@@ -762,6 +805,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [pendingFile, setPendingFile]   = useState(null);
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
+    const [ctxMenu, setCtxMenu]           = useState(null);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -796,6 +840,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         document.addEventListener('paste', onPaste);
         return () => document.removeEventListener('paste', onPaste);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
+    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
 
     const handlePhotoSelect = (e) => {
         const file = e.target.files?.[0];
@@ -855,6 +902,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     }, null);
 
     return (
+        <>
         <tr className={xk.container}>
             <td colSpan={5} className="px-0 py-0">
                 <div className="px-5 py-5 space-y-5">
@@ -890,6 +938,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 />
                             )}
                             <button onClick={() => fileRef.current?.click()}
+                                onContextMenu={handlePhotoContextMenu}
                                 className={`relative w-full aspect-square max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
                                 {localFoto ? (
                                     <>
@@ -1105,6 +1154,8 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                 </div>
             </td>
         </tr>
+        {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
+        </>
     );
 }
 
@@ -1120,6 +1171,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const [pendingFile, setPendingFile]   = useState(null);
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
+    const [ctxMenu, setCtxMenu]           = useState(null);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -1138,6 +1190,9 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         document.addEventListener('paste', onPaste);
         return () => document.removeEventListener('paste', onPaste);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
+    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
 
     const handleSave = async () => {
         setSaving(true);
@@ -1242,6 +1297,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                     {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
                     <button onClick={() => fileRef.current?.click()}
+                        onContextMenu={handlePhotoContextMenu}
                         className="group relative w-full aspect-square max-w-[180px] rounded-2xl border-2 border-dashed border-white/[0.12] overflow-hidden transition-all duration-200 hover:border-blue-400/[0.40] hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]">
                         {localFoto ? (
                             <>
@@ -1402,6 +1458,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     Guardar
                 </button>
             </div>
+            {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
         </div>
     );
 }
@@ -1605,6 +1662,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const [pendingFile, setPendingFile]   = useState(null);
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
+    const [ctxMenu, setCtxMenu]           = useState(null);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -1639,6 +1697,9 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         document.addEventListener('paste', onPaste);
         return () => document.removeEventListener('paste', onPaste);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
+    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
 
     const handlePhotoSelect = (e) => { const file = e.target.files?.[0]; if (!file) return; setPendingFile(file); e.target.value = ''; };
     const handlePhotoConfirm = async (blob) => {
@@ -1702,6 +1763,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                                 {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
                                 <button onClick={() => fileRef.current?.click()}
+                                    onContextMenu={handlePhotoContextMenu}
                                     className="group relative w-full max-w-[160px] aspect-square rounded border-2 border-dashed border-gray-300 overflow-hidden transition-colors hover:border-[#1B3A6B]/50 hover:bg-blue-50/30">
                                     {localFoto ? (
                                         <>
@@ -1851,6 +1913,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         </button>
                     </div>
                 </div>
+            {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
         </div>
     );
 }

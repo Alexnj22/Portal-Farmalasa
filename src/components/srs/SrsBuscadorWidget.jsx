@@ -171,10 +171,10 @@ function sanitize(v) {
         : String(v);
     // Strip: control chars, Unicode PUA (E000-F8FF), Specials incl. OBJ char (FFF0-FFFF)
     // Using new RegExp() so the build tool doesn't try to parse supplementary chars
-    return s.replace(
-        new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\uE000-\uF8FF\uFFF0-\uFFFF]', 'g'),
-        ''
-    ).trim();
+    return s
+        .replace(new RegExp('[\u0000-\u0008\u000B\u000C\u000E-\u001F\uE000-\uF8FF\uFFF0-\uFFFF]', 'g'), '')
+        .replace(/\u00A0/g, ' ')
+        .trim();
 }
 
 function SrsResultCard({ product: p, onSelect }) {

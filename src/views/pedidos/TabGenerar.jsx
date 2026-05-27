@@ -348,7 +348,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         }
     }, [preview, notes, selected, getAdjusted, user]);
 
-    // ── Chart data — sorted ascending so highest urgency renders at top ──────
+    // ── Chart data — sorted by urgency % descending (most urgent at top) ────
     const chartData = useMemo(() => {
         const m = {};
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
@@ -358,7 +358,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                 con_bodega_packs: m[id]?.con_bodega_packs ?? 0,
                 sin_bodega_packs: m[id]?.sin_bodega_packs ?? 0,
             }))
-            .sort((a, b) => (a.con_bodega_packs + a.sin_bodega_packs) - (b.con_bodega_packs + b.sin_bodega_packs));
+            .sort((a, b) => {
+                const total_a = a.con_bodega_packs + a.sin_bodega_packs || 1;
+                const total_b = b.con_bodega_packs + b.sin_bodega_packs || 1;
+                return (b.sin_bodega_packs / total_b) - (a.sin_bodega_packs / total_a);
+            });
     }, [dashStats]);
 
     const statMap = useMemo(() => {

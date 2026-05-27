@@ -109,12 +109,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(LS_LAST, String(now));
   };
 
-  const onActivity = () => { if (userRef.current) writeLastActivity(false); };
+  const onActivity = useCallback(() => { if (userRef.current) writeLastActivity(false); }, []);
 
-  const onVisibilityChange = () => {
+  const onVisibilityChange = useCallback(() => {
     if (!userRef.current) return;
     if (document.visibilityState === 'visible') writeLastActivity(true);
-  };
+  }, []);
 
   const stopIdleWatcher = () => {
     if (idleIntervalRef.current) { clearInterval(idleIntervalRef.current); idleIntervalRef.current = null; }

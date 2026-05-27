@@ -50,7 +50,7 @@ function fmtDate(iso) {
     });
 }
 
-export default function TabHistorial() {
+export default function TabHistorial({ searchTerm = '' }) {
     const [pedidos, setPedidos]           = useState([]);
     const [loading, setLoading]           = useState(true);
     const [filterTab, setFilterTab]       = useState('todos');
@@ -182,9 +182,13 @@ export default function TabHistorial() {
         }
     }, [loadPedidos]);
 
-    const filtered = filterTab === 'todos'
-        ? pedidos
-        : pedidos.filter(p => p.status === filterTab);
+    const filtered = pedidos
+        .filter(p => filterTab === 'todos' || p.status === filterTab)
+        .filter(p => {
+            if (!searchTerm.trim()) return true;
+            const q = searchTerm.toLowerCase();
+            return String(p.numero).includes(q) || (p.notes || '').toLowerCase().includes(q);
+        });
 
     if (loading) {
         return (

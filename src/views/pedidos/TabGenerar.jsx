@@ -1,13 +1,13 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, RefreshCw, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info, ChevronDown, ChevronRight, Clock,
-    FlaskConical, ArrowLeft, TriangleAlert, TrendingUp, Search,
-    ChevronLeft,
+    FlaskConical, ArrowLeft, TriangleAlert, TrendingUp,
+    ChevronLeft, Minus, Plus,
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend,
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -16,10 +16,11 @@ const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
-const SUCURSALES = [5, 1, 2, 3, 4, 7];
-const PAGE_SIZE  = 20;
+const SUCURSALES   = [5, 1, 2, 3, 4, 7];
+const PAGE_SB      = 20;   // sin-bodega table page size
+const PAGE_PREV    = 30;   // preview per-sucursal page size
 
-// ── Small helpers ────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function UrgenciaBar({ pct }) {
     const color = pct >= 80 ? '#ef4444' : pct >= 50 ? '#f97316' : '#10b981';
@@ -83,15 +84,53 @@ function LotesPill({ lotes, qty }) {
                     <span key={i} className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200">
                         <span className="text-slate-500 font-medium">{lot.lote || '—'}</span>
                         {fv && <span className={expCls}>{fmtMesAnio(lot.fecha_vencimiento)}</span>}
-                        <span className="text-blue-600 font-semibold">{lot.take}p</span>
+                        <span className="text-blue-600 font-semibold">{lot.take}pk</span>
                     </span>
                 );
             })}
             {remaining > 0 && (
                 <span className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-full bg-red-100 border border-red-200 text-red-500 font-medium">
-                    {remaining}p sin lote disponible
+                    {remaining}pk sin lote
                 </span>
             )}
+        </div>
+    );
+}
+
+function BarTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null;
+    const con = payload.find(p => p.dataKey === 'con_bodega_packs')?.value ?? 0;
+    const sin = payload.find(p => p.dataKey === 'sin_bodega_packs')?.value ?? 0;
+    return (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-[12px]">
+            <p className="font-semibold text-slate-700 mb-1">{label}</p>
+            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> packs</p>
+            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> packs</p>
+            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> packs</p>
+        </div>
+    );
+}
+
+// Paginación pequeña reutilizable
+function MiniPager({ page, total, pageSize, onChange }) {
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return null;
+    return (
+        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-100 bg-slate-50/30">
+            <span className="text-[11px] text-slate-400">
+                {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} de {total}
+            </span>
+            <div className="flex items-center gap-1">
+                <button onClick={() => onChange(Math.max(0, page - 1))} disabled={page === 0}
+                    className="p-1 rounded border border-slate-200 text-slate-500 hover:border-blue-300 disabled:opacity-30 transition-colors">
+                    <ChevronLeft size={13} />
+                </button>
+                <span className="text-[11px] px-2 text-slate-600">{page + 1}/{totalPages}</span>
+                <button onClick={() => onChange(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
+                    className="p-1 rounded border border-slate-200 text-slate-500 hover:border-blue-300 disabled:opacity-30 transition-colors">
+                    <ChevronRight size={13} />
+                </button>
+            </div>
         </div>
     );
 }
@@ -113,60 +152,48 @@ const TABLE_HEAD = (
     </thead>
 );
 
-// ── Custom tooltip for stacked bar ──────────────────────────────────────────
-function BarTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-    const con = payload.find(p => p.dataKey === 'con_bodega_packs')?.value ?? 0;
-    const sin = payload.find(p => p.dataKey === 'sin_bodega_packs')?.value ?? 0;
-    return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-[12px]">
-            <p className="font-semibold text-slate-700 mb-1">{label}</p>
-            <p className="text-emerald-600">Con stock Bodega: <span className="font-bold">{con.toLocaleString()}</span> packs</p>
-            <p className="text-red-500">Sin stock Bodega: <span className="font-bold">{sin.toLocaleString()}</span> packs</p>
-            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <span className="font-bold">{(con + sin).toLocaleString()}</span> packs</p>
-        </div>
-    );
-}
-
 // ── Main component ───────────────────────────────────────────────────────────
-export default function TabGenerar() {
+export default function TabGenerar({ searchTerm = '' }) {
     const { user } = useAuth();
 
     // Sucursal selection — default ALL deselected
     const [selected, setSelected] = useState(new Set());
 
-    // Preview (distribution result)
-    const [preview,       setPreview]       = useState(null);
-    const [loading,       setLoading]       = useState(false);
-    const [notes,         setNotes]         = useState('');
-    const [confirming,    setConfirming]    = useState(false);
-    const [confirmed,     setConfirmed]     = useState(null);
-    const [adjustments,   setAdjustments]   = useState({});
-    const [error,         setError]         = useState(null);
-    const [syncedAt,      setSyncedAt]      = useState(null);
-    const [revisionOpen,  setRevisionOpen]  = useState({});
-    const [sinStockOpen,  setSinStockOpen]  = useState({});
+    // Preview
+    const [preview,      setPreview]      = useState(null);
+    const [loading,      setLoading]      = useState(false);
+    const [notes,        setNotes]        = useState('');
+    const [confirming,   setConfirming]   = useState(false);
+    const [confirmed,    setConfirmed]    = useState(null);
+    const [adjustments,  setAdjustments]  = useState({});
+    const [error,        setError]        = useState(null);
+    const [syncedAt,     setSyncedAt]     = useState(null);
 
-    // Dashboard data
-    const [dashStats,     setDashStats]     = useState([]);  // [{erp_sucursal_id, necesidad_packs, con_bodega_packs, sin_bodega_packs}]
-    const [dashLoading,   setDashLoading]   = useState(true);
+    // Preview per-sucursal collapse + pagination
+    const [sucCollapsed, setSucCollapsed] = useState({});
+    const [sucPage,      setSucPage]      = useState({});
+    // Revision / sinStock collapsible
+    const [revisionOpen, setRevisionOpen] = useState({});
+    const [sinStockOpen, setSinStockOpen] = useState({});
+
+    // Dashboard
+    const [dashStats,    setDashStats]    = useState([]);
+    const [dashLoading,  setDashLoading]  = useState(true);
 
     // Sin-bodega table
-    const [sinBodega,     setSinBodega]     = useState([]);
-    const [sinBodegaTotal,setSinBodegaTotal]= useState(0);
-    const [sinBodegaPage, setSinBodegaPage] = useState(0);
-    const [sinBodegaLoad, setSinBodegaLoad] = useState(false);
-    const [sinBodegaSearch, setSinBodegaSearch] = useState('');
+    const [sinBodega,      setSinBodega]      = useState([]);
+    const [sinBodegaTotal, setSinBodegaTotal] = useState(0);
+    const [sinBodegaPage,  setSinBodegaPage]  = useState(0);
+    const [sinBodegaLoad,  setSinBodegaLoad]  = useState(false);
 
     // ── Synced-at ──────────────────────────────────────────────
     useEffect(() => {
-        supabase
-            .from('erp_minmax').select('synced_at')
+        supabase.from('erp_minmax').select('synced_at')
             .order('synced_at', { ascending: false }).limit(1).single()
             .then(({ data }) => setSyncedAt(data?.synced_at ?? null));
     }, []);
 
-    // ── Dashboard stats (all sucursales by default) ────────────
+    // ── Dashboard stats ────────────────────────────────────────
     useEffect(() => {
         setDashLoading(true);
         Promise.all([
@@ -179,19 +206,14 @@ export default function TabGenerar() {
         });
     }, []);
 
-    // ── Sin-bodega page load ───────────────────────────────────
+    // ── Sin-bodega page ────────────────────────────────────────
     useEffect(() => {
         setSinBodegaLoad(true);
-        supabase
-            .rpc('get_pedido_sin_bodega', {
-                p_sucursal_ids: SUCURSALES,
-                p_limit:        PAGE_SIZE,
-                p_offset:       sinBodegaPage * PAGE_SIZE,
-            })
-            .then(({ data }) => {
-                setSinBodega(data || []);
-                setSinBodegaLoad(false);
-            });
+        supabase.rpc('get_pedido_sin_bodega', {
+            p_sucursal_ids: SUCURSALES,
+            p_limit:        PAGE_SB,
+            p_offset:       sinBodegaPage * PAGE_SB,
+        }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
     }, [sinBodegaPage]);
 
     // ── Sucursal toggle ────────────────────────────────────────
@@ -201,17 +223,15 @@ export default function TabGenerar() {
             n.has(id) ? n.delete(id) : n.add(id);
             return n;
         });
-        setPreview(null);
-        setAdjustments({});
+        setPreview(null); setAdjustments({});
     }, []);
 
     const toggleAll = useCallback(() => {
         setSelected(prev => prev.size === SUCURSALES.length ? new Set() : new Set(SUCURSALES));
-        setPreview(null);
-        setAdjustments({});
+        setPreview(null); setAdjustments({});
     }, []);
 
-    // ── Preview adjustments ────────────────────────────────────
+    // ── Adjustments ────────────────────────────────────────────
     const getKey      = (row) => `${row.erp_sucursal_id}_${row.erp_product_id}_${row.erp_presentacion_id}`;
     const getAdjusted = useCallback((row) => {
         const k = getKey(row);
@@ -221,6 +241,10 @@ export default function TabGenerar() {
         setAdjustments(prev => ({ ...prev, [getKey(row)]: Math.max(0, val) }));
     }, []);
 
+    // ── Preview section toggles ────────────────────────────────
+    const toggleSucCollapse = useCallback((sucId) => {
+        setSucCollapsed(prev => ({ ...prev, [sucId]: !prev[sucId] }));
+    }, []);
     const toggleRevision = useCallback((sucId) => {
         setRevisionOpen(prev => ({ ...prev, [sucId]: !(prev[sucId] ?? true) }));
     }, []);
@@ -228,24 +252,21 @@ export default function TabGenerar() {
         setSinStockOpen(prev => ({ ...prev, [sucId]: !(prev[sucId] ?? false) }));
     }, []);
 
-    // ── Calcular preview ───────────────────────────────────────
+    // ── Calculate ──────────────────────────────────────────────
     const handleCalcular = useCallback(async () => {
         if (selected.size === 0) return;
-        setLoading(true);
-        setPreview(null);
-        setAdjustments({});
-        setError(null);
+        setLoading(true); setPreview(null); setAdjustments({}); setError(null);
+        setSucCollapsed({}); setSucPage({});
         try {
+            // range(0, 49999) avoids the PostgREST 1000-row default cap
             const { data, error: rpcErr } = await supabase
                 .rpc('get_pedido_preview', { p_sucursal_ids: [...selected] })
-                .range(0, 9999);
+                .range(0, 49999);
             if (rpcErr) throw rpcErr;
             const rows = data || [];
-            const initRevision = {};
-            const initSinStock = {};
-            for (const id of SUCURSALES) { initRevision[id] = true; initSinStock[id] = false; }
-            setRevisionOpen(initRevision);
-            setSinStockOpen(initSinStock);
+            const initRev = {}, initSin = {};
+            for (const id of SUCURSALES) { initRev[id] = true; initSin[id] = false; }
+            setRevisionOpen(initRev); setSinStockOpen(initSin);
             setPreview(rows);
         } catch (e) {
             setError(e.message);
@@ -257,16 +278,18 @@ export default function TabGenerar() {
     // ── Grouped preview ────────────────────────────────────────
     const grouped = useMemo(() => {
         if (!preview) return null;
+        const q = searchTerm.toLowerCase();
         const map = {};
         for (const row of preview) {
+            if (q && !row.product_name.toLowerCase().includes(q)) continue;
             const s = row.erp_sucursal_id;
             if (!map[s]) map[s] = { normal: [], revision: [], sinStock: [] };
-            if (row.sin_stock)             map[s].sinStock.push(row);
-            else if (row.revision_minmax)  map[s].revision.push(row);
-            else                           map[s].normal.push(row);
+            if (row.sin_stock)            map[s].sinStock.push(row);
+            else if (row.revision_minmax) map[s].revision.push(row);
+            else                          map[s].normal.push(row);
         }
         return map;
-    }, [preview]);
+    }, [preview, searchTerm]);
 
     const sortedSucIds = useMemo(
         () => grouped ? SUCURSALES.filter(id => grouped[id]) : [],
@@ -288,8 +311,7 @@ export default function TabGenerar() {
     // ── Confirm ────────────────────────────────────────────────
     const handleConfirmar = useCallback(async () => {
         if (!preview || preview.length === 0) return;
-        setConfirming(true);
-        setError(null);
+        setConfirming(true); setError(null);
         try {
             const items = preview.map(row => ({
                 erp_sucursal_id:       row.erp_sucursal_id,
@@ -317,9 +339,7 @@ export default function TabGenerar() {
                 numero:      ped?.numero,
             });
             setConfirmed({ id: pedidoId, numero: ped?.numero });
-            setPreview(null);
-            setNotes('');
-            setAdjustments({});
+            setPreview(null); setNotes(''); setAdjustments({});
         } catch (e) {
             setError(e.message);
         } finally {
@@ -329,51 +349,53 @@ export default function TabGenerar() {
 
     // ── Chart data ─────────────────────────────────────────────
     const chartData = useMemo(() => {
-        const statMap = {};
-        for (const s of dashStats) statMap[s.erp_sucursal_id] = s;
+        const m = {};
+        for (const s of dashStats) m[s.erp_sucursal_id] = s;
         return SUCURSALES.map(id => ({
             name:             ERP_NAMES[id],
-            con_bodega_packs: statMap[id]?.con_bodega_packs ?? 0,
-            sin_bodega_packs: statMap[id]?.sin_bodega_packs ?? 0,
-            necesidad_packs:  statMap[id]?.necesidad_packs  ?? 0,
-            total_productos:  statMap[id]?.total_productos   ?? 0,
+            con_bodega_packs: m[id]?.con_bodega_packs ?? 0,
+            sin_bodega_packs: m[id]?.sin_bodega_packs ?? 0,
         }));
     }, [dashStats]);
 
-    // ── Stat map for sucursal cards ────────────────────────────
     const statMap = useMemo(() => {
         const m = {};
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
         return m;
     }, [dashStats]);
 
-    // ── Filtered sin-bodega (client-side search on current page) ─
+    // ── Sin-bodega filtered (client-side on current page) ──────
     const filteredSinBodega = useMemo(() => {
-        if (!sinBodegaSearch.trim()) return sinBodega;
-        const q = sinBodegaSearch.toLowerCase();
+        if (!searchTerm.trim()) return sinBodega;
+        const q = searchTerm.toLowerCase();
         return sinBodega.filter(r =>
             r.product_name.toLowerCase().includes(q) ||
             r.laboratorio.toLowerCase().includes(q)
         );
-    }, [sinBodega, sinBodegaSearch]);
+    }, [sinBodega, searchTerm]);
 
-    // ── Row renderer (preview table) ───────────────────────────
-    const renderRow = (row, variant = 'normal') => {
-        const adj = getAdjusted(row);
-        const k   = getKey(row);
-        const overStock = adj > Number(row.bodega_stock_packs) && Number(row.bodega_stock_packs) > 0;
-        const isRevision = variant === 'revision';
+    // ── Row renderer ───────────────────────────────────────────
+    const renderRow = useCallback((row, variant = 'normal') => {
+        const adj        = getAdjusted(row);
+        const k          = getKey(row);
         const isSinStock = variant === 'sinStock';
+        const isRevision = variant === 'revision';
+        const isFullyCovered = row.cantidad_asignada >= row.cantidad_reponer && row.cantidad_asignada > 0;
+        const hasAdjusted    = adjustments[k] !== undefined;
+        // Show editable input when: sin_stock=false AND (not fully covered OR user has already adjusted)
+        const showInput  = !isSinStock && (!isFullyCovered || hasAdjusted);
+        const overStock  = adj > Number(row.bodega_stock_packs) && Number(row.bodega_stock_packs) > 0;
+
         return (
             <tr key={k} className={`border-t border-slate-50 transition-colors ${
-                isSinStock ? 'bg-slate-50/40 opacity-60' :
+                isSinStock ? 'bg-slate-50/40 opacity-55' :
                 isRevision ? 'bg-amber-50/30 hover:bg-amber-50/60' :
-                             'hover:bg-blue-50/30'
+                             'hover:bg-blue-50/20'
             }`}>
-                <td className="px-4 py-2 font-medium text-slate-700 max-w-[240px]">
+                <td className="px-4 py-2 max-w-[240px]">
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="block truncate text-[13px]">{row.product_name}</span>
+                            <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
                             {row.es_antibiotico && (
                                 <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
                                     <FlaskConical size={9} className="text-violet-600" />
@@ -397,7 +419,7 @@ export default function TabGenerar() {
                 <td className="px-3 py-2 text-center">
                     {isSinStock ? (
                         <span className="text-[11px] font-medium text-slate-400">Sin stock</span>
-                    ) : (
+                    ) : showInput ? (
                         <div className="flex items-center justify-center gap-1">
                             <input
                                 type="number" min={0} value={adj}
@@ -408,14 +430,23 @@ export default function TabGenerar() {
                                         : 'border-slate-200 focus:border-blue-400'
                                 }`}
                             />
-                            {overStock && <AlertTriangle size={12} className="text-amber-500 flex-shrink-0" title="Supera el stock disponible en Bodega" />}
+                            {overStock && <AlertTriangle size={12} className="text-amber-500" title="Supera el stock en Bodega" />}
                         </div>
+                    ) : (
+                        // Fully covered — read-only with checkmark, click to enable edit
+                        <button
+                            onClick={() => setAdjusted(row, adj)}
+                            title="Clic para ajustar manualmente"
+                            className="flex items-center justify-center gap-1 mx-auto group">
+                            <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
+                            <span className="text-[13px] font-semibold text-emerald-600 tabular-nums">{adj}</span>
+                        </button>
                     )}
                 </td>
                 <td className="px-3 py-2"><UrgenciaBar pct={row.urgencia_pct} /></td>
             </tr>
         );
-    };
+    }, [adjustments, getAdjusted, setAdjusted]);
 
     // ── Confirmed screen ────────────────────────────────────────
     if (confirmed) {
@@ -438,12 +469,16 @@ export default function TabGenerar() {
     if (preview) {
         return (
             <div className="space-y-4 p-4">
-                {/* Back + header */}
                 <div className="flex items-center justify-between">
                     <button onClick={() => { setPreview(null); setAdjustments({}); }}
                         className="flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-blue-600 transition-colors font-medium">
                         <ArrowLeft size={15} /> Volver al resumen
                     </button>
+                    {searchTerm && (
+                        <span className="text-[12px] text-slate-500">
+                            Filtrando por: <b>"{searchTerm}"</b>
+                        </span>
+                    )}
                     {error && (
                         <span className="text-[13px] text-red-600 flex items-center gap-1">
                             <AlertTriangle size={14} /> {error}
@@ -460,20 +495,30 @@ export default function TabGenerar() {
 
                 {sortedSucIds.map(suc => {
                     const { normal, revision, sinStock } = grouped[suc];
-                    const totalPacks = [...normal, ...revision, ...sinStock].reduce((s, r) => s + getAdjusted(r), 0);
-                    const isRevOpen  = revisionOpen[suc] ?? true;
-                    const isSinOpen  = sinStockOpen[suc] ?? false;
+                    const totalPacks  = [...normal, ...revision, ...sinStock].reduce((s, r) => s + getAdjusted(r), 0);
+                    const isCollapsed = sucCollapsed[suc] ?? false;
+                    const isRevOpen   = revisionOpen[suc] ?? true;
+                    const isSinOpen   = sinStockOpen[suc] ?? false;
+                    const pg          = sucPage[suc] ?? 0;
+                    const pageNormal  = normal.slice(pg * PAGE_PREV, (pg + 1) * PAGE_PREV);
+
                     return (
                         <div key={suc} className={`${GLASS} overflow-hidden`}>
+                            {/* Header — always visible */}
                             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-                                <div className="flex items-center gap-2">
-                                    <Building2 size={16} className="text-blue-500" />
+                                <button
+                                    onClick={() => toggleSucCollapse(suc)}
+                                    className="flex items-center gap-2 min-w-0 text-left hover:opacity-70 transition-opacity">
+                                    {isCollapsed
+                                        ? <ChevronRight size={15} className="text-slate-400 flex-shrink-0" />
+                                        : <ChevronDown  size={15} className="text-slate-400 flex-shrink-0" />}
+                                    <Building2 size={15} className="text-blue-500 flex-shrink-0" />
                                     <span className="font-semibold text-slate-700">{ERP_NAMES[suc]}</span>
-                                    <span className="text-[12px] text-slate-400">
+                                    <span className="text-[12px] text-slate-400 whitespace-nowrap">
                                         · {normal.length + revision.length + sinStock.length} productos · {totalPacks} packs asignados
                                     </span>
-                                </div>
-                                <div className="flex items-center gap-2">
+                                </button>
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                     {revision.length > 0 && (
                                         <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
                                             {revision.length} a revisar
@@ -486,40 +531,63 @@ export default function TabGenerar() {
                                     )}
                                 </div>
                             </div>
-                            {normal.length > 0 && (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">{TABLE_HEAD}<tbody>{normal.map(r => renderRow(r, 'normal'))}</tbody></table>
-                                </div>
-                            )}
-                            {revision.length > 0 && (
+
+                            {!isCollapsed && (
                                 <>
-                                    <button onClick={() => toggleRevision(suc)}
-                                        className="w-full flex items-center gap-2 px-4 py-2 bg-amber-50/60 border-t border-amber-100 hover:bg-amber-100/50 transition-colors text-left">
-                                        {isRevOpen ? <ChevronDown size={14} className="text-amber-600 flex-shrink-0" /> : <ChevronRight size={14} className="text-amber-600 flex-shrink-0" />}
-                                        <span className="text-[12px] font-medium text-amber-700">
-                                            {revision.length} {revision.length === 1 ? 'producto' : 'productos'} con bodega disponible pero cantidad insuficiente para un multiplo completo
-                                        </span>
-                                    </button>
-                                    {isRevOpen && (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">{TABLE_HEAD}<tbody>{revision.map(r => renderRow(r, 'revision'))}</tbody></table>
-                                        </div>
+                                    {/* Normal rows */}
+                                    {normal.length > 0 && (
+                                        <>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full">
+                                                    {TABLE_HEAD}
+                                                    <tbody>{pageNormal.map(r => renderRow(r, 'normal'))}</tbody>
+                                                </table>
+                                            </div>
+                                            <MiniPager
+                                                page={pg} total={normal.length} pageSize={PAGE_PREV}
+                                                onChange={p => setSucPage(prev => ({ ...prev, [suc]: p }))}
+                                            />
+                                        </>
                                     )}
-                                </>
-                            )}
-                            {sinStock.length > 0 && (
-                                <>
-                                    <button onClick={() => toggleSinStock(suc)}
-                                        className="w-full flex items-center gap-2 px-4 py-2 bg-slate-50/60 border-t border-slate-100 hover:bg-slate-100/50 transition-colors text-left">
-                                        {isSinOpen ? <ChevronDown size={14} className="text-slate-400 flex-shrink-0" /> : <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />}
-                                        <span className="text-[12px] font-medium text-slate-500">
-                                            {sinStock.length} {sinStock.length === 1 ? 'producto' : 'productos'} sin stock en Bodega
-                                        </span>
-                                    </button>
-                                    {isSinOpen && (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">{TABLE_HEAD}<tbody>{sinStock.map(r => renderRow(r, 'sinStock'))}</tbody></table>
-                                        </div>
+
+                                    {/* Revision */}
+                                    {revision.length > 0 && (
+                                        <>
+                                            <button onClick={() => toggleRevision(suc)}
+                                                className="w-full flex items-center gap-2 px-4 py-2 bg-amber-50/60 border-t border-amber-100 hover:bg-amber-100/50 transition-colors text-left">
+                                                {isRevOpen
+                                                    ? <ChevronDown  size={13} className="text-amber-600 flex-shrink-0" />
+                                                    : <ChevronRight size={13} className="text-amber-600 flex-shrink-0" />}
+                                                <span className="text-[12px] font-medium text-amber-700">
+                                                    {revision.length} {revision.length === 1 ? 'producto' : 'productos'} con bodega disponible insuficiente para un multiplo — puedes ajustar manualmente
+                                                </span>
+                                            </button>
+                                            {isRevOpen && (
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full">{TABLE_HEAD}<tbody>{revision.map(r => renderRow(r, 'revision'))}</tbody></table>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Sin stock */}
+                                    {sinStock.length > 0 && (
+                                        <>
+                                            <button onClick={() => toggleSinStock(suc)}
+                                                className="w-full flex items-center gap-2 px-4 py-2 bg-slate-50/60 border-t border-slate-100 hover:bg-slate-100/50 transition-colors text-left">
+                                                {isSinOpen
+                                                    ? <ChevronDown  size={13} className="text-slate-400 flex-shrink-0" />
+                                                    : <ChevronRight size={13} className="text-slate-400 flex-shrink-0" />}
+                                                <span className="text-[12px] font-medium text-slate-500">
+                                                    {sinStock.length} {sinStock.length === 1 ? 'producto' : 'productos'} sin stock en Bodega
+                                                </span>
+                                            </button>
+                                            {isSinOpen && (
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full">{TABLE_HEAD}<tbody>{sinStock.map(r => renderRow(r, 'sinStock'))}</tbody></table>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </>
                             )}
@@ -527,6 +595,7 @@ export default function TabGenerar() {
                     );
                 })}
 
+                {/* Global confirm */}
                 {globalTotals && sortedSucIds.length > 0 && (
                     <div className={`${GLASS} p-4 space-y-3`}>
                         <div className="flex items-center gap-4 px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100">
@@ -581,7 +650,7 @@ export default function TabGenerar() {
                 </div>
                 <p className="text-[11px] text-slate-400 mb-3 flex items-center gap-1">
                     <Info size={11} />
-                    Por defecto ninguna está seleccionada. Elige las que quieres reponer y luego calcula el pedido.
+                    Por defecto ninguna está seleccionada. Elige las sucursales a reponer y calcula el pedido.
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -618,7 +687,6 @@ export default function TabGenerar() {
                     })}
                 </div>
 
-                {/* Calculate button */}
                 <div className="mt-4 flex items-center gap-3">
                     <button onClick={handleCalcular}
                         disabled={loading || selected.size === 0}
@@ -628,7 +696,9 @@ export default function TabGenerar() {
                                 : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200'
                         }`}>
                         {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        {loading ? 'Calculando…' : `Calcular pedido${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
+                        {loading
+                            ? 'Calculando…'
+                            : `Calcular pedido${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </button>
                     {error && (
                         <span className="text-[13px] text-red-600 flex items-center gap-1">
@@ -638,11 +708,11 @@ export default function TabGenerar() {
                 </div>
             </div>
 
-            {/* ── Necesidad por sucursal chart ───────────────── */}
+            {/* ── Necesidad por sucursal ─────────────────────── */}
             <div className={GLASS + ' p-4'}>
                 <h3 className="font-semibold text-slate-700 text-[14px] mb-1">Necesidad de reposición por sucursal</h3>
                 <p className="text-[11px] text-slate-400 mb-4">
-                    Packs necesarios en total vs los que tienen stock disponible en Bodega.
+                    Packs (unidades de empaque según presentación) pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega.
                 </p>
                 {dashLoading ? (
                     <div className="h-48 flex items-center justify-center">
@@ -650,13 +720,13 @@ export default function TabGenerar() {
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={chartData} barCategoryGap="30%" layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+                        <BarChart data={chartData} layout="vertical" barCategoryGap="30%" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
                             <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => v.toLocaleString()} axisLine={false} tickLine={false} />
                             <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} axisLine={false} tickLine={false} width={72} />
                             <Tooltip content={<BarTooltip />} cursor={{ fill: 'rgba(0,82,204,0.04)' }} />
                             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                                formatter={(value) => value === 'con_bodega_packs' ? 'Con stock en Bodega' : 'Sin stock en Bodega'} />
-                            <Bar dataKey="con_bodega_packs" name="con_bodega_packs" stackId="a" fill="#10b981" radius={[0,0,0,0]} />
+                                formatter={v => v === 'con_bodega_packs' ? 'Con stock en Bodega' : 'Sin stock en Bodega'} />
+                            <Bar dataKey="con_bodega_packs" name="con_bodega_packs" stackId="a" fill="#10b981" />
                             <Bar dataKey="sin_bodega_packs" name="sin_bodega_packs" stackId="a" fill="#f87171" radius={[0,4,4,0]} />
                         </BarChart>
                     </ResponsiveContainer>
@@ -675,15 +745,11 @@ export default function TabGenerar() {
                             </span>
                         )}
                     </div>
-                    <div className="relative">
-                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            value={sinBodegaSearch}
-                            onChange={e => setSinBodegaSearch(e.target.value)}
-                            placeholder="Buscar producto…"
-                            className="pl-7 pr-3 py-1.5 text-[12px] border border-slate-200 rounded-lg focus:outline-none focus:border-blue-400 bg-white w-44"
-                        />
-                    </div>
+                    {searchTerm && (
+                        <span className="text-[11px] text-slate-400">
+                            Filtrando por: <b>"{searchTerm}"</b>
+                        </span>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -709,7 +775,7 @@ export default function TabGenerar() {
                             ) : filteredSinBodega.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-4 py-8 text-center text-slate-400 text-[13px]">
-                                        No se encontraron productos
+                                        {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No hay productos sin stock en Bodega'}
                                     </td>
                                 </tr>
                             ) : filteredSinBodega.map(row => (
@@ -724,10 +790,8 @@ export default function TabGenerar() {
                                                 <span key={s.erp_sucursal_id}
                                                     className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap">
                                                     <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                                    <span className="text-red-500 font-semibold">{s.reponer}p</span>
-                                                    {s.ventas_6m > 0 && (
-                                                        <span className="text-slate-400">↻{Math.round(s.ventas_6m)}</span>
-                                                    )}
+                                                    <span className="text-red-500 font-semibold">{s.reponer}pk</span>
+                                                    {s.ventas_6m > 0 && <span className="text-slate-400">↻{Math.round(s.ventas_6m)}</span>}
                                                 </span>
                                             ))}
                                         </div>
@@ -751,31 +815,10 @@ export default function TabGenerar() {
                     </table>
                 </div>
 
-                {/* Pagination */}
-                {sinBodegaTotal > PAGE_SIZE && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/40">
-                        <span className="text-[12px] text-slate-500">
-                            {sinBodegaPage * PAGE_SIZE + 1}–{Math.min((sinBodegaPage + 1) * PAGE_SIZE, sinBodegaTotal)} de {sinBodegaTotal.toLocaleString()} productos
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setSinBodegaPage(p => Math.max(0, p - 1))}
-                                disabled={sinBodegaPage === 0}
-                                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                                <ChevronLeft size={14} />
-                            </button>
-                            <span className="text-[12px] text-slate-600 px-2 font-medium">
-                                {sinBodegaPage + 1} / {Math.ceil(sinBodegaTotal / PAGE_SIZE)}
-                            </span>
-                            <button
-                                onClick={() => setSinBodegaPage(p => p + 1)}
-                                disabled={(sinBodegaPage + 1) * PAGE_SIZE >= sinBodegaTotal}
-                                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                                <ChevronRight size={14} />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <MiniPager
+                    page={sinBodegaPage} total={sinBodegaTotal} pageSize={PAGE_SB}
+                    onChange={setSinBodegaPage}
+                />
             </div>
         </div>
     );

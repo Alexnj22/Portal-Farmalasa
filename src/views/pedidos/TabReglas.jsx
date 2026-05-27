@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-    Loader2, Search, Check, X, Plus, Pencil, Trash2,
+    Loader2, Check, X, Plus, Pencil, Trash2,
     AlertTriangle, ChevronLeft, ChevronRight, FlaskConical,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -10,27 +10,25 @@ const PAGE_SIZE  = 50;
 const EMPTY_VALS = { solo_cajas: false, multiplo: '', blister: '', notes: '' };
 const GLASS      = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
-export default function TabReglas() {
+export default function TabReglas({ searchTerm = '' }) {
     // Rules — loaded once, O(1) lookup
     const [rulesMap, setRulesMap]         = useState({});
     const [loadingRules, setLoadingRules] = useState(true);
 
     // Products — paginated from products_with_lab view
-    const [products, setProducts]           = useState([]);
-    const [totalCount, setTotalCount]       = useState(0);
+    const [products, setProducts]               = useState([]);
+    const [totalCount, setTotalCount]           = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
-    const [page, setPage]                   = useState(0);
-
-    // Search
-    const [search, setSearch]               = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const searchTimer = useRef(null);
+    const [page, setPage]                       = useState(0);
 
     // Inline edit
     const [editingId, setEditingId]   = useState(null);
     const [editVals, setEditVals]     = useState(EMPTY_VALS);
     const [saving, setSaving]         = useState(false);
     const [saveError, setSaveError]   = useState(null);
+
+    // Reset to page 0 when search changes
+    useEffect(() => { setPage(0); }, [searchTerm]);
 
     // ── Load all rules once ───────────────────────────────────────────────────
     const loadRules = useCallback(async () => {
@@ -64,23 +62,7 @@ export default function TabReglas() {
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
-    useEffect(() => { loadProducts(page, debouncedSearch); }, [page, debouncedSearch, loadProducts]);
-
-    // ── Search debounce ───────────────────────────────────────────────────────
-    const handleSearchChange = useCallback((val) => {
-        setSearch(val);
-        clearTimeout(searchTimer.current);
-        searchTimer.current = setTimeout(() => {
-            setPage(0);
-            setDebouncedSearch(val);
-        }, 280);
-    }, []);
-
-    const clearSearch = useCallback(() => {
-        setSearch('');
-        setDebouncedSearch('');
-        setPage(0);
-    }, []);
+    useEffect(() => { loadProducts(page, searchTerm); }, [page, searchTerm, loadProducts]);
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -148,39 +130,19 @@ export default function TabReglas() {
     return (
         <div className="space-y-4 p-4">
 
-            {/* Search bar + stats */}
-            <div className={`${GLASS} px-4 py-3`}>
-                <div className="flex items-center gap-3">
-                    <div className="relative flex-1">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder="Buscar producto por nombre…"
-                            value={search}
-                            onChange={e => handleSearchChange(e.target.value)}
-                            className="w-full pl-8 pr-10 py-2.5 border border-slate-200 rounded-xl text-[13px] bg-white/80 focus:outline-none focus:border-blue-400"
-                        />
-                        {search && (
-                            <button
-                                onClick={clearSearch}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                                <X size={14} />
-                            </button>
-                        )}
-                    </div>
-                    {!loadingRules && (
-                        <span className="shrink-0 text-[12px] text-slate-400">
-                            {rulesCount} {rulesCount === 1 ? 'regla' : 'reglas'} configuradas
-                        </span>
-                    )}
-                </div>
-                <p className="mt-1.5 text-[11px] text-slate-400">
-                    {debouncedSearch.length >= 2
-                        ? `${totalCount} resultado${totalCount !== 1 ? 's' : ''} para "${debouncedSearch}"`
+            {/* Stats bar */}
+            <div className={`${GLASS} px-4 py-2.5 flex items-center justify-between`}>
+                <p className="text-[12px] text-slate-500">
+                    {searchTerm.length >= 2
+                        ? `${totalCount} resultado${totalCount !== 1 ? 's' : ''} para "${searchTerm}"`
                         : `${totalCount.toLocaleString()} productos en catálogo · ordenados por laboratorio`
                     }
                 </p>
+                {!loadingRules && (
+                    <span className="text-[12px] text-slate-400">
+                        {rulesCount} {rulesCount === 1 ? 'regla' : 'reglas'} configuradas
+                    </span>
+                )}
             </div>
 
             {/* Table */}
@@ -193,8 +155,8 @@ export default function TabReglas() {
                 ) : products.length === 0 ? (
                     <div className="p-12 text-center text-slate-400">
                         <p className="text-[14px]">
-                            {debouncedSearch.length >= 2
-                                ? `No se encontraron productos para "${debouncedSearch}".`
+                            {searchTerm.length >= 2
+                                ? `No se encontraron productos para "${searchTerm}".`
                                 : 'Sin productos en catálogo.'
                             }
                         </p>

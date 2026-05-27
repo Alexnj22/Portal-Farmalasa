@@ -85,7 +85,9 @@ function getSuggestion(row) {
 }
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
-// Los umbrales están calibrados para eso: 2 cajas/mes es demanda real.
+// Los umbrales están calibrados para eso: 2 cajas/mes es demanda retail real.
+// Umbral mayorista: ≥10 uds/factura promedio supera lo esperable en venta retail
+// de farmacia — probablemente es un cliente que compra al por mayor.
 function getSinMinMaxSugg(row) {
     const units     = Number(row.units_sold) || 0;
     const undMes    = units / 6;                       // uds. comerciales/mes
@@ -94,13 +96,24 @@ function getSinMinMaxSugg(row) {
     const invoices  = Number(row.invoice_count) || 1;
     const avgPerInv = units / invoices;
 
-    // ── Encargo: pocas facturas, muchas unidades por factura ──────────────────
-    // En uds. comerc.: >5 uds/factura con ≤3 facturas = pedido especial
-    if (invoices <= 3 && avgPerInv > 5) {
+    // ── Mayorista: promedio por factura supera la norma retail ───────────────
+    // Una farmacia retail raramente vende >10 cajas/bolsas por transacción.
+    // Si el promedio lo supera, es compra por volumen — no debe entrar a Min/Max.
+    if (avgPerInv >= 10) {
+        return {
+            level:  'mayorista',
+            label:  'Venta mayorista',
+            reason: `${avgPerInv.toFixed(1)} uds/factura promedio · ${invoices} factura${invoices !== 1 ? 's' : ''}`,
+            months, invoices, avgPerInv,
+        };
+    }
+
+    // ── Encargo: pocas facturas con volumen moderado ──────────────────────────
+    if (invoices <= 3 && avgPerInv > 4) {
         return {
             level: 'encargo',
             label: 'Posible encargo',
-            reason: `${invoices} factura${invoices > 1 ? 's' : ''} · ${avgPerInv.toFixed(1)} uds/factura promedio`,
+            reason: `${invoices} factura${invoices !== 1 ? 's' : ''} · ${avgPerInv.toFixed(1)} uds/factura promedio`,
             months, invoices, avgPerInv,
         };
     }
@@ -202,16 +215,17 @@ const FILTER_CARD_CSS = `
 
 function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
     const counts = useMemo(() => {
-        let agregar = 0, evaluar = 0, encargo = 0, omitir = 0, ignorado = 0;
+        let agregar = 0, evaluar = 0, encargo = 0, mayorista = 0, omitir = 0, ignorado = 0;
         for (const r of data) {
             if (ignoredSet.has(r.erp_product_id)) { ignorado++; continue; }
             const s = getSinMinMaxSugg(r);
-            if      (s.level === 'agregar') agregar++;
-            else if (s.level === 'evaluar') evaluar++;
-            else if (s.level === 'encargo') encargo++;
-            else                            omitir++;
+            if      (s.level === 'agregar')   agregar++;
+            else if (s.level === 'evaluar')   evaluar++;
+            else if (s.level === 'encargo')   encargo++;
+            else if (s.level === 'mayorista') mayorista++;
+            else                              omitir++;
         }
-        return { agregar, evaluar, encargo, omitir, ignorado };
+        return { agregar, evaluar, encargo, mayorista, omitir, ignorado };
     }, [data, ignoredSet]);
 
     const CARDS = [
@@ -227,6 +241,10 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
           activeBg: 'bg-orange-50/80 border-orange-300 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
           iconBgActive: 'bg-orange-100', iconColor: 'text-orange-500',
           numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
+        { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
+          activeBg: 'bg-indigo-50/80 border-indigo-300 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
+          iconBgActive: 'bg-indigo-100', iconColor: 'text-indigo-500',
+          numColor: n => n > 0 ? 'text-indigo-600' : 'text-slate-300' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
           activeBg: 'bg-slate-100/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
           iconBgActive: 'bg-slate-200', iconColor: 'text-slate-500',
@@ -681,7 +699,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         const isIgnored = ignoredSet.has(row.erp_product_id);
                                         const sugg  = getSinMinMaxSugg(row);
                                         const lvl   = sugg.level;
-                                        const leftColor = isIgnored ? '#94a3b8' : lvl === 'agregar' ? '#10b981' : lvl === 'evaluar' ? '#f59e0b' : lvl === 'encargo' ? '#f97316' : '#cbd5e1';
+                                        const leftColor = isIgnored ? '#94a3b8'
+                                            : lvl === 'agregar'   ? '#10b981'
+                                            : lvl === 'evaluar'   ? '#f59e0b'
+                                            : lvl === 'encargo'   ? '#f97316'
+                                            : lvl === 'mayorista' ? '#6366f1'
+                                            : '#cbd5e1';
                                         return (
                                             <tr key={row.erp_product_id}
                                                 style={{ borderLeftColor: leftColor }}
@@ -734,6 +757,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                                 <ShoppingBag size={9} />Posible encargo
                                                             </span>
                                                             <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
+                                                            <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                        </>)}
+                                                        {lvl === 'mayorista' && (<>
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit">
+                                                                <Truck size={9} />Venta mayorista
+                                                            </span>
+                                                            <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
                                                             <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
                                                         </>)}
                                                         {lvl === 'omitir' && (

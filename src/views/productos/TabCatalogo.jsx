@@ -338,16 +338,37 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
 
 // ── PrincipiosEditor ──────────────────────────────────────────────────────────
 
+const PA_PRESETS = ['Insumo', 'No aplica'];
+
 const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initial, onSaved }, ref) {
     const [items, setItems] = useState([]);
+    const [preset, setPreset] = useState(null); // null | 'Insumo' | 'No aplica'
 
     useEffect(() => {
         if (initial && initial.length > 0) {
-            setItems(initial.map((p, i) => ({ ...p, _key: p.id ?? i })));
+            const first = initial[0]?.nombre;
+            if (PA_PRESETS.includes(first) && initial.length === 1 && !initial[0]?.concentracion) {
+                setPreset(first);
+                setItems([]);
+            } else {
+                setPreset(null);
+                setItems(initial.map((p, i) => ({ ...p, _key: p.id ?? i })));
+            }
         } else {
+            setPreset(null);
             setItems([{ nombre: '', concentracion: '', orden: 0, _key: 0 }]);
         }
     }, [initial]);
+
+    const selectPreset = (p) => {
+        if (preset === p) {
+            setPreset(null);
+            setItems([{ nombre: '', concentracion: '', orden: 0, _key: Date.now() }]);
+        } else {
+            setPreset(p);
+            setItems([]);
+        }
+    };
 
     const addItem = () =>
         setItems(prev => [...prev, { nombre: '', concentracion: '', orden: prev.length, _key: Date.now() }]);
@@ -358,23 +379,34 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     const save = async ({ quiet = false } = {}) => {
         try {
-            const toSave = items.filter(p => p.nombre.trim());
             await supabase.from('product_active_principles').delete().eq('product_id', productId);
-            if (toSave.length > 0) {
-                await supabase.from('product_active_principles').insert(
-                    toSave.map((p, i) => ({
-                        product_id:    productId,
-                        nombre:        p.nombre.trim(),
-                        concentracion: p.concentracion?.trim() || null,
-                        orden:         i,
-                    }))
-                );
+            let text = null;
+            let saved = [];
+            if (preset) {
+                await supabase.from('product_active_principles').insert([{
+                    product_id: productId, nombre: preset, concentracion: null, orden: 0,
+                }]);
+                text = preset;
+                saved = [{ nombre: preset }];
+            } else {
+                const toSave = items.filter(p => p.nombre.trim());
+                if (toSave.length > 0) {
+                    await supabase.from('product_active_principles').insert(
+                        toSave.map((p, i) => ({
+                            product_id:    productId,
+                            nombre:        p.nombre.trim(),
+                            concentracion: p.concentracion?.trim() || null,
+                            orden:         i,
+                        }))
+                    );
+                    text = toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ');
+                }
+                saved = toSave;
             }
-            const text = toSave.map(p => [p.nombre.trim(), p.concentracion?.trim()].filter(Boolean).join(' ')).join(', ');
             await supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_PRINCIPLES', String(productId), { count: toSave.length });
+            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_PRINCIPLES', String(productId), { count: saved.length });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
-            if (onSaved) onSaved(toSave, text || null);
+            if (onSaved) onSaved(saved, text || null);
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
             throw e;
@@ -397,33 +429,60 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
         ? 'text-white/35 hover:text-blue-400'
         : 'text-slate-400 hover:text-[#0052CC]';
 
+    const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
+    const presetChipOn  = isAurora
+        ? 'bg-amber-400/[0.18] text-amber-300 border-amber-400/[0.35]'
+        : isCompat
+        ? 'bg-amber-100 text-amber-700 border-amber-300'
+        : 'bg-amber-50 text-amber-600 border-amber-300';
+    const presetChipOff = isAurora
+        ? 'bg-white/[0.04] text-white/30 border-white/[0.10] hover:text-white/55 hover:border-white/[0.22]'
+        : isCompat
+        ? 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600'
+        : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400 hover:text-slate-600';
+
     return (
         <div className="space-y-2">
-            {items.map((item, idx) => (
-                <div key={item._key} className="flex items-center gap-1.5">
-                    <span className={`text-[9px] font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
-                    <input
-                        value={item.nombre}
-                        onChange={e => updateItem(item._key, 'nombre', e.target.value)}
-                        placeholder="Nombre del principio"
-                        className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-[11px] focus:outline-none focus:ring-2 transition-colors ${inp}`}
-                    />
-                    <input
-                        value={item.concentracion || ''}
-                        onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
-                        placeholder="Cant."
-                        className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
-                    />
-                    <button onClick={() => removeItem(item._key)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
-                        <X size={10} />
+            {/* Preset chips */}
+            <div className="flex gap-1.5">
+                {PA_PRESETS.map(p => (
+                    <button key={p} onClick={() => selectPreset(p)}
+                        className={`${presetChipBase} ${preset === p ? presetChipOn : presetChipOff}`}>
+                        {p}
                     </button>
-                </div>
-            ))}
-            <button onClick={addItem}
-                className={`flex items-center gap-1 text-[10px] font-bold transition-colors pt-1 ${addCls}`}>
-                <Plus size={10} /> Agregar principio
-            </button>
+                ))}
+            </div>
+
+            {/* Input list — hidden when a preset is active */}
+            {!preset && (
+                <>
+                    {items.map((item, idx) => (
+                        <div key={item._key} className="flex items-center gap-1.5">
+                            <span className={`text-[9px] font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
+                            <input
+                                value={item.nombre}
+                                onChange={e => updateItem(item._key, 'nombre', e.target.value)}
+                                placeholder="Nombre del principio"
+                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-[11px] focus:outline-none focus:ring-2 transition-colors ${inp}`}
+                            />
+                            <input
+                                value={item.concentracion || ''}
+                                onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
+                                placeholder="Cant."
+                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-[10px] focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
+                            />
+                            <button onClick={() => removeItem(item._key)}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
+                                <X size={10} />
+                            </button>
+                        </div>
+                    ))}
+                    <button onClick={addItem}
+                        className={`flex items-center gap-1 text-[10px] font-bold transition-colors pt-1 ${addCls}`}>
+                        <Plus size={10} /> Agregar principio
+                    </button>
+                </>
+            )}
         </div>
     );
 });
@@ -1100,14 +1159,16 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <p className={`${xk.sectionLabel} flex items-center gap-1.5`}>
                                     <FlaskConical size={9} /> Principios activos
                                 </p>
-                                <button
-                                    onClick={() => setShowSrs(v => !v)}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
-                                        showSrs ? xk.srsBtnActive : xk.srsBtnInactive
-                                    }`}
-                                >
-                                    <Search size={9} strokeWidth={2.5} /> SRS
-                                </button>
+                                {!PA_PRESETS.includes(product.principio_activo) && (
+                                    <button
+                                        onClick={() => setShowSrs(v => !v)}
+                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                                            showSrs ? xk.srsBtnActive : xk.srsBtnInactive
+                                        }`}
+                                    >
+                                        <Search size={9} strokeWidth={2.5} /> SRS
+                                    </button>
+                                )}
                             </div>
                             <PrincipiosEditor
                                 ref={principiosRef}
@@ -1115,7 +1176,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 initial={principles}
                                 onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
                             />
-                            {showSrs && (
+                            {showSrs && !PA_PRESETS.includes(product.principio_activo) && (
                                 <div className={`mt-3 border-t ${xk.srsDivider} pt-3`}>
                                     <SrsBuscadorWidget initialQuery={product.nombre} />
                                 </div>
@@ -1423,15 +1484,17 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                 <div className="shrink-0 min-w-[220px]">
                     <div className="flex items-center justify-between mb-2.5">
                         <SL icon={FlaskConical}>Principios activos</SL>
-                        <button onClick={() => setShowSrs(v => !v)}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
-                                showSrs ? 'bg-violet-500/[0.20] text-violet-300 border-violet-400/[0.30]' : 'bg-white/[0.06] text-white/45 border-white/[0.14] hover:bg-violet-500/[0.12] hover:text-violet-300 hover:border-violet-400/[0.25]'
-                            }`}>
-                            <Search size={9} strokeWidth={2.5} /> SRS
-                        </button>
+                        {!PA_PRESETS.includes(product.principio_activo) && (
+                            <button onClick={() => setShowSrs(v => !v)}
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                                    showSrs ? 'bg-violet-500/[0.20] text-violet-300 border-violet-400/[0.30]' : 'bg-white/[0.06] text-white/45 border-white/[0.14] hover:bg-violet-500/[0.12] hover:text-violet-300 hover:border-violet-400/[0.25]'
+                                }`}>
+                                <Search size={9} strokeWidth={2.5} /> SRS
+                            </button>
+                        )}
                     </div>
                     <PrincipiosEditor ref={principiosRef} productId={product.id} initial={principles} onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)} />
-                    {showSrs && (
+                    {showSrs && !PA_PRESETS.includes(product.principio_activo) && (
                         <div className="mt-3 border-t border-white/[0.07] pt-3">
                             <SrsBuscadorWidget initialQuery={product.nombre} />
                         </div>
@@ -1881,14 +1944,16 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         <div className="py-3 border-r border-[#1B3A6B]/[0.08]">
                             <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 mb-3 flex items-center justify-between">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">Principios activos</p>
-                                <button onClick={() => setShowSrs(v => !v)}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold transition-all border ${showSrs ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-[#1B3A6B] border-[#1B3A6B]/30 hover:bg-[#1B3A6B]/5'}`}>
-                                    <Search size={8} strokeWidth={2.5} /> SRS
-                                </button>
+                                {!PA_PRESETS.includes(product.principio_activo) && (
+                                    <button onClick={() => setShowSrs(v => !v)}
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold transition-all border ${showSrs ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-[#1B3A6B] border-[#1B3A6B]/30 hover:bg-[#1B3A6B]/5'}`}>
+                                        <Search size={8} strokeWidth={2.5} /> SRS
+                                    </button>
+                                )}
                             </div>
                             <div className="px-4">
                                 <PrincipiosEditor ref={principiosRef} productId={product.id} initial={principles} onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)} />
-                                {showSrs && (
+                                {showSrs && !PA_PRESETS.includes(product.principio_activo) && (
                                     <div className="mt-3 pt-3 border-t border-gray-200">
                                         <SrsBuscadorWidget initialQuery={product.nombre} />
                                     </div>

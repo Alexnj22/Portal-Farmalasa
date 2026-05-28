@@ -341,11 +341,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/70 hover:text-white hover:bg-white/[0.08]';
-        const iconActiveColor   = 'text-[#4D94FF]';
-        const iconInactiveColor = 'text-white/55 group-hover:text-white';
-        const accentBarInactive = 'bg-white/20';
-        const accentBarActive   = 'bg-[#4D94FF]';
+        const navItemInactive   = 'text-white/55 hover:text-white hover:bg-white/[0.09]';
+        const iconActiveColor   = 'text-white';
+        const iconInactiveColor = 'text-white/38 group-hover:text-white/80';
+        const accentBarInactive = 'bg-white/12';
+        const accentBarActive   = 'bg-white/85';
 
         if (comingSoon) {
             return (
@@ -478,8 +478,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? 'text-[#4D94FF] scale-110'
-                            : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
+                            ? 'text-white/90 scale-110'
+                            : 'text-white/45 group-hover:text-white/85 group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -607,14 +607,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {/* Active pill */}
                         <div
                             className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                bg-[#1A3560]/90 border border-[#2D5499]/50
-                                shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                bg-white/[0.10] border border-white/[0.18]
+                                shadow-[0_2px_16px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.08)]
                                 ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                             style={{ top: pill.top, height: pill.height }}
                         >
-                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />
-                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />
+                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent rounded-t-[1rem]" />
+                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.35)]" />
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}
@@ -628,27 +627,36 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <>
                                 {/* PIN row — expanded */}
                                 {hasPermission('kiosk_pin', 'can_view') && (
-                                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all border bg-white/5 border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12">
-                                        <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
-                                            <CheckCircle2 size={13} className="text-[#4D94FF]" strokeWidth={2} />
-                                            <div className="relative w-12 flex items-center justify-center">
-                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                <Copy size={13} className={`absolute transition-all duration-300 text-white/80 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
-                                                <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                                    <div className={`grid gap-1.5 ${hasPermission('su_pin', 'can_view') ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                        {/* PIN card */}
+                                        <button onClick={handleCopyPin}
+                                            className="group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/5 border-white/8 hover:bg-white/10 hover:border-white/15 hover:scale-[1.02] active:scale-[0.98]"
+                                            title="Copiar PIN">
+                                            <div className="flex items-center gap-1 mb-0.5">
+                                                <CheckCircle2 size={10} className="text-white/40 group-hover/pin:text-emerald-400 transition-colors" strokeWidth={2} />
+                                                <span className="text-[9px] font-semibold text-white/35 uppercase tracking-wider">PIN</span>
+                                            </div>
+                                            <div className="relative h-4 flex items-center justify-center w-full">
+                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <Copy size={12} className={`absolute transition-all duration-300 text-white/60 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
+                                                <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                             </div>
                                         </button>
+                                        {/* SU-PIN card */}
                                         {hasPermission('su_pin', 'can_view') && (
-                                            <>
-                                                <div className="h-3.5 w-px bg-white/10" />
-                                                <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
-                                                    <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
-                                                    <div className="relative w-14 flex items-center justify-center">
-                                                        <span className={`absolute text-[12px] font-black text-purple-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
-                                                        <Copy size={13} className={`absolute text-purple-300/80 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
-                                                        <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
-                                                    </div>
-                                                </button>
-                                            </>
+                                            <button onClick={handleCopySuPin}
+                                                className="group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/5 border-white/8 hover:bg-purple-500/10 hover:border-purple-400/20 hover:scale-[1.02] active:scale-[0.98]"
+                                                title="Copiar código SU">
+                                                <div className="flex items-center gap-1 mb-0.5">
+                                                    <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-purple-400 transition-colors" strokeWidth={2} />
+                                                    <span className="text-[9px] font-semibold text-white/35 uppercase tracking-wider">SU</span>
+                                                </div>
+                                                <div className="relative h-4 flex items-center justify-center w-full">
+                                                    <span className={`absolute text-[12px] font-black text-purple-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
+                                                    <Copy size={12} className={`absolute text-purple-300/60 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
+                                                    <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+                                                </div>
+                                            </button>
                                         )}
                                     </div>
                                 )}

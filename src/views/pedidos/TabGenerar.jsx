@@ -7,6 +7,7 @@ import {
     ChevronLeft, Minus, Plus,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { DataTable, DataRow } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 
 const ERP_NAMES = {
@@ -94,6 +95,14 @@ function LotesPill({ lotes, qty }) {
 }
 
 const PAGE_SIZES = [20, 50, 100];
+
+const SIN_BODEGA_COLS = [
+    { key: 'producto',   label: 'Producto',                 align: 'left'   },
+    { key: 'lab',        label: 'Laboratorio',              align: 'left'   },
+    { key: 'sucursales', label: 'Sucursales que solicitan', align: 'left'   },
+    { key: 'total',      label: 'Total',   align: 'right',  hideBelow: 'sm' },
+    { key: 'ventas',     label: 'Ventas 6m', align: 'right', hideBelow: 'sm' },
+];
 
 // Paginación pequeña reutilizable (preview por sucursal)
 function MiniPager({ page, total, pageSize, onChange }) {
@@ -416,10 +425,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                 isRevision ? 'bg-amber-50/30 hover:bg-amber-50/60' :
                              'hover:bg-[#0052CC]/[0.032]'
             }`}>
-                <td className="px-4 py-2 max-w-[240px]">
+                <td className="px-4 py-2">
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
+                            <span className="text-[13px] font-medium text-slate-700">{row.product_name}</span>
                             {row.es_antibiotico && (
                                 <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
                                     <FlaskConical size={9} className="text-violet-600" />
@@ -756,118 +765,81 @@ export default function TabGenerar({ searchTerm = '' }) {
                 )}
             </div>
 
-            {/* ── Sin-bodega table ──────────────────────────── */}
-            {sinBodegaLoad && sinBodega.length === 0 ? (
-                <div className="rounded-2xl border overflow-hidden bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm">
-                    <table className="min-w-full">
-                        <tbody>
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i} className={`border-l-[3px] border-l-red-200 ${i > 0 ? 'border-t border-slate-100' : ''}`}>
-                                    <td className="px-4 py-3.5">
-                                        <div className="h-[13px] rounded-full animate-pulse bg-slate-200/70" style={{ width: `${140 + (i * 23) % 80}px` }} />
-                                    </td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className="h-4 rounded-full animate-pulse bg-slate-200/70" style={{ width: `${60 + (i * 17) % 60}px` }} /></td>
-                                    <td className="px-4 py-3.5"><div className="h-5 w-32 rounded-full animate-pulse bg-slate-200/70" /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className="h-4 w-10 rounded-full animate-pulse bg-slate-200/70 ml-auto" /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className="h-4 w-14 rounded-full animate-pulse bg-slate-200/70 ml-auto" /></td>
-                                </tr>
+            {/* ── Sin-bodega table (DataTable estándar) ────── */}
+            <DataTable
+                columns={SIN_BODEGA_COLS}
+                loading={sinBodegaLoad}
+                empty={{
+                    icon: Package,
+                    message: searchTerm
+                        ? `Sin resultados para "${searchTerm}"`
+                        : 'No hay productos sin stock en Bodega',
+                }}
+                minWidth="560px"
+                footer={sinBodegaTotal > 0 && (
+                    <>
+                        <div className="flex items-center gap-1">
+                            {PAGE_SIZES.map(size => (
+                                <button key={size} onClick={() => { setSinBodegaPageSize(size); setSinBodegaPage(1); }}
+                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                        sinBodegaPageSize === size
+                                            ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
+                                            : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
+                                    }`}>
+                                    {size}
+                                </button>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : filteredSinBodega.length === 0 ? (
-                <div className="rounded-2xl border py-16 text-center bg-white/80 border-slate-200/70 backdrop-blur-sm">
-                    <Package size={32} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-sm font-medium text-slate-400">
-                        {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No hay productos sin stock en Bodega'}
-                    </p>
-                </div>
-            ) : (
-                <div className="rounded-2xl border overflow-hidden bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm">
-                    <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-sm">
-                            <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]">
-                                <tr>
-                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Producto</th>
-                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left hidden md:table-cell">Laboratorio</th>
-                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Solicitan</th>
-                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right hidden sm:table-cell">Total</th>
-                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right hidden sm:table-cell">Ventas 6m</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredSinBodega.map(row => (
-                                    <tr key={row.erp_product_id}
-                                        className="border-l-[3px] border-l-red-300 border-t border-slate-100 hover:bg-[#0052CC]/[0.03] transition-colors">
-                                        <td className="px-4 py-3.5 max-w-[220px]">
-                                            <span className="block truncate text-[13.5px] font-semibold text-slate-800">{row.product_name}</span>
-                                        </td>
-                                        <td className="px-4 py-3.5 hidden md:table-cell">
-                                            <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            <div className="flex flex-wrap gap-1">
-                                                {(row.sucursales || []).map(s => (
-                                                    <span key={s.erp_sucursal_id}
-                                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
-                                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
-                                                        <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                                        <span className="text-red-500 font-semibold">{s.reponer}</span>
-                                                        {s.ventas_6m > 0 && (
-                                                            <span className="text-slate-400 flex items-center gap-0.5">
-                                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right hidden sm:table-cell">
-                                            <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right hidden sm:table-cell">
-                                            {row.total_ventas_6m > 0 ? (
-                                                <span className="flex items-center justify-end gap-1 text-[12px] text-emerald-600 font-semibold tabular-nums">
-                                                    <TrendingUp size={11} />
-                                                    {Math.round(row.total_ventas_6m).toLocaleString()}
-                                                </span>
-                                            ) : (
-                                                <span className="text-[11px] text-slate-300">—</span>
-                                            )}
-                                        </td>
-                                    </tr>
+                        </div>
+                        <SmartPagination
+                            page={sinBodegaPage}
+                            total={Math.max(1, Math.ceil(sinBodegaTotal / sinBodegaPageSize))}
+                            onChange={setSinBodegaPage}
+                        />
+                        <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
+                            {sinBodegaTotal.toLocaleString()} total
+                        </span>
+                    </>
+                )}
+            >
+                {filteredSinBodega.map((row, i) => (
+                    <DataRow key={row.erp_product_id} index={i}>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-slate-800">
+                            {row.product_name}
+                        </td>
+                        <td className="px-4 py-3 text-[12px] text-slate-500">{row.laboratorio || '—'}</td>
+                        <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                                {(row.sucursales || []).map(s => (
+                                    <span key={s.erp_sucursal_id}
+                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
+                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
+                                        <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
+                                        <span className="text-red-500 font-semibold">{s.reponer}</span>
+                                        {s.ventas_6m > 0 && (
+                                            <span className="text-slate-400 flex items-center gap-0.5">
+                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
+                                            </span>
+                                        )}
+                                    </span>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Sin-bodega pagination ──────────────────────── */}
-            {!sinBodegaLoad && sinBodegaTotal > 0 && (
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        {PAGE_SIZES.map(size => (
-                            <button key={size} onClick={() => { setSinBodegaPageSize(size); setSinBodegaPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    sinBodegaPageSize === size
-                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
-                                        : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
-                                }`}>
-                                {size}
-                            </button>
-                        ))}
-                    </div>
-                    <SmartPagination
-                        page={sinBodegaPage}
-                        total={Math.max(1, Math.ceil(sinBodegaTotal / sinBodegaPageSize))}
-                        onChange={setSinBodegaPage}
-                    />
-                    <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
-                        {sinBodegaTotal.toLocaleString()} total
-                    </span>
-                </div>
-            )}
+                            </div>
+                        </td>
+                        <td className="px-4 py-3 text-right hidden sm:table-cell">
+                            <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right hidden sm:table-cell">
+                            {row.total_ventas_6m > 0 ? (
+                                <span className="inline-flex items-center justify-end gap-1 text-[12px] text-emerald-600 font-semibold tabular-nums">
+                                    <TrendingUp size={11} />
+                                    {Math.round(row.total_ventas_6m).toLocaleString()}
+                                </span>
+                            ) : (
+                                <span className="text-[11px] text-slate-300">—</span>
+                            )}
+                        </td>
+                    </DataRow>
+                ))}
+            </DataTable>
         </div>
     );
 }

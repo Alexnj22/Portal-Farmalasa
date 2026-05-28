@@ -579,9 +579,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                                         <tr key={row.id} className={`border-t border-[#0052CC]/[0.06] transition-colors ${
                                                                                             row.status === 'con_diferencia' ? 'bg-amber-50/40 hover:bg-amber-50/70' : 'hover:bg-[#0052CC]/[0.025]'
                                                                                         }`}>
-                                                                                            <td className="px-3 py-2 font-medium text-slate-700 max-w-[200px]">
+                                                                                            <td className="px-3 py-2 font-medium text-slate-700">
                                                                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                                                                    <span className="block truncate">{row.products?.nombre}</span>
+                                                                                                    <span>{row.products?.nombre}</span>
                                                                                                     {row.products?.es_antibiotico && (
                                                                                                         <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
                                                                                                             <FlaskConical size={9} className="text-violet-600" />
@@ -654,9 +654,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                             <tbody>
                                                                                 {sinRows.map(row => (
                                                                                     <tr key={row.id} className="border-t border-red-50 hover:bg-red-50/50 transition-colors opacity-70">
-                                                                                        <td className="px-3 py-2 font-medium text-slate-700 max-w-[200px]">
+                                                                                        <td className="px-3 py-2 font-medium text-slate-700">
                                                                                             <div className="flex items-center gap-1.5">
-                                                                                                <span className="block truncate">{row.products?.nombre}</span>
+                                                                                                <span>{row.products?.nombre}</span>
                                                                                                 {row.products?.es_antibiotico && (
                                                                                                     <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
                                                                                                         <FlaskConical size={9} className="text-violet-600" />
@@ -706,9 +706,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                             <tbody>
                                                                                 {revRows.map(row => (
                                                                                     <tr key={row.id} className="border-t border-amber-50 hover:bg-amber-50/60 transition-colors opacity-75">
-                                                                                        <td className="px-3 py-2 font-medium text-slate-700 max-w-[200px]">
+                                                                                        <td className="px-3 py-2 font-medium text-slate-700">
                                                                                             <div className="flex items-center gap-1.5">
-                                                                                                <span className="block truncate">{row.products?.nombre}</span>
+                                                                                                <span>{row.products?.nombre}</span>
                                                                                                 {row.products?.es_antibiotico && (
                                                                                                     <span title="Antibiótico" className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 border border-violet-200">
                                                                                                         <FlaskConical size={9} className="text-violet-600" />
@@ -782,7 +782,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                         hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'
                                     }`}>
                                         <div className="flex items-center gap-3 mb-1.5">
-                                            <span className="flex-1 text-[13px] text-slate-700 font-semibold truncate">
+                                            <span className="flex-1 text-[13px] text-slate-700 font-semibold">
                                                 {row.products?.nombre}
                                             </span>
                                             <div className="flex items-center gap-2 flex-shrink-0">

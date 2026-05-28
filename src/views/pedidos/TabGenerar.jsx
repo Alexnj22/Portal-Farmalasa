@@ -4,11 +4,12 @@ import {
     Loader2, RefreshCw, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info, ChevronDown, ChevronRight, Clock,
     FlaskConical, ArrowLeft, TriangleAlert, TrendingUp,
-    ChevronLeft, Minus, Plus,
+    ChevronLeft, Minus, Plus, Printer, RefreshCcw, Save,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
+import { printFromPreview, fefoProject } from '../../utils/pedidoPrint';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -211,6 +212,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [adjustments,  setAdjustments]  = useState({});
     const [error,        setError]        = useState(null);
     const [syncedAt,     setSyncedAt]     = useState(null);
+    const [savingSnap,   setSavingSnap]   = useState(false);
 
     // Preview per-sucursal collapse + pagination
     const [sucCollapsed, setSucCollapsed] = useState({});
@@ -314,6 +316,17 @@ export default function TabGenerar({ searchTerm = '' }) {
         }
     }, [selected]);
 
+    // ── Guardar borrador ───────────────────────────────────────
+    const handleGuardarBorrador = useCallback(async () => {
+        const nombre = `Borrador ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`;
+        setSavingSnap(true);
+        try {
+            await supabase.rpc('save_pedido_snapshot', { p_sucursal_ids: [...selected], p_nombre: nombre });
+        } finally {
+            setSavingSnap(false);
+        }
+    }, [selected]);
+
     // ── Grouped preview ────────────────────────────────────────
     const grouped = useMemo(() => {
         if (!preview) return null;
@@ -352,18 +365,22 @@ export default function TabGenerar({ searchTerm = '' }) {
         if (!preview || preview.length === 0) return;
         setConfirming(true); setError(null);
         try {
-            const items = preview.map(row => ({
-                erp_sucursal_id:       row.erp_sucursal_id,
-                erp_product_id:        row.erp_product_id,
-                erp_presentacion_id:   row.erp_presentacion_id,
-                cantidad_asignada:     getAdjusted(row),
-                sin_stock:             row.sin_stock,
-                revision_minmax:       row.revision_minmax,
-                stock_packs_snapshot:  Number(row.stock_packs),
-                max_qty_snapshot:      row.max_qty,
-                min_qty_snapshot:      row.min_qty,
-                urgencia_pct_snapshot: row.urgencia_pct,
-            }));
+            const items = preview.map(row => {
+                const adj = getAdjusted(row);
+                return {
+                    erp_sucursal_id:       row.erp_sucursal_id,
+                    erp_product_id:        row.erp_product_id,
+                    erp_presentacion_id:   row.erp_presentacion_id,
+                    cantidad_asignada:     adj,
+                    sin_stock:             row.sin_stock,
+                    revision_minmax:       row.revision_minmax,
+                    stock_packs_snapshot:  Number(row.stock_packs),
+                    max_qty_snapshot:      row.max_qty,
+                    min_qty_snapshot:      row.min_qty,
+                    urgencia_pct_snapshot: row.urgencia_pct,
+                    lotes_asignados:       fefoProject(row.lotes_bodega, adj),
+                };
+            });
             const { data: pedidoId, error: rpcErr } = await supabase.rpc('confirm_pedido', {
                 p_created_by: user?.id ?? null,
                 p_notes:      notes || null,
@@ -529,21 +546,46 @@ export default function TabGenerar({ searchTerm = '' }) {
     if (preview) {
         return (
             <div className="space-y-4 p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                     <button onClick={() => { setPreview(null); setAdjustments({}); }}
                         className="flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-blue-600 transition-colors font-medium">
                         <ArrowLeft size={15} /> Volver al resumen
                     </button>
-                    {searchTerm && (
-                        <span className="text-[12px] text-slate-500">
-                            Filtrando por: <b>"{searchTerm}"</b>
-                        </span>
-                    )}
-                    {error && (
-                        <span className="text-[13px] text-red-600 flex items-center gap-1">
-                            <AlertTriangle size={14} /> {error}
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {searchTerm && (
+                            <span className="text-[12px] text-slate-500">
+                                Filtrando: <b>"{searchTerm}"</b>
+                            </span>
+                        )}
+                        {error && (
+                            <span className="text-[13px] text-red-600 flex items-center gap-1">
+                                <AlertTriangle size={14} /> {error}
+                            </span>
+                        )}
+                        <button
+                            onClick={handleCalcular}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        >
+                            {loading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCcw size={13} />}
+                            Recalcular
+                        </button>
+                        <button
+                            onClick={handleGuardarBorrador}
+                            disabled={savingSnap}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        >
+                            {savingSnap ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                            Guardar borrador
+                        </button>
+                        <button
+                            onClick={() => printFromPreview(grouped, sortedSucIds, getAdjusted,
+                                `Pedido ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+                        >
+                            <Printer size={13} /> Imprimir
+                        </button>
+                    </div>
                 </div>
 
                 {preview.length === 0 && (

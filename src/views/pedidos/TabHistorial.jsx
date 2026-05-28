@@ -3,10 +3,12 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2,
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
-    Clock, CheckCheck, TrendingDown, FlaskConical,
+    Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
+    BookMarked, Trash2, CalendarDays,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import { printFromPedidoItems, printFromSnapshot } from '../../utils/pedidoPrint';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -119,6 +121,13 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [anulando,         setAnulando]         = useState(null);
     const [confirmAnul,      setConfirmAnul]      = useState(null);
     const [anulError,        setAnulError]        = useState(null);
+    const [filterDesde,      setFilterDesde]      = useState('');
+    const [filterHasta,      setFilterHasta]      = useState('');
+    const [snapshots,        setSnapshots]        = useState([]);
+    const [snapsLoading,     setSnapsLoading]     = useState(false);
+    const [snapsOpen,        setSnapsOpen]        = useState(false);
+    const [confirmDelSnap,   setConfirmDelSnap]   = useState(null);
+    const [deletingSnap,     setDeletingSnap]     = useState(false);
 
     // ── Section toggle helpers ─────────────────────────────────────────────────
     const isSecOpen = (key, def) => sectionOpen[key] ?? def;
@@ -147,18 +156,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }));
     }, []);
 
-    // ── Reset load (stable — no state deps) ───────────────────────────────────
-    const resetLoad = useCallback(async () => {
+    // ── Reset load ────────────────────────────────────────────────────────────
+    const resetLoad = useCallback(async (desde, hasta) => {
         setLoading(true);
         setPedidos([]);
         setPage(0);
         setHasMore(false);
         setPedidoSucursales({});
-        const { data } = await supabase
+        let q = supabase
             .from('pedidos')
             .select('id, numero, created_at, status, notes')
-            .order('created_at', { ascending: false })
-            .range(0, PAGE_SIZE - 1);
+            .order('created_at', { ascending: false });
+        if (desde) q = q.gte('created_at', desde);
+        if (hasta) q = q.lte('created_at', hasta + 'T23:59:59');
+        q = q.range(0, PAGE_SIZE - 1);
+        const { data } = await q;
         const rows = data || [];
         setPedidos(rows);
         setHasMore(rows.length === PAGE_SIZE);
@@ -185,12 +197,29 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     }, [page, loadSucursales]);
 
     // Initial load
-    useEffect(() => { resetLoad(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { resetLoad('', ''); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Refresh when tab becomes active
     useEffect(() => {
-        if (refreshKey > 0) resetLoad();
-    }, [refreshKey, resetLoad]);
+        if (refreshKey > 0) resetLoad(filterDesde, filterHasta);
+    }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Reload when date filters change
+    useEffect(() => { resetLoad(filterDesde, filterHasta); }, [filterDesde, filterHasta]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Load snapshots on mount
+    const loadSnapshots = useCallback(async () => {
+        setSnapsLoading(true);
+        const { data } = await supabase
+            .from('pedidos_snapshots')
+            .select('id, nombre, sucursal_ids, created_at, total_filas, total_packs, datos')
+            .order('created_at', { ascending: false })
+            .range(0, 49);
+        setSnapshots(data || []);
+        setSnapsLoading(false);
+    }, []);
+
+    useEffect(() => { loadSnapshots(); }, [loadSnapshots]);
 
     // ── Fetch items + lotes for expanded pedido ────────────────────────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
@@ -202,7 +231,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 cantidad_asignada, cantidad_recibida,
                 sin_stock, revision_minmax,
                 status, nota_diferencia, received_at,
-                products ( nombre, es_antibiotico )
+                lotes_asignados,
+                products ( nombre, es_antibiotico ),
+                presentaciones ( tipo )
             `)
             .eq('pedido_id', pedidoId)
             .range(0, 9999);
@@ -317,6 +348,25 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }
     }, [confirmAnul]);
 
+    // ── Todo recibido exacto ──────────────────────────────────────────────────
+    const handleTodoRecibido = useCallback(() => {
+        if (!modal) return;
+        const vals = {}, notas = {};
+        for (const r of modal.rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; }
+        setRecepVals(vals);
+        setNotaVals(notas);
+    }, [modal]);
+
+    // ── Borrar snapshot ────────────────────────────────────────────────────────
+    const doDeleteSnap = useCallback(async () => {
+        if (!confirmDelSnap) return;
+        setDeletingSnap(true);
+        await supabase.from('pedidos_snapshots').delete().eq('id', confirmDelSnap.id);
+        setConfirmDelSnap(null);
+        setDeletingSnap(false);
+        loadSnapshots();
+    }, [confirmDelSnap, loadSnapshots]);
+
     // ── Filtered / counts ─────────────────────────────────────────────────────
     const filtered = pedidos
         .filter(p => filterTab === 'todos' || p.status === filterTab)
@@ -352,6 +402,26 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                     <StatCard label="Anulados"    value={counts.anulado    ?? 0} color="red"     />
                 </div>
             )}
+
+            {/* ── Date range filter ─────────────────────────────────────── */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <CalendarDays size={13} className="text-slate-400 shrink-0" />
+                <input
+                    type="date" value={filterDesde} onChange={e => setFilterDesde(e.target.value)}
+                    className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
+                />
+                <span className="text-[11px] text-slate-400">—</span>
+                <input
+                    type="date" value={filterHasta} onChange={e => setFilterHasta(e.target.value)}
+                    className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
+                />
+                {(filterDesde || filterHasta) && (
+                    <button onClick={() => { setFilterDesde(''); setFilterHasta(''); }}
+                        className="text-[11px] text-slate-400 hover:text-red-500 transition-colors flex items-center gap-0.5">
+                        <X size={11} /> Limpiar
+                    </button>
+                )}
+            </div>
 
             {/* ── Filter pills ──────────────────────────────────────────── */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -449,8 +519,17 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                     )}
                                 </div>
                             </button>
-                            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                                 <span className="text-[12px] text-slate-400 whitespace-nowrap hidden sm:block">{fmtDate(p.created_at)}</span>
+                                {isExp && sucGroups.length > 0 && (
+                                    <button
+                                        onClick={e => { e.stopPropagation(); printFromPedidoItems(p.numero, sucGroups); }}
+                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                                        title="Imprimir pedido completo"
+                                    >
+                                        <Printer size={11} /> Imprimir
+                                    </button>
+                                )}
                                 {canAnul && (
                                     <button
                                         onClick={() => setConfirmAnul({ id: p.id, numero: p.numero })}
@@ -528,15 +607,27 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    {hasPending && (
+                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                        {hasPending && (
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); openRecepcion(p.id, suc); }}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                                            >
+                                                                <ArrowDown size={11} />
+                                                                Confirmar recepción
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            onClick={e => { e.stopPropagation(); openRecepcion(p.id, suc); }}
-                                                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors flex-shrink-0"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                printFromPedidoItems(p.numero, [[suc, rows]]);
+                                                            }}
+                                                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                                                            title="Imprimir esta sucursal"
                                                         >
-                                                            <ArrowDown size={11} />
-                                                            Confirmar recepción
+                                                            <Printer size={11} />
                                                         </button>
-                                                    )}
+                                                    </div>
                                                 </button>
 
                                                 {isSucOpen && (
@@ -759,7 +850,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
                     <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                            <div>
+                            <div className="flex-1 min-w-0">
                                 <h3 className="font-bold text-slate-800 text-[16px]">
                                     Recepción — {ERP_NAMES[modal.sucursalId] ?? `Sucursal ${modal.sucursalId}`}
                                 </h3>
@@ -767,9 +858,18 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                     Ajusta la cantidad realmente recibida por producto.
                                 </p>
                             </div>
-                            <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
-                                <X size={18} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleTodoRecibido}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                                    title="Marcar todo como recibido exactamente"
+                                >
+                                    <CheckCircle2 size={12} /> Todo exacto
+                                </button>
+                                <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                                    <X size={18} />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto">
@@ -835,6 +935,63 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 </div>
             )}
 
+            {/* ── Borradores guardados ────────────────────────────────────── */}
+            <div className={GLASS + ' overflow-hidden'}>
+                <button
+                    onClick={() => setSnapsOpen(o => !o)}
+                    className="w-full flex items-center gap-2 px-5 py-3.5 hover:bg-blue-50/20 transition-colors text-left"
+                >
+                    {snapsOpen
+                        ? <ChevronDown  size={14} className="text-slate-400" />
+                        : <ChevronRight size={14} className="text-slate-400" />}
+                    <BookMarked size={15} className="text-indigo-500" />
+                    <span className="font-semibold text-slate-700 text-[14px]">Borradores guardados</span>
+                    {snapshots.length > 0 && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold">
+                            {snapshots.length}
+                        </span>
+                    )}
+                </button>
+                {snapsOpen && (
+                    <div className="border-t border-slate-100 divide-y divide-slate-100">
+                        {snapsLoading ? (
+                            <div className="flex items-center gap-2 px-5 py-4 text-slate-400">
+                                <Loader2 size={14} className="animate-spin" />
+                                <span className="text-[13px]">Cargando borradores…</span>
+                            </div>
+                        ) : snapshots.length === 0 ? (
+                            <div className="px-5 py-6 text-center text-slate-400 text-[13px]">
+                                No hay borradores guardados. Usa "Guardar borrador" en la vista de preview.
+                            </div>
+                        ) : snapshots.map(snap => (
+                            <div key={snap.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/60 transition-colors">
+                                <div className="min-w-0">
+                                    <p className="font-medium text-slate-700 text-[13px] truncate">{snap.nombre}</p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                        {fmtDate(snap.created_at)} &nbsp;·&nbsp; {snap.total_filas} productos &nbsp;·&nbsp; {snap.total_packs} packs
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                                    <button
+                                        onClick={() => printFromSnapshot(snap)}
+                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-white transition-colors"
+                                    >
+                                        <Printer size={11} /> Imprimir
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDelSnap(snap)}
+                                        className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                        title="Eliminar borrador"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             {/* ── Confirm anular ──────────────────────────────────────────── */}
             <ConfirmModal
                 isOpen={!!confirmAnul}
@@ -846,6 +1003,19 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 cancelText="Cancelar"
                 isDestructive
                 isProcessing={!!anulando}
+            />
+
+            {/* ── Confirm borrar snapshot ─────────────────────────────────── */}
+            <ConfirmModal
+                isOpen={!!confirmDelSnap}
+                onClose={() => setConfirmDelSnap(null)}
+                onConfirm={doDeleteSnap}
+                title="Eliminar borrador"
+                message={`¿Eliminar el borrador "${confirmDelSnap?.nombre}"?`}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                isDestructive
+                isProcessing={deletingSnap}
             />
         </div>
     );

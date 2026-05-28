@@ -169,6 +169,16 @@ function SmartPagination({ page, total, onChange }) {
 
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
+const SUC_ANIM_CSS = `
+@keyframes suc-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.09); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.suc-pop { animation: suc-pop 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+`;
+
 const TH = 'px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500';
 const TABLE_HEAD = (
     <thead>
@@ -703,6 +713,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     Por defecto ninguna está seleccionada. Elige las sucursales a reponer y calcula el pedido.
                 </p>
 
+                <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {SUCURSALES.map((id) => {
                         const stat     = statMap[id];
@@ -716,10 +727,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                             : 'border-slate-200 hover:border-blue-300';
                         return (
                             <button key={id} onClick={() => toggleSuc(id)}
-                                className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-3 border-2 transition-all duration-150 text-center group ${
+                                className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-3 border-2 text-center group ${
                                     isOn
-                                        ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
-                                        : `bg-white ${urgBorder} text-slate-700 hover:shadow-sm`
+                                        ? 'suc-pop bg-slate-800 border-slate-700 text-white shadow-lg shadow-slate-300/50'
+                                        : `bg-white transition-all duration-200 ${urgBorder} text-slate-700 hover:shadow-sm`
                                 }`}>
                                 {/* Urgency rank badge */}
                                 <span className={`absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black leading-none ${
@@ -731,16 +742,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 }`}>
                                     {rank + 1}
                                 </span>
-                                <Building2 size={18} className={isOn ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-400'} />
+                                <Building2 size={18} className={isOn ? 'text-slate-300' : 'text-slate-400 group-hover:text-slate-600'} />
                                 <span className={`text-[12px] font-bold leading-tight mb-1 ${isOn ? 'text-white' : 'text-slate-700'}`}>
                                     {ERP_NAMES[id]}
                                 </span>
                                 {stat && !dashLoading ? (<>
-                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-blue-100' : 'text-emerald-500'}`}>
+                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-slate-300' : 'text-emerald-500'}`}>
                                         <span className="text-[9px] font-black">✓</span>
                                         {stat.con_bodega_productos.toLocaleString()}
                                     </div>
-                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-red-200' : 'text-red-500'}`}>
+                                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-rose-300' : 'text-red-500'}`}>
                                         <span className="text-[9px] font-black">✗</span>
                                         {stat.sin_bodega_productos.toLocaleString()}
                                     </div>
@@ -748,8 +759,8 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     <div className="h-6 w-12 rounded bg-slate-100 animate-pulse mt-1" />
                                 )}
                                 {isOn && (
-                                    <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
-                                        <CheckCircle2 size={10} className="text-blue-600" />
+                                    <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center">
+                                        <CheckCircle2 size={10} className="text-white" />
                                     </span>
                                 )}
                             </button>
@@ -760,10 +771,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <div className="mt-4 flex flex-col items-center gap-2">
                     <button onClick={handleCalcular}
                         disabled={loading || selected.size === 0}
-                        className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-[15px] transition-all duration-150 shadow-lg ${
+                        className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
                             selected.size === 0
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 hover:-translate-y-0.5 active:scale-[0.98]'
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_20px_rgba(15,23,42,0.22)] hover:shadow-[0_8px_28px_rgba(15,23,42,0.30)] hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}>
                         {loading ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
                         {loading
@@ -779,18 +790,16 @@ export default function TabGenerar({ searchTerm = '' }) {
             </div>
 
             {/* ── Productos sin stock en Bodega ──────────────── */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-                <div className={GLASS + ' px-4 py-2.5 flex items-center gap-2 w-fit'}>
-                    <TriangleAlert size={14} className="text-red-500" />
-                    <span className="font-semibold text-slate-700 text-[13px]">Productos sin stock en Bodega</span>
-                    {sinBodega.length > 0 && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
-                            {sinBodega.length.toLocaleString()}
-                        </span>
-                    )}
-                </div>
+            <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
+                <TriangleAlert size={15} className="text-red-500" />
+                <span className="font-semibold text-slate-700 text-[14px]">Productos sin stock en Bodega</span>
+                {sinBodega.length > 0 && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
+                        {sinBodega.length.toLocaleString()} productos
+                    </span>
+                )}
                 {searchTerm && (
-                    <span className="text-[11px] text-slate-400">"{searchTerm}"</span>
+                    <span className="ml-auto text-[11px] text-slate-400">"{searchTerm}"</span>
                 )}
             </div>
 

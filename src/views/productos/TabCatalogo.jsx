@@ -827,7 +827,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [showAllLog, setShowAllLog]     = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
-    const locationRef   = useRef(null);
     const categoryRef   = useRef(null);
 
     const handleSave = async () => {
@@ -836,7 +835,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         try {
             await Promise.all([
                 principiosRef.current?.save({ quiet: true }),
-                locationRef.current?.save({ quiet: true }),
                 categoryRef.current?.save({ quiet: true }),
             ]);
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
@@ -1108,8 +1106,8 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         </div>
                     </div>
 
-                    {/* ── Categoría | Cambios ── */}
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-5">
+                    {/* ── Categoría | Cambios | Principios activos ── */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
                         {/* Categoría */}
                         <div>
@@ -1154,13 +1152,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 </div>
                             )}
                         </div>
-                    </div>
-
-                    {/* ── Principios activos + Ubicaciones side by side ── */}
-                    <div className={`border-t ${xk.divider} pt-4 flex flex-col md:flex-row gap-5 items-start`}>
 
                         {/* Principios activos */}
-                        <div className="shrink-0 min-w-[220px]">
+                        <div>
                             <div className="flex items-center justify-between mb-2.5">
                                 <p className={`${xk.sectionLabel} flex items-center gap-1.5`}>
                                     <FlaskConical size={9} /> Principios activos
@@ -1187,21 +1181,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                     <SrsBuscadorWidget initialQuery={product.nombre} />
                                 </div>
                             )}
-                        </div>
-
-                        <div className={`w-px self-stretch hidden md:block shrink-0 ${xk.vertDivider}`} />
-
-                        {/* Ubicaciones */}
-                        <div className="flex-1 min-w-0">
-                            <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
-                                <MapPin size={9} /> Ubicaciones por sucursal
-                            </p>
-                            <LocationGrid
-                                ref={locationRef}
-                                productId={product.id}
-                                initial={data?.locations}
-                                branches={branches}
-                            />
                         </div>
                     </div>
 
@@ -1501,8 +1480,8 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
 
             <Divider />
 
-            {/* Categoría + Cambios */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-5">
+            {/* Categoría | Cambios | Principios activos */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                     <SL icon={Tag}>Categoría</SL>
                     <CategoryEditor ref={categoryRef} productId={product.id} initial={product.tipo_medicamento} categories={categories} onCategoryCreated={onCategoryCreated} />
@@ -1531,13 +1510,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         </div>
                     )}
                 </div>
-            </div>
-
-            <Divider />
-
-            {/* Principios + Ubicaciones */}
-            <div className="flex flex-col md:flex-row gap-5 items-start">
-                <div className="shrink-0 min-w-[220px]">
+                <div>
                     <div className="flex items-center justify-between mb-2.5">
                         <SL icon={FlaskConical}>Principios activos</SL>
                         {!PA_PRESETS.includes(product.principio_activo) && (
@@ -1555,11 +1528,6 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                             <SrsBuscadorWidget initialQuery={product.nombre} />
                         </div>
                     )}
-                </div>
-                <div className="w-px self-stretch bg-white/[0.07] hidden md:block shrink-0" />
-                <div className="flex-1 min-w-0">
-                    <SL icon={MapPin}>Ubicaciones por sucursal</SL>
-                    <LocationGrid ref={locationRef} productId={product.id} initial={data?.locations} branches={branches} />
                 </div>
             </div>
 
@@ -1794,7 +1762,6 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const [showAllLog, setShowAllLog]     = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
-    const locationRef   = useRef(null);
     const categoryRef   = useRef(null);
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
@@ -1805,7 +1772,6 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         try {
             await Promise.all([
                 principiosRef.current?.save({ quiet: true }),
-                locationRef.current?.save({ quiet: true }),
                 categoryRef.current?.save({ quiet: true }),
             ]);
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
@@ -2041,12 +2007,12 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         </div>
                     </div>
 
-                    {/* Categoría + Cambios */}
-                    <div className="grid grid-cols-1 md:grid-cols-2">
+                    {/* Categoría | Cambios | Principios activos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3">
                         <Section title="Categoría" className="py-3 border-r border-[#1B3A6B]/[0.08]">
                             <CategoryEditor ref={categoryRef} productId={product.id} initial={product.tipo_medicamento} categories={categories} onCategoryCreated={onCategoryCreated} />
                         </Section>
-                        <Section title="Cambios en el producto" className="py-3">
+                        <Section title="Cambios en el producto" className="py-3 border-r border-[#1B3A6B]/[0.08]">
                             {prodLog.length === 0 ? (
                                 <p className="text-[11px] text-gray-400 italic">Sin cambios registrados.</p>
                             ) : (
@@ -2069,13 +2035,8 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                 </div>
                             )}
                         </Section>
-                    </div>
-
-                    {/* Principios + Ubicaciones */}
-                    <div className="grid grid-cols-1 md:grid-cols-2">
-                        <div className="py-3 border-r border-[#1B3A6B]/[0.08]">
-                            <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 mb-3 flex items-center justify-between">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B3A6B]/70">Principios activos</p>
+                        <Section title="Principios activos" className="py-3">
+                            <div className="px-4 flex items-center justify-end mb-2">
                                 {!PA_PRESETS.includes(product.principio_activo) && (
                                     <button onClick={() => setShowSrs(v => !v)}
                                         className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold transition-all border ${showSrs ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-[#1B3A6B] border-[#1B3A6B]/30 hover:bg-[#1B3A6B]/5'}`}>
@@ -2091,9 +2052,6 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                     </div>
                                 )}
                             </div>
-                        </div>
-                        <Section title="Ubicaciones por sucursal" className="py-3">
-                            <LocationGrid ref={locationRef} productId={product.id} initial={data?.locations} branches={branches} />
                         </Section>
                     </div>
 
@@ -2650,14 +2608,13 @@ export default function TabCatalogo({
         prefetchTimerRef.current = setTimeout(async () => {
             prefetchingRef.current.add(productId);
             try {
-                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
+                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }] = await Promise.all([
                     supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                    supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                     supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
                 ]);
-                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [], principles: principles || [] } }));
+                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [] } }));
             } catch { /* silent */ }
         }, 120);
     }, [expandedCache]);
@@ -2672,14 +2629,13 @@ export default function TabCatalogo({
         setLoadingExpandedId(productId);
         prefetchingRef.current.add(productId);
         try {
-            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
+            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }] = await Promise.all([
                 supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                 supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
             ]);
-            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], locations: locations || [], principles: principles || [] } }));
+            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [] } }));
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch]);
 

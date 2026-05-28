@@ -77,8 +77,9 @@ const MODULE_GROUPS = [
         color: 'text-teal-600',
         modules: [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
-                { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
-                { key: 'productos_tab_inventario', label: 'Inventario' },
+                { key: 'productos_tab_catalogo',     label: 'Catálogo'      },
+                { key: 'productos_tab_inventario',   label: 'Inventario'    },
+                { key: 'productos_tab_laboratorios', label: 'Laboratorios'  },
             ]},
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'           },

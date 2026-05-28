@@ -2535,11 +2535,12 @@ export default function TabCatalogo({
                 const ids = rows.map(r => r.id);
                 const [{ data: pc }, { data: prc }, { data: pp }] = await Promise.all([
                     supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
-                    supabase.from('products_changelog').select('product_id').in('product_id', ids),
+                    supabase.from('products_changelog').select('product_id, campo, valor_anterior').in('product_id', ids),
                     supabase.from('product_precios').select(`product_id, costo, ${PRICE_SELECT}`).in('product_id', ids).eq('activo', true).gt('costo', 0),
                 ]);
                 if (rid !== loadRef.current) return;
-                setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
+                const visiblePrc = (prc || []).filter(c => !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior));
+                setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...visiblePrc.map(c => c.product_id)]));
                 const mm  = {};
                 const slm = {};
                 const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');

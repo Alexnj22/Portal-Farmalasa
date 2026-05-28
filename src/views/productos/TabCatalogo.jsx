@@ -968,7 +968,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     });
 
     const precios    = data?.precios    || [];
-    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
+    const prodLog    = (data?.prodLog || []).filter(c =>
+        !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior)
+    );
     const principles = data?.principles || [];
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
@@ -1333,7 +1335,9 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     );
 
     const precios    = data?.precios    || [];
-    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
+    const prodLog    = (data?.prodLog || []).filter(c =>
+        !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior)
+    );
     const principles = data?.principles || [];
     const changesMap = {};
     (data?.changelog || []).forEach(c => {
@@ -1834,7 +1838,9 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     );
 
     const precios    = data?.precios    || [];
-    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
+    const prodLog    = (data?.prodLog || []).filter(c =>
+        !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior)
+    );
     const principles = data?.principles || [];
     const changesMap = {};
     (data?.changelog || []).forEach(c => {

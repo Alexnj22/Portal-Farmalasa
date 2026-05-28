@@ -29,8 +29,10 @@ const PRICE_FIELDS = [
 ];
 const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
-// precio_7 is excluded from loss/margin checks (it's a special price tier)
-const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7');
+// premium and precio_7 are excluded from loss/margin checks (external/special price tiers)
+const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
+// fields that ARE checked for special loss badges (shown on cards but not used for filter)
+const SPECIAL_LOSS_FIELDS = PRICE_FIELDS.filter(f => f.key === 'premium' || f.key === 'precio_7');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -59,6 +61,20 @@ function allMargins(pp, fields = PRICE_FIELDS) {
 function worstMarginOf(pp, fields = PRICE_FIELDS) {
     const vals = Object.values(allMargins(pp, fields));
     return vals.length ? Math.min(...vals) : null;
+}
+
+// Returns which special fields (premium, precio_7) have a loss for a single precio row
+function specialLossKeys(pp) {
+    const costo = parseFloat(pp.costo);
+    if (!costo || costo <= 0) return [];
+    return SPECIAL_LOSS_FIELDS
+        .filter(f => { const p = parseFloat(pp[f.key]); return p > 0 && p < costo; })
+        .map(f => f.key);
+}
+
+// Returns human-readable label for a special loss key
+function specialLossLabel(key) {
+    return key === 'premium' ? 'Premium' : 'Precio 7';
 }
 
 function marginLabel(m) {
@@ -857,7 +873,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         if (maxIdx === -1) return PRICE_FIELDS;
         return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
     }, [maxPriceLevel]);
-    const marginCheckFields = useMemo(() => allowedPriceFields.filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
+    const marginCheckFields = useMemo(() => allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
@@ -960,6 +976,11 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         return min === null ? w : Math.min(min, w);
     }, null);
 
+    const specialLossSet = precios.reduce((acc, pp) => {
+        specialLossKeys(pp).forEach(k => acc.add(k));
+        return acc;
+    }, new Set());
+
     return (
         <>
         <tr className={xk.container}>
@@ -977,6 +998,12 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             {worstOverall < 0
                                 ? <><strong>Pérdida detectada</strong> — alguna presentación tiene precio de venta por debajo del costo.</>
                                 : <><strong>Margen bajo</strong> — alguna presentación tiene margen inferior al 15 %. Estándar farmacéutico: 20–35 %.</>}
+                        </div>
+                    )}
+                    {specialLossSet.size > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium bg-orange-50 border-orange-200 text-orange-700">
+                            <TrendingDown size={13} className="shrink-0 text-orange-500" />
+                            <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                         </div>
                     )}
 
@@ -1225,7 +1252,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 
 function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
     const { maxPriceLevel } = useAuth();
-    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
+    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
@@ -1318,6 +1345,10 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         const w = worstMarginOf(pp, marginCheckFields);
         return w === null ? min : min === null ? w : Math.min(min, w);
     }, null);
+    const specialLossSet = precios.reduce((acc, pp) => {
+        specialLossKeys(pp).forEach(k => acc.add(k));
+        return acc;
+    }, new Set());
 
     const sectionLabel = (
         <span className="text-[9px] font-black uppercase tracking-widest text-blue-400/80" />
@@ -1347,6 +1378,12 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     {worstOverall < 0
                         ? <><strong>Pérdida detectada</strong> — algún precio está por debajo del costo.</>
                         : <><strong>Margen bajo</strong> — margen inferior al 15 % en alguna presentación.</>}
+                </div>
+            )}
+            {specialLossSet.size > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium bg-orange-500/[0.12] border-orange-400/[0.25] text-orange-300">
+                    <TrendingDown size={13} className="shrink-0 text-orange-400" />
+                    <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                 </div>
             )}
 
@@ -1598,7 +1635,7 @@ function AuroraFullscreenModal({ product, data, loadingRow, onClose, branches, o
 // ── AuroraView ────────────────────────────────────────────────────────────────
 // Card-based product list for the Aurora (Cosmos) theme.
 
-function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId }) {
+function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, specialLossMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId }) {
     const expandedProduct = products.find(p => p.id === expandedId) ?? null;
 
     return (
@@ -1612,6 +1649,7 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
                     const hasLoss       = worstM !== undefined && worstM < 0;
                     const hasWarn       = worstM !== undefined && worstM >= 0 && worstM < 15;
                     const isInactive    = !p.activo && filterActivo === 'todos';
+                    const specLoss      = specialLossMap?.[p.id];
 
                     const cardGlow = hasLoss ? 'aurora-loss-glow' : hasWarn ? 'aurora-warn-glow' : '';
                     const cardBorder = isExpanded
@@ -1652,6 +1690,11 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                         <span className={`text-[14px] font-semibold leading-snug ${isInactive ? 'text-white/30 line-through' : 'text-white/90'}`}>{p.nombre}</span>
                                         {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full aurora-badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
                                         {!hasLoss && hasWarn && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/[0.20] text-amber-300 border border-amber-400/[0.30] px-1.5 py-0.5 rounded-full"><TrendingDown size={7} /> Margen bajo</span>}
+                                        {specLoss && [...specLoss].map(k => (
+                                            <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-500/[0.18] text-orange-300 border border-orange-400/[0.28] px-1.5 py-0.5 rounded-full">
+                                                <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
+                                            </span>
+                                        ))}
                                         {hasChangesP && <span className="text-[9px] font-bold bg-amber-500/[0.16] text-amber-300 border border-amber-400/[0.24] px-1.5 py-0.5 rounded-full">cambios</span>}
                                     </div>
                                     <div className="flex items-center gap-3 flex-wrap">
@@ -1718,7 +1761,7 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
 
 function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
     const { maxPriceLevel } = useAuth();
-    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7'), [allowedPriceFields]);
+    const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
@@ -1801,6 +1844,15 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
     const priceFields = allowedPriceFields || PRICE_FIELDS;
 
+    const worstOverall = precios.reduce((min, pp) => {
+        const w = worstMarginOf(pp, marginCheckFields);
+        return w === null ? min : min === null ? w : Math.min(min, w);
+    }, null);
+    const specialLossSet = precios.reduce((acc, pp) => {
+        specialLossKeys(pp).forEach(k => acc.add(k));
+        return acc;
+    }, new Set());
+
     const Section = ({ title, children, className = '' }) => (
         <div className={className}>
             <div className="bg-[#1B3A6B]/[0.08] border-b border-[#1B3A6B]/[0.12] px-4 py-1.5 mb-3">
@@ -1814,6 +1866,28 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     return (
         <div className="divide-y divide-[#1B3A6B]/[0.08] bg-[#F8FAFB]">
                 <div className="divide-y divide-[#1B3A6B]/[0.08]">
+
+                    {/* ── Alert banners ── */}
+                    {(worstOverall !== null && worstOverall < 15 || specialLossSet.size > 0) && (
+                        <div className="px-4 py-3 space-y-2">
+                            {worstOverall !== null && worstOverall < 15 && (
+                                <div className={`flex items-center gap-2 px-3 py-2 rounded border text-[11px] font-medium ${
+                                    worstOverall < 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-700'
+                                }`}>
+                                    {worstOverall < 0 ? <ShieldAlert size={13} className="shrink-0 text-red-500" /> : <AlertTriangle size={12} className="shrink-0 text-amber-500" />}
+                                    {worstOverall < 0
+                                        ? <><strong>Pérdida detectada</strong> — alguna presentación vende por debajo del costo.</>
+                                        : <><strong>Margen bajo</strong> — alguna presentación con margen inferior al 15 %.</>}
+                                </div>
+                            )}
+                            {specialLossSet.size > 0 && (
+                                <div className="flex items-center gap-2 px-3 py-2 rounded border text-[11px] font-medium bg-orange-50 border-orange-200 text-orange-700">
+                                    <TrendingDown size={12} className="shrink-0 text-orange-500" />
+                                    <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo.</>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Foto + Precios */}
                     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr]">
@@ -1994,7 +2068,7 @@ function CompatSideDrawer({ product, data, loadingRow, onClose, branches, onPhot
     }, []);
 
     const worstM = data && !loadingRow ? (() => {
-        const marginCheckFields = (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7');
+        const marginCheckFields = (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7' && f.key !== 'premium');
         const precios = data?.precios || [];
         return precios.reduce((min, pp) => {
             const w = worstMarginOf(pp, marginCheckFields);
@@ -2067,7 +2141,7 @@ function CompatSideDrawer({ product, data, loadingRow, onClose, branches, onPhot
 // ── CompatView ────────────────────────────────────────────────────────────────
 // Dense corporate table for the Compat (Executive) theme.
 
-function CompatView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId, sortField, sortDir, onSort }) {
+function CompatView({ products, expandedId, expandedCache, loadingExpandedId, changedIds, marginMap, specialLossMap, filterActivo, allowedPriceFields, branches, catOptions, onCategoryCreated, toggleRow, prefetchRow, cancelPrefetch, handlePhotoUpdated, handlePrinciplesUpdated, handleCategoryUpdated, setExpandedId, sortField, sortDir, onSort }) {
     const expandedProduct = products.find(p => p.id === expandedId) ?? null;
 
     const CompatTh = ({ field, label, className = '' }) => (
@@ -2102,6 +2176,7 @@ function CompatView({ products, expandedId, expandedCache, loadingExpandedId, ch
                             const worstM        = marginMap[p.id];
                             const isInactive    = !p.activo && filterActivo === 'todos';
                             const isEven        = index % 2 === 0;
+                            const specLoss      = specialLossMap?.[p.id];
                             return (
                                 <tr key={p.id}
                                     onClick={() => toggleRow(p.id)}
@@ -2128,6 +2203,11 @@ function CompatView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                                     <span className={`text-[12px] font-semibold ${isInactive ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{p.nombre}</span>
                                                     {hasChangesP && <span className="text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-300 px-1 py-0.5 rounded uppercase shrink-0">cambios</span>}
                                                     {worstM !== undefined && worstM < 0 && <span className="text-[8px] font-bold bg-red-100 text-red-700 border border-red-300 px-1 py-0.5 rounded uppercase shrink-0">pérdida</span>}
+                                                    {specLoss && [...specLoss].map(k => (
+                                                        <span key={k} className="text-[8px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-1 py-0.5 rounded uppercase shrink-0">
+                                                            Pérd. {specialLossLabel(k)}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                                 {p.principio_activo && <div className="text-[9px] text-gray-500 truncate max-w-[220px]">{p.principio_activo}</div>}
                                             </div>
@@ -2289,8 +2369,10 @@ export default function TabCatalogo({
     const [sortDir,   setSortDir]   = useState('asc');
 
     // Per-row indicators
-    const [changedIds, setChangedIds] = useState(new Set());
-    const [marginMap,  setMarginMap]  = useState({});
+    const [changedIds,      setChangedIds]      = useState(new Set());
+    const [marginMap,       setMarginMap]        = useState({});
+    // specialLossMap: product_id → Set of keys ('premium', 'precio_7') with price < cost
+    const [specialLossMap,  setSpecialLossMap]   = useState({});
 
     const [showEnriquecer, setShowEnriquecer] = useState(false);
 
@@ -2312,7 +2394,7 @@ export default function TabCatalogo({
         const PAGE = 1000;
         const perdidaIds = new Set();
         const bajoIds    = new Set();
-        const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7');
+        const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
 
         const fetchPage = async (from) => {
             const { data, error } = await supabase.from('product_precios')
@@ -2450,17 +2532,23 @@ export default function TabCatalogo({
                 ]);
                 if (rid !== loadRef.current) return;
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...(prc || []).map(c => c.product_id)]));
-                const mm = {};
-                const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7');
+                const mm  = {};
+                const slm = {};
+                const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
                 (pp || []).forEach(row => {
                     const w = worstMarginOf(row, marginCheckFields);
-                    if (w === null) return;
-                    if (mm[row.product_id] === undefined || w < mm[row.product_id]) mm[row.product_id] = w;
+                    if (w !== null && (mm[row.product_id] === undefined || w < mm[row.product_id])) mm[row.product_id] = w;
+                    specialLossKeys(row).forEach(k => {
+                        if (!slm[row.product_id]) slm[row.product_id] = new Set();
+                        slm[row.product_id].add(k);
+                    });
                 });
                 setMarginMap(mm);
+                setSpecialLossMap(slm);
             } else {
                 setChangedIds(new Set());
                 setMarginMap({});
+                setSpecialLossMap({});
             }
         } catch (e) {
             if (rid !== loadRef.current) return;
@@ -2598,68 +2686,70 @@ export default function TabCatalogo({
                     />
                 </div>
 
-                {/* Filter pill — desktop only */}
-                <div className={`hidden lg:flex group items-center gap-0 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 shrink-0 overflow-visible ${tk.filterPill}`}>
+                {/* Filter pill + Enriquecer SRS stacked — desktop only */}
+                <div className="hidden lg:flex flex-col items-end gap-2 shrink-0">
+                    <div className={`flex group items-center gap-0 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 overflow-visible ${tk.filterPill}`}>
 
-                    {/* Activos / Todos */}
-                    <div className="flex items-center gap-0.5 px-2.5 py-2">
-                        {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
-                            <button key={v} onClick={() => setFilterActivo?.(v)}
-                                className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
-                                    filterActivo === v
-                                        ? isAurora
-                                            ? 'bg-emerald-500/[0.20] text-emerald-400 shadow-sm'
-                                            : 'bg-emerald-100 text-emerald-700 shadow-sm'
-                                        : tk.filterBtn
-                                }`}>{label}</button>
-                        ))}
+                        {/* Activos / Todos */}
+                        <div className="flex items-center gap-0.5 px-2.5 py-2">
+                            {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
+                                <button key={v} onClick={() => setFilterActivo?.(v)}
+                                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                        filterActivo === v
+                                            ? isAurora
+                                                ? 'bg-emerald-500/[0.20] text-emerald-400 shadow-sm'
+                                                : 'bg-emerald-100 text-emerald-700 shadow-sm'
+                                            : tk.filterBtn
+                                    }`}>{label}</button>
+                            ))}
+                        </div>
+
+                        <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
+
+                        {/* Laboratorio */}
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
+                            <LiquidSelect
+                                value={filterLab ? String(filterLab) : ''}
+                                onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
+                                options={labOptions}
+                                placeholder="Laboratorio"
+                                icon={Building2}
+                                compact
+                            />
+                        </div>
+
+                        <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
+
+                        {/* Categoría */}
+                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
+                            <LiquidSelect
+                                value={filterCategoria || ''}
+                                onChange={v => setFilterCategoria?.(v || null)}
+                                options={catOptions}
+                                placeholder="Categoría"
+                                icon={Tag}
+                                compact
+                            />
+                        </div>
+
+                        {/* Clear all */}
+                        {hasActiveFilters && (
+                            <>
+                                <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
+                                <button onClick={resetFilters} title="Limpiar todos los filtros"
+                                    className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                    <X size={11} strokeWidth={3} />
+                                </button>
+                            </>
+                        )}
                     </div>
 
-                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-
-                    {/* Laboratorio */}
-                    <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
-                        <LiquidSelect
-                            value={filterLab ? String(filterLab) : ''}
-                            onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
-                            options={labOptions}
-                            placeholder="Laboratorio"
-                            icon={Building2}
-                            compact
-                        />
-                    </div>
-
-                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-
-                    {/* Categoría */}
-                    <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
-                        <LiquidSelect
-                            value={filterCategoria || ''}
-                            onChange={v => setFilterCategoria?.(v || null)}
-                            options={catOptions}
-                            placeholder="Categoría"
-                            icon={Tag}
-                            compact
-                        />
-                    </div>
-
-                    {/* Clear all */}
-                    {hasActiveFilters && (
-                        <>
-                            <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-                            <button onClick={resetFilters} title="Limpiar todos los filtros"
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
-                                <X size={11} strokeWidth={3} />
-                            </button>
-                        </>
-                    )}
+                    {/* Enriquecer SRS — below filter pill */}
+                    <button onClick={() => setShowEnriquecer(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all self-end">
+                        <FlaskConical size={11} strokeWidth={2.5} /> Enriquecer SRS
+                    </button>
                 </div>
-
-                {/* Enriquecer desde SRS */}
-                <button onClick={() => setShowEnriquecer(true)}
-                    className="hidden lg:flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-2xl text-[11px] font-bold text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all">
-                    <FlaskConical size={12} strokeWidth={2.5} /> Enriquecer SRS
-                </button>
             </div>
 
             {/* ── Table ── */}
@@ -2712,6 +2802,7 @@ export default function TabCatalogo({
                     loadingExpandedId={loadingExpandedId}
                     changedIds={changedIds}
                     marginMap={marginMap}
+                    specialLossMap={specialLossMap}
                     filterActivo={filterActivo}
                     allowedPriceFields={allowedPriceFields}
                     branches={branches}
@@ -2735,6 +2826,7 @@ export default function TabCatalogo({
                     loadingExpandedId={loadingExpandedId}
                     changedIds={changedIds}
                     marginMap={marginMap}
+                    specialLossMap={specialLossMap}
                     filterActivo={filterActivo}
                     allowedPriceFields={allowedPriceFields}
                     branches={branches}
@@ -2774,6 +2866,7 @@ export default function TabCatalogo({
                                     const worstM        = marginMap[p.id];
                                     const mInfo         = worstM !== undefined ? marginLabel(worstM) : null;
                                     const isInactive    = !p.activo && filterActivo === 'todos';
+                                    const specLoss      = specialLossMap[p.id];
                                     return (
                                         <React.Fragment key={p.id}>
                                             <tr
@@ -2794,6 +2887,11 @@ export default function TabCatalogo({
                                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                                 <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
                                                                 {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
+                                                                {specLoss && [...specLoss].map(k => (
+                                                                    <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-full shrink-0">
+                                                                        <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
+                                                                    </span>
+                                                                ))}
                                                                 {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
                                                             </div>
                                                             {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}

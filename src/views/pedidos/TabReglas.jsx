@@ -2,14 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Check, X, Plus, Pencil, Trash2,
-    AlertTriangle, ChevronLeft, ChevronRight, FlaskConical, Package,
+    AlertTriangle, ChevronLeft, ChevronRight, FlaskConical, Package, Filter,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
-const PAGE_SIZE  = 50;
-const EMPTY_VALS = { solo_cajas: false, multiplo: '', blister: '', notes: '' };
-const GLASS      = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+const PAGE_SIZE       = 50;
+const EMPTY_VALS      = { solo_cajas: false, multiplo: '', blister: '', notes: '' };
+const GLASS           = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
+const VALID_MULTIPLES = new Set([2, 3, 4, 5, 6, 10, 12, 20, 24, 25, 50]);
+const MULTIPLO_PILLS  = [2, 3, 6, 10, 12, 20, 24, 50];
 
 const COLS = [
     { key: 'lab',      label: 'Laboratorio', align: 'left'   },
@@ -25,23 +28,38 @@ const COLS = [
 
 export default function TabReglas({ searchTerm = '' }) {
     // Rules — loaded once, O(1) lookup
-    const [rulesMap, setRulesMap]         = useState({});
+    const [rulesMap,     setRulesMap]     = useState({});
     const [loadingRules, setLoadingRules] = useState(true);
 
     // Products — paginated from products_with_lab view
-    const [products, setProducts]               = useState([]);
-    const [totalCount, setTotalCount]           = useState(0);
+    const [products,        setProducts]        = useState([]);
+    const [totalCount,      setTotalCount]      = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
-    const [page, setPage]                       = useState(0);
+    const [page,            setPage]            = useState(0);
+
+    // Filters
+    const [labs,       setLabs]       = useState([]);
+    const [filterLab,  setFilterLab]  = useState('');  // lab id string
+    const [filterRule, setFilterRule] = useState('');  // '' | 'con' | 'sin'
 
     // Inline edit
-    const [editingId, setEditingId]   = useState(null);
-    const [editVals, setEditVals]     = useState(EMPTY_VALS);
-    const [saving, setSaving]         = useState(false);
-    const [saveError, setSaveError]   = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editVals,  setEditVals]  = useState(EMPTY_VALS);
+    const [saving,    setSaving]    = useState(false);
+    const [saveError, setSaveError] = useState(null);
 
-    // Reset to page 0 when search changes
-    useEffect(() => { setPage(0); }, [searchTerm]);
+    // Delete confirmation
+    const [confirmDel, setConfirmDel] = useState(null); // { productId, nombre, ruleId }
+    const [deleting,   setDeleting]   = useState(false);
+
+    // Load labs for filter dropdown
+    useEffect(() => {
+        supabase.from('laboratorios').select('id, nombre').order('nombre')
+            .then(({ data }) => setLabs(data || []));
+    }, []);
+
+    // Reset page when search or lab filter changes
+    useEffect(() => { setPage(0); }, [searchTerm, filterLab]);
 
     // ── Load all rules once ───────────────────────────────────────────────────
     const loadRules = useCallback(async () => {
@@ -56,18 +74,19 @@ export default function TabReglas({ searchTerm = '' }) {
         setLoadingRules(false);
     }, []);
 
-    // ── Load products paginated from view ─────────────────────────────────────
-    const loadProducts = useCallback(async (currentPage, term) => {
+    // ── Load products paginated ───────────────────────────────────────────────
+    const loadProducts = useCallback(async (currentPage, term, labId) => {
         setLoadingProducts(true);
         const offset = currentPage * PAGE_SIZE;
         let q = supabase
             .from('products_with_lab')
-            .select('id, nombre, es_antibiotico, laboratorio_nombre', { count: 'exact' })
+            .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
             .eq('activo', true)
             .order('laboratorio_nombre', { ascending: true })
             .order('nombre', { ascending: true })
             .range(offset, offset + PAGE_SIZE - 1);
         if (term.length >= 2) q = q.ilike('nombre', `%${term}%`);
+        if (labId)            q = q.eq('laboratorio_id', parseInt(labId));
         const { data, count } = await q;
         setProducts(data || []);
         setTotalCount(count ?? 0);
@@ -75,9 +94,28 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
-    useEffect(() => { loadProducts(page, searchTerm); }, [page, searchTerm, loadProducts]);
+    useEffect(() => { loadProducts(page, searchTerm, filterLab); }, [page, searchTerm, filterLab, loadProducts]);
+
+    // Client-side rule filter (applied after DB fetch)
+    const visibleProducts = filterRule === 'con'
+        ? products.filter(p => !!rulesMap[p.id])
+        : filterRule === 'sin'
+        ? products.filter(p => !rulesMap[p.id])
+        : products;
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const rulesCount = Object.keys(rulesMap).length;
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    const validateVals = (vals) => {
+        const m = parseInt(vals.multiplo);
+        const b = parseInt(vals.blister);
+        if (vals.multiplo && !VALID_MULTIPLES.has(m))
+            return `Múltiplo inválido (${m}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
+        if (vals.blister && !VALID_MULTIPLES.has(b))
+            return `Blíster inválido (${b}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
+        return null;
+    };
 
     // ── Edit helpers ──────────────────────────────────────────────────────────
     const startEdit = useCallback((productId, rule) => {
@@ -85,15 +123,17 @@ export default function TabReglas({ searchTerm = '' }) {
         setSaveError(null);
         setEditVals({
             solo_cajas: rule?.solo_cajas ?? false,
-            multiplo:   rule?.multiplo   ?? '',
-            blister:    rule?.blister    ?? '',
-            notes:      rule?.notes      ?? '',
+            multiplo:   rule?.multiplo != null ? String(rule.multiplo) : '',
+            blister:    rule?.blister  != null ? String(rule.blister)  : '',
+            notes:      rule?.notes    ?? '',
         });
     }, []);
 
     const cancelEdit = useCallback(() => { setEditingId(null); setSaveError(null); }, []);
 
     const handleSave = useCallback(async (productId) => {
+        const valErr = validateVals(editVals);
+        if (valErr) { setSaveError(valErr); return; }
         setSaving(true);
         setSaveError(null);
         const existing = rulesMap[productId];
@@ -124,36 +164,71 @@ export default function TabReglas({ searchTerm = '' }) {
         }
     }, [editVals, rulesMap, loadRules]);
 
-    const handleDelete = useCallback(async (productId) => {
-        const rule = rulesMap[productId];
+    const handleDelete = useCallback((productId) => {
+        const rule    = rulesMap[productId];
         if (!rule) return;
         const product = products.find(p => p.id === productId);
-        if (!window.confirm(`¿Eliminar la regla de "${product?.nombre ?? 'este producto'}"?`)) return;
-        const { error } = await supabase.from('dispatch_rules').delete().eq('id', rule.id);
+        setConfirmDel({ productId, nombre: product?.nombre ?? '?', ruleId: rule.id });
+    }, [rulesMap, products]);
+
+    const doDelete = useCallback(async () => {
+        if (!confirmDel) return;
+        setDeleting(true);
+        const { error } = await supabase.from('dispatch_rules').delete().eq('id', confirmDel.ruleId);
         if (!error) {
-            useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(rule.id), {});
+            useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(confirmDel.ruleId), {});
             setEditingId(null);
             await loadRules();
         }
-    }, [rulesMap, products, loadRules]);
-
-    const rulesCount = Object.keys(rulesMap).length;
+        setDeleting(false);
+        setConfirmDel(null);
+    }, [confirmDel, loadRules]);
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="space-y-4 p-4">
 
-            {/* Stats bar */}
-            <div className={`${GLASS} px-4 py-2.5 flex items-center justify-between`}>
+            {/* Filter + stats bar */}
+            <div className={`${GLASS} px-4 py-2.5 flex flex-wrap items-center gap-3`}>
+                <Filter size={13} className="text-slate-400 shrink-0" />
+
+                <select
+                    value={filterLab}
+                    onChange={e => { setFilterLab(e.target.value); setPage(0); }}
+                    className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors min-w-[160px]"
+                >
+                    <option value="">Todos los laboratorios</option>
+                    {labs.map(l => <option key={l.id} value={String(l.id)}>{l.nombre}</option>)}
+                </select>
+
+                <div className="flex items-center gap-1">
+                    {[['', 'Todos'], ['con', 'Con regla'], ['sin', 'Sin regla']].map(([v, label]) => (
+                        <button
+                            key={v}
+                            onClick={() => setFilterRule(v)}
+                            className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                                filterRule === v
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex-1" />
+
                 <p className="text-[12px] text-slate-500">
                     {searchTerm.length >= 2
                         ? `${totalCount} resultado${totalCount !== 1 ? 's' : ''} para "${searchTerm}"`
-                        : `${totalCount.toLocaleString()} productos en catálogo · ordenados por laboratorio`
+                        : `${totalCount.toLocaleString()} productos`
                     }
+                    {filterRule && <span className="ml-2 text-slate-400">· {visibleProducts.length} visibles</span>}
                 </p>
                 {!loadingRules && (
-                    <span className="text-[12px] text-slate-400">
-                        {rulesCount} {rulesCount === 1 ? 'regla' : 'reglas'} configuradas
+                    <span className="text-[12px] text-slate-400 border-l border-slate-200 pl-3">
+                        {rulesCount} {rulesCount === 1 ? 'regla' : 'reglas'}
                     </span>
                 )}
             </div>
@@ -166,11 +241,15 @@ export default function TabReglas({ searchTerm = '' }) {
                     icon: Package,
                     message: searchTerm.length >= 2
                         ? `No se encontraron productos para "${searchTerm}".`
+                        : filterRule === 'con'
+                        ? 'Ningún producto en esta página tiene regla asignada.'
+                        : filterRule === 'sin'
+                        ? 'Todos los productos en esta página tienen regla.'
                         : 'Sin productos en catálogo.',
                 }}
                 minWidth="700px"
             >
-                {products.map((prod, i) => {
+                {visibleProducts.map((prod, i) => {
                     const isEditing = editingId === prod.id;
                     const rule      = rulesMap[prod.id] ?? null;
                     const hasRule   = !!rule;
@@ -252,8 +331,10 @@ export default function TabReglas({ searchTerm = '' }) {
                             {isEditing && (
                                 <tr className="bg-blue-50/70">
                                     <td colSpan={9} className="px-4 py-4">
-                                        <div className="flex flex-wrap items-end gap-4">
-                                            <label className="flex items-center gap-2 cursor-pointer select-none min-w-[140px]">
+                                        <div className="flex flex-wrap items-start gap-4">
+
+                                            {/* Solo cajas */}
+                                            <label className="flex items-center gap-2 cursor-pointer select-none min-w-[140px] pt-5">
                                                 <input
                                                     type="checkbox"
                                                     checked={editVals.solo_cajas}
@@ -262,8 +343,24 @@ export default function TabReglas({ searchTerm = '' }) {
                                                 />
                                                 <span className="text-[13px] text-slate-700 font-medium">Solo cajas completas</span>
                                             </label>
+
+                                            {/* Múltiplo packs */}
                                             <div>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N packs</p>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1.5">Múltiplo de N packs</p>
+                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                    {MULTIPLO_PILLS.map(n => (
+                                                        <button
+                                                            key={n}
+                                                            type="button"
+                                                            onClick={() => setEditVals(p => ({ ...p, multiplo: p.multiplo === String(n) ? '' : String(n) }))}
+                                                            className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                                                                editVals.multiplo === String(n)
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                                            }`}
+                                                        >×{n}</button>
+                                                    ))}
+                                                </div>
                                                 <input
                                                     type="number" min={1} placeholder="Ej: 6"
                                                     value={editVals.multiplo}
@@ -271,8 +368,24 @@ export default function TabReglas({ searchTerm = '' }) {
                                                     className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
                                                 />
                                             </div>
+
+                                            {/* Múltiplo blísters */}
                                             <div>
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Múltiplo de N blísters</p>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1.5">Múltiplo de N blísters</p>
+                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                    {MULTIPLO_PILLS.map(n => (
+                                                        <button
+                                                            key={n}
+                                                            type="button"
+                                                            onClick={() => setEditVals(p => ({ ...p, blister: p.blister === String(n) ? '' : String(n) }))}
+                                                            className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                                                                editVals.blister === String(n)
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                                            }`}
+                                                        >×{n}</button>
+                                                    ))}
+                                                </div>
                                                 <input
                                                     type="number" min={1} placeholder="Ej: 10"
                                                     value={editVals.blister}
@@ -280,8 +393,11 @@ export default function TabReglas({ searchTerm = '' }) {
                                                     className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
                                                 />
                                             </div>
+
+                                            {/* Notas */}
                                             <div className="flex-1 min-w-[160px]">
-                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Notas</p>
+                                                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1.5">Notas</p>
+                                                <div className="h-[26px] mb-2" /> {/* spacer aligns with pill rows */}
                                                 <input
                                                     type="text" placeholder="Observación interna…"
                                                     value={editVals.notes}
@@ -289,9 +405,11 @@ export default function TabReglas({ searchTerm = '' }) {
                                                     className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[13px] focus:outline-none focus:border-blue-400 bg-white"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
+
+                                            {/* Actions */}
+                                            <div className="flex items-end gap-2 shrink-0">
                                                 {saveError && (
-                                                    <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[180px]">
+                                                    <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[200px]">
                                                         <AlertTriangle size={11} className="shrink-0" />
                                                         {saveError}
                                                     </span>
@@ -331,7 +449,6 @@ export default function TabReglas({ searchTerm = '' }) {
                         >
                             <ChevronLeft size={13} /> Anterior
                         </button>
-                        {/* Page number pills — show up to 5 */}
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                             const start = Math.max(0, Math.min(page - 2, totalPages - 5));
                             const p     = start + i;
@@ -340,9 +457,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                     key={p}
                                     onClick={() => setPage(p)}
                                     className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-colors ${
-                                        p === page
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-slate-500 hover:bg-slate-100'
+                                        p === page ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'
                                     }`}
                                 >
                                     {p + 1}
@@ -359,6 +474,18 @@ export default function TabReglas({ searchTerm = '' }) {
                     </div>
                 </div>
             )}
+
+            {/* Delete confirm modal */}
+            <ConfirmModal
+                isOpen={!!confirmDel}
+                onClose={() => setConfirmDel(null)}
+                onConfirm={doDelete}
+                title="Eliminar regla"
+                message={`¿Eliminar la regla de "${confirmDel?.nombre}"? Esta acción no se puede deshacer.`}
+                confirmText="Eliminar"
+                isDestructive
+                isProcessing={deleting}
+            />
         </div>
     );
 }

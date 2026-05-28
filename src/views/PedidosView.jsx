@@ -15,7 +15,7 @@ const TABS = [
 ];
 
 const SEARCH_PLACEHOLDER = {
-    generar:   'Buscar producto sin stock…',
+    generar:   'Buscar producto en el pedido…',
     historial: 'Buscar pedido…',
     reglas:    'Buscar producto en reglas…',
 };

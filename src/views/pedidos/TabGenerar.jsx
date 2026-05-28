@@ -216,8 +216,8 @@ export default function TabGenerar({ searchTerm = '' }) {
     // Sin-bodega table — all data loaded once, sorted+paginated client-side
     const [sinBodega,    setSinBodega]    = useState([]);
     const [sinBodegaLoad, setSinBodegaLoad] = useState(false);
-    const [sinSortKey,   setSinSortKey]   = useState('product_name');
-    const [sinSortDir,   setSinSortDir]   = useState('asc');
+    const [sinSortKey,   setSinSortKey]   = useState('total_necesidad');
+    const [sinSortDir,   setSinSortDir]   = useState('desc');
     const [sinPage,      setSinPage]      = useState(1);
     const [sinPageSize,  setSinPageSize]  = useState(20);
 

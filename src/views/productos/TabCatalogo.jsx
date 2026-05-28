@@ -33,6 +33,8 @@ const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
 const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
 // only premium gets the special loss badge (precio_7 is fully excluded from all checks)
 const SPECIAL_LOSS_FIELDS = PRICE_FIELDS.filter(f => f.key === 'premium');
+// internal FK fields that should never appear in the changelog UI
+const CHANGELOG_HIDDEN = new Set(['laboratorio_id']);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -966,7 +968,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     });
 
     const precios    = data?.precios    || [];
-    const prodLog    = data?.prodLog    || [];
+    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
     const principles = data?.principles || [];
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
@@ -1331,7 +1333,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     );
 
     const precios    = data?.precios    || [];
-    const prodLog    = data?.prodLog    || [];
+    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
     const principles = data?.principles || [];
     const changesMap = {};
     (data?.changelog || []).forEach(c => {
@@ -1832,7 +1834,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     );
 
     const precios    = data?.precios    || [];
-    const prodLog    = data?.prodLog    || [];
+    const prodLog    = (data?.prodLog || []).filter(c => !CHANGELOG_HIDDEN.has(c.campo));
     const principles = data?.principles || [];
     const changesMap = {};
     (data?.changelog || []).forEach(c => {

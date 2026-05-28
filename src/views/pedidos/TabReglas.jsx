@@ -58,8 +58,8 @@ export default function TabReglas({ searchTerm = '' }) {
             .then(({ data }) => setLabs(data || []));
     }, []);
 
-    // Reset page when search or lab filter changes
-    useEffect(() => { setPage(0); }, [searchTerm, filterLab]);
+    // Reset page when search, lab filter, or rule filter changes
+    useEffect(() => { setPage(0); }, [searchTerm, filterLab, filterRule]);
 
     // ── Load all rules once ───────────────────────────────────────────────────
     const loadRules = useCallback(async () => {
@@ -435,8 +435,8 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* Pagination — hidden when rule filter is active (client-side filter makes page count misleading) */}
+            {totalPages > 1 && !filterRule && (
                 <div className="flex items-center justify-between px-1">
                     <span className="text-[12px] text-slate-400">
                         Página {page + 1} de {totalPages} · {totalCount.toLocaleString()} productos

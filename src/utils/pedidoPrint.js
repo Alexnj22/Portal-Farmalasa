@@ -155,11 +155,19 @@ function openPrintWindow(sections, title) {
   <button onclick="window.print()" style="background:#fff;color:#0052CC;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">🖨 Imprimir</button>
 </div>
 ${sections.map(s => buildSection(s, fecha)).join('')}
+<script>window.print();<\/script>
 </body>
 </html>`;
 
-    const win = window.open('', '_blank');
-    if (win) { win.document.write(html); win.document.close(); }
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank');
+    if (!win) {
+        URL.revokeObjectURL(url);
+        alert('El navegador bloqueó la ventana de impresión.\nPermite ventanas emergentes para este sitio e intenta de nuevo.');
+        return;
+    }
+    win.addEventListener('unload', () => URL.revokeObjectURL(url), { once: true });
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

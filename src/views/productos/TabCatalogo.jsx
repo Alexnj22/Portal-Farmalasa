@@ -9,7 +9,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard,
+    Sparkles, History, MapPin, Search, Clipboard, Eye,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
@@ -636,7 +636,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
         : `bg-slate-50 text-slate-700 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'}`;
 
     return (
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${locs.length}, minmax(0, 1fr))` }}>
+        <div className="space-y-2">
             {locs.map((loc, i) => {
                 const isSala       = loc.view === 'sala';
                 const isMainBodega = loc.branch_type === 'BODEGA';
@@ -644,57 +644,78 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasBodega    = loc.bodega_numero.trim() || loc.bodega_peldano.trim();
                 const hasData      = hasSala || hasBodega;
 
+                const rowBg = isAurora
+                    ? hasData ? 'bg-blue-500/[0.08] border-blue-400/[0.18]' : 'bg-white/[0.03] border-white/[0.07]'
+                    : isCompat
+                    ? hasData ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                    : hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-slate-50 border-slate-100';
+
                 return (
-                    <div key={loc.branch_id} className={`rounded-xl border p-2.5 transition-colors min-w-0 ${cellBg(hasData)}`}>
-                        <div className="flex items-start justify-between gap-0.5 mb-2">
-                            <p className={`text-[7px] font-black uppercase tracking-wide truncate leading-tight mt-0.5 ${labelCls}`}>{loc.branch_name}</p>
+                    <div key={loc.branch_id} className={`rounded-xl border px-3.5 py-2.5 transition-colors ${rowBg}`}>
+                        {/* Header: branch name + view toggle */}
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[11px] font-black ${isAurora ? 'text-white/80' : isCompat ? 'text-[#1B3A6B]' : 'text-slate-700'}`}>{loc.branch_name}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
+                                    loc.branch_type === 'BODEGA'
+                                        ? isAurora ? 'bg-amber-500/[0.15] text-amber-300' : 'bg-amber-100 text-amber-700'
+                                        : isAurora ? 'bg-blue-500/[0.15] text-blue-300' : 'bg-blue-100 text-blue-700'
+                                }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
+                                {hasSala && !hasBodega && <span className={`text-[8px] ${isAurora ? 'text-blue-300/60' : 'text-blue-400'}`}>Sala</span>}
+                                {hasBodega && !hasSala && <span className={`text-[8px] ${isAurora ? 'text-amber-300/60' : 'text-amber-500'}`}>Bodega int.</span>}
+                                {hasSala && hasBodega && <span className={`text-[8px] ${isAurora ? 'text-emerald-300/60' : 'text-emerald-500'}`}>Sala + Bodega</span>}
+                            </div>
                             {!isMainBodega && (
-                                <div className={`flex rounded-full p-0.5 shrink-0 ${trackCls}`}>
+                                <div className={`flex rounded-lg p-0.5 gap-0.5 ${isAurora ? 'bg-white/[0.06]' : isCompat ? 'bg-gray-100' : 'bg-slate-100'}`}>
                                     <button onClick={() => setField(i, 'view', 'sala')}
-                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
+                                        className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
                                     <button onClick={() => setField(i, 'view', 'bodega')}
-                                        className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase transition-all leading-none ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega</button>
+                                        className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega int.</button>
                                 </div>
                             )}
                         </div>
-                        {isSala ? (
-                            <div className={`flex items-center rounded-full p-0.5 mb-2 ${trackCls}`}>
-                                {['vitrina', 'estante'].map(t => (
-                                    <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                        className={`flex-1 py-0.5 rounded-full text-[6px] font-black uppercase tracking-wide transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
-                                        {t === 'vitrina' ? 'Vit.' : 'Est.'}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="mb-2 h-[18px] flex items-center justify-center">
-                                <span className={`text-[7px] font-bold uppercase tracking-wide ${isAurora ? 'text-amber-400/70' : 'text-amber-500'}`}>Bodega interna</span>
-                            </div>
-                        )}
-                        <div className="flex gap-1">
-                            <div className="flex-1 min-w-0">
-                                <p className={`text-[6px] font-semibold leading-none mb-1 ${labelCls}`}>N°</p>
-                                <input value={isSala ? loc.numero : loc.bodega_numero}
-                                    onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
-                                    maxLength={2}
-                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] text-center min-w-0 ${inp(isSala)}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className={`text-[6px] font-semibold leading-none mb-1 ${labelCls}`}>Peld.</p>
-                                <input value={isSala ? loc.peldano : loc.bodega_peldano}
-                                    onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
-                                    maxLength={2}
-                                    className={`w-full px-0.5 py-1.5 border rounded text-[11px] text-center min-w-0 ${inp(isSala)}`} />
+
+                        {/* Inputs */}
+                        <div className="flex items-end gap-3">
+                            {isSala && (
+                                <div className={`flex rounded-lg p-0.5 gap-0.5 self-start mt-0.5 ${isAurora ? 'bg-white/[0.06]' : isCompat ? 'bg-gray-100' : 'bg-slate-100'}`}>
+                                    {['vitrina', 'estante'].map(t => (
+                                        <button key={t} onClick={() => setField(i, 'tipo', t)}
+                                            className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
+                                            {t === 'vitrina' ? 'Vit.' : 'Est.'}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {!isSala && !isMainBodega && (
+                                <span className={`text-[9px] font-bold self-center ${isAurora ? 'text-amber-300/70' : 'text-amber-500'}`}>Bodega interna</span>
+                            )}
+                            {isMainBodega && (
+                                <span className={`text-[9px] font-bold self-center ${isAurora ? 'text-amber-300/70' : 'text-amber-500'}`}>Bodega principal</span>
+                            )}
+                            <div className="flex gap-2 flex-1">
+                                <div className="flex-1">
+                                    <p className={`text-[9px] font-semibold mb-1 ${labelCls}`}>N°</p>
+                                    <input
+                                        value={isSala ? loc.numero : loc.bodega_numero}
+                                        onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
+                                        maxLength={4}
+                                        placeholder="—"
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-[12px] text-center font-bold transition-colors ${inp(isSala)}`}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <p className={`text-[9px] font-semibold mb-1 ${labelCls}`}>Peldaño</p>
+                                    <input
+                                        value={isSala ? loc.peldano : loc.bodega_peldano}
+                                        onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
+                                        maxLength={4}
+                                        placeholder="—"
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-[12px] text-center font-bold transition-colors ${inp(isSala)}`}
+                                    />
+                                </div>
                             </div>
                         </div>
-                        {!isMainBodega && (
-                            <div className="mt-1.5 flex justify-center">
-                                <span className={`w-1 h-1 rounded-full transition-all ${
-                                    isSala && hasBodega ? 'bg-amber-400' :
-                                    !isSala && hasSala  ? isAurora ? 'bg-blue-400' : 'bg-[#0052CC]' : 'bg-transparent'
-                                }`} />
-                            </div>
-                        )}
                     </div>
                 );
             })}
@@ -724,6 +745,42 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
                 Pegar imagen
                 <span className="ml-auto text-[10px] text-slate-300 font-normal">Ctrl+V</span>
             </button>
+        </div>,
+        document.body
+    );
+}
+
+// inject lightbox keyframe once
+if (typeof document !== 'undefined' && !document.getElementById('lb-style')) {
+    const s = document.createElement('style');
+    s.id = 'lb-style';
+    s.textContent = '@keyframes lightbox-in { from { opacity:0; transform:scale(0.88) } to { opacity:1; transform:scale(1) } }';
+    document.head.appendChild(s);
+}
+
+function PhotoLightbox({ src, onClose }) {
+    useEffect(() => {
+        const handler = (e) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[300] flex items-center justify-center"
+            style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'rgba(0,0,0,0.65)' }}
+            onClick={onClose}>
+            <div
+                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.6)] ring-1 ring-white/20"
+                style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
+                onClick={e => e.stopPropagation()}>
+                <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 transition-colors border border-white/20">
+                    <X size={16} strokeWidth={2.5} />
+                </button>
+            </div>
         </div>,
         document.body
     );
@@ -883,6 +940,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
     const [ctxMenu, setCtxMenu]           = useState(null);
+    const [showInactive, setShowInactive] = useState(false);
+    const [lightboxSrc, setLightboxSrc]   = useState(null);
+    const [showAllLog, setShowAllLog]     = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -974,6 +1034,15 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const principles = data?.principles || [];
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
+    const inactiveCount  = precios.filter(pp => pp.activo === false).length;
+    const visiblePrecios = showInactive ? precios : precios.filter(pp => pp.activo !== false);
+
+    const _now1 = new Date();
+    const _startOfMonth1 = new Date(_now1.getFullYear(), _now1.getMonth(), 1);
+    const thisMonthLog1 = prodLog.filter(c => new Date(c.detected_at) >= _startOfMonth1);
+    const olderLog1     = prodLog.filter(c => new Date(c.detected_at) < _startOfMonth1);
+    const displayLog1   = showAllLog ? prodLog : (thisMonthLog1.length > 0 ? thisMonthLog1 : prodLog.slice(0, 5));
+
     const worstOverall = precios.reduce((min, pp) => {
         const w = worstMarginOf(pp, marginCheckFields);
         if (w === null) return min;
@@ -1027,7 +1096,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                     onCancel={() => setPendingFile(null)}
                                 />
                             )}
-                            <button onClick={() => fileRef.current?.click()}
+                            <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
                                 onContextMenu={handlePhotoContextMenu}
                                 className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-200 group ${xk.photoBtn}`}>
                                 {localFoto ? (
@@ -1038,7 +1107,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                 ? <Loader2 size={22} className="text-white animate-spin" />
                                                 : <>
                                                     <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
+                                                    <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
                                                 </>}
                                         </div>
                                     </>
@@ -1054,6 +1123,9 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                     </div>
                                 )}
                             </button>
+                            {localFoto && (
+                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${isAurora ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'}`}>Cambiar foto</button>
+                            )}
                         </div>
 
                         {/* ── RIGHT: Precios ── */}
@@ -1087,7 +1159,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                             </tr>
                                         </thead>
                                         <tbody className={xk.pricingDivide}>
-                                            {precios.map(pp => {
+                                            {visiblePrecios.map(pp => {
                                                 const pCh = changesMap[pp.id_presentacion] || {};
                                                 const rowChanged = Object.keys(pCh).length > 0;
                                                 const worst = worstMarginOf(pp, marginCheckFields);
@@ -1115,9 +1187,14 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                                             {fmtP(pp[f.key])}
                                                                         </span>
                                                                         {ch && (
-                                                                            <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
-                                                                                {fmtP(ch.anterior)}
-                                                                            </span>
+                                                                            <div className="flex flex-col items-end gap-0.5">
+                                                                                <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
+                                                                                    {fmtP(ch.anterior)}
+                                                                                </span>
+                                                                                <span className={`text-[8px] ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>
+                                                                                    {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                                                </span>
+                                                                            </div>
                                                                         )}
                                                                         {f.key !== 'precio_7' && <MarginPct pct={m} />}
                                                                     </div>
@@ -1135,6 +1212,16 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                         </tbody>
                                     </table>
                                 </div>
+                            )}
+                            {inactiveCount > 0 && (
+                                <button
+                                    onClick={() => setShowInactive(v => !v)}
+                                    className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-colors ${
+                                        isAurora ? 'text-white/35 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'
+                                    }`}>
+                                    <Eye size={11} />
+                                    {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
+                                </button>
                             )}
                         </div>
                     </div>
@@ -1165,7 +1252,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <p className={`text-[11px] ${xk.sinCambios}`}>Sin cambios registrados.</p>
                             ) : (
                                 <div className={`rounded-xl px-3.5 py-3 space-y-1.5 ${xk.changelog}`}>
-                                    {prodLog.map((c, i) => (
+                                    {displayLog1.map((c, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
                                             <span className={`font-mono text-[10px] shrink-0 px-1.5 py-0.5 rounded border ${xk.changelogDate}`}>
                                                 {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
@@ -1176,6 +1263,12 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                             <span className={`font-medium ${xk.changelogNew}`}>{c.valor_nuevo || '—'}</span>
                                         </div>
                                     ))}
+                                    {olderLog1.length > 0 && (
+                                        <button onClick={() => setShowAllLog(v => !v)}
+                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${isAurora ? 'text-white/35 hover:text-white/55' : 'text-slate-400 hover:text-slate-600'}`}>
+                                            {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog1.length} cambio${olderLog1.length !== 1 ? 's' : ''} anterior${olderLog1.length !== 1 ? 'es' : ''}`}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1247,6 +1340,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             </td>
         </tr>
         {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
+        {lightboxSrc && <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
         </>
     );
 }
@@ -1264,6 +1358,9 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
     const [ctxMenu, setCtxMenu]           = useState(null);
+    const [showInactive, setShowInactive] = useState(false);
+    const [lightboxSrc, setLightboxSrc]   = useState(null);
+    const [showAllLog, setShowAllLog]     = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -1347,6 +1444,16 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
             changesMap[c.id_presentacion][c.campo] = { anterior: c.valor_anterior, detected_at: c.detected_at };
     });
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
+
+    const inactiveCount  = precios.filter(pp => pp.activo === false).length;
+    const visiblePrecios = showInactive ? precios : precios.filter(pp => pp.activo !== false);
+
+    const _now2 = new Date();
+    const _startOfMonth2 = new Date(_now2.getFullYear(), _now2.getMonth(), 1);
+    const thisMonthLog2 = prodLog.filter(c => new Date(c.detected_at) >= _startOfMonth2);
+    const olderLog2     = prodLog.filter(c => new Date(c.detected_at) < _startOfMonth2);
+    const displayLog2   = showAllLog ? prodLog : (thisMonthLog2.length > 0 ? thisMonthLog2 : prodLog.slice(0, 5));
+
     const worstOverall = precios.reduce((min, pp) => {
         const w = worstMarginOf(pp, marginCheckFields);
         return w === null ? min : min === null ? w : Math.min(min, w);
@@ -1400,7 +1507,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     <SL icon={Camera}>Foto del producto</SL>
                     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                     {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
-                    <button onClick={() => fileRef.current?.click()}
+                    <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
                         onContextMenu={handlePhotoContextMenu}
                         className="group relative w-full h-[180px] max-w-[180px] rounded-2xl border-2 border-dashed border-white/[0.12] overflow-hidden transition-all duration-200 hover:border-blue-400/[0.40] hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]">
                         {localFoto ? (
@@ -1411,7 +1518,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                         ? <Loader2 size={22} className="text-white animate-spin" />
                                         : <>
                                             <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar foto</span>
+                                            <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
                                           </>}
                                 </div>
                             </>
@@ -1427,6 +1534,9 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                             </div>
                         )}
                     </button>
+                    {localFoto && (
+                        <button onClick={() => fileRef.current?.click()} className="mt-1.5 text-[9px] font-semibold text-white/30 hover:text-white/60 transition-colors">Cambiar foto</button>
+                    )}
                 </div>
 
                 {/* Precios */}
@@ -1452,7 +1562,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.05]">
-                                    {precios.map(pp => {
+                                    {visiblePrecios.map(pp => {
                                         const pCh = changesMap[pp.id_presentacion] || {};
                                         const rowChanged = Object.keys(pCh).length > 0;
                                         const worst = worstMarginOf(pp, marginCheckFields);
@@ -1471,7 +1581,14 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                                         <td key={f.key} className={`px-3 py-2 text-right ${ch ? 'bg-amber-500/[0.12]' : ''}`}>
                                                             <div className="flex flex-col items-end gap-0.5">
                                                                 <span className={`text-[12px] font-semibold ${ch ? 'text-amber-300' : 'text-white/85'}`}>{fmtP(pp[f.key])}</span>
-                                                                {ch && <span className="text-[9px] text-white/25 line-through">{fmtP(ch.anterior)}</span>}
+                                                                {ch && (
+                                                                    <div className="flex flex-col items-end gap-0.5">
+                                                                        <span className="text-[9px] text-white/25 line-through">{fmtP(ch.anterior)}</span>
+                                                                        <span className="text-[8px] text-white/25">
+                                                                            {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                                 {f.key !== 'precio_7' && <MarginPct pct={m} />}
                                                             </div>
                                                         </td>
@@ -1488,6 +1605,14 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                 </tbody>
                             </table>
                         </div>
+                    )}
+                    {inactiveCount > 0 && (
+                        <button
+                            onClick={() => setShowInactive(v => !v)}
+                            className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-white/35 hover:text-white/60 transition-colors">
+                            <Eye size={11} />
+                            {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
+                        </button>
                     )}
                 </div>
             </div>
@@ -1506,7 +1631,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         <p className="text-[11px] text-white/25 italic">Sin cambios registrados.</p>
                     ) : (
                         <div className="rounded-xl bg-amber-900/[0.18] border border-amber-500/[0.20] px-3.5 py-3 space-y-1.5">
-                            {prodLog.map((c, i) => (
+                            {displayLog2.map((c, i) => (
                                 <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
                                     <span className="font-mono text-[10px] bg-white/[0.07] border border-white/[0.10] text-white/40 px-1.5 py-0.5 rounded shrink-0">{new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}</span>
                                     <span className="font-semibold text-white/70">{c.campo}</span>
@@ -1515,6 +1640,12 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                     <span className="text-white/85 font-medium">{c.valor_nuevo || '—'}</span>
                                 </div>
                             ))}
+                            {olderLog2.length > 0 && (
+                                <button onClick={() => setShowAllLog(v => !v)}
+                                    className="mt-1.5 text-[10px] font-bold text-white/35 hover:text-white/55 transition-colors">
+                                    {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog2.length} cambio${olderLog2.length !== 1 ? 's' : ''} anterior${olderLog2.length !== 1 ? 'es' : ''}`}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1565,6 +1696,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                 </button>
             </div>
             {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
+            {lightboxSrc && <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
         </div>
     );
 }
@@ -1775,6 +1907,9 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
     const [ctxMenu, setCtxMenu]           = useState(null);
+    const [showInactive, setShowInactive] = useState(false);
+    const [lightboxSrc, setLightboxSrc]   = useState(null);
+    const [showAllLog, setShowAllLog]     = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const locationRef   = useRef(null);
@@ -1852,6 +1987,15 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
     const priceFields = allowedPriceFields || PRICE_FIELDS;
 
+    const inactiveCount  = precios.filter(pp => pp.activo === false).length;
+    const visiblePrecios = showInactive ? precios : precios.filter(pp => pp.activo !== false);
+
+    const _now3 = new Date();
+    const _startOfMonth3 = new Date(_now3.getFullYear(), _now3.getMonth(), 1);
+    const thisMonthLog3 = prodLog.filter(c => new Date(c.detected_at) >= _startOfMonth3);
+    const olderLog3     = prodLog.filter(c => new Date(c.detected_at) < _startOfMonth3);
+    const displayLog3   = showAllLog ? prodLog : (thisMonthLog3.length > 0 ? thisMonthLog3 : prodLog.slice(0, 5));
+
     const worstOverall = precios.reduce((min, pp) => {
         const w = worstMarginOf(pp, marginCheckFields);
         return w === null ? min : min === null ? w : Math.min(min, w);
@@ -1907,7 +2051,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                             <div className="p-4 flex flex-col items-center">
                                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                                 {pendingFile && <PhotoEditorModal file={pendingFile} onConfirm={handlePhotoConfirm} onCancel={() => setPendingFile(null)} />}
-                                <button onClick={() => fileRef.current?.click()}
+                                <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
                                     onContextMenu={handlePhotoContextMenu}
                                     className="group relative w-[160px] h-[160px] rounded border-2 border-dashed border-gray-300 overflow-hidden transition-colors hover:border-[#1B3A6B]/50 hover:bg-blue-50/30">
                                     {localFoto ? (
@@ -1916,7 +2060,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 group-hover:bg-black/40 transition-all">
                                                 {photoLoading ? <Loader2 size={18} className="text-white animate-spin" /> : <>
                                                     <Camera size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <span className="text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Cambiar</span>
+                                                    <span className="text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
                                                 </>}
                                             </div>
                                         </>
@@ -1929,6 +2073,9 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                         </div>
                                     )}
                                 </button>
+                                {localFoto && (
+                                    <button onClick={() => fileRef.current?.click()} className="mt-1.5 text-[9px] font-semibold text-gray-400 hover:text-gray-600 transition-colors">Cambiar foto</button>
+                                )}
                             </div>
                         </div>
 
@@ -1956,7 +2103,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {precios.map((pp, ri) => {
+                                                {visiblePrecios.map((pp, ri) => {
                                                     const pCh = changesMap[pp.id_presentacion] || {};
                                                     const rowChanged = Object.keys(pCh).length > 0;
                                                     const worst = worstMarginOf(pp, marginCheckFields);
@@ -1975,7 +2122,14 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                                                     <td key={f.key} className={`px-3 py-2 border-r border-gray-100 text-right ${ch ? 'bg-amber-50' : ''}`}>
                                                                         <div className="flex flex-col items-end gap-0.5">
                                                                             <span className={`text-[12px] font-semibold ${ch ? 'text-amber-700' : 'text-gray-800'}`}>{fmtP(pp[f.key])}</span>
-                                                                            {ch && <span className="text-[9px] text-gray-400 line-through">{fmtP(ch.anterior)}</span>}
+                                                                            {ch && (
+                                                                                <div className="flex flex-col items-end gap-0.5">
+                                                                                    <span className="text-[9px] text-gray-400 line-through">{fmtP(ch.anterior)}</span>
+                                                                                    <span className="text-[8px] text-slate-300">
+                                                                                        {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
                                                                             {f.key !== 'precio_7' && <MarginPct pct={m} />}
                                                                         </div>
                                                                     </td>
@@ -1993,6 +2147,14 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                         </table>
                                     </div>
                                 )}
+                                {inactiveCount > 0 && (
+                                    <button
+                                        onClick={() => setShowInactive(v => !v)}
+                                        className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors px-4">
+                                        <Eye size={11} />
+                                        {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -2007,7 +2169,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                 <p className="text-[11px] text-gray-400 italic">Sin cambios registrados.</p>
                             ) : (
                                 <div className="rounded border border-amber-200 bg-amber-50/60 px-3 py-2.5 space-y-1.5">
-                                    {prodLog.map((c, i) => (
+                                    {displayLog3.map((c, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
                                             <span className="font-mono text-[9px] bg-white border border-gray-200 text-gray-500 px-1.5 py-0.5 rounded shrink-0">{new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}</span>
                                             <span className="font-semibold text-gray-700">{c.campo}</span>
@@ -2016,6 +2178,12 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                                             <span className="text-gray-800 font-medium">{c.valor_nuevo || '—'}</span>
                                         </div>
                                     ))}
+                                    {olderLog3.length > 0 && (
+                                        <button onClick={() => setShowAllLog(v => !v)}
+                                            className="mt-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                                            {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog3.length} cambio${olderLog3.length !== 1 ? 's' : ''} anterior${olderLog3.length !== 1 ? 'es' : ''}`}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </Section>
@@ -2061,6 +2229,7 @@ function CompatExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                     </div>
                 </div>
             {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
+            {lightboxSrc && <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
         </div>
     );
 }
@@ -2619,7 +2788,7 @@ export default function TabCatalogo({
                 const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
                     supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                    supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
+                    supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                     supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
                 ]);
@@ -2641,7 +2810,7 @@ export default function TabCatalogo({
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: locations }, { data: principles }] = await Promise.all([
                 supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }).limit(20),
+                supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('product_locations').select('branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano').eq('product_id', productId),
                 supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
             ]);

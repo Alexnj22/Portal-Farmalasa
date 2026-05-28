@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { motion, LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
@@ -521,6 +522,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     };
 
     return (
+        <LayoutGroup>
         <div className="flex w-full min-h-[100dvh] font-sans overflow-hidden relative bg-[#E6F0FF] lg:bg-transparent">
 
             {/* Mobile backdrop */}
@@ -532,13 +534,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             )}
 
             {/* ── Sidebar ── */}
-            <aside
+            <motion.aside
                 ref={asideRef}
+                layout
+                initial={false}
+                animate={isMobile ? { x: isSidebarOpen ? 0 : 'calc(-100% - 16px)' } : {}}
+                transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] }, x: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }}
                 className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto
                     ${isMobile
-                        ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[280px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[280px] left-2 shadow-none')
+                        ? 'w-[85%] max-w-[280px] left-2'
                         : (isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] xl:w-[5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
-                    transition-[width,transform] duration-300 ease-out flex flex-col shrink-0
+                    flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
                 {/* ── Ambient glow layers ── */}
@@ -740,10 +746,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         )}
                     </div>
                 </div>
-            </aside>
+            </motion.aside>
 
             {/* ── Main content ── */}
-            <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
+            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
                 {/* Mobile top bar */}
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
                     <div className="flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border
@@ -827,7 +833,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {children}
                     </div>
                 </div>
-            </main>
+            </motion.main>
 
             {/* ── Bottom tabs (solo para usuarios con solo autogestión) ── */}
             {hasSelfOnly && (
@@ -988,6 +994,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </div>
             )}
         </div>
+        </LayoutGroup>
     );
 };
 

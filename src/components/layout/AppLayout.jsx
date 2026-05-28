@@ -341,11 +341,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-slate-600 hover:text-slate-900 hover:bg-black/[0.06]';
-        const iconActiveColor   = 'text-[#0052CC]';
-        const iconInactiveColor = 'text-slate-400 group-hover:text-slate-600';
-        const accentBarInactive = 'bg-slate-300';
-        const accentBarActive   = 'bg-[#0052CC]/70';
+        const navItemInactive   = 'text-white/45 hover:text-white/85 hover:bg-white/[0.05]';
+        const iconActiveColor   = 'text-white';
+        const iconInactiveColor = 'text-white/30 group-hover:text-white/65';
+        const accentBarInactive = 'bg-white/12';
+        const accentBarActive   = 'bg-gradient-to-b from-white/80 via-white/55 to-white/20';
 
         if (comingSoon) {
             return (
@@ -356,11 +356,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-10 flex-shrink-0">
-                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-slate-300" />
+                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/20" />
                     </div>
                     {isExpanded && (
                         <>
-                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-slate-400">{label}</span>
+                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/28">{label}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-600/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
@@ -380,7 +380,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 type="button"
                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
                     ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
-                    ${isActive ? 'text-slate-900' : navItemInactive}
+                    ${isActive ? 'text-white' : navItemInactive}
                     active:scale-[0.99]`}
             >
                 {/* Left accent for subitems */}
@@ -470,16 +470,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     type="button"
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild
-                            ? 'text-slate-900'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-black/[0.06]'}
+                            ? 'text-white'
+                            : 'text-white/45 hover:text-white/85 hover:bg-white/[0.05]'}
                         active:scale-[0.99]`}
                 >
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? 'text-[#0052CC] scale-110'
-                            : 'text-slate-400 group-hover:text-slate-600 group-hover:scale-110'}`}
+                            ? 'text-white/85 scale-110'
+                            : 'text-white/28 group-hover:text-white/60 group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -500,7 +500,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`transition-transform duration-300 flex-shrink-0 text-slate-400 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-300 flex-shrink-0 text-white/22 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
@@ -543,40 +543,39 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             >
                 {/* ── Ambient glow layers ── */}
                 <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                    <div className="absolute -inset-4 right-0 rounded-[3rem] bg-white/10 blur-3xl" />
-                    <div className="absolute -inset-7 right-[-4px] rounded-[5rem] bg-black/8 blur-[60px] opacity-50" />
+                    <div className="absolute top-0 left-0 right-0 h-2/3 rounded-t-[2.6rem] bg-slate-500/[0.06] blur-3xl" />
+                    <div className="absolute -inset-5 right-0 rounded-[3.5rem] bg-black/35 blur-[45px] opacity-80" />
+                    <div className="absolute -inset-10 right-[-4px] rounded-[5rem] bg-black/20 blur-[70px] opacity-50" />
                 </div>
 
                 {/* ── Glass container ── */}
                 <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-white/[0.12] backdrop-blur-2xl backdrop-saturate-[180%] border border-white/80
-                    shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_24px_64px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.08)]
-                    transition-shadow duration-500
-                    hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_32px_80px_rgba(0,0,0,0.18),0_8px_24px_rgba(0,0,0,0.1)]">
+                    bg-[#111827]/80 backdrop-blur-[36px]
+                    border border-white/[0.07]
+                    shadow-[inset_1px_0_0_rgba(255,255,255,0.08),inset_0_1px_0_rgba(255,255,255,0.12),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.35)]">
 
-                    {/* Glass sheen layers */}
-                    <div className="absolute inset-x-0 top-0 h-[35%] bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-0" />
-                    <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/70 via-white/25 to-white/5 pointer-events-none z-0" />
-                    <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/8 via-black/4 to-transparent pointer-events-none z-0" />
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/5 to-transparent pointer-events-none z-0" />
+                    {/* Depth layers */}
+                    <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none z-0" />
+                    <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/25 via-white/8 to-white/2 pointer-events-none z-0" />
+                    <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/5 via-transparent to-transparent pointer-events-none z-0" />
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
 
                     {/* ── Logo header ── */}
-                    <div className={`relative z-10 flex items-center border-b border-black/[0.07]
+                    <div className={`relative z-10 flex items-center border-b border-white/[0.07]
                         ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none" />
 
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
-                                <div className="absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 bg-[#0052CC]/15" />
+                                <div className="absolute -inset-1.5 rounded-[1.5rem] blur-lg opacity-0 group-hover/logo:opacity-100 transition-all duration-500 bg-white/8" />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                     transition-all duration-300 group-hover/logo:scale-105
-                                    bg-white/60 backdrop-blur-sm border border-white/80
-                                    shadow-[0_4px_16px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
-                                    group-hover/logo:shadow-[0_8px_24px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.9)]
-                                    group-hover/logo:border-white/90
+                                    bg-white/10 border border-white/15
+                                    shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                    group-hover/logo:border-white/25 group-hover/logo:bg-white/15
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                     <img src="/LogoFLS.svg" alt="FLS"
                                         className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                 </div>
@@ -584,8 +583,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded && (
                                 <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
-                                    <h1 className="font-black text-[15px] leading-tight tracking-tight text-slate-800">Portal</h1>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-slate-500">La Salud & La Popular</p>
+                                    <h1 className="font-black text-[15px] leading-tight tracking-tight text-white">Portal</h1>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/35">La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
@@ -593,8 +592,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {isExpanded && (
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                                 className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
-                                    bg-black/[0.05] hover:bg-black/[0.10] border border-black/[0.10] hover:border-black/[0.18] text-slate-500 hover:text-slate-700
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.7)]">
+                                    bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/35 hover:text-white/70
+                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)]">
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
                         )}
@@ -604,21 +603,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <nav ref={navRef} className="relative z-10 flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
                         {/* Active pill */}
                         <div
-                            className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                bg-white border border-black/[0.08]
-                                shadow-[0_2px_12px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.04)]
+                            className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
+                                bg-gradient-to-r from-white/[0.11] to-white/[0.04]
+                                border border-white/[0.10]
+                                shadow-[inset_0_1px_0_rgba(255,255,255,0.13),inset_0_-1px_0_rgba(0,0,0,0.12)]
                                 ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                             style={{ top: pill.top, height: pill.height }}
                         >
-                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-[#0052CC]/60 shadow-[0_0_6px_rgba(0,82,204,0.25)]" />
+                            <div className="absolute left-0 inset-y-[18%] w-[2px] rounded-full bg-gradient-to-b from-white/80 via-white/50 to-white/15" />
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className="relative z-10 px-3 pb-4 pt-3 border-t border-black/[0.07] flex flex-col gap-2.5">
-                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                    <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/[0.07] flex flex-col gap-2.5">
+                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
                         {isExpanded ? (
                             <>
@@ -627,31 +627,31 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <div className={`grid gap-1.5 ${hasPermission('su_pin', 'can_view') ? 'grid-cols-2' : 'grid-cols-1'}`}>
                                         {/* PIN card */}
                                         <button onClick={handleCopyPin}
-                                            className="group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-black/[0.04] border-black/[0.08] hover:bg-black/[0.07] hover:border-black/[0.13] hover:scale-[1.02] active:scale-[0.98]"
+                                            className="group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-white/[0.11] hover:border-white/[0.14] hover:scale-[1.02] active:scale-[0.98]"
                                             title="Copiar PIN">
                                             <div className="flex items-center gap-1 mb-0.5">
-                                                <CheckCircle2 size={10} className="text-slate-400 group-hover/pin:text-emerald-500 transition-colors" strokeWidth={2} />
-                                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">PIN</span>
+                                                <CheckCircle2 size={10} className="text-white/28 group-hover/pin:text-emerald-400 transition-colors" strokeWidth={2} />
+                                                <span className="text-[9px] font-semibold text-white/28 uppercase tracking-wider">PIN</span>
                                             </div>
                                             <div className="relative h-4 flex items-center justify-center w-full">
-                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-slate-800 ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                <Copy size={12} className={`absolute transition-all duration-300 text-slate-500 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
-                                                <CheckCircle2 size={12} className={`absolute text-emerald-500 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white/90 ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <Copy size={12} className={`absolute transition-all duration-300 text-white/50 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
+                                                <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                             </div>
                                         </button>
                                         {/* SU-PIN card */}
                                         {hasPermission('su_pin', 'can_view') && (
                                             <button onClick={handleCopySuPin}
-                                                className="group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-black/[0.04] border-black/[0.08] hover:bg-purple-500/[0.07] hover:border-purple-400/20 hover:scale-[1.02] active:scale-[0.98]"
+                                                className="group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98]"
                                                 title="Copiar código SU">
                                                 <div className="flex items-center gap-1 mb-0.5">
-                                                    <CheckCircle2 size={10} className="text-slate-400 group-hover/supin:text-purple-500 transition-colors" strokeWidth={2} />
-                                                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">SU</span>
+                                                    <CheckCircle2 size={10} className="text-white/28 group-hover/supin:text-violet-400 transition-colors" strokeWidth={2} />
+                                                    <span className="text-[9px] font-semibold text-white/28 uppercase tracking-wider">SU</span>
                                                 </div>
                                                 <div className="relative h-4 flex items-center justify-center w-full">
-                                                    <span className={`absolute text-[12px] font-black text-purple-600 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
-                                                    <Copy size={12} className={`absolute text-purple-400 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
-                                                    <CheckCircle2 size={12} className={`absolute text-emerald-500 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+                                                    <span className={`absolute text-[12px] font-black text-violet-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
+                                                    <Copy size={12} className={`absolute text-violet-300/55 transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/supin:opacity-100 group-hover/supin:scale-100'}`} />
+                                                    <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isSuCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                                 </div>
                                             </button>
                                         )}
@@ -659,17 +659,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 )}
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
-                                        className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-black/[0.05] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                                        className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]"
                                         type="button">
-                                        <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all border border-black/[0.10] shadow-[0_2px_8px_rgba(0,0,0,0.08)] bg-black/[0.05] text-slate-500 group-hover/user:border-[#0052CC]/25">
+                                        <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all border border-white/12 shadow-[0_4px_12px_rgba(0,0,0,0.4)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
-                                            <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-slate-700 group-hover/user:text-slate-900">{user?.name || 'Usuario'}</p>
+                                            <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/70 group-hover/user:text-white/90">{user?.name || 'Usuario'}</p>
                                         </div>
                                     </button>
                                     <button onClick={handleLogout}
-                                        className="p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200/60"
+                                        className="p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/25 hover:text-red-400 hover:bg-red-500/[0.12] hover:border-red-500/[0.15]"
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>
@@ -681,21 +681,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {!isMobile && (
                                     <button onClick={() => setIsSidebarOpen(true)}
                                         className="w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
-                                            bg-black/[0.04] border border-black/[0.09] text-slate-500 hover:text-slate-700 hover:bg-black/[0.08] hover:border-black/[0.15]
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.7)]">
+                                            bg-white/[0.07] border border-white/[0.09] text-white/35 hover:text-white/70 hover:bg-white/[0.12] hover:border-white/[0.15]
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]">
                                         <ChevronRight size={17} strokeWidth={2} />
                                     </button>
                                 )}
                                 {hasPermission('kiosk_pin', 'can_view') && (
                                     <button onClick={handleCopyPin}
                                         className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group transition-all hover:scale-105 active:scale-[0.97]
-                                            bg-black/[0.04] border border-black/[0.09] text-[#0052CC] hover:bg-black/[0.08] hover:border-black/[0.15]
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_4px_14px_rgba(0,82,204,0.12),inset_0_1px_0_rgba(255,255,255,0.7)]"
+                                            bg-white/[0.07] border border-white/[0.09] text-white/45 hover:bg-white/[0.13] hover:border-white/[0.15]
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]"
                                         title="PIN">
-                                        {isCopied ? <CheckCircle2 size={17} className="text-emerald-500" /> : (
+                                        {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
                                                 <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-slate-800">{authPin}</span>
+                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-white/90">{authPin}</span>
                                             </>
                                         )}
                                     </button>
@@ -703,15 +703,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {hasPermission('su_pin', 'can_view') && (
                                     <button onClick={handleCopySuPin}
                                         className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group
-                                            bg-black/[0.04] border border-black/[0.09]
-                                            text-purple-500 hover:bg-purple-50 hover:border-purple-200/60
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_4px_14px_rgba(168,85,247,0.12),inset_0_1px_0_rgba(255,255,255,0.7)]
+                                            bg-white/[0.07] border border-white/[0.09]
+                                            text-violet-300/70 hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18]
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(139,92,246,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]
                                             hover:scale-105 active:scale-[0.97] transition-all"
                                         title="PIN SU">
-                                        {isSuCopied ? <CheckCircle2 size={17} className="text-emerald-500" /> : (
+                                        {isSuCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
                                                 <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-purple-600">{authPin}{suSuffix}</span>
+                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[10px] font-black text-violet-200">{authPin}{suSuffix}</span>
                                             </>
                                         )}
                                     </button>
@@ -724,16 +724,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     }}
                                     onMouseLeave={closeFlyout}
                                     className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                        bg-black/[0.05] border border-black/[0.10] text-slate-500
-                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.06)]
-                                        hover:bg-black/[0.08] hover:border-black/[0.16] hover:shadow-[0_4px_14px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.7)]">
+                                        bg-white/[0.08] border border-white/[0.12] text-white/55
+                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.3)]
+                                        hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[0_6px_18px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18)]">
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                 </button>
                                 <button onClick={handleLogout} type="button"
                                     className="w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                        bg-red-50 border border-red-200/50 text-red-400
-                                        hover:text-red-500 hover:bg-red-100 hover:border-red-300/60
-                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.10),inset_0_1px_0_rgba(255,255,255,0.8)]">
+                                        bg-red-500/[0.08] border border-red-500/[0.12] text-red-400/60
+                                        hover:text-red-300 hover:bg-red-500/[0.18] hover:border-red-500/[0.22]
+                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]">
                                     <LogOut size={15} strokeWidth={1.8} />
                                 </button>
                             </div>

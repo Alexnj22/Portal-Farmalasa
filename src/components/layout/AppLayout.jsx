@@ -10,7 +10,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import ThemeToggle from '../common/ThemeToggle';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -653,8 +652,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </div>
                                 )}
-                                <ThemeToggle variant="sidebar" className="mb-1" />
-
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
                                         className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
@@ -714,8 +711,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </button>
                                 )}
-                                <ThemeToggle variant="compact" />
-
                                 <button onClick={() => navigate('/profile')} type="button"
                                     onMouseEnter={(e) => {
                                         const rect = e.currentTarget.getBoundingClientRect();

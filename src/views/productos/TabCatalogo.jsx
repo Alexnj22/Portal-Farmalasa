@@ -2461,12 +2461,16 @@ export default function TabCatalogo({
         const ids = new Set();
 
         const fetchPage = async (table, from) => {
+            const isProd = table === 'products_changelog';
             const { data } = await supabase.from(table)
-                .select('product_id')
+                .select(isProd ? 'product_id, campo, valor_anterior' : 'product_id')
                 .gte('detected_at', startOfMonth)
                 .range(from, from + PAGE - 1);
             if (cancelled) return;
-            (data || []).forEach(r => ids.add(r.product_id));
+            (data || []).forEach(r => {
+                if (isProd && CHANGELOG_HIDDEN.has(r.campo) && !r.valor_anterior) return;
+                ids.add(r.product_id);
+            });
             if ((data || []).length === PAGE) await fetchPage(table, from + PAGE);
         };
 

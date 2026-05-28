@@ -97,11 +97,11 @@ function LotesPill({ lotes, qty }) {
 const PAGE_SIZES = [20, 50, 100];
 
 const SIN_BODEGA_COLS = [
-    { key: 'producto',   label: 'Producto',                 align: 'left'   },
-    { key: 'lab',        label: 'Laboratorio',              align: 'left'   },
-    { key: 'sucursales', label: 'Sucursales que solicitan', align: 'left'   },
-    { key: 'total',      label: 'Total',   align: 'right',  hideBelow: 'sm' },
-    { key: 'ventas',     label: 'Ventas 6m', align: 'right', hideBelow: 'sm' },
+    { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
+    { key: 'laboratorio',     label: 'Laboratorio', align: 'left',  sortable: true },
+    { key: 'sucursales',      label: 'Solicitan',   align: 'left'                  },
+    { key: 'total_necesidad', label: 'Total',       align: 'right', sortable: true, hideBelow: 'sm' },
+    { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'right', sortable: true, hideBelow: 'sm' },
 ];
 
 // Paginación pequeña reutilizable (preview por sucursal)
@@ -213,12 +213,13 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [dashStats,    setDashStats]    = useState([]);
     const [dashLoading,  setDashLoading]  = useState(true);
 
-    // Sin-bodega table
-    const [sinBodega,      setSinBodega]      = useState([]);
-    const [sinBodegaTotal, setSinBodegaTotal] = useState(0);
-    const [sinBodegaPage,  setSinBodegaPage]  = useState(1);
-    const [sinBodegaPageSize, setSinBodegaPageSize] = useState(20);
-    const [sinBodegaLoad,  setSinBodegaLoad]  = useState(false);
+    // Sin-bodega table — all data loaded once, sorted+paginated client-side
+    const [sinBodega,    setSinBodega]    = useState([]);
+    const [sinBodegaLoad, setSinBodegaLoad] = useState(false);
+    const [sinSortKey,   setSinSortKey]   = useState('product_name');
+    const [sinSortDir,   setSinSortDir]   = useState('asc');
+    const [sinPage,      setSinPage]      = useState(1);
+    const [sinPageSize,  setSinPageSize]  = useState(20);
 
     // ── Synced-at ──────────────────────────────────────────────
     useEffect(() => {
@@ -230,25 +231,19 @@ export default function TabGenerar({ searchTerm = '' }) {
     // ── Dashboard stats ────────────────────────────────────────
     useEffect(() => {
         setDashLoading(true);
-        Promise.all([
-            supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES }),
-            supabase.rpc('get_pedido_sin_bodega_count', { p_sucursal_ids: SUCURSALES }),
-        ]).then(([statsRes, countRes]) => {
-            setDashStats(statsRes.data || []);
-            setSinBodegaTotal(countRes.data ?? 0);
-            setDashLoading(false);
-        });
+        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
     }, []);
 
-    // ── Sin-bodega page ────────────────────────────────────────
+    // ── Sin-bodega — load all once for client-side sort/filter ─
     useEffect(() => {
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
             p_sucursal_ids: SUCURSALES,
-            p_limit:        sinBodegaPageSize,
-            p_offset:       (sinBodegaPage - 1) * sinBodegaPageSize,
+            p_limit:        9999,
+            p_offset:       0,
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
-    }, [sinBodegaPage, sinBodegaPageSize]);
+    }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────
     const toggleSuc = useCallback((id) => {
@@ -397,15 +392,37 @@ export default function TabGenerar({ searchTerm = '' }) {
         return r;
     }, [statMap]);
 
-    // ── Sin-bodega filtered (client-side on current page) ──────
-    const filteredSinBodega = useMemo(() => {
-        if (!searchTerm.trim()) return sinBodega;
-        const q = searchTerm.toLowerCase();
-        return sinBodega.filter(r =>
-            r.product_name.toLowerCase().includes(q) ||
-            r.laboratorio.toLowerCase().includes(q)
-        );
-    }, [sinBodega, searchTerm]);
+    // ── Sin-bodega — client-side filter + sort + paginate ─────
+    const sinFiltered = useMemo(() => {
+        let rows = sinBodega;
+        if (searchTerm.trim()) {
+            const q = searchTerm.toLowerCase();
+            rows = rows.filter(r =>
+                r.product_name?.toLowerCase().includes(q) ||
+                r.laboratorio?.toLowerCase().includes(q)
+            );
+        }
+        const dir = sinSortDir === 'asc' ? 1 : -1;
+        return [...rows].sort((a, b) => {
+            if (sinSortKey === 'product_name' || sinSortKey === 'laboratorio') {
+                return (a[sinSortKey] || '').localeCompare(b[sinSortKey] || '', 'es') * dir;
+            }
+            return (Number(a[sinSortKey] || 0) - Number(b[sinSortKey] || 0)) * dir;
+        });
+    }, [sinBodega, searchTerm, sinSortKey, sinSortDir]);
+
+    const sinTotalPages    = Math.max(1, Math.ceil(sinFiltered.length / sinPageSize));
+    const filteredSinBodega = sinFiltered.slice((sinPage - 1) * sinPageSize, sinPage * sinPageSize);
+
+    useEffect(() => { setSinPage(1); }, [searchTerm, sinSortKey, sinSortDir]);
+
+    const handleSinSort = useCallback((key) => {
+        setSinSortKey(prev => {
+            if (prev === key) { setSinSortDir(d => d === 'asc' ? 'desc' : 'asc'); return prev; }
+            setSinSortDir('asc'); return key;
+        });
+        setSinPage(1);
+    }, []);
 
     // ── Row renderer ───────────────────────────────────────────
     const renderRow = useCallback((row, variant = 'normal') => {
@@ -755,9 +772,9 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
                 <TriangleAlert size={15} className="text-red-500" />
                 <span className="font-semibold text-slate-700 text-[14px]">Productos sin stock en Bodega</span>
-                {sinBodegaTotal > 0 && (
+                {sinBodega.length > 0 && (
                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
-                        {sinBodegaTotal.toLocaleString()} productos
+                        {sinBodega.length.toLocaleString()} productos
                     </span>
                 )}
                 {searchTerm && (
@@ -768,6 +785,9 @@ export default function TabGenerar({ searchTerm = '' }) {
             {/* ── Sin-bodega table (DataTable estándar) ────── */}
             <DataTable
                 columns={SIN_BODEGA_COLS}
+                sortKey={sinSortKey}
+                sortDir={sinSortDir}
+                onSort={handleSinSort}
                 loading={sinBodegaLoad}
                 empty={{
                     icon: Package,
@@ -776,13 +796,13 @@ export default function TabGenerar({ searchTerm = '' }) {
                         : 'No hay productos sin stock en Bodega',
                 }}
                 minWidth="560px"
-                footer={sinBodegaTotal > 0 && (
+                footer={sinFiltered.length > 0 && (
                     <>
                         <div className="flex items-center gap-1">
                             {PAGE_SIZES.map(size => (
-                                <button key={size} onClick={() => { setSinBodegaPageSize(size); setSinBodegaPage(1); }}
+                                <button key={size} onClick={() => { setSinPageSize(size); setSinPage(1); }}
                                     className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                        sinBodegaPageSize === size
+                                        sinPageSize === size
                                             ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
                                             : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
                                     }`}>
@@ -791,12 +811,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                             ))}
                         </div>
                         <SmartPagination
-                            page={sinBodegaPage}
-                            total={Math.max(1, Math.ceil(sinBodegaTotal / sinBodegaPageSize))}
-                            onChange={setSinBodegaPage}
+                            page={sinPage}
+                            total={sinTotalPages}
+                            onChange={setSinPage}
                         />
                         <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
-                            {sinBodegaTotal.toLocaleString()} total
+                            {sinFiltered.length.toLocaleString()} total
                         </span>
                     </>
                 )}

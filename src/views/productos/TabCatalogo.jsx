@@ -31,8 +31,8 @@ const PRICE_LEVEL_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo',
 const PRICE_SELECT = PRICE_FIELDS.map(f => f.key).join(', ');
 // premium and precio_7 are excluded from loss/margin checks (external/special price tiers)
 const MARGIN_FIELDS = PRICE_FIELDS.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
-// fields that ARE checked for special loss badges (shown on cards but not used for filter)
-const SPECIAL_LOSS_FIELDS = PRICE_FIELDS.filter(f => f.key === 'premium' || f.key === 'precio_7');
+// only premium gets the special loss badge (precio_7 is fully excluded from all checks)
+const SPECIAL_LOSS_FIELDS = PRICE_FIELDS.filter(f => f.key === 'premium');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

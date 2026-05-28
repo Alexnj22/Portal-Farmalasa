@@ -7,7 +7,6 @@ import {
     ChevronLeft, Minus, Plus,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { DataTable, DataRow } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 
 const ERP_NAMES = {
@@ -15,7 +14,6 @@ const ERP_NAMES = {
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
 const SUCURSALES   = [5, 1, 2, 3, 4, 7];
-const PAGE_SB      = 20;   // sin-bodega table page size
 const PAGE_PREV    = 30;   // preview per-sucursal page size
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -95,15 +93,9 @@ function LotesPill({ lotes, qty }) {
     );
 }
 
-const SIN_BODEGA_COLS = [
-    { key: 'producto',   label: 'Producto',                 align: 'left'   },
-    { key: 'lab',        label: 'Laboratorio',              align: 'left'   },
-    { key: 'sucursales', label: 'Sucursales que solicitan', align: 'left'   },
-    { key: 'total',      label: 'Total',                    align: 'center' },
-    { key: 'ventas',     label: 'Ventas 6m',                align: 'center' },
-];
+const PAGE_SIZES = [20, 50, 100];
 
-// Paginación pequeña reutilizable
+// Paginación pequeña reutilizable (preview por sucursal)
 function MiniPager({ page, total, pageSize, onChange }) {
     const totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) return null;
@@ -123,6 +115,45 @@ function MiniPager({ page, total, pageSize, onChange }) {
                     <ChevronRight size={13} />
                 </button>
             </div>
+        </div>
+    );
+}
+
+function SmartPagination({ page, total, onChange }) {
+    if (total <= 1) return null;
+    const buildPages = () => {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+        const pages = [1];
+        const left  = Math.max(2, page - 1);
+        const right = Math.min(total - 1, page + 1);
+        if (left > 2) pages.push('…');
+        for (let i = left; i <= right; i++) pages.push(i);
+        if (right < total - 1) pages.push('…');
+        pages.push(total);
+        return pages;
+    };
+    return (
+        <div className="flex items-center gap-1.5">
+            <button disabled={page <= 1} onClick={() => onChange(page - 1)}
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm">
+                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
+            </button>
+            <div className="flex items-center gap-1">
+                {buildPages().map((p, i) =>
+                    p === '…'
+                        ? <span key={`e${i}`} className="w-6 text-center text-[12px] font-bold select-none text-slate-300">·</span>
+                        : <button key={p} onClick={() => onChange(p)}
+                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 border ${
+                                p === page
+                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200/50 scale-110 border-[#0052CC]'
+                                    : 'text-slate-500 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
+                            }`}>{p}</button>
+                )}
+            </div>
+            <button disabled={page >= total} onClick={() => onChange(page + 1)}
+                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm">
+                Sig. <ChevronRight size={12} strokeWidth={2.5} />
+            </button>
         </div>
     );
 }
@@ -176,7 +207,8 @@ export default function TabGenerar({ searchTerm = '' }) {
     // Sin-bodega table
     const [sinBodega,      setSinBodega]      = useState([]);
     const [sinBodegaTotal, setSinBodegaTotal] = useState(0);
-    const [sinBodegaPage,  setSinBodegaPage]  = useState(0);
+    const [sinBodegaPage,  setSinBodegaPage]  = useState(1);
+    const [sinBodegaPageSize, setSinBodegaPageSize] = useState(20);
     const [sinBodegaLoad,  setSinBodegaLoad]  = useState(false);
 
     // ── Synced-at ──────────────────────────────────────────────
@@ -204,10 +236,10 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
             p_sucursal_ids: SUCURSALES,
-            p_limit:        PAGE_SB,
-            p_offset:       sinBodegaPage * PAGE_SB,
+            p_limit:        sinBodegaPageSize,
+            p_offset:       (sinBodegaPage - 1) * sinBodegaPageSize,
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
-    }, [sinBodegaPage]);
+    }, [sinBodegaPage, sinBodegaPageSize]);
 
     // ── Sucursal toggle ────────────────────────────────────────
     const toggleSuc = useCallback((id) => {
@@ -724,61 +756,118 @@ export default function TabGenerar({ searchTerm = '' }) {
                 )}
             </div>
 
-            <DataTable
-                columns={SIN_BODEGA_COLS}
-                loading={sinBodegaLoad}
-                empty={{
-                    icon: Package,
-                    message: searchTerm
-                        ? `Sin resultados para "${searchTerm}"`
-                        : 'No hay productos sin stock en Bodega',
-                }}
-                minWidth="600px"
-            >
-                {filteredSinBodega.map((row, i) => (
-                    <DataRow key={row.erp_product_id} index={i}>
-                        <td className="px-4 py-2.5 max-w-[220px]">
-                            <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-[12px] text-slate-500 whitespace-nowrap">{row.laboratorio}</td>
-                        <td className="px-4 py-2.5">
-                            <div className="flex flex-wrap gap-1">
-                                {(row.sucursales || []).map(s => (
-                                    <span key={s.erp_sucursal_id}
-                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
-                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
-                                        <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                        <span className="text-red-500 font-semibold">{s.reponer}</span>
-                                        {s.ventas_6m > 0 && (
-                                            <span className="text-slate-400 flex items-center gap-0.5">
-                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
-                                            </span>
-                                        )}
-                                    </span>
+            {/* ── Sin-bodega table ──────────────────────────── */}
+            {sinBodegaLoad && sinBodega.length === 0 ? (
+                <div className="rounded-2xl border overflow-hidden bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm">
+                    <table className="min-w-full">
+                        <tbody>
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <tr key={i} className={`border-l-[3px] border-l-red-200 ${i > 0 ? 'border-t border-slate-100' : ''}`}>
+                                    <td className="px-4 py-3.5">
+                                        <div className="h-[13px] rounded-full animate-pulse bg-slate-200/70" style={{ width: `${140 + (i * 23) % 80}px` }} />
+                                    </td>
+                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className="h-4 rounded-full animate-pulse bg-slate-200/70" style={{ width: `${60 + (i * 17) % 60}px` }} /></td>
+                                    <td className="px-4 py-3.5"><div className="h-5 w-32 rounded-full animate-pulse bg-slate-200/70" /></td>
+                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className="h-4 w-10 rounded-full animate-pulse bg-slate-200/70 ml-auto" /></td>
+                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className="h-4 w-14 rounded-full animate-pulse bg-slate-200/70 ml-auto" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : filteredSinBodega.length === 0 ? (
+                <div className="rounded-2xl border py-16 text-center bg-white/80 border-slate-200/70 backdrop-blur-sm">
+                    <Package size={32} className="mx-auto mb-3 text-slate-300" />
+                    <p className="text-sm font-medium text-slate-400">
+                        {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No hay productos sin stock en Bodega'}
+                    </p>
+                </div>
+            ) : (
+                <div className="rounded-2xl border overflow-hidden bg-white/90 border-slate-200/70 shadow-[0_4px_24px_rgba(0,82,204,0.10)] backdrop-blur-sm">
+                    <div className="overflow-x-auto w-full">
+                        <table className="min-w-full text-sm">
+                            <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]">
+                                <tr>
+                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Producto</th>
+                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left hidden md:table-cell">Laboratorio</th>
+                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Solicitan</th>
+                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right hidden sm:table-cell">Total</th>
+                                    <th className="px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right hidden sm:table-cell">Ventas 6m</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredSinBodega.map(row => (
+                                    <tr key={row.erp_product_id}
+                                        className="border-l-[3px] border-l-red-300 border-t border-slate-100 hover:bg-[#0052CC]/[0.03] transition-colors">
+                                        <td className="px-4 py-3.5 max-w-[220px]">
+                                            <span className="block truncate text-[13.5px] font-semibold text-slate-800">{row.product_name}</span>
+                                        </td>
+                                        <td className="px-4 py-3.5 hidden md:table-cell">
+                                            <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
+                                        </td>
+                                        <td className="px-4 py-3.5">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(row.sucursales || []).map(s => (
+                                                    <span key={s.erp_sucursal_id}
+                                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
+                                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
+                                                        <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
+                                                        <span className="text-red-500 font-semibold">{s.reponer}</span>
+                                                        {s.ventas_6m > 0 && (
+                                                            <span className="text-slate-400 flex items-center gap-0.5">
+                                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3.5 text-right hidden sm:table-cell">
+                                            <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
+                                        </td>
+                                        <td className="px-4 py-3.5 text-right hidden sm:table-cell">
+                                            {row.total_ventas_6m > 0 ? (
+                                                <span className="flex items-center justify-end gap-1 text-[12px] text-emerald-600 font-semibold tabular-nums">
+                                                    <TrendingUp size={11} />
+                                                    {Math.round(row.total_ventas_6m).toLocaleString()}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-300">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
                                 ))}
-                            </div>
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                            <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                            {row.total_ventas_6m > 0 ? (
-                                <span className="flex items-center justify-center gap-1 text-[12px] text-emerald-600 font-medium tabular-nums">
-                                    <TrendingUp size={11} />
-                                    {Math.round(row.total_ventas_6m).toLocaleString()}
-                                </span>
-                            ) : (
-                                <span className="text-[11px] text-slate-300">—</span>
-                            )}
-                        </td>
-                    </DataRow>
-                ))}
-            </DataTable>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
-            <MiniPager
-                page={sinBodegaPage} total={sinBodegaTotal} pageSize={PAGE_SB}
-                onChange={setSinBodegaPage}
-            />
+            {/* ── Sin-bodega pagination ──────────────────────── */}
+            {!sinBodegaLoad && sinBodegaTotal > 0 && (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                        {PAGE_SIZES.map(size => (
+                            <button key={size} onClick={() => { setSinBodegaPageSize(size); setSinBodegaPage(1); }}
+                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                    sinBodegaPageSize === size
+                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
+                                        : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
+                                }`}>
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                    <SmartPagination
+                        page={sinBodegaPage}
+                        total={Math.max(1, Math.ceil(sinBodegaTotal / sinBodegaPageSize))}
+                        onChange={setSinBodegaPage}
+                    />
+                    <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
+                        {sinBodegaTotal.toLocaleString()} total
+                    </span>
+                </div>
+            )}
         </div>
     );
 }

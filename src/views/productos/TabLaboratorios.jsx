@@ -19,6 +19,43 @@ function hasAnySala(d)   { return !!(d.vitrina?.trim() || d.estante?.trim() || d
 function hasAnyBodega(d) { return !!(d.bodega_numero?.trim() || d.bodega_peldano?.trim()); }
 function hasAny(d)       { return hasAnySala(d) || hasAnyBodega(d); }
 
+// ── Section classification ────────────────────────────────────────────────────
+// Insumos   : nombre starts with digit (e.g. "1.", "2-", "10.")
+// Cosméticos: nombre starts with Z/z
+// Principales: everything else
+function classifyLab(nombre) {
+    if (/^\d/.test(nombre))  return 'insumos';
+    if (/^z/i.test(nombre))  return 'cosmeticos';
+    return 'principales';
+}
+
+const SECTIONS = [
+    {
+        key:   'principales',
+        label: 'Laboratorios principales',
+        color: 'teal',
+        dot:   'bg-teal-500',
+        pill:  'bg-teal-50 text-teal-700 border-teal-200',
+        ring:  'ring-teal-100',
+    },
+    {
+        key:   'insumos',
+        label: 'Insumos',
+        color: 'indigo',
+        dot:   'bg-indigo-500',
+        pill:  'bg-indigo-50 text-indigo-700 border-indigo-200',
+        ring:  'ring-indigo-100',
+    },
+    {
+        key:   'cosmeticos',
+        label: 'Cosméticos / Conveniencia',
+        color: 'rose',
+        dot:   'bg-rose-400',
+        pill:  'bg-rose-50 text-rose-700 border-rose-200',
+        ring:  'ring-rose-100',
+    },
+];
+
 export default function TabLaboratorios({ searchTerm = '' }) {
     const branches     = useStaff(s => s.branches);
     const farmBranches = (branches || []).filter(b => ['FARMACIA', 'BODEGA'].includes(b.type));
@@ -89,7 +126,9 @@ export default function TabLaboratorios({ searchTerm = '' }) {
         return true;
     };
 
-    const toggle = (id) => setExpanded(prev => prev === id ? null : id);
+    const toggle      = (id)  => setExpanded(prev => prev === id ? null : id);
+    const [openSecs, setOpenSecs] = useState({ principales: true, insumos: true, cosmeticos: true });
+    const toggleSec   = (key) => setOpenSecs(prev => ({ ...prev, [key]: !prev[key] }));
 
     const filtered = searchTerm.trim()
         ? labs.filter(l => {
@@ -101,6 +140,11 @@ export default function TabLaboratorios({ searchTerm = '' }) {
             );
           })
         : labs;
+
+    // Group filtered labs into sections
+    const grouped = {};
+    for (const sec of SECTIONS) grouped[sec.key] = [];
+    for (const lab of filtered) grouped[classifyLab(lab.nombre)].push(lab);
 
     const totalWithLocation = labs.filter(l => {
         const labLocs = locations[l.id] || {};
@@ -120,29 +164,70 @@ export default function TabLaboratorios({ searchTerm = '' }) {
         <div className="px-4 pb-10">
             {/* ── Summary cards ──────────────────────────────────────────── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 pt-2">
-                <SummaryCard icon={FlaskConical} label="Laboratorios"   value={labs.length}           color="teal"   />
-                <SummaryCard icon={MapPin}       label="Con ubicación"  value={totalWithLocation}      color="indigo" />
-                <SummaryCard icon={Building2}    label="Sucursales"     value={farmBranches.length}    color="slate"  className="col-span-2 sm:col-span-1" />
+                <SummaryCard icon={FlaskConical} label="Laboratorios"  value={labs.length}        color="teal"   />
+                <SummaryCard icon={MapPin}       label="Con ubicación" value={totalWithLocation}   color="indigo" />
+                <SummaryCard icon={Building2}    label="Sucursales"    value={farmBranches.length} color="slate"  className="col-span-2 sm:col-span-1" />
             </div>
 
-            {/* ── Lab list ───────────────────────────────────────────────── */}
+            {/* ── Sections ───────────────────────────────────────────────── */}
             {filtered.length === 0 ? (
                 <div className="text-center py-20 text-slate-400 text-sm">
                     {searchTerm ? 'Sin resultados para la búsqueda.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {filtered.map(lab => (
-                        <LabRow
-                            key={lab.id}
-                            lab={lab}
-                            branches={farmBranches}
-                            locationMap={locations[lab.id] || {}}
-                            isOpen={expanded === lab.id}
-                            onToggle={() => toggle(lab.id)}
-                            onSave={(branchId, fields) => handleSave(lab.id, branchId, fields)}
-                        />
-                    ))}
+                <div className="space-y-6">
+                    {SECTIONS.map(sec => {
+                        const sectionLabs = grouped[sec.key];
+                        if (!sectionLabs.length) return null;
+                        const isOpen = openSecs[sec.key];
+                        return (
+                            <div key={sec.key}>
+                                {/* Section header */}
+                                <button
+                                    onClick={() => toggleSec(sec.key)}
+                                    className="w-full flex items-center gap-2.5 mb-3 group"
+                                >
+                                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sec.dot}`} />
+                                    <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
+                                        {sec.label}
+                                    </span>
+                                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${sec.pill}`}>
+                                        {sectionLabs.length}
+                                    </span>
+                                    <div className="flex-1 h-px bg-slate-200 ml-1" />
+                                    <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {/* Labs in this section */}
+                                <AnimatePresence initial={false}>
+                                    {isOpen && (
+                                        <motion.div
+                                            key={sec.key + '-body'}
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="space-y-2">
+                                                {sectionLabs.map(lab => (
+                                                    <LabRow
+                                                        key={lab.id}
+                                                        lab={lab}
+                                                        branches={farmBranches}
+                                                        locationMap={locations[lab.id] || {}}
+                                                        isOpen={expanded === lab.id}
+                                                        onToggle={() => toggle(lab.id)}
+                                                        onSave={(branchId, fields) => handleSave(lab.id, branchId, fields)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -152,9 +237,10 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 // ── Summary card ──────────────────────────────────────────────────────────────
 
 const COLOR = {
-    teal:   { bg: 'bg-teal-50',   border: 'border-teal-100',   icon: 'bg-teal-100 text-teal-600',   text: 'text-teal-700'  },
-    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-100', icon: 'bg-indigo-100 text-indigo-600',text: 'text-indigo-700'},
-    slate:  { bg: 'bg-slate-50',  border: 'border-slate-100',  icon: 'bg-slate-100 text-slate-500',  text: 'text-slate-600' },
+    teal:   { bg: 'bg-teal-50',   border: 'border-teal-100',   icon: 'bg-teal-100 text-teal-600',    text: 'text-teal-700'   },
+    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-100', icon: 'bg-indigo-100 text-indigo-600', text: 'text-indigo-700' },
+    slate:  { bg: 'bg-slate-50',  border: 'border-slate-100',  icon: 'bg-slate-100 text-slate-500',  text: 'text-slate-600'  },
+    rose:   { bg: 'bg-rose-50',   border: 'border-rose-100',   icon: 'bg-rose-100 text-rose-500',    text: 'text-rose-700'   },
 };
 
 function SummaryCard({ icon: Icon, label, value, color, className = '' }) {

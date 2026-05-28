@@ -341,11 +341,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/45 hover:text-white/85 hover:bg-white/[0.05]';
+        const navItemInactive   = 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]';
         const iconActiveColor   = 'text-white';
-        const iconInactiveColor = 'text-white/30 group-hover:text-white/65';
-        const accentBarInactive = 'bg-white/12';
-        const accentBarActive   = 'bg-gradient-to-b from-white/80 via-white/55 to-white/20';
+        const iconInactiveColor = 'text-white/45 group-hover:text-white/75';
+        const accentBarInactive = 'bg-white/20';
+        const accentBarActive   = 'bg-gradient-to-b from-white/85 via-white/60 to-white/25';
 
         if (comingSoon) {
             return (
@@ -356,11 +356,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-10 flex-shrink-0">
-                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/20" />
+                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/35" />
                     </div>
                     {isExpanded && (
                         <>
-                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/28">{label}</span>
+                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-600/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
@@ -471,15 +471,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild
                             ? 'text-white'
-                            : 'text-white/45 hover:text-white/85 hover:bg-white/[0.05]'}
+                            : 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]'}
                         active:scale-[0.99]`}
                 >
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? 'text-white/85 scale-110'
-                            : 'text-white/28 group-hover:text-white/60 group-hover:scale-110'}`}
+                            ? 'text-white scale-110'
+                            : 'text-white/42 group-hover:text-white/72 group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -500,7 +500,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`transition-transform duration-300 flex-shrink-0 text-white/22 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-300 flex-shrink-0 text-white/40 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
@@ -538,7 +538,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     ${isMobile
                         ? (isSidebarOpen ? 'translate-x-0 w-[85%] max-w-[280px] left-2 shadow-2xl' : '-translate-x-[120%] w-[85%] max-w-[280px] left-2 shadow-none')
                         : (isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] xl:w-[5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
-                    transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0
+                    transition-[width,transform] duration-300 ease-out flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
                 {/* ── Ambient glow layers ── */}
@@ -550,9 +550,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {/* ── Glass container ── */}
                 <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-[#111827]/80 backdrop-blur-[36px]
-                    border border-white/[0.07]
-                    shadow-[inset_1px_0_0_rgba(255,255,255,0.08),inset_0_1px_0_rgba(255,255,255,0.12),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.35)]">
+                    bg-[#0f172a]/92 backdrop-blur-xl
+                    border border-white/[0.09]
+                    shadow-[inset_1px_0_0_rgba(255,255,255,0.09),inset_0_1px_0_rgba(255,255,255,0.13),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.35)]">
 
                     {/* Depth layers */}
                     <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none z-0" />
@@ -584,7 +584,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             {isExpanded && (
                                 <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
                                     <h1 className="font-black text-[15px] leading-tight tracking-tight text-white">Portal</h1>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/35">La Salud & La Popular</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/50">La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
@@ -592,7 +592,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {isExpanded && (
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                                 className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
-                                    bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/35 hover:text-white/70
+                                    bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
                                     shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)]">
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
@@ -630,11 +630,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             className="group/pin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-white/[0.11] hover:border-white/[0.14] hover:scale-[1.02] active:scale-[0.98]"
                                             title="Copiar PIN">
                                             <div className="flex items-center gap-1 mb-0.5">
-                                                <CheckCircle2 size={10} className="text-white/28 group-hover/pin:text-emerald-400 transition-colors" strokeWidth={2} />
-                                                <span className="text-[9px] font-semibold text-white/28 uppercase tracking-wider">PIN</span>
+                                                <CheckCircle2 size={10} className="text-white/42 group-hover/pin:text-emerald-400 transition-colors" strokeWidth={2} />
+                                                <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">PIN</span>
                                             </div>
                                             <div className="relative h-4 flex items-center justify-center w-full">
-                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white/90 ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
                                                 <Copy size={12} className={`absolute transition-all duration-300 text-white/50 ${isCopied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
                                                 <CheckCircle2 size={12} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
                                             </div>
@@ -645,8 +645,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 className="group/supin flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border bg-white/[0.06] border-white/[0.09] hover:bg-violet-500/[0.12] hover:border-violet-400/[0.18] hover:scale-[1.02] active:scale-[0.98]"
                                                 title="Copiar código SU">
                                                 <div className="flex items-center gap-1 mb-0.5">
-                                                    <CheckCircle2 size={10} className="text-white/28 group-hover/supin:text-violet-400 transition-colors" strokeWidth={2} />
-                                                    <span className="text-[9px] font-semibold text-white/28 uppercase tracking-wider">SU</span>
+                                                    <CheckCircle2 size={10} className="text-white/40 group-hover/supin:text-violet-400 transition-colors" strokeWidth={2} />
+                                                    <span className="text-[9px] font-semibold text-white/45 uppercase tracking-wider">SU</span>
                                                 </div>
                                                 <div className="relative h-4 flex items-center justify-center w-full">
                                                     <span className={`absolute text-[12px] font-black text-violet-300 tracking-widest font-mono transition-all duration-300 ${isSuCopied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/supin:opacity-0 group-hover/supin:scale-90'}`}>{authPin}{suSuffix}</span>
@@ -665,11 +665,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
-                                            <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/70 group-hover/user:text-white/90">{user?.name || 'Usuario'}</p>
+                                            <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}</p>
                                         </div>
                                     </button>
                                     <button onClick={handleLogout}
-                                        className="p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/25 hover:text-red-400 hover:bg-red-500/[0.12] hover:border-red-500/[0.15]"
+                                        className="p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-red-400 hover:bg-red-500/[0.14] hover:border-red-500/[0.18]"
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>

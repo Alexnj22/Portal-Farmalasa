@@ -1,32 +1,20 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext } from 'react';
 
 const ThemeContext = createContext(null);
 
-const THEME_CYCLE = { liquid: 'compat', compat: 'aurora', aurora: 'liquid' };
+// Aurora and Compat themes are disabled. Only LiquidGlass is active.
+// A new theme will be introduced in Part 2.
+const FIXED_VALUE = {
+  theme: 'liquid',
+  setTheme: () => {},
+  toggleTheme: () => {},
+  isCompat: false,
+  isAurora: false,
+};
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(() =>
-    localStorage.getItem('portal-theme') || 'liquid'
-  );
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('portal-theme', theme);
-  }, [theme]);
-
-  const setTheme = useCallback((t) => setThemeState(t), []);
-  const toggleTheme = useCallback(() =>
-    setThemeState(t => THEME_CYCLE[t] || 'liquid'), []
-  );
-
   return (
-    <ThemeContext.Provider value={{
-      theme,
-      setTheme,
-      toggleTheme,
-      isCompat: theme === 'compat',
-      isAurora: theme === 'aurora',
-    }}>
+    <ThemeContext.Provider value={FIXED_VALUE}>
       {children}
     </ThemeContext.Provider>
   );

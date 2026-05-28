@@ -806,30 +806,6 @@ export default function TabGenerar({ searchTerm = '' }) {
                         : 'No hay productos sin stock en Bodega',
                 }}
                 minWidth="560px"
-                footer={sinFiltered.length > 0 && (
-                    <>
-                        <div className="flex items-center gap-1">
-                            {PAGE_SIZES.map(size => (
-                                <button key={size} onClick={() => { setSinPageSize(size); setSinPage(1); }}
-                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                        sinPageSize === size
-                                            ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
-                                            : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
-                                    }`}>
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
-                        <SmartPagination
-                            page={sinPage}
-                            total={sinTotalPages}
-                            onChange={setSinPage}
-                        />
-                        <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
-                            {sinFiltered.length.toLocaleString()} total
-                        </span>
-                    </>
-                )}
             >
                 {filteredSinBodega.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
@@ -870,6 +846,28 @@ export default function TabGenerar({ searchTerm = '' }) {
                     </DataRow>
                 ))}
             </DataTable>
+
+            {/* ── Paginación (fuera del card, igual que en Productos) ── */}
+            {!sinBodegaLoad && sinFiltered.length > 0 && (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                        {PAGE_SIZES.map(size => (
+                            <button key={size} onClick={() => { setSinPageSize(size); setSinPage(1); }}
+                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
+                                    sinPageSize === size
+                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
+                                        : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
+                                }`}>
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                    <SmartPagination page={sinPage} total={sinTotalPages} onChange={setSinPage} />
+                    <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
+                        {sinFiltered.length.toLocaleString()} total
+                    </span>
+                </div>
+            )}
         </div>
     );
 }

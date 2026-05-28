@@ -100,8 +100,8 @@ const SIN_BODEGA_COLS = [
     { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
     { key: 'laboratorio',     label: 'Laboratorio', align: 'left',  sortable: true },
     { key: 'sucursales',      label: 'Solicitan',   align: 'left'                  },
-    { key: 'total_necesidad', label: 'Total',       align: 'right', sortable: true, hideBelow: 'sm' },
-    { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'right', sortable: true, hideBelow: 'sm' },
+    { key: 'total_necesidad', label: 'Total',       align: 'center', sortable: true, hideBelow: 'sm' },
+    { key: 'total_ventas_6m', label: 'Ventas 6m',  align: 'center', sortable: true, hideBelow: 'sm' },
 ];
 
 // Paginación pequeña reutilizable (preview por sucursal)
@@ -721,6 +721,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
                                         : `bg-white ${urgBorder} text-slate-700 hover:shadow-sm`
                                 }`}>
+                                {/* Urgency rank badge */}
+                                <span className={`absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black leading-none ${
+                                    isOn
+                                        ? 'bg-white/20 text-white'
+                                        : rank < 2 ? 'bg-red-100 text-red-600'
+                                        : rank < 4 ? 'bg-amber-100 text-amber-600'
+                                        : 'bg-emerald-100 text-emerald-600'
+                                }`}>
+                                    {rank + 1}
+                                </span>
                                 <Building2 size={18} className={isOn ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-400'} />
                                 <span className={`text-[12px] font-bold leading-tight mb-1 ${isOn ? 'text-white' : 'text-slate-700'}`}>
                                     {ERP_NAMES[id]}
@@ -844,12 +854,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 ))}
                             </div>
                         </td>
-                        <td className="px-4 py-3 text-right hidden sm:table-cell">
+                        <td className="px-4 py-3 text-center hidden sm:table-cell">
                             <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
                         </td>
-                        <td className="px-4 py-3 text-right hidden sm:table-cell">
+                        <td className="px-4 py-3 text-center hidden sm:table-cell">
                             {row.total_ventas_6m > 0 ? (
-                                <span className="inline-flex items-center justify-end gap-1 text-[12px] text-emerald-600 font-semibold tabular-nums">
+                                <span className="inline-flex items-center justify-center gap-1 text-[12px] text-emerald-600 font-semibold tabular-nums">
                                     <TrendingUp size={11} />
                                     {Math.round(row.total_ventas_6m).toLocaleString()}
                                 </span>

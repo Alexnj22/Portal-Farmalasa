@@ -757,18 +757,18 @@ export default function TabGenerar({ searchTerm = '' }) {
                     })}
                 </div>
 
-                <div className="mt-4 flex items-center gap-3">
+                <div className="mt-4 flex flex-col items-center gap-2">
                     <button onClick={handleCalcular}
                         disabled={loading || selected.size === 0}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all duration-150 ${
+                        className={`flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-[15px] transition-all duration-150 shadow-lg ${
                             selected.size === 0
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200'
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}>
-                        {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                        {loading ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
                         {loading
-                            ? 'Calculando…'
-                            : `Calcular pedido${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
+                            ? 'Generando…'
+                            : `Generar pedido${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </button>
                     {error && (
                         <span className="text-[13px] text-red-600 flex items-center gap-1">
@@ -779,16 +779,18 @@ export default function TabGenerar({ searchTerm = '' }) {
             </div>
 
             {/* ── Productos sin stock en Bodega ──────────────── */}
-            <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
-                <TriangleAlert size={15} className="text-red-500" />
-                <span className="font-semibold text-slate-700 text-[14px]">Productos sin stock en Bodega</span>
-                {sinBodega.length > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
-                        {sinBodega.length.toLocaleString()} productos
-                    </span>
-                )}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+                <div className={GLASS + ' px-4 py-2.5 flex items-center gap-2 w-fit'}>
+                    <TriangleAlert size={14} className="text-red-500" />
+                    <span className="font-semibold text-slate-700 text-[13px]">Productos sin stock en Bodega</span>
+                    {sinBodega.length > 0 && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
+                            {sinBodega.length.toLocaleString()}
+                        </span>
+                    )}
+                </div>
                 {searchTerm && (
-                    <span className="ml-auto text-[11px] text-slate-400">"{searchTerm}"</span>
+                    <span className="text-[11px] text-slate-400">"{searchTerm}"</span>
                 )}
             </div>
 

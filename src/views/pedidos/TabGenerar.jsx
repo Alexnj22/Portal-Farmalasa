@@ -791,11 +791,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {stat && !dashLoading ? (<>
                                     <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-slate-300' : 'text-emerald-500'}`}>
                                         <span className="text-[9px] font-black">✓</span>
-                                        {stat.con_bodega_productos.toLocaleString()}
+                                        {stat.con_bodega_packs.toLocaleString()}
                                     </div>
                                     <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-rose-300' : 'text-red-500'}`}>
                                         <span className="text-[9px] font-black">✗</span>
-                                        {stat.sin_bodega_productos.toLocaleString()}
+                                        {stat.sin_bodega_packs.toLocaleString()}
                                     </div>
                                 </>) : (
                                     <div className="h-6 w-12 rounded bg-slate-100 animate-pulse mt-1" />

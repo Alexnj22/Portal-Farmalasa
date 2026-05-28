@@ -543,24 +543,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             >
                 {/* ── Ambient glow layers ── */}
                 <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
-                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
-                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
-                    <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
+                    <div className="absolute -inset-4 right-0 rounded-[3rem] bg-white/4 blur-3xl" />
+                    <div className="absolute -inset-6 right-0 rounded-[3.5rem] bg-slate-900/50 blur-[40px] opacity-80" />
+                    <div className="absolute -inset-9 right-[-4px] rounded-[5rem] bg-black/30 blur-[60px] opacity-60" />
                 </div>
 
                 {/* ── Glass container ── */}
                 <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14
-                    shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)]
+                    bg-[#0b1e38]/68 backdrop-blur-[48px] border border-white/[0.13]
+                    shadow-[0_24px_64px_rgba(0,0,0,0.5),0_6px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-1px_0_rgba(0,0,0,0.25),inset_1px_0_0_rgba(255,255,255,0.07)]
                     transition-shadow duration-500
-                    hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]">
+                    hover:shadow-[0_32px_80px_rgba(0,0,0,0.55),0_8px_28px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.20),inset_0_-1px_0_rgba(0,0,0,0.25),inset_1px_0_0_rgba(255,255,255,0.09)]">
 
-                    {/* Dark sheen layers */}
-                    <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
-                    <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
-                    <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/20 via-black/10 to-transparent pointer-events-none z-0" />
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
+                    {/* Glass sheen layers */}
+                    <div className="absolute inset-x-0 top-0 h-[35%] bg-gradient-to-b from-white/[0.07] via-white/[0.02] to-transparent pointer-events-none z-0" />
+                    <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/30 via-white/10 to-white/2 pointer-events-none z-0" />
+                    <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/15 via-black/8 to-transparent pointer-events-none z-0" />
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-0" />
 
                     {/* ── Logo header ── */}
                     <div className={`relative z-10 flex items-center border-b border-white/10

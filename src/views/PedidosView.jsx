@@ -37,16 +37,24 @@ export default function PedidosView() {
 
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [historialKey,    setHistorialKey]    = useState(0);
+
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
         return () => clearTimeout(t);
     }, [rawSearch]);
 
+    const handleTabChange = (tab) => {
+        setSearchParams(p => { p.set('tab', tab); return p; });
+        setRawSearch('');
+        if (tab === 'historial') setHistorialKey(k => k + 1);
+    };
+
     const filtersContent = (
         <ViewTabBar
             tabs={allowedTabs}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={SEARCH_PLACEHOLDER[activeTab] ?? 'Buscar…'}
@@ -56,7 +64,7 @@ export default function PedidosView() {
     return (
         <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
             <div className={activeTab === 'generar'   ? '' : 'hidden'}><TabGenerar   searchTerm={debouncedSearch} /></div>
-            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial searchTerm={debouncedSearch} /></div>
+            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
             <div className={activeTab === 'reglas'    ? '' : 'hidden'}><TabReglas    searchTerm={debouncedSearch} /></div>
         </GlassViewLayout>
     );

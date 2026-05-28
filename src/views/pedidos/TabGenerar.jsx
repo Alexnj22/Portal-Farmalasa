@@ -6,10 +6,8 @@ import {
     FlaskConical, ArrowLeft, TriangleAlert, TrendingUp,
     ChevronLeft, Minus, Plus,
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
-} from 'recharts';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { DataTable, DataRow } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 
 const ERP_NAMES = {
@@ -97,19 +95,13 @@ function LotesPill({ lotes, qty }) {
     );
 }
 
-function BarTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-    const con = payload.find(p => p.dataKey === 'con_bodega_packs')?.value ?? 0;
-    const sin = payload.find(p => p.dataKey === 'sin_bodega_packs')?.value ?? 0;
-    return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2 text-[12px]">
-            <p className="font-semibold text-slate-700 mb-1">{label}</p>
-            <p className="text-emerald-600">Con stock Bodega: <b>{con.toLocaleString()}</b> unidades</p>
-            <p className="text-red-500">Sin stock Bodega: <b>{sin.toLocaleString()}</b> unidades</p>
-            <p className="text-slate-500 mt-1 border-t border-slate-100 pt-1">Total: <b>{(con + sin).toLocaleString()}</b> unidades</p>
-        </div>
-    );
-}
+const SIN_BODEGA_COLS = [
+    { key: 'producto',   label: 'Producto',                 align: 'left'   },
+    { key: 'lab',        label: 'Laboratorio',              align: 'left'   },
+    { key: 'sucursales', label: 'Sucursales que solicitan', align: 'left'   },
+    { key: 'total',      label: 'Total',                    align: 'center' },
+    { key: 'ventas',     label: 'Ventas 6m',                align: 'center' },
+];
 
 // Paginación pequeña reutilizable
 function MiniPager({ page, total, pageSize, onChange }) {
@@ -363,19 +355,6 @@ export default function TabGenerar({ searchTerm = '' }) {
         sorted.forEach((id, i) => { r[id] = i; });
         return r;
     }, [statMap]);
-
-    // ── Chart data — sorted by total_productos desc (most urgent at top) ──────
-    const chartData = useMemo(() => {
-        return SUCURSALES
-            .map(id => ({
-                name:             ERP_NAMES[id],
-                con_bodega_packs: statMap[id]?.con_bodega_packs ?? 0,
-                sin_bodega_packs: statMap[id]?.sin_bodega_packs ?? 0,
-                _total:           statMap[id]?.total_productos ?? 0,
-            }))
-            .sort((a, b) => b._total - a._total);
-    }, [statMap]);
-
 
     // ── Sin-bodega filtered (client-side on current page) ──────
     const filteredSinBodega = useMemo(() => {
@@ -731,124 +710,75 @@ export default function TabGenerar({ searchTerm = '' }) {
                 </div>
             </div>
 
-            {/* ── Necesidad por sucursal ─────────────────────── */}
-            <div className={GLASS + ' p-4'}>
-                <h3 className="font-semibold text-slate-700 text-[14px] mb-1">Necesidad de reposición por sucursal</h3>
-                <p className="text-[11px] text-slate-400 mb-4">
-                    Unidades pendientes de reponer — verde: Bodega tiene stock, rojo: sin stock en Bodega. Ordenado de mayor a menor cantidad de productos.
-                </p>
-                {dashLoading ? (
-                    <div className="h-48 flex items-center justify-center">
-                        <Loader2 size={20} className="animate-spin text-slate-300" />
-                    </div>
-                ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={chartData} layout="vertical" barCategoryGap="30%" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-                            <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => v.toLocaleString()} axisLine={false} tickLine={false} />
-                            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} axisLine={false} tickLine={false} width={72} />
-                            <Tooltip content={<BarTooltip />} cursor={{ fill: 'rgba(0,82,204,0.04)' }} />
-                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                                formatter={v => v === 'con_bodega_packs' ? 'Con stock en Bodega' : 'Sin stock en Bodega'} />
-                            <Bar dataKey="con_bodega_packs" name="con_bodega_packs" stackId="a" fill="#10b981" />
-                            <Bar dataKey="sin_bodega_packs" name="sin_bodega_packs" stackId="a" fill="#f87171" radius={[0,4,4,0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+            {/* ── Productos sin stock en Bodega ──────────────── */}
+            <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
+                <TriangleAlert size={15} className="text-red-500" />
+                <span className="font-semibold text-slate-700 text-[14px]">Productos sin stock en Bodega</span>
+                {sinBodegaTotal > 0 && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
+                        {sinBodegaTotal.toLocaleString()} productos
+                    </span>
+                )}
+                {searchTerm && (
+                    <span className="ml-auto text-[11px] text-slate-400">"{searchTerm}"</span>
                 )}
             </div>
 
-            {/* ── Productos sin stock en Bodega ──────────────── */}
-            <div className={GLASS + ' overflow-hidden'}>
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-                    <div className="flex items-center gap-2">
-                        <TriangleAlert size={15} className="text-red-500" />
-                        <span className="font-semibold text-slate-700 text-[14px]">Productos sin stock en Bodega</span>
-                        {sinBodegaTotal > 0 && (
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 font-semibold">
-                                {sinBodegaTotal.toLocaleString()} productos
-                            </span>
-                        )}
-                    </div>
-                    {searchTerm && (
-                        <span className="text-[11px] text-slate-400">
-                            Filtrando por: <b>"{searchTerm}"</b>
-                        </span>
-                    )}
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-[#0052CC]/[0.04] border-b border-[#0052CC]/[0.09]">
-                                <th className={`${TH} text-left`}>Producto</th>
-                                <th className={`${TH} text-left px-3`}>Laboratorio</th>
-                                <th className={`${TH} text-left px-3`}>Sucursales que solicitan</th>
-                                <th className={`${TH} text-center px-3`}>Total</th>
-                                <th className={`${TH} text-center px-3`}>Ventas 6m</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sinBodegaLoad ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="border-t border-[#0052CC]/[0.06]">
-                                        <td colSpan={5} className="px-4 py-3">
-                                            <div className="h-4 bg-[#0052CC]/[0.06] rounded animate-pulse w-3/4" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredSinBodega.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400 text-[13px]">
-                                        {searchTerm ? `Sin resultados para "${searchTerm}"` : 'No hay productos sin stock en Bodega'}
-                                    </td>
-                                </tr>
-                            ) : filteredSinBodega.map(row => (
-                                <tr key={row.erp_product_id} className="border-t border-[#0052CC]/[0.06] hover:bg-[#0052CC]/[0.032] transition-colors">
-                                    <td className="px-4 py-2.5 max-w-[220px]">
-                                        <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-[12px] text-slate-500 whitespace-nowrap">{row.laboratorio}</td>
-                                    <td className="px-3 py-2.5">
-                                        <div className="flex flex-wrap gap-1">
-                                            {(row.sucursales || []).map(s => (
-                                                <span key={s.erp_sucursal_id}
-                                                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
-                                                    title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer} productos${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6 meses` : ''}`}>
-                                                    <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                                    <span className="text-red-500 font-semibold">{s.reponer}</span>
-                                                    {s.ventas_6m > 0 && (
-                                                        <span className="text-slate-400 flex items-center gap-0.5">
-                                                            ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
-                                                            <span className="text-[7px] text-slate-300">/6m</span>
-                                                        </span>
-                                                    )}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        {row.total_ventas_6m > 0 ? (
-                                            <span className="flex items-center justify-center gap-1 text-[12px] text-emerald-600 font-medium tabular-nums">
-                                                <TrendingUp size={11} />
-                                                {Math.round(row.total_ventas_6m).toLocaleString()}
+            <DataTable
+                columns={SIN_BODEGA_COLS}
+                loading={sinBodegaLoad}
+                empty={{
+                    icon: Package,
+                    message: searchTerm
+                        ? `Sin resultados para "${searchTerm}"`
+                        : 'No hay productos sin stock en Bodega',
+                }}
+                minWidth="600px"
+            >
+                {filteredSinBodega.map((row, i) => (
+                    <DataRow key={row.erp_product_id} index={i}>
+                        <td className="px-4 py-2.5 max-w-[220px]">
+                            <span className="block truncate text-[13px] font-medium text-slate-700">{row.product_name}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-[12px] text-slate-500 whitespace-nowrap">{row.laboratorio}</td>
+                        <td className="px-4 py-2.5">
+                            <div className="flex flex-wrap gap-1">
+                                {(row.sucursales || []).map(s => (
+                                    <span key={s.erp_sucursal_id}
+                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap"
+                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
+                                        <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
+                                        <span className="text-red-500 font-semibold">{s.reponer}</span>
+                                        {s.ventas_6m > 0 && (
+                                            <span className="text-slate-400 flex items-center gap-0.5">
+                                                ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
                                             </span>
-                                        ) : (
-                                            <span className="text-[11px] text-slate-300">—</span>
                                         )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </span>
+                                ))}
+                            </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                            <span className="text-[13px] font-bold text-red-600 tabular-nums">{row.total_necesidad}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                            {row.total_ventas_6m > 0 ? (
+                                <span className="flex items-center justify-center gap-1 text-[12px] text-emerald-600 font-medium tabular-nums">
+                                    <TrendingUp size={11} />
+                                    {Math.round(row.total_ventas_6m).toLocaleString()}
+                                </span>
+                            ) : (
+                                <span className="text-[11px] text-slate-300">—</span>
+                            )}
+                        </td>
+                    </DataRow>
+                ))}
+            </DataTable>
 
-                <MiniPager
-                    page={sinBodegaPage} total={sinBodegaTotal} pageSize={PAGE_SB}
-                    onChange={setSinBodegaPage}
-                />
-            </div>
+            <MiniPager
+                page={sinBodegaPage} total={sinBodegaTotal} pageSize={PAGE_SB}
+                onChange={setSinBodegaPage}
+            />
         </div>
     );
 }

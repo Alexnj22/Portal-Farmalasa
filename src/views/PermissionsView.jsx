@@ -5,7 +5,7 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target
+    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -77,10 +77,10 @@ const MODULE_GROUPS = [
         color: 'text-teal-600',
         modules: [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
-                { key: 'productos_tab_catalogo',     label: 'Catálogo'      },
-                { key: 'productos_tab_inventario',   label: 'Inventario'    },
-                { key: 'productos_tab_laboratorios', label: 'Laboratorios'  },
+                { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
+                { key: 'productos_tab_inventario', label: 'Inventario' },
             ]},
+            { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'           },
                 { key: 'pedidos_tab_historial', label: 'Historial'         },

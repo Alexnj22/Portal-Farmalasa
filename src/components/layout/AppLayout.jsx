@@ -6,7 +6,7 @@ import {
     Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
-    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target
+    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
@@ -42,7 +42,8 @@ const MODULE_MAP = {
     promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
-    productos:         { path: '/productos',        label: 'Productos',                icon: Package      },
+    productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
+    laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },
     pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
 };
 
@@ -63,7 +64,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview']            },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'pedidos']                 },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos'] },
 ];
 
 // Self-service module keys (for bottom tabs logic)

@@ -10,7 +10,6 @@ import {
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
@@ -319,7 +318,6 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
 function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions }) {
-    const { isCompat, isAurora } = useTheme();
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -664,7 +662,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             <DataRow
                                 index={i}
                                 onClick={() => toggleRow(r.id)}
-                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? (isAurora ? 'bg-white/[0.12]' : 'bg-blue-50/50') : ''}
+                                className={isCancelled ? 'opacity-50 bg-red-50/30' : isExpanded ? 'bg-blue-50/50' : ''}
                             >
                                 <DataCell>
                                     <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
@@ -738,17 +736,16 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                             </DataRow>
                             {isExpanded && (
-                                <tr className={`border-t ${isAurora ? 'border-white/[0.18]' : isCompat ? 'border-slate-100' : 'border-blue-100/60'}`}>
+                                <tr className="border-t border-blue-100/60">
                                     <td colSpan={8}
-                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)' } : undefined}
-                                        className={`px-5 py-4 ${isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20'}`}>
+                                        className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20">
                                         {loadingItems && !cachedItems ? (
-                                            <div className={`flex items-center gap-2 text-[11px] py-1 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-400">
                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
-                                            <div className={`flex items-center gap-2 text-[11px] py-1 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>
-                                                <Info size={12} className={`shrink-0 ${isAurora ? 'text-white/20' : 'text-slate-300'}`} />
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-400">
+                                                <Info size={12} className="shrink-0 text-slate-300" />
                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                             </div>
                                         ) : (
@@ -766,11 +763,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                const hdrTxt = isAurora ? 'text-white/40' : 'text-slate-400';
-                                                const nameTxt = isAurora ? 'text-white/90' : 'text-slate-700';
-                                                const numTxt = isAurora ? 'text-white/60' : 'text-slate-500';
-                                                const dividerCls = isAurora ? 'border-white/[0.07]' : 'border-slate-100/80';
-                                                const rowHoverCls = isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-white/70';
+                                                const hdrTxt = 'text-slate-400';
+                                                const nameTxt = 'text-slate-700';
+                                                const numTxt = 'text-slate-500';
+                                                const dividerCls = 'border-slate-100/80';
+                                                const rowHoverCls = 'hover:bg-white/70';
                                                 return (
                                                     <table className="w-full border-collapse">
                                                         <thead>
@@ -808,19 +805,19 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                                    {it.presentacion && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-400'}`}>{it.presentacion}</span>}
+                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
-                                                                                    {it.fecha_vencimiento && <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono ${isAurora ? 'bg-white/10 text-white/50' : 'bg-slate-100 text-slate-500'}`}>Vence {it.fecha_vencimiento}</span>}
+                                                                                    {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-slate-100 text-slate-500">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[10px] font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
-                                                                        <td className={`py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>{fmt(it.precio_unitario)}</td>
+                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-slate-400">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
                                                                                 <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>
                                                                             ) : noPrice ? (
-                                                                                <span className={`text-[9px] ${isAurora ? 'text-white/20' : 'text-slate-300'}`}>—</span>
+                                                                                <span className="text-[9px] text-slate-300">—</span>
                                                                             ) : null}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[11px] font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
@@ -828,15 +825,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 );
                                                             })}
                                                             {finalDiscount > 0 && (
-                                                                <tr className={`border-t ${isAurora ? 'border-amber-500/30' : 'border-amber-100'}`}>
+                                                                <tr className="border-t border-amber-100">
                                                                     <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
                                                                         <div className="flex items-center gap-1.5">
                                                                             <span className="text-[9px] font-black uppercase tracking-widest bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-md">PUNTOS</span>
-                                                                            <span className={`text-[11px] font-semibold ${isAurora ? 'text-amber-300' : 'text-amber-700'}`}>Descuento por puntos</span>
+                                                                            <span className="text-[11px] font-semibold text-amber-700">Descuento por puntos</span>
                                                                         </div>
                                                                     </td>
                                                                     <td />
-                                                                    <td className={`pt-1.5 pb-1 text-right text-[11px] font-black ${isAurora ? 'text-amber-300' : 'text-amber-600'}`}>-{fmt(finalDiscount)}</td>
+                                                                    <td className="pt-1.5 pb-1 text-right text-[11px] font-black text-amber-600">-{fmt(finalDiscount)}</td>
                                                                 </tr>
                                                             )}
                                                         </tbody>
@@ -845,17 +842,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             })()
                                         )}
                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
-                                            <div className={`mt-3 pt-3 border-t flex justify-end ${isAurora ? 'border-white/[0.07]' : 'border-slate-100'}`}>
+                                            <div className="mt-3 pt-3 border-t flex justify-end border-slate-100">
                                                 <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                    <div className={`flex justify-between gap-6 text-[11px] ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>
+                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
                                                         <span>Subtotal (sin IVA)</span>
-                                                        <span className={`font-semibold ${isAurora ? 'text-white/80' : 'text-slate-700'}`}>{fmt(r.subtotal)}</span>
+                                                        <span className="font-semibold text-slate-700">{fmt(r.subtotal)}</span>
                                                     </div>
-                                                    <div className={`flex justify-between gap-6 text-[11px] ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>
+                                                    <div className="flex justify-between gap-6 text-[11px] text-slate-500">
                                                         <span>IVA (13%)</span>
-                                                        <span className={`font-semibold ${isAurora ? 'text-white/80' : 'text-slate-700'}`}>{fmt(r.iva)}</span>
+                                                        <span className="font-semibold text-slate-700">{fmt(r.iva)}</span>
                                                     </div>
-                                                    <div className={`flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 ${isAurora ? 'text-white border-white/[0.07]' : 'text-slate-800 border-slate-200'}`}>
+                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-slate-800 border-slate-200">
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>
                                                     </div>
@@ -894,7 +891,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
 function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions }) {
-    const { isCompat, isAurora } = useTheme();
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -1085,14 +1081,14 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
-                    const expandBg     = isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
-                    const expandBorder = isAurora ? 'border-white/[0.20]' : isCompat ? 'border-slate-100' : 'border-blue-100/60';
-                    const cardNormal   = isAurora ? 'bg-white/[0.11] border-white/[0.22]' : 'bg-white border-slate-200';
-                    const cardCross    = isAurora ? 'bg-orange-900/20 border-orange-400/30' : 'bg-orange-50 border-orange-200';
+                    const expandBg     = 'bg-gradient-to-br from-blue-50/30 via-white/40 to-slate-50/20';
+                    const expandBorder = 'border-blue-100/60';
+                    const cardNormal   = 'bg-white border-slate-200';
+                    const cardCross    = 'bg-orange-50 border-orange-200';
 
                     return (
                         <React.Fragment key={r.cod_vendedor}>
-                            <DataRow index={i} onClick={() => toggleExpand(r.cod_vendedor)} className={isOpen ? (isAurora ? 'bg-white/[0.06]' : 'bg-blue-50/30') : ''}>
+                            <DataRow index={i} onClick={() => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-blue-50/30' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
                                         {i === 0 ? <Trophy size={15} className="text-yellow-500" />
@@ -1140,21 +1136,20 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             {isOpen && (
                                 <tr className={`border-t ${expandBorder}`}>
                                     <td colSpan={7}
-                                        style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)' } : undefined}
                                         className={`px-4 py-3 ${expandBg}`}>
                                         {loadingExpand ? (
                                             <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
                                         ) : (
                                             <div>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isAurora ? 'text-white/40' : 'text-slate-400'}`}>Ventas diarias</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400">Ventas diarias</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {expandedData.map(d => {
                                                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
                                                         return (
                                                             <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
-                                                                <p className={`mb-0.5 ${isAurora ? 'text-white/50' : 'text-slate-500'}`}>{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
-                                                                <p className={`font-black ${isAurora ? 'text-white/90' : 'text-slate-800'}`}>{fmt(d.total)}</p>
-                                                                <p className={isAurora ? 'text-white/40' : 'text-slate-400'}>{d.count} fact.</p>
+                                                                <p className="mb-0.5 text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
+                                                                <p className="font-black text-slate-800">{fmt(d.total)}</p>
+                                                                <p className="text-slate-400">{d.count} fact.</p>
                                                                 {cross.map(b => (
                                                                     <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
                                                                 ))}
@@ -1263,7 +1258,6 @@ function findFirstChangeSince(history, idPresentaciones, fechaStr) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
-    const { isCompat, isAurora } = useTheme();
     const { maxPriceLevel } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
@@ -1655,7 +1649,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 return (
                                     <React.Fragment key={rowKey}>
                                     <DataRow index={i} onClick={() => toggleExpand(rowKey, r.erp_product_id)}
-                                        className={isExpanded ? (isAurora ? 'bg-white/[0.08]' : 'bg-blue-50/40') : ''}>
+                                        className={isExpanded ? 'bg-blue-50/40' : ''}>
                                         <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
                                                 : <span className="text-slate-400">{globalIdx + 1}</span>}
@@ -1695,9 +1689,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                     </DataRow>
                                     {isExpanded && (
-                                        <tr className={isAurora ? '' : isCompat ? 'bg-slate-50' : 'bg-gradient-to-b from-blue-50/25 to-slate-50/10'}>
+                                        <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
                                             <td colSpan={7}
-                                                style={isAurora ? { boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.40)', background: 'rgba(255,255,255,0.08)' } : undefined}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">

@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -324,7 +323,6 @@ const initTabSizes = (userId) => {
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
   const { user, hasPermission } = useAuth();
-  const { isCompat, isAurora } = useTheme();
   const navigate = useNavigate();
 
   const employees        = useStaff(s => s.employees);
@@ -1095,7 +1093,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
-          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme={isAurora?'dark':'light'}/>)}>
+          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light"/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {shiftStatusData.length===0?(
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
@@ -1124,7 +1122,7 @@ const DashboardView = ({ openModal }) => {
           action={
             <div className="flex items-center gap-2">
               {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
-              <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme={isAurora?'dark':'light'}/>
+              <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light"/>
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
                 <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
@@ -1586,14 +1584,12 @@ const DashboardView = ({ openModal }) => {
       />
 
       {/* Divider */}
-      <div className={`w-px h-5 ${isAurora ? 'bg-white/15' : 'bg-slate-200/70'}`} />
+      <div className="w-px h-5 bg-slate-200/70" />
 
       {/* Personalizar */}
       <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
         showConfig
           ? 'bg-[#0052CC] text-white border-[#0052CC]'
-          : isAurora
-          ? 'bg-[rgba(77,148,255,0.10)] text-[rgba(150,200,255,0.85)] border-[rgba(77,148,255,0.22)] hover:bg-[rgba(77,148,255,0.20)] backdrop-blur-sm'
           : 'bg-white/70 text-slate-700 border-white/90 hover:bg-white backdrop-blur-sm'
       }`}>
         <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar

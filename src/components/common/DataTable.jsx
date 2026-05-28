@@ -25,83 +25,29 @@
 
 import React, { createContext, useContext } from 'react';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
 
 // ── Tokens ────────────────────────────────────────────────────────────────────
 function useTokens() {
-  const { isCompat, isAurora } = useTheme();
   return {
-    cardBg: isCompat
-      ? 'bg-white'
-      : isAurora
-      ? 'bg-white/[0.11] backdrop-blur-2xl backdrop-saturate-150'
-      : 'bg-white/55 backdrop-blur-xl',
-    cardBorder: isCompat
-      ? 'border-[#C4D9E8]'
-      : isAurora
-      ? 'border-white/[0.25]'
-      : 'border-white/55',
-    cardShadow: isCompat
-      ? 'shadow-[0_2px_12px_rgba(0,0,0,0.07),0_1px_3px_rgba(0,0,0,0.05)]'
-      : isAurora
-      ? 'shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.22)]'
-      : 'shadow-[0_4px_24px_rgba(0,82,204,0.08)]',
-    theadBg: isCompat
-      ? 'bg-slate-50'
-      : isAurora
-      ? 'bg-white/[0.10]'
-      : 'bg-[#0052CC]/[0.04]',
-    theadBorderRow: isCompat
-      ? 'border-b border-slate-200'
-      : isAurora
-      ? 'border-b border-white/[0.16]'
-      : 'border-b border-[#0052CC]/[0.09]',
-    thText: isAurora ? 'text-white/60' : 'text-slate-500',
-    thHover: isCompat
-      ? 'hover:bg-slate-100 hover:text-slate-700'
-      : isAurora
-      ? 'hover:bg-white/[0.12] hover:text-white'
-      : 'hover:bg-white/25 hover:text-slate-700',
-    toolbarBorder: isCompat
-      ? 'border-b border-slate-100'
-      : isAurora
-      ? 'border-b border-white/[0.12]'
-      : 'border-b border-white/40',
-    footerBorder: isCompat
-      ? 'border-t border-slate-100'
-      : isAurora
-      ? 'border-t border-white/[0.12]'
-      : 'border-t border-white/40',
-    divide: isCompat
-      ? 'divide-y divide-slate-100'
-      : isAurora
-      ? 'divide-y divide-white/[0.09]'
-      : 'divide-y divide-slate-200/50',
-    rowHover: isCompat
-      ? 'hover:bg-slate-50'
-      : isAurora
-      ? 'hover:bg-white/[0.08]'
-      : 'hover:bg-[#0052CC]/[0.032]',
-    cellText: isAurora ? 'text-white/85' : 'text-slate-700',
-    skeletonPulse: isCompat
-      ? 'bg-slate-200/70'
-      : isAurora
-      ? 'bg-white/[0.12]'
-      : 'bg-[#0052CC]/[0.07]',
-    emptyText: isAurora ? 'text-white/45' : 'text-slate-400',
-    emptyIcon: isAurora ? 'text-white/30' : 'text-slate-300',
-    expandBg: isCompat
-      ? 'bg-slate-50'
-      : isAurora
-      ? 'bg-white/[0.07]'
-      : 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
-    expandBorderColor: isCompat
-      ? 'border-slate-200'
-      : isAurora
-      ? 'border-white/[0.18]'
-      : 'border-blue-100/60',
-    expandText: isAurora ? 'text-white/50' : 'text-slate-400',
-    expandTextStrong: isAurora ? 'text-white/90' : 'text-slate-700',
+    cardBg:            'bg-white/55 backdrop-blur-xl',
+    cardBorder:        'border-white/55',
+    cardShadow:        'shadow-[0_4px_24px_rgba(0,82,204,0.08)]',
+    theadBg:           'bg-[#0052CC]/[0.04]',
+    theadBorderRow:    'border-b border-[#0052CC]/[0.09]',
+    thText:            'text-slate-500',
+    thHover:           'hover:bg-white/25 hover:text-slate-700',
+    toolbarBorder:     'border-b border-white/40',
+    footerBorder:      'border-t border-white/40',
+    divide:            'divide-y divide-slate-200/50',
+    rowHover:          'hover:bg-[#0052CC]/[0.032]',
+    cellText:          'text-slate-700',
+    skeletonPulse:     'bg-[#0052CC]/[0.07]',
+    emptyText:         'text-slate-400',
+    emptyIcon:         'text-slate-300',
+    expandBg:          'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
+    expandBorderColor: 'border-blue-100/60',
+    expandText:        'text-slate-400',
+    expandTextStrong:  'text-slate-700',
   };
 }
 

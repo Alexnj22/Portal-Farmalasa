@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
-    Megaphone, AlertTriangle, Sparkles, Activity, Copy, CheckCircle2,
+    Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target
@@ -11,7 +11,6 @@ import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import ThemeToggle from '../common/ThemeToggle';
-import { useTheme } from '../../context/ThemeContext';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -70,17 +69,8 @@ const MENU_GROUPS = [
 // Self-service module keys (for bottom tabs logic)
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
 
-const AURORA_ORBS = [
-    { cls: 'aurora-orb-1', w: 950, h: 950, top: '-260px', left: '-200px',    color: 'rgba(0,82,204,0.45)'    , blur: 80 },
-    { cls: 'aurora-orb-2', w: 750, h: 750, bottom: '-200px', right: '-120px', color: 'rgba(13,148,136,0.30)', blur: 65 },
-    { cls: 'aurora-orb-3', w: 650, h: 650, top: '38%',  right: '14%',         color: 'rgba(79,70,229,0.25)',  blur: 60 },
-    { cls: 'aurora-orb-4', w: 520, h: 520, top: '22%',  left: '24%',          color: 'rgba(105,41,196,0.22)', blur: 55 },
-    { cls: 'aurora-orb-5', w: 420, h: 420, bottom: '18%', left: '9%',         color: 'rgba(5,150,105,0.18)',  blur: 50 },
-];
-
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, systemRole } = useAuth();
-    const { isAurora, isCompat } = useTheme();
     const branches = useStaff((state) => state.branches);
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
@@ -177,8 +167,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const next = {};
         visibleGroups.forEach(g => {
             if (g.visibleModules.length >= 2) {
-                // Keep active group open only when opening a DIFFERENT group (accordion)
-                // Allow the active group to close itself when clicked directly
                 const isActiveGroup = g.visibleModules.some(
                     m => m.path.replace(/^\//, '').split('/')[0] === activeId
                 );
@@ -252,7 +240,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const showBell = hasPermission('emp_announcements', 'can_view');
     const isOnAnnouncements = activeId === 'my-announcements';
 
-    // Expanded when sidebar is open. NO hover-expand on desktop.
     const isExpanded = isMobile ? isSidebarOpen : isSidebarOpen;
     const blurClasses = isOverlayActive
         ? 'pointer-events-none select-none scale-[0.98] blur-[2px]'
@@ -263,7 +250,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const navEl = navRef.current;
         let activeEl = itemRefs.current.get(activeId);
 
-        // If active item is inside a group, check whether that group is open
         const parentGroup = visibleGroups.find(g =>
             g.visibleModules.length >= 2 &&
             g.visibleModules.some(m => m.path.replace(/^\//, '').split('/')[0] === activeId)
@@ -274,7 +260,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 activeEl = groupHeaderRefs.current.get(parentGroup.key) ?? activeEl;
             }
         } else if (!activeEl || activeEl.getBoundingClientRect().height < 4) {
-            // Compact mode: top-level item ref missing
             const fallback = visibleGroups.find(g =>
                 g.visibleModules.length >= 2 &&
                 g.visibleModules.some(m => m.path.replace(/^\//, '').split('/')[0] === activeId)
@@ -306,7 +291,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     };
 
     useLayoutEffect(() => {
-        // Track pill every frame for the full animation duration so it stays sticky
         const ANIM_MS = 320;
         let raf;
         let start = null;
@@ -358,14 +342,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        // Theme tokens for nav items
-        const navItemInactive = isCompat
-            ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]'
-            : 'text-white/70 hover:text-white hover:bg-white/[0.08]';
-        const iconActiveColor  = isCompat ? 'text-white' : 'text-[#4D94FF]';
-        const iconInactiveColor = isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B]' : 'text-white/55 group-hover:text-white';
-        const accentBarInactive = isCompat ? 'bg-[#C4D9E8]' : 'bg-white/20';
-        const accentBarActive   = isCompat ? 'bg-white/60' : 'bg-[#4D94FF]';
+        const navItemInactive   = 'text-white/70 hover:text-white hover:bg-white/[0.08]';
+        const iconActiveColor   = 'text-[#4D94FF]';
+        const iconInactiveColor = 'text-white/55 group-hover:text-white';
+        const accentBarInactive = 'bg-white/20';
+        const accentBarActive   = 'bg-[#4D94FF]';
 
         if (comingSoon) {
             return (
@@ -376,11 +357,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-10 flex-shrink-0">
-                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className={isCompat ? 'text-[#374B63]/35' : 'text-white/40'} />
+                        <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/40" />
                     </div>
                     {isExpanded && (
                         <>
-                            <span className={`text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap ${isCompat ? 'text-[#374B63]/40' : 'text-white/40'}`}>{label}</span>
+                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/40">{label}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-600/70 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
@@ -453,24 +434,20 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const renderGroup = (group) => {
         const { key, label, icon: GroupIcon, visibleModules } = group;
 
-        // Single item → render flat (no group header)
         if (visibleModules.length === 1) {
             return renderNavItem(visibleModules[0], false);
         }
 
-        // Multi-item → collapsible group
         const isOpen = openGroups[key] ?? false;
         const hasActiveChild = visibleModules.some(m => {
             const seg = m.path.replace(/^\//, '').split('/')[0];
             return activeId === seg || activePath.startsWith(m.path + '/');
         });
-        // Total unread badge for group when collapsed
         const groupBadge = visibleModules.reduce((sum, m) => sum + getBadge(m.key), 0);
         const groupAlert = visibleModules.some(m => getAlert(m.key));
 
         return (
             <div key={key} className="space-y-0.5">
-                {/* Group header button */}
                 <button
                     ref={el => {
                         if (el) groupHeaderRefs.current.set(key, el);
@@ -494,16 +471,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     type="button"
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
                         ${hasActiveChild
-                            ? (isCompat ? 'text-[#1B3A6B]' : 'text-white')
-                            : (isCompat ? 'text-[#374B63] hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.07]' : 'text-white/70 hover:text-white hover:bg-white/[0.08]')}
+                            ? 'text-white'
+                            : 'text-white/70 hover:text-white hover:bg-white/[0.08]'}
                         active:scale-[0.99]`}
                 >
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? (isCompat ? 'text-[#1B3A6B] scale-110' : 'text-[#4D94FF] scale-110')
-                            : (isCompat ? 'text-[#374B63]/50 group-hover:text-[#1B3A6B] group-hover:scale-110' : 'text-white/55 group-hover:text-white group-hover:scale-110')}`}
+                            ? 'text-[#4D94FF] scale-110'
+                            : 'text-white/55 group-hover:text-white group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -524,13 +501,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`transition-transform duration-300 flex-shrink-0 ${isCompat ? 'text-[#374B63]/30' : 'text-white/40'} ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-300 flex-shrink-0 text-white/40 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
                 </button>
 
-                {/* Children (animated) */}
                 <div
                     className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
@@ -546,26 +522,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     };
 
     return (
-        <div className={`flex w-full min-h-[100dvh] font-sans overflow-hidden relative ${isAurora ? 'bg-[#030B1C]' : 'bg-[#E6F0FF] lg:bg-transparent'}`}>
-
-            {/* ── Aurora background orbs ── */}
-            {isAurora && (
-                <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-                    {AURORA_ORBS.map((orb, i) => (
-                        <div key={i} className={orb.cls} style={{
-                            position: 'absolute',
-                            width: orb.w, height: orb.h,
-                            ...(orb.top    !== undefined ? { top:    orb.top    } : {}),
-                            ...(orb.bottom !== undefined ? { bottom: orb.bottom } : {}),
-                            ...(orb.left   !== undefined ? { left:   orb.left   } : {}),
-                            ...(orb.right  !== undefined ? { right:  orb.right  } : {}),
-                            background: `radial-gradient(ellipse at center, ${orb.color} 0%, transparent 70%)`,
-                            filter: `blur(${orb.blur}px)`,
-                        }} />
-                    ))}
-                    <div className="aurora-noise absolute inset-0" />
-                </div>
-            )}
+        <div className="flex w-full min-h-[100dvh] font-sans overflow-hidden relative bg-[#E6F0FF] lg:bg-transparent">
 
             {/* Mobile backdrop */}
             {isMobile && isSidebarOpen && (
@@ -585,57 +542,44 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col shrink-0
                     my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
             >
-                {/* ── Ambient glow layers (dark themes only) ── */}
-                {!isCompat && (
-                    <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
-                        <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
-                        <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
-                        <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
-                        <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
-                    </div>
-                )}
+                {/* ── Ambient glow layers ── */}
+                <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
+                    <div className="absolute -inset-3 right-0 rounded-[2.8rem] bg-[#4D94FF]/12 blur-2xl" />
+                    <div className="absolute -inset-5 right-0 rounded-[3.4rem] bg-[#030B1C]/40 blur-3xl opacity-70" />
+                    <div className="absolute -inset-7 right-[-4px] rounded-[4rem] bg-[#071528]/40 blur-[45px] opacity-50" />
+                    <div className="absolute -inset-8 right-[-4px] rounded-[5rem] bg-black/20 blur-[55px] opacity-30" />
+                </div>
 
-                {/* ── Glass/Corporate container ── */}
-                <div data-surface="sidebar" className={`absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    ${isCompat
-                        ? 'bg-white border border-[#C4D9E8] shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.05)]'
-                        : 'bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)] transition-shadow duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]'
-                    }`}>
+                {/* ── Glass container ── */}
+                <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
+                    bg-[#030B1C]/96 backdrop-blur-3xl border border-white/14
+                    shadow-[0_32px_80px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.08)]
+                    transition-shadow duration-500
+                    hover:shadow-[0_40px_100px_rgba(0,0,0,0.65),0_12px_32px_rgba(77,148,255,0.12),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.3),inset_1px_0_0_rgba(255,255,255,0.1)]">
 
-                    {/* Dark-theme sheen layers */}
-                    {!isCompat && (
-                        <>
-                            <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
-                            <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
-                            <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/20 via-black/10 to-transparent pointer-events-none z-0" />
-                            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
-                        </>
-                    )}
-                    {/* Compat light top accent */}
-                    {isCompat && (
-                        <div className="absolute inset-x-0 top-0 h-1 bg-[#1B3A6B] pointer-events-none z-0 rounded-t-[2.5rem]" />
-                    )}
+                    {/* Dark sheen layers */}
+                    <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-white/10 via-white/4 to-transparent pointer-events-none z-0" />
+                    <div className="absolute left-0 inset-y-0 w-px bg-gradient-to-b from-white/35 via-white/12 to-white/3 pointer-events-none z-0" />
+                    <div className="absolute right-0 inset-y-0 w-px bg-gradient-to-b from-black/20 via-black/10 to-transparent pointer-events-none z-0" />
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
 
                     {/* ── Logo header ── */}
-                    <div className={`relative z-10 flex items-center
-                        ${isCompat ? 'border-b border-[#C4D9E8]' : 'border-b border-white/10'}
+                    <div className={`relative z-10 flex items-center border-b border-white/10
                         ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                        {!isCompat && <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />}
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
                         <div className="flex items-center gap-3 relative z-10">
-                            {/* Logo mark */}
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
-                                {/* Glow */}
-                                <div className={`absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 ${isCompat ? 'bg-[#1B3A6B]/20' : 'bg-[#4D94FF]/30'}`} />
+                                <div className="absolute -inset-1.5 rounded-[1.5rem] blur-md opacity-0 group-hover/logo:opacity-100 transition-all duration-500 bg-[#4D94FF]/30" />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                     transition-all duration-300 group-hover/logo:scale-105
-                                    ${isCompat
-                                        ? 'bg-[#1B3A6B]/[0.08] border border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)] group-hover/logo:shadow-[0_4px_16px_rgba(27,58,107,0.18)] group-hover/logo:border-[#B3CCDF]'
-                                        : 'bg-white/12 backdrop-blur-sm border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)] group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)] group-hover/logo:border-white/30'
-                                    }
+                                    bg-white/12 backdrop-blur-sm border border-white/20
+                                    shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                    group-hover/logo:shadow-[0_12px_32px_rgba(77,148,255,0.35),inset_0_1px_0_rgba(255,255,255,0.35)]
+                                    group-hover/logo:border-white/30
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                    {!isCompat && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />}
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                     <img src="/LogoFLS.svg" alt="FLS"
                                         className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                 </div>
@@ -643,18 +587,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {isExpanded && (
                                 <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
-                                    <h1 className={`font-black text-[15px] leading-tight tracking-tight drop-shadow-sm ${isCompat ? 'text-[#1B3A6B]' : 'text-white'}`}>Portal</h1>
-                                    <p className={`text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug ${isCompat ? 'text-[#1B3A6B]/45' : 'text-white/50'}`}>La Salud & La Popular</p>
+                                    <h1 className="font-black text-[15px] leading-tight tracking-tight drop-shadow-sm text-white">Portal</h1>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/50">La Salud & La Popular</p>
                                 </div>
                             )}
                         </div>
 
                         {isExpanded && (
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
-                                    ${isCompat
-                                        ? 'bg-[#1B3A6B]/[0.07] border border-[#C4D9E8] text-[#374B63]/55 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.12] hover:border-[#B3CCDF]'
-                                        : 'bg-white/6 hover:bg-white/15 border border-white/10 hover:border-white/22 text-white/50 hover:text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]'}`}>
+                                className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
+                                    bg-white/6 hover:bg-white/15 border border-white/10 hover:border-white/22 text-white/50 hover:text-white
+                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.2)]">
                                 {isMobile ? <X size={16} strokeWidth={2} /> : <ChevronLeft size={16} strokeWidth={2} />}
                             </button>
                         )}
@@ -665,42 +608,39 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {/* Active pill */}
                         <div
                             className={`absolute left-3 right-3 rounded-[1rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                ${isCompat
-                                    ? 'bg-[#1B3A6B] border border-[#1B3A6B]/80 shadow-[0_4px_12px_rgba(27,58,107,0.25)]'
-                                    : 'bg-[#1A3560]/90 border border-[#2D5499]/50 shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]'
-                                }
+                                bg-[#1A3560]/90 border border-[#2D5499]/50
+                                shadow-[0_4px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]
                                 ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                             style={{ top: pill.top, height: pill.height }}
                         >
-                            {!isCompat && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />}
-                            <div className={`absolute left-0 inset-y-[20%] w-[3px] rounded-full ${isCompat ? 'bg-white/60' : 'bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]'}`} />
-                            {!isCompat && <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />}
+                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/8 to-transparent rounded-t-[1rem]" />
+                            <div className="absolute left-0 inset-y-[20%] w-[3px] rounded-full bg-gradient-to-b from-[#7DB8FF] via-[#4D94FF] to-[#4D94FF]/50 shadow-[0_0_10px_rgba(77,148,255,0.8)]" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#4D94FF]/10 via-transparent to-transparent rounded-[1rem]" />
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}
                     </nav>
 
                     {/* ── Footer ── */}
-                    <div className={`relative z-10 px-3 pb-4 pt-3 border-t flex flex-col gap-2.5 ${isCompat ? 'border-[#C4D9E8]' : 'border-white/8'}`}>
-                        {!isCompat && <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />}
+                    <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/8 flex flex-col gap-2.5">
+                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
 
                         {isExpanded ? (
-                            /* User row expanded */
                             <>
                                 {/* PIN row — expanded */}
                                 {hasPermission('kiosk_pin', 'can_view') && (
-                                    <div className={`flex items-center gap-2 rounded-xl px-3 py-2 transition-all border ${isCompat ? 'bg-[#F4F8FB] border-[#D1DDE8] hover:bg-[#EBF2F8] hover:border-[#B3CCDF]' : 'bg-white/5 border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12'}`}>
+                                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 transition-all border bg-white/5 border-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/8 hover:border-white/12">
                                         <button onClick={handleCopyPin} className="flex items-center gap-1.5 group/pin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar PIN">
                                             <CheckCircle2 size={13} className="text-[#4D94FF]" strokeWidth={2} />
                                             <div className="relative w-12 flex items-center justify-center">
-                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 ${isCompat ? 'text-[#1B3A6B]' : 'text-white'} ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
-                                                <Copy size={13} className={`absolute transition-all duration-300 ${isCompat ? 'text-[#1B3A6B]/60' : 'text-white/80'} ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
+                                                <span className={`absolute text-[12px] font-black tracking-widest font-mono transition-all duration-300 text-white ${isCopied ? 'opacity-0 scale-50' : 'opacity-100 scale-100 group-hover/pin:opacity-0 group-hover/pin:scale-90'}`}>{authPin}</span>
+                                                <Copy size={13} className={`absolute transition-all duration-300 text-white/80 ${isCopied ? 'opacity-0 scale-50' : 'opacity-0 scale-90 group-hover/pin:opacity-100 group-hover/pin:scale-100'}`} />
                                                 <CheckCircle2 size={13} className={`absolute text-emerald-400 transition-all duration-300 ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
                                             </div>
                                         </button>
                                         {hasPermission('su_pin', 'can_view') && (
                                             <>
-                                                <div className={`h-3.5 w-px ${isCompat ? 'bg-[#D1DDE8]' : 'bg-white/10'}`} />
+                                                <div className="h-3.5 w-px bg-white/10" />
                                                 <button onClick={handleCopySuPin} className="flex items-center gap-1.5 group/supin cursor-pointer outline-none hover:scale-105 transition-transform" title="Copiar código SU">
                                                     <CheckCircle2 size={13} className="text-purple-400" strokeWidth={2} />
                                                     <div className="relative w-14 flex items-center justify-center">
@@ -717,25 +657,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
-                                        className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98]
-                                            ${isCompat ? 'hover:bg-[#1B3A6B]/[0.05]' : 'hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'}`}
+                                        className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/8 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                                         type="button">
-                                        <div className={`h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all
-                                            ${isCompat
-                                                ? 'border border-[#D1DDE8] bg-[#F4F8FB] text-[#374B63]/50 group-hover/user:border-[#B3CCDF]'
-                                                : 'border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)] bg-white/10 text-white/70 group-hover/user:border-[#4D94FF]/40'}`}>
+                                        <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.3)] bg-white/10 text-white/70 group-hover/user:border-[#4D94FF]/40">
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                         </div>
                                         <div className="flex-1 overflow-hidden">
-                                            <p className={`text-[13px] font-semibold truncate transition-colors leading-tight
-                                                ${isCompat ? 'text-[#1B3A6B] group-hover/user:text-[#1B3A6B]' : 'text-white/90 group-hover/user:text-white'}`}>{user?.name || 'Usuario'}</p>
+                                            <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/90 group-hover/user:text-white">{user?.name || 'Usuario'}</p>
                                         </div>
                                     </button>
                                     <button onClick={handleLogout}
-                                        className={`p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97]
-                                            ${isCompat
-                                                ? 'text-[#374B63]/40 hover:text-red-600 hover:bg-red-50 hover:border-red-200'
-                                                : 'text-white/40 hover:text-red-300 hover:bg-red-500/15 hover:border-red-500/20'}`}
+                                        className="p-2 rounded-[0.85rem] border border-transparent transition-all flex-shrink-0 hover:scale-105 active:scale-[0.97] text-white/40 hover:text-red-300 hover:bg-red-500/15 hover:border-red-500/20"
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>
@@ -746,24 +678,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="flex flex-col items-center gap-3 py-1 animate-in fade-in duration-500">
                                 {!isMobile && (
                                     <button onClick={() => setIsSidebarOpen(true)}
-                                        className={`w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
-                                            ${isCompat
-                                                ? 'bg-[#1B3A6B]/[0.06] border border-[#D1DDE8] text-[#374B63]/50 hover:text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.10] hover:border-[#B3CCDF] hover:shadow-[0_2px_8px_rgba(27,58,107,0.15)]'
-                                                : 'bg-white/6 border border-white/10 text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]'}`}>
+                                        className="w-10 h-10 rounded-[1rem] flex items-center justify-center mb-1 transition-all hover:scale-105 active:scale-[0.97]
+                                            bg-white/6 border border-white/10 text-white/50 hover:text-white hover:bg-white/14 hover:border-white/20
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.18)]">
                                         <ChevronRight size={17} strokeWidth={2} />
                                     </button>
                                 )}
                                 {hasPermission('kiosk_pin', 'can_view') && (
                                     <button onClick={handleCopyPin}
-                                        className={`relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group transition-all hover:scale-105 active:scale-[0.97]
-                                            ${isCompat
-                                                ? 'bg-[#1B3A6B]/[0.06] border border-[#D1DDE8] text-[#1B3A6B] hover:bg-[#1B3A6B]/[0.12] hover:border-[#B3CCDF] hover:shadow-[0_2px_8px_rgba(27,58,107,0.15)]'
-                                                : 'bg-white/6 border border-white/12 text-[#4D94FF] hover:bg-white/12 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(77,148,255,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]'}`}
+                                        className="relative w-11 h-11 rounded-[1.1rem] flex items-center justify-center overflow-hidden group transition-all hover:scale-105 active:scale-[0.97]
+                                            bg-white/6 border border-white/12 text-[#4D94FF] hover:bg-white/12 hover:border-white/20
+                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_4px_14px_rgba(77,148,255,0.2),inset_0_1px_0_rgba(255,255,255,0.2)]"
                                         title="PIN">
                                         {isCopied ? <CheckCircle2 size={17} className="text-emerald-400" /> : (
                                             <>
                                                 <CheckCircle2 size={17} className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-50 absolute" />
-                                                <span className={`absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black ${isCompat ? 'text-[#1B3A6B]' : 'text-white'}`}>{authPin}</span>
+                                                <span className="absolute opacity-0 scale-150 group-hover:opacity-100 group-hover:scale-100 transition-all font-mono text-[11px] font-black text-white">{authPin}</span>
                                             </>
                                         )}
                                     </button>
@@ -793,17 +723,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                     }}
                                     onMouseLeave={closeFlyout}
-                                    className={`w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                        ${isCompat
-                                            ? 'bg-[#F4F8FB] border border-[#D1DDE8] text-[#374B63]/60 hover:bg-[#EBF2F8] hover:border-[#B3CCDF] shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(27,58,107,0.12)]'
-                                            : 'bg-white/10 border border-white/14 text-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.25)] hover:bg-white/18 hover:border-white/25 hover:shadow-[0_6px_18px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]'}`}>
+                                    className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                        bg-white/10 border border-white/14 text-white/75
+                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.25)]
+                                        hover:bg-white/18 hover:border-white/25 hover:shadow-[0_6px_18px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]">
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                 </button>
                                 <button onClick={handleLogout} type="button"
-                                    className={`w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                        ${isCompat
-                                            ? 'bg-red-50 border border-[#FECACA] text-red-400 hover:text-red-600 hover:bg-red-100 hover:border-red-300 hover:shadow-[0_2px_8px_rgba(239,68,68,0.15)]'
-                                            : 'bg-red-500/8 border border-white/10 text-red-300/70 hover:text-red-200 hover:bg-red-500/18 hover:border-red-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]'}`}>
+                                    className="w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                        bg-red-500/8 border border-white/10 text-red-300/70
+                                        hover:text-red-200 hover:bg-red-500/18 hover:border-red-500/25
+                                        shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]">
                                     <LogOut size={15} strokeWidth={1.8} />
                                 </button>
                             </div>
@@ -816,21 +746,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             <main className={`flex-1 flex flex-col overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] ${blurClasses}`}>
                 {/* Mobile top bar */}
                 <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
-                    <div className={`flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border ${
-                        isAurora
-                            ? 'bg-white/[0.12] backdrop-blur-2xl border-white/[0.25] shadow-[0_12px_40px_rgba(0,0,0,0.50),inset_0_1px_0_rgba(255,255,255,0.20)]'
-                            : isCompat
-                            ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
-                            : 'bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]'
-                    }`}>
+                    <div className="flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border
+                        bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className={`active:scale-[0.97] transition-[color,transform] ${isAurora ? 'text-white/70 hover:text-white' : 'text-[#030B1C] hover:text-[#0052CC]'}`}>
+                            <button onClick={() => setIsSidebarOpen(true)} className="active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC]">
                                 <Menu size={22} strokeWidth={2.5} />
                             </button>
-                            <div className={`w-px h-6 rounded-full ${isAurora ? 'bg-white/15' : 'bg-slate-300/50'}`} />
+                            <div className="w-px h-6 rounded-full bg-slate-300/50" />
                             <div className="flex flex-col justify-center">
-                                <h1 className={`text-[14px] font-black leading-none tracking-tight ${isAurora ? 'text-white' : 'text-slate-800'}`}>Portal</h1>
-                                <p className={`text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 ${isAurora ? 'text-[#4D94FF]' : 'text-[#0052CC]'}`}>La Salud</p>
+                                <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
+                                <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-[#0052CC]">La Salud</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -838,7 +763,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <button
                                     onClick={() => navigate('/my-announcements')}
                                     className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-[0.97] transition-all flex items-center justify-center hover:shadow-md
-                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : isAurora ? 'bg-white/[0.14] border-white/[0.28]' : 'bg-white border-white/60'}`}
+                                        ${hasUrgentUnread ? 'bg-red-50 border-red-200' : 'bg-white border-white/60'}`}
                                 >
                                     <BellRing
                                         size={18}
@@ -851,7 +776,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-60" />
                                 </button>
                             )}
-                            <button onClick={() => navigate('/profile')} className={`w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border ${isAurora ? 'bg-white/[0.14] border-white/[0.28]' : 'bg-white border-white'}`}>
+                            <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white">
                                 <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
@@ -861,13 +786,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {/* Content */}
                 <div className={`flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
-                    {/* Desktop global bell — liquid glass, top-right corner */}
+                    {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">
-                            {/* Ambient glow */}
                             <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none
                                 ${hasUrgentUnread ? 'bg-red-500/30' : 'bg-[#0052CC]/20'}`} />
-                            {/* Extra pulse ring for urgent */}
                             {hasUrgentUnread && (
                                 <span className="absolute inset-0 rounded-[1.25rem] bg-red-400/25 animate-ping" style={{ animationDuration: '1.5s' }} />
                             )}
@@ -882,12 +805,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         ? 'bg-red-50/90 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
                                         : 'bg-white/75 border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}
                             >
-                                {/* Inner sheen */}
                                 <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />
-                                {/* Color tint */}
                                 <div className={`absolute inset-0 rounded-[1.25rem] pointer-events-none
                                     ${hasUrgentUnread ? 'bg-gradient-to-br from-red-500/10 via-transparent to-transparent' : 'bg-gradient-to-br from-[#0052CC]/8 via-transparent to-transparent'}`} />
-
                                 <BellRing
                                     size={18}
                                     strokeWidth={2}
@@ -899,8 +819,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         : 'bg-red-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]'}`}>
                                     {unreadCount > 9 ? '9+' : unreadCount}
                                 </span>
-                                <span className={`absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10
-                                    ${hasUrgentUnread ? 'bg-red-400' : 'bg-red-400'}`} />
+                                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-red-400" />
                             </button>
                         </div>
                     )}
@@ -913,13 +832,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             {/* ── Bottom tabs (solo para usuarios con solo autogestión) ── */}
             {hasSelfOnly && (
                 <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
-                    <div className={`flex items-center justify-around rounded-[1.75rem] px-2 py-2 border ${
-                        isAurora
-                            ? 'bg-white/[0.12] backdrop-blur-2xl border-white/[0.25] shadow-[0_-4px_30px_rgba(0,0,0,0.50),inset_0_1px_0_rgba(255,255,255,0.18)]'
-                            : isCompat
-                            ? 'bg-white border-slate-200 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'
-                            : 'bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]'
-                    }`}>
+                    <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
+                        bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
                         {selfItems.map(({ key, path, label, icon: Icon }) => { // eslint-disable-line no-unused-vars
                             const pathSeg = path.replace(/^\//, '').split('/')[0];
                             const isActive = activeId === pathSeg;
@@ -951,7 +865,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     onMouseLeave={closeFlyout}
                 >
                     {flyout.type === 'item' ? (
-                        /* ── Simple item flyout — clickable with icon ── */
                         <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
                             <button
                                 onClick={() => { navigate(flyout.path); setFlyout(null); }}
@@ -987,20 +900,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </button>
                         </div>
                     ) : flyout.type === 'group' ? (
-                        /* ── Group flyout panel ── */
                         <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
                             <div className="relative rounded-[1.4rem] overflow-hidden
                                 bg-[#0A1628]/80 backdrop-blur-2xl backdrop-saturate-150
                                 border border-white/12
                                 shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]">
 
-                                {/* Group label header */}
                                 <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
                                     <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.6)]" />
                                     <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.18em]">{flyout.label}</span>
                                 </div>
 
-                                {/* Items */}
                                 <div className="p-1.5 space-y-0.5">
                                     {flyout.items.map(m => {
                                         const MIcon = m.icon;
@@ -1056,7 +966,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
                         </div>
                     ) : flyout.type === 'user' ? (
-                        /* ── User card flyout ── */
                         <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
                             <button
                                 onClick={() => { navigate('/profile'); setFlyout(null); }}

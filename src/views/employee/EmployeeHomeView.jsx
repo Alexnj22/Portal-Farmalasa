@@ -10,7 +10,6 @@ import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
-import { useTheme } from '../../context/ThemeContext';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -71,54 +70,30 @@ const EmployeeHomeView = () => {
     const [isLoadingWeek, setIsLoadingWeek]   = useState(false);
     const [branchSchedule, setBranchSchedule] = useState([]);
 
-    const { isAurora, isCompat } = useTheme();
-
     const emp    = employees.find(e => String(e.id) === String(user?.id));
     const branch = branches.find(b => String(b.id) === String(emp?.branchId));
 
     const tk = {
-        card: isAurora
-            ? 'bg-white/[0.10] backdrop-blur-xl border-white/[0.22] shadow-[0_4px_24px_rgba(0,0,0,0.40),inset_0_1px_0_rgba(255,255,255,0.18)]'
-            : isCompat
-            ? 'bg-white border-slate-200 shadow-sm'
-            : 'bg-white/60 backdrop-blur-xl border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]',
-        cardHover: isAurora
-            ? 'hover:bg-white/[0.14] hover:border-white/[0.30] hover:shadow-[0_20px_44px_rgba(0,0,0,0.50)]'
-            : isCompat
-            ? 'hover:bg-slate-50 hover:shadow-md'
-            : 'hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]',
-        textStrong: isAurora ? 'text-white/95' : 'text-slate-800',
-        textMid:   isAurora ? 'text-white/75' : 'text-slate-600',
-        textMuted: isAurora ? 'text-white/55' : 'text-slate-400',
-        divider:   isAurora ? 'border-white/[0.14]' : 'border-slate-100',
-        pill: isAurora
-            ? 'bg-white/[0.12] backdrop-blur-2xl border-white/[0.26] shadow-[0_4px_24px_rgba(0,0,0,0.50),inset_0_1px_0_rgba(255,255,255,0.22)]'
-            : isCompat
-            ? 'bg-white border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.07)]'
-            : 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)]',
-        shiftPill: isAurora
-            ? 'bg-white/[0.14] border-white/[0.25]'
-            : isCompat
-            ? 'bg-slate-50 border-slate-200'
-            : 'bg-white/50 border-white/70',
-        ctaBtn: isAurora
-            ? 'bg-white/[0.18] border-white/[0.35] text-white hover:bg-white/[0.26]'
-            : isCompat
-            ? 'bg-[#0052CC] border-[#0052CC] text-white hover:bg-[#003D99]'
-            : 'bg-white/70 border-white/80 text-slate-700 hover:bg-white/90',
-        dayHeaderDefault: isAurora
-            ? 'bg-white/[0.12] text-white/80'
-            : isCompat ? 'bg-slate-100 text-slate-600' : 'bg-slate-50 text-slate-600',
-        dayHeaderToday: isAurora ? 'bg-white/[0.28] text-white' : 'bg-slate-800 text-white',
-        dayHeaderNext: isAurora ? 'bg-white/[0.07] text-white/60' : isCompat ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500',
-        dayBody: isAurora ? 'bg-white/[0.05]' : 'bg-white/40',
-        empRowSelf: isAurora ? 'bg-white/[0.16] border-white/[0.30]' : 'bg-slate-100/80 border-slate-200',
-        empRow:     isAurora ? 'bg-white/[0.08]' : 'bg-white/60',
-        navBtn: isAurora ? 'hover:bg-white/[0.10] text-white/65' : 'hover:bg-slate-100 text-slate-500',
-        navLabel: isAurora ? 'text-white/65' : 'text-slate-500',
-        iconBg: isAurora ? 'bg-white/[0.12]' : 'bg-slate-100',
-        progressTrack: isAurora ? 'bg-white/[0.12]' : 'bg-slate-100',
-        progressBar:   isAurora ? 'bg-white/[0.65]' : 'bg-slate-700',
+        card:             'bg-white/60 backdrop-blur-xl border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)]',
+        cardHover:        'hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]',
+        textStrong:       'text-slate-800',
+        textMid:          'text-slate-600',
+        textMuted:        'text-slate-400',
+        divider:          'border-slate-100',
+        pill:             'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)]',
+        shiftPill:        'bg-white/50 border-white/70',
+        ctaBtn:           'bg-white/70 border-white/80 text-slate-700 hover:bg-white/90',
+        dayHeaderDefault: 'bg-slate-50 text-slate-600',
+        dayHeaderToday:   'bg-slate-800 text-white',
+        dayHeaderNext:    'bg-slate-100 text-slate-500',
+        dayBody:          'bg-white/40',
+        empRowSelf:       'bg-slate-100/80 border-slate-200',
+        empRow:           'bg-white/60',
+        navBtn:           'hover:bg-slate-100 text-slate-500',
+        navLabel:         'text-slate-500',
+        iconBg:           'bg-slate-100',
+        progressTrack:    'bg-slate-100',
+        progressBar:      'bg-slate-700',
     };
 
     // Reloj
@@ -394,7 +369,6 @@ const EmployeeHomeView = () => {
                     {/* Turno hoy */}
                     {activeEvent === undefined ? null : activeEvent ? (
                         <div className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black text-[10px] uppercase tracking-widest border ${
-                            isAurora ? 'bg-white/[0.16] text-white/90 border-white/[0.30]' :
                             activeEvent.type === 'VACATION'   ? 'bg-amber-50 text-amber-700 border-amber-200' :
                             activeEvent.type === 'DISABILITY' ? 'bg-red-50 text-red-700 border-red-200' :
                             'bg-purple-50 text-purple-700 border-purple-200'
@@ -420,7 +394,7 @@ const EmployeeHomeView = () => {
                             <p className={`text-[11px] font-bold ${tk.textMid}`}>Día libre</p>
                         </div>
                     )}
-                    <div className={`w-px h-6 shrink-0 hidden sm:block ${isAurora ? 'bg-white/[0.20]' : 'bg-white/40'}`} />
+                    <div className="w-px h-6 shrink-0 hidden sm:block bg-white/40" />
                     {/* Botón */}
                     <button onClick={() => navigate('/my-requests')}
                         className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-[0.97] shrink-0 border ${tk.ctaBtn}`}>
@@ -534,10 +508,8 @@ const EmployeeHomeView = () => {
 
                     {/* Vacaciones */}
                     <div className={`col-span-2 lg:col-span-1 rounded-[1.75rem] p-4 backdrop-blur-xl border hover:-translate-y-1.5 transition-all duration-300 ${
-                        myVacationPlans.length > 0 && !isAurora
+                        myVacationPlans.length > 0
                             ? 'bg-gradient-to-br from-emerald-50/80 to-white/80 border-emerald-200/60 shadow-[0_4px_20px_rgba(16,185,129,0.08)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.15)]'
-                            : myVacationPlans.length > 0 && isAurora
-                            ? 'bg-[rgba(4,40,30,0.60)] border-[rgba(16,185,129,0.25)] shadow-[0_4px_20px_rgba(16,185,129,0.12)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.20)]'
                             : `${tk.card} ${tk.cardHover}`
                     }`}>
                         <p className={`text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${tk.textMuted}`}>
@@ -560,11 +532,11 @@ const EmployeeHomeView = () => {
                                     return (
                                         <div key={vp.id} className={`p-2 rounded-xl border transition-all ${
                                             vp.status === 'CONFIRMED'
-                                                ? isAurora ? 'border-emerald-500/25 bg-emerald-900/20' : 'border-emerald-200/70 bg-emerald-50/50'
-                                                : isAurora ? 'border-white/[0.20] bg-white/[0.09]' : 'border-white/80 bg-white/40'
+                                                ? 'border-emerald-200/70 bg-emerald-50/50'
+                                                : 'border-white/80 bg-white/40'
                                         }`}>
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isAurora ? 'bg-white/[0.16] text-white/90 border-white/[0.28]' : s.color}`}>{s.label}</span>
+                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${s.color}`}>{s.label}</span>
                                                 {daysLeft > 0 && daysLeft <= 90 && <span className={`text-[8px] font-black ${tk.textMuted}`}>en {daysLeft}d</span>}
                                             </div>
                                             <p className={`text-[10px] font-black ${tk.textStrong}`}>{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
@@ -633,7 +605,7 @@ const EmployeeHomeView = () => {
                             {weekOffset !== 0 && (
                                 <button
                                     onClick={() => setWeekOffset(0)}
-                                    className={`p-1.5 rounded-xl border transition-all active:scale-[0.97] animate-in fade-in zoom-in-95 duration-200 ${isAurora ? 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/30' : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'}`}
+                                    className="p-1.5 rounded-xl border transition-all active:scale-[0.97] animate-in fade-in zoom-in-95 duration-200 bg-red-50 text-red-500 border-red-200 hover:bg-red-100"
                                     title="Volver a esta semana"
                                 >
                                     <X size={13} strokeWidth={2.5} />
@@ -678,8 +650,8 @@ const EmployeeHomeView = () => {
                                         return (
                                             <div key={d.id} className={`flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
                                                 d.isToday
-                                                    ? isAurora ? 'border-white/[0.35] shadow-[0_0_0_2px_rgba(255,255,255,0.10)]' : 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
-                                                    : isAurora ? 'border-white/[0.12]' : 'border-white/60'
+                                                    ? 'border-slate-300 shadow-[0_0_0_2px_rgba(0,0,0,0.08)]'
+                                                    : 'border-white/60'
                                             } ${isPast ? 'opacity-40 grayscale' : ''}`}>
 
                                                 {/* Header del día */}
@@ -698,10 +670,10 @@ const EmployeeHomeView = () => {
                                                         <div key={em.id} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all border ${
                                                             String(em.id) === String(user?.id) ? tk.empRowSelf : `${tk.empRow} border-transparent`
                                                         }`}>
-                                                            <div className={`w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border ${isAurora ? 'border-white/[0.28]' : 'border-white/60'}`}>
+                                                            <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 border border-white/60">
                                                                 {em.photo || em.photo_url
                                                                     ? <img src={em.photo || em.photo_url} className="w-full h-full object-cover" alt="" />
-                                                                    : <div className={`w-full h-full flex items-center justify-center text-[9px] font-black ${isAurora ? 'bg-white/[0.20] text-white/85' : 'bg-slate-200 text-slate-500'}`}>{em.name?.charAt(0)}</div>
+                                                                    : <div className="w-full h-full flex items-center justify-center text-[9px] font-black bg-slate-200 text-slate-500">{em.name?.charAt(0)}</div>
                                                                 }
                                                             </div>
                                                             <div className="flex-1 min-w-0">
@@ -714,7 +686,7 @@ const EmployeeHomeView = () => {
                                                                 </div>
                                                                 {String(em.id) === String(user?.id) && d.event ? (() => {
                                                                     const evCfg = {
-                                                                        VACATION:   { label: 'Vacaciones', cls: isAurora ? 'text-emerald-400' : 'text-emerald-600' },
+                                                                        VACATION:   { label: 'Vacaciones', cls: 'text-emerald-600' },
                                                                         DISABILITY: { label: 'Incapacidad', cls: 'text-red-400'   },
                                                                         PERMIT:     { label: 'Permiso',     cls: 'text-amber-400' },
                                                                     }[d.event.type] || { label: d.event.type, cls: tk.textMuted };

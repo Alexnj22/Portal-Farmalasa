@@ -4,7 +4,6 @@ import {
   CartesianGrid, Tooltip, Legend, ReferenceLine, ReferenceArea, Cell,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Target, Settings2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { supabase } from '../supabaseClient';
 
@@ -129,8 +128,6 @@ function ChartTooltip({ active, payload, label, goals, isProjected }) {
 // ─── MetasView ───────────────────────────────────────────────────────────────
 
 export default function MetasView() {
-  const { isCompat, isAurora } = useTheme();
-
   const [goals, setGoals] = useState(() => {
     try { return { ...DEFAULT_GOALS, ...JSON.parse(localStorage.getItem('farmalasa_metas') || '{}') }; }
     catch { return DEFAULT_GOALS; }
@@ -273,16 +270,14 @@ export default function MetasView() {
   }, [goals]);
 
   // Theme tokens
-  const card   = isAurora ? 'bg-white/[0.11] border-white/[0.25] backdrop-blur-2xl'
-               : isCompat ? 'bg-white border-slate-200'
-               : 'bg-white/60 border-white/55 backdrop-blur-xl';
-  const shadow = isAurora ? 'shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]' : isCompat ? 'shadow-sm' : 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
-  const txt    = isAurora ? 'text-white/85' : 'text-slate-700';
-  const muted  = isAurora ? 'text-white/50'  : 'text-slate-400';
-  const divider= isAurora ? 'border-white/[0.12]' : isCompat ? 'border-slate-100' : 'border-slate-200/60';
-  const gridColor  = isAurora ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
-  const axisColor  = isAurora ? 'rgba(255,255,255,0.45)' : '#94a3b8';
-  const projAreaFill = isAurora ? 'rgba(255,255,255,0.04)' : 'rgba(99,102,241,0.04)';
+  const card        = 'bg-white/60 border-white/55 backdrop-blur-xl';
+  const shadow      = 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
+  const txt         = 'text-slate-700';
+  const muted       = 'text-slate-400';
+  const divider     = 'border-slate-200/60';
+  const gridColor   = '#e2e8f0';
+  const axisColor   = '#94a3b8';
+  const projAreaFill = 'rgba(99,102,241,0.04)';
 
   return (
     <GlassViewLayout icon={Target} title="Metas de Ventas">
@@ -298,7 +293,6 @@ export default function MetasView() {
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all
             ${showGoalEditor
               ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-[0_3px_10px_rgba(0,82,204,0.35)]'
-              : isAurora ? 'bg-white/[0.12] border-white/[0.28] text-white/85 hover:bg-white/[0.18]'
               : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
             }`}
         >
@@ -322,9 +316,7 @@ export default function MetasView() {
                     type="text"
                     defaultValue={goals[b]?.toLocaleString('en-US')}
                     onBlur={e => updateGoal(b, e.target.value)}
-                    className={`w-full pl-5 pr-2 py-1.5 rounded-lg text-[11px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40
-                      ${isAurora ? 'bg-white/[0.10] border-white/[0.22] text-white/80'
-                                 : 'bg-white border-slate-200 text-slate-700'}`}
+                    className="w-full pl-5 pr-2 py-1.5 rounded-lg text-[11px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40 bg-white border-slate-200 text-slate-700"
                   />
                 </div>
               </div>
@@ -364,9 +356,9 @@ export default function MetasView() {
           const borderColor = status === 'green'  ? 'border-green-400/60'
                             : status === 'orange' ? 'border-orange-400/60'
                             : status === 'red'    ? 'border-red-400/60'
-                            : isAurora ? 'border-white/[0.25]' : 'border-slate-200';
+                            : 'border-slate-200';
 
-          const pulse = isAurora ? 'bg-white/[0.12]' : 'bg-slate-200/70';
+          const pulse = 'bg-slate-200/70';
 
           return (
             <div key={b}
@@ -407,7 +399,7 @@ export default function MetasView() {
                 <div className={`h-1.5 rounded-full animate-pulse ${pulse}`}/>
               ) : pct != null && goal > 0 && (
                 <div className="space-y-0.5">
-                  <div className={`h-1.5 rounded-full overflow-hidden ${isAurora ? 'bg-white/10' : 'bg-slate-100'}`}>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         status==='green' ? 'bg-green-500' : status==='orange' ? 'bg-orange-500' : 'bg-red-500'
@@ -450,7 +442,7 @@ export default function MetasView() {
                 onClick={() => toggleBranch(b)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
                   hidden.has(b)
-                    ? isAurora ? 'bg-transparent border-white/[0.15] text-white/30' : 'bg-slate-100 border-slate-200 text-slate-300'
+                    ? 'bg-slate-100 border-slate-200 text-slate-300'
                     : 'border-transparent text-white shadow-sm'
                 }`}
                 style={!hidden.has(b) ? {background: COLORS[b]} : {}}
@@ -484,9 +476,9 @@ export default function MetasView() {
             />
             {/* Projected zone shading */}
             <ReferenceArea x1="May'26" x2="Jul'26" fill={projAreaFill} strokeOpacity={0} />
-            <ReferenceLine x="May'26" stroke={isAurora ? 'rgba(255,255,255,0.25)' : '#c7d2fe'} strokeDasharray="4 4" label={{ value:"▶ Proyección", fontSize:9, fill: isAurora ? 'rgba(255,255,255,0.50)' : '#818cf8', position:'insideTopRight' }} />
+            <ReferenceLine x="May'26" stroke="#c7d2fe" strokeDasharray="4 4" label={{ value:"▶ Proyección", fontSize:9, fill:'#818cf8', position:'insideTopRight' }} />
             {/* Year separator */}
-            <ReferenceLine x="Ene'26" stroke={isAurora ? 'rgba(255,255,255,0.18)' : '#e2e8f0'} strokeDasharray="2 4" label={{ value:"2026", fontSize:9, fill:axisColor, position:'insideTopRight' }} />
+            <ReferenceLine x="Ene'26" stroke="#e2e8f0" strokeDasharray="2 4" label={{ value:"2026", fontSize:9, fill:axisColor, position:'insideTopRight' }} />
             {/* Lines per branch */}
             {BRANCHES.filter(b => !hidden.has(b)).map(b => (
               <Line
@@ -563,17 +555,14 @@ export default function MetasView() {
             <button
               onClick={() => setSelectedMonthIdx(i => Math.max(0, i - 1))}
               disabled={selectedMonthIdx === 0}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
-                ${isAurora ? 'bg-white/[0.14] text-white/80 hover:bg-white/[0.22] disabled:opacity-30'
-                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30"
             >
               <ChevronLeft size={16} strokeWidth={2.5}/>
             </button>
             <div className="text-center min-w-[110px]">
               <p className={`text-[14px] font-black ${txt}`}>{MONTHS[selectedMonthIdx].full}</p>
               {MONTHS[selectedMonthIdx].projected && (
-                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full
-                  ${isAurora ? 'bg-white/[0.16] text-white/80' : 'bg-indigo-100 text-indigo-600'}`}>
+                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600">
                   Proyección
                 </span>
               )}
@@ -581,9 +570,7 @@ export default function MetasView() {
             <button
               onClick={() => setSelectedMonthIdx(i => Math.min(MONTHS.length - 1, i + 1))}
               disabled={selectedMonthIdx === MONTHS.length - 1}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all
-                ${isAurora ? 'bg-white/[0.14] text-white/80 hover:bg-white/[0.22] disabled:opacity-30'
-                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30'}`}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30"
             >
               <ChevronRight size={16} strokeWidth={2.5}/>
             </button>
@@ -622,8 +609,8 @@ export default function MetasView() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" style={{minWidth:'900px'}}>
             <thead>
-              <tr className={`border-b ${divider} ${isAurora ? 'bg-white/[0.09]' : 'bg-slate-50/80'}`}>
-                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 ${isAurora ? 'bg-[#030B1C]/92' : 'bg-slate-50'} ${muted}`}>Sucursal</th>
+              <tr className={`border-b ${divider} bg-slate-50/80`}>
+                <th className={`text-left px-4 py-2.5 text-[9px] font-black uppercase tracking-widest sticky left-0 bg-slate-50 ${muted}`}>Sucursal</th>
                 {MONTHS.slice(0,16).map(m => (
                   <th key={m.label} className={`text-right px-2 py-2.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${muted} ${m.yr===2026 ? 'bg-indigo-50/40' : ''}`}>
                     {m.label}
@@ -638,8 +625,8 @@ export default function MetasView() {
                 const goal = goals[b];
                 const totals = annualTotals[b];
                 return (
-                  <tr key={b} className={`border-b ${divider} transition-colors ${isAurora ? 'hover:bg-white/[0.08]' : 'hover:bg-slate-50/60'}`}>
-                    <td className={`px-4 py-2 sticky left-0 ${isAurora ? 'bg-[#030B1C]/95' : 'bg-white'} border-r ${divider}`}>
+                  <tr key={b} className={`border-b ${divider} transition-colors hover:bg-slate-50/60`}>
+                    <td className={`px-4 py-2 sticky left-0 bg-white border-r ${divider}`}>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{background:COLORS[b]}} />
                         <span className={`text-[11px] font-black ${txt}`}>{b}</span>
@@ -652,8 +639,8 @@ export default function MetasView() {
                       return (
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
-                            ${yr2026 ? (isAurora ? 'bg-white/[0.03]' : 'bg-indigo-50/30') : ''}
-                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : (isAurora ? 'text-white/40' : 'text-slate-300')}`}
+                            ${yr2026 ? 'bg-indigo-50/30' : ''}
+                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : 'text-slate-300'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
                         </td>
@@ -676,12 +663,12 @@ export default function MetasView() {
             </tbody>
             {/* Total row */}
             <tfoot>
-              <tr className={`border-t-2 ${divider} ${isAurora ? 'bg-white/[0.09]' : 'bg-slate-50'}`}>
-                <td className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest sticky left-0 ${isAurora ? 'bg-[#030B1C]/95' : 'bg-slate-50'} ${txt}`}>Total</td>
+              <tr className={`border-t-2 ${divider} bg-slate-50`}>
+                <td className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest sticky left-0 bg-slate-50 ${txt}`}>Total</td>
                 {Array.from({length:16},(_,mi) => {
                   const total = BRANCHES.reduce((a,b)=>a+(RAW[b][mi]||0),0);
                   return (
-                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?(isAurora?'bg-white/[0.03]':'bg-indigo-50/30'):''}`}>
+                    <td key={mi} className={`px-2 py-2.5 text-right text-[11px] font-black whitespace-nowrap font-mono ${txt} ${MONTHS[mi].yr===2026?'bg-indigo-50/30':''}`}>
                       {fmtK(total)}
                     </td>
                   );

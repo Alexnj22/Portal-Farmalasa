@@ -10,7 +10,6 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
 import { useToastStore } from "../store/toastStore";
-import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../supabaseClient';
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
@@ -912,7 +911,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const { user, rolePerms } = useAuth();
   const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
   const showToast = useToastStore(s => s.showToast);
-  const { isCompat, isAurora } = useTheme();
   const {
     employees: storeEmployees, branches: storeBranches, shifts: storeShifts,
     appendAuditLog, loadAttendanceLastDays, insertAttendancePunchAt,
@@ -1234,28 +1232,12 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   }, [branchDropOpen]);
 
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
-  const pillWrap = isCompat
-    ? 'flex items-center gap-1 border border-[#C4D9E8] bg-white rounded-md shadow-[0_1px_4px_rgba(0,0,0,0.07)] px-2 h-9'
-    : isAurora
-      ? 'flex items-center border border-blue-400/[0.18] bg-white/[0.08] backdrop-blur-2xl rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1'
-      : 'flex items-center border border-white/90 bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
-
-  const pillBtn = (active) => isCompat
-    ? `px-2.5 h-7 rounded text-[9px] font-black uppercase tracking-widest transition-colors ${active ? 'bg-[#1B3A6B] text-white' : 'text-[#374B63] hover:bg-[#1B3A6B]/10'}`
-    : isAurora
-      ? `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white/[0.14] text-white border-blue-400/[0.25] shadow-sm scale-[1.02]' : 'bg-transparent text-white/45 border-transparent hover:bg-white/10 hover:text-white'}`
-      : `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`;
-
-  const pillDivider = isCompat ? 'h-4 w-px bg-[#C4D9E8] mx-1' : isAurora ? 'h-5 w-px bg-blue-400/[0.15] mx-1' : 'h-5 w-px bg-white/40 mx-1';
-
-  const pillIconBtn = isCompat
-    ? 'h-7 w-7 rounded flex items-center justify-center text-[#374B63] hover:bg-[#1B3A6B]/10 transition-colors shrink-0'
-    : isAurora
-      ? 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white/45 hover:bg-white/10 hover:text-white transition-all duration-300 shrink-0'
-      : 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
-
-  const pillLabelText = isAurora ? 'text-white' : 'text-slate-800';
-  const pillSubText   = (ok) => ok ? (isAurora ? 'text-emerald-400' : 'text-emerald-600') : (isAurora ? 'text-sky-400' : 'text-[#0052CC]');
+  const pillWrap    = 'flex items-center border border-white/90 bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
+  const pillBtn     = (active) => `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`;
+  const pillDivider = 'h-5 w-px bg-white/40 mx-1';
+  const pillIconBtn = 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
+  const pillLabelText = 'text-slate-800';
+  const pillSubText   = (ok) => ok ? 'text-emerald-600' : 'text-[#0052CC]';
 
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (

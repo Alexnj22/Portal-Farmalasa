@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -97,7 +96,6 @@ function MarginPct({ pct }) {
 // ── SmartPagination ───────────────────────────────────────────────────────────
 
 function SmartPagination({ page, total, onChange }) {
-    const { isAurora } = useTheme();
     if (total <= 1) return null;
     const buildPages = () => {
         if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -110,9 +108,7 @@ function SmartPagination({ page, total, onChange }) {
         pages.push(total);
         return pages;
     };
-    const navBtn = isAurora
-        ? 'bg-white/[0.09] text-white/65 border-white/[0.20] hover:bg-white/[0.14] hover:border-white/[0.30] hover:text-white'
-        : 'text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm';
+    const navBtn = 'text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm';
     return (
         <div className="flex items-center gap-1.5">
             <button disabled={page <= 1} onClick={() => onChange(page - 1)}
@@ -122,13 +118,11 @@ function SmartPagination({ page, total, onChange }) {
             <div className="flex items-center gap-1">
                 {buildPages().map((p, i) =>
                     p === '…'
-                        ? <span key={`e${i}`} className={`w-6 text-center text-[12px] font-bold select-none ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>·</span>
+                        ? <span key={`e${i}`} className={`w-6 text-center text-[12px] font-bold select-none ${'text-slate-300'}`}>·</span>
                         : <button key={p} onClick={() => onChange(p)}
                             className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 border ${
                                 p === page
                                     ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200/50 scale-110 border-[#0052CC]'
-                                    : isAurora
-                                    ? 'text-white/55 border-white/[0.14] hover:bg-white/[0.12] hover:text-white hover:border-white/[0.28]'
                                     : 'text-slate-500 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
                             }`}>{p}</button>
                 )}
@@ -144,22 +138,17 @@ function SmartPagination({ page, total, onChange }) {
 // ── MarginStatCards ───────────────────────────────────────────────────────────
 
 function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats, productStatsLoading, filterNuevos, onFilterNuevos, filterModificados, onFilterModificados, modificadosStats, modificadosLoading }) {
-    const { isAurora, isCompat } = useTheme();
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
 
     // Neutral card (info only, not clickable filter)
-    const infoCard = isAurora
-        ? 'bg-white/[0.10] border-white/[0.20] backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
-        : isCompat
-        ? 'bg-white border-[#C4D9E8] shadow-sm'
-        : 'bg-white/70 border-white/80 backdrop-blur-sm shadow-sm';
+    const infoCard = 'bg-white/70 border-white/80 backdrop-blur-sm shadow-sm';
 
-    const statText   = isAurora ? 'text-white/90' : 'text-slate-700';
-    const statLabel  = isAurora ? 'text-white/65' : 'text-slate-600';
-    const statSub    = isAurora ? 'text-white/40' : 'text-slate-400';
-    const statIconBg = isAurora ? 'bg-white/[0.15]' : 'bg-blue-50';
-    const divider    = isAurora ? 'bg-white/[0.15]' : 'bg-slate-100';
+    const statText   = 'text-slate-700';
+    const statLabel  = 'text-slate-600';
+    const statSub    = 'text-slate-400';
+    const statIconBg = 'bg-blue-50';
+    const divider    = 'bg-slate-100';
 
     const filterCardDef = [
         {
@@ -168,23 +157,15 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Con pérdida',
             sub: 'precio < costo',
             count: perdidaCount,
-            activeBg: isAurora
-                ? 'bg-red-500/[0.18] border-red-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
-                : isCompat
-                ? 'bg-red-50 border-red-300 shadow-red-100/80'
-                : 'bg-red-50 border-red-300 shadow-red-100/80',
-            inactiveBg: isAurora
-                ? 'bg-white/[0.08] border-white/[0.16] hover:bg-red-500/[0.10] hover:border-red-400/[0.25]'
-                : isCompat
-                ? 'bg-white border-[#C4D9E8] hover:border-red-200 hover:bg-red-50/40'
-                : 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/40',
+            activeBg: 'bg-red-50 border-red-300 shadow-red-100/80',
+            inactiveBg: 'bg-white border-slate-200 hover:border-red-200 hover:bg-red-50/40',
             iconBg: filterMargin === 'perdida'
-                ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
-                : isAurora ? 'bg-red-500/[0.20]' : 'bg-red-50',
-            iconColor: isAurora ? 'text-red-400' : 'text-red-500',
+                ? 'bg-white'
+                : 'bg-red-50',
+            iconColor: 'text-red-500',
             countColor: perdidaCount > 0
-                ? isAurora ? 'text-red-400' : 'text-red-600'
-                : isAurora ? 'text-white/25' : 'text-slate-300',
+                ? 'text-red-600'
+                : 'text-slate-300',
         },
         {
             id: 'bajo',
@@ -192,51 +173,37 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Margen bajo',
             sub: '< 15% en algún precio',
             count: bajoCount,
-            activeBg: isAurora
-                ? 'bg-amber-500/[0.18] border-amber-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)]'
-                : isCompat
-                ? 'bg-amber-50 border-amber-300 shadow-amber-100/80'
-                : 'bg-amber-50 border-amber-300 shadow-amber-100/80',
-            inactiveBg: isAurora
-                ? 'bg-white/[0.08] border-white/[0.16] hover:bg-amber-500/[0.10] hover:border-amber-400/[0.25]'
-                : isCompat
-                ? 'bg-white border-[#C4D9E8] hover:border-amber-200 hover:bg-amber-50/40'
-                : 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
+            activeBg: 'bg-amber-50 border-amber-300 shadow-amber-100/80',
+            inactiveBg: 'bg-white border-slate-200 hover:border-amber-200 hover:bg-amber-50/40',
             iconBg: filterMargin === 'bajo'
-                ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
-                : isAurora ? 'bg-amber-500/[0.20]' : 'bg-amber-50',
-            iconColor: isAurora ? 'text-amber-400' : 'text-amber-500',
+                ? 'bg-white'
+                : 'bg-amber-50',
+            iconColor: 'text-amber-500',
             countColor: bajoCount > 0
-                ? isAurora ? 'text-amber-400' : 'text-amber-600'
-                : isAurora ? 'text-white/25' : 'text-slate-300',
+                ? 'text-amber-600'
+                : 'text-slate-300',
         },
     ];
 
     // Nuevos card
     const nuevosBg = filterNuevos
-        ? isAurora
-            ? 'bg-emerald-500/[0.18] border-emerald-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)] -translate-y-px'
-            : 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
-        : isAurora
-            ? 'bg-white/[0.08] border-white/[0.16] hover:bg-emerald-500/[0.10] hover:border-emerald-400/[0.25]'
-            : isCompat
-            ? 'bg-white border-[#C4D9E8] hover:border-emerald-200 hover:bg-emerald-50/40'
-            : 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40';
+        ? 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px'
+        : 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40';
 
     const nuevosIconBg = filterNuevos
-        ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
-        : isAurora ? 'bg-emerald-500/[0.20]' : 'bg-emerald-50';
+        ? 'bg-white'
+        : 'bg-emerald-50';
 
     return (
         <div className="flex gap-3 flex-wrap">
             {/* Info card — total */}
             <div className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] ${infoCard}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${statIconBg}`}>
-                    <Package size={15} className={isAurora ? 'text-blue-300' : 'text-[#0052CC]'} />
+                    <Package size={15} className={'text-[#0052CC]'} />
                 </div>
                 <div className="text-left min-w-0">
                     <div className={`text-[22px] font-black leading-none tabular-nums ${statText}`}>
-                        {productStatsLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (productStats?.activos ?? 0).toLocaleString()}
+                        {productStatsLoading ? <span className={'text-slate-200'}>–</span> : (productStats?.activos ?? 0).toLocaleString()}
                     </div>
                     <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Productos activos</div>
                     {!productStatsLoading && (productStats?.inactivos ?? 0) > 0 && (
@@ -253,16 +220,16 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 disabled={productStatsLoading}
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${nuevosBg}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${nuevosIconBg}`}>
-                    <Sparkles size={15} className={isAurora ? 'text-emerald-400' : 'text-emerald-500'} />
+                    <Sparkles size={15} className={'text-emerald-500'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className={`text-[22px] font-black leading-none tabular-nums ${isAurora ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                        {productStatsLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
+                    <div className={`text-[22px] font-black leading-none tabular-nums ${'text-emerald-600'}`}>
+                        {productStatsLoading ? <span className={'text-slate-200'}>–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
                     </div>
                     <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Nuevos este mes</div>
                     <div className={`text-[9px] ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
                 </div>
-                {filterNuevos && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
+                {filterNuevos && <X size={11} className={`${'text-slate-400'} ml-auto shrink-0`} />}
             </button>
 
             {/* Modificados este mes filter card */}
@@ -271,34 +238,28 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 disabled={modificadosLoading}
                 className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
                     filterModificados
-                        ? isAurora
-                            ? 'bg-amber-500/[0.18] border-amber-400/[0.35] shadow-[0_4px_16px_rgba(0,0,0,0.35)] -translate-y-px'
-                            : 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px'
-                        : isAurora
-                            ? 'bg-white/[0.08] border-white/[0.16] hover:bg-amber-500/[0.10] hover:border-amber-400/[0.25]'
-                            : isCompat
-                            ? 'bg-white border-[#C4D9E8] hover:border-amber-200 hover:bg-amber-50/40'
-                            : 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40'
+                        ? 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px'
+                        : 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40'
                 }`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     filterModificados
-                        ? isAurora ? 'bg-white/[0.18]' : 'bg-white'
-                        : isAurora ? 'bg-amber-500/[0.20]' : 'bg-amber-50'
+                        ? 'bg-white'
+                        : 'bg-amber-50'
                 }`}>
-                    <History size={15} className={isAurora ? 'text-amber-400' : 'text-amber-500'} />
+                    <History size={15} className={'text-amber-500'} />
                 </div>
                 <div className="text-left min-w-0">
                     <div className={`text-[22px] font-black leading-none tabular-nums ${
                         (modificadosStats?.count ?? 0) > 0
-                            ? isAurora ? 'text-amber-400' : 'text-amber-600'
-                            : isAurora ? 'text-white/25' : 'text-slate-300'
+                            ? 'text-amber-600'
+                            : 'text-slate-300'
                     }`}>
-                        {modificadosLoading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
+                        {modificadosLoading ? <span className={'text-slate-200'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
                     </div>
                     <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Modificados este mes</div>
                     <div className={`text-[9px] ${statSub}`}>precios o datos cambiados</div>
                 </div>
-                {filterModificados && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
+                {filterModificados && <X size={11} className={`${'text-slate-400'} ml-auto shrink-0`} />}
             </button>
 
             {/* Divider */}
@@ -319,12 +280,12 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                         </div>
                         <div className="text-left min-w-0">
                             <div className={`text-[22px] font-black leading-none tabular-nums ${c.countColor}`}>
-                                {loading ? <span className={isAurora ? 'text-white/20' : 'text-slate-200'}>–</span> : c.count.toLocaleString()}
+                                {loading ? <span className={'text-slate-200'}>–</span> : c.count.toLocaleString()}
                             </div>
                             <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>{c.label}</div>
                             <div className={`text-[9px] ${statSub}`}>{c.sub}</div>
                         </div>
-                        {active && <X size={11} className={`${isAurora ? 'text-white/40' : 'text-slate-400'} ml-auto shrink-0`} />}
+                        {active && <X size={11} className={`${'text-slate-400'} ml-auto shrink-0`} />}
                     </button>
                 );
             })}
@@ -335,14 +296,13 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 // ── SortTh ────────────────────────────────────────────────────────────────────
 
 function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
-    const { isAurora } = useTheme();
     const active = sortField === field;
     return (
         <th onClick={() => onSort(field)}
             className={`px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
                 active
-                    ? isAurora ? 'text-white' : 'text-[#0052CC]'
-                    : isAurora ? 'text-white/45 hover:text-white/80' : 'text-slate-400 hover:text-slate-600'
+                    ? 'text-[#0052CC]'
+                    : 'text-slate-400 hover:text-slate-600'
             } ${className}`}>
             <span className="flex items-center gap-1.5">
                 {label}
@@ -433,31 +393,14 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useImperativeHandle(ref, () => ({ save }));
 
-    const { isAurora, isCompat } = useTheme();
-    const inp = isAurora
-        ? 'bg-white/[0.05] border-white/[0.12] text-white/85 placeholder:text-white/25 focus:border-blue-400/[0.45] focus:ring-blue-400/[0.15] focus:bg-white/[0.08]'
-        : isCompat
-        ? 'bg-white border-gray-300 text-gray-800 placeholder:text-gray-400 focus:border-[#1B3A6B]/50 focus:ring-[#1B3A6B]/15'
-        : 'bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-300 focus:ring-[#0052CC]/20';
-    const numCls = isAurora ? 'text-white/25' : 'text-slate-300';
-    const rmBtn  = isAurora
-        ? 'text-white/25 hover:text-red-400 hover:bg-red-500/[0.12]'
-        : 'text-slate-300 hover:text-red-400 hover:bg-red-50';
-    const addCls = isAurora
-        ? 'text-white/35 hover:text-blue-400'
-        : 'text-slate-400 hover:text-[#0052CC]';
+    const inp = 'bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-300 focus:ring-[#0052CC]/20';
+    const numCls = 'text-slate-300';
+    const rmBtn  = 'text-slate-300 hover:text-red-400 hover:bg-red-50';
+    const addCls = 'text-slate-400 hover:text-[#0052CC]';
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
-    const presetChipOn  = isAurora
-        ? 'bg-amber-400/[0.18] text-amber-300 border-amber-400/[0.35]'
-        : isCompat
-        ? 'bg-amber-100 text-amber-700 border-amber-300'
-        : 'bg-amber-50 text-amber-600 border-amber-300';
-    const presetChipOff = isAurora
-        ? 'bg-white/[0.04] text-white/30 border-white/[0.10] hover:text-white/55 hover:border-white/[0.22]'
-        : isCompat
-        ? 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600'
-        : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400 hover:text-slate-600';
+    const presetChipOn  = 'bg-amber-50 text-amber-600 border-amber-300';
+    const presetChipOff = 'bg-white text-slate-400 border-slate-200 hover:border-slate-400 hover:text-slate-600';
 
     return (
         <div className="space-y-2">
@@ -610,30 +553,23 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     useImperativeHandle(ref, () => ({ save }));
 
-    const { isAurora, isCompat } = useTheme();
 
     if (!locs.length) return (
-        <p className={`text-[11px] italic ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>Sin sucursales.</p>
+        <p className={`text-[11px] italic ${'text-slate-300'}`}>Sin sucursales.</p>
     );
 
-    const cellBg = (hasData) => isAurora
-        ? hasData ? 'bg-blue-500/[0.10] border-blue-400/[0.22]' : 'bg-white/[0.04] border-white/[0.08]'
-        : isCompat
-        ? hasData ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
-        : hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100';
+    const cellBg = (hasData) =>
+        hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100';
 
-    const labelCls = isAurora ? 'text-white/35' : isCompat ? 'text-gray-500' : 'text-slate-500';
-    const trackCls = isAurora ? 'bg-white/[0.08]' : isCompat ? 'bg-gray-100' : 'bg-slate-100';
+    const labelCls = 'text-slate-500';
+    const trackCls = 'bg-slate-100';
 
-    const salaActiveBtn  = isAurora ? 'bg-white/[0.12] text-blue-300 shadow-sm' : isCompat ? 'bg-white text-[#1B3A6B] shadow-sm' : 'bg-white text-[#0052CC] shadow-sm';
-    const inactivBtn     = isAurora ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600';
-    const bodegaActiveBtn = isAurora ? 'bg-white/[0.12] text-amber-300 shadow-sm' : 'bg-white text-amber-600 shadow-sm';
+    const salaActiveBtn  = 'bg-white text-[#0052CC] shadow-sm';
+    const inactivBtn     = 'text-slate-400 hover:text-slate-600';
+    const bodegaActiveBtn = 'bg-white text-amber-600 shadow-sm';
 
-    const inp = (sala) => isAurora
-        ? `bg-white/[0.05] text-white/80 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-white/[0.10] focus:ring-blue-400/[0.30] focus:border-blue-400/[0.40]' : 'border-amber-400/[0.20] focus:ring-amber-400/[0.30]'}`
-        : isCompat
-        ? `bg-white text-gray-800 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-gray-300 focus:ring-[#1B3A6B]/25' : 'border-amber-300 focus:ring-amber-400/30'}`
-        : `bg-slate-50 text-slate-700 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'}`;
+    const inp = (sala) =>
+        `bg-slate-50 text-slate-700 font-bold focus:ring-1 focus:outline-none ${sala ? 'border-slate-200 focus:ring-[#0052CC]/30' : 'border-amber-200 focus:ring-amber-400/30'}`;
 
     return (
         <div className="space-y-2">
@@ -644,29 +580,26 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                 const hasBodega    = loc.bodega_numero.trim() || loc.bodega_peldano.trim();
                 const hasData      = hasSala || hasBodega;
 
-                const rowBg = isAurora
-                    ? hasData ? 'bg-blue-500/[0.08] border-blue-400/[0.18]' : 'bg-white/[0.03] border-white/[0.07]'
-                    : isCompat
-                    ? hasData ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                    : hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-slate-50 border-slate-100';
+                const rowBg =
+                    hasData ? 'bg-blue-50/60 border-blue-100' : 'bg-slate-50 border-slate-100';
 
                 return (
                     <div key={loc.branch_id} className={`rounded-xl border px-3.5 py-2.5 transition-colors ${rowBg}`}>
                         {/* Header: branch name + view toggle */}
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-black ${isAurora ? 'text-white/80' : isCompat ? 'text-[#1B3A6B]' : 'text-slate-700'}`}>{loc.branch_name}</span>
+                                <span className={`text-[11px] font-black ${'text-slate-700'}`}>{loc.branch_name}</span>
                                 <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
                                     loc.branch_type === 'BODEGA'
-                                        ? isAurora ? 'bg-amber-500/[0.15] text-amber-300' : 'bg-amber-100 text-amber-700'
-                                        : isAurora ? 'bg-blue-500/[0.15] text-blue-300' : 'bg-blue-100 text-blue-700'
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : 'bg-blue-100 text-blue-700'
                                 }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
-                                {hasSala && !hasBodega && <span className={`text-[8px] ${isAurora ? 'text-blue-300/60' : 'text-blue-400'}`}>Sala</span>}
-                                {hasBodega && !hasSala && <span className={`text-[8px] ${isAurora ? 'text-amber-300/60' : 'text-amber-500'}`}>Bodega int.</span>}
-                                {hasSala && hasBodega && <span className={`text-[8px] ${isAurora ? 'text-emerald-300/60' : 'text-emerald-500'}`}>Sala + Bodega</span>}
+                                {hasSala && !hasBodega && <span className={`text-[8px] ${'text-blue-400'}`}>Sala</span>}
+                                {hasBodega && !hasSala && <span className={`text-[8px] ${'text-amber-500'}`}>Bodega int.</span>}
+                                {hasSala && hasBodega && <span className={`text-[8px] ${'text-emerald-500'}`}>Sala + Bodega</span>}
                             </div>
                             {!isMainBodega && (
-                                <div className={`flex rounded-lg p-0.5 gap-0.5 ${isAurora ? 'bg-white/[0.06]' : isCompat ? 'bg-gray-100' : 'bg-slate-100'}`}>
+                                <div className={`flex rounded-lg p-0.5 gap-0.5 ${'bg-slate-100'}`}>
                                     <button onClick={() => setField(i, 'view', 'sala')}
                                         className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
                                     <button onClick={() => setField(i, 'view', 'bodega')}
@@ -678,7 +611,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                         {/* Inputs */}
                         <div className="flex items-end gap-3">
                             {isSala && (
-                                <div className={`flex rounded-lg p-0.5 gap-0.5 self-start mt-0.5 ${isAurora ? 'bg-white/[0.06]' : isCompat ? 'bg-gray-100' : 'bg-slate-100'}`}>
+                                <div className={`flex rounded-lg p-0.5 gap-0.5 self-start mt-0.5 ${'bg-slate-100'}`}>
                                     {['vitrina', 'estante'].map(t => (
                                         <button key={t} onClick={() => setField(i, 'tipo', t)}
                                             className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
@@ -688,10 +621,10 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 </div>
                             )}
                             {!isSala && !isMainBodega && (
-                                <span className={`text-[9px] font-bold self-center ${isAurora ? 'text-amber-300/70' : 'text-amber-500'}`}>Bodega interna</span>
+                                <span className={`text-[9px] font-bold self-center ${'text-amber-500'}`}>Bodega interna</span>
                             )}
                             {isMainBodega && (
-                                <span className={`text-[9px] font-bold self-center ${isAurora ? 'text-amber-300/70' : 'text-amber-500'}`}>Bodega principal</span>
+                                <span className={`text-[9px] font-bold self-center ${'text-amber-500'}`}>Bodega principal</span>
                             )}
                             <div className="flex gap-2 flex-1">
                                 <div className="flex-1">
@@ -830,100 +763,49 @@ function resizeImage(file, maxPx, quality) {
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
     const { maxPriceLevel } = useAuth();
-    const { isAurora, isCompat } = useTheme();
 
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
-        container: isAurora
-            ? 'bg-[#050e1f] border-t border-white/[0.10]'
-            : isCompat
-            ? 'bg-[#F5F7FA] border-t border-[#C4D9E8]'
-            : 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-[#0052CC]/[0.12]',
-        loadingRow: isAurora
-            ? 'bg-[#050e1f] border-t border-white/[0.10]'
-            : isCompat
-            ? 'bg-[#F5F7FA] border-t border-[#C4D9E8]'
-            : 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-blue-100/60',
-        loadingText: isAurora ? 'text-white/45' : 'text-slate-400',
-        alertDanger: isAurora
-            ? 'bg-red-500/[0.15] border-red-500/[0.30] text-red-300'
-            : 'bg-red-50 border-red-200 text-red-700',
-        alertWarning: isAurora
-            ? 'bg-amber-500/[0.15] border-amber-500/[0.30] text-amber-300'
-            : 'bg-amber-50 border-amber-200 text-amber-700',
-        sectionLabel: isAurora
-            ? 'text-[10px] font-black uppercase tracking-widest text-white/35'
-            : isCompat
-            ? 'text-[10px] font-black uppercase tracking-widest text-slate-500'
-            : 'text-[10px] font-black uppercase tracking-widest text-slate-400',
-        photoBtn: isAurora
-            ? 'border-white/[0.20] bg-white/[0.06] hover:bg-white/[0.10] hover:border-white/[0.35]'
-            : 'border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30',
-        photoSubText: isAurora ? 'text-white/25' : 'text-slate-300',
-        photoUploadIcon: isAurora ? 'text-white/25 group-hover:text-white/70' : 'text-slate-300 group-hover:text-[#0052CC]',
-        photoUploadLabel: isAurora ? 'text-white/45 group-hover:text-white/80' : 'text-slate-400 group-hover:text-[#0052CC]',
-        changesBadge: isAurora
-            ? 'bg-amber-500/[0.18] text-amber-300 border-amber-500/[0.25]'
-            : 'bg-amber-100 text-amber-700 border-amber-200',
-        emptyPresentaciones: isAurora
-            ? 'bg-white/[0.06] border-white/[0.10] text-white/45'
-            : isCompat
-            ? 'bg-white border-slate-200 text-slate-400'
-            : 'bg-slate-50 border-slate-100 text-slate-400',
-        pricingWrapper: isAurora
-            ? 'bg-[#0a1628]/80 border-white/[0.10]'
-            : isCompat
-            ? 'bg-white border-slate-200'
-            : 'bg-white border-slate-100 shadow-sm',
-        pricingThead: isAurora
-            ? 'bg-white/[0.06] border-b border-white/[0.10]'
-            : isCompat
-            ? 'bg-slate-100 border-b border-slate-200'
-            : 'bg-[#0052CC]/[0.05] border-b border-[#0052CC]/[0.08]',
-        pricingThText: isAurora ? 'text-white/35' : 'text-slate-400',
-        pricingDivide: isAurora ? 'divide-y divide-white/[0.06]' : 'divide-y divide-slate-50',
-        pricingRowChanged: isAurora ? 'bg-amber-500/[0.12]' : 'bg-amber-50/60',
-        pricingRowLoss: isAurora ? 'bg-red-500/[0.10]' : 'bg-red-50/30',
-        pricingRowNormal: isAurora ? 'bg-transparent' : 'bg-white',
-        pricingCellChanged: isAurora ? 'bg-amber-500/[0.12]' : 'bg-amber-50',
-        pricingValueChanged: isAurora ? 'text-amber-300' : 'text-amber-700',
-        pricingValueNormal: isAurora ? 'text-white/90' : 'text-slate-700',
-        pricingOldValue: isAurora ? 'text-white/35' : 'text-slate-400',
-        pricingFactor: isAurora ? 'text-white/65' : 'text-slate-500',
-        pricingCosto: isAurora ? 'text-white/65' : 'text-slate-500',
-        statusActive: isAurora
-            ? 'bg-emerald-500/[0.18] text-emerald-400 border border-emerald-500/[0.25]'
-            : isCompat
-            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-            : 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-        statusInactive: isAurora
-            ? 'bg-white/[0.08] text-white/35 border border-white/[0.14]'
-            : 'bg-slate-100 text-slate-400',
-        changelog: isAurora
-            ? 'bg-amber-900/[0.20] border border-amber-500/[0.20]'
-            : 'bg-amber-50/50 border border-amber-100',
-        changelogDate: isAurora
-            ? 'bg-white/[0.08] border-white/[0.12] text-white/50'
-            : 'bg-white border-slate-100 text-slate-400',
-        changelogField: isAurora ? 'text-white/80' : 'text-slate-600',
-        changelogOld: isAurora ? 'text-white/35' : 'text-slate-400',
-        changelogArrow: isAurora ? 'text-white/20' : 'text-slate-300',
-        changelogNew: isAurora ? 'text-white/90' : 'text-slate-800',
-        sinCambios: isAurora ? 'text-white/30 italic' : 'text-slate-300 italic',
-        divider: isAurora ? 'border-white/[0.08]' : isCompat ? 'border-[#C4D9E8]' : 'border-slate-100/80',
-        vertDivider: isAurora ? 'bg-white/[0.08]' : 'bg-slate-100',
-        btnCancel: isAurora
-            ? 'bg-white/[0.08] border-white/[0.16] text-white/65 hover:bg-white/[0.14] hover:text-white'
-            : isCompat
-            ? 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700',
-        srsBtnInactive: isAurora
-            ? 'bg-white/[0.07] text-white/55 border-white/[0.16] hover:bg-violet-500/[0.15] hover:text-violet-300 hover:border-violet-400/[0.30]'
-            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200',
-        srsBtnActive: isAurora
-            ? 'bg-violet-500/[0.20] text-violet-300 border-violet-400/[0.30]'
-            : 'bg-violet-100 text-violet-700 border-violet-200',
-        srsDivider: isAurora ? 'border-white/[0.08]' : 'border-slate-100',
+        container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-[#0052CC]/[0.12]',
+        loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-blue-100/60',
+        loadingText: 'text-slate-400',
+        alertDanger: 'bg-red-50 border-red-200 text-red-700',
+        alertWarning: 'bg-amber-50 border-amber-200 text-amber-700',
+        sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-slate-400',
+        photoBtn: 'border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30',
+        photoSubText: 'text-slate-300',
+        photoUploadIcon: 'text-slate-300 group-hover:text-[#0052CC]',
+        photoUploadLabel: 'text-slate-400 group-hover:text-[#0052CC]',
+        changesBadge: 'bg-amber-100 text-amber-700 border-amber-200',
+        emptyPresentaciones: 'bg-slate-50 border-slate-100 text-slate-400',
+        pricingWrapper: 'bg-white border-slate-100 shadow-sm',
+        pricingThead: 'bg-[#0052CC]/[0.05] border-b border-[#0052CC]/[0.08]',
+        pricingThText: 'text-slate-400',
+        pricingDivide: 'divide-y divide-slate-50',
+        pricingRowChanged: 'bg-amber-50/60',
+        pricingRowLoss: 'bg-red-50/30',
+        pricingRowNormal: 'bg-white',
+        pricingCellChanged: 'bg-amber-50',
+        pricingValueChanged: 'text-amber-700',
+        pricingValueNormal: 'text-slate-700',
+        pricingOldValue: 'text-slate-400',
+        pricingFactor: 'text-slate-500',
+        pricingCosto: 'text-slate-500',
+        statusActive: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+        statusInactive: 'bg-slate-100 text-slate-400',
+        changelog: 'bg-amber-50/50 border border-amber-100',
+        changelogDate: 'bg-white border-slate-100 text-slate-400',
+        changelogField: 'text-slate-600',
+        changelogOld: 'text-slate-400',
+        changelogArrow: 'text-slate-300',
+        changelogNew: 'text-slate-800',
+        sinCambios: 'text-slate-300 italic',
+        divider: 'border-slate-100/80',
+        vertDivider: 'bg-slate-100',
+        btnCancel: 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700',
+        srsBtnInactive: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200',
+        srsBtnActive: 'bg-violet-100 text-violet-700 border-violet-200',
+        srsDivider: 'border-slate-100',
     };
 
     const allowedPriceFields = useMemo(() => {
@@ -1124,7 +1006,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 )}
                             </button>
                             {localFoto && (
-                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${isAurora ? 'text-white/30 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'}`}>Cambiar foto</button>
+                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${'text-slate-400 hover:text-slate-600'}`}>Cambiar foto</button>
                             )}
                         </div>
 
@@ -1191,7 +1073,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                                                                 <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
                                                                                     {fmtP(ch.anterior)}
                                                                                 </span>
-                                                                                <span className={`text-[8px] ${isAurora ? 'text-white/25' : 'text-slate-300'}`}>
+                                                                                <span className={`text-[8px] ${'text-slate-300'}`}>
                                                                                     {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                                                                 </span>
                                                                             </div>
@@ -1217,7 +1099,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <button
                                     onClick={() => setShowInactive(v => !v)}
                                     className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-colors ${
-                                        isAurora ? 'text-white/35 hover:text-white/60' : 'text-slate-400 hover:text-slate-600'
+                                        'text-slate-400 hover:text-slate-600'
                                     }`}>
                                     <Eye size={11} />
                                     {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
@@ -1265,7 +1147,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                     ))}
                                     {olderLog1.length > 0 && (
                                         <button onClick={() => setShowAllLog(v => !v)}
-                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${isAurora ? 'text-white/35 hover:text-white/55' : 'text-slate-400 hover:text-slate-600'}`}>
+                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${'text-slate-400 hover:text-slate-600'}`}>
                                             {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog1.length} cambio${olderLog1.length !== 1 ? 's' : ''} anterior${olderLog1.length !== 1 ? 'es' : ''}`}
                                         </button>
                                     )}
@@ -2476,47 +2358,30 @@ export default function TabCatalogo({
         return PRICE_FIELDS.filter(f => PRICE_LEVEL_ORDER.indexOf(f.key) <= maxIdx);
     }, [maxPriceLevel]);
 
-    const { isAurora, isCompat } = useTheme();
 
     // ── Theme tokens ────────────────────────────────────────────────────────────
     const tk = {
-        card: isAurora
-            ? 'bg-[#0a1628] border-white/[0.12] shadow-[0_8px_40px_rgba(0,0,0,0.70),inset_0_1px_0_rgba(255,255,255,0.08)]'
-            : isCompat
-            ? 'bg-white border-[#C4D9E8] shadow-[0_4px_20px_rgba(0,0,0,0.08)]'
-            : 'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
-        thead: isAurora
-            ? 'bg-white/[0.06] border-b border-white/[0.10]'
-            : isCompat
-            ? 'bg-[#EEF4F9] border-b border-[#C4D9E8]'
-            : 'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
-        rowBorder: isAurora ? 'border-t border-white/[0.07]' : isCompat ? 'border-t border-slate-100' : 'border-t border-slate-100',
-        rowHover: isAurora ? 'hover:bg-white/[0.05]' : 'hover:bg-[#0052CC]/[0.03]',
-        rowExpanded: isAurora ? 'bg-white/[0.09]' : isCompat ? 'bg-blue-50/50' : 'bg-[#0052CC]/[0.05]',
-        rowAccentColor: isAurora ? 'rgba(96,165,250,0.7)' : '#0052CC',
-        textStrong: isAurora ? 'text-white/90' : 'text-slate-800',
-        textMid: isAurora ? 'text-white/65' : 'text-slate-500',
-        textInactive: isAurora ? 'text-white/35 line-through decoration-white/20' : 'text-slate-400 line-through decoration-slate-300',
-        avatarBg: isAurora ? 'bg-white/[0.14]' : isCompat ? 'bg-slate-100' : 'bg-[#0052CC]/[0.07]',
-        avatarIcon: isAurora ? 'text-white/35' : isCompat ? 'text-slate-300' : 'text-[#0052CC]/50',
-        skeleton: isAurora ? 'bg-white/[0.12]' : isCompat ? 'bg-slate-200/60' : 'bg-slate-200/70',
-        emptyBg: isAurora ? 'bg-white/[0.07] border-white/[0.16]' : isCompat ? 'bg-white border-[#C4D9E8]' : 'bg-white border-slate-200/80',
-        emptyIcon: isAurora ? 'text-white/25' : 'text-slate-300',
-        emptyText: isAurora ? 'text-white/45' : 'text-slate-400',
-        filterPill: isAurora
-            ? 'bg-white/[0.09] border-white/[0.18] backdrop-blur-2xl shadow-[0_2px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.14)]'
-            : isCompat
-            ? 'bg-white border-[#C4D9E8] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
-            : 'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
-        filterDivider: isAurora ? 'bg-white/[0.14]' : 'bg-slate-100',
-        filterBtn: isAurora ? 'text-white/55 hover:text-white/85 hover:bg-white/[0.09]' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
+        card: 'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
+        thead: 'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
+        rowBorder: 'border-t border-slate-100',
+        rowHover: 'hover:bg-[#0052CC]/[0.03]',
+        rowExpanded: 'bg-[#0052CC]/[0.05]',
+        rowAccentColor: '#0052CC',
+        textStrong: 'text-slate-800',
+        textMid: 'text-slate-500',
+        textInactive: 'text-slate-400 line-through decoration-slate-300',
+        avatarBg: 'bg-[#0052CC]/[0.07]',
+        avatarIcon: 'text-[#0052CC]/50',
+        skeleton: 'bg-slate-200/70',
+        emptyBg: 'bg-white border-slate-200/80',
+        emptyIcon: 'text-slate-300',
+        emptyText: 'text-slate-400',
+        filterPill: 'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
+        filterDivider: 'bg-slate-100',
+        filterBtn: 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
         pageSizeActive: 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
-        pageSizeInactive: isAurora
-            ? 'bg-white/[0.08] text-white/65 border-white/[0.18] hover:border-white/[0.28] hover:text-white'
-            : isCompat
-            ? 'bg-white text-slate-500 border-[#C4D9E8] hover:border-slate-300 hover:text-slate-700'
-            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
-        totalText: isAurora ? 'text-white/40' : 'text-slate-400',
+        pageSizeInactive: 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
+        totalText: 'text-slate-400',
     };
 
     const branches = useStaff(s => s.branches);
@@ -2878,9 +2743,7 @@ export default function TabCatalogo({
                                 <button key={v} onClick={() => setFilterActivo?.(v)}
                                     className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
                                         filterActivo === v
-                                            ? isAurora
-                                                ? 'bg-emerald-500/[0.20] text-emerald-400 shadow-sm'
-                                                : 'bg-emerald-100 text-emerald-700 shadow-sm'
+                                            ? 'bg-emerald-100 text-emerald-700 shadow-sm'
                                             : tk.filterBtn
                                     }`}>{label}</button>
                             ))}
@@ -2974,57 +2837,6 @@ export default function TabCatalogo({
                     <Package size={32} className={`mx-auto mb-3 ${tk.emptyIcon}`} />
                     <p className={`text-sm font-medium ${tk.emptyText}`}>No se encontraron productos</p>
                 </div>
-
-            ) : isAurora ? (
-                /* ── AURORA: animated card list ── */
-                <AuroraView
-                    products={products}
-                    expandedId={expandedId}
-                    expandedCache={expandedCache}
-                    loadingExpandedId={loadingExpandedId}
-                    changedIds={changedIds}
-                    marginMap={marginMap}
-                    specialLossMap={specialLossMap}
-                    filterActivo={filterActivo}
-                    allowedPriceFields={allowedPriceFields}
-                    branches={branches}
-                    catOptions={catOptions}
-                    onCategoryCreated={onCategoryCreated}
-                    toggleRow={toggleRow}
-                    prefetchRow={prefetchRow}
-                    cancelPrefetch={cancelPrefetch}
-                    handlePhotoUpdated={handlePhotoUpdated}
-                    handlePrinciplesUpdated={handlePrinciplesUpdated}
-                    handleCategoryUpdated={handleCategoryUpdated}
-                    setExpandedId={setExpandedId}
-                />
-
-            ) : isCompat ? (
-                /* ── COMPAT: dense corporate table ── */
-                <CompatView
-                    products={products}
-                    expandedId={expandedId}
-                    expandedCache={expandedCache}
-                    loadingExpandedId={loadingExpandedId}
-                    changedIds={changedIds}
-                    marginMap={marginMap}
-                    specialLossMap={specialLossMap}
-                    filterActivo={filterActivo}
-                    allowedPriceFields={allowedPriceFields}
-                    branches={branches}
-                    catOptions={catOptions}
-                    onCategoryCreated={onCategoryCreated}
-                    toggleRow={toggleRow}
-                    prefetchRow={prefetchRow}
-                    cancelPrefetch={cancelPrefetch}
-                    handlePhotoUpdated={handlePhotoUpdated}
-                    handlePrinciplesUpdated={handlePrinciplesUpdated}
-                    handleCategoryUpdated={handleCategoryUpdated}
-                    setExpandedId={setExpandedId}
-                    sortField={sortField}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                />
 
             ) : (
                 /* ── LIQUID: glass table (default) ── */

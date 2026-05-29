@@ -5,6 +5,7 @@ import {
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 
 const ERP_NAMES = {
@@ -21,11 +22,6 @@ const ERP_COLORS = {
     6: 'text-amber-700 bg-amber-50 border-amber-100',
     7: 'text-indigo-600 bg-indigo-50 border-indigo-100',
 };
-const PAGE_SIZE_OPTIONS = [
-    { value: '25',  label: '25 / pág' },
-    { value: '50',  label: '50 / pág' },
-    { value: '100', label: '100 / pág' },
-];
 
 function parseFactor(detalle) {
     if (!detalle) return 1;
@@ -72,46 +68,6 @@ function ExpiryCell({ fecha }) {
     );
     return <span className="text-xs text-slate-400 whitespace-nowrap">{fecha}</span>;
 }
-
-function SmartPagination({ page, total, onChange }) {
-    if (total <= 1) return null;
-    const buildPages = () => {
-        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-        const pages = [1];
-        const left  = Math.max(2, page - 1);
-        const right = Math.min(total - 1, page + 1);
-        if (left > 2) pages.push('…');
-        for (let i = left; i <= right; i++) pages.push(i);
-        if (right < total - 1) pages.push('…');
-        pages.push(total);
-        return pages;
-    };
-    return (
-        <div className="flex items-center gap-1.5">
-            <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
-                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
-            </button>
-            <div className="flex items-center gap-1">
-                {buildPages().map((p, i) =>
-                    p === '…'
-                        ? <span key={`e${i}`} className="w-6 text-center text-slate-300 text-[12px] font-bold select-none">·</span>
-                        : <button key={p} onClick={() => onChange(p)}
-                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
-                                p === page
-                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
-                                    : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
-                            }`}>{p}</button>
-                )}
-            </div>
-            <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
-                Sig. <ChevronRight size={12} strokeWidth={2.5} />
-            </button>
-        </div>
-    );
-}
-
 
 export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,    setSelectedErp]    = useState(null);
@@ -653,18 +609,15 @@ export default function TabInventario({ searchTerm = '' }) {
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (
-                <div className="flex items-center justify-between">
-                    <LiquidSelect
-                        value={String(pageSize)}
-                        onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                        options={PAGE_SIZE_OPTIONS}
-                        compact
-                    />
-                    <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                    <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
-                        {total.toLocaleString()} grupos
-                    </span>
-                </div>
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={total}
+                    unit="grupos"
+                />
             )}
         </div>
     );

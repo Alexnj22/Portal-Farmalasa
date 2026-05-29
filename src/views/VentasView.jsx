@@ -15,6 +15,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
+import TablePagination from '../components/common/TablePagination';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -214,50 +215,6 @@ function FilterControls({
     );
 }
 
-const PAGE_SIZE_OPTIONS = [
-    { value: '25',  label: '25 filas' },
-    { value: '50',  label: '50 filas' },
-    { value: '100', label: '100 filas' },
-];
-
-function SmartPagination({ page, total, onChange }) {
-    if (total <= 1) return null;
-    const buildPages = () => {
-        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-        const pages = [1];
-        const left  = Math.max(2, page - 1);
-        const right = Math.min(total - 1, page + 1);
-        if (left > 2) pages.push('…');
-        for (let i = left; i <= right; i++) pages.push(i);
-        if (right < total - 1) pages.push('…');
-        pages.push(total);
-        return pages;
-    };
-    return (
-        <div className="flex items-center gap-1.5 py-2">
-            <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
-                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
-            </button>
-            <div className="flex items-center gap-1">
-                {buildPages().map((p, i) =>
-                    p === '…'
-                        ? <span key={`e${i}`} className="w-6 text-center text-slate-300 text-[12px] font-bold select-none">·</span>
-                        : <button key={p} onClick={() => onChange(p)}
-                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 ${
-                                p === page
-                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200 scale-110'
-                                    : 'text-slate-500 hover:bg-white hover:border hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
-                            }`}>{p}</button>
-                )}
-            </div>
-            <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className="flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold text-slate-500 bg-white border border-slate-200 hover:border-slate-300 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
-                Sig. <ChevronRight size={12} strokeWidth={2.5} />
-            </button>
-        </div>
-    );
-}
 
 // Stat card with % change vs previous period + optional sub label
 function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active }) {
@@ -633,19 +590,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 loading={loadingRows && rows.length === 0}
                 skeletonRows={10}
                 empty={{ icon: TrendingUp, message: isSearching ? 'Sin resultados para esa búsqueda' : 'Sin ventas para este período' }}
-                footer={!loadingRows && rows.length > 0 ? (
-                    <>
-                        <div className="w-[130px]">
-                            <LiquidSelect value={String(pageSize)}
-                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
-                        </div>
-                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
-                            {isSearching ? `${rows.length} resultados` : `${fmtNum(totalCount)} total`}
-                        </span>
-                    </>
-                ) : undefined}
                 minWidth="700px"
             >
                 {rows.map((r, i) => {
@@ -877,6 +821,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     );
                 })}
             </DataTable>
+
+            {!loadingRows && rows.length > 0 && (
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={isSearching ? rows.length : (filterPuntos ? puntosCount : totalCount)}
+                    unit={isSearching ? 'resultados' : 'ventas'}
+                />
+            )}
 
         </div>
     );
@@ -1679,19 +1635,6 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 skeletonRows={10}
                 empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : 'Sin datos para este período' }}
                 minWidth="640px"
-                footer={!loading && rows.length > 0 ? (
-                    <>
-                        <div className="w-[130px]">
-                            <LiquidSelect value={String(pageSize)}
-                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                                options={PAGE_SIZE_OPTIONS} clearable={false} compact />
-                        </div>
-                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] text-slate-400 font-semibold w-[130px] text-right">
-                            {searchTerm ? `${filtered.length} de ${rows.length}` : `${fmtNum(rows.length)} productos`}
-                        </span>
-                    </>
-                ) : undefined}
             >
                 {paginated.map((r, i) => {
                                 const globalIdx  = (page - 1) * pageSize + i;
@@ -2056,6 +1999,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 );
                             })}
             </DataTable>
+            )}
+
+            {!error && !loading && rows.length > 0 && (
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={rows.length}
+                    unit="productos"
+                    filteredTotal={searchTerm ? filtered.length : undefined}
+                />
             )}
         </div>
     );

@@ -12,15 +12,11 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 
-const PAGE_SIZE_OPTIONS = [
-    { value: '25',  label: '25 / pág' },
-    { value: '50',  label: '50 / pág' },
-    { value: '100', label: '100 / pág' },
-];
 
 const PRICE_FIELDS = [
     { key: 'vineta',      label: 'Víneta'   },
@@ -96,48 +92,6 @@ function MarginPct({ pct }) {
     if (pct === null) return <span className="text-[9px] text-slate-200">—</span>;
     const cls = pct < 0 ? 'text-red-500' : pct < 15 ? 'text-amber-500' : 'text-emerald-600';
     return <span className={`text-[9px] font-bold tabular-nums ${cls}`}>{pct.toFixed(1)}%</span>;
-}
-
-// ── SmartPagination ───────────────────────────────────────────────────────────
-
-function SmartPagination({ page, total, onChange }) {
-    if (total <= 1) return null;
-    const buildPages = () => {
-        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-        const pages = [1];
-        const left  = Math.max(2, page - 1);
-        const right = Math.min(total - 1, page + 1);
-        if (left > 2) pages.push('…');
-        for (let i = left; i <= right; i++) pages.push(i);
-        if (right < total - 1) pages.push('…');
-        pages.push(total);
-        return pages;
-    };
-    const navBtn = 'text-slate-500 bg-white border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-sm';
-    return (
-        <div className="flex items-center gap-1.5">
-            <button disabled={page <= 1} onClick={() => onChange(page - 1)}
-                className={`flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed ${navBtn}`}>
-                <ChevronLeft size={12} strokeWidth={2.5} /> Ant.
-            </button>
-            <div className="flex items-center gap-1">
-                {buildPages().map((p, i) =>
-                    p === '…'
-                        ? <span key={`e${i}`} className={`w-6 text-center text-[12px] font-bold select-none ${'text-slate-300'}`}>·</span>
-                        : <button key={p} onClick={() => onChange(p)}
-                            className={`w-8 h-8 rounded-full text-[12px] font-black transition-all duration-200 border ${
-                                p === page
-                                    ? 'bg-[#0052CC] text-white shadow-md shadow-blue-200/50 scale-110 border-[#0052CC]'
-                                    : 'text-slate-500 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm hover:text-slate-800'
-                            }`}>{p}</button>
-                )}
-            </div>
-            <button disabled={page >= total} onClick={() => onChange(page + 1)}
-                className={`flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all border disabled:opacity-30 disabled:cursor-not-allowed ${navBtn}`}>
-                Sig. <ChevronRight size={12} strokeWidth={2.5} />
-            </button>
-        </div>
-    );
 }
 
 // ── MarginStatCards ───────────────────────────────────────────────────────────
@@ -2838,18 +2792,14 @@ export default function TabCatalogo({
 
             {/* ── Pagination ── */}
             {!loading && total > 0 && (
-                <div className="flex items-center justify-between">
-                    <LiquidSelect
-                        value={String(pageSize)}
-                        onChange={v => { setPageSize(Number(v)); setPage(1); }}
-                        options={PAGE_SIZE_OPTIONS}
-                        compact
-                    />
-                    <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                    <span className={`text-[10px] font-semibold w-[80px] text-right ${tk.totalText}`}>
-                        {total.toLocaleString()} total
-                    </span>
-                </div>
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={total}
+                />
             )}
         </div>
     );

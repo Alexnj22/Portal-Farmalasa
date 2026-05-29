@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -183,24 +184,6 @@ function SmartPagination({ page, total, onChange }) {
     );
 }
 
-// ─── SortTh ───────────────────────────────────────────────────────────────────
-
-function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
-    const active = sortField === field;
-    return (
-        <th onClick={() => onSort(field)}
-            className={`px-4 py-3.5 text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'
-            } ${className}`}>
-            <span className="flex items-center gap-1.5">
-                {label}
-                <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
-                    {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-                </span>
-            </span>
-        </th>
-    );
-}
 
 // ─── Última venta cell ────────────────────────────────────────────────────────
 
@@ -738,277 +721,226 @@ export default function TabGestionStock({ searchTerm = '' }) {
             )}
 
             {/* ── Table ── */}
-            {activeLoading && activeData.length === 0 ? (
-                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
-                    <table className="min-w-full">
-                        <tbody>
-                            {Array.from({ length: 10 }).map((_, i) => (
-                                <tr key={i} className={`border-l-[3px] border-l-transparent ${i > 0 ? tk.rowBorder : ''}`}>
-                                    <td className="px-4 py-3.5">
-                                        <div className="space-y-2">
-                                            <div className={`h-[13px] rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${140 + (i * 23) % 80}px` }} />
-                                            <div className={`h-2.5 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${50 + (i * 17) % 50}px` }} />
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${60 + (i * 13) % 50}px` }} /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
-                                    {mode === 'stock_ret' && <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>}
-                                    <td className="px-4 py-3.5"><div className={`h-5 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
-                                </tr>
+            {(() => {
+                const SIN_GESTION_COLS = [
+                    { key: 'product_name',      label: 'Producto',      sortable: true },
+                    { key: 'laboratorio',        label: 'Laboratorio',   sortable: true, hideBelow: 'md' },
+                    { key: 'months_with_sales',  label: 'Meses c/venta', sortable: true, align: 'center', hideBelow: 'lg' },
+                    { key: 'units_sold',         label: 'Uds. (6m)',     sortable: true, align: 'right',  hideBelow: 'sm' },
+                    { key: 'revenue',            label: 'Revenue (6m)',  sortable: true, align: 'right' },
+                    { key: 'sugerencia',         label: 'Sugerencia',    hideBelow: 'md' },
+                    { key: 'action',             label: '',              hideBelow: 'md' },
+                ];
+                const STOCK_RET_COLS = [
+                    { key: 'product_name',  label: 'Producto',       sortable: true },
+                    { key: 'laboratorio',   label: 'Laboratorio',    sortable: true, hideBelow: 'md' },
+                    { key: 'current_stock', label: 'Stock aquí',     sortable: true, align: 'right',  hideBelow: 'sm' },
+                    { key: 'cost_value',    label: 'Costo retenido', sortable: true, align: 'right',  hideBelow: 'sm' },
+                    { key: 'minmax',        label: 'Min/Max',        align: 'center', hideBelow: 'md' },
+                    { key: 'sugerencia',    label: 'Sugerencia',     hideBelow: 'md' },
+                    { key: 'ultima_venta',  label: 'Última venta',   sortable: true, hideBelow: 'md' },
+                    { key: 'sold_in',       label: 'Vendido en (6m)' },
+                ];
+                const columns = mode === 'sin_gestion' ? SIN_GESTION_COLS : STOCK_RET_COLS;
+
+                const emptyMsg = activeData.length === 0
+                    ? '¡Sin productos para este criterio!'
+                    : 'Sin productos con ese filtro';
+
+                const footer = !activeLoading && filtered.length > 0 ? (
+                    <>
+                        <div className="flex items-center gap-1">
+                            {PAGE_SIZES.map(size => (
+                                <button key={size} onClick={() => { setPageSize(size); setPage(1); }}
+                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive}`}>
+                                    {size}
+                                </button>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : filtered.length === 0 ? (
-                <div className={`rounded-2xl border py-20 text-center ${tk.emptyBg}`}>
-                    <Package size={32} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-sm font-medium text-slate-400">
-                        {activeData.length === 0 ? '¡Sin productos para este criterio!' : 'Sin productos con ese filtro'}
-                    </p>
-                    {activeData.length > 0 && filterMode !== 'todos' && filterMode !== 'agregar' && (
-                        <button onClick={() => setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos')} className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">Ver todos</button>
-                    )}
-                </div>
-            ) : (
-                <div className={`rounded-2xl border overflow-hidden transition-opacity duration-300 ${tk.card} ${activeRefreshing ? 'opacity-60' : 'opacity-100'}`}>
-                    <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-sm">
+                        </div>
+                        <SmartPagination page={page} total={totalPages} onChange={setPage} />
+                        <span className="text-[10px] font-semibold w-[80px] text-right text-slate-400">
+                            {filtered.length.toLocaleString()} total
+                        </span>
+                    </>
+                ) : undefined;
 
-                            {/* ── Sin Min/Max table ── */}
-                            {mode === 'sin_gestion' && (
-                                <>
-                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
-                                    <tr>
-                                        <SortTh field="product_name"      label="Producto"          sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                        <SortTh field="laboratorio"       label="Laboratorio"       sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
-                                        <SortTh field="months_with_sales" label="Meses c/venta"     sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-center hidden lg:table-cell" />
-                                        <SortTh field="units_sold"        label="Uds. (6m)"         sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <SortTh field="revenue"           label="Revenue (6m)"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right" />
-                                        <th className="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
-                                        <th className="w-10 hidden md:table-cell" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pageRows.map(row => {
-                                        const isIgnored = ignoredSet.has(row.erp_product_id);
-                                        const sugg  = getSinMinMaxSugg(row);
-                                        const lvl   = sugg.level;
-                                        const leftColor = isIgnored ? '#94a3b8'
-                                            : lvl === 'agregar'   ? '#10b981'
-                                            : lvl === 'evaluar'   ? '#f59e0b'
-                                            : lvl === 'encargo'   ? '#f97316'
-                                            : lvl === 'mayorista' ? '#6366f1'
-                                            : '#cbd5e1';
-                                        return (
-                                            <tr key={row.erp_product_id}
-                                                style={{ borderLeftColor: leftColor }}
-                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors ${isIgnored ? 'opacity-50' : ''}`}>
-                                                <td className="px-4 py-3.5">
-                                                    <button
-                                                        onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
-                                                        title="Copiar nombre"
-                                                        className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                        <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px] group-hover/copy:text-[#0052CC] transition-colors">
-                                                            {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
-                                                        </span>
-                                                        <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
-                                                            {copiedId === row.erp_product_id ? '✓' : '⎘'}
-                                                        </span>
-                                                    </button>
-                                                    <span className="text-[9px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 text-center hidden lg:table-cell">
-                                                    <div className="flex items-center justify-center gap-0.5">
-                                                        {Array.from({ length: 6 }).map((_, i) => (
-                                                            <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
-                                                        ))}
-                                                    </div>
-                                                    <div className="text-[9px] text-slate-400 mt-0.5 text-center">{sugg.months}/6</div>
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                    <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                                    <span className="text-[10px] text-amber-400 ml-1">uds.</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    {isIgnored ? (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
-                                                            <EyeOff size={9} />No sugerir
-                                                        </span>
-                                                    ) : (<div className="flex flex-col gap-1">
-                                                        {lvl === 'agregar' && (<>
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit">
-                                                                <PlusCircle size={9} />Agregar Min/Max
-                                                            </span>
-                                                            <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
-                                                            <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
-                                                        </>)}
-                                                        {lvl === 'evaluar' && (<>
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit">
-                                                                <AlertTriangle size={9} />Evaluar
-                                                            </span>
-                                                            <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
-                                                        </>)}
-                                                        {lvl === 'encargo' && (<>
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit">
-                                                                <ShoppingBag size={9} />Posible encargo
-                                                            </span>
-                                                            <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
-                                                        </>)}
-                                                        {lvl === 'mayorista' && (<>
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit">
-                                                                <Truck size={9} />Venta mayorista
-                                                            </span>
-                                                            <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
-                                                            <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
-                                                        </>)}
-                                                        {lvl === 'omitir' && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
-                                                                <Minus size={9} />Sin acción
-                                                            </span>
-                                                        )}
-                                                    </div>)}
-                                                </td>
-                                                <td className="px-2 py-3.5 text-center hidden md:table-cell">
-                                                    {isIgnored ? (
-                                                        <button onClick={() => handleRestore(row.erp_product_id)}
-                                                            title="Restaurar sugerencia"
-                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                                                            <Eye size={13} />
-                                                        </button>
-                                                    ) : (
-                                                        <button onClick={() => handleIgnore(row.erp_product_id)}
-                                                            title="No sugerir"
-                                                            className="p-1.5 rounded-lg text-slate-200 hover:text-slate-500 hover:bg-slate-100 transition-colors">
-                                                            <EyeOff size={13} />
-                                                        </button>
+                return (
+                    <div className={`transition-opacity duration-300 ${activeRefreshing ? 'opacity-60' : ''}`}>
+                        <DataTable
+                            columns={columns}
+                            sortKey={sortField}
+                            sortDir={sortDir}
+                            onSort={handleSort}
+                            loading={activeLoading && activeData.length === 0}
+                            skeletonRows={10}
+                            empty={{ icon: Package, message: emptyMsg }}
+                            minWidth={mode === 'sin_gestion' ? '640px' : '720px'}
+                            footer={footer}
+                        >
+                            {mode === 'sin_gestion' && pageRows.map(row => {
+                                const isIgnored = ignoredSet.has(row.erp_product_id);
+                                const sugg  = getSinMinMaxSugg(row);
+                                const lvl   = sugg.level;
+                                const leftColor = isIgnored ? '#94a3b8'
+                                    : lvl === 'agregar'   ? '#10b981'
+                                    : lvl === 'evaluar'   ? '#f59e0b'
+                                    : lvl === 'encargo'   ? '#f97316'
+                                    : lvl === 'mayorista' ? '#6366f1'
+                                    : '#cbd5e1';
+                                return (
+                                    <DataRow key={row.erp_product_id} index={row.erp_product_id}
+                                        style={{ borderLeftColor: leftColor }}
+                                        className={`border-l-[3px] ${isIgnored ? 'opacity-50' : ''}`}>
+                                        <DataCell>
+                                            <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                                title="Copiar nombre"
+                                                className="group/copy flex items-center gap-1.5 text-left w-full">
+                                                <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                    {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                </span>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                    {copiedId === row.erp_product_id ? '✓' : '⎘'}
+                                                </span>
+                                            </button>
+                                            <span className="text-[10px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                        </DataCell>
+                                        <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell align="center" hideBelow="lg">
+                                            <div className="flex items-center justify-center gap-0.5">
+                                                {Array.from({ length: 6 }).map((_, i) => (
+                                                    <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
+                                                ))}
+                                            </div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5 text-center">{sugg.months}/6</div>
+                                        </DataCell>
+                                        <DataCell align="right" hideBelow="sm">
+                                            <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
+                                            <span className="text-[10px] text-amber-400 ml-1">uds.</span>
+                                        </DataCell>
+                                        <DataCell align="right">
+                                            <span className="text-[13px] font-bold text-slate-700 tabular-nums">{fmtMoney(row.revenue)}</span>
+                                        </DataCell>
+                                        <DataCell hideBelow="md">
+                                            {isIgnored ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
+                                                    <EyeOff size={9} />No sugerir
+                                                </span>
+                                            ) : (
+                                                <div className="flex flex-col gap-1">
+                                                    {lvl === 'agregar' && (<>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
+                                                        <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
+                                                        <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                    </>)}
+                                                    {lvl === 'evaluar' && (<>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit"><AlertTriangle size={9} />Evaluar</span>
+                                                        <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                    </>)}
+                                                    {lvl === 'encargo' && (<>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit"><ShoppingBag size={9} />Posible encargo</span>
+                                                        <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                    </>)}
+                                                    {lvl === 'mayorista' && (<>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit"><Truck size={9} />Venta mayorista</span>
+                                                        <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                    </>)}
+                                                    {lvl === 'omitir' && (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
                                                     )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                                </>
-                            )}
+                                                </div>
+                                            )}
+                                        </DataCell>
+                                        <DataCell align="center" hideBelow="md">
+                                            {isIgnored ? (
+                                                <button onClick={() => handleRestore(row.erp_product_id)} title="Restaurar sugerencia"
+                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                                                    <Eye size={13} />
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => handleIgnore(row.erp_product_id)} title="No sugerir"
+                                                    className="p-1.5 rounded-lg text-slate-200 hover:text-slate-500 hover:bg-slate-100 transition-colors">
+                                                    <EyeOff size={13} />
+                                                </button>
+                                            )}
+                                        </DataCell>
+                                    </DataRow>
+                                );
+                            })}
 
-                            {/* ── Stock Retenido table ── */}
-                            {mode === 'stock_ret' && (
-                                <>
-                                <thead className={`sticky top-0 z-10 ${tk.thead}`}>
-                                    <tr>
-                                        <SortTh field="product_name"  label="Producto"        sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left" />
-                                        <SortTh field="laboratorio"   label="Laboratorio"     sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
-                                        <SortTh field="current_stock" label="Stock aquí"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
-                                        <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Min/Max</th>
-                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
-                                        <SortTh field="ultima_venta" label="Última venta" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
-                                        <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pageRows.map(row => {
-                                        const stock  = Number(row.current_stock);
-                                        const cost   = Number(row.cost_value || 0);
-                                        const soldIn = row.sold_in || [];
-                                        const sug    = getSuggestion(row);
-                                        return (
-                                            <tr key={row.erp_product_id}
-                                                style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
-                                                className={`border-l-[3px] ${tk.rowBorder} ${tk.rowHover} transition-colors`}>
-                                                <td className="px-4 py-3.5">
-                                                    <button
-                                                        onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
-                                                        title="Copiar nombre"
-                                                        className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                        <span className="text-[13.5px] font-semibold text-slate-800 block truncate leading-snug max-w-[220px] group-hover/copy:text-[#0052CC] transition-colors">
-                                                            {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                            {mode === 'stock_ret' && pageRows.map(row => {
+                                const stock  = Number(row.current_stock);
+                                const cost   = Number(row.cost_value || 0);
+                                const soldIn = row.sold_in || [];
+                                const sug    = getSuggestion(row);
+                                return (
+                                    <DataRow key={row.erp_product_id} index={row.erp_product_id}
+                                        style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
+                                        className="border-l-[3px]">
+                                        <DataCell>
+                                            <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                                title="Copiar nombre"
+                                                className="group/copy flex items-center gap-1.5 text-left w-full">
+                                                <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[220px] group-hover/copy:text-[#0052CC] transition-colors">
+                                                    {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                </span>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                    {copiedId === row.erp_product_id ? '✓' : '⎘'}
+                                                </span>
+                                            </button>
+                                            {row.fecha_vencimiento_min && (() => {
+                                                const exp = new Date(row.fecha_vencimiento_min);
+                                                const expired = exp < new Date();
+                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
+                                                    {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
+                                                </span>;
+                                            })()}
+                                        </DataCell>
+                                        <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell align="right" hideBelow="sm">
+                                            <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
+                                            <span className="text-[10px] text-slate-400 ml-1">und</span>
+                                        </DataCell>
+                                        <DataCell align="right" hideBelow="sm">
+                                            {cost > 0
+                                                ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span>
+                                                : <span className="text-[11px] text-slate-200">—</span>}
+                                        </DataCell>
+                                        <DataCell align="center" hideBelow="md">
+                                            {row.in_minmax
+                                                ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>}
+                                        </DataCell>
+                                        <DataCell hideBelow="md">
+                                            {sug
+                                                ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
+                                                : <span className="text-[11px] text-slate-200">—</span>}
+                                        </DataCell>
+                                        <DataCell hideBelow="md">
+                                            <UltimaVentaCell row={row} allBranches={false} />
+                                        </DataCell>
+                                        <DataCell>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                {soldIn.length === 0
+                                                    ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    : soldIn.map(s => (
+                                                        <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                            {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                                         </span>
-                                                        <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
-                                                            {copiedId === row.erp_product_id ? '✓' : '⎘'}
-                                                        </span>
-                                                    </button>
-                                                    {row.fecha_vencimiento_min && (() => {
-                                                        const exp = new Date(row.fecha_vencimiento_min);
-                                                        const expired = exp < new Date();
-                                                        return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
-                                                            {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
-                                                        </span>;
-                                                    })()}
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <span className="text-[12px] text-slate-500 truncate block max-w-[140px]">{row.laboratorio || '—'}</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
-                                                    <span className="text-[10px] text-slate-400 ml-1">und</span>
-                                                </td>
-                                                <td className="px-4 py-3.5 text-right whitespace-nowrap hidden sm:table-cell">
-                                                    {cost > 0 ? <span className="text-[12px] font-bold text-orange-700 tabular-nums">{fmtMoney(cost)}</span> : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 text-center hidden md:table-cell">
-                                                    {row.in_minmax
-                                                        ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
-                                                        : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
-                                                         : <span className="text-[11px] text-slate-200">—</span>}
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <UltimaVentaCell row={row} allBranches={false} />
-                                                </td>
-                                                <td className="px-4 py-3.5">
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        {soldIn.length === 0
-                                                            ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
-                                                            : soldIn.map(s => (
-                                                                <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                                                    {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
-                                                                </span>
-                                                            ))}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                                </>
-                            )}
-
-                        </table>
+                                                    ))}
+                                            </div>
+                                        </DataCell>
+                                    </DataRow>
+                                );
+                            })}
+                        </DataTable>
                     </div>
-                </div>
-            )}
-
-            {/* ── Pagination ── */}
-            {!activeLoading && filtered.length > 0 && (
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        {PAGE_SIZES.map(size => (
-                            <button key={size} onClick={() => { setPageSize(size); setPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive}`}>
-                                {size}
-                            </button>
-                        ))}
-                    </div>
-                    <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                    <span className={`text-[10px] font-semibold w-[80px] text-right ${tk.totalText}`}>
-                        {filtered.length.toLocaleString()} total
-                    </span>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

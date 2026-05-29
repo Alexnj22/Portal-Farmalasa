@@ -282,7 +282,7 @@ async function syncInventoryBranch(
   const productos: any[] = payload?.inventario ?? [];
   if (productos.length === 0) return { items: 0, rows: 0 };
 
-  // Upsert products (nombre) encountered in inventory
+  // Solo insertar productos nuevos — sync-products maneja actualizaciones completas cada 10 min
   const productUpserts: any[] = productos.map(p => ({
     id:         parseInt(p.id_producto),
     nombre:     p.producto,
@@ -290,46 +290,53 @@ async function syncInventoryBranch(
   })).filter(p => !isNaN(p.id) && p.id > 0);
 
   if (productUpserts.length > 0) {
-    await supabase.from('products').upsert(productUpserts, { onConflict: 'id', ignoreDuplicates: false });
+    await supabase.from('products').upsert(productUpserts, { onConflict: 'id', ignoreDuplicates: true });
   }
 
-  // Delete existing snapshot for this branch+ubicacion, then bulk insert fresh data
-  await supabase.from('inventory')
-    .delete()
-    .eq('erp_sucursal_id', erpId)
-    .eq('is_vencidos', isVencidos);
-
+  // UPSERT en vez de DELETE+INSERT:
+  // Solo escribimos filas que cambiaron; las que no existen en ERP se eliminan
+  // al final comparando synced_at < syncStart (no fueron tocadas por este sync).
+  const syncStart = new Date().toISOString();
   const rows: any[] = [];
-  const now = new Date().toISOString();
 
   for (const p of productos) {
     const productId = parseInt(p.id_producto);
     if (isNaN(productId)) continue;
 
     for (const det of (p.detalles ?? [])) {
-      const rawFecha = det.fecha_vencimiento;
+      const rawFecha  = det.fecha_vencimiento;
       const fechaVenc = (rawFecha && rawFecha !== '0000-00-00') ? rawFecha : null;
+      const pid       = productId > 0 ? productId : null;
 
       rows.push({
         erp_sucursal_id:   erpId,
         is_vencidos:       isVencidos,
-        erp_product_id:    productId > 0 ? productId : null,
+        erp_product_id:    pid,
         descripcion:       p.producto ?? null,
         presentacion:      det.presentacion ?? null,
         detalle:           det.detalle ?? null,
         lote:              det.lote ?? null,
         fecha_vencimiento: fechaVenc,
         cantidad:          parseInt(det.cantidad) || 0,
-        synced_at:         now,
+        synced_at:         syncStart,
+        sync_key:          `${erpId}|${isVencidos}|${pid ?? ''}|${det.lote ?? ''}|${det.detalle ?? ''}|${fechaVenc ?? ''}`,
       });
     }
   }
 
   const CHUNK = 200;
   for (let i = 0; i < rows.length; i += CHUNK) {
-    const { error } = await supabase.from('inventory').insert(rows.slice(i, i + CHUNK));
-    if (error) throw new Error(`inventory insert chunk ${i}: ${error.message}`);
+    const { error } = await supabase.from('inventory')
+      .upsert(rows.slice(i, i + CHUNK), { onConflict: 'sync_key' });
+    if (error) throw new Error(`inventory upsert chunk ${i}: ${error.message}`);
   }
+
+  // Eliminar filas que ya no existen en el ERP (no fueron tocadas por este sync)
+  await supabase.from('inventory')
+    .delete()
+    .eq('erp_sucursal_id', erpId)
+    .eq('is_vencidos', isVencidos)
+    .lt('synced_at', syncStart);
 
   return { items: productos.length, rows: rows.length };
 }

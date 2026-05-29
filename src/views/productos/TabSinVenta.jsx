@@ -4,7 +4,7 @@ import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
     TrendingUp, CheckCircle2, CircleDashed, PlusCircle, Minus, ShoppingBag,
-    EyeOff, Eye,
+    EyeOff, Eye, Calendar,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -201,6 +201,57 @@ function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
     );
 }
 
+// ─── Última venta cell ────────────────────────────────────────────────────────
+
+function UltimaVentaCell({ row, allBranches }) {
+    const fecha = row.ultima_venta;
+    const porSuc = row.ultima_venta_por_suc || [];
+
+    if (!fecha) {
+        return (
+            <div>
+                <span className="text-[10px] text-slate-300 italic">Nunca vendido</span>
+            </div>
+        );
+    }
+
+    const days  = Math.floor((new Date() - new Date(fecha)) / 86_400_000);
+    const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
+    const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    if (!allBranches) {
+        return (
+            <div>
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-[9px] text-slate-400">hace {days}d</span>
+            </div>
+        );
+    }
+
+    // Todas: if only 1 branch has ever sold it, show branch name inline
+    if (porSuc.length === 1) {
+        const s = porSuc[0];
+        const tooltip = `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${new Date(s.fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+        return (
+            <div title={tooltip}>
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-[9px] text-slate-400">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+            </div>
+        );
+    }
+
+    // Multiple branches: show most recent + tooltip with all
+    const tooltip = porSuc
+        .map(s => `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${new Date(s.fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`)
+        .join('\n');
+    return (
+        <div title={tooltip} className="cursor-help">
+            <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+            <span className="block text-[9px] text-slate-400">{porSuc.length} sucursales ⓘ</span>
+        </div>
+    );
+}
+
 // ─── Sub-filter cards ─────────────────────────────────────────────────────────
 
 const GLASS_CARD = 'bg-white/60 border-slate-200/50 backdrop-blur-sm shadow-[0_2px_12px_rgba(0,82,204,0.07)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,82,204,0.12)] hover:bg-white/80';
@@ -339,7 +390,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
 export default function TabGestionStock({ searchTerm = '' }) {
     const [mode,        setMode]        = useState('stock_ret');
-    const [selectedErp, setSelectedErp] = useState(5);
+    const [selectedErp, setSelectedErp] = useState(5); // null = todas las sucursales
     const [filterMode,  setFilterMode]  = useState('todos');
 
     // One data store per view — keyed so switching back doesn't re-fetch
@@ -444,13 +495,15 @@ export default function TabGestionStock({ searchTerm = '' }) {
         setIgnoredSet(new Set());
         setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos');
 
-        supabase
-            .from('minmax_ignored')
-            .select('erp_product_id')
-            .eq('erp_sucursal_id', selectedErp)
-            .then(({ data }) => {
-                if (data) setIgnoredSet(new Set(data.map(r => r.erp_product_id)));
-            });
+        if (selectedErp !== null) {
+            supabase
+                .from('minmax_ignored')
+                .select('erp_product_id')
+                .eq('erp_sucursal_id', selectedErp)
+                .then(({ data }) => {
+                    if (data) setIgnoredSet(new Set(data.map(r => r.erp_product_id)));
+                });
+        }
 
         MODES.forEach(m => loadMode(selectedErp, m.key));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -510,6 +563,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 const cmp = (a[sortField] || '').localeCompare(b[sortField] || '', 'es');
                 return sortDir === 'asc' ? cmp : -cmp;
             }
+            if (sortField === 'ultima_venta') {
+                const av = a.ultima_venta || '0000-00-00';
+                const bv = b.ultima_venta || '0000-00-00';
+                const cmp = av.localeCompare(bv);
+                return sortDir === 'asc' ? cmp : -cmp;
+            }
             const av = Number(a[sortField] || 0), bv = Number(b[sortField] || 0);
             return sortDir === 'asc' ? av - bv : bv - av;
         });
@@ -521,7 +580,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
-    const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
+    const allBranches = selectedErp === null;
+    const erpOptions = [
+        { value: '', label: 'Todas las sucursales' },
+        ...ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] })),
+    ];
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -631,8 +694,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-300" /></div>}
                     <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
                         <LiquidSelect
-                            value={String(selectedErp)}
-                            onChange={v => { if (v) setSelectedErp(Number(v)); }}
+                            value={selectedErp !== null ? String(selectedErp) : ''}
+                            onChange={v => setSelectedErp(v === '' ? null : Number(v))}
                             options={erpOptions}
                             icon={Building2}
                             clearable={false}
@@ -668,6 +731,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-14 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ml-auto ${tk.skeleton}`} /></td>
                                     <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-6 w-24 rounded-full animate-pulse mx-auto ${tk.skeleton}`} /></td>
+                                    {mode === 'stock_ret' && <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-4 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>}
                                     <td className="px-4 py-3.5"><div className={`h-5 w-28 rounded-full animate-pulse ${tk.skeleton}`} /></td>
                                 </tr>
                             ))}
@@ -825,6 +889,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <SortTh field="cost_value"    label="Costo retenido"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-right hidden sm:table-cell" />
                                         <th className="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell whitespace-nowrap">Min/Max</th>
                                         <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400 hidden md:table-cell">Sugerencia</th>
+                                        <SortTh field="ultima_venta" label="Última venta" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="text-left hidden md:table-cell" />
                                         <th className="px-4 py-3.5 text-left  text-[10px] font-black uppercase tracking-widest text-slate-400">Vendido en (6m)</th>
                                     </tr>
                                 </thead>
@@ -876,6 +941,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <td className="px-4 py-3.5 hidden md:table-cell">
                                                     {sug ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
                                                          : <span className="text-[11px] text-slate-200">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3.5 hidden md:table-cell">
+                                                    <UltimaVentaCell row={row} allBranches={allBranches} />
                                                 </td>
                                                 <td className="px-4 py-3.5">
                                                     <div className="flex items-center gap-1.5 flex-wrap">

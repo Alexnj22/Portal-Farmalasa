@@ -724,12 +724,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         {relevantChanges.length > 0 && (
                                             <LiquidTooltip content={
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[9px] font-black uppercase tracking-widest text-amber-500 mb-1.5">Cambios registrados</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">Cambios registrados</p>
                                                     {relevantChanges.map((c, ci) => (
-                                                        <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-slate-100 last:border-0">
-                                                            <span className="text-[10px] font-bold text-slate-600 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                                            <span className="text-[10px] text-slate-400 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
-                                                            <span className="text-[10px] font-semibold text-slate-700">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
+                                                        <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-slate-100 last:border-0">
+                                                            <span className="text-[11px] font-bold text-slate-600 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                                            <span className="text-[11px] text-slate-400 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                                            <span className="text-[11px] font-semibold text-slate-700">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1286,16 +1286,16 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     }
 
     const tipContent = (
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Última venta por suc.</p>
+        <div className="space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((Date.now() - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
                 return (
-                    <div key={s.branch_id} className="flex items-center justify-between gap-4">
-                        <span className="text-[10px] font-semibold text-slate-700">{name}</span>
-                        <span className={`text-[10px] font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
+                    <div key={s.branch_id} className="flex items-center justify-between gap-6">
+                        <span className="text-[12px] font-semibold text-slate-700">{name}</span>
+                        <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
                     </div>
                 );
             })}

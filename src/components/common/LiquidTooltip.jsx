@@ -58,8 +58,8 @@ export default function LiquidTooltip({ children, content, side = 'top', classNa
                         bg-white/85 backdrop-blur-2xl backdrop-saturate-[180%]
                         border border-white/90
                         shadow-[0_8px_32px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)]
-                        rounded-2xl px-3.5 py-2.5
-                        min-w-[120px] max-w-[280px]
+                        rounded-2xl px-5 py-3.5
+                        min-w-[180px] max-w-[340px]
                         animate-in fade-in zoom-in-95 duration-150 ease-out
                     ">
                         {content}

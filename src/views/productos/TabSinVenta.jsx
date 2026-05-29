@@ -237,9 +237,9 @@ function UltimaVentaCell({ row, allBranches }) {
         const s = porSuc[0];
         const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
         const tipContent = (
-            <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] font-semibold text-slate-700">{name}</span>
-                <span className="text-[10px] font-black tabular-nums text-[#0052CC]">{fmtSucDate(s.fecha)}</span>
+            <div className="flex items-center justify-between gap-6">
+                <span className="text-[12px] font-semibold text-slate-700">{name}</span>
+                <span className="text-[12px] font-black tabular-nums text-[#0052CC]">{fmtSucDate(s.fecha)}</span>
             </div>
         );
         return (
@@ -255,15 +255,15 @@ function UltimaVentaCell({ row, allBranches }) {
     // Multiple branches: show most recent + liquid tooltip with all
     const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const tipContent = (
-        <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Última venta por suc.</p>
+        <div className="space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((Date.now() - new Date(s.fecha)) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
                 return (
-                    <div key={s.esid} className="flex items-center justify-between gap-4">
-                        <span className="text-[10px] font-semibold text-slate-700">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
-                        <span className={`text-[10px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
+                    <div key={s.esid} className="flex items-center justify-between gap-6">
+                        <span className="text-[12px] font-semibold text-slate-700">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+                        <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
                     </div>
                 );
             })}

@@ -39,6 +39,11 @@ function fmtQty(n) {
     return f % 1 === 0 ? String(f) : f.toFixed(3).replace(/\.?0+$/, '');
 }
 
+function fmtDate(dateStr) {
+    if (!dateStr) return null;
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function currentMonthRange() {
     const now = new Date(Date.now() - 6 * 3600_000);
     const y = now.getFullYear();
@@ -1257,6 +1262,52 @@ function findFirstChangeSince(history, idPresentaciones, fechaStr) {
     return later[0]?.valid_from ?? null;
 }
 
+function UltimaVentaCell({ row, filterBranch, branches }) {
+    const fecha  = row.ultima_venta;
+    const porSuc = row.ultima_venta_por_suc || [];
+
+    if (!fecha) {
+        return <span className="text-[10px] text-slate-300 italic">Sin ventas</span>;
+    }
+
+    const days  = Math.floor((Date.now() - new Date(fecha + 'T12:00:00')) / 86_400_000);
+    const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
+    const label = fmtDate(fecha);
+
+    if (filterBranch) {
+        return (
+            <div>
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-[9px] text-slate-400">hace {days}d</span>
+            </div>
+        );
+    }
+
+    // All branches
+    const byBranch = porSuc.filter(s => s.fecha);
+    if (byBranch.length <= 1) {
+        const name = byBranch.length === 1
+            ? (branches.find(b => b.id === Number(byBranch[0].branch_id))?.name || `Suc. ${byBranch[0].branch_id}`)
+            : '';
+        return (
+            <div>
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                {name && <span className="block text-[9px] text-slate-400">{name}</span>}
+            </div>
+        );
+    }
+
+    const tooltip = byBranch
+        .map(s => `${branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`}: ${fmtDate(s.fecha)}`)
+        .join('\n');
+    return (
+        <div title={tooltip} className="cursor-help">
+            <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+            <span className="block text-[9px] text-slate-400">{byBranch.length} sucursales ⓘ</span>
+        </div>
+    );
+}
+
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
     const { maxPriceLevel } = useAuth();
     const allowedDrillTiers = useMemo(() => {
@@ -1313,7 +1364,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     const fetchProductos = useCallback(async (isRetry = false) => {
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
-        const lsKey    = `pp_${cacheKey}`;
+        const lsKey    = `ppv2_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
         // Cache only applies when not searching — search results are never cached
@@ -1375,6 +1426,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     erp_product_id: item.erp_product_id,
                     descripcion:    item.descripcion,
                     cantidad: qty, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
+                    ultima_venta:        item.ultima_venta        || null,
+                    ultima_venta_por_suc: item.ultima_venta_por_suc || [],
                 };
             });
 
@@ -1383,7 +1436,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 productsCache.current.set(cacheKey, allRows);
                 try {
                     Object.keys(localStorage)
-                        .filter(k => k.startsWith('pp_') && k !== lsKey)
+                        .filter(k => k.startsWith('ppv2_') && k !== lsKey)
                         .forEach(k => {
                             try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
                         });
@@ -1607,13 +1660,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             {!error && (
             <DataTable
                 columns={[
-                    { key: 'rank',        label: '#' },
-                    { key: 'descripcion', label: 'Producto',     sortable: true },
-                    { key: 'cantidad',    label: 'Unidades',     sortable: true, align: 'right', hideBelow: 'md' },
-                    { key: 'neto',        label: 'Total s/IVA',  sortable: true, align: 'right' },
-                    { key: 'costo_total', label: 'Costo',        sortable: true, align: 'right', hideBelow: 'lg' },
-                    { key: 'utilidad',    label: 'Utilidad',     sortable: true, align: 'right', hideBelow: 'sm' },
-                    { key: 'margen',      label: 'Margen',       sortable: true, align: 'right' },
+                    { key: 'rank',         label: '#' },
+                    { key: 'descripcion',  label: 'Producto',      sortable: true },
+                    { key: 'cantidad',     label: 'Unidades',      sortable: true, align: 'right', hideBelow: 'md' },
+                    { key: 'neto',         label: 'Total s/IVA',   sortable: true, align: 'right' },
+                    { key: 'costo_total',  label: 'Costo',         sortable: true, align: 'right', hideBelow: 'lg' },
+                    { key: 'utilidad',     label: 'Utilidad',      sortable: true, align: 'right', hideBelow: 'sm' },
+                    { key: 'margen',       label: 'Margen',        sortable: true, align: 'right' },
+                    { key: 'ultima_venta', label: 'Última venta',  sortable: true, align: 'right', hideBelow: 'lg' },
                 ]}
                 sortKey={sortCol}
                 sortDir={sortDir}
@@ -1657,7 +1711,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell className="max-w-[220px]">
                                             <div className="flex items-start gap-1.5">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold text-[12px] leading-tight">{r.descripcion}</p>
+                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-slate-400' : ''}`}>{r.descripcion}</p>
                                                     {r.presentaciones?.length > 0 && (
                                                         <p className="text-[10px] text-slate-400 mt-0.5">
                                                             {r.presentaciones.length === 1
@@ -1665,9 +1719,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 : `${r.presentaciones.length} presentaciones`}
                                                         </p>
                                                     )}
+                                                    {r.neto === 0 && (
+                                                        <span className="text-[9px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
+                                                    )}
+                                                    {r.neto > 0 && (
                                                     <div className="mt-1.5 h-1 rounded-full bg-slate-100">
                                                         <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
                                                     </div>
+                                                    )}
                                                 </div>
                                                 <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-slate-300'}`} />
                                             </div>
@@ -1687,10 +1746,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 ? <span className={`text-[12px] font-black ${marginColor}`}>{fmtPct(margin)}</span>
                                                 : <span className="opacity-30 text-[12px]">—</span>}
                                         </DataCell>
+                                        <DataCell align="right" hideBelow="lg">
+                                            <UltimaVentaCell row={r} filterBranch={filterBranch} branches={branches} />
+                                        </DataCell>
                                     </DataRow>
                                     {isExpanded && (
                                         <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
-                                            <td colSpan={7}
+                                            <td colSpan={8}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">

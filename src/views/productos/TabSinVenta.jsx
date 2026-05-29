@@ -7,6 +7,7 @@ import {
     EyeOff, Eye, Calendar,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -228,27 +229,53 @@ function UltimaVentaCell({ row, allBranches }) {
         );
     }
 
+    const fmtSucDate = (fecha) =>
+        new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+
     // Todas: if only 1 branch has ever sold it, show branch name inline
     if (porSuc.length === 1) {
         const s = porSuc[0];
-        const tooltip = `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${new Date(s.fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-        return (
-            <div title={tooltip}>
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-400">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+        const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
+        const tipContent = (
+            <div className="flex items-center justify-between gap-4">
+                <span className="text-[10px] font-semibold text-slate-700">{name}</span>
+                <span className="text-[10px] font-black tabular-nums text-[#0052CC]">{fmtSucDate(s.fecha)}</span>
             </div>
+        );
+        return (
+            <LiquidTooltip content={tipContent}>
+                <div>
+                    <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                    <span className="block text-[9px] text-slate-400">{name}</span>
+                </div>
+            </LiquidTooltip>
         );
     }
 
-    // Multiple branches: show most recent + tooltip with all
-    const tooltip = porSuc
-        .map(s => `${ERP_NAMES[s.esid] || `Suc.${s.esid}`}: ${new Date(s.fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`)
-        .join('\n');
-    return (
-        <div title={tooltip} className="cursor-help">
-            <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-            <span className="block text-[9px] text-slate-400">{porSuc.length} sucursales ⓘ</span>
+    // Multiple branches: show most recent + liquid tooltip with all
+    const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    const tipContent = (
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Última venta por suc.</p>
+            {sorted.map(s => {
+                const d = Math.floor((Date.now() - new Date(s.fecha)) / 86_400_000);
+                const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
+                return (
+                    <div key={s.esid} className="flex items-center justify-between gap-4">
+                        <span className="text-[10px] font-semibold text-slate-700">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+                        <span className={`text-[10px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
+                    </div>
+                );
+            })}
         </div>
+    );
+    return (
+        <LiquidTooltip content={tipContent}>
+            <div className="cursor-help">
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-[9px] text-slate-400">{porSuc.length} suc. ⓘ</span>
+            </div>
+        </LiquidTooltip>
     );
 }
 

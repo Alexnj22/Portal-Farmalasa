@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
@@ -345,7 +345,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [abInvoiceIds, setAbInvoiceIds] = useState(null); // null=not loaded, []|[ids]=loaded
     const [filterAnuladas, setFilterAnuladas] = useState(false);
     const [changelogCache, setChangelogCache] = useState({});
-    const [changeTooltip, setChangeTooltip] = useState(null); // { x, y, changes }
     const fetchRowsRef = useRef(0);
 
     useEffect(() => {
@@ -723,16 +722,23 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 <DataCell align="right">
                                     <div className="flex items-center justify-end gap-2">
                                         {relevantChanges.length > 0 && (
-                                            <div className="shrink-0" onClick={e => e.stopPropagation()}
-                                                onMouseEnter={e => {
-                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                    setChangeTooltip({ x: rect.left + rect.width / 2, y: rect.top, changes: relevantChanges });
-                                                }}
-                                                onMouseLeave={() => setChangeTooltip(null)}>
-                                                <div className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
+                                            <LiquidTooltip content={
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-amber-500 mb-1.5">Cambios registrados</p>
+                                                    {relevantChanges.map((c, ci) => (
+                                                        <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-slate-100 last:border-0">
+                                                            <span className="text-[10px] font-bold text-slate-600 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                                            <span className="text-[10px] text-slate-400 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                                            <span className="text-[10px] font-semibold text-slate-700">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            } className="shrink-0">
+                                                <div onClick={e => e.stopPropagation()}
+                                                    className="w-4 h-4 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center cursor-default transition-colors">
                                                     <span className="text-[9px] font-black text-amber-600 leading-none">!</span>
                                                 </div>
-                                            </div>
+                                            </LiquidTooltip>
                                         )}
                                         <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
@@ -872,24 +878,6 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 })}
             </DataTable>
 
-            {/* Change tooltip — portaled to document.body to escape transform-gpu containing block */}
-            {changeTooltip && ReactDOM.createPortal(
-                <div className="fixed z-[9999] pointer-events-none"
-                    style={{ left: changeTooltip.x, top: changeTooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
-                    <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3 py-2.5 shadow-xl w-max max-w-[260px] border border-white/10">
-                        <div className="text-[9px] font-black uppercase tracking-wider text-amber-300 mb-1.5">Cambios registrados</div>
-                        {changeTooltip.changes.map((c, ci) => (
-                            <div key={ci} className="flex items-baseline gap-1.5 py-0.5 border-b border-white/5 last:border-0">
-                                <span className="text-[10px] font-bold text-slate-300 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                <span className="text-[10px] text-slate-500 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
-                                <span className="text-[10px] text-slate-200">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-slate-900/95" />
-                </div>,
-                document.body
-            )}
         </div>
     );
 }
@@ -1297,14 +1285,29 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         );
     }
 
-    const tooltip = byBranch
-        .map(s => `${branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`}: ${fmtDate(s.fecha)}`)
-        .join('\n');
-    return (
-        <div title={tooltip} className="cursor-help">
-            <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-            <span className="block text-[9px] text-slate-400">{byBranch.length} sucursales ⓘ</span>
+    const tipContent = (
+        <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Última venta por suc.</p>
+            {byBranch.map(s => {
+                const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
+                const d = Math.floor((Date.now() - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
+                const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
+                return (
+                    <div key={s.branch_id} className="flex items-center justify-between gap-4">
+                        <span className="text-[10px] font-semibold text-slate-700">{name}</span>
+                        <span className={`text-[10px] font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
+                    </div>
+                );
+            })}
         </div>
+    );
+    return (
+        <LiquidTooltip content={tipContent}>
+            <div className="cursor-help">
+                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-[9px] text-slate-400">{byBranch.length} suc. ⓘ</span>
+            </div>
+        </LiquidTooltip>
     );
 }
 

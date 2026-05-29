@@ -28,7 +28,11 @@ const SUC_COLORS = {
     6: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
-const PAGE_SIZES = [25, 50, 100];
+const PAGE_SIZE_OPTIONS = [
+    { value: '25',  label: '25 / pág' },
+    { value: '50',  label: '50 / pág' },
+    { value: '100', label: '100 / pág' },
+];
 
 const MODES = [
     {
@@ -459,8 +463,6 @@ export default function TabGestionStock({ searchTerm = '' }) {
         filterPill:       'bg-white/60 border-white/50 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
         filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-white/60',
         filterDivider:    'bg-slate-200/60',
-        pageSizeActive:   'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
-        pageSizeInactive: 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80',
         totalText:        'text-slate-400',
     };
 
@@ -749,17 +751,18 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                 const footer = !activeLoading && filtered.length > 0 ? (
                     <>
-                        <div className="flex items-center gap-1">
-                            {PAGE_SIZES.map(size => (
-                                <button key={size} onClick={() => { setPageSize(size); setPage(1); }}
-                                    className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive}`}>
-                                    {size}
-                                </button>
-                            ))}
+                        <div className="w-[130px]">
+                            <LiquidSelect
+                                value={String(pageSize)}
+                                onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                                options={PAGE_SIZE_OPTIONS}
+                                clearable={false}
+                                compact
+                            />
                         </div>
                         <SmartPagination page={page} total={totalPages} onChange={setPage} />
-                        <span className="text-[10px] font-semibold w-[80px] text-right text-slate-400">
-                            {filtered.length.toLocaleString()} total
+                        <span className="text-[10px] font-semibold w-[130px] text-right text-slate-400">
+                            {filtered.length.toLocaleString()} productos
                         </span>
                     </>
                 ) : undefined;

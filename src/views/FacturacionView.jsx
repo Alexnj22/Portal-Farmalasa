@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
     Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info,
+    Pause, Play
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -207,6 +208,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const [resolvedIds, setResolvedIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
+    const [paused, setPaused] = useState(false);
     const [solvingId, setSolvingId] = useState(null);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
@@ -276,7 +278,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]);
-    useEffect(() => { const id = setInterval(loadData, 60_000); return () => clearInterval(id); }, [loadData]);
+    useEffect(() => { if (paused) return; const id = setInterval(loadData, 60_000); return () => clearInterval(id); }, [loadData, paused]);
 
     const handleSolve = async (invoiceId) => {
         setSaving(true);
@@ -404,7 +406,17 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
-                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                <div className="flex items-center gap-2 ml-auto">
+                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
+                            paused
+                                ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                        }`}>
+                        {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -629,6 +641,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const pollingRef2 = useRef(false);
     const [loading, setLoading]         = useState(true);
     const [lastRefresh, setLastRefresh] = useState(null);
+    const [paused, setPaused]           = useState(false);
     const [solvingId, setSolvingId]     = useState(null);
     const [comment, setComment]         = useState('');
     const [saving, setSaving]           = useState(false);
@@ -792,7 +805,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     }, [filterBranch]);
 
     useEffect(() => { loadData(); }, [loadData]);
-    useEffect(() => { const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData]);
+    useEffect(() => { if (paused) return; const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData, paused]);
 
     const handleSolve = async (invoiceId) => {
         setSaving(true);
@@ -873,7 +886,17 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
-                {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-auto">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                <div className="flex items-center gap-2 ml-auto">
+                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
+                            paused
+                                ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                        }`}>
+                        {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
+                    </button>
+                </div>
             </div>
 
             {/* Pending list */}

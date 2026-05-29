@@ -845,6 +845,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     const [expanded, setExpanded]       = useState(null);
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
+
+    useEffect(() => { if (privacyMode) setExpanded(null); }, [privacyMode]);
     const [prevRankMap, setPrevRankMap]     = useState(new Map());
     const [prevVendStats, setPrevVendStats] = useState({ sum: 0, count: 0 });
 
@@ -1037,7 +1039,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
                     return (
                         <React.Fragment key={r.cod_vendedor}>
-                            <DataRow index={i} onClick={() => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-blue-50/30' : ''}>
+                            <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-blue-50/30' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
                                         {i === 0 ? <Trophy size={15} className="text-yellow-500" />
@@ -1072,17 +1074,21 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 </DataCell>
                                 <DataCell align="right" className="font-semibold text-[12px]">{fmtNum(r.count)}</DataCell>
                                 <DataCell align="right">
-                                    <p className="font-black text-[13px]">{fmt(r.total)}</p>
-                                    <div className="mt-1 h-1 rounded-full bg-slate-100">
-                                        <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                    <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                        <p className="font-black text-[13px]">{fmt(r.total)}</p>
+                                        <div className="mt-1 h-1 rounded-full bg-slate-100">
+                                            <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                        </div>
                                     </div>
                                 </DataCell>
-                                <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
+                                <DataCell align="right" hideBelow="md" className="text-[12px]">
+                                    <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(ticket)}</span>
+                                </DataCell>
                                 <DataCell>
                                     <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-slate-400'}`} />
                                 </DataCell>
                             </DataRow>
-                            {isOpen && (
+                            {isOpen && !privacyMode && (
                                 <tr className={`border-t ${expandBorder}`}>
                                     <td colSpan={7}
                                         className={`px-4 py-3 ${expandBg}`}>
@@ -1127,8 +1133,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         </DataCell>
                         <DataCell hideBelow="md" className="text-[12px]">—</DataCell>
                         <DataCell align="right" className="text-[12px]">{fmtNum(u.count)}</DataCell>
-                        <DataCell align="right" className="font-bold text-[13px]">{fmt(u.total)}</DataCell>
-                        <DataCell align="right" hideBelow="md" className="text-[12px]">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
+                        <DataCell align="right" className="font-bold text-[13px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(u.total)}</span></DataCell>
+                        <DataCell align="right" hideBelow="md" className="text-[12px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{u.count > 0 ? fmt(u.total / u.count) : '—'}</span></DataCell>
                         <DataCell />
                     </DataRow>
                 ))}
@@ -1286,6 +1292,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [pageSize, setPageSize]   = useState(50);
     const [expandedKey, setExpandedKey]   = useState(null);
     const [drillData,   setDrillData]     = useState([]);
+
+    useEffect(() => { if (privacyMode) setExpandedKey(null); }, [privacyMode]);
     const [drillLoading, setDrillLoading] = useState(false);
     const [drillSortCol, setDrillSortCol] = useState('fecha');
     const [drillSortDir, setDrillSortDir] = useState('desc');
@@ -1648,7 +1656,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     : 'text-red-600';
                                 return (
                                     <React.Fragment key={rowKey}>
-                                    <DataRow index={i} onClick={() => toggleExpand(rowKey, r.erp_product_id)}
+                                    <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-blue-50/40' : ''}>
                                         <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
@@ -1678,14 +1686,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             </div>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad)}</DataCell>
-                                        <DataCell align="right" className="font-black text-[13px]">{fmt(r.neto)}</DataCell>
+                                        <DataCell align="right" className="font-black text-[13px]">
+                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(r.neto)}</span>
+                                        </DataCell>
                                         <DataCell align="right" hideBelow="lg" className="text-[12px]">
-                                            {r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
+                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                                {r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
+                                            </span>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm" className="text-[12px] font-bold">
-                                            {r.utilidad != null
-                                                ? <span className={r.utilidad >= 0 ? 'text-emerald-600' : 'text-red-600'}>{fmt(r.utilidad)}</span>
-                                                : <span className="opacity-30">—</span>}
+                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                                {r.utilidad != null
+                                                    ? <span className={r.utilidad >= 0 ? 'text-emerald-600' : 'text-red-600'}>{fmt(r.utilidad)}</span>
+                                                    : <span className="opacity-30">—</span>}
+                                            </span>
                                         </DataCell>
                                         <DataCell align="right">
                                             {margin != null
@@ -1696,7 +1710,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <UltimaVentaCell row={r} filterBranch={filterBranch} branches={branches} />
                                         </DataCell>
                                     </DataRow>
-                                    {isExpanded && (
+                                    {isExpanded && !privacyMode && (
                                         <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
                                             <td colSpan={8}
                                                 className="px-4 py-4">

@@ -342,7 +342,7 @@ const LiquidSelect = ({
     );
 
     const pillBaseClasses = bare
-        ? `w-full rounded-xl transition-all duration-200 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-none shadow-none`
+        ? `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
         : `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         } ${

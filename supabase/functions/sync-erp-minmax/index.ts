@@ -89,18 +89,23 @@ async function syncBranch(
     }
   }
 
-  // Replace all rows for this sucursal atomically
+  // UPSERT on natural key — avoid table bloat from DELETE+INSERT cycles
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from("erp_minmax")
+      .upsert(rows.slice(i, i + CHUNK), {
+        onConflict: "erp_sucursal_id,erp_product_id,erp_presentacion_id",
+      });
+    // FK violation (erp_presentacion_id no existe en presentaciones) se reporta aquí.
+    if (error) errors.push(`upsert[suc=${erp_sucursal_id}][offset=${i}]: ${error.message}`);
+  }
+
+  // Delete rows removed from ERP since last sync
   const { error: delErr } = await supabase
     .from("erp_minmax")
     .delete()
-    .eq("erp_sucursal_id", erp_sucursal_id);
-  if (delErr) throw new Error(`Delete erp_minmax[${erp_sucursal_id}]: ${delErr.message}`);
-
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    const { error } = await supabase.from("erp_minmax").insert(rows.slice(i, i + CHUNK));
-    // FK violation (erp_presentacion_id no existe en presentaciones) se reporta aquí.
-    if (error) errors.push(`insert[suc=${erp_sucursal_id}][offset=${i}]: ${error.message}`);
-  }
+    .eq("erp_sucursal_id", erp_sucursal_id)
+    .lt("synced_at", now);
+  if (delErr) errors.push(`delete stale[suc=${erp_sucursal_id}]: ${delErr.message}`);
 
   const skipped = items.reduce((s: number, item: any) => s + (item.detalles?.length ?? 0), 0) - rows.length;
   return { erp_sucursal_id, inserted: rows.length, skipped, errors };

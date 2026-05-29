@@ -5,7 +5,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronRight, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -217,7 +217,7 @@ function FilterControls({
 
 
 // Stat card with % change vs previous period + optional sub label
-function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active }) {
+function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred }) {
     const isFilter = !!onClick;
     return (
         <div
@@ -236,7 +236,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             </div>
             <div className="flex flex-col min-w-0">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">{label}</span>
-                <div className="flex items-baseline gap-1.5 flex-wrap">
+                <div className={`flex items-baseline gap-1.5 flex-wrap transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
                     {pct !== null && pct !== undefined && (
                         <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -245,7 +245,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                         </span>
                     )}
                 </div>
-                {sub && <span className="text-[9px] text-slate-400 font-medium leading-none mt-0.5">{sub}</span>}
+                {sub && <span className={`text-[9px] text-slate-400 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
@@ -279,7 +279,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 }
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
-function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions }) {
+function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions, privacyMode }) {
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -560,7 +560,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         { label: 'Total Ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
                         { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   sub: prevStats.sum && prevStats.count ? `${fmt(prevStats.sum/prevStats.count)}` : undefined },
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-amber-500 to-orange-400', text: 'text-amber-700',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
-                    ].map(card => <StatCard key={card.label} {...card} />);
+                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
                 <FilterControls
@@ -839,7 +839,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 }
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
-function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions }) {
+function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -1003,7 +1003,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-blue-500 to-indigo-500',  text: 'text-blue-700',    pct: null,     sub: undefined },
                         { label: 'Total Ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-emerald-500 to-teal-400', text: 'text-emerald-700', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
                         { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-slate-500 to-slate-400',  text: 'text-slate-700',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
-                    ].map(card => <StatCard key={card.label} {...card} />);
+                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
@@ -1267,7 +1267,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     );
 }
 
-function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions }) {
+function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
     const { maxPriceLevel } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
@@ -1603,7 +1603,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
-                    ].map(card => <StatCard key={card.label} {...card} />);
+                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
@@ -2043,6 +2043,7 @@ export default function VentasView() {
     });
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch]     = useState('');
+    const [privacyMode, setPrivacyMode] = useState(false);
     const [debouncedSearch, setDebouncedSearch] = useState('');
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
@@ -2108,6 +2109,14 @@ export default function VentasView() {
                 })}
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
+                <button onClick={() => setPrivacyMode(v => !v)}
+                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
+                        privacyMode
+                            ? 'bg-slate-700 text-white border-slate-700 shadow-[0_3px_8px_rgba(0,0,0,0.25)]'
+                            : 'bg-white/50 text-slate-500 border-white/80 hover:bg-white hover:shadow-md hover:text-slate-700'
+                    }`}>
+                    {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
+                </button>
                 <button onClick={openSearch}
                     className="w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
@@ -2123,7 +2132,7 @@ export default function VentasView() {
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
                 <TabVentas branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    employees={employees} branchOptions={branchOptions} />
+                    employees={employees} branchOptions={branchOptions} privacyMode={privacyMode} />
             </div>
 
             {/* Vendedores + Productos: unmount when not active so their useEffects don't
@@ -2132,12 +2141,12 @@ export default function VentasView() {
             {activeTab === 'vendedores' && (
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     employees={employees} searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    branchOptions={branchOptions} />
+                    branchOptions={branchOptions} privacyMode={privacyMode} />
             )}
             {activeTab === 'productos' && (
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    branchOptions={branchOptions} />
+                    branchOptions={branchOptions} privacyMode={privacyMode} />
             )}
         </GlassViewLayout>
     );

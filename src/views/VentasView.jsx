@@ -1081,9 +1081,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                         </div>
                                     </div>
                                 </DataCell>
-                                <DataCell align="right" hideBelow="md" className="text-[12px]">
-                                    <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(ticket)}</span>
-                                </DataCell>
+                                <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
                                 <DataCell>
                                     <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-400' : 'text-slate-400'}`} />
                                 </DataCell>

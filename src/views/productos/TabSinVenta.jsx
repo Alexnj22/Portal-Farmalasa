@@ -580,11 +580,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const pageRows   = filtered.slice((page - 1) * pageSize, page * pageSize);
-    const allBranches = selectedErp === null;
-    const erpOptions = [
-        { value: '', label: 'Todas las sucursales' },
-        ...ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] })),
-    ];
+    const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
@@ -694,8 +690,8 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-300" /></div>}
                     <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
                         <LiquidSelect
-                            value={selectedErp !== null ? String(selectedErp) : ''}
-                            onChange={v => setSelectedErp(v === '' ? null : Number(v))}
+                            value={String(selectedErp)}
+                            onChange={v => setSelectedErp(Number(v))}
                             options={erpOptions}
                             icon={Building2}
                             clearable={false}
@@ -943,7 +939,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                          : <span className="text-[11px] text-slate-200">—</span>}
                                                 </td>
                                                 <td className="px-4 py-3.5 hidden md:table-cell">
-                                                    <UltimaVentaCell row={row} allBranches={allBranches} />
+                                                    <UltimaVentaCell row={row} allBranches={false} />
                                                 </td>
                                                 <td className="px-4 py-3.5">
                                                     <div className="flex items-center gap-1.5 flex-wrap">

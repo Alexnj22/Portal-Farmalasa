@@ -26,6 +26,8 @@ const LiquidSelect = ({
     onSearchChange = null,
     // Show loading spinner inside dropdown
     isLoading = false,
+    // Bare mode: no background/border/shadow — blends into a parent pill bar
+    bare = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -339,30 +341,34 @@ const LiquidSelect = ({
         </div>
     );
 
-    const pillBaseClasses = `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-    } ${
-        isDark
-            ? isOpen
-                ? 'bg-black/50 border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.15)] text-white'
-                : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
-            : isOpen
-                ? 'bg-white border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] border text-slate-700'
-                : 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/80 group-hover:bg-white/80 group-hover:border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_8px_rgba(255,255,255,0.7)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.07),inset_0_1px_8px_rgba(255,255,255,0.8)] text-slate-700'
-    }`;
+    const pillBaseClasses = bare
+        ? `w-full rounded-xl transition-all duration-200 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-none shadow-none`
+        : `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
+            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        } ${
+            isDark
+                ? isOpen
+                    ? 'bg-black/50 border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.15)] text-white'
+                    : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
+                : isOpen
+                    ? 'bg-white border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] border text-slate-700'
+                    : 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/80 group-hover:bg-white/80 group-hover:border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_8px_rgba(255,255,255,0.7)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.07),inset_0_1px_8px_rgba(255,255,255,0.8)] text-slate-700'
+        }`;
 
     return (
         <div
             data-surface="input"
-            className={`relative group w-full transition-all duration-300 transform-gpu ${isOpen || disabled ? '' : 'hover:-translate-y-0.5'}`}
+            className={`relative group w-full transition-all duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO */}
-            <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center shadow-sm transition-colors duration-300 z-10 pointer-events-none ${isOpen
-                    ? 'text-white bg-[#0052CC]'
-                    : isDark
-                        ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                        : 'bg-white/80 text-[#0052CC] border border-white'
+            <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
+                    ? 'text-white bg-[#0052CC] shadow-sm'
+                    : bare
+                        ? 'bg-transparent text-[#0052CC]'
+                        : isDark
+                            ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
+                            : 'bg-white/80 text-[#0052CC] border border-white shadow-sm'
                 }`}>
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>

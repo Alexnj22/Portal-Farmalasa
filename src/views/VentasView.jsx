@@ -143,7 +143,7 @@ function FilterControls({
             <div className="flex items-center">
                 <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                        options={branchOptions} placeholder="Todas" icon={Building2} compact />
+                        options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
                 </div>
                 {filterBranch && (
                     <button onClick={() => setFilterBranch('')} title="Quitar sucursal"

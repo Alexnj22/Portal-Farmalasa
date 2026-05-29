@@ -637,6 +637,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             icon={Building2}
                             clearable={false}
                             compact
+                            bare
                         />
                     </div>
                 </div>

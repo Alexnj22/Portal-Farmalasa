@@ -2716,6 +2716,7 @@ export default function TabCatalogo({
                                 placeholder="Laboratorio"
                                 icon={Building2}
                                 compact
+                                bare
                             />
                         </div>
 
@@ -2730,6 +2731,7 @@ export default function TabCatalogo({
                                 placeholder="Categoría"
                                 icon={Tag}
                                 compact
+                                bare
                             />
                         </div>
 

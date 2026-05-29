@@ -392,6 +392,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         icon={Building2}
                                         clearable={false}
                                         compact
+                                        bare
                                     />
                                 </div>
                                 {selectedErp !== null && (
@@ -413,6 +414,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             placeholder="Laboratorio"
                                             clearable={false}
                                             compact
+                                            bare
                                         />
                                     </div>
                                     {filterLab !== null && (
@@ -435,6 +437,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             placeholder="Categoría"
                                             clearable={false}
                                             compact
+                                            bare
                                         />
                                     </div>
                                     {filterCat !== null && (

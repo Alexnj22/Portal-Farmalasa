@@ -11,11 +11,16 @@ import {
     Sparkles, History, MapPin, Search, Clipboard, Eye,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 
-const PAGE_SIZES = [25, 50, 100];
+const PAGE_SIZE_OPTIONS = [
+    { value: '25',  label: '25 / pág' },
+    { value: '50',  label: '50 / pág' },
+    { value: '100', label: '100 / pág' },
+];
 
 const PRICE_FIELDS = [
     { key: 'vineta',      label: 'Víneta'   },
@@ -293,26 +298,6 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     );
 }
 
-// ── SortTh ────────────────────────────────────────────────────────────────────
-
-function SortTh({ field, label, sortField, sortDir, onSort, className = '' }) {
-    const active = sortField === field;
-    return (
-        <th onClick={() => onSort(field)}
-            className={`px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest cursor-pointer select-none transition-colors whitespace-nowrap ${
-                active
-                    ? 'text-[#0052CC]'
-                    : 'text-slate-400 hover:text-slate-600'
-            } ${className}`}>
-            <span className="flex items-center gap-1.5">
-                {label}
-                <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>
-                    {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-                </span>
-            </span>
-        </th>
-    );
-}
 
 // ── PrincipiosEditor ──────────────────────────────────────────────────────────
 
@@ -2319,26 +2304,15 @@ export default function TabCatalogo({
 
     // ── Theme tokens ────────────────────────────────────────────────────────────
     const tk = {
-        card: 'bg-white border-slate-200/80 shadow-[0_4px_24px_rgba(0,82,204,0.10)]',
-        thead: 'bg-gradient-to-r from-[#0052CC]/[0.07] to-[#0052CC]/[0.03] border-b border-[#0052CC]/[0.12]',
-        rowBorder: 'border-t border-slate-100',
-        rowHover: 'hover:bg-[#0052CC]/[0.03]',
         rowExpanded: 'bg-[#0052CC]/[0.05]',
-        rowAccentColor: '#0052CC',
         textStrong: 'text-slate-800',
         textMid: 'text-slate-500',
         textInactive: 'text-slate-400 line-through decoration-slate-300',
         avatarBg: 'bg-[#0052CC]/[0.07]',
         avatarIcon: 'text-[#0052CC]/50',
-        skeleton: 'bg-slate-200/70',
-        emptyBg: 'bg-white border-slate-200/80',
-        emptyIcon: 'text-slate-300',
-        emptyText: 'text-slate-400',
         filterPill: 'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
         filterDivider: 'bg-slate-100',
         filterBtn: 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
-        pageSizeActive: 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm',
-        pageSizeInactive: 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700',
         totalText: 'text-slate-400',
     };
 
@@ -2766,148 +2740,111 @@ export default function TabCatalogo({
                         Reintentar
                     </button>
                 </div>
-            ) : loading ? (
-                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
-                    <table className="min-w-full">
-                        <tbody>
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i} className={`border-l-[3px] border-l-transparent ${i > 0 ? tk.rowBorder : ''}`}>
-                                    <td className="px-4 py-3.5">
+            ) : (
+                <DataTable
+                    columns={[
+                        { key: 'nombre',    label: 'Producto',    sortable: true },
+                        { key: 'lab',       label: 'Laboratorio', sortable: true, hideBelow: 'md' },
+                        { key: 'categoria', label: 'Categoría',   sortable: true, hideBelow: 'lg' },
+                        { key: 'activo',    label: 'Estado',      sortable: true, hideBelow: 'sm' },
+                        { key: '_expand',   label: '',             className: 'w-10' },
+                    ]}
+                    sortKey={sortField}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    loading={loading}
+                    skeletonRows={8}
+                    empty={{ icon: Package, message: 'No se encontraron productos' }}
+                >
+                    {products.map((p, index) => {
+                        const isExpanded    = expandedId === p.id;
+                        const isLoadingThis = loadingExpandedId === p.id;
+                        const hasChanges    = changedIds.has(p.id);
+                        const worstM        = marginMap[p.id];
+                        const mInfo         = worstM !== undefined ? marginLabel(worstM) : null;
+                        const isInactive    = !p.activo && filterActivo === 'todos';
+                        const specLoss      = specialLossMap[p.id];
+                        return (
+                            <React.Fragment key={p.id}>
+                                <DataRow
+                                    index={index}
+                                    onClick={() => toggleRow(p.id)}
+                                    onMouseEnter={() => prefetchRow(p.id)}
+                                    onMouseLeave={cancelPrefetch}
+                                    style={{ borderLeftColor: isExpanded ? '#0052CC' : 'transparent' }}
+                                    className={`border-l-[3px] ${isExpanded ? tk.rowExpanded : isInactive ? 'opacity-50' : ''}`}
+                                >
+                                    <DataCell>
                                         <div className="flex items-center gap-3.5">
-                                            <div className={`w-11 h-11 rounded-2xl animate-pulse shrink-0 ${tk.skeleton}`} />
-                                            <div className="space-y-2">
-                                                <div className={`h-[13px] w-44 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${140 + (i * 23) % 60}px` }} />
-                                                <div className={`h-2.5 w-24 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${60 + (i * 17) % 40}px` }} />
+                                            {p.foto_url
+                                                ? <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
+                                                : <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}><Package size={16} className={tk.avatarIcon} /></div>
+                                            }
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
+                                                    {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
+                                                    {specLoss && [...specLoss].map(k => (
+                                                        <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-full shrink-0">
+                                                            <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
+                                                        </span>
+                                                    ))}
+                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
+                                                </div>
+                                                {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3.5 hidden md:table-cell"><div className={`h-3 rounded-full animate-pulse ${tk.skeleton}`} style={{ width: `${80 + (i * 13) % 50}px` }} /></td>
-                                    <td className="px-4 py-3.5 hidden lg:table-cell"><div className={`h-5 w-20 rounded-full animate-pulse ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 hidden sm:table-cell"><div className={`h-6 w-14 rounded-full animate-pulse ${tk.skeleton}`} /></td>
-                                    <td className="px-4 py-3.5 w-10" />
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : products.length === 0 ? (
-                <div className={`rounded-2xl border py-20 text-center ${tk.emptyBg}`}>
-                    <Package size={32} className={`mx-auto mb-3 ${tk.emptyIcon}`} />
-                    <p className={`text-sm font-medium ${tk.emptyText}`}>No se encontraron productos</p>
-                </div>
-
-            ) : (
-                /* ── LIQUID: glass table (default) ── */
-                <div className={`rounded-2xl border overflow-hidden ${tk.card}`}>
-                    <div className="overflow-x-auto w-full">
-                        <table className="min-w-full text-sm">
-                            <thead className={`sticky top-0 z-10 ${tk.thead}`}>
-                                <tr>
-                                    <SortTh field="nombre"    label="Producto"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                                    <SortTh field="lab"       label="Laboratorio" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
-                                    <SortTh field="categoria" label="Categoría"   sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
-                                    <SortTh field="activo"    label="Estado"      sortField={sortField} sortDir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
-                                    <th className="px-4 py-3.5 w-10" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map(p => {
-                                    const isExpanded    = expandedId === p.id;
-                                    const isLoadingThis = loadingExpandedId === p.id;
-                                    const hasChanges    = changedIds.has(p.id);
-                                    const worstM        = marginMap[p.id];
-                                    const mInfo         = worstM !== undefined ? marginLabel(worstM) : null;
-                                    const isInactive    = !p.activo && filterActivo === 'todos';
-                                    const specLoss      = specialLossMap[p.id];
-                                    return (
-                                        <React.Fragment key={p.id}>
-                                            <tr
-                                                onClick={() => toggleRow(p.id)}
-                                                onMouseEnter={() => prefetchRow(p.id)}
-                                                onMouseLeave={cancelPrefetch}
-                                                style={{ borderLeftColor: isExpanded ? '#0052CC' : 'transparent' }}
-                                                className={`cursor-pointer transition-all duration-150 border-l-[3px] ${tk.rowBorder} ${
-                                                    isExpanded ? tk.rowExpanded : isInactive ? `${tk.rowHover} opacity-50` : tk.rowHover
-                                                }`}>
-                                                <td className="px-4 py-3.5">
-                                                    <div className="flex items-center gap-3.5">
-                                                        {p.foto_url
-                                                            ? <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
-                                                            : <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}><Package size={16} className={tk.avatarIcon} /></div>
-                                                        }
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
-                                                                {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
-                                                                {specLoss && [...specLoss].map(k => (
-                                                                    <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded-full shrink-0">
-                                                                        <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
-                                                                    </span>
-                                                                ))}
-                                                                {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
-                                                            </div>
-                                                            {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden md:table-cell"><span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></td>
-                                                <td className="px-4 py-3.5 hidden lg:table-cell">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
-                                                        {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Antibiótico</span>}
-                                                        {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-100">Receta</span>}
-                                                        {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-300">—</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3.5 hidden sm:table-cell">
-                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                                                        {p.activo ? 'Activo' : 'Inactivo'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3.5">
-                                                    {isLoadingThis
-                                                        ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
-                                                        : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-blue-400' : tk.textMid}`} />
-                                                    }
-                                                </td>
-                                            </tr>
-                                            {isExpanded && (
-                                                <ExpandedProductRow
-                                                    product={p}
-                                                    data={expandedCache[p.id]}
-                                                    loadingRow={isLoadingThis && !expandedCache[p.id]}
-                                                    branches={branches}
-                                                    onPhotoUpdated={handlePhotoUpdated}
-                                                    onPrinciplesUpdated={handlePrinciplesUpdated}
-                                                    onCategoryUpdated={handleCategoryUpdated}
-                                                    onClose={() => setExpandedId(null)}
-                                                    categories={catOptions.map(o => o.value)}
-                                                    onCategoryCreated={onCategoryCreated}
-                                                />
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    </DataCell>
+                                    <DataCell hideBelow="md"><span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></DataCell>
+                                    <DataCell hideBelow="lg">
+                                        <div className="flex flex-wrap gap-1">
+                                            {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
+                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Antibiótico</span>}
+                                            {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-100">Receta</span>}
+                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-300">—</span>}
+                                        </div>
+                                    </DataCell>
+                                    <DataCell hideBelow="sm">
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                            {p.activo ? 'Activo' : 'Inactivo'}
+                                        </span>
+                                    </DataCell>
+                                    <DataCell className="w-10 text-center">
+                                        {isLoadingThis
+                                            ? <Loader2 size={13} className="animate-spin text-blue-400 mx-auto" />
+                                            : <ChevronDown size={13} className={`transition-transform duration-200 mx-auto ${isExpanded ? 'rotate-180 text-blue-400' : tk.textMid}`} />
+                                        }
+                                    </DataCell>
+                                </DataRow>
+                                {isExpanded && (
+                                    <ExpandedProductRow
+                                        product={p}
+                                        data={expandedCache[p.id]}
+                                        loadingRow={isLoadingThis && !expandedCache[p.id]}
+                                        branches={branches}
+                                        onPhotoUpdated={handlePhotoUpdated}
+                                        onPrinciplesUpdated={handlePrinciplesUpdated}
+                                        onCategoryUpdated={handleCategoryUpdated}
+                                        onClose={() => setExpandedId(null)}
+                                        categories={catOptions.map(o => o.value)}
+                                        onCategoryCreated={onCategoryCreated}
+                                    />
+                                )}
+                            </React.Fragment>
+                        );
+                    })}
+                </DataTable>
             )}
 
             {/* ── Pagination ── */}
-            {!loading && products.length > 0 && (
+            {!loading && total > 0 && (
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        {PAGE_SIZES.map(size => (
-                            <button key={size}
-                                onClick={() => { setPageSize(size); setPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    pageSize === size ? tk.pageSizeActive : tk.pageSizeInactive
-                                }`}>
-                                {size}
-                            </button>
-                        ))}
-                    </div>
+                    <LiquidSelect
+                        value={String(pageSize)}
+                        onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                        options={PAGE_SIZE_OPTIONS}
+                        compact
+                    />
                     <SmartPagination page={page} total={totalPages} onChange={setPage} />
                     <span className={`text-[10px] font-semibold w-[80px] text-right ${tk.totalText}`}>
                         {total.toLocaleString()} total

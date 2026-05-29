@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import { useAuth } from '../../context/AuthContext';
 import { printFromPreview, fefoProject } from '../../utils/pedidoPrint';
 
@@ -95,7 +96,11 @@ function LotesPill({ lotes, qty }) {
     );
 }
 
-const PAGE_SIZES = [20, 50, 100];
+const PAGE_SIZE_OPTIONS = [
+    { value: '25',  label: '25 / pág' },
+    { value: '50',  label: '50 / pág' },
+    { value: '100', label: '100 / pág' },
+];
 
 const SIN_BODEGA_COLS = [
     { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
@@ -231,7 +236,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [sinSortKey,   setSinSortKey]   = useState('total_necesidad');
     const [sinSortDir,   setSinSortDir]   = useState('desc');
     const [sinPage,      setSinPage]      = useState(1);
-    const [sinPageSize,  setSinPageSize]  = useState(20);
+    const [sinPageSize,  setSinPageSize]  = useState(25);
 
     // ── Synced-at ──────────────────────────────────────────────
     useEffect(() => {
@@ -903,18 +908,12 @@ export default function TabGenerar({ searchTerm = '' }) {
             {/* ── Paginación (fuera del card, igual que en Productos) ── */}
             {!sinBodegaLoad && sinFiltered.length > 0 && (
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        {PAGE_SIZES.map(size => (
-                            <button key={size} onClick={() => { setSinPageSize(size); setSinPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    sinPageSize === size
-                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
-                                        : 'bg-white/50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700 hover:bg-white/80'
-                                }`}>
-                                {size}
-                            </button>
-                        ))}
-                    </div>
+                    <LiquidSelect
+                        value={String(sinPageSize)}
+                        onChange={v => { setSinPageSize(Number(v)); setSinPage(1); }}
+                        options={PAGE_SIZE_OPTIONS}
+                        compact
+                    />
                     <SmartPagination page={sinPage} total={sinTotalPages} onChange={setSinPage} />
                     <span className="text-[10px] font-semibold text-slate-400 w-[80px] text-right">
                         {sinFiltered.length.toLocaleString()} total

@@ -21,7 +21,11 @@ const ERP_COLORS = {
     6: 'text-amber-700 bg-amber-50 border-amber-100',
     7: 'text-indigo-600 bg-indigo-50 border-indigo-100',
 };
-const PAGE_SIZES = [25, 50, 100];
+const PAGE_SIZE_OPTIONS = [
+    { value: '25',  label: '25 / pág' },
+    { value: '50',  label: '50 / pág' },
+    { value: '100', label: '100 / pág' },
+];
 
 function parseFactor(detalle) {
     if (!detalle) return 1;
@@ -650,19 +654,12 @@ export default function TabInventario({ searchTerm = '' }) {
             {/* ── Pagination ── */}
             {!loading && total > 0 && (
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        {PAGE_SIZES.map(size => (
-                            <button key={size}
-                                onClick={() => { setPageSize(size); setPage(1); }}
-                                className={`px-3 h-7 rounded-full text-[10px] font-bold transition-all border ${
-                                    pageSize === size
-                                        ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-                                }`}>
-                                {size}
-                            </button>
-                        ))}
-                    </div>
+                    <LiquidSelect
+                        value={String(pageSize)}
+                        onChange={v => { setPageSize(Number(v)); setPage(1); }}
+                        options={PAGE_SIZE_OPTIONS}
+                        compact
+                    />
                     <SmartPagination page={page} total={totalPages} onChange={setPage} />
                     <span className="text-[10px] text-slate-400 font-semibold w-[80px] text-right">
                         {total.toLocaleString()} grupos

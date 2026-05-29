@@ -17,7 +17,11 @@ export default function LiquidTooltip({ children, content, side = 'top', classNa
     const show = useCallback(() => {
         if (!ref.current || !content) return;
         const r = ref.current.getBoundingClientRect();
-        setPos({ cx: r.left + r.width / 2, top: r.top, bottom: r.bottom });
+        const rawCx = r.left + r.width / 2;
+        // Clamp so the tooltip (est. max ~360px wide) never clips either viewport edge
+        const halfEst = 180;
+        const cx = Math.min(Math.max(rawCx, halfEst + 8), window.innerWidth - halfEst - 8);
+        setPos({ cx, top: r.top, bottom: r.bottom });
     }, [content]);
 
     const hide = useCallback(() => setPos(null), []);
@@ -59,7 +63,7 @@ export default function LiquidTooltip({ children, content, side = 'top', classNa
                         border border-white/90
                         shadow-[0_8px_32px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)]
                         rounded-2xl px-5 py-3.5
-                        min-w-[180px] max-w-[340px]
+                        w-max max-w-[360px]
                         animate-in fade-in zoom-in-95 duration-150 ease-out
                     ">
                         {content}

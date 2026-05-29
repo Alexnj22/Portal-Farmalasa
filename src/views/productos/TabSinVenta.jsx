@@ -237,7 +237,7 @@ function UltimaVentaCell({ row, allBranches }) {
         const s = porSuc[0];
         const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
         const tipContent = (
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center justify-between gap-6 whitespace-nowrap">
                 <span className="text-[12px] font-semibold text-slate-700">{name}</span>
                 <span className="text-[12px] font-black tabular-nums text-[#0052CC]">{fmtSucDate(s.fecha)}</span>
             </div>
@@ -261,7 +261,7 @@ function UltimaVentaCell({ row, allBranches }) {
                 const d = Math.floor((Date.now() - new Date(s.fecha)) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
                 return (
-                    <div key={s.esid} className="flex items-center justify-between gap-6">
+                    <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-[12px] font-semibold text-slate-700">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
                         <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
                     </div>

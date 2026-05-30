@@ -81,6 +81,14 @@ const TimeClockView = ({ setView }) => {
     }
   }, [logout, setView]);
 
+  // Dark theme-color for iOS Safari chrome (Dynamic Island + nav bar)
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.content;
+    if (meta) meta.content = '#060B18';
+    return () => { if (meta && prev) meta.content = prev; };
+  }, []);
+
   useEffect(() => {
     const handleEscKey = (e) => {
       if (e.key === 'Escape') {

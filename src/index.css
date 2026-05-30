@@ -165,7 +165,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%);
+  background: radial-gradient(ellipse at 38% 28%, #d8d2ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%);
   overscroll-behavior: none;
   overflow: hidden;
 }

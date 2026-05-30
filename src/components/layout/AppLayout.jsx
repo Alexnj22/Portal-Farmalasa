@@ -77,9 +77,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [isMobile, setIsMobile] = useState(false);
-    const [isWide, setIsWide] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+    const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
     const [openGroups, setOpenGroups] = useState({});  // groupKey → bool
 
     const [authPin, setAuthPin] = useState(getHourlyCode());

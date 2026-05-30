@@ -15,6 +15,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [isLoading,         setIsLoading]         = useState(false);
     const [error,             setError]             = useState('');
     const [loginMode,         setLoginMode]         = useState('code');
+    const [codeKey,           setCodeKey]           = useState(0); // increments when code panel enters
+    const [userKey,           setUserKey]           = useState(0); // increments when username panel enters
     const [newPassword,       setNewPassword]       = useState('');
     const [confirmPassword,   setConfirmPassword]   = useState('');
     const [changePassError,   setChangePassError]   = useState('');
@@ -111,6 +113,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         handleStopScannerBtn();
         setLoginMode(mode);
         setError('');
+        // Increment the entering panel's key → forces remount → stagger animations replay
+        if (mode === 'code')     setCodeKey(k => k + 1);
+        if (mode === 'username') setUserKey(k => k + 1);
     };
 
     const goToKiosko = () => {
@@ -315,7 +320,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         const tid = isHidden ? -1 : undefined;
         return (
             <div className="flex flex-col gap-3">
-                <div className="relative group z-20 flex items-center gap-2">
+                <div className="relative group z-20 flex items-center gap-2 animate-input-reveal" style={{'--ir-delay':'0ms'}}>
                     <div className="relative flex-1 flex items-center">
                         <ScanBarcode size={compact?18:22} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-30" />
                         <input ref={inputRef} id={isHidden?undefined:'login-code'} name="login-code" type="text" placeholder="CÓDIGO"
@@ -338,7 +343,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref:usernameRef, id:'username', type:'text', placeholder:'nombre.apellido', autoComplete:'username', Icon:UserIcon },
                     { ref:userPasswordRef, id:'password', type:'password', placeholder:'Contraseña', autoComplete:'current-password', Icon:Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }, i) => (
-                    <div key={i} className="relative group flex items-center">
+                    <div key={i} className="relative group flex items-center animate-input-reveal" style={{'--ir-delay':`${i * 80}ms`}}>
                         <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
                         <input ref={ref} id={isHidden?undefined:id} name={id} type={type} placeholder={placeholder}
                             tabIndex={tid} autoComplete={autoComplete}
@@ -371,29 +376,33 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     transition: 'transform 520ms cubic-bezier(0.23, 1, 0.32, 1)',
                     willChange: 'transform',
                 }}>
-                    {/* ── Code panel ── */}
-                    <div style={{ width: '50%', minWidth: 0 }}>
+                    {/* ── Code panel ── key increments when panel enters → remount → animations replay */}
+                    <div key={codeKey} style={{ width: '50%', minWidth: 0 }}>
                         <form onSubmit={handleLogin} className={`flex flex-col ${gap}`}>
                             <CodeForm compact={compact} isHidden={isUsername} />
                             {!isUsername && <ErrorPill />}
-                            <GlassButton height={btnH} disabled={isLoading || isUsername} tabIndex={isUsername ? -1 : undefined}>
-                                {isLoading && !isUsername
-                                    ? <Loader2 size={compact?16:20} className="animate-spin" />
-                                    : 'Ingresar al Portal'}
-                            </GlassButton>
+                            <div className="animate-input-reveal" style={{'--ir-delay':'90ms'}}>
+                                <GlassButton height={btnH} disabled={isLoading || isUsername} tabIndex={isUsername ? -1 : undefined}>
+                                    {isLoading && !isUsername
+                                        ? <Loader2 size={compact?16:20} className="animate-spin" />
+                                        : 'Ingresar al Portal'}
+                                </GlassButton>
+                            </div>
                         </form>
                     </div>
 
-                    {/* ── Username panel ── */}
-                    <div style={{ width: '50%', minWidth: 0 }}>
+                    {/* ── Username panel ── key increments when panel enters → remount → animations replay */}
+                    <div key={userKey} style={{ width: '50%', minWidth: 0 }}>
                         <form onSubmit={handleUsernameLogin} className={`flex flex-col ${gap}`}>
                             <UsernameForm compact={compact} isHidden={!isUsername} />
                             {isUsername && <ErrorPill />}
-                            <GlassButton height={btnH} disabled={isLoading || !isUsername} tabIndex={!isUsername ? -1 : undefined}>
-                                {isLoading && isUsername
-                                    ? <Loader2 size={compact?16:20} className="animate-spin" />
-                                    : 'Ingresar al Portal'}
-                            </GlassButton>
+                            <div className="animate-input-reveal" style={{'--ir-delay':'170ms'}}>
+                                <GlassButton height={btnH} disabled={isLoading || !isUsername} tabIndex={!isUsername ? -1 : undefined}>
+                                    {isLoading && isUsername
+                                        ? <Loader2 size={compact?16:20} className="animate-spin" />
+                                        : 'Ingresar al Portal'}
+                                </GlassButton>
+                            </div>
                         </form>
                     </div>
                 </div>

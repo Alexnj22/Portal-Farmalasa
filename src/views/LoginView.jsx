@@ -15,7 +15,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [isLoading,         setIsLoading]         = useState(false);
     const [error,             setError]             = useState('');
     const [loginMode,         setLoginMode]         = useState('code');
-    const [prevMode,          setPrevMode]          = useState(null);
+    const [exitingMode,       setExitingMode]       = useState(null); // mode being animated out
+    const [slideDir,          setSlideDir]          = useState(null); // 'right' | 'left'
     const [newPassword,       setNewPassword]       = useState('');
     const [confirmPassword,   setConfirmPassword]   = useState('');
     const [changePassError,   setChangePassError]   = useState('');
@@ -25,7 +26,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [scannerActive,     setScannerActive]     = useState(false);
     const [scanFeedback,      setScanFeedback]      = useState(null);
     const [mounted,           setMounted]           = useState(false);
-    const [leaving,           setLeaving]           = useState(false);  // kiosko exit transition
+    const [leaving,           setLeaving]           = useState(false);
 
     const inputRef        = useRef(null);
     const usernameRef     = useRef(null);
@@ -35,9 +36,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const scannerRef      = useRef(null);
     const streamRef       = useRef(null);
     const cooldownRef     = useRef(false);
+    const exitTimerRef    = useRef(null);
 
     useEffect(() => { loginModeRef.current = loginMode; }, [loginMode]);
     useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);
+    useEffect(() => () => { if (exitTimerRef.current) clearTimeout(exitTimerRef.current); }, []);
 
     useEffect(() => {
         if (loginMode === 'code' && inputRef.current && !scannerActive) inputRef.current.focus();
@@ -104,11 +107,15 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const handleStopScannerBtn = () => { cooldownRef.current = false; stopCameraSafely(); setScannerActive(false); setScanFeedback(null); };
 
     const switchMode = (mode) => {
-        if (mode === loginMode) return;
-        setPrevMode(loginMode);
+        if (mode === loginMode || exitingMode) return; // block during transition
+        const dir = mode === 'username' ? 'right' : 'left';
+        setSlideDir(dir);
+        setExitingMode(loginMode);
         handleStopScannerBtn();
         setLoginMode(mode);
         setError('');
+        if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = setTimeout(() => setExitingMode(null), 420);
     };
 
     const goToKiosko = () => {
@@ -156,16 +163,48 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setChangePassLoading(false);
     };
 
-    /* ─── Shared ─────────────────────────────────────────────────────────── */
+    /* ─── Shared styles ─────────────────────────────────────────────────────── */
 
     const inputCls = "w-full bg-white/[0.22] hover:bg-white/[0.38] backdrop-blur-md border border-white/65 text-slate-800 placeholder-slate-400/80 outline-none focus:bg-white/[0.60] focus:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/12 transition-all duration-200 font-bold";
 
-    // Tab switch direction: going to 'username' → slide from right; going to 'code' → slide from left
-    const tabAnimCls = prevMode === null
-        ? 'animate-view-enter'
-        : loginMode === 'username'
-            ? 'animate-tab-enter-right'
-            : 'animate-tab-enter-left';
+    // Animation classes for the currently entering form
+    const enterCls = exitingMode ? (slideDir === 'right' ? 'animate-tab-enter-right' : 'animate-tab-enter-left') : '';
+    // Animation class for the ghost of the exiting form
+    const exitCls  = slideDir === 'right' ? 'animate-tab-exit-left' : 'animate-tab-exit-right';
+
+    /* ─── Ghost forms (visual-only, no refs, for exit overlay) ─────────────── */
+
+    // Renders the visual skeleton of a form mode, used only during the exit animation
+    const GhostCodeInputs = ({ compact }) => (
+        <div className="flex flex-col gap-3">
+            <div className="relative flex items-center gap-2">
+                <div className="relative flex-1 flex items-center">
+                    <ScanBarcode size={compact?18:22} strokeWidth={2} className="absolute left-4 text-slate-400 pointer-events-none z-10" />
+                    <div className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-sm':'pl-14 pr-5 py-4 text-lg'} rounded-[1.5rem] tracking-[0.45em]`} />
+                </div>
+                <div className={`shrink-0 ${compact?'w-[44px] h-[44px]':'w-[52px] h-[52px]'} flex items-center justify-center rounded-[1.25rem] border backdrop-blur-md bg-white/[0.30] border-white/65 text-slate-400`}>
+                    <Camera size={compact?16:18} strokeWidth={2} />
+                </div>
+            </div>
+        </div>
+    );
+
+    const GhostUsernameInputs = ({ compact }) => (
+        <div className="flex flex-col gap-3">
+            {[UserIcon, Lock].map((Icon, i) => (
+                <div key={i} className="relative flex items-center">
+                    <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 pointer-events-none z-10" />
+                    <div className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[13px]':'pl-12 pr-5 py-4 text-[14px]'} rounded-[1.5rem]`} />
+                </div>
+            ))}
+        </div>
+    );
+
+    const GhostButton = ({ compact }) => (
+        <div className={`w-full ${compact?'h-[46px]':'h-[54px]'} rounded-[1.5rem] bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78 border border-white/22 opacity-80`} />
+    );
+
+    /* ─── Functional sub-components ─────────────────────────────────────────── */
 
     const AmbientBG = () => (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -175,7 +214,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 style={{ width:'70vw', height:'70vw', bottom:'-20%', right:'-16%', background:'radial-gradient(circle, rgba(60,100,240,0.28) 0%, rgba(80,140,255,0.10) 45%, transparent 70%)', filter:'blur(52px)', animationDuration:'22s' }} />
             <div className="animate-ambient-drift absolute rounded-full"
                 style={{ width:'50vw', height:'50vw', top:'40%', right:'-8%', background:'radial-gradient(circle, rgba(160,90,255,0.18) 0%, transparent 65%)', filter:'blur(40px)', animationDuration:'18s', animationDelay:'-7s' }} />
-            {/* Glass particles */}
             {[{s:16,t:'11%',l:'7%',d:'6.5s',dl:'0s'},{s:10,t:'19%',l:'79%',d:'9s',dl:'1.2s'},{s:20,t:'66%',l:'11%',d:'7.5s',dl:'2.5s'},{s:12,t:'73%',l:'83%',d:'10s',dl:'0.7s'},{s:8,t:'37%',l:'4%',d:'5.5s',dl:'3.2s'},{s:22,t:'81%',l:'61%',d:'8.5s',dl:'4.0s'}].map((p,i)=>(
                 <div key={i} className="absolute rounded-full"
                     style={{ width:p.s, height:p.s, top:p.t, left:p.l, background:'rgba(255,255,255,0.48)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.88)', boxShadow:'inset 0 1px 2px rgba(255,255,255,1)', animation:`lgn-p${i%2+1} ${p.d} ease-in-out ${p.dl} infinite` }} />
@@ -284,6 +322,43 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </div>
     );
 
+    /* ──────────────────────────────────────────────────────────────────────────
+       Slide-animated form panel (enter + exit ghost simultaneously)
+    ────────────────────────────────────────────────────────────────────────── */
+
+    const FormPanel = ({ compact }) => {
+        const btnH = compact ? 'h-[46px]' : 'h-[54px]';
+        return (
+            // overflow-hidden clips both the entering and exiting forms
+            <div className="relative overflow-hidden">
+
+                {/* ── EXIT GHOST: visual copy of the leaving form, slides away ── */}
+                {exitingMode && (
+                    <div className={`absolute top-0 left-0 right-0 z-20 pointer-events-none flex flex-col ${compact?'gap-3':'gap-4'} ${exitCls}`}>
+                        {exitingMode === 'code'
+                            ? <GhostCodeInputs compact={compact} />
+                            : <GhostUsernameInputs compact={compact} />
+                        }
+                        <GhostButton compact={compact} />
+                    </div>
+                )}
+
+                {/* ── ENTERING FORM: the active form, slides in ── */}
+                <div key={loginMode} className={`relative z-10 flex flex-col ${compact?'gap-3':'gap-4'} ${enterCls}`}>
+                    <form onSubmit={loginMode==='username'?handleUsernameLogin:handleLogin}
+                        className={`flex flex-col ${compact?'gap-3':'gap-4'}`}>
+                        {loginMode==='code' ? <CodeForm compact={compact}/> : <UsernameForm compact={compact}/>}
+                        <ErrorPill />
+                        <GlassButton height={btnH}>
+                            {isLoading?<Loader2 size={compact?16:20} className="animate-spin"/>:'Ingresar al Portal'}
+                        </GlassButton>
+                    </form>
+                </div>
+
+            </div>
+        );
+    };
+
     /* ══════════════════════════════════════════════════════
        CHANGE PASSWORD SCREEN
     ══════════════════════════════════════════════════════ */
@@ -344,11 +419,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-[2.5rem]" />
                 <div className="rounded-[2.5rem] p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[0_24px_60px_rgba(0,0,0,0.10),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-4">
                     <TabBar />
-                    <form key={loginMode} onSubmit={loginMode==='username'?handleUsernameLogin:handleLogin} className={`flex flex-col gap-3 ${tabAnimCls}`}>
-                        {loginMode==='code' ? <CodeForm compact /> : <UsernameForm compact />}
-                        <ErrorPill />
-                        <GlassButton height="h-[46px]">{isLoading?<Loader2 size={18} className="animate-spin"/>:'Ingresar al Portal'}</GlassButton>
-                    </form>
+                    <FormPanel compact />
                     {!isMobileOrApp() && (
                         <>
                             <div className="h-px bg-white/40 mx-2" />
@@ -389,14 +460,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     );
 
     /* ══════════════════════════════════════════════════════
-       DESKTOP LAYOUT — card truly centered, links float right
+       DESKTOP LAYOUT
     ══════════════════════════════════════════════════════ */
     const DesktopLayout = () => (
         <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
 
-            {/* Card — always centered */}
+            {/* Card */}
             <div className={`relative w-full max-w-[480px] z-10 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
-                {/* Outer glow */}
                 <div className="absolute -inset-6 rounded-[3.5rem] blur-2xl opacity-18 bg-gradient-to-b from-violet-400 via-indigo-300 to-blue-400 pointer-events-none" />
 
                 <div className="relative rounded-[3rem] px-10 py-10 bg-white/[0.18] backdrop-blur-[52px] backdrop-saturate-[200%] border border-white/[0.86] shadow-[0_40px_100px_rgba(0,0,0,0.12),inset_0_2px_0_rgba(255,255,255,0.95)] flex flex-col gap-6 overflow-hidden">
@@ -417,21 +487,14 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </div>
                     </div>
 
-                    {/* Divider */}
                     <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/55 to-transparent" /></div>
 
-                    {/* Form — animated on tab switch */}
+                    {/* Form area */}
                     <div className={`relative flex flex-col gap-5 transition-all duration-700 delay-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
                         <TabBar />
-                        <form key={loginMode} onSubmit={loginMode==='username'?handleUsernameLogin:handleLogin}
-                            className={`flex flex-col gap-4 ${tabAnimCls}`}>
-                            {loginMode==='code' ? <CodeForm /> : <UsernameForm />}
-                            <ErrorPill />
-                            <GlassButton>{isLoading?<Loader2 size={20} className="animate-spin"/>:'Ingresar al Portal'}</GlassButton>
-                        </form>
+                        <FormPanel compact={false} />
                     </div>
 
-                    {/* Divider */}
                     <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/55 to-transparent" /></div>
 
                     {/* Kiosko */}
@@ -457,7 +520,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            {/* Quick links — float right absolutely, doesn't affect card centering */}
+            {/* Quick links */}
             <div className={`absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-20 transition-all duration-700 delay-[300ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-x-0':'opacity-0 translate-x-8'}`}>
                 <div className="rounded-[2rem] p-4 bg-white/[0.16] backdrop-blur-[40px] backdrop-saturate-[200%] border border-white/[0.78] shadow-[0_20px_50px_rgba(0,0,0,0.09),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-3 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-[2rem]" />
@@ -471,7 +534,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     ].map(({href,Icon,label,sub,color,glow})=>(
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                             className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-white/55 hover:border-white/88 rounded-[1.25rem] transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
-                            style={{ '--link-glow': glow }}
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
                             <div className="absolute inset-0 overflow-hidden rounded-[1.25rem] pointer-events-none">

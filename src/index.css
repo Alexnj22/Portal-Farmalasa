@@ -244,17 +244,29 @@ body::-webkit-scrollbar { display: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Dashboard tab transitions */
+/* Tab slide transitions — enter */
 @keyframes tabEnterRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(36px) scale(0.97); filter: blur(5px); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    filter: blur(0); }
 }
 @keyframes tabEnterLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-36px) scale(0.97); filter: blur(5px); }
+  to   { opacity: 1; transform: translateX(0)     scale(1);    filter: blur(0); }
 }
-.animate-tab-enter-right { animation: tabEnterRight 250ms cubic-bezier(0.23,1,0.32,1) both; }
-.animate-tab-enter-left  { animation: tabEnterLeft  250ms cubic-bezier(0.23,1,0.32,1) both; }
+.animate-tab-enter-right { animation: tabEnterRight 380ms cubic-bezier(0.23,1,0.32,1) both; }
+.animate-tab-enter-left  { animation: tabEnterLeft  380ms cubic-bezier(0.23,1,0.32,1) both; }
+
+/* Tab slide transitions — exit */
+@keyframes tabExitLeft {
+  from { opacity: 1; transform: translateX(0)     scale(1);    filter: blur(0); }
+  to   { opacity: 0; transform: translateX(-36px) scale(0.97); filter: blur(5px); }
+}
+@keyframes tabExitRight {
+  from { opacity: 1; transform: translateX(0)    scale(1);    filter: blur(0); }
+  to   { opacity: 0; transform: translateX(36px) scale(0.97); filter: blur(5px); }
+}
+.animate-tab-exit-left  { animation: tabExitLeft  380ms cubic-bezier(0.23,1,0.32,1) both; }
+.animate-tab-exit-right { animation: tabExitRight 380ms cubic-bezier(0.23,1,0.32,1) both; }
 
 /* Virtual caret animations */
 @keyframes border-pulse-blue {

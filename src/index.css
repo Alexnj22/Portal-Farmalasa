@@ -180,15 +180,6 @@ body::-webkit-scrollbar { display: none; }
    PORTAL AMBIENT ORBS
    ═══════════════════════════════════════════════════════════════ */
 
-@keyframes flsOrb1 {
-  0%   { transform: translate(0,0) scale(1); }
-  100% { transform: translate(6%,8%) scale(1.12); }
-}
-@keyframes flsOrb2 {
-  0%   { transform: translate(0,0) scale(1); }
-  100% { transform: translate(-8%,5%) scale(1.08); }
-}
-
 /* ═══════════════════════════════════════════════════════════════
    GLOBAL ANIMATION UTILITIES
    ═══════════════════════════════════════════════════════════════ */
@@ -218,18 +209,20 @@ body::-webkit-scrollbar { display: none; }
 
 @keyframes ambientDrift {
   0%   { transform: translate3d(0,0,0) scale(1); }
-  33%  { transform: translate3d(4vw,-4vh,0) scale(1.05); }
-  66%  { transform: translate3d(-3vw,3vh,0) scale(0.95); }
+  25%  { transform: translate3d(8vw,-6vh,0) scale(1.08); }
+  50%  { transform: translate3d(3vw,8vh,0) scale(0.94); }
+  75%  { transform: translate3d(-6vw,-3vh,0) scale(1.06); }
   100% { transform: translate3d(0,0,0) scale(1); }
 }
 @keyframes ambientDriftReverse {
   0%   { transform: translate3d(0,0,0) scale(1); }
-  33%  { transform: translate3d(-4vw,5vh,0) scale(1.05); }
-  66%  { transform: translate3d(5vw,-3vh,0) scale(0.95); }
+  25%  { transform: translate3d(-7vw,7vh,0) scale(1.07); }
+  50%  { transform: translate3d(6vw,2vh,0) scale(0.93); }
+  75%  { transform: translate3d(-2vw,-7vh,0) scale(1.05); }
   100% { transform: translate3d(0,0,0) scale(1); }
 }
-.animate-ambient-drift         { animation: ambientDrift 20s ease-in-out infinite alternate; will-change: transform; }
-.animate-ambient-drift-reverse { animation: ambientDriftReverse 25s ease-in-out infinite alternate; will-change: transform; }
+.animate-ambient-drift         { animation: ambientDrift 16s ease-in-out infinite; will-change: transform; }
+.animate-ambient-drift-reverse { animation: ambientDriftReverse 20s ease-in-out infinite; will-change: transform; }
 
 /* Skeleton sweep */
 .skeleton {

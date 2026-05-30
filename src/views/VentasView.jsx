@@ -237,15 +237,15 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             <div className="flex flex-col min-w-0">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">{label}</span>
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
-                    <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
-                    {pct !== null && pct !== undefined && (
+                    <span className={`text-[15px] font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
+                    {!blurred && pct !== null && pct !== undefined && (
                         <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
                             {Math.abs(pct).toFixed(1)}%
                         </span>
                     )}
                 </div>
-                {sub && <span className={`text-[9px] text-slate-400 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{sub}</span>}
+                {sub && <span className={`text-[9px] text-slate-400 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
@@ -1075,9 +1075,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell align="right" className="font-semibold text-[12px]">{fmtNum(r.count)}</DataCell>
                                 <DataCell align="right">
                                     <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
-                                        <p className="font-black text-[13px]">{fmt(r.total)}</p>
+                                        <p className="font-black text-[13px]">{privacyMode ? '••••••' : fmt(r.total)}</p>
                                         <div className="mt-1 h-1 rounded-full bg-slate-100">
-                                            <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: `${pct}%` }} />
+                                            <div className="h-1 rounded-full bg-blue-400 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
                                         </div>
                                     </div>
                                 </DataCell>
@@ -1131,8 +1131,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         </DataCell>
                         <DataCell hideBelow="md" className="text-[12px]">—</DataCell>
                         <DataCell align="right" className="text-[12px]">{fmtNum(u.count)}</DataCell>
-                        <DataCell align="right" className="font-bold text-[13px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(u.total)}</span></DataCell>
-                        <DataCell align="right" hideBelow="md" className="text-[12px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{u.count > 0 ? fmt(u.total / u.count) : '—'}</span></DataCell>
+                        <DataCell align="right" className="font-bold text-[13px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{privacyMode ? '••••••' : fmt(u.total)}</span></DataCell>
+                        <DataCell align="right" hideBelow="md" className="text-[12px]">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
                         <DataCell />
                     </DataRow>
                 ))}
@@ -1685,16 +1685,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad)}</DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">
-                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{fmt(r.neto)}</span>
+                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
+                                                {privacyMode ? '••••••' : fmt(r.neto)}
+                                            </span>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="lg" className="text-[12px]">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
-                                                {r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
+                                                {privacyMode ? '••••••' : r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
                                             </span>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm" className="text-[12px] font-bold">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
-                                                {r.utilidad != null
+                                                {privacyMode ? '••••••' : r.utilidad != null
                                                     ? <span className={r.utilidad >= 0 ? 'text-emerald-600' : 'text-red-600'}>{fmt(r.utilidad)}</span>
                                                     : <span className="opacity-30">—</span>}
                                             </span>

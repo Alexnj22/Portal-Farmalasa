@@ -387,7 +387,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                         {/* Logo + título */}
                         <div className="flex flex-col items-center gap-1.5">
-                            <img src="/LogoFLS.svg" alt="FarmaLasa"
+                            <img src="/Logo192.png" alt="FarmaLasa"
                                 className="w-12 h-12 object-contain" />
                             <p className="font-black text-[20px] text-slate-800 tracking-tight leading-none">
                                 Portal
@@ -597,7 +597,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                         <div className="flex flex-col items-center mb-8">
                             <div className="w-20 h-20 flex items-center justify-center mb-6">
-                                <img src="/LogoFLS.svg" alt="FarmaLasa" className="w-20 h-20 object-contain" style={{ background: 'transparent' }} />
+                                <img src="/Logo192.png" alt="FarmaLasa" className="w-20 h-20 object-contain" style={{ background: 'transparent' }} />
                             </div>
                             <h3 className="text-[28px] md:text-[34px] font-black text-slate-800 tracking-tight leading-none mb-3 text-center">
                                 Portal

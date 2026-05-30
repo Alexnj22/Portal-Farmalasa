@@ -543,7 +543,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                             if (isSystemOrAdmin) {
                                                                                 actorName = 'SISTEMA';
-                                                                                actorPhotoUrl = '/LogoFLS.svg';
+                                                                                actorPhotoUrl = '/Logo192.png';
                                                                             } else {
                                                                                 const matchingEmp = employees.find(e =>
                                                                                     (e.email && item.user_email && e.email === item.user_email) ||

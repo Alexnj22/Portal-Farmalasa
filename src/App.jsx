@@ -424,7 +424,7 @@ function MainApp() {
                             </svg>
                             {/* Logo pill */}
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0052CC] to-[#003D99] flex items-center justify-center shadow-[0_8px_28px_rgba(0,82,204,0.40),inset_0_1px_2px_rgba(255,255,255,0.25)]">
-                                <img src="/LogoFLS.svg" alt="Farmalasa" className="w-10 h-10 object-contain" />
+                                <img src="/Logo192.png" alt="Farmalasa" className="w-10 h-10 object-contain" />
                             </div>
                         </div>
 

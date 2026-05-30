@@ -617,7 +617,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     group-hover/logo:border-violet-300/35 group-hover/logo:bg-white/18
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                     <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
-                                    <img src="/LogoFLS.svg" alt="FLS"
+                                    <img src="/Logo192.png" alt="FLS"
                                         className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                 </div>
                             </div>

@@ -286,7 +286,7 @@ const LoginConceptView = ({ setView, setActiveEmployee, onExitConcept }) => {
                         {/* soft glow behind logo */}
                         <div className="absolute inset-0 rounded-2xl"
                             style={{ background:'rgba(0,82,204,0.50)', filter:'blur(28px)', transform:'scale(1.8)' }} />
-                        <img src="/LogoFLS.svg" alt="FarmaLasa" className="relative w-14 h-14 object-contain" />
+                        <img src="/Logo192.png" alt="FarmaLasa" className="relative w-14 h-14 object-contain" />
                     </div>
                     <div className="text-center">
                         <h1 className="text-white font-black text-[38px] tracking-[-0.025em] leading-none">Portal</h1>

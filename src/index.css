@@ -850,10 +850,28 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #E6F0FF;
+  background: radial-gradient(ellipse at 38% 28%, #ded8ff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%);
   overscroll-behavior: none;
   overflow: hidden;
 }
+
+/* Compat: background sólido, sin gradiente */
+[data-theme="compat"] html,
+[data-theme="compat"] body,
+[data-theme="compat"] #root { background: #C8DCED !important; }
+
+/* ── Portal ambient orbs (lavanda/violeta) ─────────────────────────────── */
+@keyframes flsOrb1 {
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(6%,8%) scale(1.12); }
+}
+@keyframes flsOrb2 {
+  0%   { transform: translate(0,0) scale(1); }
+  100% { transform: translate(-8%,5%) scale(1.08); }
+}
+/* Ocultar orbs en temas aurora (tiene los suyos) y compat (sin efectos) */
+[data-theme="aurora"] .fls-orb-portal,
+[data-theme="compat"] .fls-orb-portal { display: none !important; }
 
 /* ── Aurora Cosmos — glow animations ─────────────────────────────────────── */
 @keyframes aurora-loss-glow {

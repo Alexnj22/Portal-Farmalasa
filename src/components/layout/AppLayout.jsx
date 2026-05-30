@@ -524,7 +524,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className="flex w-full min-h-[100dvh] font-sans overflow-hidden relative bg-[#E6F0FF] lg:bg-transparent">
+        <div className="flex w-full min-h-[100dvh] font-sans overflow-hidden relative">
+
+            {/* ── Global ambient orbs ── */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+                <div className="fls-orb-portal absolute rounded-full" style={{ width:'80vw', height:'80vw', top:'-30%', left:'-20%', background:'radial-gradient(circle, rgba(110,70,230,0.20) 0%, transparent 68%)', filter:'blur(65px)', animation:'flsOrb1 11s ease-in-out infinite alternate', willChange:'transform' }} />
+                <div className="fls-orb-portal absolute rounded-full" style={{ width:'65vw', height:'65vw', top:'0%', right:'-25%', background:'radial-gradient(circle, rgba(60,100,240,0.14) 0%, transparent 68%)', filter:'blur(65px)', animation:'flsOrb2 13s ease-in-out infinite alternate', willChange:'transform' }} />
+                <div className="fls-orb-portal absolute rounded-full" style={{ width:'90vw', height:'90vw', bottom:'-45%', left:'0%', background:'radial-gradient(circle, rgba(150,90,240,0.14) 0%, transparent 68%)', filter:'blur(75px)', animation:'flsOrb1 16s ease-in-out 2s infinite alternate', willChange:'transform' }} />
+                <div className="fls-orb-portal absolute rounded-full" style={{ width:'50vw', height:'50vw', top:'30%', left:'60%', background:'radial-gradient(circle, rgba(90,150,255,0.10) 0%, transparent 68%)', filter:'blur(55px)', animation:'flsOrb2 9s ease-in-out 1s infinite alternate', willChange:'transform' }} />
+                <div className="fls-orb-portal absolute rounded-full" style={{ width:'35vw', height:'35vw', top:'55%', left:'35%', background:'radial-gradient(circle, rgba(200,130,255,0.08) 0%, transparent 68%)', filter:'blur(45px)', animation:'flsOrb1 7s ease-in-out 3s infinite alternate', willChange:'transform' }} />
+            </div>
 
             {/* Mobile backdrop */}
             {isMobile && isSidebarOpen && (

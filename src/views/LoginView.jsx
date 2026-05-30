@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Clock, ScanBarcode, Loader2, ChevronRight,
     ShoppingCart, Pill, AlertCircle, Lock, Camera, CameraOff,
-    User as UserIcon, Sparkles, ArrowRight,
+    User as UserIcon, Sparkles, ArrowRight, X,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -15,8 +15,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [isLoading,         setIsLoading]         = useState(false);
     const [error,             setError]             = useState('');
     const [loginMode,         setLoginMode]         = useState('code');
-    const [exitingMode,       setExitingMode]       = useState(null); // mode being animated out
-    const [slideDir,          setSlideDir]          = useState(null); // 'right' | 'left'
     const [newPassword,       setNewPassword]       = useState('');
     const [confirmPassword,   setConfirmPassword]   = useState('');
     const [changePassError,   setChangePassError]   = useState('');
@@ -36,15 +34,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const scannerRef      = useRef(null);
     const streamRef       = useRef(null);
     const cooldownRef     = useRef(false);
-    const exitTimerRef    = useRef(null);
 
     useEffect(() => { loginModeRef.current = loginMode; }, [loginMode]);
     useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);
-    useEffect(() => () => { if (exitTimerRef.current) clearTimeout(exitTimerRef.current); }, []);
 
     useEffect(() => {
-        if (loginMode === 'code' && inputRef.current && !scannerActive) inputRef.current.focus();
-        else if (loginMode === 'username' && usernameRef.current) usernameRef.current.focus();
+        // Small delay so the carousel has time to slide before focusing
+        const t = setTimeout(() => {
+            if (loginMode === 'code' && inputRef.current && !scannerActive) inputRef.current.focus();
+            else if (loginMode === 'username' && usernameRef.current) usernameRef.current.focus();
+        }, 60);
+        return () => clearTimeout(t);
     }, [loginMode, scannerActive]);
 
     const stopCameraSafely = () => {
@@ -107,15 +107,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const handleStopScannerBtn = () => { cooldownRef.current = false; stopCameraSafely(); setScannerActive(false); setScanFeedback(null); };
 
     const switchMode = (mode) => {
-        if (mode === loginMode || exitingMode) return; // block during transition
-        const dir = mode === 'username' ? 'right' : 'left';
-        setSlideDir(dir);
-        setExitingMode(loginMode);
+        if (mode === loginMode) return;
         handleStopScannerBtn();
         setLoginMode(mode);
         setError('');
-        if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-        exitTimerRef.current = setTimeout(() => setExitingMode(null), 420);
     };
 
     const goToKiosko = () => {
@@ -165,46 +160,21 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     /* ─── Shared styles ─────────────────────────────────────────────────────── */
 
-    const inputCls = "w-full bg-white/[0.22] hover:bg-white/[0.38] backdrop-blur-md border border-white/65 text-slate-800 placeholder-slate-400/80 outline-none focus:bg-white/[0.60] focus:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/12 transition-all duration-200 font-bold";
+    // White glassmorphism focus — no blue ring
+    const inputCls = [
+        'w-full',
+        'bg-white/[0.22] hover:bg-white/[0.32]',
+        'backdrop-blur-md',
+        'border border-white/65 hover:border-white/80',
+        'text-slate-800 placeholder-slate-400/80',
+        'outline-none',
+        'focus:bg-white/[0.58] focus:border-white/90',
+        'focus:shadow-[inset_0_2px_10px_rgba(0,0,0,0.04),0_0_0_3px_rgba(255,255,255,0.38)]',
+        'transition-all duration-250',
+        'font-bold',
+    ].join(' ');
 
-    // Animation classes for the currently entering form
-    const enterCls = exitingMode ? (slideDir === 'right' ? 'animate-tab-enter-right' : 'animate-tab-enter-left') : '';
-    // Animation class for the ghost of the exiting form
-    const exitCls  = slideDir === 'right' ? 'animate-tab-exit-left' : 'animate-tab-exit-right';
-
-    /* ─── Ghost forms (visual-only, no refs, for exit overlay) ─────────────── */
-
-    // Renders the visual skeleton of a form mode, used only during the exit animation
-    const GhostCodeInputs = ({ compact }) => (
-        <div className="flex flex-col gap-3">
-            <div className="relative flex items-center gap-2">
-                <div className="relative flex-1 flex items-center">
-                    <ScanBarcode size={compact?18:22} strokeWidth={2} className="absolute left-4 text-slate-400 pointer-events-none z-10" />
-                    <div className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-sm':'pl-14 pr-5 py-4 text-lg'} rounded-[1.5rem] tracking-[0.45em]`} />
-                </div>
-                <div className={`shrink-0 ${compact?'w-[44px] h-[44px]':'w-[52px] h-[52px]'} flex items-center justify-center rounded-[1.25rem] border backdrop-blur-md bg-white/[0.30] border-white/65 text-slate-400`}>
-                    <Camera size={compact?16:18} strokeWidth={2} />
-                </div>
-            </div>
-        </div>
-    );
-
-    const GhostUsernameInputs = ({ compact }) => (
-        <div className="flex flex-col gap-3">
-            {[UserIcon, Lock].map((Icon, i) => (
-                <div key={i} className="relative flex items-center">
-                    <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 pointer-events-none z-10" />
-                    <div className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[13px]':'pl-12 pr-5 py-4 text-[14px]'} rounded-[1.5rem]`} />
-                </div>
-            ))}
-        </div>
-    );
-
-    const GhostButton = ({ compact }) => (
-        <div className={`w-full ${compact?'h-[46px]':'h-[54px]'} rounded-[1.5rem] bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78 border border-white/22 opacity-80`} />
-    );
-
-    /* ─── Functional sub-components ─────────────────────────────────────────── */
+    /* ─── Sub-components ─────────────────────────────────────────────────────── */
 
     const AmbientBG = () => (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -237,9 +207,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </div>
     );
 
-    const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]', className = '' }) => (
-        <button type={type} onClick={onClick} disabled={disabled}
-            className={`relative overflow-hidden group w-full ${height} ${className}
+    const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h-[54px]', tabIndex }) => (
+        <button type={type} onClick={onClick} disabled={disabled} tabIndex={tabIndex}
+            className={`relative overflow-hidden group w-full ${height}
                 bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78
                 backdrop-blur-xl
                 border border-white/22 hover:border-white/36
@@ -255,19 +225,45 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </button>
     );
 
+    // Premium glassmorphism scanner
     const ScannerView = () => (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-            <div className="relative w-full rounded-[1.5rem] overflow-hidden bg-black/90 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]" style={{ height: 210 }}>
-                <style>{`@keyframes scan-ln{0%{top:8%}50%{top:88%}100%{top:8%}}`}</style>
-                <div style={{ position:'absolute',left:'6%',right:'6%',height:'2px',background:'rgba(0,82,204,0.9)',animation:'scan-ln 2s ease-in-out infinite',zIndex:10,boxShadow:'0 0 14px rgba(0,82,204,0.8)' }} />
-                {[{t:10,l:10,bt:'borderTop',bl:'borderLeft',br:'4px 0 0 0'},{t:10,r:10,bt:'borderTop',bl:'borderRight',br:'0 4px 0 0'},{b:10,l:10,bt:'borderBottom',bl:'borderLeft',br:'0 0 0 4px'},{b:10,r:10,bt:'borderBottom',bl:'borderRight',br:'0 0 4px 0'}].map((c,i) => (
-                    <div key={i} style={{ position:'absolute', top:c.t, bottom:c.b, left:c.l, right:c.r, width:22, height:22, [c.bt]:'3px solid #0052CC', [c.bl]:'3px solid #0052CC', borderRadius:c.br, zIndex:11 }} />
+        <div style={{ animation: 'scannerReveal 450ms cubic-bezier(0.23,1,0.32,1) both' }} className="flex flex-col gap-2.5">
+            {/* Viewport */}
+            <div className="relative w-full overflow-hidden border border-white/[0.14] shadow-[0_20px_60px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(255,255,255,0.14)]"
+                style={{ height: 224, borderRadius: '1.5rem' }}>
+                {/* Glass dark backing */}
+                <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-sm" />
+                <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
+                {/* Scan line */}
+                <style>{`
+                    @keyframes scan-ln{0%{top:10%}50%{top:88%}100%{top:10%}}
+                    @keyframes scannerReveal{from{opacity:0;transform:scaleY(0.72) translateY(-12px);filter:blur(6px);transform-origin:top center;}to{opacity:1;transform:scaleY(1) translateY(0);filter:blur(0);transform-origin:top center;}}
+                `}</style>
+                <div style={{ position:'absolute', left:'8%', right:'8%', height:'2px', background:'linear-gradient(90deg, transparent, rgba(0,82,204,0.95), transparent)', animation:'scan-ln 2s ease-in-out infinite', zIndex:10, boxShadow:'0 0 18px rgba(0,82,204,0.75), 0 0 50px rgba(0,82,204,0.25)' }} />
+                {/* Corner brackets */}
+                {[
+                    { top:14, left:14, bTop:'2.5px solid rgba(0,82,204,0.90)', bLeft:'2.5px solid rgba(0,82,204,0.90)', br:'5px 0 0 0' },
+                    { top:14, right:14, bTop:'2.5px solid rgba(0,82,204,0.90)', bRight:'2.5px solid rgba(0,82,204,0.90)', br:'0 5px 0 0' },
+                    { bottom:14, left:14, bBottom:'2.5px solid rgba(0,82,204,0.90)', bLeft:'2.5px solid rgba(0,82,204,0.90)', br:'0 0 0 5px' },
+                    { bottom:14, right:14, bBottom:'2.5px solid rgba(0,82,204,0.90)', bRight:'2.5px solid rgba(0,82,204,0.90)', br:'0 0 5px 0' },
+                ].map((c,i) => (
+                    <div key={i} style={{ position:'absolute', top:c.top, left:c.left, right:c.right, bottom:c.bottom, width:26, height:26, borderTop:c.bTop, borderLeft:c.bLeft, borderRight:c.bRight, borderBottom:c.bBottom, borderRadius:c.br, zIndex:11, filter:'drop-shadow(0 0 5px rgba(0,82,204,0.55))' }} />
                 ))}
-                <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                {/* Center guide rect */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-white/15 rounded-xl"
+                    style={{ width:'62%', height:'52%' }} />
+                {/* Vignette overlay */}
+                <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', background:'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.35) 100%)', pointerEvents:'none' }} />
+                {/* Inner border */}
+                <div style={{ position:'absolute', inset:0, borderRadius:'1.5rem', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 0 32px rgba(0,0,0,0.30)', pointerEvents:'none' }} />
             </div>
-            <div className="flex items-center justify-center gap-2 px-3 py-2 bg-white/[0.15] backdrop-blur-sm rounded-[1rem]">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#0052CC] animate-pulse shrink-0" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 text-center">Apunta al código de barras de tu carné</p>
+            {/* Status bar */}
+            <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/[0.22] backdrop-blur-xl border border-white/55 rounded-[1.25rem] shadow-[0_4px_14px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.85)]">
+                <div className="relative shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-[#0052CC]" />
+                    <div className="absolute inset-0 rounded-full bg-[#0052CC]/40 animate-ping" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Apunta el escáner al código de barras</p>
             </div>
         </div>
     );
@@ -291,70 +287,116 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </div>
     ) : null;
 
-    const CodeForm = ({ compact = false }) => (
-        <div className="flex flex-col gap-3">
-            <div className="relative group z-20 flex items-center gap-2">
-                <div className="relative flex-1 flex items-center">
-                    <ScanBarcode size={compact?18:22} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-30" />
-                    <input ref={inputRef} id="login-code" name="login-code" type="text" placeholder="CÓDIGO"
-                        autoComplete="off" spellCheck="false"
-                        className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-sm':'pl-14 pr-5 py-4 text-lg'} rounded-[1.5rem] tracking-[0.45em] uppercase [-webkit-text-security:disc]`} />
-                </div>
-                <button type="button" onClick={() => { if(scannerActive){handleStopScannerBtn();}else{if(inputRef.current)inputRef.current.value='';setScanFeedback(null);cooldownRef.current=false;setScannerActive(true);}}}
-                    className={`shrink-0 ${compact?'w-[44px] h-[44px]':'w-[52px] h-[52px]'} flex items-center justify-center rounded-[1.25rem] border backdrop-blur-md transition-all duration-200 active:scale-[0.97] ${scannerActive?'bg-red-50/70 border-red-200/60 text-red-400 hover:bg-red-100':'bg-white/[0.30] border-white/65 text-slate-400 hover:bg-white/[0.65] hover:text-[#0052CC] hover:shadow-sm'}`}>
-                    {scannerActive?<CameraOff size={compact?16:18} strokeWidth={2}/>:<Camera size={compact?16:18} strokeWidth={2}/>}
-                </button>
-            </div>
-            {scannerActive && <ScannerView />}
-            <ScanFeedback />
-        </div>
+    // Camera toggle button — premium glass
+    const CameraToggleBtn = ({ compact, hidden: tabHidden }) => (
+        <button
+            type="button"
+            tabIndex={tabHidden ? -1 : undefined}
+            onClick={() => {
+                if (scannerActive) { handleStopScannerBtn(); }
+                else { if (inputRef.current) inputRef.current.value = ''; setScanFeedback(null); cooldownRef.current = false; setScannerActive(true); }
+            }}
+            className={[
+                'shrink-0 flex items-center justify-center rounded-[1.25rem] border backdrop-blur-md',
+                'transition-all duration-300 active:scale-[0.93]',
+                compact ? 'w-[44px] h-[44px]' : 'w-[52px] h-[52px]',
+                scannerActive
+                    ? 'bg-red-500/[0.15] border-red-400/45 text-red-400 shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25] hover:shadow-[0_0_28px_rgba(239,68,68,0.28),inset_0_1px_0_rgba(255,255,255,0.60)]'
+                    : 'bg-white/[0.28] border-white/60 text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-white/85 hover:text-[#0052CC] hover:shadow-[0_6px_18px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.95)]',
+            ].join(' ')}
+        >
+            {scannerActive
+                ? <X size={compact ? 15 : 17} strokeWidth={2.5} />
+                : <Camera size={compact ? 16 : 18} strokeWidth={2} />}
+        </button>
     );
 
-    const UsernameForm = ({ compact = false }) => (
-        <div className="flex flex-col gap-3">
-            {[{ref:usernameRef,id:'username',type:'text',placeholder:'nombre.apellido',autoComplete:'username',Icon:UserIcon},{ref:userPasswordRef,id:'password',type:'password',placeholder:'Contraseña',autoComplete:'current-password',Icon:Lock}].map(({ref,id,type,placeholder,autoComplete,Icon},i)=>(
-                <div key={i} className="relative group flex items-center">
-                    <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
-                    <input ref={ref} id={id} name={id} type={type} placeholder={placeholder} autoComplete={autoComplete}
-                        className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[13px]':'pl-12 pr-5 py-4 text-[14px]'} rounded-[1.5rem]`} />
+    const CodeForm = ({ compact = false, isHidden = false }) => {
+        const tid = isHidden ? -1 : undefined;
+        return (
+            <div className="flex flex-col gap-3">
+                <div className="relative group z-20 flex items-center gap-2">
+                    <div className="relative flex-1 flex items-center">
+                        <ScanBarcode size={compact?18:22} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-30" />
+                        <input ref={inputRef} id={isHidden?undefined:'login-code'} name="login-code" type="text" placeholder="CÓDIGO"
+                            tabIndex={tid} autoComplete="off" spellCheck="false"
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-sm':'pl-14 pr-5 py-4 text-lg'} rounded-[1.5rem] tracking-[0.45em] uppercase [-webkit-text-security:disc]`} />
+                    </div>
+                    <CameraToggleBtn compact={compact} hidden={isHidden} />
                 </div>
-            ))}
-        </div>
-    );
+                {!isHidden && scannerActive && <ScannerView />}
+                {!isHidden && <ScanFeedback />}
+            </div>
+        );
+    };
+
+    const UsernameForm = ({ compact = false, isHidden = false }) => {
+        const tid = isHidden ? -1 : undefined;
+        return (
+            <div className="flex flex-col gap-3">
+                {[
+                    { ref:usernameRef, id:'username', type:'text', placeholder:'nombre.apellido', autoComplete:'username', Icon:UserIcon },
+                    { ref:userPasswordRef, id:'password', type:'password', placeholder:'Contraseña', autoComplete:'current-password', Icon:Lock },
+                ].map(({ ref, id, type, placeholder, autoComplete, Icon }, i) => (
+                    <div key={i} className="relative group flex items-center">
+                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
+                        <input ref={ref} id={isHidden?undefined:id} name={id} type={type} placeholder={placeholder}
+                            tabIndex={tid} autoComplete={autoComplete}
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[13px]':'pl-12 pr-5 py-4 text-[14px]'} rounded-[1.5rem]`} />
+                    </div>
+                ))}
+            </div>
+        );
+    };
 
     /* ──────────────────────────────────────────────────────────────────────────
-       Slide-animated form panel (enter + exit ghost simultaneously)
+       CAROUSEL FORM PANEL
+       Both modes always rendered side-by-side; CSS translateX slides the track.
+       This gives a real physical slide the user can see.
     ────────────────────────────────────────────────────────────────────────── */
-
     const FormPanel = ({ compact }) => {
+        const isUsername = loginMode === 'username';
         const btnH = compact ? 'h-[46px]' : 'h-[54px]';
+        const gap  = compact ? 'gap-3' : 'gap-4';
+
         return (
-            // overflow-hidden clips both the entering and exiting forms
-            <div className="relative overflow-hidden">
-
-                {/* ── EXIT GHOST: visual copy of the leaving form, slides away ── */}
-                {exitingMode && (
-                    <div className={`absolute top-0 left-0 right-0 z-20 pointer-events-none flex flex-col ${compact?'gap-3':'gap-4'} ${exitCls}`}>
-                        {exitingMode === 'code'
-                            ? <GhostCodeInputs compact={compact} />
-                            : <GhostUsernameInputs compact={compact} />
-                        }
-                        <GhostButton compact={compact} />
+            /* overflow-hidden clips the off-screen panel */
+            <div className="w-full overflow-hidden">
+                {/* Sliding track — 200% wide, both panels side by side */}
+                <div style={{
+                    display: 'flex',
+                    width: '200%',
+                    alignItems: 'flex-start',
+                    transform: isUsername ? 'translateX(-50%)' : 'translateX(0%)',
+                    transition: 'transform 520ms cubic-bezier(0.23, 1, 0.32, 1)',
+                    willChange: 'transform',
+                }}>
+                    {/* ── Code panel ── */}
+                    <div style={{ width: '50%', minWidth: 0 }}>
+                        <form onSubmit={handleLogin} className={`flex flex-col ${gap}`}>
+                            <CodeForm compact={compact} isHidden={isUsername} />
+                            {!isUsername && <ErrorPill />}
+                            <GlassButton height={btnH} disabled={isLoading || isUsername} tabIndex={isUsername ? -1 : undefined}>
+                                {isLoading && !isUsername
+                                    ? <Loader2 size={compact?16:20} className="animate-spin" />
+                                    : 'Ingresar al Portal'}
+                            </GlassButton>
+                        </form>
                     </div>
-                )}
 
-                {/* ── ENTERING FORM: the active form, slides in ── */}
-                <div key={loginMode} className={`relative z-10 flex flex-col ${compact?'gap-3':'gap-4'} ${enterCls}`}>
-                    <form onSubmit={loginMode==='username'?handleUsernameLogin:handleLogin}
-                        className={`flex flex-col ${compact?'gap-3':'gap-4'}`}>
-                        {loginMode==='code' ? <CodeForm compact={compact}/> : <UsernameForm compact={compact}/>}
-                        <ErrorPill />
-                        <GlassButton height={btnH}>
-                            {isLoading?<Loader2 size={compact?16:20} className="animate-spin"/>:'Ingresar al Portal'}
-                        </GlassButton>
-                    </form>
+                    {/* ── Username panel ── */}
+                    <div style={{ width: '50%', minWidth: 0 }}>
+                        <form onSubmit={handleUsernameLogin} className={`flex flex-col ${gap}`}>
+                            <UsernameForm compact={compact} isHidden={!isUsername} />
+                            {isUsername && <ErrorPill />}
+                            <GlassButton height={btnH} disabled={isLoading || !isUsername} tabIndex={!isUsername ? -1 : undefined}>
+                                {isLoading && isUsername
+                                    ? <Loader2 size={compact?16:20} className="animate-spin" />
+                                    : 'Ingresar al Portal'}
+                            </GlassButton>
+                        </form>
+                    </div>
                 </div>
-
             </div>
         );
     };
@@ -400,7 +442,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     ══════════════════════════════════════════════════════ */
     const MobileLayout = () => (
         <div className="flex flex-col items-center justify-between min-h-[100dvh] w-full px-5 py-8 gap-4">
-            {/* Logo */}
             <div className={`flex flex-col items-center gap-2 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 -translate-y-4'}`}>
                 <div className="relative">
                     <div className="absolute -inset-3 rounded-[2rem] blur-xl opacity-40 bg-gradient-to-tr from-violet-500/60 to-blue-400/40" />
@@ -414,7 +455,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            {/* Card */}
             <div className={`relative w-full max-w-[420px] transition-all duration-700 delay-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.94] translate-y-5'}`}>
                 <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-[2.5rem]" />
                 <div className="rounded-[2.5rem] p-5 bg-white/[0.20] backdrop-blur-[48px] backdrop-saturate-[200%] border border-white/[0.82] shadow-[0_24px_60px_rgba(0,0,0,0.10),inset_0_2px_0_rgba(255,255,255,0.90)] flex flex-col gap-4">
@@ -443,14 +483,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
             </div>
 
-            {/* Quick links */}
             <div className={`flex gap-2 transition-all duration-700 delay-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
                 {[
                     {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Ventas',color:'#0052CC'},
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
                 ].map(({href,Icon,label,color})=>(
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-white/55 hover:border-white/85 rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-[0_6px_18px_rgba(0,0,0,0.10)]">
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-white/55 hover:border-white/85 rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-200 group-hover:scale-110" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-700 transition-colors">{label}</span>
                     </a>
@@ -464,8 +503,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     ══════════════════════════════════════════════════════ */
     const DesktopLayout = () => (
         <div className="relative flex items-center justify-center w-full min-h-[100dvh] px-6 py-10">
-
-            {/* Card */}
             <div className={`relative w-full max-w-[480px] z-10 transition-all duration-700 delay-[80ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 scale-100 translate-y-0':'opacity-0 scale-[0.93] translate-y-8'}`}>
                 <div className="absolute -inset-6 rounded-[3.5rem] blur-2xl opacity-18 bg-gradient-to-b from-violet-400 via-indigo-300 to-blue-400 pointer-events-none" />
 
@@ -489,7 +526,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
                     <div className="relative h-px"><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/55 to-transparent" /></div>
 
-                    {/* Form area */}
+                    {/* Form */}
                     <div className={`relative flex flex-col gap-5 transition-all duration-700 delay-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${mounted?'opacity-100 translate-y-0':'opacity-0 translate-y-4'}`}>
                         <TabBar />
                         <FormPanel compact={false} />
@@ -555,7 +592,6 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         </div>
     );
 
-    /* ── Keyframes ── */
     const styles = `
         @keyframes lgn-logo{0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(110,70,220,0.16),inset 0 2px 0 rgba(255,255,255,1);}50%{transform:scale(1.04);box-shadow:0 20px 56px rgba(110,70,220,0.28),inset 0 2px 0 rgba(255,255,255,1);}}
         @keyframes lgn-p1{0%,100%{transform:translate(0,0) scale(1);opacity:.60;}35%{transform:translate(10px,-18px) scale(1.16);opacity:1;}68%{transform:translate(-6px,-8px) scale(.88);opacity:.75;}}

@@ -170,6 +170,22 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ── Mobile: native browser scroll so Safari's URL bar can hide ── */
+@media (max-width: 1023px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  body, #root {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    overscroll-behavior-x: none;
+  }
+}
+
 html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -139,6 +139,13 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
+// Scroll to top on every route change (needed for native mobile scroll)
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    return null;
+}
+
 function MainApp() {
     const { user, logout, isAuthenticated, hasPermission, loading, permsLoading } = useAuth();
 
@@ -458,6 +465,8 @@ function MainApp() {
     }
 
     return (
+        <>
+        <ScrollToTop />
         <Routes>
             <Route path="/kiosk" element={
                 !isMobileOrApp() ? (
@@ -597,6 +606,7 @@ function MainApp() {
                 ) : <Navigate to="/login" replace />
             } />
         </Routes>
+        </>
     );
 }
 

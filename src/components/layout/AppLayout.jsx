@@ -533,7 +533,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className="flex w-full min-h-[100dvh] font-sans overflow-hidden relative">
+        <div className="flex w-full min-h-[100dvh] font-sans lg:overflow-hidden overflow-x-hidden relative">
 
             {/* ── Global ambient orbs ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -780,9 +780,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             </aside>
 
             {/* ── Main content ── */}
-            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
+            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col lg:overflow-hidden relative z-20 ${blurClasses}`}>
                 {/* Mobile top bar */}
-                <div className="lg:hidden px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 relative z-40 w-full shrink-0">
+                <div className="lg:hidden sticky top-0 z-40 px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2 w-full">
                     <div className="flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border
                         bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]">
                         <div className="flex items-center gap-4">
@@ -822,7 +822,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </div>
 
                 {/* Content */}
-                <div className={`flex-1 overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+                <div className={`flex-1 lg:overflow-hidden relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">
@@ -860,7 +860,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </button>
                         </div>
                     )}
-                    <div key={activeId} className="h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
+                    <div key={activeId} className="lg:h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
                         {children}
                     </div>
                 </div>

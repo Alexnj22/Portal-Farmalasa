@@ -390,13 +390,69 @@ function MainApp() {
 
     if (loading || (isAuthenticated && permsLoading)) {
         return (
-            <div className="fixed inset-0 w-full h-[100dvh] bg-[#E6F0FF] overflow-hidden flex items-center justify-center">
+            <div className="fixed inset-0 w-full h-[100dvh] bg-gradient-to-br from-[#ddeeff] via-[#f0f6ff] to-[#e8eeff] overflow-hidden flex items-center justify-center">
                 <GlobalBackground />
-                <div className="relative z-10 flex flex-col items-center justify-center gap-4 bg-white/40 backdrop-blur-xl border border-white/80 p-8 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05),inset_0_2px_15px_rgba(255,255,255,0.9)] animate-in fade-in zoom-in-95 duration-500">
-                    <Loader2 size={32} className="text-[#0052CC] animate-spin" strokeWidth={2.5} />
-                    <span className="text-slate-500 font-bold uppercase tracking-widest text-xs animate-pulse">
-                        Verificando sesión...
-                    </span>
+
+                {/* Card */}
+                <div className="relative z-10 animate-in fade-in zoom-in-95 duration-700 ease-out">
+                    <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2.5rem] px-14 py-12 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-7 min-w-[280px]">
+
+                        {/* Shimmer line top */}
+                        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+
+                        {/* Logo + animated rings */}
+                        <div className="relative flex items-center justify-center w-28 h-28">
+                            {/* Slow outer ring */}
+                            <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '4s' }} viewBox="0 0 100 100" fill="none">
+                                <defs>
+                                    <linearGradient id="rg1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#0052CC" stopOpacity="0.7" />
+                                        <stop offset="60%" stopColor="#0052CC" stopOpacity="0.15" />
+                                        <stop offset="100%" stopColor="#0052CC" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="50" cy="50" r="46" stroke="url(#rg1)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="160 130" />
+                            </svg>
+                            {/* Fast inner ring */}
+                            <svg className="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] animate-spin" style={{ animationDuration: '1.8s', animationDirection: 'reverse' }} viewBox="0 0 100 100" fill="none">
+                                <defs>
+                                    <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#6929C4" stopOpacity="0.5" />
+                                        <stop offset="100%" stopColor="#6929C4" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="50" cy="50" r="44" stroke="url(#rg2)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="80 200" />
+                            </svg>
+                            {/* Logo pill */}
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0052CC] to-[#003D99] flex items-center justify-center shadow-[0_8px_28px_rgba(0,82,204,0.40),inset_0_1px_2px_rgba(255,255,255,0.25)]">
+                                <img src="/LogoFLS.svg" alt="Farmalasa" className="w-10 h-10 object-contain" />
+                            </div>
+                        </div>
+
+                        {/* Brand text */}
+                        <div className="flex flex-col items-center gap-1.5">
+                            <span className="text-[21px] font-black text-slate-800 tracking-tight leading-none">Portal Farmalasa</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0052CC]/60">Sistema de Gestión</span>
+                        </div>
+
+                        {/* Animated dots */}
+                        <div className="flex items-center gap-2">
+                            {[0, 1, 2, 3].map(i => (
+                                <div key={i}
+                                    className="w-1.5 h-1.5 rounded-full bg-[#0052CC]/40 animate-bounce"
+                                    style={{ animationDelay: `${i * 0.14}s`, animationDuration: '0.9s' }}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Status */}
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 -mt-2">
+                            Verificando sesión...
+                        </span>
+
+                        {/* Shimmer line bottom */}
+                        <div className="absolute bottom-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#0052CC]/25 to-transparent" />
+                    </div>
                 </div>
             </div>
         );

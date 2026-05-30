@@ -17,8 +17,10 @@ const withTimeout = (promise, ms, label = "timeout") =>
 // -------------------------
 // ⏱️ Configuraciones de Sesión e Inactividad
 // -------------------------
-const LS_USER = "sb_user";
-const LS_LAST = "sb_last_activity_at";
+const LS_USER  = "sb_user";
+const LS_LAST  = "sb_last_activity_at";
+const LS_PERMS = "sb_role_perms";
+const LS_PRICE = "sb_max_price_level";
 
 const ERP_CACHE_KEYS = [
   CACHE_KEYS.BRANCHES,
@@ -73,9 +75,14 @@ export const AuthProvider = ({ children }) => {
         data.forEach(p => {
           map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };
         });
+        const price = roleData?.max_price_level ?? null;
         setRolePerms(map);
-        setMaxPriceLevel(roleData?.max_price_level ?? null);
+        setMaxPriceLevel(price);
         setPermsLoading(false);
+        try {
+          localStorage.setItem(LS_PERMS, JSON.stringify(map));
+          localStorage.setItem(LS_PRICE, JSON.stringify(price));
+        } catch { /* storage lleno — ignorar */ }
       })
       .catch(() => { setPermsLoading(false); });
   }, []);
@@ -127,7 +134,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearErpCache  = () => ERP_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
-  const clearAuthCache = () => { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_LAST); };
+  const clearAuthCache = () => {
+    localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_LAST);
+    localStorage.removeItem(LS_PERMS);
+    localStorage.removeItem(LS_PRICE);
+  };
 
   const doLogout = () => {
     stopIdleWatcher();
@@ -179,7 +191,22 @@ export const AuthProvider = ({ children }) => {
           clearAuthCache();
           clearErpCache();
         } else {
-          setPermsLoading(true);
+          // Load cached perms instantly — avoids the network round-trip that
+          // previously blocked the UI with permsLoading=true on every page load.
+          // refreshPermissions() will update them silently in the background.
+          const cachedPerms = localStorage.getItem(LS_PERMS);
+          if (cachedPerms) {
+            try {
+              setRolePerms(JSON.parse(cachedPerms));
+              const cachedPrice = localStorage.getItem(LS_PRICE);
+              setMaxPriceLevel(cachedPrice ? JSON.parse(cachedPrice) : null);
+              // permsLoading stays false — cached perms are ready immediately
+            } catch {
+              setPermsLoading(true); // corrupt cache — fall back to network
+            }
+          } else {
+            setPermsLoading(true); // first login — must fetch from network
+          }
           setUser(parsed);
           startIdleWatcher(parsed);
         }

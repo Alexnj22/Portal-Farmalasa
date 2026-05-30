@@ -192,6 +192,25 @@ const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+// ─── Skeleton primitives ──────────────────────────────────────────────────────
+const Skel = ({ className = '', style }) => (
+  <div className={`skeleton rounded-lg ${className}`} style={style} />
+);
+
+const KpiCardSkeleton = () => (
+  <div className="relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
+    <div className="flex items-center gap-2">
+      <Skel className="w-7 h-7 rounded-[0.7rem] flex-shrink-0" />
+      <Skel className="h-2.5 flex-1 max-w-[110px]" />
+    </div>
+    <div className="flex items-end justify-between gap-1">
+      <Skel className="h-8 w-12" />
+      <Skel className="h-2.5 w-20" />
+    </div>
+  </div>
+);
+
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div data-surface="card" onClick={onClick}
     className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
@@ -1072,7 +1091,21 @@ const DashboardView = ({ openModal }) => {
               <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed"><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
-          <div className="px-4 pb-4 pt-2 h-full">
+          <div className="px-4 pb-4 pt-2 h-full flex flex-col">
+            {!attendanceLoaded ? (
+              <div className="flex flex-col justify-end h-full gap-2">
+                <div className="flex items-end gap-2 flex-1">
+                  {[45,72,58,88,62,95,42].map((h,i) => (
+                    <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                      <Skel className="w-full rounded-t-md" style={{ height:`${h}%` }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {[0,1,2,3,4,5,6].map(i => <Skel key={i} className="flex-1 h-2" />)}
+                </div>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData} margin={{top:5,right:5,left:-20,bottom:0}}>
                 <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0052CC" stopOpacity={0.25}/><stop offset="95%" stopColor="#0052CC" stopOpacity={0}/></linearGradient></defs>
@@ -1083,6 +1116,7 @@ const DashboardView = ({ openModal }) => {
                 <Area type="monotone" dataKey="total" stroke="#0052CC" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:'#0052CC',strokeWidth:0,r:3}} activeDot={{r:5,fill:'#0052CC'}}/>
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </WidgetCard>
       , staggerIdx);
@@ -1095,7 +1129,22 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
           action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light"/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
-            {shiftStatusData.length===0?(
+            {employees.length === 0 ? (
+              <div className="px-4 py-3 space-y-5">
+                {[0,1,2].map(i => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skel className="w-2 h-2 rounded-full" />
+                      <Skel className="h-2.5 w-20" />
+                      <Skel className="h-4 w-6 rounded-full" />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[0,1,2].map(j => <Skel key={j} className="h-5 w-16 rounded-full" />)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : shiftStatusData.length===0?(
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
@@ -1137,7 +1186,13 @@ const DashboardView = ({ openModal }) => {
                 {!salesBranch?(
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-slate-400/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
                 ):salesLoading?(
-                  <div className="absolute inset-0 flex items-center justify-center"><Loader2 size={20} className="animate-spin text-[#0052CC]"/></div>
+                  <div className="absolute inset-0 flex items-end gap-1.5 px-1 pb-1">
+                    {[55,80,42,95,68,72,50,38,85,60,45,78].map((h,i) => (
+                      <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                        <Skel className="w-full rounded-t-[4px]" style={{ height:`${h}%` }} />
+                      </div>
+                    ))}
+                  </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
                   if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-[#0052CC]/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
@@ -1236,7 +1291,16 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
-            {absLoading?[0,1,2].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
+            {absLoading?[0,1,2].map(i=>(
+              <div key={i} className="flex items-center gap-3 px-5 py-3">
+                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skel className="h-3 w-3/4" />
+                  <Skel className="h-2.5 w-1/2" />
+                </div>
+                <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
+              </div>
+            ))
               :absences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
               :absences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
@@ -1261,7 +1325,16 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
-            {reqLoading?[0,1,2,3].map(i=><div key={i} className="px-5 py-3"><div className="h-3 skeleton rounded w-3/4 mb-1.5"/><div className="h-2.5 skeleton rounded w-1/2"/></div>)
+            {reqLoading?[0,1,2,3].map(i=>(
+              <div key={i} className="flex items-center gap-3 px-5 py-3">
+                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skel className="h-3 w-3/4" />
+                  <Skel className="h-2.5 w-1/2" />
+                </div>
+                <Skel className="h-2.5 w-10 flex-shrink-0" />
+              </div>
+            ))
               :pendingReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
               :pendingReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
@@ -1395,7 +1468,23 @@ const DashboardView = ({ openModal }) => {
           </div>
           {/* Content */}
           <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-3 pb-3 pt-2">
-            {birthdaysOfMonth.length === 0 ? (
+            {employees.length === 0 ? (
+              <div className="space-y-1.5">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-white/60 bg-white/40">
+                    <Skel className="w-9 h-9 rounded-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <Skel className="h-3 w-2/3" />
+                      <Skel className="h-2 w-1/3" />
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <Skel className="h-3 w-10" />
+                      <Skel className="h-4 w-12 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : birthdaysOfMonth.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-8 text-slate-300">
                 <Gift size={32} strokeWidth={1}/>
                 <p className="text-[12px] font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
@@ -1536,7 +1625,20 @@ const DashboardView = ({ openModal }) => {
           action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
-              <div className="flex items-center justify-center py-10"><Loader2 size={20} className="animate-spin text-[#0052CC]"/></div>
+              <div className="space-y-0.5 py-1">
+                {[0,1,2,3,4,5,6].map(i => (
+                  <div key={i} className="flex items-center gap-2.5 py-1.5">
+                    <Skel className="w-4 h-2.5 rounded-sm flex-shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <Skel className={`h-2.5 rounded-md ${i % 3 === 0 ? 'w-4/5' : i % 3 === 1 ? 'w-3/5' : 'w-2/3'}`} />
+                      <div className="flex items-center gap-2">
+                        <Skel className="flex-1 h-1.5 rounded-full" />
+                        <Skel className="h-2.5 w-12 rounded-sm flex-shrink-0" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : topProductos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Package size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin datos este mes</p></div>
             ) : topProductos.map((p, i) => {
@@ -1656,12 +1758,14 @@ const DashboardView = ({ openModal }) => {
 
         {/* KPI row — content varies by tab */}
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
-          <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#F04438':'#12B76A'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
-          </div>
+          employees.length === 0
+            ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
+            : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#F04438':'#12B76A'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+              </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1672,12 +1776,14 @@ const DashboardView = ({ openModal }) => {
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (
-          <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC"/>
-            <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
-            <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#F04438" sub={absences.length===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-            <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-          </div>
+          employees.length === 0
+            ? <div key="kpi-rrhh-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
+            : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC"/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#F04438" sub={absences.length===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+              </div>
         )}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}

@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/LogoFLS.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#F2F2F7" />
-    
+
     <title>Portal - FarmaSalud</title>
-    
+
     <style>
       /* body/html: unchanged — these styles persist after React mounts */
       body, html { background-color: #F2F2F7; margin: 0; padding: 0; }
@@ -19,130 +19,231 @@
 
       #app-loader {
         position: fixed; inset: 0;
-        display: flex; align-items: center; justify-content: center;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
         overflow: hidden;
-        background: linear-gradient(135deg, #ddeeff 0%, #f0f6ff 50%, #e8eeff 100%);
+        background: radial-gradient(ellipse at 30% 20%, #c7deff 0%, #e8f0ff 40%, #f0f4ff 70%, #eef2fb 100%);
         font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       }
 
-      /* Ambient orbs */
+      /* ── Deep ambient orbs ── */
       #app-loader .orb {
         position: absolute; border-radius: 50%; pointer-events: none;
       }
       #app-loader .orb-1 {
-        width: 60vw; height: 60vw; top: -15%; left: -15%;
-        background: rgba(0,82,204,0.22); filter: blur(80px);
-        animation: fls-drift1 8s ease-in-out infinite alternate;
+        width: 80vw; height: 80vw; top: -30%; left: -25%;
+        background: radial-gradient(circle, rgba(0,82,204,0.28) 0%, transparent 70%);
+        filter: blur(60px);
+        animation: fls-orb1 9s ease-in-out infinite alternate;
       }
       #app-loader .orb-2 {
-        width: 50vw; height: 50vw; top: 5%; right: -15%;
-        background: rgba(105,41,196,0.18); filter: blur(80px);
-        animation: fls-drift2 10s ease-in-out infinite alternate;
+        width: 70vw; height: 70vw; top: 10%; right: -30%;
+        background: radial-gradient(circle, rgba(105,41,196,0.22) 0%, transparent 70%);
+        filter: blur(60px);
+        animation: fls-orb2 11s ease-in-out infinite alternate;
       }
       #app-loader .orb-3 {
-        width: 65vw; height: 65vw; bottom: -25%; left: 15%;
-        background: rgba(18,183,106,0.12); filter: blur(90px);
-        animation: fls-drift1 12s ease-in-out 3s infinite alternate;
+        width: 90vw; height: 90vw; bottom: -40%; left: 10%;
+        background: radial-gradient(circle, rgba(0,130,200,0.18) 0%, transparent 70%);
+        filter: blur(70px);
+        animation: fls-orb1 14s ease-in-out 2s infinite alternate;
       }
-      @keyframes fls-drift1 {
-        0%   { transform: translate(0,0) scale(1); }
-        100% { transform: translate(4%,5%) scale(1.08); }
+      #app-loader .orb-4 {
+        width: 40vw; height: 40vw; top: 40%; left: 55%;
+        background: radial-gradient(circle, rgba(18,140,220,0.15) 0%, transparent 70%);
+        filter: blur(50px);
+        animation: fls-orb2 7s ease-in-out 1s infinite alternate;
       }
-      @keyframes fls-drift2 {
+      @keyframes fls-orb1 {
         0%   { transform: translate(0,0) scale(1); }
-        100% { transform: translate(-5%,3%) scale(1.05); }
+        100% { transform: translate(6%, 8%) scale(1.12); }
+      }
+      @keyframes fls-orb2 {
+        0%   { transform: translate(0,0) scale(1); }
+        100% { transform: translate(-8%, 4%) scale(1.08); }
       }
 
-      /* Glass card */
-      #app-loader .card {
+      /* ── Floating glass particles ── */
+      #app-loader .particle {
+        position: absolute; border-radius: 50%; pointer-events: none;
+        background: rgba(255,255,255,0.45);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255,255,255,0.8);
+        box-shadow: inset 0 1px 2px rgba(255,255,255,0.9);
+      }
+      #app-loader .p1 {
+        width: 14px; height: 14px; top: 18%; left: 22%;
+        animation: fls-float1 6s ease-in-out infinite;
+      }
+      #app-loader .p2 {
+        width: 9px; height: 9px; top: 28%; left: 70%;
+        animation: fls-float2 8s ease-in-out 1s infinite;
+      }
+      #app-loader .p3 {
+        width: 18px; height: 18px; top: 65%; left: 18%;
+        animation: fls-float1 7s ease-in-out 2s infinite;
+      }
+      #app-loader .p4 {
+        width: 11px; height: 11px; top: 72%; left: 75%;
+        animation: fls-float2 9s ease-in-out 0.5s infinite;
+      }
+      #app-loader .p5 {
+        width: 7px; height: 7px; top: 45%; left: 12%;
+        animation: fls-float1 5s ease-in-out 3s infinite;
+      }
+      #app-loader .p6 {
+        width: 13px; height: 13px; top: 20%; left: 80%;
+        animation: fls-float2 10s ease-in-out 1.5s infinite;
+      }
+      #app-loader .p7 {
+        width: 8px; height: 8px; top: 80%; left: 45%;
+        animation: fls-float1 6.5s ease-in-out 4s infinite;
+      }
+      @keyframes fls-float1 {
+        0%, 100% { transform: translateY(0) translateX(0) scale(1);    opacity: 0.6; }
+        33%       { transform: translateY(-18px) translateX(8px) scale(1.1); opacity: 1;   }
+        66%       { transform: translateY(-8px) translateX(-5px) scale(0.9);  opacity: 0.8; }
+      }
+      @keyframes fls-float2 {
+        0%, 100% { transform: translateY(0) translateX(0) scale(1);      opacity: 0.5; }
+        40%       { transform: translateY(14px) translateX(-10px) scale(1.15); opacity: 0.9; }
+        70%       { transform: translateY(-10px) translateX(6px) scale(0.85);   opacity: 0.7; }
+      }
+
+      /* ── Ripple rings ── */
+      #app-loader .ripple-wrap {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 160px; height: 160px;
+        pointer-events: none;
+      }
+      #app-loader .ripple {
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0,82,204,0.22);
+        animation: fls-ripple 3.2s ease-out infinite;
+      }
+      #app-loader .ripple:nth-child(2) { animation-delay: 1.06s; }
+      #app-loader .ripple:nth-child(3) { animation-delay: 2.13s; }
+      @keyframes fls-ripple {
+        0%   { transform: scale(1);   opacity: 0.7; }
+        100% { transform: scale(2.8); opacity: 0;   }
+      }
+
+      /* ── Morphing liquid glass blob ── */
+      #app-loader .blob {
         position: relative; z-index: 10;
-        display: flex; flex-direction: column; align-items: center; gap: 26px;
-        padding: 48px 56px;
-        background: rgba(255,255,255,0.35);
-        backdrop-filter: blur(40px) saturate(180%);
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        border: 1.5px solid rgba(255,255,255,0.72);
-        border-radius: 40px;
-        box-shadow: 0 32px 80px rgba(0,82,204,0.10), 0 8px 32px rgba(0,0,0,0.04), inset 0 2px 24px rgba(255,255,255,0.85);
-        animation: fls-card-in 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
-        min-width: 270px;
-      }
-      /* shimmer top */
-      #app-loader .card::before {
-        content: ''; position: absolute;
-        top: 0; left: 40px; right: 40px; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent);
-      }
-      /* shimmer bottom */
-      #app-loader .card::after {
-        content: ''; position: absolute;
-        bottom: 0; left: 40px; right: 40px; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(0,82,204,0.25), transparent);
-      }
-      @keyframes fls-card-in {
-        from { opacity: 0; transform: scale(0.92) translateY(10px); }
-        to   { opacity: 1; transform: scale(1) translateY(0); }
-      }
-
-      /* Logo + rings */
-      #app-loader .logo-wrap {
-        position: relative; width: 112px; height: 112px;
+        width: 148px; height: 148px;
         display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.38);
+        backdrop-filter: blur(36px) saturate(200%);
+        -webkit-backdrop-filter: blur(36px) saturate(200%);
+        border: 2px solid rgba(255,255,255,0.75);
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        box-shadow:
+          0 24px 80px rgba(0,82,204,0.18),
+          0 8px 32px rgba(0,0,0,0.06),
+          inset 0 2px 20px rgba(255,255,255,0.90),
+          inset 0 -4px 12px rgba(0,82,204,0.06);
+        animation: fls-morph 8s ease-in-out infinite, fls-blob-in 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
       }
-      #app-loader .ring {
-        position: absolute; border-radius: 50%;
+      /* inner liquid shimmer */
+      #app-loader .blob::before {
+        content: '';
+        position: absolute; inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(135deg,
+          rgba(255,255,255,0.55) 0%,
+          rgba(255,255,255,0.08) 50%,
+          rgba(0,82,204,0.05) 100%
+        );
+        animation: fls-shimmer-rot 6s linear infinite;
       }
-      #app-loader .ring-outer {
-        inset: 0; animation: fls-cw 4s linear infinite;
+      @keyframes fls-shimmer-rot {
+        0%   { transform: rotate(0deg);   }
+        100% { transform: rotate(360deg); }
       }
-      #app-loader .ring-outer svg { width: 100%; height: 100%; }
-      #app-loader .ring-inner {
-        inset: 8px; animation: fls-ccw 1.8s linear infinite;
+      @keyframes fls-morph {
+        0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        20%       { border-radius: 40% 60% 55% 45% / 50% 55% 45% 55%; }
+        40%       { border-radius: 30% 70% 60% 40% / 70% 40% 60% 30%; }
+        60%       { border-radius: 55% 45% 40% 60% / 35% 65% 35% 65%; }
+        80%       { border-radius: 45% 55% 70% 30% / 55% 45% 55% 45%; }
       }
-      #app-loader .ring-inner svg { width: 100%; height: 100%; }
-      @keyframes fls-cw  { to { transform: rotate(360deg);  } }
-      @keyframes fls-ccw { to { transform: rotate(-360deg); } }
+      @keyframes fls-blob-in {
+        from { opacity: 0; transform: scale(0.7); }
+        to   { opacity: 1; transform: scale(1);   }
+      }
 
+      /* Logo pill inside blob */
       #app-loader .logo-pill {
         position: relative; z-index: 2;
-        width: 64px; height: 64px; border-radius: 18px;
+        width: 72px; height: 72px; border-radius: 22px;
         background: linear-gradient(145deg, #0052CC, #003D99);
         display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 8px 28px rgba(0,82,204,0.42), inset 0 1px 2px rgba(255,255,255,0.25);
+        box-shadow:
+          0 10px 32px rgba(0,82,204,0.50),
+          inset 0 1px 3px rgba(255,255,255,0.30);
+        animation: fls-logo-pulse 4s ease-in-out infinite;
       }
-      #app-loader .logo-pill img { width: 40px; height: 40px; object-fit: contain; }
+      #app-loader .logo-pill img { width: 44px; height: 44px; object-fit: contain; }
+      @keyframes fls-logo-pulse {
+        0%, 100% { box-shadow: 0 10px 32px rgba(0,82,204,0.50), inset 0 1px 3px rgba(255,255,255,0.30); }
+        50%       { box-shadow: 0 16px 48px rgba(0,82,204,0.70), inset 0 1px 3px rgba(255,255,255,0.30); }
+      }
 
-      /* Brand */
-      #app-loader .brand { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      /* ── Brand text ── */
+      #app-loader .brand {
+        position: relative; z-index: 10;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        margin-top: 32px;
+        animation: fls-fade-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+      }
       #app-loader .brand-name {
-        font-size: 21px; font-weight: 900; color: #1e293b;
+        font-size: 22px; font-weight: 900; color: #1e293b;
         letter-spacing: -0.5px; line-height: 1;
       }
       #app-loader .brand-sub {
         font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.22em; color: rgba(0,82,204,0.60);
+        letter-spacing: 0.24em; color: rgba(0,82,204,0.58);
+      }
+      @keyframes fls-fade-up {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0);    }
       }
 
-      /* Bounce dots */
-      #app-loader .dots { display: flex; align-items: center; gap: 8px; }
-      #app-loader .dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: rgba(0,82,204,0.40);
-        animation: fls-bounce 0.9s ease-in-out infinite;
+      /* ── Liquid shimmer progress bar ── */
+      #app-loader .progress-wrap {
+        position: relative; z-index: 10;
+        margin-top: 28px; width: 160px; height: 4px;
+        border-radius: 99px;
+        background: rgba(0,82,204,0.12);
+        overflow: hidden;
+        animation: fls-fade-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.5s both;
       }
-      #app-loader .dot:nth-child(1) { animation-delay: 0s;    }
-      #app-loader .dot:nth-child(2) { animation-delay: 0.14s; }
-      #app-loader .dot:nth-child(3) { animation-delay: 0.28s; }
-      #app-loader .dot:nth-child(4) { animation-delay: 0.42s; }
-      @keyframes fls-bounce {
-        0%, 80%, 100% { transform: translateY(0);   opacity: 0.4; }
-        40%            { transform: translateY(-6px); opacity: 1;   }
+      #app-loader .progress-bar {
+        position: absolute; inset-block: 0; left: -60%;
+        width: 60%; border-radius: 99px;
+        background: linear-gradient(90deg,
+          transparent 0%,
+          rgba(0,82,204,0.55) 40%,
+          rgba(100,160,255,0.9) 60%,
+          transparent 100%
+        );
+        animation: fls-progress 1.8s ease-in-out infinite;
+      }
+      @keyframes fls-progress {
+        0%   { left: -60%; }
+        100% { left: 110%; }
       }
 
-      /* Status */
+      /* ── Status label ── */
       #app-loader .status {
+        position: relative; z-index: 10;
+        margin-top: 14px;
         font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.20em; color: #94a3b8; margin-top: -6px;
+        letter-spacing: 0.22em; color: #94a3b8;
+        animation: fls-fade-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.6s both;
       }
     </style>
   </head>
@@ -154,57 +255,44 @@
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
         <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
 
-        <!-- Glass card -->
-        <div class="card">
+        <!-- Floating glass particles -->
+        <div class="particle p1"></div>
+        <div class="particle p2"></div>
+        <div class="particle p3"></div>
+        <div class="particle p4"></div>
+        <div class="particle p5"></div>
+        <div class="particle p6"></div>
+        <div class="particle p7"></div>
 
-          <!-- Logo + rings -->
-          <div class="logo-wrap">
-            <div class="ring ring-outer">
-              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="rg1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%"   stop-color="#0052CC" stop-opacity="0.75"/>
-                    <stop offset="60%"  stop-color="#0052CC" stop-opacity="0.15"/>
-                    <stop offset="100%" stop-color="#0052CC" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="46" stroke="url(#rg1)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="160 130"/>
-              </svg>
-            </div>
-            <div class="ring ring-inner">
-              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stop-color="#6929C4" stop-opacity="0.55"/>
-                    <stop offset="100%" stop-color="#6929C4" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="44" stroke="url(#rg2)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="80 200"/>
-              </svg>
-            </div>
-            <div class="logo-pill">
-              <img src="/LogoFLS.svg" alt="Farmalasa" />
-            </div>
-          </div>
-
-          <!-- Brand -->
-          <div class="brand">
-            <span class="brand-name">Portal Farmalasa</span>
-            <span class="brand-sub">Sistema de Gestión</span>
-          </div>
-
-          <!-- Dots -->
-          <div class="dots">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
-
-          <span class="status">Iniciando Portal...</span>
-
+        <!-- Ripple rings (behind blob) -->
+        <div class="ripple-wrap">
+          <div class="ripple"></div>
+          <div class="ripple"></div>
+          <div class="ripple"></div>
         </div>
+
+        <!-- Morphing liquid glass blob with logo -->
+        <div class="blob">
+          <div class="logo-pill">
+            <img src="/LogoFLS.svg" alt="Farmalasa" />
+          </div>
+        </div>
+
+        <!-- Brand -->
+        <div class="brand">
+          <span class="brand-name">Portal Farmalasa</span>
+          <span class="brand-sub">Sistema de Gestión</span>
+        </div>
+
+        <!-- Liquid progress bar -->
+        <div class="progress-wrap">
+          <div class="progress-bar"></div>
+        </div>
+
+        <span class="status">Iniciando Portal...</span>
+
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>

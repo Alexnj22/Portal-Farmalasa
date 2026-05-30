@@ -285,9 +285,9 @@ body::-webkit-scrollbar { display: none; }
    ═══════════════════════════════════════════════════════════════ */
 
 button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
+input:not(.outline-none):focus-visible,
+select:not(.outline-none):focus-visible,
+textarea:not(.outline-none):focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {

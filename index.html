@@ -12,13 +12,8 @@
     <title>Portal - FarmaSalud</title>
 
     <style>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body, html {
-        background: linear-gradient(135deg, #ddeeff 0%, #f0f6ff 50%, #e8eeff 100%);
-        min-height: 100dvh;
-        overflow: hidden;
-        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-      }
+      /* Only pre-React splash styles — nothing here persists to affect the app */
+      body, html { margin: 0; padding: 0; background-color: #E6F0FF; }
 
       /* ── Ambient orbs ── */
       #app-loader {
@@ -29,6 +24,9 @@
         width: 100vw;
         height: 100dvh;
         overflow: hidden;
+        background: linear-gradient(135deg, #ddeeff 0%, #f0f6ff 50%, #e8eeff 100%);
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        box-sizing: border-box;
       }
 
       .orb {

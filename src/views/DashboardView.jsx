@@ -704,6 +704,8 @@ const DashboardView = ({ openModal }) => {
   // ── Comercial tab data ─────────────────────────────────────────────────────
   const [cotizStats,     setCotizStats]     = useState({ activas: 0, total: 0, recent: [] });
   const [factStats,      setFactStats]      = useState({ count: 0, total: 0, ccf: 0, fcf: 0 });
+  const [cotizLoading,   setCotizLoading]   = useState(true);
+  const [factLoading,    setFactLoading]    = useState(true);
   const [topProductos,   setTopProductos]   = useState([]);
   const [topProdLoading, setTopProdLoading] = useState(false);
 
@@ -851,6 +853,7 @@ const DashboardView = ({ openModal }) => {
           total:   activas.reduce((s, c) => s + (parseFloat(c.total) || 0), 0),
           recent:  activas.slice(0, 6),
         });
+        setCotizLoading(false);
       });
   }, []);
 
@@ -867,6 +870,7 @@ const DashboardView = ({ openModal }) => {
           ccf:   rows.filter(r => r.tipo_documento === 'CCF').length,
           fcf:   rows.filter(r => r.tipo_documento !== 'CCF').length,
         });
+        setFactLoading(false);
       });
   }, []);
 
@@ -1356,7 +1360,17 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
           action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {branchAlerts.length===0?(
+            {branches.length === 0 ? (
+              [0,1,2].map(i => (
+                <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <Skel className="w-5 h-5 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skel className="h-2.5 w-2/3" />
+                    <Skel className="h-2 w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : branchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
                 <p className="text-[12px] font-bold text-slate-500">Todo en orden</p>
@@ -1398,6 +1412,13 @@ const DashboardView = ({ openModal }) => {
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
+              {employees.length === 0 ? (
+                <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(28px,1fr)' }}>
+                  {Array.from({ length: 35 }).map((_, i) => (
+                    i % 3 === 1 ? <Skel key={i} className="m-0.5 rounded-full" style={{ minHeight: 24 }} /> : <div key={i} />
+                  ))}
+                </div>
+              ) : (
               <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(28px,1fr)' }}>
                 {calendarDays.cells.map((day,i)=>{
                   if (!day) return <div key={`pad-${i}`}/>;
@@ -1415,6 +1436,7 @@ const DashboardView = ({ openModal }) => {
                   );
                 })}
               </div>
+              )}
             </div>
           </div>
         </WidgetCard>
@@ -1428,7 +1450,15 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
           action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todos <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
-            {recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
+            {employees.length === 0 ? [0,1,2,3].map(i => (
+              <div key={i} className="flex items-start gap-3 px-5 py-3.5">
+                <Skel className="w-7 h-7 rounded-[0.6rem] flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <Skel className="h-3 w-4/5" />
+                  <Skel className="h-2.5 w-1/3" />
+                </div>
+              </div>
+            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-slate-50 cursor-pointer':'cursor-default'}`}>
@@ -1544,6 +1574,32 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
           action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          {cotizLoading ? (
+            <div className="flex flex-col h-full">
+              <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
+                <div className="space-y-1.5">
+                  <Skel className="h-8 w-10" />
+                  <Skel className="h-2 w-16" />
+                </div>
+                <div className="mb-1 space-y-1.5">
+                  <Skel className="h-4 w-20" />
+                  <Skel className="h-2 w-14" />
+                </div>
+              </div>
+              <div className="flex-1 divide-y divide-slate-50">
+                {[0,1,2,3].map(i => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                    <Skel className="w-6 h-6 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <Skel className="h-2.5 w-3/4" />
+                      <Skel className="h-2 w-1/2" />
+                    </div>
+                    <Skel className="h-3 w-14 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col h-full">
             <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
               <div>
@@ -1572,6 +1628,7 @@ const DashboardView = ({ openModal }) => {
               ))}
             </div>
           </div>
+          )}
         </WidgetCard>
       , staggerIdx);
     }
@@ -1583,6 +1640,30 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
           action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          {factLoading ? (
+            <div className="flex flex-col h-full px-4 py-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50/80 rounded-2xl p-3 space-y-2">
+                  <Skel className="h-8 w-12" />
+                  <Skel className="h-2 w-16" />
+                </div>
+                <div className="bg-emerald-50 rounded-2xl p-3 space-y-2">
+                  <Skel className="h-5 w-20" />
+                  <Skel className="h-2 w-16" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-red-50 rounded-xl px-3 py-2 space-y-2">
+                  <Skel className="h-5 w-8" />
+                  <Skel className="h-2 w-10" />
+                </div>
+                <div className="bg-slate-50 rounded-xl px-3 py-2 space-y-2">
+                  <Skel className="h-5 w-8" />
+                  <Skel className="h-2 w-10" />
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col h-full px-4 py-3 gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50/80 rounded-2xl p-3">
@@ -1611,6 +1692,7 @@ const DashboardView = ({ openModal }) => {
               </div>
             </div>
           </div>
+          )}
         </WidgetCard>
       , staggerIdx);
     }

@@ -553,18 +553,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             )}
 
             {/* ── Sidebar ── */}
-            <motion.aside
+            <aside
                 ref={asideRef}
-                layout
-                initial={false}
-                animate={isMobile ? { x: isSidebarOpen ? 0 : 'calc(-100% - 16px)' } : {}}
-                transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] }, x: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }}
-                className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto
+                className={`fixed lg:relative z-50 lg:z-[60] h-[calc(100dvh-16px)] lg:h-auto flex flex-col shrink-0
+                    my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                     ${isMobile
-                        ? 'w-[85%] max-w-[280px] left-2'
-                        : (isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem] ml-[max(env(safe-area-inset-left,8px),8px)]' : 'w-[4.5rem] xl:w-[5rem] ml-[max(env(safe-area-inset-left,8px),8px)]')}
-                    flex flex-col shrink-0
-                    my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)] ${blurClasses}`}
+                        ? `w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
+                        : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}
+                    ${blurClasses}`}
             >
                 {/* ── Ambient glow layers ── */}
                 <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
@@ -781,7 +777,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         )}
                     </div>
                 </div>
-            </motion.aside>
+            </aside>
 
             {/* ── Main content ── */}
             <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>

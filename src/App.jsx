@@ -46,7 +46,6 @@ import NoAccessView from "./views/NoAccessView";
 import AccessDeniedView from "./views/AccessDeniedView";
 import DashboardView from "./views/DashboardView";
 import LiquidToast from './components/common/LiquidToast';
-import SalyChatOverlay from "./components/SalyChatOverlay";
 
 // ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA
 const AuthSyncHelper = () => {
@@ -577,8 +576,6 @@ function MainApp() {
                                 </Routes>
                             </AppLayout>
                         </div>
-
-                        <SalyChatOverlay />
 
                         <UnifiedModal
                             isOpen={modalOpen}

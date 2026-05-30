@@ -701,8 +701,7 @@ const AppWithToast = () => {
 
     return (
         <>
-            <MobileConstructionScreen />
-            <div className="hidden sm:block w-full h-full">
+            <div className="w-full h-full">
                 <MainApp />
                 <LiquidToast theme={isKioskMode ? 'dark' : 'light'} />
             </div>

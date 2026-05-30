@@ -12,36 +12,199 @@
     <title>Portal - FarmaSalud</title>
     
     <style>
+      /* body/html: unchanged — these styles persist after React mounts */
       body, html { background-color: #F2F2F7; margin: 0; padding: 0; }
-      #app-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; width: 100vw; font-family: system-ui, -apple-system, sans-serif; background-color: #F2F2F7; }
-      .spinner { width: 40px; height: 40px; border: 4px solid rgba(0, 122, 255, 0.2); border-left-color: #007AFF; border-radius: 50%; animation: spin 1s linear infinite; }
-      @keyframes spin { 100% { transform: rotate(360deg); } }
 
-      /* 🚨 MAGIA AQUÍ: Ocultamos el loader de PC si la pantalla es de móvil */
-      #mobile-pre-loader { display: none; text-align: center; }
-      
-      @media (max-width: 1023px) {
-        .spinner, #desktop-text { display: none !important; }
-        #mobile-pre-loader { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+      /* ─── Everything below is scoped to #app-loader which React removes on mount ─── */
+
+      #app-loader {
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ddeeff 0%, #f0f6ff 50%, #e8eeff 100%);
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+
+      /* Ambient orbs */
+      #app-loader .orb {
+        position: absolute; border-radius: 50%; pointer-events: none;
+      }
+      #app-loader .orb-1 {
+        width: 60vw; height: 60vw; top: -15%; left: -15%;
+        background: rgba(0,82,204,0.22); filter: blur(80px);
+        animation: fls-drift1 8s ease-in-out infinite alternate;
+      }
+      #app-loader .orb-2 {
+        width: 50vw; height: 50vw; top: 5%; right: -15%;
+        background: rgba(105,41,196,0.18); filter: blur(80px);
+        animation: fls-drift2 10s ease-in-out infinite alternate;
+      }
+      #app-loader .orb-3 {
+        width: 65vw; height: 65vw; bottom: -25%; left: 15%;
+        background: rgba(18,183,106,0.12); filter: blur(90px);
+        animation: fls-drift1 12s ease-in-out 3s infinite alternate;
+      }
+      @keyframes fls-drift1 {
+        0%   { transform: translate(0,0) scale(1); }
+        100% { transform: translate(4%,5%) scale(1.08); }
+      }
+      @keyframes fls-drift2 {
+        0%   { transform: translate(0,0) scale(1); }
+        100% { transform: translate(-5%,3%) scale(1.05); }
+      }
+
+      /* Glass card */
+      #app-loader .card {
+        position: relative; z-index: 10;
+        display: flex; flex-direction: column; align-items: center; gap: 26px;
+        padding: 48px 56px;
+        background: rgba(255,255,255,0.35);
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        border: 1.5px solid rgba(255,255,255,0.72);
+        border-radius: 40px;
+        box-shadow: 0 32px 80px rgba(0,82,204,0.10), 0 8px 32px rgba(0,0,0,0.04), inset 0 2px 24px rgba(255,255,255,0.85);
+        animation: fls-card-in 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+        min-width: 270px;
+      }
+      /* shimmer top */
+      #app-loader .card::before {
+        content: ''; position: absolute;
+        top: 0; left: 40px; right: 40px; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent);
+      }
+      /* shimmer bottom */
+      #app-loader .card::after {
+        content: ''; position: absolute;
+        bottom: 0; left: 40px; right: 40px; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,82,204,0.25), transparent);
+      }
+      @keyframes fls-card-in {
+        from { opacity: 0; transform: scale(0.92) translateY(10px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
+      /* Logo + rings */
+      #app-loader .logo-wrap {
+        position: relative; width: 112px; height: 112px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      #app-loader .ring {
+        position: absolute; border-radius: 50%;
+      }
+      #app-loader .ring-outer {
+        inset: 0; animation: fls-cw 4s linear infinite;
+      }
+      #app-loader .ring-outer svg { width: 100%; height: 100%; }
+      #app-loader .ring-inner {
+        inset: 8px; animation: fls-ccw 1.8s linear infinite;
+      }
+      #app-loader .ring-inner svg { width: 100%; height: 100%; }
+      @keyframes fls-cw  { to { transform: rotate(360deg);  } }
+      @keyframes fls-ccw { to { transform: rotate(-360deg); } }
+
+      #app-loader .logo-pill {
+        position: relative; z-index: 2;
+        width: 64px; height: 64px; border-radius: 18px;
+        background: linear-gradient(145deg, #0052CC, #003D99);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 8px 28px rgba(0,82,204,0.42), inset 0 1px 2px rgba(255,255,255,0.25);
+      }
+      #app-loader .logo-pill img { width: 40px; height: 40px; object-fit: contain; }
+
+      /* Brand */
+      #app-loader .brand { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      #app-loader .brand-name {
+        font-size: 21px; font-weight: 900; color: #1e293b;
+        letter-spacing: -0.5px; line-height: 1;
+      }
+      #app-loader .brand-sub {
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.22em; color: rgba(0,82,204,0.60);
+      }
+
+      /* Bounce dots */
+      #app-loader .dots { display: flex; align-items: center; gap: 8px; }
+      #app-loader .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: rgba(0,82,204,0.40);
+        animation: fls-bounce 0.9s ease-in-out infinite;
+      }
+      #app-loader .dot:nth-child(1) { animation-delay: 0s;    }
+      #app-loader .dot:nth-child(2) { animation-delay: 0.14s; }
+      #app-loader .dot:nth-child(3) { animation-delay: 0.28s; }
+      #app-loader .dot:nth-child(4) { animation-delay: 0.42s; }
+      @keyframes fls-bounce {
+        0%, 80%, 100% { transform: translateY(0);   opacity: 0.4; }
+        40%            { transform: translateY(-6px); opacity: 1;   }
+      }
+
+      /* Status */
+      #app-loader .status {
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.20em; color: #94a3b8; margin-top: -6px;
       }
     </style>
   </head>
   <body>
     <div id="root">
       <div id="app-loader">
-        
-        <div class="spinner"></div>
-        <p id="desktop-text" style="margin-top: 20px; color: #64748b; font-weight: 800; letter-spacing: 0.15em; font-size: 11px; text-transform: uppercase;">
-          Iniciando Portal
-        </p>
 
-        <div id="mobile-pre-loader">
-            <p style="color: #007AFF; font-weight: 800; letter-spacing: 0.15em; font-size: 11px; text-transform: uppercase; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">
-              Verificando Dispositivo...
-            </p>
-            <style>@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }</style>
+        <!-- Ambient orbs -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <!-- Glass card -->
+        <div class="card">
+
+          <!-- Logo + rings -->
+          <div class="logo-wrap">
+            <div class="ring ring-outer">
+              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="rg1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   stop-color="#0052CC" stop-opacity="0.75"/>
+                    <stop offset="60%"  stop-color="#0052CC" stop-opacity="0.15"/>
+                    <stop offset="100%" stop-color="#0052CC" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="46" stroke="url(#rg1)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="160 130"/>
+              </svg>
+            </div>
+            <div class="ring ring-inner">
+              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stop-color="#6929C4" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="#6929C4" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="44" stroke="url(#rg2)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="80 200"/>
+              </svg>
+            </div>
+            <div class="logo-pill">
+              <img src="/LogoFLS.svg" alt="Farmalasa" />
+            </div>
+          </div>
+
+          <!-- Brand -->
+          <div class="brand">
+            <span class="brand-name">Portal Farmalasa</span>
+            <span class="brand-sub">Sistema de Gestión</span>
+          </div>
+
+          <!-- Dots -->
+          <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+
+          <span class="status">Iniciando Portal...</span>
+
         </div>
-
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>

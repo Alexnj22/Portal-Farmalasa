@@ -343,11 +343,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]';
-        const iconActiveColor   = 'text-white';
-        const iconInactiveColor = 'text-white/45 group-hover:text-white/75';
+        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]';
+        const iconActiveColor   = 'text-violet-200';
+        const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
-        const accentBarActive   = 'bg-gradient-to-b from-white/85 via-white/60 to-white/25';
+        const accentBarActive   = 'bg-gradient-to-b from-violet-300 via-indigo-400 to-blue-400 shadow-[0_0_10px_rgba(139,92,246,0.7)]';
 
         if (comingSoon) {
             return (
@@ -380,11 +380,16 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                 type="button"
-                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-300 group relative text-left
+                className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden
                     ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
-                    active:scale-[0.99]`}
+                    active:scale-[0.99] active:translate-y-0`}
             >
+                {/* Shimmer sweep on hover */}
+                <span className="absolute inset-0 overflow-hidden rounded-[1rem] pointer-events-none">
+                    <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                </span>
+
                 {/* Left accent for subitems */}
                 {indent && (
                     <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? accentBarActive : accentBarInactive}`} />
@@ -470,18 +475,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     } : undefined}
                     onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                     type="button"
-                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-300 group text-left
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
-                            : 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]'}
-                        active:scale-[0.99]`}
+                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]'}
+                        active:scale-[0.99] active:translate-y-0`}
                 >
+                    {/* Shimmer sweep on hover */}
+                    <span className="absolute inset-0 overflow-hidden rounded-[1rem] pointer-events-none">
+                        <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                    </span>
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? 'text-white scale-110'
-                            : 'text-white/42 group-hover:text-white/72 group-hover:scale-110'}`}
+                            ? 'text-violet-200 scale-110'
+                            : 'text-white/42 group-hover:text-white/80 group-hover:scale-110'}`}
                     />
                     {isExpanded && (
                         <>
@@ -566,30 +575,46 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {/* ── Glass container ── */}
                 <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                    bg-[#0f172a]/92 backdrop-blur-xl
-                    border border-white/[0.09]
-                    shadow-[inset_1px_0_0_rgba(255,255,255,0.09),inset_0_1px_0_rgba(255,255,255,0.13),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.35)]">
+                    bg-[#07031a]/80 backdrop-blur-2xl
+                    border border-white/[0.10]
+                    shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
+
+                    {/* Inner ambient orbs — drift behind the glass */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[2.5rem]" style={{ zIndex: 0 }}>
+                        <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, rgba(139,92,246,0.28) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
+                        <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, rgba(59,130,246,0.22) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
+                        <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
+                    </div>
 
                     {/* Depth layers */}
-                    <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none z-0" />
-                    <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/25 via-white/8 to-white/2 pointer-events-none z-0" />
-                    <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/5 via-transparent to-transparent pointer-events-none z-0" />
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/25 to-transparent pointer-events-none z-0" />
+                    <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none z-[1]" />
+                    <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/30 via-white/10 to-white/3 pointer-events-none z-[1]" />
+                    <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/8 via-transparent to-transparent pointer-events-none z-[1]" />
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-[1]" />
+
+                    {/* Animated top-border shimmer */}
+                    <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden z-[2] pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-violet-300/80 to-transparent animate-shimmer" style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out' }} />
+                    </div>
 
                     {/* ── Logo header ── */}
-                    <div className={`relative z-10 flex items-center border-b border-white/[0.07]
+                    <div className={`relative z-10 flex items-center border-b border-white/[0.06]
                         ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.06] to-transparent pointer-events-none" />
+                        {/* Separator shimmer line */}
+                        <div className="absolute bottom-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
+                            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-indigo-300/50 to-transparent animate-shimmer" style={{ animationDuration: '5s', animationDelay: '1.5s', animationTimingFunction: 'ease-in-out' }} />
+                        </div>
 
                         <div className="flex items-center gap-3 relative z-10">
                             <div className="relative group/logo flex-shrink-0 cursor-pointer"
                                 onClick={() => navigate('/')}>
-                                <div className="absolute -inset-1.5 rounded-[1.5rem] blur-lg opacity-0 group-hover/logo:opacity-100 transition-all duration-500 bg-white/8" />
+                                <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-violet-500/50 to-blue-500/40" />
                                 <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                     transition-all duration-300 group-hover/logo:scale-105
-                                    bg-white/10 border border-white/15
-                                    shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25),inset_0_-1px_0_rgba(0,0,0,0.2)]
-                                    group-hover/logo:border-white/25 group-hover/logo:bg-white/15
+                                    bg-white/12 border border-violet-300/20
+                                    shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
+                                    group-hover/logo:border-violet-300/35 group-hover/logo:bg-white/18
                                     ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                     <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                     <img src="/LogoFLS.svg" alt="FLS"
@@ -620,13 +645,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {/* Active pill */}
                         <div
                             className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                bg-gradient-to-r from-white/[0.11] to-white/[0.04]
-                                border border-white/[0.10]
-                                shadow-[inset_0_1px_0_rgba(255,255,255,0.13),inset_0_-1px_0_rgba(0,0,0,0.12)]
+                                bg-gradient-to-r from-violet-500/[0.22] via-indigo-400/[0.14] to-blue-500/[0.08]
+                                border border-violet-300/[0.20]
+                                shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_28px_rgba(139,92,246,0.22),0_4px_16px_rgba(0,0,0,0.30)]
                                 ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                             style={{ top: pill.top, height: pill.height }}
                         >
-                            <div className="absolute left-0 inset-y-[18%] w-[2px] rounded-full bg-gradient-to-b from-white/80 via-white/50 to-white/15" />
+                            <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-violet-300 via-indigo-400 to-blue-400 shadow-[0_0_10px_rgba(139,92,246,0.8),0_0_20px_rgba(139,92,246,0.4)]" />
                         </div>
 
                         {visibleGroups.map(g => renderGroup(g))}

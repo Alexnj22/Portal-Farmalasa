@@ -533,7 +533,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className="flex w-full min-h-[100dvh] font-sans lg:overflow-hidden overflow-x-hidden relative">
+        <div className="flex w-full min-h-[100dvh] font-sans lg:overflow-hidden relative">
 
             {/* ── Global ambient orbs ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -637,7 +637,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
 
                     {/* ── Nav ── */}
-                    <nav ref={navRef} className="relative z-10 flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide">
+                    <nav ref={navRef} className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {/* Active pill */}
                         <div
                             className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none

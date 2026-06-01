@@ -83,6 +83,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
     const [openGroups, setOpenGroups] = useState({});  // groupKey → bool
 
+    // En Safari browser (no Capacitor), activar scroll nativo del body para que
+    // el status bar transparente muestre contenido real al scrollear.
+    const isCapacitor = typeof window !== 'undefined' && !!window.Capacitor;
+    const useBrowserScroll = isMobile && !isCapacitor;
+
+    useEffect(() => {
+        const els = [document.documentElement, document.body];
+        if (useBrowserScroll) {
+            els.forEach(el => { el.style.overflow = 'auto'; el.style.height = 'auto'; });
+            document.body.style.overscrollBehavior = 'none';
+        } else {
+            els.forEach(el => { el.style.overflow = ''; el.style.height = ''; });
+            document.body.style.overscrollBehavior = '';
+        }
+    }, [useBrowserScroll]);
+
     const [authPin, setAuthPin] = useState(getHourlyCode());
     const [suSuffix, setSuSuffix] = useState(getSuPinSuffix());
     const [isCopied, setIsCopied] = useState(false);
@@ -534,7 +550,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className="flex w-full h-[100dvh] font-sans overflow-hidden relative">
+        <div className={`flex w-full font-sans relative ${useBrowserScroll ? 'min-h-screen' : 'h-[100dvh] overflow-hidden'}`}>
 
             {/* ── Global ambient orbs ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -781,7 +797,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             </aside>
 
             {/* ── Main content ── */}
-            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
+            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`${useBrowserScroll ? 'w-full' : 'flex-1 overflow-hidden'} flex flex-col relative z-20 ${blurClasses}`}>
                 {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
                     className="lg:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/25"
@@ -837,7 +853,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 />
 
                 {/* Content */}
-                <div id="main-scroll" className={`flex-1 overflow-y-auto lg:overflow-hidden overscroll-none min-h-0 relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div id="main-scroll" className={`${useBrowserScroll ? 'w-full' : 'flex-1 overflow-y-auto min-h-0'} lg:overflow-hidden overscroll-none relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={useBrowserScroll ? undefined : { WebkitOverflowScrolling: 'touch' }}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">

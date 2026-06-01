@@ -145,7 +145,11 @@ function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
         const el = document.getElementById('main-scroll');
-        if (el) el.scrollTop = 0;
+        if (el && el.scrollHeight > el.clientHeight) {
+            el.scrollTop = 0;
+        } else {
+            window.scrollTo(0, 0);
+        }
     }, [pathname]);
     return null;
 }

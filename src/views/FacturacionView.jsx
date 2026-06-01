@@ -2175,7 +2175,7 @@ export default function FacturacionView() {
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 
                 <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
-                    <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact />
+                    <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
                 </div>
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />

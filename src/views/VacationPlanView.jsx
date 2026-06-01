@@ -680,6 +680,7 @@ const VacationPlanView = () => {
                         compact
                         clearable={false}
                         icon={Building2}
+                        bare
                     />
                 </div>
 
@@ -701,6 +702,7 @@ const VacationPlanView = () => {
                         compact
                         clearable={false}
                         icon={ListFilter}
+                        bare
                     />
                 </div>
 

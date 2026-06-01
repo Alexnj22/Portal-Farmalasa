@@ -494,11 +494,11 @@ const PayrollView = ({ openModal }) => {
             {/* Normal mode */}
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
                 <div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                    <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} />
+                    <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
                 </div>
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
                 <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                    <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} />
+                    <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
                 <button onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}

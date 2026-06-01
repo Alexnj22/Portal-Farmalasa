@@ -584,6 +584,7 @@ const StaffManagementView = ({
               compact
               clearable={false}
               icon={Building2}
+              bare
             />
           </div>
 

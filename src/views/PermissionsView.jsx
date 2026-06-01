@@ -730,7 +730,7 @@ const PermissionsView = () => {
                             Activar todo
                         </button>
                         <div className="w-44 shrink-0">
-                            <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }} options={copyOptions} placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'} icon={Copy} clearable={false} compact={true} disabled={activatingAll || copyingFrom} />
+                            <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }} options={copyOptions} placeholder={copyingFrom ? 'Copiando...' : 'Copiar de...'} icon={Copy} clearable={false} compact={true} disabled={activatingAll || copyingFrom} bare />
                         </div>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                     </>

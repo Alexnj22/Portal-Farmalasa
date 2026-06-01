@@ -585,6 +585,7 @@ export default function EncuestaView() {
                         placeholder="Todas las sucursales"
                         icon={Building2}
                         compact
+                        bare
                     />
                 </div>
                 {surveys.length > 1 && (

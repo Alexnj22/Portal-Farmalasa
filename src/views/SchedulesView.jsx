@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
@@ -116,10 +116,15 @@ const HolidaysPanel = ({
                     <p className="text-[13px] font-bold text-slate-400">No hay feriados registrados para {holidayYear}</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {byMonth.map(({ month, items }) => (
                         <div key={month}>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">{month}</p>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-1.5 h-6 bg-amber-400 rounded-full shrink-0" />
+                                <span className="text-[15px] font-black text-slate-700 tracking-tight capitalize">{month}</span>
+                                <div className="h-px flex-1 bg-amber-100" />
+                                <span className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full shrink-0">{items.length} {items.length === 1 ? 'feriado' : 'feriados'}</span>
+                            </div>
                             <div className="space-y-2">
                                 {items.sort((a,b) => a.holiday_date.localeCompare(b.holiday_date)).map(h => {
                                     const d = new Date(h.holiday_date + 'T12:00:00Z');
@@ -195,6 +200,13 @@ const SchedulesView = ({ openModal, setView }) => {
     });
 
     const [viewMode, setViewMode] = useState('calendar');
+    const viewOrderMap = { calendar: 0, shifts: 1, holidays: 2 };
+    const viewDirRef = useRef(0);
+    const goToView = useCallback((next) => {
+        viewDirRef.current = (viewOrderMap[next] ?? 1) >= (viewOrderMap[viewMode] ?? 0) ? 1 : -1;
+        setViewMode(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode]);
     const [filterBranch, setFilterBranch] = useState('');
 
     const [shiftTab, setShiftTab] = useState('ACTIVE');
@@ -798,17 +810,17 @@ useEffect(() => {
                             <div className="flex items-center min-w-0 gap-1 md:gap-2 h-full">
                                 <LayoutGroup id="sched-tabs">
                                     <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
-                                        <button onClick={() => setViewMode('calendar')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'calendar' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Vista Calendario">
+                                        <button onClick={() => goToView('calendar')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'calendar' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Vista Calendario">
                                             {viewMode === 'calendar' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
                                             <CalendarDays size={16} strokeWidth={2.5} className="relative z-10" />
                                         </button>
                                         <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
-                                        <button onClick={() => setViewMode('shifts')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'shifts' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Catálogo de Turnos">
+                                        <button onClick={() => goToView('shifts')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'shifts' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Catálogo de Turnos">
                                             {viewMode === 'shifts' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
                                             <BookOpen size={16} strokeWidth={2.5} className="relative z-10" />
                                         </button>
                                         <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
-                                        <button onClick={() => setViewMode('holidays')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'holidays' ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`} title="Feriados">
+                                        <button onClick={() => goToView('holidays')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'holidays' ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`} title="Feriados">
                                             {viewMode === 'holidays' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-amber-50 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
                                             <Star size={16} strokeWidth={2.5} className="relative z-10" />
                                         </button>
@@ -885,8 +897,8 @@ useEffect(() => {
             <AnimatePresence mode="wait" initial={false}>
             {viewMode === 'shifts' ? (
                 <motion.div key="shifts"
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
+                    transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full h-full relative">
                     <TabShifts
                         branches={branches}
@@ -896,8 +908,8 @@ useEffect(() => {
                 </motion.div>
             ) : viewMode === 'holidays' ? (
                 <motion.div key="holidays"
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
+                    transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full h-full">
                 <HolidaysPanel
                     holidays={holidays}
@@ -939,8 +951,8 @@ useEffect(() => {
                 </motion.div>
             ) : (
                 <motion.div key="calendar"
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
+                    transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
                     {employeesInView.length === 0 ? (
                         <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[65vh] relative z-10">

@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useEffect } from 'react';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
 
@@ -599,20 +600,36 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
                             })}
                         </tr>
                     </thead>
-                    <tbody className="relative z-10">
-                        {isLoading ? (
-                            [...Array(4)].map((_, idx) => (
+                    <AnimatePresence mode="wait" initial={false}>
+                    {isLoading ? (
+                        <motion.tbody key="skeleton" className="relative z-10"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}>
+                            {[...Array(employeesInView.length || 5)].map((_, idx) => (
                                 <tr key={idx}>
-                                    <td className="p-0 sticky left-0 z-20">
-                                        <div className="h-[90px] skeleton rounded-[1.5rem] mx-1"></div>
+                                    <td className="p-0 sticky left-0 z-20 h-px">
+                                        <div className="h-full min-h-[72px] skeleton rounded-[2rem] mx-1 flex items-center gap-2.5 p-2.5" style={{ animationDelay: `${idx * 0.06}s` }}>
+                                            <div className="w-10 h-10 rounded-xl bg-white/25 shrink-0" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-2.5 bg-white/20 rounded-full w-3/4" />
+                                                <div className="h-2 bg-white/15 rounded-full w-1/2" />
+                                                <div className="h-1.5 bg-white/10 rounded-full w-full mt-1" />
+                                            </div>
+                                        </div>
                                     </td>
-                                    {[...Array(7)].map((_, dIdx) => (
-                                        <td key={dIdx} className="p-0"><div className="h-[90px] skeleton rounded-[1.5rem] mx-1"></div></td>
+                                    {calendarDates.map((_, dIdx) => (
+                                        <td key={dIdx} className="p-0 h-px">
+                                            <div className="h-full min-h-[72px] skeleton rounded-[1.2rem] mx-0.5" style={{ animationDelay: `${(idx * 0.06) + (dIdx * 0.04)}s` }} />
+                                        </td>
                                     ))}
                                 </tr>
-                            ))
-                        ) : (
-                            employeesInView.map(emp => (
+                            ))}
+                        </motion.tbody>
+                    ) : (
+                        <motion.tbody key="data" className="relative z-10"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}>
+                            {employeesInView.map(emp => (
                                 <EmployeeScheduleRow
                                     key={emp.id}
                                     emp={emp}
@@ -622,9 +639,10 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
                                     onEditCell={handleEditCell}
                                     isReadOnly={isReadOnly}
                                 />
-                            ))
-                        )}
-                    </tbody>
+                            ))}
+                        </motion.tbody>
+                    )}
+                    </AnimatePresence>
                 </table>
             </div>
         </div>

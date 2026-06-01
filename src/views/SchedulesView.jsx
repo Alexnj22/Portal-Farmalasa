@@ -477,6 +477,12 @@ useEffect(() => {
             });
     }, [employees, filterBranch]);
 
+    const shiftsMap = useMemo(() => {
+        const m = new Map();
+        shifts.forEach(s => m.set(String(s.id), s));
+        return m;
+    }, [shifts]);
+
     const weekIsPublished = useMemo(() => {
         if (employeesInView.length === 0) return false;
         return employeesInView.every(e => publishedIds.has(String(e.id)));
@@ -521,8 +527,8 @@ useEffect(() => {
                 const day = sch[dId];
                 if (day && !day.isOff && (day.shiftId || day.customStart)) {
                     consecutiveDays++;
-                    
-                    const shiftTemplate = shifts.find(s => String(s.id) === String(day.shiftId));
+
+                    const shiftTemplate = day.shiftId ? shiftsMap.get(String(day.shiftId)) : null;
                     const sStartStr = day.customStart || shiftTemplate?.start_time?.substring(0, 5) || shiftTemplate?.start;
                     const sEndStr = day.customEnd || shiftTemplate?.end_time?.substring(0, 5) || shiftTemplate?.end;
 
@@ -574,7 +580,7 @@ useEffect(() => {
         }
 
         return alerts;
-    }, [weeklyRosters, employeesInView, shifts, calendarDates, filterBranch, branches]);
+    }, [weeklyRosters, employeesInView, shiftsMap, shifts, calendarDates, filterBranch, branches]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
         setWeeklyRosters(prev => {

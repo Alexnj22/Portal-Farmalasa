@@ -321,9 +321,9 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
     return (
-        <tr className="group/row relative transition-all duration-300 hover:z-50">
+        <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
             <td className="p-0 sticky left-0 z-30 align-top group-hover/row:z-50 min-w-[240px] max-w-[240px] 2xl:min-w-[260px] 2xl:max-w-[260px]">
-                <div className="min-h-[85px] h-full bg-white/60 backdrop-blur-3xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-3 mx-1 flex items-center gap-3 transition-all duration-300 group-hover/row:bg-white/95 group-hover/row:shadow-[0_20px_40px_rgba(0,0,0,0.12)] overflow-hidden">
+                <div className="min-h-[85px] h-full bg-white/60 backdrop-blur-3xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-3 mx-1 flex items-center gap-3 transition-[background-color,box-shadow] duration-150 group-hover/row:bg-white/95 group-hover/row:shadow-[0_20px_40px_rgba(0,0,0,0.12)] overflow-hidden">
                     <div className="w-10 h-10 2xl:w-12 2xl:h-12 rounded-xl bg-slate-100 overflow-hidden border border-white shadow-sm flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-300" />}
                     </div>
@@ -413,7 +413,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     }}>
-                        <div className={`min-h-[85px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-all duration-300 flex flex-col 
+                        <div className={`min-h-[85px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-[transform,box-shadow] duration-150 flex flex-col
                             ${!isReadOnly ? 'group-hover/cell:-translate-y-1 group-hover/cell:shadow-md' : ''}
                             ${conf ? conf.bg + ' border border-dashed ' + conf.border : 
                               hasShift ? `bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${!isReadOnly ? 'group-hover/cell:border-[#0052CC]/40' : ''}` : 
@@ -494,32 +494,44 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 // ============================================================================
 // 🚀 VISTA PRINCIPAL DEL CALENDARIO
 // ============================================================================
-const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRosters, shifts, handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly }) => {
+const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, weeklyRosters, shifts, handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly }) => {
     
     const allSchedulesArray = useMemo(() => {
         return employeesInView.map(emp => {
-            let rawSchedule = weeklyRosters[emp.id] || {}; 
+            let rawSchedule = weeklyRosters[emp.id] || {};
             const parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
             return { ...parsed, name: emp.name };
         });
     }, [employeesInView, weeklyRosters]);
 
+    // Compute coverage once per dep-change; reused in both thead and copilot effect.
+    const coverageByDay = useMemo(() => {
+        const result = {};
+        calendarDates.forEach(date => {
+            const dNum = new Date(date + 'T00:00:00').getDay();
+            result[dNum] = evaluateDayCoverage(
+                dNum, allSchedulesArray, shifts,
+                salesStats?.specificHours?.[dNum] || []
+            );
+        });
+        return result;
+    }, [allSchedulesArray, shifts, salesStats, calendarDates]);
+
     useEffect(() => {
         let weeklyCopilotAlerts = [];
-        for (let dNum = 0; dNum < 7; dNum++) {
-            const daySalesData = salesStats?.specificHours?.[dNum] || [];
-            const result = evaluateDayCoverage(dNum, allSchedulesArray, shifts, daySalesData);
-            if (result.copilotAlerts && result.copilotAlerts.length > 0) {
-                const dayName = new Date(calendarDates[dNum] + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' });
-                const alertsWithDay = result.copilotAlerts.map(a => ({...a, msg: `[${dayName.toUpperCase()}] ${a.msg}`}));
-                weeklyCopilotAlerts = [...weeklyCopilotAlerts, ...alertsWithDay];
+        calendarDates.forEach(date => {
+            const dNum = new Date(date + 'T00:00:00').getDay();
+            const result = coverageByDay[dNum];
+            if (result?.copilotAlerts?.length > 0) {
+                const dayName = new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' });
+                weeklyCopilotAlerts = [
+                    ...weeklyCopilotAlerts,
+                    ...result.copilotAlerts.map(a => ({ ...a, msg: `[${dayName.toUpperCase()}] ${a.msg}` }))
+                ];
             }
-        }
-        
-        if (onSalyAlertsUpdate) {
-            onSalyAlertsUpdate(weeklyCopilotAlerts);
-        }
-    }, [allSchedulesArray, shifts, salesStats, calendarDates, onSalyAlertsUpdate]);
+        });
+        if (onSalyAlertsUpdate) onSalyAlertsUpdate(weeklyCopilotAlerts);
+    }, [coverageByDay, calendarDates, onSalyAlertsUpdate]);
 
     return (
         <div className="w-full relative z-10 shrink-0 mt-4">
@@ -535,10 +547,7 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
                             
                             {calendarDates.map((date) => {
                                 const dNum = new Date(date + 'T00:00:00').getDay();
-                                
-                                const daySalesData = salesStats?.specificHours?.[dNum] || [];
-                                const coverageData = evaluateDayCoverage(dNum, allSchedulesArray, shifts, daySalesData);
-
+                                const coverageData = coverageByDay[dNum] || {};
                                 const dayOverallStat = salesStats?.days?.find(d => d.day === dNum);
                                 const dayColor = dayOverallStat?.color;
 
@@ -562,7 +571,7 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
 
                                 return (
                                     <th key={date} className="p-0 text-center min-w-[135px] 2xl:min-w-[150px] align-bottom group relative z-10 hover:z-[70]">
-                                        <div className={`backdrop-blur-xl border shadow-sm rounded-[1.5rem] pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-all duration-300 relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
+                                        <div className={`backdrop-blur-xl border shadow-sm rounded-[1.5rem] pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-[transform,box-shadow] duration-150 relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
                                             
                                             <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-20 pointer-events-none">
                                                 <div className="flex flex-wrap justify-center items-end gap-[3px] w-full max-h-[40px] overflow-hidden">
@@ -620,6 +629,6 @@ const ScheduleCalendar = ({ isLoading, calendarDates, employeesInView, weeklyRos
             </div>
         </div>
     );
-};
+});
 
 export default memo(ScheduleCalendar);

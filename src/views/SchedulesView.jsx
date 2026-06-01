@@ -212,7 +212,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const [startDate, setStartDate] = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
-    const [weekIsPublished, setWeekIsPublished] = useState(false);
+    const [publishedIds, setPublishedIds] = useState(new Set());
     const [isLoading, setIsLoading] = useState(true);
 
     const [editingCell, setEditingCell] = useState(null);
@@ -283,7 +283,7 @@ const SchedulesView = ({ openModal, setView }) => {
             fetchWeekRosters(startDate).then(result => {
                 if (isMounted) {
                     setWeeklyRosters(result?.rosters || {});
-                    setWeekIsPublished(result?.isPublished || false);
+                    setPublishedIds(result?.publishedIds || new Set());
                     if (!isSilent) setIsLoading(false);
                 }
             });
@@ -476,6 +476,11 @@ useEffect(() => {
                 return safeNameA.localeCompare(safeNameB);
             });
     }, [employees, filterBranch]);
+
+    const weekIsPublished = useMemo(() => {
+        if (employeesInView.length === 0) return false;
+        return employeesInView.every(e => publishedIds.has(String(e.id)));
+    }, [employeesInView, publishedIds]);
 
     const aiCopilotAlerts = useMemo(() => {
         const alerts = [];
@@ -693,7 +698,11 @@ useEffect(() => {
                 await publishWeekRosters(startDate, filterBranch);
             }
 
-            setWeekIsPublished(true);
+            setPublishedIds(prev => {
+                const next = new Set(prev);
+                publishState.bulkUpdates.forEach(item => next.add(String(item.id)));
+                return next;
+            });
             showToast('Horarios publicados', `Semana del ${formatDateLocal(startDate)} publicada correctamente.`, 'success');
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '', bulkUpdates: null });

@@ -952,17 +952,17 @@ export const createSystemSlice = (set, get) => ({
             if (error) throw error;
 
             const rosterMap = {};
-            let publishedCount = 0;
+            const publishedIds = new Set();
             (data || []).forEach(r => {
                 let parsedSchedule = r.schedule_data;
                 if (typeof parsedSchedule === 'string') {
                     try { parsedSchedule = JSON.parse(parsedSchedule); } catch { parsedSchedule = {}; }
                 }
                 rosterMap[r.employee_id] = parsedSchedule;
-                if (r.status === 'PUBLISHED') publishedCount++;
+                if (r.status === 'PUBLISHED') publishedIds.add(String(r.employee_id));
             });
 
-            return { rosters: rosterMap, isPublished: (data || []).length > 0 && publishedCount > 0 };
+            return { rosters: rosterMap, publishedIds };
         } catch (err) {
             console.error("Error cargando el roster semanal:", err);
             return {};

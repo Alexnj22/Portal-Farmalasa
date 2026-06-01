@@ -1758,7 +1758,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                     ))}
                 </div>
                 <div className="w-[170px] md:w-[200px]">
-                    <LiquidSelect value={selectedMonth} onChange={setSelectedMonth} options={monthOpts} placeholder="Mes" compact />
+                    <LiquidSelect value={selectedMonth} onChange={setSelectedMonth} options={monthOpts} placeholder="Mes" compact bare />
                 </div>
             </div>
 
@@ -2008,10 +2008,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                             <div className="px-5 pl-8 py-3 border-b border-black/[0.04] flex items-center gap-3 bg-black/[0.01]">
                                 <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest shrink-0">Filtrar:</span>
                                 <div className="w-[160px]">
-                                    <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact />
+                                    <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact bare />
                                 </div>
                                 <div className="w-[180px]">
-                                    <LiquidSelect value={filterConfirmedBranch} onChange={setFilterConfirmedBranch} options={branchFilterOpts} placeholder="Sucursal" compact />
+                                    <LiquidSelect value={filterConfirmedBranch} onChange={setFilterConfirmedBranch} options={branchFilterOpts} placeholder="Sucursal" compact bare />
                                 </div>
                                 {(filterConfirmedTipo || filterConfirmedBranch) && (
                                     <button onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}

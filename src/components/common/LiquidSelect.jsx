@@ -352,7 +352,7 @@ const LiquidSelect = ({
                     : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
                 : isOpen
                     ? 'bg-white border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] border text-slate-700'
-                    : 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/80 group-hover:bg-white/80 group-hover:border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_8px_rgba(255,255,255,0.7)] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.07),inset_0_1px_8px_rgba(255,255,255,0.8)] text-slate-700'
+                    : 'bg-white/90 border border-slate-100 shadow-[0_1px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] group-hover:bg-white group-hover:border-slate-200/70 group-hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)] text-slate-700'
         }`;
 
     return (
@@ -368,7 +368,7 @@ const LiquidSelect = ({
                         ? 'bg-transparent text-[#0052CC]'
                         : isDark
                             ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                            : 'bg-white/80 text-[#0052CC] border border-white shadow-sm'
+                            : 'bg-white text-[#0052CC] border border-slate-100 shadow-sm'
                 }`}>
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>

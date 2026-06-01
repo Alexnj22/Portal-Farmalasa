@@ -90,11 +90,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     useEffect(() => {
         const els = [document.documentElement, document.body];
+        const root = document.getElementById('root');
         if (useBrowserScroll) {
             els.forEach(el => { el.style.overflow = 'auto'; el.style.height = 'auto'; });
+            if (root) { root.style.overflow = 'auto'; root.style.height = 'auto'; }
             document.body.style.overscrollBehavior = 'none';
         } else {
             els.forEach(el => { el.style.overflow = ''; el.style.height = ''; });
+            if (root) { root.style.overflow = ''; root.style.height = ''; }
             document.body.style.overscrollBehavior = '';
         }
     }, [useBrowserScroll]);

@@ -784,11 +784,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
                 {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
-                    className="lg:hidden fixed top-0 left-0 right-0 z-40
-                        bg-white/65 backdrop-blur-[44px] backdrop-saturate-[220%]
-                        border-b border-white/70
-                        shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_-1px_0_rgba(255,255,255,0.9)]"
-                    style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+                    className="lg:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/25"
+                    style={{
+                        paddingTop: 'env(safe-area-inset-top, 0px)',
+                        background: 'rgba(221,216,255,0.82)',
+                        backdropFilter: 'blur(40px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                        boxShadow: '0 4px 20px rgba(110,70,220,0.10)',
+                    }}
                 >
                     <div className="flex items-center justify-between px-4 py-2.5">
                         <div className="flex items-center gap-4">

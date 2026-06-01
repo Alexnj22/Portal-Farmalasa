@@ -324,10 +324,23 @@ async function syncInventoryBranch(
     }
   }
 
+  // Deduplicate by sync_key (ERP occasionally returns duplicate detail rows for the
+  // same product+lote+detalle combination). Sum quantities when merging.
+  const rowsByKey = new Map<string, any>();
+  for (const row of rows) {
+    const existing = rowsByKey.get(row.sync_key);
+    if (existing) {
+      existing.cantidad += row.cantidad;
+    } else {
+      rowsByKey.set(row.sync_key, { ...row });
+    }
+  }
+  const dedupedRows = Array.from(rowsByKey.values());
+
   const CHUNK = 200;
-  for (let i = 0; i < rows.length; i += CHUNK) {
+  for (let i = 0; i < dedupedRows.length; i += CHUNK) {
     const { error } = await supabase.from('inventory')
-      .upsert(rows.slice(i, i + CHUNK), { onConflict: 'sync_key' });
+      .upsert(dedupedRows.slice(i, i + CHUNK), { onConflict: 'sync_key' });
     if (error) throw new Error(`inventory upsert chunk ${i}: ${error.message}`);
   }
 

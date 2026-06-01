@@ -863,7 +863,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 />
 
                 {/* Content */}
-                <div id="main-scroll" className={`flex-1 min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+                <div id="main-scroll" className={`lg:flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">

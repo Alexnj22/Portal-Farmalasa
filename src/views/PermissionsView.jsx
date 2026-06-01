@@ -73,8 +73,10 @@ const MODULE_GROUPS = [
                 { key: 'facturacion_tab_saltos',       label: 'Saltos'       },
                 { key: 'facturacion_tab_no_efectivo',  label: 'No Efectivo'  },
             ]},
-            { key: 'cotizaciones',  label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt, hasApprove: false, hasScope: true },
-            { key: 'metas',         label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas', icon: Target, hasApprove: false },
+            { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
+            { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas',                icon: Target,        hasApprove: false },
+            { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones y ofertas por producto o categoría (próximamente)',             icon: Gift,          hasApprove: false, comingSoon: true },
+            { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],
     },
     {
@@ -99,8 +101,9 @@ const MODULE_GROUPS = [
         group: 'RRHH',
         color: 'text-violet-600',
         modules: [
-            { key: 'encuesta',       label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y colaborador', icon: BarChart2, hasApprove: false },
-            { key: 'encuesta_admin', label: 'Gestión de Encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2, hasApprove: false },
+            { key: 'encuesta',       label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y colaborador', icon: BarChart2,   hasApprove: false },
+            { key: 'encuesta_admin', label: 'Gestión de Encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2,   hasApprove: false },
+            { key: 'entrevistas',    label: 'Entrevistas',          desc: 'Gestión del proceso de selección y entrevistas de candidatos (próximamente)',                    icon: Briefcase,  hasApprove: false, comingSoon: true },
         ],
     },
     {
@@ -263,12 +266,15 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
     const ModIcon = module.icon;
     const hasAnyPerm = perms.can_view || perms.can_edit || perms.can_approve;
     const currentScope = perms.scope || 'ALL';
+    const isComing = !!module.comingSoon;
 
     return (
         <div className={`rounded-[1.5rem] border transition-all duration-500 ${
-            hasAnyPerm
-                ? 'bg-white/80 backdrop-blur-xl border-white/90 shadow-[0_4px_20px_rgba(0,82,204,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transform-gpu'
-                : 'bg-white/40 backdrop-blur-md border-slate-100/60 opacity-70 hover:opacity-90'
+            isComing
+                ? 'bg-white/30 backdrop-blur-md border-slate-100/40 opacity-50'
+                : hasAnyPerm
+                    ? 'bg-white/80 backdrop-blur-xl border-white/90 shadow-[0_4px_20px_rgba(0,82,204,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transform-gpu'
+                    : 'bg-white/40 backdrop-blur-md border-slate-100/60 opacity-70 hover:opacity-90'
         }`}>
             <div className="p-4">
                 {/* Header */}
@@ -837,7 +843,10 @@ const PermissionsView = () => {
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">
 
-                            {/* ── Card: Super Usuario ── */}
+                            {/* ── Cards: Super Usuario + Nivel de Precio (2 columnas) ── */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                            {/* SU Card */}
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
@@ -846,13 +855,11 @@ const PermissionsView = () => {
                                         ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-400/10 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_32px_rgba(217,119,6,0.18)]'
                                         : 'bg-white/70 backdrop-blur-xl border-white/80 shadow-[0_4px_16px_rgba(0,0,0,0.05)]'
                                 }`}>
-                                    {/* Glow orb when active */}
                                     {isRoleSU && (
                                         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-amber-300/20 blur-3xl pointer-events-none" />
                                     )}
-                                    <div className="relative p-4">
+                                    <div className="relative p-4 flex flex-col h-full">
                                         <div className="flex items-center gap-3">
-                                            {/* Icon */}
                                             <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                                                 isRoleSU
                                                     ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_4px_16px_rgba(217,119,6,0.4)]'
@@ -865,7 +872,6 @@ const PermissionsView = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            {/* Label */}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <p className={`text-[13px] font-black leading-tight ${isRoleSU ? 'text-amber-900' : 'text-slate-800'}`}>
@@ -878,10 +884,9 @@ const PermissionsView = () => {
                                                     )}
                                                 </div>
                                                 <p className={`text-[10px] font-medium mt-0.5 leading-snug ${isRoleSU ? 'text-amber-700/70' : 'text-slate-400'}`}>
-                                                    Acceso total irrestricto · oculto en listados de personal
+                                                    Acceso total irrestricto · oculto en listados
                                                 </p>
                                             </div>
-                                            {/* Toggle */}
                                             <Toggle
                                                 value={isRoleSU}
                                                 onChange={v => canEdit && handleSuToggle(v)}
@@ -890,12 +895,11 @@ const PermissionsView = () => {
                                                 size="lg"
                                             />
                                         </div>
-                                        {/* Banner when active */}
                                         {isRoleSU && (
                                             <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-300/40">
                                                 <Zap size={11} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
                                                 <p className="text-[10px] font-black text-amber-700 uppercase tracking-wide">
-                                                    Los permisos por módulo no aplican — este cargo tiene acceso total
+                                                    Los permisos por módulo no aplican — acceso total
                                                 </p>
                                             </div>
                                         )}
@@ -904,56 +908,58 @@ const PermissionsView = () => {
                                 );
                             })()}
 
-                            {/* ── Card: Acceso a Niveles de Precio ── */}
+                            {/* Price Level Card */}
                             {(() => {
                                 const currentLevel = rolePriceLevels[selectedRoleId] ?? null;
                                 const PRICE_OPTS = [
-                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock, grad: 'from-emerald-500 to-teal-600' },
-                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-blue-500 to-indigo-600' },
+                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-emerald-500 to-teal-600'  },
+                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-blue-500 to-indigo-600'   },
                                     { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-violet-500 to-purple-600' },
-                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-amber-500 to-orange-600' },
-                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-rose-500 to-pink-600' },
-                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-cyan-500 to-sky-600' },
-                                    { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-slate-600 to-slate-800' },
-                                    { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-orange-500 to-red-600' },
+                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-amber-500 to-orange-600'  },
+                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-rose-500 to-pink-600'     },
+                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-cyan-500 to-sky-600'      },
+                                    { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-slate-600 to-slate-800'   },
+                                    { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-orange-500 to-red-600'    },
                                 ];
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                            <div className="rounded-[1.5rem] border bg-white/75 backdrop-blur-xl border-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.05)] p-4">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
-                                        <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
+                                <div className="rounded-[1.5rem] border bg-white/75 backdrop-blur-xl border-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.05)] p-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
+                                            <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[13px] font-black text-slate-800 leading-tight">Nivel de Precio Máximo</p>
+                                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                                Activo: <span className="font-black text-slate-600">{activeOpt.label}</span>
+                                                {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[13px] font-black text-slate-800 leading-tight">Nivel de Precio Máximo</p>
-                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                            Activo: <span className="font-black text-slate-600">{activeOpt.label}</span>
-                                            {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
-                                        </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {PRICE_OPTS.map(opt => {
+                                            const isActive = currentLevel === opt.value;
+                                            const OptIcon = opt.icon;
+                                            return (
+                                                <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
+                                                    onClick={() => canEdit && handlePriceLevelChange(opt.value)}
+                                                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
+                                                        isActive
+                                                            ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
+                                                            : 'bg-white/80 border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'
+                                                    } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                                    <OptIcon size={9} strokeWidth={2.5} />
+                                                    {opt.label}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {PRICE_OPTS.map(opt => {
-                                        const isActive = currentLevel === opt.value;
-                                        const OptIcon = opt.icon;
-                                        return (
-                                            <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
-                                                onClick={() => canEdit && handlePriceLevelChange(opt.value)}
-                                                className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
-                                                    isActive
-                                                        ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
-                                                        : 'bg-white/80 border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'
-                                                } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                                <OptIcon size={9} strokeWidth={2.5} />
-                                                {opt.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
                                 );
                             })()}
+
+                            </div>{/* end 2-col grid */}
 
                             {MODULE_GROUPS.map((g, gi) => {
                                 // groupActive/groupPartial solo considera módulos principales (sin tabs)

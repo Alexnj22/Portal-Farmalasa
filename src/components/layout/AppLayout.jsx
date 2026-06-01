@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
+import SidebarSyncStatus from '../common/SidebarSyncStatus';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -725,6 +726,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </div>
                                 )}
+                                {/* Sync health + notification toggle */}
+                                <SidebarSyncStatus />
+
                                 <div className="flex items-center gap-2 group/user">
                                     <button onClick={() => navigate('/profile')}
                                         className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]"

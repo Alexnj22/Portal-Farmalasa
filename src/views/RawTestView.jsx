@@ -1,17 +1,48 @@
+import { useEffect } from 'react';
+
 export default function RawTestView() {
+    useEffect(() => {
+        const html = document.documentElement;
+        const body = document.body;
+        const root = document.getElementById('root');
+
+        // setProperty con 'important' es el API correcto para !important en inline styles
+        // cssText += '...!important' tiene bugs de parseo — por eso v2 falló
+        html.style.setProperty('overflow', 'auto', 'important');
+        html.style.setProperty('height', 'auto', 'important');
+
+        body.style.setProperty('overflow', 'auto', 'important');
+        body.style.setProperty('height', 'auto', 'important');
+        body.style.setProperty('overscroll-behavior', 'auto', 'important'); // permite rubber-band de iOS
+
+        if (root) {
+            root.style.setProperty('overflow', 'visible', 'important');
+            root.style.setProperty('height', 'auto', 'important');
+            root.style.setProperty('overscroll-behavior', 'auto', 'important');
+        }
+
+        return () => {
+            html.style.removeProperty('overflow');
+            html.style.removeProperty('height');
+            body.style.removeProperty('overflow');
+            body.style.removeProperty('height');
+            body.style.removeProperty('overscroll-behavior');
+            if (root) {
+                root.style.removeProperty('overflow');
+                root.style.removeProperty('height');
+                root.style.removeProperty('overscroll-behavior');
+            }
+        };
+    }, []);
+
     const GRAD = 'radial-gradient(ellipse at 38% 28%, #d8d2ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%)';
 
     return (
         <>
-            {/* Fondo fijo — position:fixed llega hasta y=0 (bajo status bar) */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0, right: 0, bottom: 0,
-                background: GRAD,
-                zIndex: 0,
-            }} />
+            {/* Mismo fondo en html/body — cubre zona status bar */}
+            <style>{`html, body { background: ${GRAD} !important; }`}</style>
 
-            {/* Header fijo — cubre zona status bar con mismo gradiente */}
+            {/* Header fijo desde y=0 físico */}
             <div style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99,
                 background: 'rgba(221,216,255,0.85)',
@@ -22,29 +53,23 @@ export default function RawTestView() {
             }}>
                 <div style={{ padding: '12px 16px', fontFamily: 'system-ui', fontWeight: 800, fontSize: 15, color: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>/raw-test</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v3</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v4</span>
                 </div>
             </div>
 
-            {/* Contenedor de scroll — div interno fijo, igual que #main-scroll en Portal */}
-            <div style={{
-                position: 'fixed',
-                top: 'calc(env(safe-area-inset-top, 0px) + 52px)',
-                left: 0, right: 0,
-                bottom: 0,
-                overflowY: 'auto',
-                WebkitOverflowScrolling: 'touch',
-                zIndex: 10,
-                padding: '16px',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
-            }}>
+            {/* Spacer — empuja el contenido debajo del header fijo */}
+            <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 52px)' }} />
+
+            {/* Contenido en flujo normal — el BODY scrollea (scroll nativo WKWebView) */}
+            <div style={{ padding: 16, background: GRAD }}>
 
                 <div style={{ background: 'rgba(110,70,230,0.12)', borderRadius: 16, padding: 16, marginBottom: 16, border: '1px solid rgba(110,70,230,0.2)' }}>
                     <p style={{ margin: 0, fontSize: 13, color: '#4c1d95', lineHeight: 1.6, fontFamily: 'system-ui' }}>
-                        <strong>v3 — scroll interno (div fijo)</strong><br />
+                        <strong>v4 — scroll nativo del body</strong><br />
                         1. ¿Hay scroll? ✓/✗<br />
-                        2. ¿La franja del status bar (arriba) desaparece?<br />
-                        3. ¿La franja de abajo desaparece?
+                        2. Al bajar desde arriba, ¿hace rubber-band?<br />
+                        3. ¿El contenido pasa por la zona del status bar?<br />
+                        4. ¿Las franjas arriba/abajo desaparecen?
                     </p>
                 </div>
 
@@ -68,10 +93,12 @@ export default function RawTestView() {
                         }}>{i + 1}</div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>Fila {i + 1}</div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>Scrollea hacia abajo</div>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>Scroll nativo del body</div>
                         </div>
                     </div>
                 ))}
+
+                <div style={{ height: 'max(env(safe-area-inset-bottom, 0px), 20px)' }} />
             </div>
         </>
     );

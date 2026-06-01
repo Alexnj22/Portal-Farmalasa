@@ -1,75 +1,53 @@
-import { useEffect } from 'react';
-
 export default function RawTestView() {
-    useEffect(() => {
-        const html = document.documentElement;
-        const body = document.body;
-        const root = document.getElementById('root');
-
-        // setProperty con 'important' es el API correcto para !important en inline styles
-        // cssText += '...!important' tiene bugs de parseo — por eso v2 falló
-        html.style.setProperty('overflow', 'auto', 'important');
-        html.style.setProperty('height', 'auto', 'important');
-
-        body.style.setProperty('overflow', 'auto', 'important');
-        body.style.setProperty('height', 'auto', 'important');
-        body.style.setProperty('overscroll-behavior', 'auto', 'important'); // permite rubber-band de iOS
-
-        if (root) {
-            root.style.setProperty('overflow', 'visible', 'important');
-            root.style.setProperty('height', 'auto', 'important');
-            root.style.setProperty('overscroll-behavior', 'auto', 'important');
-        }
-
-        return () => {
-            html.style.removeProperty('overflow');
-            html.style.removeProperty('height');
-            body.style.removeProperty('overflow');
-            body.style.removeProperty('height');
-            body.style.removeProperty('overscroll-behavior');
-            if (root) {
-                root.style.removeProperty('overflow');
-                root.style.removeProperty('height');
-                root.style.removeProperty('overscroll-behavior');
-            }
-        };
-    }, []);
-
     const GRAD = 'radial-gradient(ellipse at 38% 28%, #d8d2ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%)';
+    // Alto total del header fijo (zona status bar + barra de título)
+    const HEADER_H = 'calc(env(safe-area-inset-top, 0px) + 52px)';
 
     return (
         <>
-            {/* Mismo fondo en html/body — cubre zona status bar */}
-            <style>{`html, body { background: ${GRAD} !important; }`}</style>
+            {/* Fondo fijo — cubre todo el físico incluyendo status bar y home indicator */}
+            <div style={{ position: 'fixed', inset: 0, background: GRAD, zIndex: 0 }} />
 
-            {/* Header fijo desde y=0 físico */}
+            {/* Header de vidrio — cubre zona status bar (paddingTop) + barra de título */}
             <div style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99,
-                background: 'rgba(221,216,255,0.85)',
-                backdropFilter: 'blur(40px)',
-                WebkitBackdropFilter: 'blur(40px)',
+                background: 'rgba(221,216,255,0.88)',
+                backdropFilter: 'blur(44px)',
+                WebkitBackdropFilter: 'blur(44px)',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
-                borderBottom: '1px solid rgba(255,255,255,0.5)',
+                borderBottom: '1px solid rgba(255,255,255,0.6)',
             }}>
                 <div style={{ padding: '12px 16px', fontFamily: 'system-ui', fontWeight: 800, fontSize: 15, color: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>/raw-test</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v4</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v5</span>
                 </div>
             </div>
 
-            {/* Spacer — empuja el contenido debajo del header fijo */}
-            <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 52px)' }} />
-
-            {/* Contenido en flujo normal — el BODY scrollea (scroll nativo WKWebView) */}
-            <div style={{ padding: 16, background: GRAD }}>
+            {/*
+              Scroll container empieza en top:0 (físico) — mismo que el header.
+              paddingTop empuja el primer ítem debajo del header.
+              Al scrollear, el contenido SUBE por detrás del vidrio del header
+              y entra en la zona del status bar → el efecto que buscamos.
+              zIndex 10 < zIndex 99 del header, así el contenido pasa por debajo.
+            */}
+            <div style={{
+                position: 'fixed',
+                top: 0, left: 0, right: 0, bottom: 0,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                zIndex: 10,
+                paddingTop: HEADER_H,
+                paddingLeft: 16,
+                paddingRight: 16,
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
+            }}>
 
                 <div style={{ background: 'rgba(110,70,230,0.12)', borderRadius: 16, padding: 16, marginBottom: 16, border: '1px solid rgba(110,70,230,0.2)' }}>
                     <p style={{ margin: 0, fontSize: 13, color: '#4c1d95', lineHeight: 1.6, fontFamily: 'system-ui' }}>
-                        <strong>v4 — scroll nativo del body</strong><br />
+                        <strong>v5 — scroll por detrás del header</strong><br />
                         1. ¿Hay scroll? ✓/✗<br />
-                        2. Al bajar desde arriba, ¿hace rubber-band?<br />
-                        3. ¿El contenido pasa por la zona del status bar?<br />
-                        4. ¿Las franjas arriba/abajo desaparecen?
+                        2. Al scrollear, ¿el contenido pasa por el status bar (arriba)?<br />
+                        3. ¿La franja de abajo desaparece?
                     </p>
                 </div>
 
@@ -93,13 +71,21 @@ export default function RawTestView() {
                         }}>{i + 1}</div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>Fila {i + 1}</div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>Scroll nativo del body</div>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>Scrollea para ver el efecto</div>
                         </div>
                     </div>
                 ))}
-
-                <div style={{ height: 'max(env(safe-area-inset-bottom, 0px), 20px)' }} />
             </div>
+
+            {/* Franja inferior — cubre zona home indicator con mismo vidrio del header */}
+            <div style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0,
+                height: 'env(safe-area-inset-bottom, 0px)',
+                background: 'rgba(221,216,255,0.88)',
+                backdropFilter: 'blur(44px)',
+                WebkitBackdropFilter: 'blur(44px)',
+                zIndex: 98,
+            }} />
         </>
     );
 }

@@ -262,33 +262,44 @@ const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false, size
 };
 
 // ─── Módulo card ────────────────────────────────────────────────────────────
-const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, tabSaving, onTabChange }) => {
+const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabPerms, tabSaving, onTabChange }) => {
     const ModIcon = module.icon;
     const hasAnyPerm = perms.can_view || perms.can_edit || perms.can_approve;
     const currentScope = perms.scope || 'ALL';
     const isComing = !!module.comingSoon;
+    const [flashedPerm, setFlashedPerm] = useState(null);
+
+    const handlePerm = (key, permType, v) => {
+        onChange(key, permType, v);
+        setFlashedPerm(permType);
+        setTimeout(() => setFlashedPerm(null), 500);
+    };
 
     return (
-        <div className={`rounded-[1.5rem] border transition-all duration-300 ease-out transform-gpu ${
+        <div className={`rounded-[1.5rem] border transition-all duration-500 ease-out transform-gpu ${
             isComing
                 ? 'bg-white/20 backdrop-blur-xl border-white/20 opacity-40 select-none'
                 : hasAnyPerm
-                    ? 'bg-white/55 backdrop-blur-2xl border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,82,204,0.08),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_14px_44px_rgba(0,82,204,0.15),0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-1.5 hover:scale-[1.015] hover:bg-white/70'
+                    ? `bg-white/55 backdrop-blur-2xl border-white/75
+                       shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,82,204,0.08)]
+                       hover:shadow-[inset_0_1px_0_rgba(255,255,255,1),0_16px_48px_rgba(0,82,204,0.16),0_4px_16px_rgba(0,0,0,0.06)]
+                       hover:-translate-y-2 hover:scale-[1.018] hover:bg-white/70
+                       ${flash ? 'ring-2 ring-blue-300/50 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_0_0_4px_rgba(0,82,204,0.06),0_8px_32px_rgba(0,82,204,0.18)]' : ''}`
                     : 'bg-white/25 backdrop-blur-xl border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-white/35'
         }`}>
             <div className="p-4">
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3.5">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                         hasAnyPerm
-                            ? 'bg-gradient-to-br from-[#0052CC] to-[#6929C4] text-white shadow-[0_3px_10px_rgba(0,82,204,0.35)]'
-                            : 'bg-white/50 backdrop-blur-sm border border-white/60 text-slate-300'
+                            ? 'bg-gradient-to-br from-[#0052CC] to-[#6929C4] text-white shadow-[0_3px_12px_rgba(0,82,204,0.38)] scale-100'
+                            : 'bg-white/50 backdrop-blur-sm border border-white/60 text-slate-300 scale-90'
                     }`}>
                         <ModIcon size={15} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className={`text-[12px] font-black leading-tight transition-colors ${hasAnyPerm ? 'text-slate-800' : 'text-slate-400'}`}>
+                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-slate-800' : 'text-slate-400'}`}>
                                 {module.label}
                             </p>
                             {saving && <Loader2 size={10} className="text-slate-400 animate-spin flex-shrink-0" />}
@@ -298,7 +309,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                 </div>
 
                 {/* Toggles */}
-                <div className={`rounded-xl p-2.5 space-y-2 border ${
+                <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-300 ${
                     hasAnyPerm
                         ? 'bg-white/50 backdrop-blur-sm border-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'
                         : 'bg-white/20 border-white/30'
@@ -308,19 +319,30 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                         const PtIcon = pt.icon;
                         const val = !!perms[pt.key];
                         const needsView = (pt.key === 'can_edit' || pt.key === 'can_approve') && !perms.can_view;
+                        const isFlashing = flashedPerm === pt.key;
                         return (
-                            <div key={pt.key} title={PERM_DESC[pt.key]} className={`flex items-center justify-between gap-3 transition-opacity duration-200 ${needsView ? 'opacity-20 pointer-events-none' : ''}`}>
+                            <div
+                                key={pt.key}
+                                title={PERM_DESC[pt.key]}
+                                className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
+                                    needsView ? 'opacity-20 pointer-events-none' : ''
+                                } ${isFlashing ? (val ? 'bg-blue-50/70 scale-[1.02]' : 'bg-red-50/50 scale-[0.99]') : ''}`}
+                            >
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${val ? pt.activeColor + ' shadow-sm' : 'bg-slate-200/50'}`}>
+                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                                        val
+                                            ? `${pt.activeColor} shadow-sm ${isFlashing ? 'scale-125' : 'scale-100'}`
+                                            : `bg-slate-200/50 ${isFlashing ? 'scale-75' : 'scale-100'}`
+                                    }`}>
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${val ? 'text-slate-700' : 'text-slate-300'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-slate-700' : 'text-slate-300'}`}>
                                         {pt.label}
                                     </span>
                                 </div>
                                 <Toggle
                                     value={val}
-                                    onChange={v => onChange(module.key, pt.key, v)}
+                                    onChange={v => handlePerm(module.key, pt.key, v)}
                                     color={pt.activeColor}
                                     disabled={locked || needsView}
                                 />
@@ -345,7 +367,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                                     onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
                                     className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
-                                            ? `${opt.color} border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.15)]`
+                                            ? `${opt.color} border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.15)] scale-[1.02]`
                                             : 'bg-white/50 backdrop-blur-sm border-white/50 text-slate-400 hover:bg-white/70 hover:text-slate-600'
                                     } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
@@ -367,12 +389,12 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                             {tabs.map(tab => {
                                 const tabPerm = tabPerms[tab.key] || { can_view: false };
                                 return (
-                                    <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-200 ${
+                                    <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${
                                         tabPerm.can_view
-                                            ? 'bg-blue-400/8 border-blue-200/40 backdrop-blur-sm'
+                                            ? 'bg-blue-50/50 border-blue-200/40'
                                             : 'bg-white/20 border-white/30'
                                     }`}>
-                                        <span className={`text-[10px] font-bold ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-300'}`}>
+                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-300'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
@@ -851,60 +873,63 @@ const PermissionsView = () => {
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">
 
-                            {/* ── Cards: Super Usuario + Nivel de Precio (2 columnas) ── */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* ── Cards: Super Usuario (1/3) + Nivel de Precio (2/3) ── */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
 
-                            {/* SU Card */}
+                            {/* SU Card — columna pequeña */}
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
-                                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-400 ${
+                                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-r from-amber-400/18 to-orange-300/10 backdrop-blur-xl border-amber-300/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_4px_20px_rgba(217,119,6,0.16)]'
+                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-300/5 backdrop-blur-xl border-amber-300/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_24px_rgba(217,119,6,0.2)] scale-[1.01]'
                                         : 'bg-white/50 backdrop-blur-xl border-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_2px_12px_rgba(0,0,0,0.04)]'
                                 }`}>
-                                    {isRoleSU && <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-amber-300/25 blur-2xl pointer-events-none" />}
-                                    <div className="relative flex items-center gap-3 p-3">
-                                        <div className={`relative w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-400 ${
-                                            isRoleSU
-                                                ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_2px_10px_rgba(217,119,6,0.4)]'
-                                                : 'bg-white/60 backdrop-blur-sm border border-white/70'
-                                        }`}>
-                                            <ShieldAlert size={14} className={isRoleSU ? 'text-white' : 'text-slate-400'} strokeWidth={2} />
-                                            {isRoleSU && (
-                                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow-sm flex items-center justify-center">
-                                                    <Sparkles size={7} className="text-amber-500" strokeWidth={2.5} />
-                                                </div>
-                                            )}
+                                    {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-300/30 blur-xl pointer-events-none" />}
+                                    <div className="relative p-3.5 flex flex-col gap-3">
+                                        {/* Icon + toggle row */}
+                                        <div className="flex items-center justify-between">
+                                            <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                                                isRoleSU
+                                                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_3px_12px_rgba(217,119,6,0.45)] scale-100'
+                                                    : 'bg-white/60 border border-white/70 scale-90'
+                                            }`}>
+                                                <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-slate-400'} strokeWidth={1.8} />
+                                                {isRoleSU && (
+                                                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
+                                                        <Sparkles size={7} className="text-amber-500" strokeWidth={2.5} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Toggle
+                                                value={isRoleSU}
+                                                onChange={v => canEdit && handleSuToggle(v)}
+                                                color="bg-amber-400"
+                                                disabled={!canEdit}
+                                            />
                                         </div>
-                                        <div className="flex-1 min-w-0">
+                                        {/* Label */}
+                                        <div>
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight ${isRoleSU ? 'text-amber-900' : 'text-slate-700'}`}>
+                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-amber-900' : 'text-slate-700'}`}>
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
-                                                    <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full">SU</span>
+                                                    <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug ${isRoleSU ? 'text-amber-700/70' : 'text-slate-400'}`}>
-                                                {isRoleSU ? 'Acceso total · ignorado en listados' : 'Acceso irrestricto a todo el sistema'}
+                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-slate-400'}`}>
+                                                {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
-                                        <Toggle
-                                            value={isRoleSU}
-                                            onChange={v => canEdit && handleSuToggle(v)}
-                                            color="bg-amber-400"
-                                            disabled={!canEdit}
-                                        />
+                                        {/* Warning badge */}
+                                        {isRoleSU && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-amber-400/12 border border-amber-300/30 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                                                <Zap size={8} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                                <p className="text-[8px] font-black text-amber-700 uppercase tracking-wide">Permisos ignorados</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    {isRoleSU && (
-                                        <div className="mx-3 mb-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-400/12 border border-amber-300/30">
-                                            <Zap size={9} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
-                                            <p className="text-[9px] font-black text-amber-700 uppercase tracking-wide">
-                                                Permisos por módulo ignorados
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                                 );
                             })()}
@@ -925,7 +950,7 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div className="rounded-2xl border bg-white/55 backdrop-blur-2xl border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4">
+                                <div className="rounded-2xl border bg-white/55 backdrop-blur-2xl border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_24px_rgba(0,0,0,0.06)] p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
@@ -1012,6 +1037,7 @@ const PermissionsView = () => {
                                                         onChange={handleToggle}
                                                         locked={!canEdit}
                                                         saving={saving[k]}
+                                                        flash={!!savedFlash[k]}
                                                         tabs={m.tabs}
                                                         tabPerms={tabPerms}
                                                         tabSaving={tabSaving}

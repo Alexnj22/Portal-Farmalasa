@@ -1,5 +1,8 @@
 {
   "appId": "lat.farmasalud.portal",
   "appName": "Portal-FarmaSalud",
-  "webDir": "dist"
+  "webDir": "dist",
+  "ios": {
+    "backgroundColor": "#ddd8ff"
+  }
 }

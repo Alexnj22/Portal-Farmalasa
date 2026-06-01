@@ -142,7 +142,10 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // Scroll to top on every route change (needed for native mobile scroll)
 function ScrollToTop() {
     const { pathname } = useLocation();
-    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    useEffect(() => {
+        const el = document.getElementById('main-scroll');
+        if (el) el.scrollTop = 0;
+    }, [pathname]);
     return null;
 }
 

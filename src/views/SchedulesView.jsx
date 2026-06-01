@@ -260,18 +260,6 @@ const SchedulesView = ({ openModal, setView }) => {
     }, [editingCell, publishState.isOpen]);
 
     useEffect(() => {
-        if (window.innerWidth >= 1024) {
-            setTimeout(() => {
-                if (viewMode === 'calendar') {
-                    window.dispatchEvent(new CustomEvent('set-sidebar', { detail: false }));
-                } else {
-                    window.dispatchEvent(new CustomEvent('set-sidebar', { detail: true }));
-                }
-            }, 50);
-        }
-    }, [viewMode]);
-    
-    useEffect(() => {
         let isMounted = true;
         const loadRosters = (isSilent = false) => {
             if (viewMode === 'shifts' || !filterBranch) return;

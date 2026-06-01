@@ -31,6 +31,7 @@ import AttendanceAuditView from "./views/AttendanceAuditView";
 import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
 import IOSTestView from "./views/IOSTestView";
+import RawTestView from "./views/RawTestView";
 import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
 import PayrollView from "./views/PayrollView";
@@ -476,6 +477,7 @@ function MainApp() {
         <>
         <ScrollToTop />
         <Routes>
+            <Route path="/raw-test" element={<RawTestView />} />
             <Route path="/kiosk" element={
                 !isMobileOrApp() ? (
                     <TimeClockView setView={setView} />

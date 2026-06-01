@@ -80,7 +80,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
     const [openGroups, setOpenGroups] = useState({});  // groupKey → bool
 
 
@@ -147,7 +147,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     useEffect(() => {
         if (isMobile) setIsSidebarOpen(false);
-        else setIsSidebarOpen(isWide);
+        else setIsSidebarOpen(true);
     }, [isMobile, isWide]);
 
     useEffect(() => {

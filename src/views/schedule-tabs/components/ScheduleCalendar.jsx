@@ -322,10 +322,10 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
-            <td className="p-0 sticky left-0 z-30 align-top group-hover/row:z-50 min-w-[196px] max-w-[196px] 2xl:min-w-[216px] 2xl:max-w-[216px]">
+            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[196px] max-w-[196px] 2xl:min-w-[216px] 2xl:max-w-[216px]">
                 <div className="min-h-[72px] h-full bg-white/60 backdrop-blur-xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2.5 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 overflow-hidden border border-white shadow-sm flex items-center justify-center shrink-0">
-                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-slate-300" />}
+                    <div className="w-10 h-10 2xl:w-12 2xl:h-12 rounded-xl bg-slate-100 overflow-hidden border border-white shadow-sm flex items-center justify-center shrink-0">
+                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-300" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
                         <h4 className="font-black text-slate-800 text-[12px] 2xl:text-[13px] truncate leading-tight mb-1" title={emp.name}>{shortName}</h4>
@@ -408,12 +408,12 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const timeBlocks = hasShift ? getTimeBlocks(startStr, endStr, dayData.hasLunch, dayData.lunchStart, dayData.hasLactation, dayData.lactationStart) : [];
 
                 return (
-                    <td key={date} className={`p-0 align-top ${isReadOnly ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
+                    <td key={date} className={`p-0 align-top h-px ${isReadOnly ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
                         if (conf || isReadOnly) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     }}>
-                        <div className={`min-h-[72px] h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
+                        <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
                             ${!isReadOnly ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${conf ? conf.bg + ' border border-dashed ' + conf.border :
                               hasShift ? 'bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)]' :

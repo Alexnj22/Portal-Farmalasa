@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft,
@@ -807,19 +808,28 @@ useEffect(() => {
             <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
                         <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3">
                             <div className="flex items-center min-w-0 gap-1 md:gap-2 h-full">
-                                <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
-                                    <button onClick={() => setViewMode('calendar')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'calendar' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Vista Calendario"><CalendarDays size={16} strokeWidth={2.5} /></button>
-                                    <div className="w-px h-5 bg-white/60 mx-0.5"></div>
-                                    <button onClick={() => setViewMode('shifts')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'shifts' ? 'bg-white text-[#0052CC] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'}`} title="Catálogo de Turnos"><BookOpen size={16} strokeWidth={2.5} /></button>
-                                    <div className="w-px h-5 bg-white/60 mx-0.5"></div>
-                                    <button onClick={() => setViewMode('holidays')} className={`w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-all ${viewMode === 'holidays' ? 'bg-amber-50 text-amber-600 shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]' : 'text-slate-500 hover:text-amber-600 hover:bg-white/50'}`} title="Feriados"><Star size={16} strokeWidth={2.5} /></button>
-                                </div>
+                                <LayoutGroup id="sched-tabs">
+                                    <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
+                                        <button onClick={() => setViewMode('calendar')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'calendar' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Vista Calendario">
+                                            {viewMode === 'calendar' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
+                                            <CalendarDays size={16} strokeWidth={2.5} className="relative z-10" />
+                                        </button>
+                                        <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
+                                        <button onClick={() => setViewMode('shifts')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'shifts' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Catálogo de Turnos">
+                                            {viewMode === 'shifts' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
+                                            <BookOpen size={16} strokeWidth={2.5} className="relative z-10" />
+                                        </button>
+                                        <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
+                                        <button onClick={() => setViewMode('holidays')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'holidays' ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`} title="Feriados">
+                                            {viewMode === 'holidays' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-amber-50 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
+                                            <Star size={16} strokeWidth={2.5} className="relative z-10" />
+                                        </button>
+                                    </div>
+                                </LayoutGroup>
                                 <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 hidden md:block shrink-0"></div>
                                 
                                 {viewMode === 'calendar' && (
-                                    <div className="w-max overflow-visible group/branch hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                                        <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branches.filter(b => { const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos'); }).map(b => ({ value: String(b.id), label: b.name }))} compact clearable={false} icon={Building2} />
-                                    </div>
+                                    <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branches.filter(b => { const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos'); }).map(b => ({ value: String(b.id), label: b.name }))} compact clearable={false} icon={Building2} bare />
                                 )}
 
                                 {viewMode === 'calendar' && (
@@ -884,15 +894,23 @@ useEffect(() => {
             transparentBody={viewMode === 'shifts' || viewMode === 'holidays'}
             fixedScrollMode={viewMode === 'shifts'}
         >
+            <AnimatePresence mode="wait" initial={false}>
             {viewMode === 'shifts' ? (
-                <div key="shifts" className="w-full h-full animate-view-enter relative">
+                <motion.div key="shifts"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    className="w-full h-full relative">
                     <TabShifts
                         branches={branches}
                         filterBranch={filterBranch}
                         shiftTab={shiftTab}
                     />
-                </div>
+                </motion.div>
             ) : viewMode === 'holidays' ? (
+                <motion.div key="holidays"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    className="w-full h-full">
                 <HolidaysPanel
                     holidays={holidays}
                     holidayYear={holidayYear}
@@ -930,8 +948,12 @@ useEffect(() => {
                         } finally { setHDeleting(null); }
                     }}
                 />
+                </motion.div>
             ) : (
-                <div key="calendar" className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 animate-view-enter mx-auto h-full overflow-hidden">
+                <motion.div key="calendar"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                    className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
                     {employeesInView.length === 0 ? (
                         <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[65vh] relative z-10">
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none"></div>
@@ -994,8 +1016,9 @@ useEffect(() => {
                             />
                         </div>
                     )}
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
             {editingCell && (
                 <InlineDayEditor

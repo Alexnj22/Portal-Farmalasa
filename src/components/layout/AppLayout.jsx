@@ -120,6 +120,31 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    // Native body scroll on mobile — overrides index.css overflow:hidden so content
+    // can reach the Dynamic Island zone in standalone/Capacitor mode.
+    useEffect(() => {
+        if (!isMobile) return;
+        const html = document.documentElement;
+        const body = document.body;
+        const root = document.getElementById('root');
+        html.style.setProperty('overflow', 'auto', 'important');
+        html.style.setProperty('height', 'auto', 'important');
+        html.style.setProperty('overscroll-behavior', 'auto', 'important');
+        body.style.setProperty('overflow', 'auto', 'important');
+        body.style.setProperty('height', 'auto', 'important');
+        body.style.setProperty('overscroll-behavior', 'auto', 'important');
+        if (root) {
+            root.style.setProperty('overflow', 'visible', 'important');
+            root.style.setProperty('height', 'auto', 'important');
+            root.style.setProperty('overscroll-behavior', 'auto', 'important');
+        }
+        return () => {
+            ['overflow', 'height', 'overscroll-behavior'].forEach(p => html.style.removeProperty(p));
+            ['overflow', 'height', 'overscroll-behavior'].forEach(p => body.style.removeProperty(p));
+            if (root) ['overflow', 'height', 'overscroll-behavior'].forEach(p => root.style.removeProperty(p));
+        };
+    }, [isMobile]);
+
     useEffect(() => {
         if (isMobile) setIsSidebarOpen(false);
         else setIsSidebarOpen(isWide);
@@ -535,7 +560,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className="flex w-full h-[100dvh] font-sans overflow-hidden relative">
+        <div className="flex w-full font-sans relative lg:h-[100dvh] lg:overflow-hidden">
 
             {/* ── Global ambient orbs ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -782,13 +807,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             </aside>
 
             {/* ── Main content ── */}
-            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
+            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden ${blurClasses}`}>
                 {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
-                    className="lg:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/25"
+                    className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
                     style={{
-                        paddingTop: 'env(safe-area-inset-top, 0px)',
-                        background: 'rgba(221,216,255,0.82)',
+                        top: 'env(safe-area-inset-top, 0px)',
+                        background: 'rgba(221,216,255,0.88)',
                         backdropFilter: 'blur(40px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(40px) saturate(180%)',
                         boxShadow: '0 4px 20px rgba(110,70,220,0.10)',
@@ -838,7 +863,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 />
 
                 {/* Content */}
-                <div id="main-scroll" className={`flex-1 overflow-y-auto lg:overflow-hidden overscroll-none min-h-0 relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div id="main-scroll" className={`flex-1 min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">
@@ -1045,7 +1070,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-10 pointer-events-none"
                 style={{
                     height: 'env(safe-area-inset-bottom, 0px)',
-                    background: 'rgba(255,255,255,0.28)',
+                    background: 'rgba(221,216,255,0.72)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                 }}

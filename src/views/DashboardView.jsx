@@ -20,6 +20,7 @@ import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
+import SyncHealthBanner from '../components/common/SyncHealthBanner';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
@@ -1867,6 +1868,9 @@ const DashboardView = ({ openModal }) => {
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
+
+        {/* Sync health status bar */}
+        {hasPermission('dash_kpi', 'can_view') && <SyncHealthBanner />}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div

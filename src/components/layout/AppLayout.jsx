@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -77,6 +78,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
     const location = useLocation();
+
+    useSyncMonitor();
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);

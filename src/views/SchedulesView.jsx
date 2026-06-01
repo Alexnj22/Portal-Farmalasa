@@ -673,9 +673,16 @@ useEffect(() => {
     const executePublish = async () => {
         setIsPublishing(true);
         try {
+            const rosterInserts = publishState.bulkUpdates.map(item => ({
+                employee_id: item.id,
+                week_start_date: startDate,
+                schedule_data: item.weekly_schedule,
+                updated_at: new Date().toISOString()
+            }));
+
             const { error: bulkError } = await supabase
-                .from('employees')
-                .upsert(publishState.bulkUpdates, { onConflict: 'id' });
+                .from('employee_rosters')
+                .upsert(rosterInserts, { onConflict: 'employee_id,week_start_date' });
 
             if (bulkError) throw bulkError;
 

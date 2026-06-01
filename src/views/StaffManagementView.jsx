@@ -345,8 +345,8 @@ const StaffManagementView = ({
 }) => {
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
   const { employees, branches, bootStatus } = useStaff();
-  const { user, isJefe, rolePerms } = useAuth();
-  const canEdit = rolePerms === 'ALL' || !!rolePerms?.['staff_list']?.can_edit;
+  const { user, hasPermission, getScope } = useAuth();
+  const canEdit = hasPermission('staff_list', 'can_edit');
 
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
@@ -381,7 +381,7 @@ const StaffManagementView = ({
   }, [branches]);
 
   const searchFilteredEmployees = useMemo(() => {
-    const baseEmployees = isJefe
+    const baseEmployees = getScope('staff_list') === 'BRANCH'
         ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
         : (employees || []);
     return baseEmployees.filter((emp) => {
@@ -402,7 +402,7 @@ const StaffManagementView = ({
 
       return matchesSearch && matchesBranch;
     });
-  }, [employees, normalizedSearch, selectedBranch, branchMap, isJefe, user?.branchId]);
+  }, [employees, normalizedSearch, selectedBranch, branchMap, getScope, user?.branchId]);
 
   const stats = useMemo(() => {
     const total = searchFilteredEmployees.length;

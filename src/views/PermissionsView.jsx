@@ -30,26 +30,30 @@ const MODULE_GROUPS = [
         group: 'Personal',
         color: 'text-indigo-600',
         modules: [
-            { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false },
-            { key: 'staff_detail', label: 'Expediente Completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false },
-            { key: 'staff_salary', label: 'Salarios e Ingresos',    desc: 'Información salarial y ajustes de nómina (datos sensibles)',icon: User,          hasApprove: false },
+            { key: 'staff_list',   label: 'Listado de Personal',    desc: 'Ver y buscar empleados, datos básicos y estado',            icon: User,          hasApprove: false, hasScope: true },
+            { key: 'staff_detail', label: 'Expediente Completo',    desc: 'Perfil, historial, eventos y documentos del empleado',      icon: User,          hasApprove: false, hasScope: true },
+            { key: 'staff_salary', label: 'Salarios e Ingresos',    desc: 'Información salarial y ajustes de nómina (datos sensibles)',icon: User,          hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'Asistencia',
         color: 'text-amber-600',
         modules: [
-            { key: 'monitor',      label: 'Monitor Real-Time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false },
-            { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false },
+            { key: 'monitor',      label: 'Monitor Real-Time',      desc: 'Monitoreo en vivo de marcaciones y asistencia activa',      icon: Monitor,       hasApprove: false, hasScope: true },
+            { key: 'time_audit',   label: 'Auditoría de Tiempos',   desc: 'Revisión y corrección de marcaciones históricas',           icon: AlertTriangle, hasApprove: false, hasScope: true },
         ],
     },
     {
         group: 'Operaciones',
         color: 'text-blue-600',
         modules: [
-            { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false },
-            { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true },
-            { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false },
+            { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, tabs: [
+                { key: 'schedules_tab_calendar', label: 'Calendario' },
+                { key: 'schedules_tab_catalog',  label: 'Catálogo de Turnos' },
+                { key: 'schedules_tab_holidays', label: 'Feriados' },
+            ]},
+            { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true,  hasScope: true },
+            { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
             { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true  },
         ],
     },
@@ -359,13 +363,14 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
 
 // ─── Vista principal ────────────────────────────────────────────────────────
 const PermissionsView = () => {
-    const { rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['permissions']?.can_edit;
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('permissions', 'can_edit');
 
     const [selectedRoleId, setSelectedRoleId] = useState(null); // integer (roles.id)
     const [orgRoles, setOrgRoles] = useState([]);               // [{ id, name, parent_role_id }] sorted hierarchically
     const [permissions, setPermissions] = useState({});         // { 'role_id:module_key': { can_view, can_edit, can_approve } }
     const [rolePriceLevels, setRolePriceLevels] = useState({}); // { [roleId]: string | null }
+    const [roleIsSU, setRoleIsSU] = useState({});               // { [roleId]: boolean }
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState({});
     const [savedFlash, setSavedFlash] = useState({});
@@ -381,7 +386,7 @@ const PermissionsView = () => {
     useEffect(() => {
         setLoading(true);
         Promise.all([
-            supabase.from('roles').select('id, name, parent_role_id, max_price_level').order('id'),
+            supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su').order('id'),
             supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve, scope').not('role_id', 'is', null),
         ]).then(([{ data: rolesData }, { data: permsData }]) => {
             // Ordenar jerárquicamente: raíz → hijos → nietos...
@@ -403,10 +408,15 @@ const PermissionsView = () => {
             const loadedRoles = sorted;
             setOrgRoles(loadedRoles);
 
-            // Niveles de precio por cargo
+            // Niveles de precio y flag is_su por cargo
             const levels = {};
-            rawRoles.forEach(r => { levels[r.id] = r.max_price_level ?? null; });
+            const suFlags = {};
+            rawRoles.forEach(r => {
+                levels[r.id]  = r.max_price_level ?? null;
+                suFlags[r.id] = r.is_su ?? false;
+            });
             setRolePriceLevels(levels);
+            setRoleIsSU(suFlags);
 
             const map = {};
             (permsData || []).forEach(p => {
@@ -470,6 +480,13 @@ const PermissionsView = () => {
         if (!selectedRoleId) return;
         setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: level }));
         await supabase.from('roles').update({ max_price_level: level }).eq('id', selectedRoleId);
+    }, [selectedRoleId]);
+
+    // ── Toggle Super Usuario por cargo ───────────────────────────────────────
+    const handleSuToggle = useCallback(async (value) => {
+        if (!selectedRoleId) return;
+        setRoleIsSU(prev => ({ ...prev, [selectedRoleId]: value }));
+        await supabase.from('roles').update({ is_su: value }).eq('id', selectedRoleId);
     }, [selectedRoleId]);
 
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
@@ -788,6 +805,45 @@ const PermissionsView = () => {
                         ) : (
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">
+
+                            {/* ── Card: Super Usuario ── */}
+                            {(() => {
+                                const isRoleSU = !!roleIsSU[selectedRoleId];
+                                return (
+                                <div className={`rounded-[1.5rem] border p-4 transition-all duration-300 ${isRoleSU ? 'bg-amber-50/80 border-amber-200 shadow-[0_2px_12px_rgba(217,119,6,0.1)]' : 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]'}`}>
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isRoleSU ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-slate-200'}`}>
+                                            <ShieldAlert size={16} className="text-white" strokeWidth={1.8} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <p className={`text-[12px] font-black leading-tight ${isRoleSU ? 'text-amber-800' : 'text-slate-800'}`}>Super Usuario</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">Acceso total irrestricto. Este cargo queda oculto en listados de personal.</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    disabled={!canEdit}
+                                                    onClick={() => canEdit && handleSuToggle(!isRoleSU)}
+                                                    className={`relative w-10 h-5.5 min-w-[40px] h-[22px] rounded-full transition-all duration-300 flex-shrink-0 ${
+                                                        !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                                                    } ${isRoleSU ? 'bg-amber-400' : 'bg-slate-200'}`}
+                                                    style={{ minWidth: 40, height: 22 }}
+                                                >
+                                                    <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${isRoleSU ? 'left-[20px]' : 'left-[3px]'}`} />
+                                                </button>
+                                            </div>
+                                            {isRoleSU && (
+                                                <div className="mt-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-600">
+                                                    <ShieldAlert size={9} strokeWidth={2.5} />
+                                                    <span>Los módulos de abajo no aplican — acceso total activo</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                );
+                            })()}
 
                             {/* ── Card: Acceso a Niveles de Precio ── */}
                             <div className={`rounded-[1.5rem] border p-4 transition-all duration-300 ${rolePriceLevels[selectedRoleId] ? 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]' : 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]'}`}>

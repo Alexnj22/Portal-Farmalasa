@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
       : Promise.resolve({ data: [] });
     const priceLevelQuery = roleId
-      ? supabase.from('roles').select('max_price_level').eq('id', roleId).single()
+      ? supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single()
       : Promise.resolve({ data: null });
 
     Promise.all([permsQuery, priceLevelQuery])
@@ -76,8 +76,16 @@ export const AuthProvider = ({ children }) => {
           map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };
         });
         const price = roleData?.max_price_level ?? null;
+        const isSU  = roleData?.is_su ?? false;
         setRolePerms(map);
         setMaxPriceLevel(price);
+        // Persist isSU on user object so idle-timeout survives page reload from cache
+        setUser(prev => {
+          if (!prev || prev.isSU === isSU) return prev;
+          const updated = { ...prev, isSU };
+          try { localStorage.setItem(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
+          return updated;
+        });
         setPermsLoading(false);
         try {
           localStorage.setItem(LS_PERMS, JSON.stringify(map));
@@ -92,7 +100,7 @@ export const AuthProvider = ({ children }) => {
   // — ambos casos tienen roleId correcto, no queremos doble refresh.
   useEffect(() => {
     refreshPermissions(user);
-  }, [user?.id, user?.roleId, user?.systemRole]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.roleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresca permisos solo al VOLVER a la pestaña (no al ocultarla)
   useEffect(() => {
@@ -106,8 +114,18 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   // ⏱️ Inactividad
   // -------------------------
-  const getIdleLimitMs = (u) =>
-    (['ADMIN','SUPERADMIN','JEFE','SUBJEFE','SUPERVISOR'].includes(u?.systemRole) ? IDLE_ADMIN_MS : IDLE_EMP_MS);
+  const getIdleLimitMs = (u) => {
+    if (u?.isSU) return IDLE_ADMIN_MS;
+    try {
+      const cached = localStorage.getItem(LS_PERMS);
+      if (cached) {
+        const perms = JSON.parse(cached);
+        const mgmt = ['staff_list','schedules','monitor','requests','time_audit','permissions','announcements'];
+        if (mgmt.some(m => perms[m]?.can_view)) return IDLE_ADMIN_MS;
+      }
+    } catch { /* corrupt cache */ }
+    return IDLE_EMP_MS;
+  };
 
   const writeLastActivity = (force = false) => {
     const now = Date.now();
@@ -454,22 +472,20 @@ export const AuthProvider = ({ children }) => {
   // 📦 Contexto expuesto
   // -------------------------
   const value = useMemo(() => {
-    const systemRole = user?.systemRole || 'EMPLEADO';
-    const isAdmin      = ['ADMIN','SUPERADMIN'].includes(systemRole);
-    const isJefe       = ['JEFE','SUBJEFE'].includes(systemRole);
-    const isSupervisor = systemRole === 'SUPERVISOR';
-    const canApprove   = ['ADMIN','SUPERADMIN','SUPERVISOR','JEFE','SUBJEFE'].includes(systemRole);
+    const isSU = !!user?.isSU;
+
+    const getScope = (moduleKey) => rolePerms?.[moduleKey]?.scope ?? 'ALL';
 
     const hasPermission = (moduleKey, action = 'can_view') => {
-      if (systemRole === 'SUPERADMIN') return true;
+      if (isSU) return true;
       if (!rolePerms) return false;
       return !!(rolePerms[moduleKey]?.[action]);
     };
 
     return {
       user, isAuthenticated: !!user,
-      isAdmin, isJefe, isSupervisor, canApprove,
-      systemRole, rolePerms, permsLoading, hasPermission,
+      isSU, getScope,
+      rolePerms, permsLoading, hasPermission,
       maxPriceLevel, loading,
       completeLogin, completePasswordChange,
       login, loginWithEmail, loginWithUsername, logout,

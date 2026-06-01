@@ -9,7 +9,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import ThemeToggle from '../common/ThemeToggle';
 
 const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleLogout }) => {
-    const { user, isJefe } = useAuth();
+    const { user, getScope } = useAuth();
     const branches = useStaff((state) => state.branches);
 
     const [isMobile, setIsMobile] = useState(false);
@@ -95,11 +95,11 @@ const AdminLayout = ({ children, view, setView, isOverlayActive = false, handleL
             { id: 'auditview',     label: 'Auditoría',               icon: Activity     },
             { id: 'staff',         label: 'Personal',                icon: User         },
         ];
-        if (isJefe) return all.filter(i =>
+        if (getScope('staff_list') === 'BRANCH') return all.filter(i =>
             ['requests', 'schedules', 'staff', 'announcements', 'vacation-plan'].includes(i.id)
         );
         return all.filter(i => i.id !== 'staff');
-    }, [isJefe]);
+    }, [getScope]);
 
     const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : 'scale-100 blur-0';
 

@@ -10,7 +10,7 @@ import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
 
 const LoginView = ({ setView, setActiveEmployee }) => {
-    const { login, loginWithUsername, isAdmin, user, completePasswordChange } = useAuth();
+    const { login, loginWithUsername, hasPermission, user, completePasswordChange } = useAuth();
 
     const [isLoading,         setIsLoading]         = useState(false);
     const [error,             setError]             = useState('');
@@ -99,8 +99,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     }, [scannerActive]);
 
     useEffect(() => {
-        if (user) { if (isAdmin) setView('dashboard'); else { setActiveEmployee(user); setView('employee-detail'); } }
-    }, [user, isAdmin, setView, setActiveEmployee]);
+        if (user) { if (hasPermission('staff_list', 'can_view') || hasPermission('overview', 'can_view')) setView('dashboard'); else { setActiveEmployee(user); setView('employee-detail'); } }
+    }, [user, hasPermission, setView, setActiveEmployee]);
 
     useEffect(() => {
         if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); }

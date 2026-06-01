@@ -23,8 +23,8 @@ const SCOPE_OPTIONS = [
 // 🚀 VISTA PRINCIPAL ROLES
 // ============================================================================
 const RolesView = ({ openModal }) => {
-    const { rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['roles']?.can_edit;
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('roles', 'can_edit');
     const roles = useStaff(state => state.roles);
     const employees = useStaff(state => state.employees);
     const addRole = useStaff(state => state.addRole);

@@ -170,10 +170,10 @@ const AnnouncementsView = ({ openModal }) => {
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
   const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
-  const { user, rolePerms } = useAuth();
-  const canEdit = rolePerms === 'ALL' || !!rolePerms?.['announcements']?.can_edit;
+  const { user, hasPermission, getScope } = useAuth();
+  const canEdit = hasPermission('announcements', 'can_edit');
   // BRANCH scope: el usuario solo puede dirigir avisos a su propia sucursal
-  const annScope = rolePerms === 'ALL' ? 'ALL' : (rolePerms?.['announcements']?.scope || 'ALL');
+  const annScope = getScope('announcements');
   const isBranchScoped = annScope === 'BRANCH';
 
   const [editingAnnId, setEditingAnnId] = useState(null);

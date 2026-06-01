@@ -534,8 +534,8 @@ const BranchCard = memo(({
 // ============================================================================
 const BranchesView = ({ openModal, setActiveBranch }) => {
     const navigate = useNavigate();
-    const { rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['branches']?.can_edit;
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('branches', 'can_edit');
     const branches = useStaff(state => state.branches);
     const employees = useStaff(state => state.employees);
     const deleteBranch = useStaff(state => state.deleteBranch);

@@ -272,8 +272,8 @@ const GanttChart = ({ plans, year }) => {
 
 // ── Vista principal ───────────────────────────────────────────────────────────
 const VacationPlanView = () => {
-    const { user, rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['vacation_plan']?.can_edit;
+    const { user, hasPermission } = useAuth();
+    const canEdit = hasPermission('vacation_plan', 'can_edit');
     const employees                  = useStaffStore(s => s.employees);
     const branches                   = useStaffStore(s => s.branches);
     const holidays                   = useStaffStore(s => s.holidays);

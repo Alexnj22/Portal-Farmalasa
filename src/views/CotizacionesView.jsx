@@ -305,9 +305,9 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CotizacionesView() {
-    const { user, maxPriceLevel, rolePerms } = useAuth();
-    const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['cotizaciones']?.can_edit;
-    const cotScope  = rolePerms === 'ALL' ? 'ALL' : (rolePerms?.['cotizaciones']?.scope ?? 'ALL');
+    const { user, maxPriceLevel, hasPermission, getScope } = useAuth();
+    const canEdit   = hasPermission('cotizaciones', 'can_edit');
+    const cotScope  = getScope('cotizaciones');
 
     // Filtrar columnas de precio según el nivel máximo permitido al cargo
     const allowedPriceCols = useMemo(() => {

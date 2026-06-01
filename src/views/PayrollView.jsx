@@ -363,8 +363,8 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 const PayrollView = ({ openModal }) => {
-    const { rolePerms }          = useAuth();
-    const canApprove             = rolePerms === 'ALL' || !!rolePerms?.['payroll']?.can_approve;
+    const { hasPermission }      = useAuth();
+    const canApprove             = hasPermission('payroll', 'can_approve');
     const branches               = useStaffStore(s => s.branches);
     const payrollPeriods         = useStaffStore(s => s.payrollPeriods);
     const payrollEntries         = useStaffStore(s => s.payrollEntries);

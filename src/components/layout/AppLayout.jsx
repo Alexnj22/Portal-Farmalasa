@@ -72,7 +72,7 @@ const MENU_GROUPS = [
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
 
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
-    const { user, hasPermission, systemRole } = useAuth();
+    const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches);
     const announcements = useStaff((state) => state.announcements);
     const navigate = useNavigate();
@@ -105,9 +105,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const activeId = activePath.split('/')[1] || '';
 
     const cargoLabel = (() => {
+        if (isSU) return 'Super Admin';
         if (typeof user?.role === 'string' && isNaN(Number(user.role))) return user.role;
-        const map = { SUPERADMIN: 'Super Admin', ADMIN: 'Administrador', EMPLEADO: 'Colaborador' };
-        return map[systemRole] || systemRole || '';
+        const sr = user?.systemRole;
+        return { ADMIN: 'Administrador', EMPLEADO: 'Colaborador' }[sr] || sr || '';
     })();
 
     useEffect(() => {

@@ -27,8 +27,8 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
     const { employees, branches, shifts, holidays } = useStaffStore();
-    const { user, rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['staff_detail']?.can_edit;
+    const { user, hasPermission } = useAuth();
+    const canEdit = hasPermission('staff_detail', 'can_edit');
     
     const [_activeTab, _setActiveTab] = useState('history');
     const currentTab = activeTab || _activeTab;

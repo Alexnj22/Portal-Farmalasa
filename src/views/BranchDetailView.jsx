@@ -21,8 +21,8 @@ import { useAuth } from '../context/AuthContext';
 // ============================================================================
 const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS NAVEGACIÓN
-    const { rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['branches']?.can_edit;
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('branches', 'can_edit');
     const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
     
     const [activeTab, setActiveTab] = useState('history');

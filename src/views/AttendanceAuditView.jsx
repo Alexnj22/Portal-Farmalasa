@@ -908,8 +908,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 // ── Main view ─────────────────────────────────────────────────────────────────
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
   const navigate  = useNavigate();
-  const { user, rolePerms } = useAuth();
-  const canEdit   = rolePerms === 'ALL' || !!rolePerms?.['time_audit']?.can_edit;
+  const { user, hasPermission } = useAuth();
+  const canEdit   = hasPermission('time_audit', 'can_edit');
   const showToast = useToastStore(s => s.showToast);
   const {
     employees: storeEmployees, branches: storeBranches, shifts: storeShifts,

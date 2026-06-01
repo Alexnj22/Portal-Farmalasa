@@ -178,8 +178,8 @@ const HolidaysPanel = ({
 
 const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, holidays, fetchWeekRosters, publishWeekRosters, fetchBoot, addHoliday, deleteHoliday } = useStaff();
-    const { isJefe, rolePerms } = useAuth();
-    const canEdit = rolePerms === 'ALL' || !!rolePerms?.['schedules']?.can_edit;
+    const { hasPermission, getScope } = useAuth();
+    const canEdit = hasPermission('schedules', 'can_edit');
     const showToast = useToastStore(s => s.showToast);
     const [isPublishing, setIsPublishing] = useState(false);
 
@@ -851,7 +851,7 @@ useEffect(() => {
                                         </button>
                                         
                                         {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
-                                        {!isJefe && canEdit && <button onClick={weekIsPublished ? undefined : triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2 ${weekIsPublished ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default' : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'} ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                        {canEdit && getScope('schedules') !== 'BRANCH' && <button onClick={weekIsPublished ? undefined : triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2 ${weekIsPublished ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default' : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'} ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
                                             {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
                                             <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}</span>
                                         </button>}
@@ -1012,7 +1012,7 @@ useEffect(() => {
                                 handleEditCell={handleEditCell}
                                 salesStats={salesStats}
                                 onSalyAlertsUpdate={setSalyDynamicAlerts}
-                                isReadOnly={isPastWeek || isJefe}
+                                isReadOnly={isPastWeek || !hasPermission('schedules', 'can_edit')}
                             />
                         </div>
                     )}

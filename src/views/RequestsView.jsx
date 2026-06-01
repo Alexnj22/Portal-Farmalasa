@@ -294,8 +294,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
 // ─── Vista principal ───────────────────────────────────────────────────────────
 const RequestsView = () => {
-    const { user, isJefe, isSupervisor, rolePerms } = useAuth();
-    const canApprove = rolePerms === 'ALL' || !!rolePerms?.['requests']?.can_approve;
+    const { user, hasPermission, getScope } = useAuth();
+    const canApprove = hasPermission('requests', 'can_approve');
 
     const requests       = useStaff(s => s.requests);
     const employees      = useStaff(s => s.employees);
@@ -320,15 +320,15 @@ const RequestsView = () => {
     const searchInputRef = useRef(null);
 
     useEffect(() => {
-        const apId = (isJefe || isSupervisor) ? user?.id : null;
-        const brId = isJefe ? user?.branchId : null;
+        const apId = canApprove ? user?.id : null;
+        const brId = getScope('requests') === 'BRANCH' ? user?.branchId : null;
         fetchRequests(null, brId, apId);
     }, []);
 
     useEffect(() => {
         const handler = () => {
-            const apId = (isJefe || isSupervisor) ? user?.id : null;
-            const brId = isJefe ? user?.branchId : null;
+            const apId = canApprove ? user?.id : null;
+            const brId = getScope('requests') === 'BRANCH' ? user?.branchId : null;
             fetchRequests(null, brId, apId);
         };
         window.addEventListener('requests-updated', handler);

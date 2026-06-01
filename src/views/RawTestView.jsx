@@ -8,7 +8,7 @@ export default function RawTestView() {
 
         html.style.setProperty('overflow', 'auto', 'important');
         html.style.setProperty('height', 'auto', 'important');
-        html.style.setProperty('overscroll-behavior', 'auto', 'important'); // faltaba → sin esto no hay rubber-band
+        html.style.setProperty('overscroll-behavior', 'auto', 'important');
 
         body.style.setProperty('overflow', 'auto', 'important');
         body.style.setProperty('height', 'auto', 'important');
@@ -27,39 +27,54 @@ export default function RawTestView() {
         };
     }, []);
 
-    // Gradiente que empieza en #ddd8ff (mismo que capacitor backgroundColor y theme-color)
-    // El 0% del gradiente ahora coincide exactamente con el fondo nativo del WKWebView
     const GRAD = 'radial-gradient(ellipse at 38% 28%, #ddd8ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%)';
 
     return (
         <>
             <style>{`html, body { background: ${GRAD} !important; }`}</style>
 
-            {/* Header fijo — cubre zona status bar con glass sobre el gradiente */}
+            {/*
+              ZONA STATUS BAR / DYNAMIC ISLAND — glass muy transparente (15% opacidad)
+              El contenido que scrollea hacia arriba se ve claramente pasar por aquí.
+              El blur mantiene la estética sin bloquear la vista.
+            */}
             <div style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99,
+                height: 'env(safe-area-inset-top, 0px)',
+                background: 'rgba(221,216,255,0.15)',
+                backdropFilter: 'blur(44px)',
+                WebkitBackdropFilter: 'blur(44px)',
+            }} />
+
+            {/*
+              BARRA DE TÍTULO — glass más opaco, empieza justo debajo del status bar
+              El borderBottom separa visualmente el header del contenido.
+            */}
+            <div style={{
+                position: 'fixed',
+                top: 'env(safe-area-inset-top, 0px)',
+                left: 0, right: 0, zIndex: 99,
                 background: 'rgba(221,216,255,0.88)',
                 backdropFilter: 'blur(44px)',
                 WebkitBackdropFilter: 'blur(44px)',
-                paddingTop: 'env(safe-area-inset-top, 0px)',
                 borderBottom: '1px solid rgba(255,255,255,0.6)',
             }}>
                 <div style={{ padding: '12px 16px', fontFamily: 'system-ui', fontWeight: 800, fontSize: 15, color: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>/raw-test</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v7</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#6e46e6', background: 'rgba(110,70,230,0.12)', borderRadius: 8, padding: '2px 8px' }}>v8</span>
                 </div>
             </div>
 
-            {/* Spacer = altura del header (safe-area + título) */}
+            {/* Spacer = zona status bar + barra de título */}
             <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 52px)' }} />
 
-            {/* Contenido en flujo normal — body scroll nativo */}
+            {/* Contenido — body scroll nativo */}
             <div style={{ padding: 16 }}>
                 <div style={{ background: 'rgba(110,70,230,0.12)', borderRadius: 16, padding: 16, marginBottom: 16, border: '1px solid rgba(110,70,230,0.2)' }}>
                     <p style={{ margin: 0, fontSize: 13, color: '#4c1d95', lineHeight: 1.6, fontFamily: 'system-ui' }}>
-                        <strong>v7 — gradiente + overscroll en html</strong><br />
-                        Al scrollear: contenido pasa detrás del header glass.<br />
-                        Al jalar hacia abajo desde arriba: ¿rebota?
+                        <strong>v8 — Dynamic Island zone más transparente</strong><br />
+                        Al scrollear: el contenido debe verse pasar por la zona del Dynamic Island (arriba).<br />
+                        Barra de título sigue opaca abajo.
                     </p>
                 </div>
 
@@ -83,7 +98,7 @@ export default function RawTestView() {
                         }}>{i + 1}</div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>Fila {i + 1}</div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>Scroll nativo del body</div>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>Scroll para ver el efecto en Dynamic Island</div>
                         </div>
                     </div>
                 ))}

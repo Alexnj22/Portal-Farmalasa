@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Bot, Clock, Flame, AlertTriangle } from 'lucide-react';
+import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '../../../store/staffStore'; 
@@ -16,7 +16,7 @@ const formatTime12hStr = (time24) => {
     return `${hour}:${m} ${ampm}`;
 };
 
-const InlineDayEditor = memo(({ dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect }) => {
+const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect }) => {
     const { branches } = useStaffStore(); 
 
     const [shiftId, setShiftId] = useState(() => {
@@ -292,12 +292,22 @@ const InlineDayEditor = memo(({ dateStr, dayId, currentData, shifts, filterBranc
                 className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/95 backdrop-blur-3xl rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.3)] border border-white transition-opacity duration-200 flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-white/50 shrink-0 z-40">
-                    <div>
-                        <p className="text-[11px] font-black text-[#0052CC] uppercase tracking-widest leading-none mb-1">{new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}</p>
-                        <p className="text-[14px] font-bold text-slate-700 leading-none">{new Date(dateStr + 'T00:00:00').getDate()}</p>
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-white/70 to-white/50 shrink-0 z-40">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
+                            {employee?.photo_url
+                                ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
+                                : <CircleUserRound size={18} className="text-slate-300" strokeWidth={1.5} />}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{employee?.name || '—'}</p>
+                            <p className="text-[10px] font-black text-[#0052CC] uppercase tracking-widest leading-none mt-0.5 capitalize">
+                                {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
+                                <span className="text-slate-400 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
+                            </p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97]"><X size={16} strokeWidth={3} /></button>
+                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
                 </div>
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">

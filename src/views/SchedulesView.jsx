@@ -781,7 +781,7 @@ useEffect(() => {
                 </div>
             );
         }
-        return "Horarios WFM";
+        return "Horarios";
     };
 
     const renderFiltersContent = () => {
@@ -818,7 +818,7 @@ useEffect(() => {
                                 
                                 {viewMode === 'calendar' && (
                                     <div className="w-max overflow-visible group/branch hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                                        <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branches.map(b => ({ value: String(b.id), label: b.name }))} compact clearable={false} icon={Building2} />
+                                        <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branches.filter(b => { const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos'); }).map(b => ({ value: String(b.id), label: b.name }))} compact clearable={false} icon={Building2} />
                                     </div>
                                 )}
 

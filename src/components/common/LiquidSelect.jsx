@@ -342,8 +342,8 @@ const LiquidSelect = ({
     );
 
     const pillBaseClasses = bare
-        ? `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
-        : `w-full rounded-[1.5rem] transition-all duration-300 outline-none min-h-[40px] flex items-center ${
+        ? `w-full rounded-2xl transition-all duration-300 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
+        : `w-full rounded-2xl transition-all duration-300 outline-none min-h-[40px] flex items-center ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         } ${
             isDark
@@ -351,8 +351,8 @@ const LiquidSelect = ({
                     ? 'bg-black/50 border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.15)] text-white'
                     : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
                 : isOpen
-                    ? 'bg-white border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] border text-slate-700'
-                    : 'bg-white/90 border border-slate-100 shadow-[0_1px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] group-hover:bg-white group-hover:border-slate-200/70 group-hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)] text-slate-700'
+                    ? 'bg-white border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] text-slate-700'
+                    : 'bg-white/50 border border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)] group-hover:bg-white/70 group-hover:border-white/80 group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-slate-700'
         }`;
 
     return (
@@ -368,7 +368,7 @@ const LiquidSelect = ({
                         ? 'bg-transparent text-[#0052CC]'
                         : isDark
                             ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                            : 'bg-white text-[#0052CC] border border-slate-100 shadow-sm'
+                            : 'bg-white/70 text-[#0052CC] border border-white/60 shadow-sm'
                 }`}>
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>

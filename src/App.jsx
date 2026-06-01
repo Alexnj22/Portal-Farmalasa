@@ -30,6 +30,7 @@ import AnnouncementsView from "./views/AnnouncementsView";
 import AttendanceAuditView from "./views/AttendanceAuditView";
 import LoginView from "./views/LoginView";
 import AuditView from "./views/AuditView";
+import IOSTestView from "./views/IOSTestView";
 import RequestsView from "./views/RequestsView";
 import VacationPlanView from "./views/VacationPlanView";
 import PayrollView from "./views/PayrollView";
@@ -580,6 +581,7 @@ function MainApp() {
                                     <Route path="roles" element={<PermissionGuard moduleKey="roles"><RolesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="permissions" element={<PermissionGuard moduleKey="permissions"><PermissionsView /></PermissionGuard>} />
                                     <Route path="auditview" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="ios-test" element={<PermissionGuard moduleKey="ios_test"><IOSTestView /></PermissionGuard>} />
 
                                     {/* ── Fallbacks ── */}
                                     <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />

@@ -783,10 +783,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             {/* ── Main content ── */}
             <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
                 {/* Mobile top bar */}
-                <div className="lg:hidden shrink-0 z-40 w-full relative overflow-hidden">
-                    {/* Glass layer fills the entire strip including safe area above pill */}
-                    <div className="absolute inset-0 bg-white/30 backdrop-blur-2xl pointer-events-none" />
-                    <div className="relative z-10 px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2">
+                <div className="lg:hidden shrink-0 z-40 w-full px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2">
                     <div className="flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border
                         bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]">
                         <div className="flex items-center gap-4">
@@ -822,7 +819,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                             </button>
                         </div>
-                    </div>
                     </div>
                 </div>
 

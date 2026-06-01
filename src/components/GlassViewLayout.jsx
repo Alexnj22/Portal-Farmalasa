@@ -40,7 +40,7 @@ const GlassViewLayout = ({
         : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
 
     return (
-        <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans animate-view-enter relative lg:overflow-hidden lg:overscroll-none">
+        <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans animate-view-enter relative lg:overflow-hidden overscroll-none">
 
             {/* ── Floating glass pill header (desktop) ──────────────────────── */}
             <div className="hidden lg:block absolute top-6 xl:top-7 left-0 right-0 z-40 px-6 xl:px-8 pointer-events-none">
@@ -88,7 +88,7 @@ const GlassViewLayout = ({
             <div
                 ref={scrollContainerRef}
                 className={`lg:absolute lg:inset-0 lg:w-full lg:h-full z-10 px-2 lg:px-6 xl:px-8 pb-10 [&::-webkit-scrollbar]:hidden ${
-                    fixedScrollMode ? 'lg:overflow-hidden lg:overscroll-contain scroll-smooth' : 'lg:overflow-y-auto lg:overscroll-contain scroll-smooth'
+                    fixedScrollMode ? 'lg:overflow-hidden overscroll-contain scroll-smooth' : 'lg:overflow-y-auto overscroll-contain scroll-smooth'
                 }`}
                 style={isDesktop ? desktopMask : undefined}
                 onScroll={handleInternalScroll}

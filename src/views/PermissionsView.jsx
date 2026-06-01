@@ -5,7 +5,8 @@ import {
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
-    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone
+    BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
+    Sparkles, Layers, Globe2, BadgeAlert
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +84,8 @@ const MODULE_GROUPS = [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
                 { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
                 { key: 'productos_tab_inventario', label: 'Inventario' },
+                { key: 'productos_tab_minmax',     label: 'Min / Max'  },
+                { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
             ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
@@ -237,18 +240,23 @@ const PERM_DESC = {
 };
 
 // ─── Toggle component ───────────────────────────────────────────────────────
-const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false }) => (
-    <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && onChange(!value)}
-        className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${
-            disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-        } ${value ? color : 'bg-slate-200'}`}
-    >
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${value ? 'left-4' : 'left-0.5'}`} />
-    </button>
-);
+const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false, size = 'md' }) => {
+    const w = size === 'lg' ? 'w-12 h-6' : 'w-9 h-5';
+    const knob = size === 'lg' ? 'w-4 h-4 top-1' : 'w-3.5 h-3.5 top-[3px]';
+    const on = size === 'lg' ? 'left-[28px]' : 'left-[18px]';
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={() => !disabled && onChange(!value)}
+            className={`relative ${w} rounded-full transition-all duration-300 flex-shrink-0 ${
+                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'
+            } ${value ? color : 'bg-slate-200/80'}`}
+        >
+            <span className={`absolute ${knob} rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
+        </button>
+    );
+};
 
 // ─── Módulo card ────────────────────────────────────────────────────────────
 const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, tabSaving, onTabChange }) => {
@@ -257,40 +265,46 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
     const currentScope = perms.scope || 'ALL';
 
     return (
-        <div className={`rounded-[1.5rem] border transition-all duration-300 ${
+        <div className={`rounded-[1.5rem] border transition-all duration-500 ${
             hasAnyPerm
-                ? 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5'
-                : 'bg-slate-50/60 border-slate-100'
+                ? 'bg-white/80 backdrop-blur-xl border-white/90 shadow-[0_4px_20px_rgba(0,82,204,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transform-gpu'
+                : 'bg-white/40 backdrop-blur-md border-slate-100/60 opacity-70 hover:opacity-90'
         }`}>
             <div className="p-4">
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-4">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                        hasAnyPerm ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-400'
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 shadow-sm ${
+                        hasAnyPerm
+                            ? 'bg-gradient-to-br from-[#0052CC] to-[#6929C4] text-white shadow-[0_2px_8px_rgba(0,82,204,0.3)]'
+                            : 'bg-slate-100 text-slate-300'
                     }`}>
-                        <ModIcon size={16} strokeWidth={1.8} />
+                        <ModIcon size={15} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black leading-tight transition-colors ${hasAnyPerm ? 'text-slate-800' : 'text-slate-400'}`}>
-                            {module.label}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">{module.desc}</p>
+                        <div className="flex items-center gap-1.5">
+                            <p className={`text-[12px] font-black leading-tight transition-colors ${hasAnyPerm ? 'text-slate-800' : 'text-slate-400'}`}>
+                                {module.label}
+                            </p>
+                            {saving && <Loader2 size={10} className="text-slate-400 animate-spin flex-shrink-0" />}
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
                     </div>
-                    {saving && <Loader2 size={12} className="text-slate-400 animate-spin flex-shrink-0 mt-1" />}
                 </div>
 
                 {/* Toggles */}
-                <div className="space-y-2.5">
+                <div className={`rounded-xl p-2.5 space-y-2 ${hasAnyPerm ? 'bg-slate-50/60' : 'bg-slate-50/30'}`}>
                     {PERMISSION_TYPES.map(pt => {
                         if (pt.key === 'can_approve' && !module.hasApprove) return null;
                         const PtIcon = pt.icon;
                         const val = !!perms[pt.key];
                         const needsView = (pt.key === 'can_edit' || pt.key === 'can_approve') && !perms.can_view;
                         return (
-                            <div key={pt.key} title={PERM_DESC[pt.key]} className={`flex items-center justify-between gap-3 transition-opacity ${needsView ? 'opacity-30 pointer-events-none' : ''}`}>
-                                <div className="flex items-center gap-1.5">
-                                    <PtIcon size={10} className={val ? 'text-slate-600' : 'text-slate-300'} strokeWidth={2.5} />
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${val ? 'text-slate-600' : 'text-slate-300'}`}>
+                            <div key={pt.key} title={PERM_DESC[pt.key]} className={`flex items-center justify-between gap-3 transition-opacity duration-200 ${needsView ? 'opacity-25 pointer-events-none' : ''}`}>
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${val ? pt.activeColor + ' opacity-80' : 'bg-slate-200/60'}`}>
+                                        <PtIcon size={9} className="text-white" strokeWidth={3} />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${val ? 'text-slate-700' : 'text-slate-300'}`}>
                                         {pt.label}
                                     </span>
                                 </div>
@@ -305,10 +319,13 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                     })}
                 </div>
 
-                {/* Scope selector — solo visible cuando can_view está activo y el módulo lo soporta */}
+                {/* Scope selector */}
                 {module.hasScope && perms.can_view && (
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Alcance de datos</p>
+                    <div className="mt-3 pt-3 border-t border-slate-100/80">
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <Globe2 size={9} className="text-slate-400" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Alcance</p>
+                        </div>
                         <div className="flex gap-1.5">
                             {SCOPE_OPTIONS.map(opt => (
                                 <button
@@ -316,10 +333,10 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                                     type="button"
                                     disabled={locked}
                                     onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
-                                    className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
+                                    className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
-                                            ? `${opt.color} shadow-sm ring-2 ${opt.ring}`
-                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                            ? `${opt.color} border-transparent shadow-sm`
+                                            : 'bg-white/80 border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'
                                     } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     {opt.label}
@@ -329,20 +346,23 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, tabs, tabPerms, t
                     </div>
                 )}
 
-                {/* Sub-tabs — solo visible cuando can_view está activo */}
+                {/* Sub-tabs */}
                 {tabs && perms.can_view && tabPerms && (
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pestañas visibles</p>
-                        <div className="space-y-2">
+                    <div className="mt-3 pt-3 border-t border-slate-100/80">
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <Layers size={9} className="text-slate-400" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pestañas</p>
+                        </div>
+                        <div className="space-y-1.5">
                             {tabs.map(tab => {
                                 const tabPerm = tabPerms[tab.key] || { can_view: false };
                                 return (
-                                    <div key={tab.key} className="flex items-center justify-between gap-3">
-                                        <span className={`text-[10px] font-semibold ${tabPerm.can_view ? 'text-slate-600' : 'text-slate-300'}`}>
+                                    <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl transition-colors ${tabPerm.can_view ? 'bg-blue-50/60' : 'bg-slate-50/40'}`}>
+                                        <span className={`text-[10px] font-bold ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-300'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
-                                            {tabSaving?.[tab.key] && <Loader2 size={10} className="text-slate-400 animate-spin" />}
+                                            {tabSaving?.[tab.key] && <Loader2 size={9} className="text-slate-400 animate-spin" />}
                                             <Toggle
                                                 value={!!tabPerm.can_view}
                                                 onChange={v => onTabChange(tab.key, 'can_view', v)}
@@ -748,28 +768,39 @@ const PermissionsView = () => {
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
                         {filteredRoles.map((r, idx) => {
                             const isActive = selectedRoleId === r.id;
                             const cs = ROLE_COLORS[idx % ROLE_COLORS.length];
+                            const isSURol = !!roleIsSU[r.id];
                             const viewCount = MAIN_MODULES.filter(m => permissions[`${r.id}:${m.key}`]?.can_view).length;
                             return (
                                 <button
                                     key={r.id}
                                     onClick={() => setSelectedRoleId(r.id)}
-                                    className={`w-full text-left rounded-[1.5rem] border p-4 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] ${
+                                    className={`w-full text-left rounded-[1.5rem] border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive
-                                            ? `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
-                                            : 'bg-white/50 border-white/70 hover:bg-white/70'
+                                            ? isSURol
+                                                ? 'bg-gradient-to-br from-amber-50/90 to-orange-50/60 border-amber-200/70 shadow-[0_4px_20px_rgba(217,119,6,0.12)]'
+                                                : `${cs.bg} ${cs.border} shadow-[0_4px_16px_rgba(0,0,0,0.08)]`
+                                            : 'bg-white/60 backdrop-blur-md border-white/80 hover:bg-white/80 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${cs.color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                                        <div className={`relative w-8 h-8 rounded-xl bg-gradient-to-br ${isSURol ? 'from-amber-400 to-orange-500 shadow-[0_2px_8px_rgba(217,119,6,0.35)]' : cs.color + ' shadow-sm'} flex items-center justify-center flex-shrink-0`}>
                                             <ShieldCheck size={13} className="text-white" strokeWidth={2} />
+                                            {isSURol && (
+                                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
+                                                    <Sparkles size={7} className="text-amber-500" strokeWidth={2.5} />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`text-[12px] font-black leading-tight ${isActive ? cs.textColor : 'text-slate-700'}`}>{r.name}</p>
-                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? cs.textColor + ' opacity-70' : 'text-slate-400'}`}>
+                                            <div className="flex items-center gap-1.5">
+                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-slate-700'}`}>{r.name}</p>
+                                                {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
+                                            </div>
+                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-slate-400'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
@@ -810,77 +841,119 @@ const PermissionsView = () => {
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
-                                <div className={`rounded-[1.5rem] border p-4 transition-all duration-300 ${isRoleSU ? 'bg-amber-50/80 border-amber-200 shadow-[0_2px_12px_rgba(217,119,6,0.1)]' : 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]'}`}>
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isRoleSU ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-slate-200'}`}>
-                                            <ShieldAlert size={16} className="text-white" strokeWidth={1.8} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className={`text-[12px] font-black leading-tight ${isRoleSU ? 'text-amber-800' : 'text-slate-800'}`}>Super Usuario</p>
-                                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">Acceso total irrestricto. Este cargo queda oculto en listados de personal.</p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    disabled={!canEdit}
-                                                    onClick={() => canEdit && handleSuToggle(!isRoleSU)}
-                                                    className={`relative w-10 h-5.5 min-w-[40px] h-[22px] rounded-full transition-all duration-300 flex-shrink-0 ${
-                                                        !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                                                    } ${isRoleSU ? 'bg-amber-400' : 'bg-slate-200'}`}
-                                                    style={{ minWidth: 40, height: 22 }}
-                                                >
-                                                    <span className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 ${isRoleSU ? 'left-[20px]' : 'left-[3px]'}`} />
-                                                </button>
+                                <div className={`relative overflow-hidden rounded-[1.5rem] border transition-all duration-500 ${
+                                    isRoleSU
+                                        ? 'bg-gradient-to-br from-amber-400/20 via-orange-300/10 to-yellow-400/10 backdrop-blur-xl border-amber-300/60 shadow-[0_8px_32px_rgba(217,119,6,0.18)]'
+                                        : 'bg-white/70 backdrop-blur-xl border-white/80 shadow-[0_4px_16px_rgba(0,0,0,0.05)]'
+                                }`}>
+                                    {/* Glow orb when active */}
+                                    {isRoleSU && (
+                                        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-amber-300/20 blur-3xl pointer-events-none" />
+                                    )}
+                                    <div className="relative p-4">
+                                        <div className="flex items-center gap-3">
+                                            {/* Icon */}
+                                            <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                                                isRoleSU
+                                                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_4px_16px_rgba(217,119,6,0.4)]'
+                                                    : 'bg-slate-100'
+                                            }`}>
+                                                <ShieldAlert size={18} className={isRoleSU ? 'text-white' : 'text-slate-400'} strokeWidth={1.8} />
+                                                {isRoleSU && (
+                                                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                                                        <Sparkles size={9} className="text-amber-500" strokeWidth={2.5} />
+                                                    </div>
+                                                )}
                                             </div>
-                                            {isRoleSU && (
-                                                <div className="mt-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-600">
-                                                    <ShieldAlert size={9} strokeWidth={2.5} />
-                                                    <span>Los módulos de abajo no aplican — acceso total activo</span>
+                                            {/* Label */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className={`text-[13px] font-black leading-tight ${isRoleSU ? 'text-amber-900' : 'text-slate-800'}`}>
+                                                        Super Usuario
+                                                    </p>
+                                                    {isRoleSU && (
+                                                        <span className="text-[8px] font-black uppercase tracking-widest bg-amber-400 text-white px-2 py-0.5 rounded-full">
+                                                            Activo
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            )}
+                                                <p className={`text-[10px] font-medium mt-0.5 leading-snug ${isRoleSU ? 'text-amber-700/70' : 'text-slate-400'}`}>
+                                                    Acceso total irrestricto · oculto en listados de personal
+                                                </p>
+                                            </div>
+                                            {/* Toggle */}
+                                            <Toggle
+                                                value={isRoleSU}
+                                                onChange={v => canEdit && handleSuToggle(v)}
+                                                color="bg-amber-400"
+                                                disabled={!canEdit}
+                                                size="lg"
+                                            />
                                         </div>
+                                        {/* Banner when active */}
+                                        {isRoleSU && (
+                                            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-400/15 border border-amber-300/40">
+                                                <Zap size={11} className="text-amber-600 flex-shrink-0" strokeWidth={2.5} />
+                                                <p className="text-[10px] font-black text-amber-700 uppercase tracking-wide">
+                                                    Los permisos por módulo no aplican — este cargo tiene acceso total
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 );
                             })()}
 
                             {/* ── Card: Acceso a Niveles de Precio ── */}
-                            <div className={`rounded-[1.5rem] border p-4 transition-all duration-300 ${rolePriceLevels[selectedRoleId] ? 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]' : 'bg-white/70 border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.05)]'}`}>
-                                <div className="flex items-start gap-3 mb-4">
-                                    <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                        <DollarSign size={16} className="text-white" strokeWidth={1.8} />
+                            {(() => {
+                                const currentLevel = rolePriceLevels[selectedRoleId] ?? null;
+                                const PRICE_OPTS = [
+                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock, grad: 'from-emerald-500 to-teal-600' },
+                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-blue-500 to-indigo-600' },
+                                    { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-violet-500 to-purple-600' },
+                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-amber-500 to-orange-600' },
+                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-rose-500 to-pink-600' },
+                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-cyan-500 to-sky-600' },
+                                    { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-slate-600 to-slate-800' },
+                                    { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-orange-500 to-red-600' },
+                                ];
+                                const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
+                                const ActiveIcon = activeOpt.icon;
+                                return (
+                            <div className="rounded-[1.5rem] border bg-white/75 backdrop-blur-xl border-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.05)] p-4">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all duration-300`}>
+                                        <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[12px] font-black text-slate-800 leading-tight">Acceso a Niveles de Precio</p>
-                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug">Precio máximo que este cargo puede ver en cualquier módulo</p>
+                                        <p className="text-[13px] font-black text-slate-800 leading-tight">Nivel de Precio Máximo</p>
+                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                            Activo: <span className="font-black text-slate-600">{activeOpt.label}</span>
+                                            {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {[
-                                        { value: null,          label: 'Sin límite (todos)' },
-                                        { value: 'vineta',      label: 'Viñeta'      },
-                                        { value: 'descuento_1', label: 'Descuento 1' },
-                                        { value: 'vip',         label: 'VIP'         },
-                                        { value: 'clinica',     label: 'Clínica'     },
-                                        { value: 'mayoreo',     label: 'Mayoreo'     },
-                                        { value: 'premium',     label: 'Premium'     },
-                                        { value: 'precio_7',    label: 'Precio 7'    },
-                                    ].map(opt => {
-                                        const current = rolePriceLevels[selectedRoleId] ?? null;
-                                        const isActive = current === opt.value;
+                                    {PRICE_OPTS.map(opt => {
+                                        const isActive = currentLevel === opt.value;
+                                        const OptIcon = opt.icon;
                                         return (
                                             <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
                                                 onClick={() => canEdit && handlePriceLevelChange(opt.value)}
-                                                className={`py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${
-                                                    isActive ? 'bg-slate-800 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                                className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
+                                                    isActive
+                                                        ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
+                                                        : 'bg-white/80 border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'
                                                 } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                                <OptIcon size={9} strokeWidth={2.5} />
                                                 {opt.label}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
+                                );
+                            })()}
 
                             {MODULE_GROUPS.map((g, gi) => {
                                 // groupActive/groupPartial solo considera módulos principales (sin tabs)
@@ -890,9 +963,13 @@ const PermissionsView = () => {
                                 const allGroupModules = g.modules.flatMap(m => [m, ...(m.tabs || []).map(t => ({ key: t.key, hasApprove: false }))]);
                                 return (
                                 <div key={g.group}>
-                                    <div className={`flex items-center gap-2 mb-3 ${g.color}`}>
-                                        <span className="flex-1 border-t border-current opacity-20" />
-                                        <p className="text-[10px] font-black uppercase tracking-widest">{g.group}</p>
+                                    <div className="flex items-center gap-2.5 mb-3">
+                                        <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-sm ${g.color}`}>
+                                            <p className="text-[9px] font-black uppercase tracking-widest">{g.group}</p>
+                                            {groupPartial && !groupActive && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />}
+                                            {groupActive && <Check size={9} strokeWidth={3} className="flex-shrink-0" />}
+                                        </div>
                                         {/* Toggle de sección */}
                                         <button
                                             type="button"
@@ -901,11 +978,11 @@ const PermissionsView = () => {
                                             title={groupActive ? 'Desactivar sección' : 'Activar sección'}
                                             className={`relative w-8 h-4 rounded-full transition-all duration-300 flex-shrink-0 ${
                                                 !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                                            } ${groupActive ? 'bg-current' : groupPartial ? 'bg-current opacity-40' : 'bg-slate-200'}`}
+                                            } ${groupActive ? 'bg-current ' + g.color : groupPartial ? 'bg-current ' + g.color + ' opacity-40' : 'bg-slate-200'}`}
                                         >
                                             <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${groupActive ? 'left-[18px]' : 'left-0.5'}`} />
                                         </button>
-                                        <span className="flex-1 border-t border-current opacity-20" />
+                                        <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((m, i) => {

@@ -782,13 +782,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             {/* ── Main content ── */}
             <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
-                {/* Mobile top bar — full-bleed glass band covering status bar safe area */}
+                {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
-                    className="lg:hidden shrink-0 z-40 w-full
+                    className="lg:hidden fixed top-0 left-0 right-0 z-40
                         bg-white/65 backdrop-blur-[44px] backdrop-saturate-[220%]
                         border-b border-white/70
                         shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_-1px_0_rgba(255,255,255,0.9)]"
-                    style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 0px)' }}
+                    style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
                 >
                     <div className="flex items-center justify-between px-4 py-2.5">
                         <div className="flex items-center gap-4">
@@ -827,8 +827,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
                 </div>
 
+                {/* Spacer — ocupa la altura del fixed header para que el contenido no quede tapado */}
+                <div
+                    className="lg:hidden shrink-0 w-full"
+                    style={{ height: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
+                />
+
                 {/* Content */}
-                <div id="main-scroll" className={`flex-1 overflow-y-auto lg:overflow-hidden overscroll-none min-h-0 relative bg-transparent rounded-[2.5rem] lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 mt-2 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div id="main-scroll" className={`flex-1 overflow-y-auto lg:overflow-hidden overscroll-none min-h-0 relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">

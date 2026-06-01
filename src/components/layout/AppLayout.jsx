@@ -782,10 +782,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             {/* ── Main content ── */}
             <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col overflow-hidden relative z-20 ${blurClasses}`}>
-                {/* Mobile top bar */}
-                <div className="lg:hidden shrink-0 z-40 w-full px-4 pt-[max(env(safe-area-inset-top,12px),12px)] pb-2">
-                    <div className="flex items-center justify-between rounded-[2rem] p-2 pl-5 transition-all duration-300 border
-                        bg-white/60 backdrop-blur-[40px] border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.9)]">
+                {/* Mobile top bar — full-bleed glass band covering status bar safe area */}
+                <div
+                    className="lg:hidden shrink-0 z-40 w-full
+                        bg-white/65 backdrop-blur-[44px] backdrop-saturate-[220%]
+                        border-b border-white/70
+                        shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_-1px_0_rgba(255,255,255,0.9)]"
+                    style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 0px)' }}
+                >
+                    <div className="flex items-center justify-between px-4 py-2.5">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setIsSidebarOpen(true)} className="active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC]">
                                 <Menu size={22} strokeWidth={2.5} />

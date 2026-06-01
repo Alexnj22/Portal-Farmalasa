@@ -191,7 +191,7 @@ const TabShifts = ({ branches, shiftTab }) => {
 
     const [isLoading, setIsLoading]       = useState(false);
     const [editingGroup, setEditingGroup] = useState(null);
-    const [currentForm, setCurrentForm]   = useState({ start: '', end: '' });
+    const [currentForm, setCurrentForm]   = useState({ start: '', end: '', name: '' });
     const [dismissedSugs, setDismissedSugs] = useState(new Set());
     const [localSearch, setLocalSearch]   = useState('');
     const searchInputRef = useRef(null);
@@ -353,7 +353,7 @@ const TabShifts = ({ branches, shiftTab }) => {
     // ── ACCIONES ─────────────────────────────────────────────────────────────
     const applySuggestion = useCallback((action) => {
         setEditingGroup(null);
-        setCurrentForm({ start: action.start, end: action.end });
+        setCurrentForm({ start: action.start, end: action.end, name: '' });
         showToast('Sugerencia Aplicada', 'Verifica las horas y guarda el turno.', 'info');
     }, [showToast]);
 
@@ -365,13 +365,14 @@ const TabShifts = ({ branches, shiftTab }) => {
         if (e) e.preventDefault();
         if (!currentForm.start || !currentForm.end) { showToast('Campos incompletos', 'Asegúrate de darle horas al turno.', 'error'); return; }
         if (hasBlockingError) { showToast('Error Operativo', 'Resuelve las advertencias de Saly antes de guardar.', 'error'); return; }
+        const effectiveName = currentForm.name.trim() || autoName;
         setIsLoading(true);
         try {
             if (editingGroup) {
-                await updateShift(editingGroup.shifts_data[0].id, { name: autoName, start_time: `${currentForm.start}:00`, end_time: `${currentForm.end}:00`, branch_id: null });
+                await updateShift(editingGroup.shifts_data[0].id, { name: effectiveName, start_time: `${currentForm.start}:00`, end_time: `${currentForm.end}:00`, branch_id: null });
                 showToast('Éxito', 'Turno actualizado en el catálogo global', 'success');
             } else {
-                await addShift({ name: autoName, start: currentForm.start, end: currentForm.end, branchId: null });
+                await addShift({ name: effectiveName, start: currentForm.start, end: currentForm.end, branchId: null });
                 showToast('Éxito', 'Turno añadido al catálogo global', 'success');
             }
             cancelEditing();
@@ -382,8 +383,8 @@ const TabShifts = ({ branches, shiftTab }) => {
 
     const handleDuplicate = useCallback((group) => {
         setEditingGroup(null);
-        setCurrentForm({ start: group.start, end: group.end });
-        showToast('Modo Duplicar', 'Copia las horas para crear uno nuevo.', 'info');
+        setCurrentForm({ start: group.start, end: group.end, name: group.name });
+        showToast('Modo Duplicar', 'Ajusta las horas o el nombre y guarda el nuevo turno.', 'info');
     }, [showToast]);
 
     const handleArchiveGroup = useCallback(async (ids) => {
@@ -398,12 +399,12 @@ const TabShifts = ({ branches, shiftTab }) => {
 
     const startEditing = useCallback((group) => {
         setEditingGroup(group);
-        setCurrentForm({ start: group.start, end: group.end });
+        setCurrentForm({ start: group.start, end: group.end, name: group.name });
     }, []);
 
     const cancelEditing = useCallback(() => {
         setEditingGroup(null);
-        setCurrentForm({ start: '', end: '' });
+        setCurrentForm({ start: '', end: '', name: '' });
     }, []);
 
     const isEmpty = sortedShifts.length === 0 && globalInsights.length === 0;
@@ -449,6 +450,30 @@ const TabShifts = ({ branches, shiftTab }) => {
                                     <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm(f => ({ ...f, end: v }))} />
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
+                            <div className="flex gap-2 mb-2">
+                                {['Apertura', 'Enlace', 'Cierre'].map(tipo => (
+                                    <button key={tipo} type="button"
+                                        onClick={() => setCurrentForm(f => ({ ...f, name: tipo }))}
+                                        className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border active:scale-[0.97] ${
+                                            currentForm.name === tipo
+                                                ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-[0_4px_12px_rgba(0,82,204,0.25)]'
+                                                : 'bg-white/60 text-slate-500 border-white/70 hover:bg-white/90 hover:text-slate-700 hover:border-slate-200'
+                                        }`}>
+                                        {tipo}
+                                    </button>
+                                ))}
+                            </div>
+                            <input
+                                type="text"
+                                value={currentForm.name}
+                                onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}
+                                placeholder={`Nombre personalizado (ej: ${autoName})`}
+                                className="w-full bg-white/60 backdrop-blur-md border border-white/70 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-[#0052CC]/40 focus:bg-white/80 transition-all"
+                            />
                         </div>
 
                         {currentForm.start && currentForm.end && (

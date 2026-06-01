@@ -537,8 +537,10 @@ useEffect(() => {
                         const sEndMins = timeToMins(sEndStr);
                         let duration = (sEndMins < sStartMins ? sEndMins + 1440 : sEndMins) - sStartMins;
                         
-                        if (duration >= 420 && !day.hasLunch) {
-                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Alerta de fatiga: Turno mayor a 7h sin almuerzo.` });
+                        const adjEnd = sEndMins < sStartMins ? sEndMins + 1440 : sEndMins;
+                        const spansNoon = sStartMins < 720 && adjEnd > 720;
+                        if (duration >= 420 && !day.hasLunch && spansNoon) {
+                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Alerta de fatiga: Turno mayor a 7h que cruza el mediodía sin almuerzo.` });
                         }
 
                         if (hasBranchSchedule) {

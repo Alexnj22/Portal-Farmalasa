@@ -22,6 +22,12 @@ const GlassViewLayout = ({
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    useEffect(() => {
+        if (fixedScrollMode && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+        }
+    }, [fixedScrollMode]);
+
     const handleInternalScroll = useCallback(() => {
         if (!scrollContainerRef.current) return;
         requestAnimationFrame(() => {

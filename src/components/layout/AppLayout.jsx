@@ -553,7 +553,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-        <div className={`flex w-full font-sans relative ${useBrowserScroll ? 'min-h-screen' : 'h-[100dvh] overflow-hidden'}`}>
+        <div className={`flex w-full font-sans relative ${useBrowserScroll ? 'min-h-screen items-start' : 'h-[100dvh] overflow-hidden'}`}>
 
             {/* ── Global ambient orbs ── */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -856,7 +856,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 />
 
                 {/* Content */}
-                <div id="main-scroll" className={`${useBrowserScroll ? 'w-full' : 'flex-1 overflow-y-auto min-h-0'} lg:overflow-hidden overscroll-none relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={useBrowserScroll ? undefined : { WebkitOverflowScrolling: 'touch' }}>
+                <div id="main-scroll" className={`${useBrowserScroll ? 'w-full' : 'flex-1 overflow-y-auto min-h-0 overscroll-none'} lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 lg:mt-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={useBrowserScroll ? undefined : { WebkitOverflowScrolling: 'touch' }}>
                     {/* Desktop global bell */}
                     {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
                         <div className="absolute top-4 right-5 z-[200] hidden lg:block">

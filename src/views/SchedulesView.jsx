@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft,
-    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight
+    Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -212,6 +212,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const [startDate, setStartDate] = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
+    const [weekIsPublished, setWeekIsPublished] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     const [editingCell, setEditingCell] = useState(null);
@@ -279,9 +280,10 @@ const SchedulesView = ({ openModal, setView }) => {
                 setWeeklyRosters({}); 
             }
             
-            fetchWeekRosters(startDate).then(data => {
+            fetchWeekRosters(startDate).then(result => {
                 if (isMounted) {
-                    setWeeklyRosters(data || {});
+                    setWeeklyRosters(result?.rosters || {});
+                    setWeekIsPublished(result?.isPublished || false);
                     if (!isSilent) setIsLoading(false);
                 }
             });
@@ -677,6 +679,7 @@ useEffect(() => {
                 employee_id: item.id,
                 week_start_date: startDate,
                 schedule_data: item.weekly_schedule,
+                status: 'DRAFT',
                 updated_at: new Date().toISOString()
             }));
 
@@ -686,11 +689,12 @@ useEffect(() => {
 
             if (bulkError) throw bulkError;
 
-            // Mantenemos el disparo a la store (por si maneja lógica de reportes o histórico)
             if (typeof publishWeekRosters === 'function') {
                 await publishWeekRosters(startDate, filterBranch);
             }
 
+            setWeekIsPublished(true);
+            showToast('Horarios publicados', `Semana del ${formatDateLocal(startDate)} publicada correctamente.`, 'success');
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '', bulkUpdates: null });
             
@@ -820,9 +824,9 @@ useEffect(() => {
                                         </button>
                                         
                                         {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
-                                        {!isJefe && canEdit && <button onClick={triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_10px_rgba(0,82,204,0.3)] border border-[#0052CC]/50 transition-all hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] gap-2 ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
-                                            {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
-                                            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : 'Publicar'}</span>
+                                        {!isJefe && canEdit && <button onClick={weekIsPublished ? undefined : triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2 ${weekIsPublished ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default' : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'} ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                            {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
+                                            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}</span>
                                         </button>}
                                     </div>
                                 )}

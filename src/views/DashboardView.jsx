@@ -71,7 +71,7 @@ const WIDGET_SIZES = {
   sales:         { minCols: 3, minRows: 2, label: 'Ventas'       },
   absences:      { minCols: 1, minRows: 2, label: 'Ausencias'    },
   requests:      { minCols: 1, minRows: 2, label: 'Solicitudes'  },
-  branches:      { minCols: 1, minRows: 1, label: 'Sucursales'   },
+  sync_health:   { minCols: 1, minRows: 2, label: 'Sincronización'},
   calendar:      { minCols: 2, minRows: 3, label: 'Calendario'   },
   announcements: { minCols: 1, minRows: 2, label: 'Avisos'       },
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
@@ -85,7 +85,7 @@ const getWidgetSize = (id) => {
   return WIDGET_SIZES[id] || { minCols: 1, minRows: 1, label: id };
 };
 
-const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'branches', 'calendar', 'announcements', 'birthdays', 'cotizaciones', 'facturacion', 'top_productos'];
+const DEFAULT_WIDGET_ORDER = ['trend', 'shifts', 'sales', 'absences', 'requests', 'sync_health', 'calendar', 'announcements', 'birthdays', 'cotizaciones', 'facturacion', 'top_productos'];
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [
@@ -94,7 +94,7 @@ const TABS = [
   { id: 'rrhh',      label: 'RRHH',      icon: Users           },
 ];
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos'];
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','sync_health','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
   comercial: ['kpi','cotizaciones','facturacion','top_productos','sales'],
@@ -180,7 +180,7 @@ const WIDGET_DEFS = [
   { id: 'shifts',        label: 'Estado de turnos',        permission: 'dash_shifts',        icon: Users,        category: 'personal'  },
   { id: 'absences',      label: 'Ausencias activas',       permission: 'dash_absences',      icon: UserX,        category: 'personal'  },
   { id: 'sales',         label: 'Ventas por día/hora',     permission: 'dash_sales',         icon: BarChart2,    category: 'ventas'    },
-  { id: 'branches',      label: 'Alertas de sucursales',   permission: 'dash_branches',      icon: Building2,    category: 'general'   },
+  { id: 'sync_health',   label: 'Sincronización',           permission: 'dash_branches',      icon: Activity,     category: 'productos' },
   { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays, category: 'general'   },
   { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone,    category: 'general'   },
   { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift,         category: 'personal'  },
@@ -1355,42 +1355,11 @@ const DashboardView = ({ openModal }) => {
     }
 
     /* ── BRANCHES ── */
-    if (wid === 'branches') {
-      if (!showWidget('branches','dash_branches')) return null;
-      return wrapWidget('branches',
-        <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
-          <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {branches.length === 0 ? (
-              [0,1,2].map(i => (
-                <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <Skel className="w-5 h-5 rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <Skel className="h-2.5 w-2/3" />
-                    <Skel className="h-2 w-1/2" />
-                  </div>
-                </div>
-              ))
-            ) : branchAlerts.length===0?(
-              <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
-                <p className="text-[12px] font-bold text-slate-500">Todo en orden</p>
-                <p className="text-[10px] text-slate-300">{branches.length} sucursal{branches.length!==1?'es':''} activa{branches.length!==1?'s':''}</p>
-              </div>
-            ):(
-              branchAlerts.map(b=>{
-                const issue=getBranchIssue(b);
-                return (
-                  <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-amber-50/80 cursor-pointer':'cursor-default'} border-amber-100 bg-amber-50/50`}>
-                    <AlertTriangle size={13} className="text-amber-500 shrink-0"/>
-                    <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-slate-700 truncate">{b.name}</p><p className="text-[9px] text-amber-600 font-semibold">{issue}</p></div>
-                    {canManage('dash_branches')&&<ChevronRight size={11} className="text-slate-300 shrink-0"/>}
-                  </button>
-                );
-              })
-            )}
-          </div>
+    if (wid === 'sync_health') {
+      if (!showWidget('sync_health','dash_branches')) return null;
+      return wrapWidget('sync_health',
+        <WidgetCard title="Sincronización" icon={Activity} category="productos">
+          <SyncHealthBanner />
         </WidgetCard>
       , staggerIdx);
     }
@@ -1868,9 +1837,6 @@ const DashboardView = ({ openModal }) => {
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
-
-        {/* Sync health status bar */}
-        {hasPermission('dash_kpi', 'can_view') && <SyncHealthBanner />}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div

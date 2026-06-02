@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { usePushSubscription } from '../../hooks/usePushSubscription';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;
@@ -14,10 +15,8 @@ function dotClass(minsAgo, hasError) {
 }
 
 export default function SidebarSyncStatus() {
-  const [branches, setBranches]   = useState([]);
-  const [notifPerm, setNotifPerm] = useState(
-    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
-  );
+  const [branches, setBranches] = useState([]);
+  const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
   const fetchLatest = useCallback(async () => {
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
@@ -47,12 +46,6 @@ export default function SidebarSyncStatus() {
     return () => { clearInterval(timer); supabase.removeChannel(channel); };
   }, [fetchLatest]);
 
-  const requestNotif = async () => {
-    if (!('Notification' in window)) return;
-    const perm = await Notification.requestPermission();
-    setNotifPerm(perm);
-  };
-
   const now       = Date.now();
   const hasErrors = branches.some(b => !b.success);
   const anyStale  = branches.some(b => (now - new Date(b.synced_at).getTime()) / 60000 > STALE_MINS);
@@ -61,9 +54,8 @@ export default function SidebarSyncStatus() {
   const latestMs      = branches.length ? Math.max(...branches.map(b => new Date(b.synced_at).getTime())) : null;
   const minsAgoLatest = latestMs ? Math.round((now - latestMs) / 60000) : null;
 
-  // ── Bell card content varies by permission state ──────────────────────────
-  const bellGranted = notifPerm === 'granted';
-  const bellDenied  = notifPerm === 'denied';
+  const bellGranted = subscribed && permission === 'granted';
+  const bellDenied  = permission === 'denied';
 
   return (
     <div className="grid grid-cols-2 gap-1.5">
@@ -107,15 +99,14 @@ export default function SidebarSyncStatus() {
       </div>
 
       {/* ── Right: notification bell ──────────────────────────────────────── */}
-      {notifPerm === 'unsupported' ? (
-        /* No notification support — show muted placeholder */
+      {!isSupported ? (
         <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border bg-white/[0.06] border-white/[0.09] opacity-30">
           <BellOff size={14} className="text-white/40" />
           <span className="text-[9px] text-white/35 uppercase tracking-wider font-semibold">N/D</span>
         </div>
       ) : (
         <button
-          onClick={bellGranted || bellDenied ? undefined : requestNotif}
+          onClick={bellGranted || bellDenied ? undefined : subscribe}
           disabled={bellDenied}
           title={bellDenied ? 'Actívalas en la configuración del navegador' : undefined}
           className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border

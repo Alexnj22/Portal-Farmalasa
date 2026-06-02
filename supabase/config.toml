@@ -386,6 +386,27 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.sync-dte-sales]
 verify_jwt = false
 
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.sync-erp-minmax]
+verify_jwt = false
+
+[functions.sync-products]
+verify_jwt = false
+
+[functions.backfill-dte-sales]
+verify_jwt = false
+
+[functions.check-doc-expiry]
+verify_jwt = false
+
+[functions.consolidate-timesheets]
+verify_jwt = false
+
+[functions.heal-dte-sync]
+verify_jwt = false
+
 [functions.ensure_user_by_code]
 enabled = true
 verify_jwt = false

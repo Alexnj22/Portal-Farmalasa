@@ -255,9 +255,8 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => { // eslint-disable-line no-unused-vars
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    {/* Outer: overflow-hidden clips content to rounded corners; no backdrop-filter here (Chrome bug) */}
     <div data-surface="card" className={`h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
-      {/* Inner glass layer — backdrop-filter lives here, NOT on the overflow-hidden parent */}
+      {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
       <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
       {/* Glass shine */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />

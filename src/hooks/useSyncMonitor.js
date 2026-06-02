@@ -47,15 +47,15 @@ export function useSyncMonitor() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'announcements' },
         ({ new: a }) => {
-          // Skip archived or future-scheduled
-          if (a.isArchived) return;
-          if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return;
+          // Realtime payload is raw snake_case from the DB
+          if (a.is_archived) return;
+          if (a.scheduled_for && new Date(a.scheduled_for) > new Date()) return;
 
           // Check if this announcement targets the current user
           const applies =
-            a.targetType === 'GLOBAL' ||
-            (a.targetType === 'BRANCH'   && (a.targetValue || []).includes(String(user.branchId))) ||
-            (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)));
+            a.target_type === 'GLOBAL' ||
+            (a.target_type === 'BRANCH'   && (a.target_value || []).includes(String(user.branchId))) ||
+            (a.target_type === 'EMPLOYEE' && (a.target_value || []).includes(String(user.id)));
           if (!applies) return;
 
           const isUrgent = a.priority === 'URGENT';

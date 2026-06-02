@@ -602,61 +602,15 @@ const SchedulesView = ({ openModal, setView }) => {
         viewMode === 'shifts'   ? 'Buscar turno...' :
                                   'Buscar feriado...';
 
-    const calendarControlsPill = viewMode === 'calendar' && (
-        <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-1.5 md:gap-2 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu">
-            <LiquidSelect
-                value={filterBranch}
-                onChange={setFilterBranch}
-                options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
-                compact clearable={false} icon={Building2} bare
-            />
-            <div className="w-px h-6 md:h-8 bg-white/40 mx-1 shrink-0" />
-            <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-[calc(100%-8px)] ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
-                    <button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button>
-                </div>
-                <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
-                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
-                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
-                </div>
-                {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
-                    <button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button>
-                </div>
-            </div>
-            {canEdit && getScope('schedules') !== 'BRANCH' && (
-                <>
-                    <div className="w-px h-6 md:h-8 bg-white/40 mx-1 shrink-0" />
-                    <button
-                        onClick={weekIsPublished ? undefined : triggerPublishAudit}
-                        disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`h-9 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
-                            ${weekIsPublished
-                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
-                                : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
-                            ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
-                        {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
-                        <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
-                            {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                        </span>
-                    </button>
-                </>
-            )}
-        </div>
-    );
-
     const filtersContent = (
-        <div className="flex items-center gap-3">
-            {calendarControlsPill}
-            <ViewTabBar
-                tabs={SCHED_TABS}
-                activeTab={viewMode}
-                onTabChange={goToView}
-                searchValue={rawSearch}
-                onSearchChange={setRawSearch}
-                placeholder={searchPlaceholder}
-            />
-        </div>
+        <ViewTabBar
+            tabs={SCHED_TABS}
+            activeTab={viewMode}
+            onTabChange={goToView}
+            searchValue={rawSearch}
+            onSearchChange={setRawSearch}
+            placeholder={searchPlaceholder}
+        />
     );
 
     let currentChartData = [];
@@ -731,6 +685,44 @@ const SchedulesView = ({ openModal, setView }) => {
                     initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
+
+                    {/* ── Controls: branch selector + week nav + publish ── */}
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 pb-4 shrink-0">
+                        <LiquidSelect
+                            value={filterBranch}
+                            onChange={setFilterBranch}
+                            options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
+                            compact clearable={false} icon={Building2} bare
+                        />
+                        <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-10 ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
+                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
+                                <button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button>
+                            </div>
+                            <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
+                                <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
+                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
+                            </div>
+                            {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
+                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
+                                <button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button>
+                            </div>
+                        </div>
+                        {canEdit && getScope('schedules') !== 'BRANCH' && (
+                            <button
+                                onClick={weekIsPublished ? undefined : triggerPublishAudit}
+                                disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
+                                className={`h-10 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
+                                    ${weekIsPublished
+                                        ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
+                                        : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
+                                    ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
+                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
+                                    {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
+                                </span>
+                            </button>
+                        )}
+                    </div>
 
                     {employeesInView.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">

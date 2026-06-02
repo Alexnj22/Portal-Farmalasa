@@ -13,6 +13,7 @@ import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
+import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -746,7 +747,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         type="button">
                                         <LogOut size={16} strokeWidth={1.8} />
                                     </button>
-                                </div>
+                                <p className="text-center text-[9px] font-medium text-white/20 tracking-wider pt-1">
+                                    Edwin Nunez · v{APP_VERSION}
+                                </p>
                             </>
                         ) : (
                             /* Icon column compact */
@@ -809,6 +812,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)]">
                                     <LogOut size={15} strokeWidth={1.8} />
                                 </button>
+                                <span className="text-[8px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                             </div>
                         )}
                     </div>

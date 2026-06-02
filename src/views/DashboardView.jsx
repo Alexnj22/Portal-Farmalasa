@@ -198,7 +198,7 @@ const Skel = ({ className = '', style }) => (
 );
 
 const KpiCardSkeleton = () => (
-  <div className="relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden">
+  <div className="relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3">
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     <div className="flex items-center gap-2">
       <Skel className="w-7 h-7 rounded-[0.7rem] flex-shrink-0" />
@@ -234,7 +234,7 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div data-surface="card" onClick={onClick}
-    className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
@@ -255,7 +255,10 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => { // eslint-disable-line no-unused-vars
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    <div data-surface="card" className={`h-full relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>
+    {/* Outer: overflow-hidden clips content to rounded corners; no backdrop-filter here (Chrome bug) */}
+    <div data-surface="card" className={`h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
+      {/* Inner glass layer — backdrop-filter lives here, NOT on the overflow-hidden parent */}
+      <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
       {/* Glass shine */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
       {/* Left category stripe */}
@@ -1504,7 +1507,8 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('birthdays','dash_birthdays')) return null;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
+        <div className="h-full rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden relative">
+          <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] pointer-events-none" />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-white/50 shrink-0">
             <div className="relative flex items-center justify-between">

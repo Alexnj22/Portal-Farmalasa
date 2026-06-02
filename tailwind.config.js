@@ -11,23 +11,23 @@ export default {
           '0%':   { transform: 'scale(1.04) translateY(-7px)' },
           '40%':  { transform: 'scale(0.97) translateY(4px)'  },
           '70%':  { transform: 'scale(1.02) translateY(-2px)' },
-          '100%': { transform: 'scale(1)    translateY(0)'    },
+          '100%': { transform: 'none' },
         },
         'kpi-enter': {
           '0%':   { opacity: '0', transform: 'translateY(10px) scale(0.97)' },
-          '100%': { opacity: '1', transform: 'translateY(0)    scale(1)'    },
+          '100%': { opacity: '1', transform: 'none' },
         },
         'widget-enter': {
           '0%':   { opacity: '0', transform: 'translateY(8px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)'   },
+          '100%': { opacity: '1', transform: 'none' },
         },
         'cosmos-in': {
           '0%':   { opacity: '0', transform: 'translateY(14px) scale(0.97)' },
-          '100%': { opacity: '1', transform: 'translateY(0)    scale(1)'    },
+          '100%': { opacity: '1', transform: 'none' },
         },
         'cosmos-panel': {
           '0%':   { opacity: '0', transform: 'translateY(-6px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)'    },
+          '100%': { opacity: '1', transform: 'none' },
         },
         'compat-row': {
           '0%':   { opacity: '0' },

@@ -186,7 +186,7 @@ body::-webkit-scrollbar { display: none; }
 
 @keyframes viewEnter {
   from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 .animate-view-enter {
   animation: viewEnter 250ms var(--ease-spring) both;
@@ -194,7 +194,7 @@ body::-webkit-scrollbar { display: none; }
 
 @keyframes staggerEnter {
   from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 .animate-stagger-child {
   animation: staggerEnter 220ms var(--ease-spring) both;
@@ -247,22 +247,22 @@ body::-webkit-scrollbar { display: none; }
 /* Tab slide transitions — enter */
 @keyframes tabEnterRight {
   from { opacity: 0; transform: translateX(36px) scale(0.97); filter: blur(5px); }
-  to   { opacity: 1; transform: translateX(0)    scale(1);    filter: blur(0); }
+  to   { opacity: 1; transform: none;                         filter: none; }
 }
 @keyframes tabEnterLeft {
   from { opacity: 0; transform: translateX(-36px) scale(0.97); filter: blur(5px); }
-  to   { opacity: 1; transform: translateX(0)     scale(1);    filter: blur(0); }
+  to   { opacity: 1; transform: none;                          filter: none; }
 }
 .animate-tab-enter-right { animation: tabEnterRight 380ms cubic-bezier(0.23,1,0.32,1) both; }
 .animate-tab-enter-left  { animation: tabEnterLeft  380ms cubic-bezier(0.23,1,0.32,1) both; }
 
 /* Tab slide transitions — exit */
 @keyframes tabExitLeft {
-  from { opacity: 1; transform: translateX(0)     scale(1);    filter: blur(0); }
+  from { opacity: 1; transform: none;                          filter: none; }
   to   { opacity: 0; transform: translateX(-36px) scale(0.97); filter: blur(5px); }
 }
 @keyframes tabExitRight {
-  from { opacity: 1; transform: translateX(0)    scale(1);    filter: blur(0); }
+  from { opacity: 1; transform: none;                         filter: none; }
   to   { opacity: 0; transform: translateX(36px) scale(0.97); filter: blur(5px); }
 }
 .animate-tab-exit-left  { animation: tabExitLeft  380ms cubic-bezier(0.23,1,0.32,1) both; }
@@ -271,7 +271,7 @@ body::-webkit-scrollbar { display: none; }
 /* Input stagger reveal (used when panel becomes active in carousel) */
 @keyframes inputReveal {
   from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  to   { opacity: 1; transform: none;             filter: none; }
 }
 .animate-input-reveal {
   animation: inputReveal 360ms cubic-bezier(0.23,1,0.32,1) both;

@@ -13,6 +13,7 @@ import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
+import PushPromptBanner from '../common/PushPromptBanner';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -1084,6 +1085,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 }}
             />
         </div>
+
+        <PushPromptBanner />
+
         </LayoutGroup>
     );
 };

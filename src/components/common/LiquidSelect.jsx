@@ -382,7 +382,8 @@ const LiquidSelect = ({
                     <input
                         ref={inputRef}
                         type="text"
-                        className={`w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
+                        size={1}
+                        className={`min-w-0 w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
                         onChange={(e) => {
                             const val = e.target.value;
                             setSearchTerm(val);

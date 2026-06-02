@@ -8,14 +8,20 @@ self.addEventListener('push', (event) => {
   const { title = 'Farmalasa', body = '', url = '/my-announcements', tag, urgent } = payload;
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: '/Logo192.png',
-      badge: '/Logo192.png',
-      tag: tag || 'farmalasa-notif',
-      data: { url },
-      vibrate: urgent ? [200, 100, 200] : [100],
-      requireInteraction: !!urgent,
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      // If any window is focused the in-app toast already handles it — skip OS notification
+      const appFocused = list.some(c => c.focused);
+      if (appFocused) return;
+
+      return self.registration.showNotification(title, {
+        body,
+        icon: '/Logo192.png',
+        badge: '/Logo192.png',
+        tag: tag || 'farmalasa-notif',
+        data: { url },
+        vibrate: urgent ? [200, 100, 200] : [100],
+        requireInteraction: !!urgent,
+      });
     })
   );
 });

@@ -568,15 +568,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         <LayoutGroup>
         <div className="flex w-full font-sans relative lg:h-[100dvh] lg:overflow-hidden">
 
-            {/* ── Global ambient orbs ── */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-                <div className="animate-ambient-drift absolute rounded-full" style={{ width:'70vw', height:'70vw', top:'-15%', left:'-15%', background:'radial-gradient(circle, rgba(110,70,230,0.45) 0%, rgba(130,80,240,0.20) 40%, transparent 70%)', filter:'blur(35px)' }} />
-                <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'55vw', height:'55vw', top:'-5%', right:'-20%', background:'radial-gradient(circle, rgba(60,100,240,0.38) 0%, rgba(80,120,255,0.15) 40%, transparent 70%)', filter:'blur(30px)' }} />
-                <div className="animate-ambient-drift absolute rounded-full" style={{ width:'80vw', height:'80vw', bottom:'-35%', left:'-10%', background:'radial-gradient(circle, rgba(150,80,240,0.35) 0%, rgba(160,100,250,0.12) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
-                <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'25%', right:'5%', background:'radial-gradient(circle, rgba(90,150,255,0.32) 0%, rgba(100,160,255,0.12) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
-                <div className="animate-ambient-drift absolute rounded-full" style={{ width:'30vw', height:'30vw', top:'50%', left:'38%', background:'radial-gradient(circle, rgba(200,120,255,0.28) 0%, rgba(210,130,255,0.10) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
-            </div>
-
             {/* Mobile backdrop */}
             {isMobile && isSidebarOpen && (
                 <div
@@ -817,6 +808,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             {/* ── Main content ── */}
             <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden ${blurClasses}`}>
+                {/* ── Global ambient orbs — inside main stacking context so Chrome backdrop-filter can see them ── */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'100vw', height:'100vw', top:'-30%', left:'-30%', background:'radial-gradient(circle, rgba(110,70,230,0.50) 0%, rgba(130,80,240,0.22) 40%, transparent 70%)', filter:'blur(35px)' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'80vw', height:'80vw', top:'-10%', right:'-25%', background:'radial-gradient(circle, rgba(60,100,240,0.42) 0%, rgba(80,120,255,0.18) 40%, transparent 70%)', filter:'blur(30px)' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'100vw', height:'100vw', bottom:'-40%', left:'-20%', background:'radial-gradient(circle, rgba(150,80,240,0.40) 0%, rgba(160,100,250,0.15) 40%, transparent 70%)', filter:'blur(40px)', animationDelay:'4s', animationDuration:'18s' }} />
+                    <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'60vw', height:'60vw', top:'25%', right:'0%', background:'radial-gradient(circle, rgba(90,150,255,0.36) 0%, rgba(100,160,255,0.14) 40%, transparent 70%)', filter:'blur(28px)', animationDelay:'2s', animationDuration:'14s' }} />
+                    <div className="animate-ambient-drift absolute rounded-full" style={{ width:'45vw', height:'45vw', top:'50%', left:'30%', background:'radial-gradient(circle, rgba(200,120,255,0.32) 0%, rgba(210,130,255,0.12) 40%, transparent 70%)', filter:'blur(22px)', animationDelay:'6s', animationDuration:'11s' }} />
+                </div>
+
                 {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
                     className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"

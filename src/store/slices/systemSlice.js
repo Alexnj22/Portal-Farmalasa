@@ -650,25 +650,10 @@ export const createSystemSlice = (set, get) => ({
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
 
-            const newAnn = {
-                id: data.id,
-                title: data.title,
-                message: data.message,
-                targetType: data.target_type,
-                targetValue: data.target_value,
-                priority: data.priority || 'NORMAL',
-                date: data.created_at,
-                readBy: data.read_by || [],
-                isArchived: data.is_archived,
-                scheduledFor: data.scheduled_for
-            };
-
-            set((state) => {
-                const next = [newAnn, ...state.announcements];
-                localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(next));
-                return { announcements: next };
-            });
-            return newAnn;
+            // Do NOT manually push to store here — the 'announcements-live' Realtime
+            // channel receives the INSERT and adds it. Doing both causes a duplicate
+            // when Realtime fires before this set() runs (race condition).
+            return { id: data.id, ...data };
         } catch (err) {
             console.error("Error creando aviso:", err);
             throw err;

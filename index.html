@@ -379,9 +379,13 @@
         <div class="blob">
           <div class="logo-pill">
             <img src="/Logo192.png" alt="Farmalasa" width="48" height="48"
+              id="loader-logo"
               onload="this.classList.add('loaded')" />
             <div class="logo-placeholder">FL</div>
           </div>
+          <script>
+            (function(){var i=document.getElementById('loader-logo');if(i&&i.complete&&i.naturalWidth)i.classList.add('loaded');})();
+          </script>
         </div>
 
         <!-- Brand -->

@@ -71,8 +71,8 @@
   border: 1px solid var(--border-card);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-card);
-  backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+  backdrop-filter: blur(44px) saturate(200%);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
   transition: transform var(--dur-base) var(--ease-spring),
               box-shadow var(--dur-base) var(--ease-spring);
 }
@@ -86,8 +86,8 @@
   border: 1px solid var(--border-header);
   box-shadow: var(--shadow-header);
   border-radius: var(--radius-header);
-  backdrop-filter: var(--backdrop-header);
-  -webkit-backdrop-filter: var(--backdrop-header);
+  backdrop-filter: blur(32px) saturate(280%);
+  -webkit-backdrop-filter: blur(32px) saturate(280%);
   transition: transform 300ms cubic-bezier(0.23,1,0.32,1),
               box-shadow 300ms cubic-bezier(0.23,1,0.32,1);
 }
@@ -102,8 +102,8 @@
   border: 1px solid var(--border-modal);
   box-shadow: var(--shadow-modal);
   border-radius: var(--radius-modal);
-  backdrop-filter: var(--backdrop-modal);
-  -webkit-backdrop-filter: var(--backdrop-modal);
+  backdrop-filter: blur(48px) saturate(160%);
+  -webkit-backdrop-filter: blur(48px) saturate(160%);
 }
 
 [data-surface="dropdown"] {
@@ -111,8 +111,8 @@
   border: 1px solid var(--border-card);
   box-shadow: var(--shadow-modal);
   border-radius: var(--radius-card);
-  backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+  backdrop-filter: blur(44px) saturate(200%);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
 }
 
 [data-surface="input"] {
@@ -120,16 +120,16 @@
   border: 1px solid var(--border-input);
   box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
   border-radius: var(--radius-input);
-  backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+  backdrop-filter: blur(44px) saturate(200%);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
 }
 
 [data-surface="tab-track"] {
   background: var(--surface-tab-track);
   border: 1px solid var(--border-tab);
   border-radius: 1.25rem;
-  backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+  backdrop-filter: blur(44px) saturate(200%);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
 }
 
 /* ═══════════════════════════════════════════════════════════════

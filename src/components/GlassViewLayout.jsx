@@ -46,11 +46,12 @@ const GlassViewLayout = ({
                 <div className="hidden lg:block lg:sticky lg:top-0 left-0 right-0 z-40 px-6 xl:px-8 pt-6 xl:pt-7 pointer-events-none">
                     <div data-surface="page-header"
                         className="group/header border rounded-[2.5rem]
-                            bg-white/[0.14] backdrop-blur-[32px] backdrop-saturate-[250%] border-white/80
+                            bg-white/[0.14] border-white/80
                             shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]
                             hover:-translate-y-[1px]
                             py-6 px-10 xl:py-7 xl:px-12 relative pointer-events-auto
-                            transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                            transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                        style={{ backdropFilter: 'blur(32px) saturate(280%)', WebkitBackdropFilter: 'blur(32px) saturate(280%)' }}>
 
                         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
 

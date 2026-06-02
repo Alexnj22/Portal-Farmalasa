@@ -34,8 +34,19 @@ const ERP_CACHE_KEYS = [
 
 const IDLE_EMP_MS   = 5 * 60 * 1000;
 const IDLE_ADMIN_MS = 12 * 60 * 60 * 1000;
+const IDLE_MOBILE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days — PWA / mobile browser
 const CHECK_EVERY_MS        = 30 * 1000;
 const ACTIVITY_THROTTLE_MS  = 2000;
+
+// True when running as installed PWA (standalone) or any mobile browser.
+const IS_MOBILE_SESSION = (() => {
+  try {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    return standalone || mobile;
+  } catch { return false; }
+})();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -115,6 +126,7 @@ export const AuthProvider = ({ children }) => {
   // ⏱️ Inactividad
   // -------------------------
   const getIdleLimitMs = (u) => {
+    if (IS_MOBILE_SESSION) return IDLE_MOBILE_MS;
     if (u?.isSU) return IDLE_ADMIN_MS;
     try {
       const cached = localStorage.getItem(LS_PERMS);

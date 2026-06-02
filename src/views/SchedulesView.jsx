@@ -592,6 +592,11 @@ const SchedulesView = ({ openModal, setView }) => {
         }
     };
 
+    const validBranches = branches.filter(b => {
+        const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos');
+    });
+
     const searchPlaceholder =
         viewMode === 'calendar' ? 'Buscar colaborador...' :
         viewMode === 'shifts'   ? 'Buscar turno...' :
@@ -665,11 +670,6 @@ const SchedulesView = ({ openModal, setView }) => {
         currentChartData = salesStats.specificHours?.[chartView] || [];
         chartTitle = `Afluencia por Hora - ${DAY_NAMES[chartView]}`;
     }
-
-    const validBranches = branches.filter(b => {
-        const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-        return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos');
-    });
 
     return (
         <GlassViewLayout

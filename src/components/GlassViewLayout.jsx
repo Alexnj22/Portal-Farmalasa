@@ -29,7 +29,7 @@ const GlassViewLayout = ({
 
     const bodyCardCls = transparentBody
         ? 'bg-transparent'
-        : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
+        : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
 
     return (
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans animate-view-enter relative lg:overflow-hidden lg:overscroll-none">
@@ -45,14 +45,14 @@ const GlassViewLayout = ({
                 {/* Desktop sticky header — inside scroll container so Chrome backdrop-filter works */}
                 <div className="hidden lg:block lg:sticky lg:top-0 left-0 right-0 z-40 px-6 xl:px-8 pt-6 xl:pt-7 pointer-events-none">
                     <div data-surface="page-header"
-                        className="group/header border rounded-[2.5rem] overflow-hidden
+                        className="group/header border rounded-[2.5rem]
                             bg-white/[0.14] backdrop-blur-[32px] backdrop-saturate-[250%] border-white/80
                             shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]
                             hover:-translate-y-[1px]
                             py-6 px-10 xl:py-7 xl:px-12 relative pointer-events-auto
                             transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
 
                         <div className="relative z-10 flex flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0 shrink-0">

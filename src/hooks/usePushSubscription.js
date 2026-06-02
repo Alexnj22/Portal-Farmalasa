@@ -19,6 +19,8 @@ async function saveSubscription(employeeId, sub) {
   );
 }
 
+const SYNC_EVENT = 'push-subscription-changed';
+
 // Returns { permission, subscribed, subscribe, unsubscribe }
 export function usePushSubscription() {
   const { user } = useAuth();
@@ -29,14 +31,24 @@ export function usePushSubscription() {
 
   const isSupported = 'serviceWorker' in navigator && 'PushManager' in window && !!VAPID_PUBLIC_KEY;
 
+  const refresh = useCallback(async () => {
+    if (!isSupported) return;
+    setPermission(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    setSubscribed(!!existing);
+  }, [isSupported]);
+
   // On mount, check if already subscribed
   useEffect(() => {
-    if (!isSupported) return;
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const existing = await reg.pushManager.getSubscription();
-      setSubscribed(!!existing);
-    });
-  }, [isSupported]);
+    refresh();
+  }, [refresh]);
+
+  // Sync across all hook instances when any instance subscribes/unsubscribes
+  useEffect(() => {
+    window.addEventListener(SYNC_EVENT, refresh);
+    return () => window.removeEventListener(SYNC_EVENT, refresh);
+  }, [refresh]);
 
   const subscribe = useCallback(async () => {
     if (!isSupported || !user) return;
@@ -56,6 +68,7 @@ export function usePushSubscription() {
       }
       await saveSubscription(user.id, sub);
       setSubscribed(true);
+      window.dispatchEvent(new Event(SYNC_EVENT));
     } catch (err) {
       console.error('Push subscribe error:', err);
     }
@@ -71,6 +84,7 @@ export function usePushSubscription() {
         await supabase.from('push_subscriptions').delete().eq('endpoint', sub.toJSON().endpoint);
       }
       setSubscribed(false);
+      window.dispatchEvent(new Event(SYNC_EVENT));
     } catch (err) {
       console.error('Push unsubscribe error:', err);
     }

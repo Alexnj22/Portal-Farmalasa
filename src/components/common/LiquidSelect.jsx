@@ -373,17 +373,46 @@ const LiquidSelect = ({
                 {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
             </div>
 
-            {/* CONTENEDOR PRINCIPAL */}
-            <div 
-                className={pillBaseClasses}
+            {/* CONTENEDOR PRINCIPAL
+                Ghost-sizer pattern: the display div is always in flow (determines width).
+                When open, it stays invisible so the container width doesn't change.
+                The search input is layered on top via absolute positioning.           */}
+            <div
+                className={`${pillBaseClasses} relative`}
                 onClick={handleOpen}
             >
-                {isOpen ? (
+                {/* Always-rendered display content — keeps container width stable */}
+                <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
+                    ${isOpen ? 'invisible pointer-events-none select-none' : ''}
+                    ${!selectedOption && !isOpen ? (isDark ? 'text-white/40' : 'text-slate-400') : ''}`}>
+                    {selectedOption ? (
+                        <>
+                            {selectedOption.avatar !== undefined && (
+                                <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
+                                    {selectedOption.avatar
+                                        ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
+                                        : (selectedOption.label || '?').charAt(0).toUpperCase()
+                                    }
+                                </div>
+                            )}
+                            <span className="flex-1 min-w-0">
+                                <span className="block leading-tight truncate">{selectedOption.label}</span>
+                                {selectedOption.sublabel && (
+                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
+                                        {selectedOption.sublabel}
+                                    </span>
+                                )}
+                            </span>
+                        </>
+                    ) : placeholder}
+                </div>
+
+                {/* Search input — overlaid absolutely when open */}
+                {isOpen && (
                     <input
                         ref={inputRef}
                         type="text"
-                        size={1}
-                        className={`min-w-0 w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
+                        className={`absolute inset-0 w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
                         onChange={(e) => {
                             const val = e.target.value;
                             setSearchTerm(val);
@@ -415,29 +444,6 @@ const LiquidSelect = ({
                         value={searchTerm}
                         placeholder="Buscar..."
                     />
-                ) : (
-                    <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-normal break-words leading-tight flex items-center gap-2 ${!selectedOption && (isDark ? 'text-white/40' : 'text-slate-400')}`}>
-                        {selectedOption ? (
-                            <>
-                                {selectedOption.avatar !== undefined && (
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
-                                        {selectedOption.avatar
-                                            ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
-                                            : (selectedOption.label || '?').charAt(0).toUpperCase()
-                                        }
-                                    </div>
-                                )}
-                                <span className="flex-1 min-w-0">
-                                    <span className="block leading-tight truncate">{selectedOption.label}</span>
-                                    {selectedOption.sublabel && (
-                                        <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
-                                            {selectedOption.sublabel}
-                                        </span>
-                                    )}
-                                </span>
-                            </>
-                        ) : placeholder}
-                    </div>
                 )}
             </div>
 

@@ -342,11 +342,11 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 else { map[key].all_ids.push(s.id); map[key].shifts_data.push(s); }
                 return map;
             }, {});
-    }, [shifts, shiftTab, localSearch]);
+    }, [shifts, shiftTab, searchTerm]);
 
     const sortedShifts = useMemo(() =>
         Object.values(globalShifts).sort((a, b) => timeToMins(a.start) - timeToMins(b.start)),
-    [globalShifts, shiftTab]);
+    [globalShifts]);
 
     // ── ACCIONES ─────────────────────────────────────────────────────────────
     const applySuggestion = useCallback((action) => {

@@ -323,9 +323,9 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 
     return (
         <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
-            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[196px] max-w-[196px] 2xl:min-w-[216px] 2xl:max-w-[216px]">
-                <div className="min-h-[72px] h-full bg-white/60 backdrop-blur-xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2.5 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-10 h-10 2xl:w-12 2xl:h-12 rounded-xl bg-slate-100 overflow-hidden border border-white shadow-sm flex items-center justify-center shrink-0">
+            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
+                <div className="min-h-[72px] h-full bg-white/60 backdrop-blur-xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                    <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-white/30 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_4px_rgba(255,255,255,0.7)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-300" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
@@ -540,7 +540,7 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
                 <table className="w-full text-left border-separate border-spacing-y-2 border-spacing-x-1 min-w-full relative">
                     <thead className="relative z-[60]">
                         <tr>
-                            <th className="p-0 sticky left-0 z-[70] min-w-[240px] max-w-[240px] 2xl:min-w-[260px] 2xl:max-w-[260px] bg-transparent align-bottom">
+                            <th className="p-0 sticky left-0 z-[70] min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
                                 <div className="bg-white/50 backdrop-blur-2xl border border-white/80 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] p-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center justify-between">
                                     Personal <span className="bg-white/80 px-2 py-0.5 rounded-lg text-slate-400 border border-white">44H / 1 DESCANSO</span>
                                 </div>

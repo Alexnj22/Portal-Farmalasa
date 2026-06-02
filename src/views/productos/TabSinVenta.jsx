@@ -66,7 +66,11 @@ function fmtMoney(n) {
 
 function getSuggestion(row) {
     const stock  = Number(row.current_stock);
-    if (!stock) return null;
+    if (!stock) {
+        if (row.in_minmax)
+            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, cls: 'bg-violet-50 text-violet-700 border-violet-200' };
+        return null;
+    }
     const soldIn = row.sold_in || [];
     let daysToExpiry = null;
     if (row.fecha_vencimiento_min)
@@ -308,8 +312,9 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
 function StockRetFilters({ data, filterMode, onFilter, loading }) {
     const counts = useMemo(() => ({
-        con_minmax: data.filter(r => r.in_minmax).length,
-        sin_minmax: data.filter(r => !r.in_minmax).length,
+        con_minmax:      data.filter(r => r.in_minmax).length,
+        sin_stock_minmax: data.filter(r => r.in_minmax && Number(r.current_stock) === 0).length,
+        sin_minmax:      data.filter(r => !r.in_minmax).length,
     }), [data]);
 
     const CARDS = [
@@ -317,6 +322,10 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
           activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
           numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+        { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max', sub: 'min/max pero sin inventario',
+          activeBg: 'bg-violet-50/80 border-violet-300 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
+          iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
+          numColor: n => n > 0 ? 'text-violet-600' : 'text-slate-300' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max', sub: 'sin parámetros asignados',
           activeBg: 'bg-red-50/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
           iconBgActive: 'bg-red-100', iconColor: 'text-red-500',
@@ -514,8 +523,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 }
             }
         } else if (mode === 'stock_ret') {
-            if      (filterMode === 'con_minmax') rows = rows.filter(r => r.in_minmax);
-            else if (filterMode === 'sin_minmax') rows = rows.filter(r => !r.in_minmax);
+            if      (filterMode === 'con_minmax')       rows = rows.filter(r => r.in_minmax);
+            else if (filterMode === 'sin_stock_minmax') rows = rows.filter(r => r.in_minmax && Number(r.current_stock) === 0);
+            else if (filterMode === 'sin_minmax')       rows = rows.filter(r => !r.in_minmax);
         }
 
         const q = (searchTerm || '').toLowerCase();
@@ -839,8 +849,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">
-                                            <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
-                                            <span className="text-[10px] text-slate-400 ml-1">und</span>
+                                            {stock === 0 ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200">Sin stock</span>
+                                            ) : (
+                                                <>
+                                                    <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-slate-400 ml-1">und</span>
+                                                </>
+                                            )}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {cost > 0
@@ -848,9 +864,20 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 : <span className="text-[11px] text-slate-200">—</span>}
                                         </DataCell>
                                         <DataCell align="center" hideBelow="md">
-                                            {row.in_minmax
-                                                ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
-                                                : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>}
+                                            {row.in_minmax ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                    {(row.min_qty != null || row.max_qty != null) && (
+                                                        <span className="text-[9px] font-mono text-slate-500 tabular-nums">
+                                                            <span className="text-orange-500 font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
+                                                            <span className="text-slate-300 mx-0.5">/</span>
+                                                            <span className="text-blue-500 font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200"><CircleDashed size={9} />Sin Min/Max</span>
+                                            )}
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {sug

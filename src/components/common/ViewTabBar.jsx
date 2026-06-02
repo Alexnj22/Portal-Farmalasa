@@ -46,9 +46,8 @@ export default function ViewTabBar({
 
   return (
     <div className={`relative flex items-center border transition-all duration-700 ${spring}
-      hover:-translate-y-[2px] transform-gpu rounded-[2.5rem]
-      h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full ${pillCls}`}
-      style={{ clipPath: 'inset(0 round 2.5rem)' }}>
+      hover:-translate-y-[2px] transform-gpu rounded-[2.5rem] overflow-hidden
+      h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full ${pillCls}`}>
 
       {/* Search mode */}
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden

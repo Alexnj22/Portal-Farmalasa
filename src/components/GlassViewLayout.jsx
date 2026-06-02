@@ -43,8 +43,8 @@ const GlassViewLayout = ({
 
     const bodyCardCls = transparentBody
         ? 'bg-transparent'
-        : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
-    const bodyCardStyle = transparentBody ? undefined : { clipPath: `inset(0 round ${isDesktop ? '2.5rem' : '1.5rem'})` };
+        : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] overflow-hidden transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
+    const bodyCardStyle = undefined;
 
     return (
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans animate-view-enter relative lg:overflow-hidden lg:overscroll-none">
@@ -52,13 +52,12 @@ const GlassViewLayout = ({
             {/* ── Floating glass pill header (desktop) ──────────────────────── */}
             <div className="hidden lg:block absolute top-6 xl:top-7 left-0 right-0 z-40 px-6 xl:px-8 pointer-events-none">
                 <div data-surface="page-header"
-                    className="group/header border rounded-[2.5rem]
+                    className="group/header border rounded-[2.5rem] overflow-hidden
                         bg-white/[0.14] backdrop-blur-[32px] backdrop-saturate-[250%] border-white/80
                         shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]
                         hover:-translate-y-[1px]
                         py-6 px-10 xl:py-7 xl:px-12 relative pointer-events-auto
-                        transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                    style={{ clipPath: 'inset(0 round 2.5rem)' }}>
+                        transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                     <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
 

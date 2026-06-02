@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { motion, LayoutGroup } from 'framer-motion';
+import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
@@ -816,7 +816,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             </aside>
 
             {/* ── Main content ── */}
-            <motion.main layout initial={false} transition={{ layout: { duration: 0.22, ease: [0.4, 0, 0.2, 1] } }} className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden ${blurClasses}`}>
+            <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden ${blurClasses}`}>
                 {/* Mobile top bar — fixed so it starts at physical y=0 (under notch), not at safe-area-inset-top */}
                 <div
                     className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
@@ -914,7 +914,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         {children}
                     </div>
                 </div>
-            </motion.main>
+            </main>
 
             {/* ── Bottom tabs (solo para usuarios con solo autogestión) ── */}
             {hasSelfOnly && (

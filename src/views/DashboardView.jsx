@@ -211,6 +211,27 @@ const KpiCardSkeleton = () => (
   </div>
 );
 
+const SalesBranchSkeleton = () => (
+  <div className="bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-2">
+    <div className="flex items-start justify-between gap-2">
+      <Skel className="h-3 w-24" />
+      <Skel className="h-3 w-14 shrink-0" />
+    </div>
+    <div className="flex items-end gap-[2px] flex-1 min-h-[60px]">
+      {[55,72,40,88,62,95,48,70,83,58,65,90].map((h,i) => (
+        <div key={i} className="flex-1 flex flex-col justify-end h-full">
+          <Skel className="w-full rounded-t-[2px]" style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }} />
+        </div>
+      ))}
+    </div>
+    <div className="flex gap-[2px]">
+      {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (
+        <Skel key={i} className="flex-1 h-1.5" style={{ animationDelay: `${i * 40}ms` }} />
+      ))}
+    </div>
+  </div>
+);
+
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
   <div data-surface="card" onClick={onClick}
     className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
@@ -700,6 +721,7 @@ const DashboardView = ({ openModal }) => {
   const [todaySales,     setTodaySales]     = useState({});
   const [todayLoading,   setTodayLoading]   = useState(false);
   const [salesBranchIds, setSalesBranchIds] = useState(new Set());
+  const [salesBranchIdsLoading, setSalesBranchIdsLoading] = useState(true);
 
   // ── Comercial tab data ─────────────────────────────────────────────────────
   const [cotizStats,     setCotizStats]     = useState({ activas: 0, total: 0, recent: [] });
@@ -713,7 +735,10 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     const since = new Date(); since.setDate(since.getDate()-7);
     supabase.from('branch_hourly_sales').select('branch_id').gte('sale_date', localDateStr(since))
-      .then(({ data }) => setSalesBranchIds(new Set((data||[]).map(r => String(r.branch_id)))));
+      .then(({ data }) => {
+        setSalesBranchIds(new Set((data||[]).map(r => String(r.branch_id))));
+        setSalesBranchIdsLoading(false);
+      });
   }, []);
 
   const salesBranches = useMemo(() => branches.filter(b => salesBranchIds.has(String(b.id))), [branches, salesBranchIds]);
@@ -1754,7 +1779,20 @@ const DashboardView = ({ openModal }) => {
       const pa = activeLayout[a], pb = activeLayout[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
     });
-    return sorted.map((id, idx) => renderWidget(id, idx));
+    const widgets = sorted.map((id, idx) => renderWidget(id, idx));
+
+    // Show skeleton cards for branch sales widgets while branch IDs are loading
+    if (salesBranchIdsLoading && activeTab === 'general' && showWidget('sales', 'dash_sales')) {
+      [0, 1, 2].forEach(i => {
+        widgets.push(
+          <div key={`skel-branch-${i}`} className="animate-stagger-child" style={{ '--stagger-delay': `${(sorted.length + i) * 45}ms` }}>
+            <SalesBranchSkeleton />
+          </div>
+        );
+      });
+    }
+
+    return widgets;
   };
 
   // ── filtersContent ─────────────────────────────────────────────────────────

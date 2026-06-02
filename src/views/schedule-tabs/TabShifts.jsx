@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, memo, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import {
     X, Loader2, Archive, Target, Edit3, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
@@ -185,7 +185,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
 // ============================================================================
 // TAB SHIFTS — CATÁLOGO GLOBAL
 // ============================================================================
-const TabShifts = ({ branches, shiftTab }) => {
+const TabShifts = ({ branches, searchTerm = '' }) => {
     const { shifts, addShift, updateShift, archiveShift, unarchiveShift } = useStaffStore();
     const { showToast } = useToastStore();
 
@@ -193,8 +193,7 @@ const TabShifts = ({ branches, shiftTab }) => {
     const [editingGroup, setEditingGroup] = useState(null);
     const [currentForm, setCurrentForm]   = useState({ start: '', end: '', name: '' });
     const [dismissedSugs, setDismissedSugs] = useState(new Set());
-    const [localSearch, setLocalSearch]   = useState('');
-    const searchInputRef = useRef(null);
+    const [shiftTab, setShiftTab]         = useState('ACTIVE');
 
     useEffect(() => {
         if (currentForm.start && !currentForm.end) {
@@ -330,12 +329,11 @@ const TabShifts = ({ branches, shiftTab }) => {
     // ── FILTERED + SORTED SHIFTS ─────────────────────────────────────────────
     const globalShifts = useMemo(() => {
         if (!shifts) return [];
-        const q = localSearch.trim().toLowerCase();
         return shifts
             .filter(s => {
                 const isActive    = s.is_active !== false && s.isActive !== false;
                 const matchesTab  = (shiftTab === 'ACTIVE' && isActive) || (shiftTab === 'ARCHIVED' && !isActive);
-                const matchesSearch = !q || (s.name || '').toLowerCase().includes(q);
+                const matchesSearch = !searchTerm || (s.name || '').toLowerCase().includes(searchTerm);
                 return matchesTab && matchesSearch;
             })
             .reduce((map, s) => {
@@ -348,7 +346,7 @@ const TabShifts = ({ branches, shiftTab }) => {
 
     const sortedShifts = useMemo(() =>
         Object.values(globalShifts).sort((a, b) => timeToMins(a.start) - timeToMins(b.start)),
-    [globalShifts]);
+    [globalShifts, shiftTab]);
 
     // ── ACCIONES ─────────────────────────────────────────────────────────────
     const applySuggestion = useCallback((action) => {
@@ -527,23 +525,17 @@ const TabShifts = ({ branches, shiftTab }) => {
             {/* ── COLUMNA DERECHA: CATÁLOGO ── */}
             <div className="flex-1 flex flex-col min-w-0 w-full h-[100dvh] overflow-y-auto overscroll-contain pb-32 scrollbar-hide -mt-[140px] md:-mt-[190px] pt-[140px] md:pt-[190px] pointer-events-auto">
 
-                {/* Buscador inline */}
-                <div className="px-3 md:px-4 pt-4 pb-3">
-                    <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/70 rounded-[2rem] px-4 h-12 shadow-[inset_0_1px_4px_rgba(255,255,255,0.8),0_4px_16px_rgba(0,0,0,0.04)] transition-all duration-300 focus-within:bg-white/80 focus-within:shadow-[inset_0_1px_4px_rgba(255,255,255,0.9),0_4px_20px_rgba(0,82,204,0.08)] focus-within:border-[#0052CC]/20">
-                        <Search size={15} className="text-slate-400 shrink-0" strokeWidth={2.5} />
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder="Buscar turnos por nombre…"
-                            value={localSearch}
-                            onChange={e => setLocalSearch(e.target.value)}
-                            className="flex-1 bg-transparent outline-none text-[13px] font-semibold text-slate-700 placeholder-slate-400"
-                        />
-                        {localSearch && (
-                            <button onClick={() => { setLocalSearch(''); searchInputRef.current?.focus(); }} className="text-slate-400 hover:text-slate-600 transition-colors active:scale-[0.97]">
-                                <X size={14} strokeWidth={2.5} />
-                            </button>
-                        )}
+                {/* Sub-tabs: Activos / Archivo */}
+                <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
+                    <div className="flex items-center bg-white/50 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)]">
+                        <button onClick={() => setShiftTab('ACTIVE')}
+                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            Activos
+                        </button>
+                        <button onClick={() => setShiftTab('ARCHIVED')}
+                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            Archivo
+                        </button>
                     </div>
                 </div>
 
@@ -551,21 +543,16 @@ const TabShifts = ({ branches, shiftTab }) => {
                     {isEmpty ? (
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
-                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${localSearch ? 'bg-[#0052CC]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${localSearch ? 'text-[#0052CC]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                    {localSearch ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
+                                <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-[#0052CC]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${searchTerm ? 'text-[#0052CC]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                    {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>
                                 <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
-                                    {localSearch ? 'Sin resultados' : shiftTab === 'ACTIVE' ? 'Catálogo al día' : 'Archivo vacío'}
+                                    {searchTerm ? 'Sin resultados' : shiftTab === 'ACTIVE' ? 'Catálogo al día' : 'Archivo vacío'}
                                 </h3>
                                 <p className="font-medium text-[14px] text-slate-500 max-w-[280px] leading-relaxed">
-                                    {localSearch ? `No hay turnos que coincidan con "${localSearch}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
+                                    {searchTerm ? `No hay turnos que coincidan con "${searchTerm}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
                                 </p>
-                                {localSearch && (
-                                    <button onClick={() => setLocalSearch('')} className="mt-4 px-4 py-2 rounded-full bg-[#0052CC]/10 text-[#0052CC] text-[11px] font-black uppercase tracking-widest hover:bg-[#0052CC]/20 transition-colors active:scale-[0.97]">
-                                        Limpiar búsqueda
-                                    </button>
-                                )}
                             </div>
                         </div>
                     ) : (

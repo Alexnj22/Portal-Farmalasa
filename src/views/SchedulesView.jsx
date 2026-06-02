@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
-import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
-    HeartPulse, X, Sparkles, Save, Loader2, ArrowLeft,
+    X, Save, Loader2,
     Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle
 } from 'lucide-react';
 
@@ -13,39 +13,59 @@ import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
+import ViewTabBar from '../components/common/ViewTabBar';
 
-// 🚀 HELPERS
 import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
 
-// 🚀 COMPONENTES EXTRAÍDOS
 import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
 import ScheduleChart from './schedule-tabs/components/ScheduleChart';
-import SalyCopilot from './schedule-tabs/components/SalyCopilot';
 import ScheduleCalendar from './schedule-tabs/components/ScheduleCalendar';
-import ConfirmModal from '../components/common/ConfirmModal'; // 🚨 IMPORTADO EL MODAL UI
-
-const dayNamesMap = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+const SCHED_TABS = [
+    { key: 'calendar', label: 'Horarios', icon: CalendarDays },
+    { key: 'shifts',   label: 'Catálogo', icon: BookOpen     },
+    { key: 'holidays', label: 'Feriados', icon: Star         },
+];
+
+const formatWeekRange = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const start = new Date(y, m - 1, d);
+    const end   = new Date(y, m - 1, d + 6);
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d1 = String(start.getDate()).padStart(2,'0'), m1 = months[start.getMonth()], y1 = String(start.getFullYear()).slice(-2);
+    const d2 = String(end.getDate()).padStart(2,'0'),   m2 = months[end.getMonth()],   y2 = String(end.getFullYear()).slice(-2);
+    if (y1 !== y2) return `${d1} ${m1} '${y1} - ${d2} ${m2} '${y2}`;
+    if (m1 !== m2) return `${d1} ${m1} - ${d2} ${m2} '${y2}`;
+    return `${d1} - ${d2} ${m1} '${y2}`;
+};
+
+// ── HOLIDAYS PANEL ─────────────────────────────────────────────────────────────
 const HolidaysPanel = ({
     holidays, holidayYear, setHolidayYear, currentYear,
     showForm, setShowForm,
     hName, setHName, hDate, setHDate, hType, setHType,
     hMuni, setHMuni, hRecurring, setHRecurring,
     hSaving, hDeleting, canEdit, onSave, onDelete,
+    searchTerm = '',
 }) => {
-    const yearHolidays = (holidays || []).filter(h => h.holiday_date?.startsWith(String(holidayYear)));
+    const yearHolidays = (holidays || []).filter(h => {
+        const yearMatch = h.holiday_date?.startsWith(String(holidayYear));
+        const nameMatch = !searchTerm || (h.name || '').toLowerCase().includes(searchTerm);
+        return yearMatch && nameMatch;
+    });
     const byMonth = MONTHS_ES.map((month, idx) => ({
         month, idx,
         items: yearHolidays.filter(h => parseInt(h.holiday_date?.split('-')[1], 10) === idx + 1),
     })).filter(m => m.items.length > 0);
 
     return (
-        <div className="p-4 md:p-6 space-y-5 animate-view-enter">
-
+        <div className="p-4 md:p-6 space-y-6 animate-view-enter">
             {/* Year toggle + Add button */}
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md border border-white/70 rounded-[1.5rem] p-1 shadow-sm">
                     {[currentYear - 1, currentYear, currentYear + 1].map(y => (
                         <button key={y} onClick={() => setHolidayYear(y)}
@@ -107,63 +127,79 @@ const HolidaysPanel = ({
                 </div>
             )}
 
-            {/* Holiday list by month */}
+            {/* Holiday list */}
             {byMonth.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                     <div className="p-5 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
                         <Star size={32} className="text-amber-200" strokeWidth={1.5} />
                     </div>
-                    <p className="text-[13px] font-bold text-slate-400">No hay feriados registrados para {holidayYear}</p>
+                    <p className="text-[13px] font-bold text-slate-400">
+                        {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
+                    </p>
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                     {byMonth.map(({ month, items }) => (
                         <div key={month}>
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-1.5 h-6 bg-amber-400 rounded-full shrink-0" />
-                                <span className="text-[15px] font-black text-slate-700 tracking-tight capitalize">{month}</span>
-                                <div className="h-px flex-1 bg-amber-100" />
-                                <span className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full shrink-0">{items.length} {items.length === 1 ? 'feriado' : 'feriados'}</span>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-2 h-7 bg-gradient-to-b from-amber-400 to-orange-400 rounded-full shrink-0" />
+                                    <span className="text-[16px] font-black text-slate-700 tracking-tight">{month}</span>
+                                </div>
+                                <div className="h-px flex-1 bg-gradient-to-r from-amber-100 to-transparent" />
+                                <span className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full shrink-0">
+                                    {items.length} {items.length === 1 ? 'feriado' : 'feriados'}
+                                </span>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 {items.sort((a,b) => a.holiday_date.localeCompare(b.holiday_date)).map(h => {
                                     const d = new Date(h.holiday_date + 'T12:00:00Z');
-                                    const dayNum = d.getUTCDate();
+                                    const dayNum  = d.getUTCDate();
                                     const dayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getUTCDay()];
+                                    const isNat   = h.type === 'NATIONAL';
                                     return (
-                                        <div key={h.id} className="flex items-center gap-3 bg-white/60 backdrop-blur-md border border-white/70 rounded-[1.25rem] px-4 py-3 shadow-sm group hover:shadow-md hover:-translate-y-0.5 transition-all">
-                                            {/* Date pill */}
-                                            <div className="w-12 h-12 rounded-[0.85rem] bg-amber-50 border border-amber-100 flex flex-col items-center justify-center flex-shrink-0">
-                                                <span className="text-[8px] font-black text-amber-400 uppercase tracking-widest leading-none">{dayName}</span>
-                                                <span className="text-[18px] font-black text-amber-700 leading-tight">{dayNum}</span>
-                                            </div>
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[13px] font-black text-slate-800 truncate">{h.name}</p>
-                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                                    {h.type === 'NATIONAL' ? (
-                                                        <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                                            <Globe size={8} strokeWidth={2} /> Nacional
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
-                                                            <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
-                                                        </span>
-                                                    )}
-                                                    {h.is_recurring && (
-                                                        <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-                                                            <RefreshCw size={8} strokeWidth={2} /> Recurrente
-                                                        </span>
-                                                    )}
+                                        <div key={h.id}
+                                            className="group relative flex items-center overflow-hidden
+                                                bg-white/70 backdrop-blur-md border border-white/80 rounded-[1.5rem]
+                                                shadow-[0_2px_12px_rgba(0,0,0,0.04)]
+                                                hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-0.5
+                                                transition-all duration-300">
+                                            {/* Color stripe */}
+                                            <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-amber-400 to-orange-400' : 'bg-gradient-to-b from-blue-400 to-indigo-400'}`} />
+                                            <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
+                                                {/* Date badge */}
+                                                <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50 border border-blue-100'}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-amber-400' : 'text-blue-400'}`}>{dayName}</span>
+                                                    <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-amber-700' : 'text-blue-700'}`}>{dayNum}</span>
                                                 </div>
+                                                {/* Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[13px] font-black text-slate-800 truncate">{h.name}</p>
+                                                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                        {isNat ? (
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                                                <Globe size={8} strokeWidth={2} /> Nacional
+                                                            </span>
+                                                        ) : (
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                                                <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
+                                                            </span>
+                                                        )}
+                                                        {h.is_recurring && (
+                                                            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                                                                <RefreshCw size={8} strokeWidth={2} /> Recurrente
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {/* Delete */}
+                                                {canEdit && (
+                                                    <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
+                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
+                                                        {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-red-400" /> : <Trash2 size={14} strokeWidth={2} />}
+                                                    </button>
+                                                )}
                                             </div>
-                                            {/* Delete */}
-                                            {canEdit && (
-                                                <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                    className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
-                                                    {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-red-400" /> : <Trash2 size={14} strokeWidth={2} />}
-                                                </button>
-                                            )}
                                         </div>
                                     );
                                 })}
@@ -176,6 +212,7 @@ const HolidaysPanel = ({
     );
 };
 
+// ── SCHEDULES VIEW ─────────────────────────────────────────────────────────────
 const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, holidays, fetchWeekRosters, publishWeekRosters, fetchBoot, addHoliday, deleteHoliday } = useStaff();
     const { hasPermission, getScope } = useAuth();
@@ -184,19 +221,12 @@ const SchedulesView = ({ openModal, setView }) => {
     const [isPublishing, setIsPublishing] = useState(false);
 
     useEffect(() => {
-        if (shifts.length === 0) {
-            fetchBoot?.();
-        }
+        if (shifts.length === 0) fetchBoot?.();
     }, []);
 
-    // 🚨 ESTADO PARA CONTROLAR EL MODAL DE PUBLICACIÓN
     const [publishState, setPublishState] = useState({
-        isOpen: false,
-        isDestructive: false,
-        title: '',
-        message: '',
-        confirmText: '',
-        bulkUpdates: null // Guardamos los datos aquí para ejecutarlos al confirmar
+        isOpen: false, isDestructive: false,
+        title: '', message: '', confirmText: '', bulkUpdates: null,
     });
 
     const [viewMode, setViewMode] = useState('calendar');
@@ -207,56 +237,55 @@ const SchedulesView = ({ openModal, setView }) => {
         setViewMode(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [viewMode]);
+
     const [filterBranch, setFilterBranch] = useState('');
+    const [rawSearch, setRawSearch] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const [shiftTab, setShiftTab] = useState('ACTIVE');
+    useEffect(() => {
+        const t = setTimeout(() => setSearchTerm(rawSearch.trim().toLowerCase()), 250);
+        return () => clearTimeout(t);
+    }, [rawSearch]);
 
-    // ── Feriados state ─────────────────────────────────────────────────────
+    // ── Feriados state ──────────────────────────────────────────────────────────
     const currentYear = new Date().getFullYear();
-    const [holidayYear, setHolidayYear] = useState(currentYear);
+    const [holidayYear, setHolidayYear]   = useState(currentYear);
     const [showHolidayForm, setShowHolidayForm] = useState(false);
-    const [hName, setHName]           = useState('');
-    const [hDate, setHDate]           = useState('');
-    const [hType, setHType]           = useState('NATIONAL');
-    const [hMuni, setHMuni]           = useState('');
-    const [hRecurring, setHRecurring] = useState(false);
-    const [hSaving, setHSaving]       = useState(false);
-    const [hDeleting, setHDeleting]   = useState(null);
+    const [hName, setHName]               = useState('');
+    const [hDate, setHDate]               = useState('');
+    const [hType, setHType]               = useState('NATIONAL');
+    const [hMuni, setHMuni]               = useState('');
+    const [hRecurring, setHRecurring]     = useState(false);
+    const [hSaving, setHSaving]           = useState(false);
+    const [hDeleting, setHDeleting]       = useState(null);
 
-    const [startDate, setStartDate] = useState(getLocalMonday());
+    const [startDate, setStartDate]       = useState(getLocalMonday());
     const [weeklyRosters, setWeeklyRosters] = useState({});
     const [publishedIds, setPublishedIds] = useState(new Set());
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading]       = useState(true);
+    const [editingCell, setEditingCell]   = useState(null);
 
-    const [editingCell, setEditingCell] = useState(null);
-
-    const [chartView, setChartView] = useState('DAYS');
-    const [salesStats, setSalesStats] = useState({ generalHours: [], days: [], specificHours: {}, maxAvgDays: 0, maxAvgGeneralHours: 0 });
+    const [chartView, setChartView]       = useState('DAYS');
+    const [salesStats, setSalesStats]     = useState({ generalHours: [], days: [], specificHours: {} });
     const [isLoadingSales, setIsLoadingSales] = useState(false);
-
-    const [salyDynamicAlerts, setSalyDynamicAlerts] = useState([]);
 
     useEffect(() => {
         if (branches && branches.length > 0 && !filterBranch) {
             const popular = branches.find(b => b.name.toLowerCase().includes('popular'));
-            if (popular) setFilterBranch(String(popular.id));
-            else setFilterBranch(String(branches[0].id));
+            setFilterBranch(popular ? String(popular.id) : String(branches[0].id));
         }
     }, [branches, filterBranch]);
 
     const isDefaultWeek = useMemo(() => startDate === getLocalMonday(), [startDate]);
-    const isPastWeek = useMemo(() => startDate < getLocalMonday(), [startDate]);
-    const isBranchSelected = filterBranch !== '';
+    const isPastWeek    = useMemo(() => startDate < getLocalMonday(), [startDate]);
 
-    const handleResetFilters = useCallback(() => {
-        setStartDate(getLocalMonday());
-    }, []);
+    const handleResetFilters = useCallback(() => setStartDate(getLocalMonday()), []);
 
     const changeWeek = useCallback((daysToAdd) => {
         setStartDate(prev => {
             const [y, m, d] = prev.split('-').map(Number);
-            const nextDate = new Date(y, m - 1, d + daysToAdd);
-            return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+            const next = new Date(y, m - 1, d + daysToAdd);
+            return `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
         });
     }, []);
 
@@ -264,7 +293,7 @@ const SchedulesView = ({ openModal, setView }) => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 if (editingCell) setEditingCell(null);
-                if (publishState.isOpen) setPublishState(prev => ({ ...prev, isOpen: false })); // Cerrar modal con ESC
+                if (publishState.isOpen) setPublishState(prev => ({ ...prev, isOpen: false }));
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -275,12 +304,7 @@ const SchedulesView = ({ openModal, setView }) => {
         let isMounted = true;
         const loadRosters = (isSilent = false) => {
             if (viewMode === 'shifts' || !filterBranch) return;
-            
-            if (!isSilent) {
-                setIsLoading(true);
-                setWeeklyRosters({}); 
-            }
-            
+            if (!isSilent) { setIsLoading(true); setWeeklyRosters({}); }
             fetchWeekRosters(startDate).then(result => {
                 if (isMounted) {
                     setWeeklyRosters(result?.rosters || {});
@@ -289,7 +313,6 @@ const SchedulesView = ({ openModal, setView }) => {
                 }
             });
         };
-        
         loadRosters(false);
         const handleRefresh = () => loadRosters(true);
         window.addEventListener('force-history-refresh', handleRefresh);
@@ -304,15 +327,15 @@ const SchedulesView = ({ openModal, setView }) => {
     const calendarDates = useMemo(() => Array.from({ length: 7 }).map((_, i) => {
         const [y, m, d] = startDate.split('-').map(Number);
         const cur = new Date(y, m - 1, d + i);
-        return `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+        return `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
     }), [startDate]);
 
-useEffect(() => {
+    useEffect(() => {
         if (!filterBranch || viewMode === 'shifts') return;
         const fetchSales = async () => {
             setIsLoadingSales(true);
             try {
-                const standardDaysBack = 90; 
+                const standardDaysBack = 90;
                 const today = new Date();
                 today.setDate(today.getDate() - standardDaysBack);
                 const dateStr = today.toISOString().split('T')[0];
@@ -325,72 +348,64 @@ useEffect(() => {
 
                 if (error) throw error;
 
-                let openH = 7; let closeH = 18; 
+                let openH = 7; let closeH = 18;
                 const currentBranch = branches.find(b => String(b.id) === String(filterBranch));
-                
+
                 if (currentBranch) {
                     let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
-                    if (typeof sch === 'string') {
-                        try { sch = JSON.parse(sch); } catch(e) { sch = null; }
-                    }
-
+                    if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch(e) { sch = null; } }
                     if (sch && typeof sch === 'object') {
                         let minOpen = 1440; let maxClose = 0;
                         Object.values(sch).forEach(d => {
                             if (d && d.isOpen !== false && !d.isClosed && !d.isOff) {
                                 const cleanStart = String(d.start || d.open || '').replace(/[^0-9:]/g, '').trim();
-                                const cleanEnd = String(d.end || d.close || '').replace(/[^0-9:]/g, '').trim();
-                                
+                                const cleanEnd   = String(d.end   || d.close || '').replace(/[^0-9:]/g, '').trim();
                                 if (cleanStart && cleanEnd) {
                                     const oMins = timeToMins(cleanStart);
-                                    let cMins = timeToMins(cleanEnd);
+                                    let cMins   = timeToMins(cleanEnd);
                                     if (cMins < oMins) cMins += 1440;
-
-                                    if (oMins < minOpen) minOpen = oMins;
+                                    if (oMins < minOpen)  minOpen  = oMins;
                                     if (cMins > maxClose) maxClose = cMins;
                                 }
                             }
                         });
-                        if (minOpen < 1440) openH = Math.floor(minOpen / 60); 
-                        if (maxClose > 0) closeH = Math.ceil(maxClose / 60) - 1;
+                        if (minOpen  < 1440) openH  = Math.floor(minOpen / 60);
+                        if (maxClose > 0)    closeH = Math.ceil(maxClose / 60) - 1;
                     }
                 }
 
-                if (closeH <= openH) closeH = openH + 11; 
+                if (closeH <= openH) closeH = openH + 11;
 
-                const daysMap = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
-                const hourlyMap = {};
-                const specificHourlyMap = { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 0: {} };
-                const uniqueDatesByDay = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set(), 0: new Set() };
-                const uniqueDates = new Set();
-                
-                const validHistoricalData = (rawSalesData || []).filter(row => {
+                const daysMap          = { 1:0,2:0,3:0,4:0,5:0,6:0,0:0 };
+                const hourlyMap        = {};
+                const specificHourlyMap = { 1:{},2:{},3:{},4:{},5:{},6:{},0:{} };
+                const uniqueDatesByDay  = { 1:new Set(),2:new Set(),3:new Set(),4:new Set(),5:new Set(),6:new Set(),0:new Set() };
+                const uniqueDates       = new Set();
+
+                const validData = (rawSalesData || []).filter(row => {
                     const hour = Number(row.sale_hour);
                     return hour >= openH && hour <= closeH;
                 });
 
-                validHistoricalData.forEach(row => {
-                    const h = Number(row.sale_hour);
+                validData.forEach(row => {
+                    const h    = Number(row.sale_hour);
                     const dStr = row.sale_date;
                     const dNum = new Date(dStr + 'T00:00:00').getDay();
-                    const count = Number(row.transaction_count || 0);
-
+                    const count= Number(row.transaction_count || 0);
                     daysMap[dNum] += count;
                     if (!hourlyMap[h]) hourlyMap[h] = 0;
                     hourlyMap[h] += count;
                     if (!specificHourlyMap[dNum][h]) specificHourlyMap[dNum][h] = 0;
                     specificHourlyMap[dNum][h] += count;
-
                     uniqueDates.add(dStr);
                     uniqueDatesByDay[dNum].add(dStr);
                 });
 
-                // Days: color = P75 of hourly averages for that DOW (robust to single-hour outliers)
-                const finalDays = [1, 2, 3, 4, 5, 6, 0].map(d => {
-                    const dc = uniqueDatesByDay[d].size || 1;
+                const finalDays = [1,2,3,4,5,6,0].map(d => {
+                    const dc  = uniqueDatesByDay[d].size || 1;
                     const hrs = [];
                     for (let h = openH; h <= closeH; h++) hrs.push(Math.round((specificHourlyMap[d][h] || 0) / dc));
-                    hrs.sort((a, b) => a - b);
+                    hrs.sort((a,b) => a-b);
                     const p75 = hrs[Math.floor(hrs.length * 0.75)] || 0;
                     return { day: d, avg: p75, label: DAY_NAMES[d] };
                 });
@@ -398,33 +413,29 @@ useEffect(() => {
                 const totalDays = uniqueDates.size || 1;
                 const finalGeneralHours = [];
                 for (let h = openH; h <= closeH; h++) {
-                    const avg = totalDays > 0 ? Math.round((hourlyMap[h] || 0) / totalDays) : 0;
-                    finalGeneralHours.push({ hour: h, avg, label: formatHourAMPM(h) });
+                    finalGeneralHours.push({ hour: h, avg: Math.round((hourlyMap[h] || 0) / totalDays), label: formatHourAMPM(h) });
                 }
 
                 const finalSpecificHours = {};
-                [1, 2, 3, 4, 5, 6, 0].forEach(d => {
+                [1,2,3,4,5,6,0].forEach(d => {
                     finalSpecificHours[d] = [];
                     const dCount = uniqueDatesByDay[d].size || 1;
                     for (let h = openH; h <= closeH; h++) {
-                        const avg = dCount > 0 ? Math.round((specificHourlyMap[d][h] || 0) / dCount) : 0;
-                        finalSpecificHours[d].push({ hour: h, avg, label: formatHourAMPM(h) });
+                        finalSpecificHours[d].push({ hour: h, avg: Math.round((specificHourlyMap[d][h] || 0) / dCount), label: formatHourAMPM(h) });
                     }
                 });
 
-                // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
-                // scale=1 for hourly views, scale=numOpenHours for daily totals
-                const applyColors = (arr, scale = 1) => {
+                const applyColors = (arr) => {
                     const max = Math.max(...arr.map(o => o.avg), 1);
                     return arr.map(item => {
-                        const txPerHr = item.avg / scale;
-                        let color = '#64748b';                     // ≤4  muerta   — 1 persona ociosa
-                        if      (txPerHr > 18) color = '#FF2D55';  // >18 crítica  — 3+ personas
-                        else if (txPerHr > 12) color = '#F79009';  // >12 pico     — 2-3 personas
-                        else if (txPerHr >  4) color = '#0052CC';  // >4  normal   — 1-2 personas
+                        const txPerHr = item.avg;
+                        let color = '#64748b';
+                        if      (txPerHr > 18) color = '#FF2D55';
+                        else if (txPerHr > 12) color = '#F79009';
+                        else if (txPerHr >  4) color = '#0052CC';
                         const hi = item.avg / max;
                         item.height = hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%';
-                        item.color = color;
+                        item.color  = color;
                         return item;
                     });
                 };
@@ -442,7 +453,6 @@ useEffect(() => {
                         0: applyColors(finalSpecificHours[0]),
                     }
                 });
-
             } catch (err) {
                 console.error("Error cargando ventas WFM:", err);
             } finally {
@@ -456,163 +466,48 @@ useEffect(() => {
         const roleWeight = (role) => {
             const r = (role || '').toUpperCase();
             if (r.includes('GERENTE') || (r.includes('JEFE') && !r.includes('SUB'))) return 1;
-            if (r.includes('SUBJEFE')) return 2;
-            if (r.includes('REGENTE')) return 3;
+            if (r.includes('SUBJEFE'))    return 2;
+            if (r.includes('REGENTE'))    return 3;
             if (r.includes('DEPENDIENTE')) return 4;
             return 5;
         };
-
         return employees
-            .filter(e => {
-                return String(e.branchId || e.branch_id) === String(filterBranch) &&
-                    (e.status || '').toUpperCase() !== 'INACTIVO';
-            })
+            .filter(e => String(e.branchId || e.branch_id) === String(filterBranch) && (e.status || '').toUpperCase() !== 'INACTIVO')
             .sort((a, b) => {
-                const weightA = roleWeight(a.role);
-                const weightB = roleWeight(b.role);
-                if (weightA !== weightB) return weightA - weightB;
-                // 🚨 PREVENCIÓN DE ERROR: localeCompare solo en strings válidos
-                const safeNameA = a.name || 'Sin Nombre';
-                const safeNameB = b.name || 'Sin Nombre';
-                return safeNameA.localeCompare(safeNameB);
+                const wA = roleWeight(a.role), wB = roleWeight(b.role);
+                if (wA !== wB) return wA - wB;
+                return (a.name || 'Sin Nombre').localeCompare(b.name || 'Sin Nombre');
             });
     }, [employees, filterBranch]);
 
-    const shiftsMap = useMemo(() => {
-        const m = new Map();
-        shifts.forEach(s => m.set(String(s.id), s));
-        return m;
-    }, [shifts]);
+    const filteredEmployees = useMemo(() => {
+        if (!searchTerm) return employeesInView;
+        return employeesInView.filter(e => (e.name || '').toLowerCase().includes(searchTerm));
+    }, [employeesInView, searchTerm]);
 
     const weekIsPublished = useMemo(() => {
         if (employeesInView.length === 0) return false;
         return employeesInView.every(e => publishedIds.has(String(e.id)));
     }, [employeesInView, publishedIds]);
 
-    const aiCopilotAlerts = useMemo(() => {
-        const alerts = [];
-        if (!filterBranch) return [];
-
-        let totalAssignedHours = 0;
-
-        const currentBranch = branches.find(b => String(b.id) === String(filterBranch));
-        let branchSchedule = {};
-        let hasBranchSchedule = false;
-
-        if (currentBranch) {
-            let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
-            if (typeof sch === 'string') {
-                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
-            }
-            if (sch && typeof sch === 'object' && Object.keys(sch).length > 0) {
-                branchSchedule = sch;
-                hasBranchSchedule = true;
-            }
-        }
-
-        if (!hasBranchSchedule) {
-            alerts.push({ type: 'danger', emp: null, msg: `SALY REQUIERE DATOS: La sucursal no tiene horario operativo configurado en la base de datos. La auditoría está incompleta.` });
-        }
-
-        employeesInView.forEach(emp => {
-            const empName = emp.name || 'Colaborador';
-            let rawSchedule = weeklyRosters[emp.id] || {}; 
-            let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
-            const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
-            totalAssignedHours += hours;
-
-            if (hours > 44) alerts.push({ type: 'danger', emp: empName, msg: `¡Cuidado! Necesita un respiro (Exceso de ${hours}h semanales).` });
-
-            let consecutiveDays = 0;
-            [1, 2, 3, 4, 5, 6, 0].forEach(dId => {
-                const day = sch[dId];
-                if (day && !day.isOff && (day.shiftId || day.customStart)) {
-                    consecutiveDays++;
-
-                    const shiftTemplate = day.shiftId ? shiftsMap.get(String(day.shiftId)) : null;
-                    const sStartStr = day.customStart || shiftTemplate?.start_time?.substring(0, 5) || shiftTemplate?.start;
-                    const sEndStr = day.customEnd || shiftTemplate?.end_time?.substring(0, 5) || shiftTemplate?.end;
-
-                    if (sStartStr && sEndStr) {
-                        const sStartMins = timeToMins(sStartStr);
-                        const sEndMins = timeToMins(sEndStr);
-                        let duration = (sEndMins < sStartMins ? sEndMins + 1440 : sEndMins) - sStartMins;
-                        
-                        const adjEnd = sEndMins < sStartMins ? sEndMins + 1440 : sEndMins;
-                        const spansNoon = sStartMins < 720 && adjEnd > 720;
-                        if (duration >= 420 && !day.hasLunch && spansNoon) {
-                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Alerta de fatiga: Turno mayor a 7h que cruza el mediodía sin almuerzo.` });
-                        }
-
-                        if (hasBranchSchedule) {
-                            const bDay = branchSchedule[dId];
-                            if (bDay) {
-                                if (bDay.isClosed || bDay.isOff || bDay.isOpen === false) {
-                                    alerts.push({ type: 'danger', emp: empName, msg: `[${dayNamesMap[dId]}] Tiene turno asignado, pero la sucursal está CERRADA hoy.` });
-                                } else {
-                                    const bStartStr = String(bDay.start || bDay.open || '').replace(/[^0-9:]/g, '').trim();
-                                    const bEndStr = String(bDay.end || bDay.close || '').replace(/[^0-9:]/g, '').trim();
-
-                                    if (bStartStr && bEndStr) {
-                                        const bStartMins = timeToMins(bStartStr);
-                                        let bEndMins = timeToMins(bEndStr);
-                                        if (bEndMins < bStartMins) bEndMins += 1440;
-                                        let adjSEnd = sEndMins < sStartMins ? sEndMins + 1440 : sEndMins;
-
-                                        if (sStartMins < bStartMins) {
-                                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Entra a las ${formatHourAMPM(Math.floor(sStartMins/60))}, pero la sucursal abre a las ${formatHourAMPM(Math.floor(bStartMins/60))}.` });
-                                        }
-                                        if (adjSEnd > bEndMins) {
-                                            alerts.push({ type: 'warning', emp: empName, msg: `[${dayNamesMap[dId]}] Sale a las ${formatHourAMPM(Math.floor(adjSEnd/60))}, pero la sucursal cierra a las ${formatHourAMPM(Math.floor(bEndMins/60))}.` });
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    consecutiveDays = 0;
-                }
-            });
-
-            if (consecutiveDays >= 7) alerts.push({ type: 'danger', emp: empName, msg: `¡Riesgo de burnout! Sin días libres en la semana.` });
-        });
-
-        if (employeesInView.length > 0 && totalAssignedHours < (employeesInView.length * 40 * 0.8)) {
-            alerts.push({ type: 'info', emp: null, msg: `Signos vitales bajos: Faltan horas asignadas en la sucursal.` });
-        }
-
-        return alerts;
-    }, [weeklyRosters, employeesInView, shiftsMap, shifts, calendarDates, filterBranch, branches]);
-
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
         setWeeklyRosters(prev => {
-            const currentRoster = prev[empId] || {};
-            const schedule = (typeof currentRoster === 'string') ? JSON.parse(currentRoster || '{}') : { ...currentRoster };
-            schedule[dayId] = newCellData;
-            return { ...prev, [empId]: schedule };
+            const cur = prev[empId] || {};
+            const sch = (typeof cur === 'string') ? JSON.parse(cur || '{}') : { ...cur };
+            sch[dayId] = newCellData;
+            return { ...prev, [empId]: sch };
         });
-
-        // Read current roster from latest state snapshot to build the full schedule for upsert
-        const latestRoster = weeklyRosters[empId] || {};
-        const scheduleToSave = (typeof latestRoster === 'string') ? JSON.parse(latestRoster || '{}') : { ...latestRoster };
-        scheduleToSave[dayId] = newCellData;
-
+        const latest = weeklyRosters[empId] || {};
+        const toSave = (typeof latest === 'string') ? JSON.parse(latest || '{}') : { ...latest };
+        toSave[dayId] = newCellData;
         try {
-            const { error } = await supabase
-                .from('employee_rosters')
-                .upsert({
-                    employee_id: empId,
-                    week_start_date: startDate,
-                    schedule_data: scheduleToSave,
-                    status: 'DRAFT'
-                }, { onConflict: 'employee_id, week_start_date' });
-
-            if (error) {
-                console.error("Error guardando borrador en Supabase:", error);
-            }
-        } catch (error) {
-            console.error("Error de red guardando borrador:", error);
+            const { error } = await supabase.from('employee_rosters').upsert({
+                employee_id: empId, week_start_date: startDate,
+                schedule_data: toSave, status: 'DRAFT',
+            }, { onConflict: 'employee_id, week_start_date' });
+            if (error) console.error("Error guardando borrador:", error);
+        } catch (err) {
+            console.error("Error de red guardando borrador:", err);
         }
     }, [startDate, weeklyRosters]);
 
@@ -620,93 +515,59 @@ useEffect(() => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });
     }, []);
 
-    // ============================================================================
-    // 🚀 LA MAGIA DE PUBLICAR: Auditoría Final + UPDATE Masivo a JSONB
-    // ============================================================================
     const triggerPublishAudit = () => {
-        let incompleteCount = 0;
-        let excessCount = 0;
-
-        // Transformación de los datos a preparar para el Bulk Update
+        let incompleteCount = 0, excessCount = 0;
         const bulkUpdates = employeesInView.map(emp => {
-            let rawSchedule = weeklyRosters[emp.id] || {}; 
-            let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
-            
-            // Evaluamos horas para la auditoría
+            const raw = weeklyRosters[emp.id] || {};
+            const sch = (typeof raw === 'string') ? JSON.parse(raw || '{}') : raw;
             const hours = calculateEmployeeWeeklyHoursLocal(sch, shifts, emp.history, calendarDates);
-            let daysOffCount = 0;
-            
+            let daysOff = 0;
             calendarDates.forEach(date => {
-                const dId = new Date(date + 'T00:00:00').getDay();
+                const dId   = new Date(date + 'T00:00:00').getDay();
                 const dayData = sch[dId] || {};
                 const shift = shifts.find(s => String(s.id) === String(dayData.shiftId));
-                const startStr = dayData.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
-                const endStr = dayData.customEnd || shift?.end_time?.substring(0, 5) || shift?.end;
-                
-                const hasShift = !dayData.isOff && startStr && endStr;
-                if (!hasShift) daysOffCount++;
+                const hasShift = !dayData.isOff &&
+                    (dayData.customStart || shift?.start_time?.substring(0,5) || shift?.start) &&
+                    (dayData.customEnd   || shift?.end_time?.substring(0,5)   || shift?.end);
+                if (!hasShift) daysOff++;
             });
-
-            if (hours > 44 || daysOffCount === 0) {
-                excessCount++; 
-            } else if (hours < 44 || daysOffCount > 1) {
-                incompleteCount++; 
-            }
-
-            return {
-                id: emp.id,
-                weekly_schedule: sch
-            };
+            if (hours > 44 || daysOff === 0) excessCount++;
+            else if (hours < 44 || daysOff > 1) incompleteCount++;
+            return { id: emp.id, weekly_schedule: sch };
         });
 
-        // 🚨 Saly decide qué Modal mostrar
         if (incompleteCount > 0 || excessCount > 0) {
             const msgs = [];
             if (incompleteCount > 0) msgs.push(`${incompleteCount} colaborador(es) con horarios incompletos.`);
-            if (excessCount > 0) msgs.push(`${excessCount} colaborador(es) con infracciones por exceso de horas.`);
-            
+            if (excessCount > 0)     msgs.push(`${excessCount} colaborador(es) con exceso de horas.`);
             setPublishState({
-                isOpen: true,
-                isDestructive: true, // Modal en Modo Alerta Roja
+                isOpen: true, isDestructive: true,
                 title: "⚠️ Planificación No Óptima",
-                message: `He detectado que el horario tiene deficiencias:\n${msgs.join('\n')}\n\n¿Estás completamente seguro de que quieres publicar y sobreescribir el horario con estos errores?`,
-                confirmText: "Publicar con Errores",
-                bulkUpdates: bulkUpdates
+                message: `Se detectaron deficiencias:\n${msgs.join('\n')}\n\n¿Deseas publicar de todas formas?`,
+                confirmText: "Publicar con Errores", bulkUpdates,
             });
         } else {
             setPublishState({
-                isOpen: true,
-                isDestructive: false, // Modal en Modo Azul Seguro
+                isOpen: true, isDestructive: false,
                 title: "✅ Planificación Perfecta",
-                message: `Todos los empleados están en Verde (Óptimo). ¿Deseas publicar y oficializar los horarios de la semana del ${formatDateLocal(startDate)}?`,
-                confirmText: "Publicar Horarios",
-                bulkUpdates: bulkUpdates
+                message: `Todos los empleados están en verde. ¿Deseas publicar los horarios de la semana del ${formatDateLocal(startDate)}?`,
+                confirmText: "Publicar Horarios", bulkUpdates,
             });
         }
     };
 
-    // La función real que ejecuta Supabase cuando el usuario dice "Acepto" en el Modal
     const executePublish = async () => {
         setIsPublishing(true);
         try {
             const rosterInserts = publishState.bulkUpdates.map(item => ({
-                employee_id: item.id,
-                week_start_date: startDate,
-                schedule_data: item.weekly_schedule,
-                status: 'DRAFT',
-                updated_at: new Date().toISOString()
+                employee_id: item.id, week_start_date: startDate,
+                schedule_data: item.weekly_schedule, status: 'DRAFT',
+                updated_at: new Date().toISOString(),
             }));
-
-            const { error: bulkError } = await supabase
-                .from('employee_rosters')
+            const { error: bulkError } = await supabase.from('employee_rosters')
                 .upsert(rosterInserts, { onConflict: 'employee_id,week_start_date' });
-
             if (bulkError) throw bulkError;
-
-            if (typeof publishWeekRosters === 'function') {
-                await publishWeekRosters(startDate, filterBranch);
-            }
-
+            if (typeof publishWeekRosters === 'function') await publishWeekRosters(startDate, filterBranch);
             setPublishedIds(prev => {
                 const next = new Set(prev);
                 publishState.bulkUpdates.forEach(item => next.add(String(item.id)));
@@ -715,9 +576,8 @@ useEffect(() => {
             showToast('Horarios publicados', `Semana del ${formatDateLocal(startDate)} publicada correctamente.`, 'success');
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             setPublishState({ isOpen: false, isDestructive: false, title: '', message: '', confirmText: '', bulkUpdates: null });
-            
         } catch (error) {
-            console.error("Error crítico publicando horarios:", error);
+            console.error("Error publicando horarios:", error);
             showToast('Error al publicar', 'Hubo un error de conexión. Intenta de nuevo.', 'error');
         } finally {
             setIsPublishing(false);
@@ -725,154 +585,28 @@ useEffect(() => {
     };
 
     const goToPersonal = () => {
-        if (setView) {
-            setView('DashboardView');
-        } else {
-            const personalBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Personal'));
-            if (personalBtn) personalBtn.click();
+        if (setView) setView('DashboardView');
+        else {
+            const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Personal'));
+            if (btn) btn.click();
         }
     };
 
-    const renderHeaderTitle = () => {
-        if (viewMode === 'shifts') {
-            return (
-                <div className="flex items-center gap-3 md:gap-4 w-full">
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white/70 backdrop-blur-xl"
-                        title="Volver a Calendario"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#0052CC]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                        <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-500 group-hover/back:text-[#0052CC] transition-colors relative z-10" />
-                    </button>
+    const searchPlaceholder =
+        viewMode === 'calendar' ? 'Buscar colaborador...' :
+        viewMode === 'shifts'   ? 'Buscar turno...' :
+                                  'Buscar feriado...';
 
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white flex items-center justify-center shadow-[0_8px_20px_rgba(0,82,204,0.3)] shrink-0 border border-white/20">
-                        <BookOpen size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
-                    </div>
-
-                    <div className="flex flex-col items-start gap-0.5 relative transition-all">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">Catálogo de Turnos</span>
-                        </div>
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Configuración Multi-Sucursal
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-        if (viewMode === 'holidays') {
-            return (
-                <div className="flex items-center gap-3 md:gap-4 w-full">
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(234,179,8,0.2)] hover:-translate-y-0.5 z-50 bg-white/70 backdrop-blur-xl"
-                        title="Volver a Calendario"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/20 to-orange-300/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                        <ArrowLeft size={18} strokeWidth={2.5} className="text-slate-500 group-hover/back:text-amber-600 transition-colors relative z-10" />
-                    </button>
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-[0_8px_20px_rgba(234,179,8,0.3)] shrink-0 border border-white/20">
-                        <Star size={20} className="md:w-6 md:h-6" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex flex-col items-start gap-0.5">
-                        <span className="text-[20px] md:text-[22px] font-black text-slate-800 leading-none tracking-tight">Feriados</span>
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Días no laborales</span>
-                    </div>
-                </div>
-            );
-        }
-        return "Horarios";
-    };
-
-    const renderFiltersContent = () => {
-        const formatWeekRange = (dateStr) => {
-            if (!dateStr) return '';
-            const [y, m, d] = dateStr.split('-').map(Number);
-            const start = new Date(y, m - 1, d);
-            const end = new Date(y, m - 1, d + 6);
-            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            const d1 = String(start.getDate()).padStart(2, '0');
-            const m1 = months[start.getMonth()];
-            const y1 = String(start.getFullYear()).slice(-2);
-            const d2 = String(end.getDate()).padStart(2, '0');
-            const m2 = months[end.getMonth()];
-            const y2 = String(end.getFullYear()).slice(-2);
-
-            if (y1 !== y2) return `${d1} ${m1} '${y1} - ${d2} ${m2} '${y2}`;
-            if (m1 !== m2) return `${d1} ${m1} - ${d2} ${m2} '${y2}`;
-            return `${d1} - ${d2} ${m1} '${y2}`;
-        };
-
-        return (
-            <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
-                        <div className="flex items-center justify-between w-full h-full pl-2 pr-2 md:pr-3">
-                            <div className="flex items-center min-w-0 gap-1 md:gap-2 h-full">
-                                <LayoutGroup id="sched-tabs">
-                                    <div className="flex items-center bg-white/40 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] relative shrink-0 h-[calc(100%-8px)]">
-                                        <button onClick={() => goToView('calendar')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'calendar' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Vista Calendario">
-                                            {viewMode === 'calendar' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
-                                            <CalendarDays size={16} strokeWidth={2.5} className="relative z-10" />
-                                        </button>
-                                        <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
-                                        <button onClick={() => goToView('shifts')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'shifts' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`} title="Catálogo de Turnos">
-                                            {viewMode === 'shifts' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
-                                            <BookOpen size={16} strokeWidth={2.5} className="relative z-10" />
-                                        </button>
-                                        <div className="w-px h-5 bg-white/60 mx-0.5 relative z-10" />
-                                        <button onClick={() => goToView('holidays')} className={`relative w-10 md:w-11 h-full rounded-full flex items-center justify-center transition-colors z-10 ${viewMode === 'holidays' ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`} title="Feriados">
-                                            {viewMode === 'holidays' && <motion.div layoutId="sched-tab-pill" className="absolute inset-0 bg-amber-50 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.10)]" transition={{ type: 'spring', stiffness: 500, damping: 38, mass: 0.8 }} />}
-                                            <Star size={16} strokeWidth={2.5} className="relative z-10" />
-                                        </button>
-                                    </div>
-                                </LayoutGroup>
-                                <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 hidden md:block shrink-0"></div>
-                                
-                                {viewMode === 'calendar' && (
-                                    <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branches.filter(b => { const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos'); }).map(b => ({ value: String(b.id), label: b.name }))} compact clearable={false} icon={Building2} bare />
-                                )}
-
-                                {viewMode === 'calendar' && (
-                                    <div className="flex items-center gap-1 md:gap-2 h-full py-0.5 shrink-0">
-                                        <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 shrink-0"></div>
-                                        <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-full ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
-                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500"><button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button></div>
-                                            <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
-                                                <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-1 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
-                                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
-                                            </div>
-                                            {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
-                                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500"><button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button></div>
-                                        </div>
-                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (openModal) openModal("aiSchedulerPreview", { branchId: filterBranch, startDate }); }} disabled={!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit} className={`relative group/saly w-9 h-9 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek || !canEdit) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer'}`}>
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-20 group-hover/saly:opacity-100 transition-all duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
-                                            <div className="absolute inset-[1px] bg-white/90 backdrop-blur-sm rounded-full border border-white/50"></div>
-                                            <HeartPulse size={18} strokeWidth={2.5} className={`text-cyan-500 group-hover/saly:text-indigo-500 relative z-10 transition-colors duration-300 ${(!isBranchSelected || employeesInView.length === 0 || isPastWeek) ? '' : 'animate-pulse'}`} />
-                                        </button>
-                                        
-                                        {/* 🚨 BOTÓN DE PUBLICAR QUE DISPARA EL MODAL DE SALY */}
-                                        {canEdit && getScope('schedules') !== 'BRANCH' && <button onClick={weekIsPublished ? undefined : triggerPublishAudit} disabled={isPublishing || employeesInView.length === 0 || isPastWeek} className={`h-9 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2 ${weekIsPublished ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default' : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'} ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
-                                            {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
-                                            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">{isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}</span>
-                                        </button>}
-                                    </div>
-                                )}
-
-                                {viewMode === 'shifts' && (
-                                    <div className="flex items-center gap-1 md:gap-2 h-full py-0.5 shrink-0">
-                                        <div className="w-px h-6 md:h-8 bg-white/40 mx-1 md:mx-2 hidden md:block shrink-0"></div>
-                                        <div className="flex items-center bg-white/50 rounded-full p-0.5 border border-white/60 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] h-full shrink-0">
-                                            <button onClick={() => setShiftTab('ACTIVE')} className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${shiftTab === 'ACTIVE' ? 'bg-white text-slate-800 border border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>Activos</button>
-                                            <button onClick={() => setShiftTab('ARCHIVED')} className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${shiftTab === 'ARCHIVED' ? 'bg-white text-slate-800 border border-white shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>Archivo</button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                        </div>
-            </div>
-        );
-    };
+    const filtersContent = (
+        <ViewTabBar
+            tabs={SCHED_TABS}
+            activeTab={viewMode}
+            onTabChange={goToView}
+            searchValue={rawSearch}
+            onSearchChange={setRawSearch}
+            placeholder={searchPlaceholder}
+        />
+    );
 
     let currentChartData = [];
     let chartTitle = 'Mapa Operativo (Últimos 90 Días)';
@@ -886,11 +620,16 @@ useEffect(() => {
         chartTitle = `Afluencia por Hora - ${DAY_NAMES[chartView]}`;
     }
 
-   return (
+    const validBranches = branches.filter(b => {
+        const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos');
+    });
+
+    return (
         <GlassViewLayout
-            icon={viewMode === 'shifts' ? null : viewMode === 'holidays' ? null : CalendarDays}
-            title={renderHeaderTitle()}
-            filtersContent={renderFiltersContent()}
+            icon={CalendarDays}
+            title="Horarios"
+            filtersContent={filtersContent}
             transparentBody={viewMode === 'shifts' || viewMode === 'holidays'}
             fixedScrollMode={viewMode === 'shifts'}
         >
@@ -900,97 +639,109 @@ useEffect(() => {
                     initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full h-full relative">
-                    <TabShifts
-                        branches={branches}
-                        filterBranch={filterBranch}
-                        shiftTab={shiftTab}
-                    />
+                    <TabShifts branches={branches} searchTerm={searchTerm} />
                 </motion.div>
             ) : viewMode === 'holidays' ? (
                 <motion.div key="holidays"
                     initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full h-full">
-                <HolidaysPanel
-                    holidays={holidays}
-                    holidayYear={holidayYear}
-                    setHolidayYear={setHolidayYear}
-                    currentYear={currentYear}
-                    showForm={showHolidayForm}
-                    setShowForm={setShowHolidayForm}
-                    hName={hName} setHName={setHName}
-                    hDate={hDate} setHDate={setHDate}
-                    hType={hType} setHType={setHType}
-                    hMuni={hMuni} setHMuni={setHMuni}
-                    hRecurring={hRecurring} setHRecurring={setHRecurring}
-                    hSaving={hSaving}
-                    hDeleting={hDeleting}
-                    canEdit={canEdit}
-                    onSave={async () => {
-                        if (!hDate || !hName.trim()) return;
-                        setHSaving(true);
-                        try {
-                            await addHoliday({ holiday_date: hDate, name: hName.trim(), type: hType, municipality: hMuni.trim() || null, is_recurring: hRecurring });
-                            showToast('Feriado agregado', `${hName} guardado correctamente.`, 'success');
-                            setHName(''); setHDate(''); setHType('NATIONAL'); setHMuni(''); setHRecurring(false);
-                            setShowHolidayForm(false);
-                        } catch(e) {
-                            showToast('Error', e.message, 'error');
-                        } finally { setHSaving(false); }
-                    }}
-                    onDelete={async (id) => {
-                        setHDeleting(id);
-                        try {
-                            await deleteHoliday(id);
-                            showToast('Feriado eliminado', '', 'success');
-                        } catch(e) {
-                            showToast('Error', e.message, 'error');
-                        } finally { setHDeleting(null); }
-                    }}
-                />
+                    <HolidaysPanel
+                        holidays={holidays}
+                        holidayYear={holidayYear} setHolidayYear={setHolidayYear}
+                        currentYear={currentYear}
+                        showForm={showHolidayForm} setShowForm={setShowHolidayForm}
+                        hName={hName} setHName={setHName}
+                        hDate={hDate} setHDate={setHDate}
+                        hType={hType} setHType={setHType}
+                        hMuni={hMuni} setHMuni={setHMuni}
+                        hRecurring={hRecurring} setHRecurring={setHRecurring}
+                        hSaving={hSaving} hDeleting={hDeleting}
+                        canEdit={canEdit}
+                        searchTerm={searchTerm}
+                        onSave={async () => {
+                            if (!hDate || !hName.trim()) return;
+                            setHSaving(true);
+                            try {
+                                await addHoliday({ holiday_date: hDate, name: hName.trim(), type: hType, municipality: hMuni.trim() || null, is_recurring: hRecurring });
+                                showToast('Feriado agregado', `${hName} guardado correctamente.`, 'success');
+                                setHName(''); setHDate(''); setHType('NATIONAL'); setHMuni(''); setHRecurring(false);
+                                setShowHolidayForm(false);
+                            } catch(e) { showToast('Error', e.message, 'error'); }
+                            finally { setHSaving(false); }
+                        }}
+                        onDelete={async (id) => {
+                            setHDeleting(id);
+                            try {
+                                await deleteHoliday(id);
+                                showToast('Feriado eliminado', '', 'success');
+                            } catch(e) { showToast('Error', e.message, 'error'); }
+                            finally { setHDeleting(null); }
+                        }}
+                    />
                 </motion.div>
             ) : (
                 <motion.div key="calendar"
                     initial={{ opacity: 0, x: viewDirRef.current * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: viewDirRef.current * -40 }}
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
-                    {employeesInView.length === 0 ? (
-                        <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[65vh] relative z-10">
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none"></div>
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-400/10 rounded-full blur-[80px] pointer-events-none translate-x-16"></div>
 
-                            <div className="relative w-28 h-28 mb-8 flex items-center justify-center">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full animate-[spin_4s_linear_infinite] opacity-20 blur-md"></div>
-                                <div className="absolute inset-2 bg-gradient-to-tr from-emerald-50 to-cyan-50 rounded-full shadow-inner border border-white/80 flex items-center justify-center z-10 overflow-hidden">
-                                    <div className="absolute inset-0 bg-white/50 backdrop-blur-md rounded-full"></div>
-                                    <HeartPulse size={44} strokeWidth={1.5} className="text-cyan-500 relative z-20 animate-pulse" />
-                                </div>
-                                <Sparkles size={24} className="absolute -top-1 -right-1 text-emerald-400 animate-pulse z-30" style={{ animationDuration: '2s' }} />
+                    {/* ── Control bar ── */}
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 pb-4 shrink-0">
+                        <LiquidSelect
+                            value={filterBranch}
+                            onChange={setFilterBranch}
+                            options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
+                            compact clearable={false} icon={Building2} bare
+                        />
+                        <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-10 ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
+                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
+                                <button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button>
                             </div>
-
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-50 border border-cyan-100 text-cyan-600 text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm">
-                                <Sparkles size={12} /> Hola, soy Saly
+                            <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
+                                <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
+                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
                             </div>
-
-                            <h2 className="text-[24px] md:text-[28px] font-black text-slate-800 tracking-tight mb-4 leading-tight text-center">
-                                ¡La sucursal está en ayunas!
-                            </h2>
-
-                            <p className="text-[14px] md:text-[15px] font-medium text-slate-500 leading-relaxed mb-10 max-w-md text-center">
-                                Para analizar la afluencia y recetar una planificación óptima, necesito saber quiénes trabajan aquí.
-                            </p>
-
+                            {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
+                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
+                                <button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button>
+                            </div>
+                        </div>
+                        {canEdit && getScope('schedules') !== 'BRANCH' && (
                             <button
-                                onClick={goToPersonal}
-                                className="inline-flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-emerald-400 to-cyan-500 text-white rounded-full text-[12px] font-black uppercase tracking-widest shadow-[0_8px_20px_rgba(45,212,191,0.3)] hover:shadow-[0_12px_25px_rgba(45,212,191,0.5)] hover:-translate-y-1 active:scale-[0.97] transition-all"
-                            >
-                                Ir al módulo de Personal <ArrowRight size={16} />
+                                onClick={weekIsPublished ? undefined : triggerPublishAudit}
+                                disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
+                                className={`h-10 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
+                                    ${weekIsPublished
+                                        ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
+                                        : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
+                                    ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
+                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
+                                    {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
+                                </span>
+                            </button>
+                        )}
+                    </div>
+
+                    {employeesInView.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
+                            <div className="p-6 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
+                                <CalendarDays size={36} className="text-[#0052CC]/30" strokeWidth={1.5} />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[16px] font-black text-slate-600 mb-1">Sin colaboradores</p>
+                                <p className="text-[13px] font-medium text-slate-400">No hay colaboradores activos en esta sucursal.</p>
+                            </div>
+                            <button onClick={goToPersonal}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-[#0052CC] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                Ir al módulo de Personal <ArrowRight size={14} />
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-5 pb-10 h-full overflow-y-auto hide-scrollbar relative">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 shrink-0 z-20">
-                                <ScheduleChart 
+                            <div className="shrink-0 z-20">
+                                <ScheduleChart
                                     chartTitle={chartTitle}
                                     chartView={chartView}
                                     setChartView={setChartView}
@@ -1000,18 +751,16 @@ useEffect(() => {
                                     branches={branches}
                                     openModal={openModal}
                                 />
-                                <SalyCopilot aiCopilotAlerts={[...aiCopilotAlerts, ...salyDynamicAlerts]} />
                             </div>
-
-                            <ScheduleCalendar 
+                            <ScheduleCalendar
                                 isLoading={isLoading}
                                 calendarDates={calendarDates}
-                                employeesInView={employeesInView}
+                                employeesInView={filteredEmployees}
                                 weeklyRosters={weeklyRosters}
                                 shifts={shifts}
                                 handleEditCell={handleEditCell}
                                 salesStats={salesStats}
-                                onSalyAlertsUpdate={setSalyDynamicAlerts}
+                                onSalyAlertsUpdate={() => {}}
                                 isReadOnly={isPastWeek || !hasPermission('schedules', 'can_edit')}
                             />
                         </div>
@@ -1034,24 +783,18 @@ useEffect(() => {
                 />
             )}
 
-            {/* 🚨 MODAL DE CONFIRMACIÓN DE PUBLICACIÓN DE SALY */}
             <ConfirmModal
                 isOpen={publishState.isOpen}
                 onClose={() => setPublishState(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={executePublish}
                 title={publishState.title}
-                message={
-                    <span className="whitespace-pre-line text-[13px]">
-                        {publishState.message}
-                    </span>
-                }
+                message={<span className="whitespace-pre-line text-[13px]">{publishState.message}</span>}
                 confirmText={publishState.confirmText}
                 cancelText="Cancelar"
                 isDestructive={publishState.isDestructive}
                 isProcessing={isPublishing}
                 theme="light"
             />
-
         </GlassViewLayout>
     );
 };

@@ -1781,9 +1781,14 @@ const DashboardView = ({ openModal }) => {
     });
     const widgets = sorted.map((id, idx) => renderWidget(id, idx));
 
-    // Show skeleton cards for branch sales widgets while branch IDs are loading
+    // Show skeleton cards for branch sales widgets while branch IDs are loading.
+    // Count comes from the saved layout (already in localStorage), so the number
+    // of skeletons matches exactly what the user has added. Falls back to
+    // branches.length if the layout has none yet (first load with data).
     if (salesBranchIdsLoading && activeTab === 'general' && showWidget('sales', 'dash_sales')) {
-      [0, 1, 2].forEach(i => {
+      const savedCount = sorted.filter(id => id.startsWith('sales_branch_')).length;
+      const skeletonCount = savedCount > 0 ? savedCount : branches.length;
+      Array.from({ length: skeletonCount }).forEach((_, i) => {
         widgets.push(
           <div key={`skel-branch-${i}`} className="animate-stagger-child" style={{ '--stagger-delay': `${(sorted.length + i) * 45}ms` }}>
             <SalesBranchSkeleton />

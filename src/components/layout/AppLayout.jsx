@@ -277,7 +277,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const isExpanded = isMobile ? isSidebarOpen : isSidebarOpen;
     const blurClasses = isOverlayActive
         ? 'pointer-events-none select-none scale-[0.98] blur-[2px]'
-        : 'scale-100 blur-0';
+        : '';
 
     // ── Pill animation ──
     const recomputePill = () => {
@@ -910,7 +910,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </button>
                         </div>
                     )}
-                    <div key={activeId} className="lg:h-full w-full animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-4 duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] fill-mode-both">
+                    <div key={activeId} className="lg:h-full w-full animate-route-enter">
                         {children}
                     </div>
                 </div>

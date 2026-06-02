@@ -192,6 +192,15 @@ body::-webkit-scrollbar { display: none; }
   animation: viewEnter 250ms var(--ease-spring) both;
 }
 
+/* Route-level fade — opacity only, no transform, safe for backdrop-filter in Chrome */
+@keyframes routeFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-route-enter {
+  animation: routeFadeIn 220ms var(--ease-spring) both;
+}
+
 @keyframes staggerEnter {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }

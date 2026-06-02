@@ -296,7 +296,6 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                                 {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
-                            <div className="text-[9px] text-slate-400 leading-tight">{c.sub}</div>
                         </div>
                         {active && (
                             <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">
@@ -318,15 +317,15 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
     }), [data]);
 
     const CARDS = [
-        { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max', sub: 'tiene parámetros asignados',
+        { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
           activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
           numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
-        { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max', sub: 'min/max pero sin inventario',
+        { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
           activeBg: 'bg-violet-50/80 border-violet-300 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
           iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
           numColor: n => n > 0 ? 'text-violet-600' : 'text-slate-300' },
-        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max', sub: 'sin parámetros asignados',
+        { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
           activeBg: 'bg-red-50/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
           iconBgActive: 'bg-red-100', iconColor: 'text-red-500',
           numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
@@ -349,7 +348,6 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                                 {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
-                            <div className="text-[9px] text-slate-400 leading-tight">{c.sub}</div>
                         </div>
                         {active && (
                             <div className="shrink-0 w-5 h-5 rounded-full bg-white/60 flex items-center justify-center">

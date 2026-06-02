@@ -38,7 +38,7 @@ serve(async (req) => {
       const { data: emps } = await supabase
         .from('employees')
         .select('id')
-        .in('erp_sucursal_id', target_value);
+        .in('branch_id', target_value);
       const empIds = (emps || []).map((e: { id: string }) => e.id);
       if (empIds.length === 0) return new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       query = query.in('employee_id', empIds);

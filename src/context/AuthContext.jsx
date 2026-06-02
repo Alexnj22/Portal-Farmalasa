@@ -189,11 +189,14 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('touchstart', onActivity, true);
     document.addEventListener('visibilitychange', onVisibilityChange, true);
 
-    const limit = getIdleLimitMs(u);
     idleIntervalRef.current = setInterval(() => {
+      // Skip while app is backgrounded — prevents iOS from firing stale checks
+      // on resume before visibilitychange can refresh the activity timestamp.
+      if (document.visibilityState === 'hidden') return;
       const last = parseInt(localStorage.getItem(LS_LAST) || '0', 10);
       if (!last) return;
-      if (Date.now() - last >= limit) doLogout();
+      // Re-read limit each tick so it reflects permissions loaded after login.
+      if (Date.now() - last >= getIdleLimitMs(userRef.current)) doLogout();
     }, CHECK_EVERY_MS);
   };
 

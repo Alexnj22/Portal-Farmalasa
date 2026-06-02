@@ -185,8 +185,8 @@ body::-webkit-scrollbar { display: none; }
    ═══════════════════════════════════════════════════════════════ */
 
 @keyframes viewEnter {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .animate-view-enter {
   animation: viewEnter 250ms var(--ease-spring) both;

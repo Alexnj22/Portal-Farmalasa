@@ -1,0 +1,25 @@
+{
+  "name": "Portal Farmalasa",
+  "short_name": "Portal",
+  "description": "Sistema de gestión FarmaSalud",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ddd8ff",
+  "theme_color": "#ddd8ff",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/Logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

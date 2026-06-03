@@ -526,26 +526,55 @@ const DashboardView = ({ openModal }) => {
           if (data.layout && typeof data.layout === 'object') {
             const isNewFormat = TABS.some(t => t.id in data.layout);
             if (isNewFormat) {
-              setWidgetLayout(data.layout);
-              TABS.forEach(t => { try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(data.layout[t.id] || {})); } catch {} });
+              // Merge: keep locally-generated tabs not in DB (new tabs), and inject
+              // any new widget IDs missing from existing DB tabs.
+              setWidgetLayout(prev => {
+                const next = { ...prev }; // preserves new tabs (e.g. 'operacion')
+                TABS.forEach(t => {
+                  const dbTab = data.layout[t.id];
+                  if (!dbTab || typeof dbTab !== 'object') return; // tab not in DB → keep local
+                  const tabLayout = { ...dbTab };
+                  // Add any widget IDs that are new (not yet in the saved layout)
+                  const expected = (TAB_WIDGETS[t.id] || []).filter(id => id !== 'kpi');
+                  const missing  = expected.filter(id => !(id in tabLayout));
+                  if (missing.length) {
+                    const placed = autoPlaceOrder([...Object.keys(tabLayout), ...missing], {});
+                    missing.forEach(id => { tabLayout[id] = placed[id]; });
+                  }
+                  next[t.id] = tabLayout;
+                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch {}
+                });
+                return next;
+              });
             }
           }
           if (data.sizes && typeof data.sizes === 'object') {
             const isNewFormat = TABS.some(t => t.id in data.sizes);
             if (isNewFormat) {
-              setWidgetSizes(data.sizes);
-              TABS.forEach(t => { try { localStorage.setItem(`portal_dash_sizes_${user.id}_${t.id}`, JSON.stringify(data.sizes[t.id] || {})); } catch {} });
+              setWidgetSizes(prev => {
+                const next = { ...prev };
+                TABS.forEach(t => {
+                  if (t.id in data.sizes) {
+                    next[t.id] = data.sizes[t.id];
+                    try { localStorage.setItem(`portal_dash_sizes_${user.id}_${t.id}`, JSON.stringify(data.sizes[t.id])); } catch {}
+                  }
+                });
+                return next;
+              });
             }
           }
           if (data.widgets && Array.isArray(data.widgets) && data.widgets.length) {
-            setWidgetConfig(data.widgets);
-            try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(data.widgets)); } catch {}
+            // Merge: add any new widget defs not present in the stored list
+            const storedIds = new Set(data.widgets.map(w => w.id));
+            const merged = [...data.widgets, ...WIDGET_DEFS.filter(w => !storedIds.has(w.id)).map(w => ({ id: w.id, enabled: true }))];
+            setWidgetConfig(merged);
+            try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(merged)); } catch {}
           }
           if (data.mobile_layout && TABS.some(t => t.id in data.mobile_layout)) {
-            setMobileLayout(data.mobile_layout);
+            setMobileLayout(prev => ({ ...prev, ...data.mobile_layout }));
           }
           if (data.mobile_sizes && TABS.some(t => t.id in data.mobile_sizes)) {
-            setMobileSizes(data.mobile_sizes);
+            setMobileSizes(prev => ({ ...prev, ...data.mobile_sizes }));
           }
         }
         setPrefsReady(true); // flip → triggers save effect below to persist current state

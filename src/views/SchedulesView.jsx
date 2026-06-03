@@ -625,96 +625,6 @@ const SchedulesView = ({ openModal, setView }) => {
         chartTitle = `Tx por hora · ${DAY_NAMES[chartView]}`;
     }
 
-    // ── Filter pill (glassmorphic) ──────────────────────────────────────────────
-    const filterPill = (
-        <div className="relative flex items-center gap-0 rounded-2xl overflow-hidden
-            bg-white/[0.14] backdrop-blur-2xl
-            border border-white/60
-            shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]
-            transition-all duration-300
-            hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.95)]
-            hover:-translate-y-0.5 shrink-0">
-
-            {/* Top shimmer line */}
-            <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-10">
-                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-shimmer"
-                    style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out' }} />
-            </div>
-
-            {/* Branch selector */}
-            <div className="px-2 py-2 overflow-visible relative z-10">
-                <LiquidSelect
-                    value={filterBranch}
-                    onChange={setFilterBranch}
-                    options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
-                    compact clearable={false} icon={Building2} bare
-                />
-            </div>
-
-            <div className="h-5 w-px bg-white/30 shrink-0" />
-
-            {/* Week navigator — hover-reveal arrows */}
-            <div className="group/week flex items-center overflow-visible cursor-default relative z-10">
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
-                    <button onClick={() => changeWeek(-7)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-slate-600 hover:bg-white/50 active:scale-[0.97] transition-all shadow-sm">
-                        <ChevronLeft size={15} strokeWidth={2.5} />
-                    </button>
-                </div>
-                <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-500' : 'text-slate-600'}`}>
-                        {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
-                    </span>
-                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-800'}`}>
-                        {formatWeekRange(startDate)}
-                    </span>
-                </div>
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
-                    <button onClick={() => changeWeek(7)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-slate-600 hover:bg-white/50 active:scale-[0.97] transition-all shadow-sm">
-                        <ArrowRight size={15} strokeWidth={2.5} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Reset X — only when week is not current */}
-            {!isDefaultWeek && (
-                <>
-                    <div className="h-5 w-px bg-white/30 shrink-0" />
-                    <button onClick={handleResetFilters} title="Volver a semana actual"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
-                        <X size={11} strokeWidth={3} />
-                    </button>
-                </>
-            )}
-
-            {/* Publish button inside pill */}
-            {canEdit && getScope('schedules') !== 'BRANCH' && (
-                <>
-                    <div className="h-5 w-px bg-white/30 shrink-0" />
-                    <button
-                        onClick={weekIsPublished ? undefined : triggerPublishAudit}
-                        disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        title={weekIsPublished ? 'Semana publicada' : 'Publicar horarios'}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
-                            ${weekIsPublished
-                                ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-700 cursor-default'
-                                : 'bg-[#0052CC] border-[#0052CC]/70 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
-                            ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                        {isPublishing
-                            ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
-                            : weekIsPublished
-                                ? <CheckCircle size={11} strokeWidth={2.5} />
-                                : <Save size={11} strokeWidth={2.5} />}
-                        <span className="hidden md:inline">
-                            {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                        </span>
-                    </button>
-                </>
-            )}
-        </div>
-    );
-
     return (
         <GlassViewLayout
             icon={CalendarDays}
@@ -776,23 +686,22 @@ const SchedulesView = ({ openModal, setView }) => {
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
 
-                    {/* Chart (left) + filter pill with publish (right) */}
-                    <div className="flex items-center gap-3 pb-3 shrink-0">
-                        <div className="flex-1 min-w-0">
-                            <ScheduleChart
-                                chartTitle={chartTitle}
-                                chartView={chartView}
-                                setChartView={setChartView}
-                                isLoadingSales={isLoadingSales}
-                                currentChartData={currentChartData}
-                                filterBranch={filterBranch}
-                                branches={branches}
-                                openModal={openModal}
-                            />
-                        </div>
-                        <div className="hidden lg:flex shrink-0 self-center">
-                            {filterPill}
-                        </div>
+                    {/* Unified chart card — controls integrated inside */}
+                    <div className="pb-3 shrink-0">
+                        <ScheduleChart
+                            chartView={chartView} setChartView={setChartView}
+                            isLoadingSales={isLoadingSales}
+                            currentChartData={currentChartData}
+                            filterBranch={filterBranch} setFilterBranch={setFilterBranch}
+                            validBranches={validBranches}
+                            startDate={startDate} changeWeek={changeWeek} isDefaultWeek={isDefaultWeek}
+                            handleResetFilters={handleResetFilters}
+                            canPublish={canEdit && getScope('schedules') !== 'BRANCH'}
+                            weekIsPublished={weekIsPublished} isPublishing={isPublishing}
+                            isPastWeek={isPastWeek} hasEmployees={employeesInView.length > 0}
+                            onPublish={triggerPublishAudit}
+                            openModal={openModal}
+                        />
                     </div>
 
                     {employeesInView.length === 0 ? (

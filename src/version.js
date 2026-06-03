@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.4.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.1 — Horarios: heatmap chart (días/horas) con controles integrados en un solo card glassmorphic
 // v1.4.0 — Horarios: chart shorter + glassmorphic, publish btn solid blue, week text contrast, Personal header height fix
 // v1.3.9 — Horarios: chart left + pill (with publish) right inside body; weekIsPublished some() fix
 // v1.3.8 — Horarios: chart full-width above body (subContent), filter pill inside body right-aligned

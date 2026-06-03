@@ -425,7 +425,8 @@ export const createEmployeeSlice = (set, get) => ({
             return d.toISOString().split('T')[0];
         };
         const weekStart = getMondayISO(date);
-        const dayId = new Date(date + 'T00:00:00').getDay();
+        const _rawDay = new Date(date + 'T00:00:00').getDay();
+        const dayId   = _rawDay === 0 ? 7 : _rawDay;
 
         const { data: roster } = await supabase
             .from('employee_rosters').select('schedule_data')

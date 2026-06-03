@@ -1095,10 +1095,25 @@ export const createSystemSlice = (set, get) => ({
                         metadata: a.metadata || null,
                     }));
 
-                const mappedEmployees = (data.employees || []).map(e => ({
+                let mappedEmployees = (data.employees || []).map(e => ({
                     ...e,
                     weeklySchedule: e.weekly_roster
                 }));
+
+                // Merge cross-branch coverage employees so the kiosk recognises them
+                try {
+                    const { data: coverageEmps, error: covErr } = await supabase.rpc(
+                        'get_kiosk_coverage_employees',
+                        { p_branch_id: Number(config.branchId), p_week_start: weekStartDate }
+                    );
+                    if (!covErr && Array.isArray(coverageEmps) && coverageEmps.length > 0) {
+                        const existingIds = new Set(mappedEmployees.map(e => e.id));
+                        const mapped = coverageEmps
+                            .filter(e => !existingIds.has(e.id))
+                            .map(e => ({ ...e, weeklySchedule: e.weekly_roster }));
+                        mappedEmployees = [...mappedEmployees, ...mapped];
+                    }
+                } catch (_) { /* non-fatal */ }
 
                 set({
                     shifts: mappedShifts,

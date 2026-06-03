@@ -544,25 +544,24 @@ const SchedulesView = ({ openModal, setView }) => {
     }, [employeesInView, publishedIds]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
+        let latestRoster;
         setWeeklyRosters(prev => {
             const cur = prev[empId] || {};
             const sch = (typeof cur === 'string') ? JSON.parse(cur || '{}') : { ...cur };
             sch[dayId] = newCellData;
+            latestRoster = sch;
             return { ...prev, [empId]: sch };
         });
-        const latest = weeklyRosters[empId] || {};
-        const toSave = (typeof latest === 'string') ? JSON.parse(latest || '{}') : { ...latest };
-        toSave[dayId] = newCellData;
         try {
             const { error } = await supabase.from('employee_rosters').upsert({
                 employee_id: empId, week_start_date: startDate,
-                schedule_data: toSave, status: 'DRAFT',
+                schedule_data: latestRoster, status: 'DRAFT',
             }, { onConflict: 'employee_id, week_start_date' });
             if (error) console.error("Error guardando borrador:", error);
         } catch (err) {
             console.error("Error de red guardando borrador:", err);
         }
-    }, [startDate, weeklyRosters]);
+    }, [startDate]);
 
     const handleEditCell = useCallback((empId, dayId, dateStr, currentData, rect) => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });

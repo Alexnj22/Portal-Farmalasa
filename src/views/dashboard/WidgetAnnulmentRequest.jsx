@@ -55,11 +55,25 @@ function PayBadge({ tipo }) {
   );
 }
 
-/* ─── Invoice detail popup ──────────────────────────────────────────────── */
+/* ─── Invoice detail + products ────────────────────────────────────────── */
 function InvoiceDetail({ inv, onBack, onAnnul }) {
-  const age         = daysAgo(inv.fecha);
+  const age           = daysAgo(inv.fecha);
   const graceDaysLeft = GRACE_DAYS - age;
   const withinGrace   = graceDaysLeft >= 0;
+
+  const [items,        setItems]        = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from('sales_invoice_items')
+      .select('descripcion, presentacion, cantidad, precio_unitario, total_linea')
+      .eq('invoice_id', inv.id)
+      .order('total_linea', { ascending: false })
+      .then(({ data }) => { if (!cancelled) { setItems(data || []); setItemsLoading(false); } });
+    return () => { cancelled = true; };
+  }, [inv.id]);
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
@@ -70,48 +84,78 @@ function InvoiceDetail({ inv, onBack, onAnnul }) {
           <ArrowLeft size={13} strokeWidth={2.5} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">{inv.correlativo}</p>
-          <p className="text-[10px] text-slate-400">{fmtDate(inv.fecha)}</p>
+          <p className="text-[12px] font-black text-slate-800 truncate">{inv.cliente || inv.correlativo}</p>
+          <p className="text-[10px] text-slate-400">{inv.correlativo} · {fmtDate(inv.fecha)}</p>
         </div>
         <span className="text-[13px] font-black text-slate-700">{fmtCurrency(inv.total)}</span>
       </div>
 
-      {/* Detail card */}
-      <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden shrink-0">
-        {[
-          { label: 'Cliente',    value: inv.cliente     || '—' },
-          { label: 'Tipo',       value: inv.tipo_documento || '—' },
-          { label: 'Pago',       value: inv.tipo_pago    || '—' },
-          { label: 'Fecha',      value: fmtDate(inv.fecha)       },
-          { label: 'Monto',      value: fmtCurrency(inv.total)   },
-        ].map(({ label, value }, i) => (
-          <div key={i} className={`flex items-center justify-between px-3.5 py-2 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
-            <span className="text-[11px] font-bold text-slate-700">{value}</span>
-          </div>
-        ))}
-      </div>
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Invoice summary */}
+        <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden shrink-0">
+          {[
+            { label: 'Tipo',  value: inv.tipo_documento || '—' },
+            { label: 'Pago',  value: inv.tipo_pago      || '—' },
+            { label: 'Fecha', value: fmtDate(inv.fecha)        },
+            { label: 'Total', value: fmtCurrency(inv.total)    },
+          ].map(({ label, value }, i) => (
+            <div key={i} className={`flex items-center justify-between px-3.5 py-2 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
+              <span className="text-[11px] font-bold text-slate-700">{value}</span>
+            </div>
+          ))}
+        </div>
 
-      {/* Grace status */}
-      <div className={`rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shrink-0 ${
-        withinGrace ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'
-      }`}>
-        <Clock size={13} className={withinGrace ? 'text-amber-500' : 'text-red-500'} strokeWidth={2.5} />
-        <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-red-600'}`}>
-          {withinGrace
-            ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} de gracia`
-            : `Fuera del período de gracia (${age} días)`}
-        </p>
-      </div>
+        {/* Products */}
+        <div className="shrink-0">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-1.5">
+            Productos ({items.length})
+          </p>
+          {itemsLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 size={16} className="animate-spin text-slate-300" />
+            </div>
+          ) : items.length === 0 ? (
+            <p className="text-[11px] text-slate-400 text-center py-3">Sin detalle de productos</p>
+          ) : (
+            <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
+              {items.map((it, i) => (
+                <div key={i} className={`flex items-start gap-2 px-3 py-2 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-slate-700 leading-tight truncate">{it.descripcion}</p>
+                    {it.presentacion && (
+                      <p className="text-[9px] text-slate-400">{it.presentacion}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[11px] font-black text-slate-700">{fmtCurrency(it.total_linea)}</p>
+                    <p className="text-[9px] text-slate-400">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {withinGrace && (
+        {/* Grace status */}
+        <div className={`rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shrink-0 ${
+          withinGrace ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'
+        }`}>
+          <Clock size={13} className={withinGrace ? 'text-amber-500' : 'text-red-500'} strokeWidth={2.5} />
+          <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-red-600'}`}>
+            {withinGrace
+              ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} de gracia`
+              : `Fuera del período de gracia — ${age} días desde la venta`}
+          </p>
+        </div>
+
         <button
           onClick={onAnnul}
-          className="w-full py-2.5 rounded-2xl bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] transition-all"
+          className="w-full py-2.5 rounded-2xl bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest hover:bg-[#003d99] transition-all shrink-0"
         >
           Solicitar anulación
         </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -123,8 +167,8 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const graceDaysLeft = GRACE_DAYS - daysAgo(inv.fecha);
-  const withinGrace   = graceDaysLeft >= 0;
+  const age         = daysAgo(inv.fecha);
+  const withinGrace = age <= GRACE_DAYS;
 
   const findTarget = useCallback(() => {
     const branchEmps = employees.filter(e => String(e.branchId ?? e.branch_id) === String(activeBranchId));
@@ -138,7 +182,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
   }, [employees, activeBranchId]);
 
   const handleSubmit = async () => {
-    if (!reason || !withinGrace) return;
+    if (!reason) return;
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -201,6 +245,16 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
       </div>
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Out-of-grace warning */}
+        {!withinGrace && (
+          <div className="rounded-2xl px-3.5 py-2.5 flex items-start gap-2 bg-red-50 border border-red-200 shrink-0">
+            <AlertTriangle size={13} className="text-red-500 mt-0.5 shrink-0" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold text-red-700 leading-snug">
+              Esta factura está fuera del período de gracia ({age} días). La solicitud quedará pendiente de aprobación del supervisor.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -422,14 +476,13 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                   <Eye size={12} strokeWidth={2.5} />
                 </button>
                 <button
-                  onClick={() => { if (!ok) return; setFocused(inv); setPrevAnnulView('list'); setView('annul'); }}
-                  disabled={!ok}
+                  onClick={() => { setFocused(inv); setPrevAnnulView('list'); setView('annul'); }}
                   className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
                     ok
                       ? 'bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-500'
-                      : 'bg-slate-50 text-slate-200 cursor-not-allowed'
+                      : 'bg-red-50 hover:bg-red-500 hover:text-white text-red-400'
                   }`}
-                  title={ok ? 'Solicitar anulación' : 'Fuera del período de gracia'}
+                  title={ok ? 'Solicitar anulación' : 'Solicitar anulación (fuera de gracia)'}
                 >
                   <AlertCircle size={12} strokeWidth={2.5} />
                 </button>

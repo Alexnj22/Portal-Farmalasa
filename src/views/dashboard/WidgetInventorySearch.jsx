@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Search, Loader2, X, Package } from 'lucide-react';
+import { Search, Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
 const ERP_BRANCH_MAP = {
@@ -13,12 +13,12 @@ const ERP_BRANCH_MAP = {
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7];
 
 const BRANCH_THEME = {
-  'La Popular': { dot: '#7C3AED', pill: 'bg-violet-50  border-violet-200/70', label: 'text-violet-700', lot: 'bg-violet-50/60' },
-  'Salud 1':    { dot: '#0052CC', pill: 'bg-blue-50    border-blue-200/70',   label: 'text-blue-700',   lot: 'bg-blue-50/60'   },
-  'Salud 2':    { dot: '#059669', pill: 'bg-emerald-50 border-emerald-200/70',label: 'text-emerald-700',lot: 'bg-emerald-50/60'},
-  'Salud 3':    { dot: '#D97706', pill: 'bg-amber-50   border-amber-200/70', label: 'text-amber-700',  lot: 'bg-amber-50/60'  },
-  'Salud 4':    { dot: '#E11D48', pill: 'bg-rose-50    border-rose-200/70',   label: 'text-rose-700',   lot: 'bg-rose-50/60'   },
-  'Salud 5':    { dot: '#0891B2', pill: 'bg-cyan-50    border-cyan-200/70',   label: 'text-cyan-700',   lot: 'bg-cyan-50/60'   },
+  'La Popular': { dot: '#7C3AED', pill: 'bg-violet-50  border-violet-200/70', label: 'text-violet-700' },
+  'Salud 1':    { dot: '#0052CC', pill: 'bg-blue-50    border-blue-200/70',   label: 'text-blue-700'   },
+  'Salud 2':    { dot: '#059669', pill: 'bg-emerald-50 border-emerald-200/70',label: 'text-emerald-700'},
+  'Salud 3':    { dot: '#D97706', pill: 'bg-amber-50   border-amber-200/70', label: 'text-amber-700'  },
+  'Salud 4':    { dot: '#E11D48', pill: 'bg-rose-50    border-rose-200/70',   label: 'text-rose-700'   },
+  'Salud 5':    { dot: '#0891B2', pill: 'bg-cyan-50    border-cyan-200/70',   label: 'text-cyan-700'   },
 };
 const DEFAULT_THEME = BRANCH_THEME['Salud 1'];
 
@@ -71,28 +71,80 @@ function SkeletonSection({ rows }) {
   );
 }
 
+/* ─── Photo thumb ───────────────────────────────────────────────────────── */
+function PhotoThumb({ url, onZoom }) {
+  if (!url) return null;
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onZoom(url); }}
+      className="relative w-8 h-8 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0 group"
+    >
+      <img src={url} alt="" className="w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <ZoomIn size={10} className="text-white" strokeWidth={2.5} />
+      </div>
+    </button>
+  );
+}
+
+/* ─── Lightbox ──────────────────────────────────────────────────────────── */
+function Lightbox({ url, onClose }) {
+  if (!url) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-8"
+      onClick={onClose}
+    >
+      <img
+        src={url}
+        alt=""
+        className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+        style={{ maxWidth: '85vw', maxHeight: '80vh' }}
+      />
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition-colors"
+      >
+        <X size={14} className="text-white" strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────── */
 export default function WidgetInventorySearch() {
-  const [query,   setQuery]   = useState('');
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
-  const debounceRef           = useRef(null);
+  const [query,        setQuery]        = useState('');
+  const [results,      setResults]      = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState(null);
+  const [drillProduct, setDrillProduct] = useState(null); // { descripcion, presentacion, fotoUrl }
+  const [lightboxUrl,  setLightboxUrl]  = useState(null);
+  const debounceRef                     = useRef(null);
 
   const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setResults(null); return; }
     setLoading(true);
     setError(null);
+    setDrillProduct(null);
     try {
-      const { data, error: err } = await supabase
-        .from('inventory')
-        .select('erp_sucursal_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
-        .ilike('descripcion', `%${q}%`)
-        .gt('cantidad', 0)
-        .order('descripcion')
-        .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
+      // Fetch photos in parallel (only ~5 products have them — very cheap)
+      const [{ data: photoData }, { data, error: err }] = await Promise.all([
+        supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null),
+        supabase
+          .from('inventory')
+          .select('erp_sucursal_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
+          .ilike('descripcion', `%${q}%`)
+          .gt('cantidad', 0)
+          .order('descripcion')
+          .order('fecha_vencimiento', { ascending: true, nullsFirst: false }),
+      ]);
 
       if (err) throw err;
+
+      const photoMap = {};
+      for (const p of photoData || []) {
+        photoMap[p.nombre.toUpperCase().trim()] = p.foto_url;
+      }
 
       // Group: branch → product key → lots
       const map = {};
@@ -104,6 +156,7 @@ export default function WidgetInventorySearch() {
         if (!map[bName][key]) map[bName][key] = {
           descripcion:  row.descripcion,
           presentacion: row.presentacion,
+          fotoUrl:      photoMap[row.descripcion.toUpperCase().trim()] ?? null,
           lots:         [],
         };
         map[bName][key].lots.push(row);
@@ -124,10 +177,121 @@ export default function WidgetInventorySearch() {
   const handleInput = (val) => {
     setQuery(val);
     clearTimeout(debounceRef.current);
-    if (!val.trim()) { setResults(null); return; }
+    if (!val.trim()) { setResults(null); setDrillProduct(null); return; }
     debounceRef.current = setTimeout(() => doSearch(val), 380);
   };
 
+  /* ── DRILL-DOWN VIEW ──────────────────────────────────────────────────── */
+  if (drillProduct) {
+    const drillBranches = (results || [])
+      .map(branch => ({
+        ...branch,
+        products: branch.products.filter(p =>
+          p.descripcion === drillProduct.descripcion &&
+          (p.presentacion || '') === (drillProduct.presentacion || '')
+        ),
+      }))
+      .filter(b => b.products.length > 0);
+
+    const grandTotal = drillBranches.reduce(
+      (s, b) => s + b.products[0].lots.reduce((ss, r) => ss + r.cantidad, 0), 0
+    );
+
+    return (
+      <div className="flex flex-col gap-2.5 h-full">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => setDrillProduct(null)}
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0"
+          >
+            <ArrowLeft size={13} strokeWidth={2.5} />
+          </button>
+
+          {drillProduct.fotoUrl ? (
+            <button
+              onClick={() => setLightboxUrl(drillProduct.fotoUrl)}
+              className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 group"
+            >
+              <img src={drillProduct.fotoUrl} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <ZoomIn size={12} className="text-white" strokeWidth={2.5} />
+              </div>
+            </button>
+          ) : (
+            <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+              <Package size={18} strokeWidth={1.5} className="text-slate-300" />
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-black text-slate-800 leading-tight truncate">{drillProduct.descripcion}</p>
+            {drillProduct.presentacion && (
+              <p className="text-[10px] text-slate-400 font-medium">{drillProduct.presentacion}</p>
+            )}
+            <p className="text-[9px] text-slate-400 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
+          </div>
+        </div>
+
+        {/* Branch sections */}
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {drillBranches.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+              <Package size={24} strokeWidth={1.5} className="text-slate-200" />
+              <p className="text-[11px] text-slate-400 font-semibold">Sin stock en ninguna sucursal</p>
+            </div>
+          ) : (
+            drillBranches.map((branch, bi) => {
+              const theme = BRANCH_THEME[branch.name] || DEFAULT_THEME;
+              const prod  = branch.products[0];
+              const total = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+              return (
+                <div
+                  key={branch.name}
+                  className="mb-3"
+                  style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${bi * 45}ms` }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200/80" />
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
+                      <span className="text-[9px] font-bold text-slate-400 ml-0.5">{total} uds</span>
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
+                  </div>
+                  <div className="rounded-xl border border-slate-100 overflow-hidden">
+                    {prod.lots.length === 1 ? (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-white">
+                        <span className="text-[9px] font-mono text-slate-400 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
+                        <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
+                        <span className="text-[10px] font-black text-slate-700 shrink-0 tabular-nums w-14 text-right">{prod.lots[0].cantidad} uds</span>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-white/60" style={{ background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)' }}>
+                        {prod.lots.map((row, li) => (
+                          <div key={li} className="flex items-center gap-2 px-3 py-1.5">
+                            <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+                            <ExpiryBadge date={row.fecha_vencimiento} />
+                            <span className="text-[10px] font-black text-slate-600 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+        <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      </div>
+    );
+  }
+
+  /* ── SEARCH VIEW ─────────────────────────────────────────────────────── */
   return (
     <div className="flex flex-col gap-2.5 h-full">
 
@@ -149,7 +313,7 @@ export default function WidgetInventorySearch() {
         />
         {query && (
           <button
-            onClick={() => { setQuery(''); setResults(null); }}
+            onClick={() => { setQuery(''); setResults(null); setDrillProduct(null); }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <X size={10} strokeWidth={2.5} />
@@ -162,10 +326,8 @@ export default function WidgetInventorySearch() {
       {/* ── Results ──────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-        {/* Loading */}
         {loading && <><SkeletonSection rows={3} /><SkeletonSection rows={2} /></>}
 
-        {/* Empty — no query yet */}
         {!loading && results === null && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-slate-200" />
@@ -175,7 +337,6 @@ export default function WidgetInventorySearch() {
           </div>
         )}
 
-        {/* Empty — no results */}
         {!loading && results !== null && results.length === 0 && (
           <div className="py-10 text-center text-[12px] text-slate-400 font-medium">
             Sin resultados para "{query}"
@@ -195,7 +356,7 @@ export default function WidgetInventorySearch() {
               className="mb-4"
               style={{ animation: `inv-fade-up 0.28s ease both`, animationDelay: `${bi * 55}ms` }}
             >
-              {/* ── Branch header ──────────────────────────────────── */}
+              {/* Branch header */}
               <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-10 py-0.5">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200/80" />
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
@@ -208,11 +369,11 @@ export default function WidgetInventorySearch() {
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
               </div>
 
-              {/* ── Products ───────────────────────────────────────── */}
+              {/* Products */}
               <div className="space-y-0.5">
                 {branch.products.map((prod, pi) => {
-                  const lotTotal  = prod.lots.reduce((s, r) => s + r.cantidad, 0);
-                  const multiLot  = prod.lots.length > 1;
+                  const lotTotal = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+                  const multiLot = prod.lots.length > 1;
 
                   return (
                     <div
@@ -221,38 +382,43 @@ export default function WidgetInventorySearch() {
                       style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${bi * 55 + pi * 25}ms` }}
                     >
                       {multiLot ? (
-                        /* Multiple lots ─────────────────────────── */
-                        <div className="rounded-xl border border-slate-100 overflow-hidden">
-                          {/* Product name row */}
-                          <div className="flex items-start gap-2 px-3 pt-2.5 pb-1.5 bg-white">
+                        /* Multiple lots */
+                        <div
+                          className="rounded-xl border border-slate-100 overflow-hidden cursor-pointer group"
+                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
+                        >
+                          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 bg-white group-hover:bg-blue-50/40 transition-colors">
+                            {prod.fotoUrl && (
+                              <PhotoThumb url={prod.fotoUrl} onZoom={setLightboxUrl} />
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="text-[11px] font-black text-slate-800 leading-tight">{prod.descripcion}</p>
                               {prod.presentacion && (
                                 <p className="text-[9px] text-slate-400 font-medium mt-0.5">{prod.presentacion}</p>
                               )}
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 shrink-0 tabular-nums mt-0.5">
-                              {lotTotal} uds
-                            </span>
+                            <span className="text-[10px] font-black text-slate-500 shrink-0 tabular-nums">{lotTotal} uds</span>
+                            <ChevronRight size={11} className="text-slate-300 group-hover:text-[#0052CC] transition-colors shrink-0" strokeWidth={2.5} />
                           </div>
-                          {/* Lot rows */}
                           <div className="divide-y divide-white/60" style={{ background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)' }}>
                             {prod.lots.map((row, li) => (
                               <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                                <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">
-                                  {row.lote || '—'}
-                                </span>
+                                <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                                 <ExpiryBadge date={row.fecha_vencimiento} />
-                                <span className="text-[10px] font-black text-slate-600 shrink-0 tabular-nums w-14 text-right">
-                                  {row.cantidad} uds
-                                </span>
+                                <span className="text-[10px] font-black text-slate-600 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
                               </div>
                             ))}
                           </div>
                         </div>
                       ) : (
-                        /* Single lot ────────────────────────────── */
-                        <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-white/80 transition-colors">
+                        /* Single lot */
+                        <button
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-white/80 transition-colors group text-left"
+                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
+                        >
+                          {prod.fotoUrl && (
+                            <PhotoThumb url={prod.fotoUrl} onZoom={setLightboxUrl} />
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-bold text-slate-800 truncate leading-tight">{prod.descripcion}</p>
                             {prod.presentacion && (
@@ -266,7 +432,8 @@ export default function WidgetInventorySearch() {
                           <span className="text-[10px] font-black text-slate-700 shrink-0 tabular-nums w-14 text-right">
                             {prod.lots[0].cantidad} uds
                           </span>
-                        </div>
+                          <ChevronRight size={11} className="text-slate-300 group-hover:text-[#0052CC] transition-colors shrink-0" strokeWidth={2.5} />
+                        </button>
                       )}
                     </div>
                   );
@@ -277,13 +444,8 @@ export default function WidgetInventorySearch() {
         })}
       </div>
 
-      {/* Keyframe */}
-      <style>{`
-        @keyframes inv-fade-up {
-          from { opacity: 0; transform: translateY(7px); }
-          to   { opacity: 1; transform: translateY(0);   }
-        }
-      `}</style>
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }

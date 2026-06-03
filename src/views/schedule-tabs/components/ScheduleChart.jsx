@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="col-span-1 lg:col-span-2 bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border border-white/80 rounded-[2rem] p-4 shadow-[inset_0_2px_15px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.05)] flex flex-col justify-between hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)] transition-all duration-300 group/chart relative overflow-visible min-h-[150px] z-10">
+        <div className="col-span-1 lg:col-span-2 bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col justify-between hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 transition-all duration-300 group/chart relative overflow-visible min-h-[120px] z-10">
             
             <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
                 <button onClick={() => openModal && openModal("viewWfmAnalytics")} className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all duration-200" title="Expandir Análisis">
@@ -39,7 +39,7 @@ const ScheduleChart = ({
 
             <div className="flex flex-col w-full border-b border-slate-200/60 pb-1.5 relative z-10 flex-1 mt-4">
                 {/* 🚨 Aseguramos overflow-visible aquí también para el tooltip */}
-                <div className="flex items-end gap-1.5 h-[60px] w-full relative overflow-visible">
+                <div className="flex items-end gap-1.5 h-[48px] w-full relative overflow-visible">
                     <div className="absolute inset-0 flex flex-col justify-between opacity-20 pointer-events-none z-0 pb-[1px]">
                         <div className="border-t border-dashed border-slate-400 w-full h-px"></div>
                         <div className="border-t border-dashed border-slate-400 w-full h-px"></div>

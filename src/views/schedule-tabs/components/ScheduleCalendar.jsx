@@ -541,7 +541,7 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
                     <thead className="relative z-[60]">
                         <tr>
                             <th className="p-0 sticky left-0 z-[70] min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
-                                <div className="bg-white/50 backdrop-blur-2xl border border-white/80 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] p-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center justify-between">
+                                <div className="bg-white/50 backdrop-blur-2xl border border-white/80 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-slate-500 tracking-widest flex flex-col items-center justify-center gap-1">
                                     Personal <span className="bg-white/80 px-2 py-0.5 rounded-lg text-slate-400 border border-white">44H / 1 DESCANSO</span>
                                 </div>
                             </th>

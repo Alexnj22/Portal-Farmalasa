@@ -614,15 +614,15 @@ const SchedulesView = ({ openModal, setView }) => {
     );
 
     let currentChartData = [];
-    let chartTitle = 'Mapa Operativo (Últimos 90 Días)';
+    let chartTitle = 'Tx promedio · últimos 3 meses';
     if (chartView === 'DAYS') {
         currentChartData = salesStats.days || [];
     } else if (chartView === 'HOURS') {
         currentChartData = salesStats.generalHours || [];
-        chartTitle = 'Afluencia General (Horas)';
+        chartTitle = 'Tx por hora · general';
     } else {
         currentChartData = salesStats.specificHours?.[chartView] || [];
-        chartTitle = `Afluencia por Hora - ${DAY_NAMES[chartView]}`;
+        chartTitle = `Tx por hora · ${DAY_NAMES[chartView]}`;
     }
 
     // ── Filter pill (glassmorphic) ──────────────────────────────────────────────
@@ -662,10 +662,10 @@ const SchedulesView = ({ openModal, setView }) => {
                     </button>
                 </div>
                 <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-500'}`}>
+                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-500' : 'text-slate-600'}`}>
                         {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
                     </span>
-                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>
+                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-800'}`}>
                         {formatWeekRange(startDate)}
                     </span>
                 </div>
@@ -696,10 +696,10 @@ const SchedulesView = ({ openModal, setView }) => {
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
                         title={weekIsPublished ? 'Semana publicada' : 'Publicar horarios'}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10
+                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
-                                ? 'bg-emerald-100/80 text-emerald-700 cursor-default'
-                                : 'bg-[#0052CC]/10 text-[#0052CC] hover:bg-[#0052CC] hover:text-white active:scale-[0.97]'}
+                                ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-700 cursor-default'
+                                : 'bg-[#0052CC] border-[#0052CC]/70 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
                             ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         {isPublishing
                             ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />

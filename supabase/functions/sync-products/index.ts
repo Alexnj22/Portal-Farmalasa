@@ -10,7 +10,7 @@ const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_prod
 const CREDENTIALS  = { username: 'documento1.supervisor', password: 'documento9999' };
 const CHUNK        = 500;
 
-const PRICE_FIELDS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'] as const;
+const PRICE_FIELDS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7', 'costo'] as const;
 
 async function getSessionCookie(): Promise<string> {
   const form = new URLSearchParams();
@@ -286,6 +286,7 @@ Deno.serve(async (req) => {
           product_id: r.product_id, id_presentacion: r.id_presentacion,
           vineta: r.vineta, descuento_1: r.descuento_1, vip: r.vip,
           clinica: r.clinica, mayoreo: r.mayoreo, premium: r.premium, precio_7: r.precio_7,
+          costo: r.costo ?? null,
           valid_from: now,
         };
       });
@@ -298,6 +299,7 @@ Deno.serve(async (req) => {
         product_id: r.product_id, id_presentacion: r.id_presentacion,
         vineta: r.vineta, descuento_1: r.descuento_1, vip: r.vip,
         clinica: r.clinica, mayoreo: r.mayoreo, premium: r.premium, precio_7: r.precio_7,
+        costo: r.costo ?? null,
         valid_from: now,
       }));
       for (let i = 0; i < seedRows.length; i += CHUNK) {

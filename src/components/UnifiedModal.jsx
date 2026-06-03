@@ -431,6 +431,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const targetRoleObj = roles.find(r => r.name === formData.targetRole);
                 const targetRoleId = targetRoleObj ? targetRoleObj.id : null;
 
+                const { updateEmployee: _ue, appendAuditLog } = useStaff.getState();
+
                 if (formData.currentAssignee && formData.currentAssignee !== formData.selectedEmpId) {
                     if (formData.outgoingAction === 'REASSIGN') {
                         const outRoleObj = roles.find(r => r.name === formData.outgoingRole);
@@ -438,59 +440,54 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         await updateEmployee(formData.currentAssignee, {
                             branchId: formData.outgoingBranch,
                             role_id: outRoleObj ? outRoleObj.id : null,
-                            role: formData.outgoingRole 
+                            role: formData.outgoingRole
                         });
 
-                        await supabase.from('employee_history').insert([{
-                            employee_id: formData.currentAssignee,
+                        await appendAuditLog('EMPLEADO_RELEVADO', formData.currentAssignee, {
                             type: 'REASSIGNMENT',
-                            date: new Date().toISOString().split('T')[0],
                             previous_branch_id: actualBranchId,
+                            previous_branch_name: actualBranchName,
                             target_branch_id: formData.outgoingBranch,
                             previous_role: formData.targetRole,
                             new_role: formData.outgoingRole,
-                            details: { note: `Relevado de jefatura en ${actualBranchName}` }
-                        }]);
+                            note: `Relevado de jefatura en ${actualBranchName}`,
+                        });
 
                     } else {
                         await updateEmployee(formData.currentAssignee, {
-                            branchId: null, 
+                            branchId: null,
                             role_id: null,
                             role: 'Sin Asignar'
                         });
 
-                        await supabase.from('employee_history').insert([{
-                            employee_id: formData.currentAssignee,
+                        await appendAuditLog('EMPLEADO_DESVINCULADO_SUCURSAL', formData.currentAssignee, {
                             type: 'UNASSIGNED',
-                            date: new Date().toISOString().split('T')[0],
                             previous_branch_id: actualBranchId,
+                            previous_branch_name: actualBranchName,
                             previous_role: formData.targetRole,
                             new_role: 'Sin Asignar',
-                            details: { note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.` }
-                        }]);
+                            note: `Removido de la sucursal ${actualBranchName} a la bolsa de trabajo flotante.`,
+                        });
                     }
                 }
 
                 await updateEmployee(formData.selectedEmpId, {
-                    branchId: actualBranchId,    
-                    role_id: targetRoleId,       
-                    role: formData.targetRole    
+                    branchId: actualBranchId,
+                    role_id: targetRoleId,
+                    role: formData.targetRole
                 });
 
-                await supabase.from('employee_history').insert([{
-                    employee_id: formData.selectedEmpId,
+                await appendAuditLog(formData.moveType || 'EMPLEADO_ASIGNADO', formData.selectedEmpId, {
                     type: formData.moveType || 'PROMOTION',
-                    date: new Date().toISOString().split('T')[0],
                     previous_branch_id: selectedEmp?.branchId || null,
                     target_branch_id: actualBranchId,
+                    target_branch_name: actualBranchName,
                     previous_role: selectedEmp?.role || null,
                     new_role: formData.targetRole,
-                    details: {
-                        note: formData.notes || 'Asignación realizada desde el Panel de Sucursales',
-                        isInterim: formData.isPermanent === false,
-                        interimEndDate: formData.interimEndDate || null
-                    }
-                }]);
+                    note: formData.notes || 'Asignación realizada desde el Panel de Sucursales',
+                    isInterim: formData.isPermanent === false,
+                    interimEndDate: formData.interimEndDate || null,
+                });
 
                 const { fetchEmployees, fetchBranchHistory } = useStaff.getState();
                 if (fetchEmployees) await fetchEmployees();

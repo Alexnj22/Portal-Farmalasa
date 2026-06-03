@@ -122,6 +122,21 @@ export const AuthProvider = ({ children }) => {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refreshPermissions]);
 
+  // Realtime: refresca permisos en el instante que el admin cambia role_permissions
+  // del rol del usuario actual — menú y PermissionGuard reaccionan sin recargar.
+  useEffect(() => {
+    const roleId = user?.roleId ?? (Number.isInteger(user?.role) ? user?.role : null);
+    if (!roleId) return;
+    const channel = supabase
+      .channel(`role_perms_${roleId}_${user?.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'role_permissions', filter: `role_id=eq.${roleId}` },
+        () => refreshPermissions()
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, user?.roleId, refreshPermissions]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // -------------------------
   // ⏱️ Inactividad
   // -------------------------

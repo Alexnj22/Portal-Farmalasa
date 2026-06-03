@@ -39,9 +39,8 @@ export const AUDIT_SOURCE = {
 
 export const AUDIT_SEVERITY = {
   INFO: 'INFO',
-  WARN: 'WARN',
-  ERROR: 'ERROR',
-  SECURITY: 'SECURITY',
+  WARNING: 'WARNING',
+  CRITICAL: 'CRITICAL',
 };
 
 export const INPUT_METHOD = {
@@ -153,9 +152,14 @@ export const normalizeKioskAuditInfo = (raw) => {
 
 export const deriveSeverity = (action) => {
   const a = asUpper(action) || '';
-  if (a.includes('INTENTO_PIN_INCORRECTO') || a.includes('SECURITY')) return AUDIT_SEVERITY.SECURITY;
-  if (a.includes('ERROR') || a.includes('FALLO') || a.includes('EXCEPTION')) return AUDIT_SEVERITY.ERROR;
-  if (a.includes('REVOCAR') || a.includes('VINCULAR') || a.includes('BORRAR') || a.includes('ELIMINAR')) return AUDIT_SEVERITY.WARN;
+  if (
+    a.includes('INTENTO') || a.includes('FRAUDE') || a.includes('DENEG') ||
+    a.includes('ELIMINAR') || a.includes('REVOCAR') || a.includes('VINCULAR_KIOSCO')
+  ) return AUDIT_SEVERITY.CRITICAL;
+  if (
+    a.includes('ERROR') || a.includes('FALLO') || a.includes('EXCEPTION') ||
+    a.includes('BORRAR') || a.includes('VINCULAR')
+  ) return AUDIT_SEVERITY.WARNING;
   return AUDIT_SEVERITY.INFO;
 };
 

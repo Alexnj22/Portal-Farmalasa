@@ -5,11 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.3.7';
+export const APP_VERSION = '1.3.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
-// v1.3.7 — Horarios: chart + filter pill moved inside body (Productos pattern: chart left, pill right)
+// v1.3.8 — Horarios: chart full-width above body (subContent), filter pill inside body right-aligned
 // v1.3.6 — Horarios: glassmorphic filter pill + chart moved to subContent (between header/body)
 // v1.3.5 — Horarios: calendar controls wrapped in Ventas filter pill standard
 // v1.3.4 — Fix JSX fragment/div mismatch in AppLayout sidebar footer (build error)

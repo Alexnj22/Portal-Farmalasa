@@ -487,7 +487,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const weekIsPublished = useMemo(() => {
         if (employeesInView.length === 0) return false;
-        return employeesInView.every(e => publishedIds.has(String(e.id)));
+        return employeesInView.some(e => publishedIds.has(String(e.id)));
     }, [employeesInView, publishedIds]);
 
     const handleSaveCell = useCallback(async (empId, dayId, newCellData) => {
@@ -687,28 +687,39 @@ const SchedulesView = ({ openModal, setView }) => {
                     </button>
                 </>
             )}
+
+            {/* Publish button inside pill */}
+            {canEdit && getScope('schedules') !== 'BRANCH' && (
+                <>
+                    <div className="h-5 w-px bg-white/30 shrink-0" />
+                    <button
+                        onClick={weekIsPublished ? undefined : triggerPublishAudit}
+                        disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
+                        title={weekIsPublished ? 'Semana publicada' : 'Publicar horarios'}
+                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10
+                            ${weekIsPublished
+                                ? 'bg-emerald-100/80 text-emerald-700 cursor-default'
+                                : 'bg-[#0052CC]/10 text-[#0052CC] hover:bg-[#0052CC] hover:text-white active:scale-[0.97]'}
+                            ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                        {isPublishing
+                            ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
+                            : weekIsPublished
+                                ? <CheckCircle size={11} strokeWidth={2.5} />
+                                : <Save size={11} strokeWidth={2.5} />}
+                        <span className="hidden md:inline">
+                            {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
+                        </span>
+                    </button>
+                </>
+            )}
         </div>
     );
-
-    const schedSubContent = viewMode === 'calendar' ? (
-        <ScheduleChart
-            chartTitle={chartTitle}
-            chartView={chartView}
-            setChartView={setChartView}
-            isLoadingSales={isLoadingSales}
-            currentChartData={currentChartData}
-            filterBranch={filterBranch}
-            branches={branches}
-            openModal={openModal}
-        />
-    ) : null;
 
     return (
         <GlassViewLayout
             icon={CalendarDays}
             title="Horarios"
             filtersContent={filtersContent}
-            subContent={schedSubContent}
             transparentBody={viewMode === 'shifts' || viewMode === 'holidays'}
             fixedScrollMode={viewMode === 'shifts'}
         >
@@ -765,24 +776,23 @@ const SchedulesView = ({ openModal, setView }) => {
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
 
-                    {/* Filter pill + publish — right-aligned inside body */}
-                    <div className="hidden lg:flex items-center justify-end gap-2 pb-3 shrink-0">
-                        {filterPill}
-                        {canEdit && getScope('schedules') !== 'BRANCH' && (
-                            <button
-                                onClick={weekIsPublished ? undefined : triggerPublishAudit}
-                                disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                                className={`h-10 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
-                                    ${weekIsPublished
-                                        ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
-                                        : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
-                                    ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
-                                {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
-                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
-                                    {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                                </span>
-                            </button>
-                        )}
+                    {/* Chart (left) + filter pill with publish (right) */}
+                    <div className="flex items-center gap-3 pb-3 shrink-0">
+                        <div className="flex-1 min-w-0">
+                            <ScheduleChart
+                                chartTitle={chartTitle}
+                                chartView={chartView}
+                                setChartView={setChartView}
+                                isLoadingSales={isLoadingSales}
+                                currentChartData={currentChartData}
+                                filterBranch={filterBranch}
+                                branches={branches}
+                                openModal={openModal}
+                            />
+                        </div>
+                        <div className="hidden lg:flex shrink-0 self-center">
+                            {filterPill}
+                        </div>
                     </div>
 
                     {employeesInView.length === 0 ? (

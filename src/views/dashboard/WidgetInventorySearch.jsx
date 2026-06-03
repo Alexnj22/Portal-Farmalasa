@@ -236,7 +236,7 @@ export default function WidgetInventorySearch() {
         </div>
 
         {/* Branch sections */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drillBranches.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Package size={24} strokeWidth={1.5} className="text-slate-200" />
@@ -329,7 +329,7 @@ export default function WidgetInventorySearch() {
       {error && <p className="shrink-0 px-1 text-[11px] text-red-500 font-medium">{error}</p>}
 
       {/* ── Results ──────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {loading && <><SkeletonSection rows={3} /><SkeletonSection rows={2} /></>}
 
@@ -389,8 +389,8 @@ export default function WidgetInventorySearch() {
                       {multiLot ? (
                         /* Multiple lots */
                         <div
-                          className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm shadow-sm"
-                          style={{ background: 'rgba(255,255,255,0.32)', border: '1px solid rgba(255,255,255,0.6)', borderLeft: `3px solid ${theme.dot}` }}
+                          className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
+                          style={{ background: 'rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.72)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
                           <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-white/30 transition-colors">
@@ -419,8 +419,8 @@ export default function WidgetInventorySearch() {
                       ) : (
                         /* Single lot */
                         <button
-                          className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-white/45 transition-colors group text-left shadow-sm"
-                          style={{ background: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.5)', borderLeft: `3px solid ${theme.dot}` }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-white/50 transition-colors group text-left"
+                          style={{ background: 'rgba(255,255,255,0.34)', border: '1px solid rgba(255,255,255,0.68)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
                           {prod.fotoUrl && (

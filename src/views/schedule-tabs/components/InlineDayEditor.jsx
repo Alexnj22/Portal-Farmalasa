@@ -168,12 +168,20 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
         if (!branchLimits.hasValidHours || branchLimits.isClosedToday) return [];
 
-        return globalShifts.filter(s => {
+        const inRange = globalShifts.filter(s => {
             const sStartMins = timeToMins(s.start_time?.substring(0, 5) || s.start);
             let sEndMins = timeToMins(s.end_time?.substring(0, 5) || s.end);
             if (sEndMins < sStartMins) sEndMins += 1440;
-
             return sStartMins >= branchLimits.minOpen && sEndMins <= branchLimits.maxClose;
+        });
+
+        // Deduplicate by name+start+end — same grouping key as TabShifts catalog
+        const seen = new Map();
+        return inRange.filter(s => {
+            const key = `${s.name}_${s.start_time || s.start}_${s.end_time || s.end}`;
+            if (seen.has(key)) return false;
+            seen.set(key, true);
+            return true;
         });
     }, [shifts, filterBranch, branchLimits]);
 

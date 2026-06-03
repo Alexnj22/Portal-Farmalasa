@@ -1,231 +1,111 @@
 import React, { memo } from 'react';
-import { TrendingUp, Maximize2, ChevronLeft, ArrowRight, Loader2, BarChart2, Building2, Save, CheckCircle, X } from 'lucide-react';
-import LiquidSelect from '../../../components/common/LiquidSelect';
-
-const WEEK_MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-const fmtWeek = (dateStr) => {
-    if (!dateStr) return '';
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const s = new Date(y, m - 1, d);
-    const e = new Date(y, m - 1, d + 6);
-    const d1 = String(s.getDate()).padStart(2,'0'), m1 = WEEK_MONTHS[s.getMonth()];
-    const d2 = String(e.getDate()).padStart(2,'0'), m2 = WEEK_MONTHS[e.getMonth()];
-    return m1 !== m2 ? `${d1} ${m1} – ${d2} ${m2}` : `${d1}–${d2} ${m1}`;
-};
-
-const LEGEND = [
-    { color: '#cbd5e1', label: 'Muerta' },
-    { color: '#0052CC', label: 'Normal' },
-    { color: '#F79009', label: 'Pico'   },
-    { color: '#FF2D55', label: 'Crítica'},
-];
+import { TrendingUp, Maximize2, ChevronLeft, Loader2, BarChart2 } from 'lucide-react';
 
 const ScheduleChart = ({
-    chartView, setChartView,
+    chartTitle,
+    chartView,
+    setChartView,
     isLoadingSales,
     currentChartData,
-    filterBranch, setFilterBranch,
-    validBranches,
-    startDate, changeWeek, isDefaultWeek,
-    handleResetFilters,
-    canPublish,
-    weekIsPublished, isPublishing, isPastWeek, hasEmployees,
-    onPublish,
-    openModal,
+    openModal
 }) => {
-    const isSpecificDay = typeof chartView === 'number';
-    const showEveryOther = chartView === 'HOURS' && currentChartData.length > 10;
-
     return (
-        <div className="group/chart bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.20] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 relative overflow-visible">
+        <div className="col-span-1 lg:col-span-2 bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border border-white/80 rounded-[2rem] p-4 shadow-[inset_0_2px_15px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.05)] flex flex-col justify-between hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)] transition-all duration-300 group/chart relative overflow-visible min-h-[180px] z-10">
 
-            {/* Shimmer top edge */}
-            <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-10 rounded-t-2xl">
-                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-shimmer"
-                    style={{ animationDuration: '4s' }} />
+            <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
+                <button onClick={() => openModal && openModal('viewWfmAnalytics')}
+                    className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all duration-200"
+                    title="Expandir Análisis">
+                    <Maximize2 size={12} strokeWidth={2.5} />
+                </button>
             </div>
 
-            {/* ── Header ── */}
-            <div className="flex items-center gap-2 px-4 pt-3 pb-2 flex-wrap relative z-10">
-
-                {/* Left: icon + title + view toggle */}
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="w-5 h-5 rounded-full bg-cyan-50 border border-cyan-100/60 text-cyan-600 flex items-center justify-center shrink-0">
-                        <TrendingUp size={10} strokeWidth={2.5} />
+            <div className="flex items-center justify-between mb-4 pr-10 relative z-10">
+                <h3 className="text-[13px] font-black text-slate-800 tracking-tight flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-sm border border-cyan-100/50">
+                        <TrendingUp size={12} strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10.5px] font-black text-slate-700 tracking-tight whitespace-nowrap">
-                        {isSpecificDay
-                            ? `Horas · ${currentChartData[0] ? (currentChartData[0].label?.slice(0,-1) || '') : ''}`
-                            : 'Tx promedio · últimos 3 meses'}
-                    </span>
+                    {chartTitle}
+                </h3>
 
-                    {/* Días / Horas toggle */}
-                    <div className="flex items-center bg-white/50 border border-white/70 rounded-full p-0.5 h-[22px] ml-1 shrink-0">
-                        {isSpecificDay && (
-                            <button onClick={() => setChartView('DAYS')}
-                                className="px-1.5 h-full text-[7px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:text-slate-800 hover:bg-white/60 flex items-center gap-0.5 transition-all active:scale-[0.97]">
-                                <ChevronLeft size={7} strokeWidth={3} />Días
-                            </button>
-                        )}
+                <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-7">
+                    {typeof chartView === 'number' && (
                         <button onClick={() => setChartView('DAYS')}
-                            className={`px-2 h-full text-[7px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97]
-                                ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
-                            Días
+                            className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 text-slate-500 hover:text-slate-800 flex items-center gap-1 hover:bg-white/50 active:scale-[0.97]">
+                            <ChevronLeft size={10} strokeWidth={3} /> Volver a Días
                         </button>
-                        <button onClick={() => setChartView('HOURS')}
-                            className={`px-2 h-full text-[7px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97]
-                                ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
-                            Horas
-                        </button>
-                    </div>
-                </div>
-
-                {/* Right: branch | week nav | publish | expand */}
-                <div className="flex items-center shrink-0 gap-0">
-
-                    {/* Branch selector */}
-                    <div className="px-1 overflow-visible">
-                        <LiquidSelect
-                            value={filterBranch} onChange={setFilterBranch}
-                            options={(validBranches || []).map(b => ({ value: String(b.id), label: b.name }))}
-                            compact clearable={false} icon={Building2} bare
-                        />
-                    </div>
-
-                    <div className="h-4 w-px bg-white/50 shrink-0 mx-0.5" />
-
-                    {/* Week navigator */}
-                    <div className="group/week flex items-center overflow-visible cursor-default">
-                        <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-6 group-hover/week:opacity-100 group-hover/week:ml-0.5 transition-all duration-300">
-                            <button onClick={() => changeWeek(-7)}
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 hover:bg-white/70 active:scale-[0.97] transition-all">
-                                <ChevronLeft size={11} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                        <div className="flex flex-col items-center justify-center px-2 whitespace-nowrap">
-                            <span className={`text-[6px] font-black uppercase tracking-[0.18em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-500' : 'text-slate-500'}`}>
-                                {!isDefaultWeek ? 'Filtrada' : 'Semana actual'}
-                            </span>
-                            <span className={`text-[9.5px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-800'}`}>
-                                {fmtWeek(startDate)}
-                            </span>
-                        </div>
-                        <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-6 group-hover/week:opacity-100 group-hover/week:mr-0.5 transition-all duration-300">
-                            <button onClick={() => changeWeek(7)}
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 hover:bg-white/70 active:scale-[0.97] transition-all">
-                                <ArrowRight size={11} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Reset week */}
-                    {!isDefaultWeek && (
-                        <>
-                            <div className="h-4 w-px bg-white/50 shrink-0 mx-0.5" />
-                            <button onClick={handleResetFilters} title="Volver a semana actual"
-                                className="mx-1 w-5 h-5 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 hover:scale-110">
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        </>
                     )}
-
-                    {/* Publish */}
-                    {canPublish && (
-                        <>
-                            <div className="h-4 w-px bg-white/50 shrink-0 mx-0.5" />
-                            <button
-                                onClick={weekIsPublished ? undefined : onPublish}
-                                disabled={isPublishing || !hasEmployees || isPastWeek}
-                                className={`mx-1.5 flex items-center gap-1 px-2.5 py-1 rounded-full text-[8.5px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 border
-                                    ${weekIsPublished
-                                        ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-700 cursor-default'
-                                        : 'bg-[#0052CC] border-[#003D99]/60 text-white shadow-[0_2px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:shadow-[0_4px_14px_rgba(0,82,204,0.5)] hover:scale-105 active:scale-[0.97]'}
-                                    ${(!hasEmployees || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                                {isPublishing
-                                    ? <Loader2 size={9} strokeWidth={3} className="animate-spin" />
-                                    : weekIsPublished
-                                        ? <CheckCircle size={9} strokeWidth={2.5} />
-                                        : <Save size={9} strokeWidth={2.5} />}
-                                <span className="hidden sm:inline">
-                                    {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                                </span>
-                            </button>
-                        </>
-                    )}
-
-                    {/* Expand */}
-                    <div className="ml-1 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200">
-                        <button onClick={() => openModal?.('viewWfmAnalytics')}
-                            className="w-5 h-5 rounded-full bg-white/80 text-[#0052CC] border border-blue-100 shadow-sm flex items-center justify-center hover:bg-blue-50 hover:scale-105 transition-all">
-                            <Maximize2 size={9} strokeWidth={2.5} />
-                        </button>
-                    </div>
+                    <button onClick={() => setChartView('HOURS')}
+                        className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                        Horas
+                    </button>
+                    <button onClick={() => setChartView('DAYS')}
+                        className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                        Días
+                    </button>
                 </div>
             </div>
 
-            {/* ── Heatmap ── */}
-            <div className="px-4 pb-3 relative z-10">
-                {isLoadingSales ? (
-                    <div className="flex items-center gap-[3px] h-[44px]">
-                        {Array.from({ length: chartView === 'DAYS' ? 7 : 11 }).map((_, i) => (
-                            <div key={i} className="flex-1 skeleton rounded-md h-[28px]" style={{ animationDelay: `${i * 0.05}s` }} />
-                        ))}
+            <div className="flex flex-col w-full border-b border-slate-200/60 pb-1.5 relative z-10 flex-1 mt-4">
+                <div className="flex items-end gap-1.5 h-[80px] w-full relative overflow-visible">
+                    <div className="absolute inset-0 flex flex-col justify-between opacity-20 pointer-events-none z-0 pb-[1px]">
+                        <div className="border-t border-dashed border-slate-400 w-full h-px" />
+                        <div className="border-t border-dashed border-slate-400 w-full h-px" />
                     </div>
-                ) : currentChartData.length === 0 ? (
-                    <div className="flex items-center justify-center h-[44px] gap-2 text-slate-300">
-                        <BarChart2 size={14} strokeWidth={1.5} />
-                        <span className="text-[8.5px] font-black uppercase tracking-widest">Sin historial de ventas</span>
-                    </div>
-                ) : (
-                    <div className="flex items-end gap-[3px] overflow-visible">
-                        {currentChartData.map((item, i) => {
-                            const bg = item.avg === 0 ? '#cbd5e1' : item.color;
-                            const op = item.avg === 0 ? 0.45 : 0.88;
-                            const showLabel = !showEveryOther || i % 2 === 0;
-                            return (
-                                <div key={i}
-                                    onClick={chartView === 'DAYS' && typeof item.day !== 'undefined' ? () => setChartView(item.day) : undefined}
-                                    className={`flex-1 flex flex-col items-center gap-[3px] group/cell relative overflow-visible
-                                        ${chartView === 'DAYS' ? 'cursor-pointer' : 'cursor-default'}`}>
 
-                                    {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/cell:opacity-100 transition-all duration-150 pointer-events-none w-max z-[100] translate-y-1 group-hover/cell:translate-y-0 border border-white/10">
-                                        <p className="text-[7.5px] font-black uppercase tracking-wider text-slate-400">{item.label}</p>
-                                        <p className="text-[10px] font-bold flex items-center gap-1 mt-0.5">
-                                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: bg }} />
-                                            {item.avg} Tx promedio
-                                        </p>
-                                        {chartView === 'DAYS' && (
-                                            <p className="text-[6.5px] text-[#0052CC] font-black uppercase tracking-widest mt-0.5">Clic → ver horas</p>
-                                        )}
-                                    </div>
-
-                                    {/* Heatmap cell */}
-                                    <div
-                                        className="w-full rounded-[5px] transition-all duration-200 group-hover/cell:scale-y-[1.12] group-hover/cell:opacity-100 origin-bottom"
-                                        style={{ height: '28px', backgroundColor: bg, opacity: op }}
-                                    />
-
-                                    {/* Label */}
-                                    <span className={`text-[6px] font-bold text-slate-400 leading-none transition-colors group-hover/cell:text-slate-600 ${showLabel ? '' : 'invisible'}`}>
-                                        {item.label}
-                                    </span>
+                    {isLoadingSales ? (
+                        <div className="absolute inset-0 flex items-end gap-1.5 z-10 px-1">
+                            {Array.from({ length: 7 }).map((_, i) => (
+                                <div key={i} className="flex-1 flex flex-col justify-end items-center h-full">
+                                    <div className="w-full skeleton rounded-t-[6px]"
+                                        style={{ height: `${30 + (i % 3) * 20 + (i % 2) * 10}%` }} />
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Legend */}
-                <div className="flex items-center gap-3 mt-2.5">
-                    {LEGEND.map(l => (
-                        <div key={l.label} className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
-                            <span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">{l.label}</span>
+                            ))}
                         </div>
-                    ))}
+                    ) : currentChartData.length === 0 ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-2 p-4 text-center animate-in fade-in duration-300">
+                            <BarChart2 size={24} strokeWidth={1.5} className="text-slate-300" />
+                            <p className="text-[9px] md:text-[10px] font-black text-[#0052CC]/60 uppercase tracking-widest leading-snug">Sin historial de ventas</p>
+                        </div>
+                    ) : (
+                        currentChartData.map((item, i) => (
+                            <div key={i}
+                                onClick={() => { if (chartView === 'DAYS') setChartView(item.day); }}
+                                className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
+
+                                <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
+                                    <p className="font-black text-[8px] uppercase tracking-widest text-slate-400 mb-1 border-b border-white/10 pb-0.5 px-2">
+                                        {chartView === 'DAYS' ? 'Día' : 'Hora'}: {item.label}
+                                    </p>
+                                    <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5">
+                                        <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
+                                        {item.avg} Tx / Promedio
+                                    </p>
+                                    {chartView === 'DAYS' && (
+                                        <p className="text-[7px] text-[#0052CC] font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
+                                            Clic para ver horas
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div
+                                    className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu group-hover:opacity-80 group-hover:shadow-md origin-bottom shadow-sm z-10 ${chartView === 'DAYS' ? 'rounded-t-[6px] group-hover:scale-y-[1.05]' : 'rounded-t-[4px] group-hover:-translate-y-[2px]'}`}
+                                    style={{ height: item.height, backgroundColor: item.color }}
+                                />
+                                <span className="text-[7px] md:text-[7.5px] font-bold text-slate-400 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:text-cyan-500 transition-all duration-200 whitespace-nowrap z-10">
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mt-4 justify-center md:justify-start relative z-10">
+                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#e2e8f0]" /> Muerta</div>
+                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#0052CC]" /> Normal</div>
+                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#F79009]" /> Pico</div>
+                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#FF2D55]" /> Crítica</div>
             </div>
         </div>
     );

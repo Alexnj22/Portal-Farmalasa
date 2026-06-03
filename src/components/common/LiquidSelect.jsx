@@ -30,6 +30,7 @@ const LiquidSelect = ({
     bare = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
@@ -38,6 +39,7 @@ const LiquidSelect = ({
     const dropdownRef = useRef(null);
     const searchDebounceRef = useRef(null);
     const itemRefs = useRef([]);
+    const closingTimerRef = useRef(null);
 
     // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
     const [coords, setCoords] = useState({ 
@@ -102,31 +104,40 @@ const LiquidSelect = ({
         }
     };
 
+    // Cleanup closing timer on unmount
     useEffect(() => {
+        return () => { if (closingTimerRef.current) clearTimeout(closingTimerRef.current); };
+    }, []);
+
+    useEffect(() => {
+        const doClose = () => {
+            if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
+            setIsClosing(true);
+            closingTimerRef.current = setTimeout(() => {
+                setIsOpen(false);
+                setIsClosing(false);
+                setSearchTerm('');
+            }, 150);
+        };
+
         const handleClickOutside = (e) => {
             if (
                 selectRef.current && !selectRef.current.contains(e.target) &&
                 (!dropdownRef.current || !dropdownRef.current.contains(e.target))
             ) {
-                setIsOpen(false);
-                setSearchTerm('');
+                doClose();
             }
         };
 
         const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                setIsOpen(false);
-                setSearchTerm('');
-            }
+            if (e.key === 'Escape') doClose();
         };
 
         const handleScroll = (e) => {
             if (dropdownRef.current && (dropdownRef.current === e.target || dropdownRef.current.contains(e.target))) {
                 return;
             }
-            if (isOpen) {
-                setIsOpen(false);
-            }
+            if (isOpen) doClose();
         };
 
         if (isOpen) {
@@ -143,9 +154,21 @@ const LiquidSelect = ({
         };
     }, [isOpen]);
 
+    const triggerClose = () => {
+        if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
+        setIsClosing(true);
+        closingTimerRef.current = setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+            setSearchTerm('');
+        }, 150);
+    };
+
     const handleOpen = () => {
         if (disabled) return;
-        updateCoords(); // Calculamos el espacio antes de abrir
+        if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
+        setIsClosing(false);
+        updateCoords();
         setIsOpen(true);
         setSearchTerm('');
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -162,8 +185,7 @@ const LiquidSelect = ({
         e.stopPropagation();
         if (disabled) return;
         if (isOpen) {
-            setIsOpen(false);
-            setSearchTerm('');
+            triggerClose();
         } else {
             handleOpen();
         }
@@ -171,8 +193,7 @@ const LiquidSelect = ({
 
     const handleSelect = (val) => {
         onChange(val);
-        setIsOpen(false);
-        setSearchTerm('');
+        triggerClose();
     };
 
     const isLargeList = !serverSearch && options.length > searchThreshold;
@@ -219,8 +240,11 @@ const LiquidSelect = ({
                 maxHeight: coords.maxHeight + 'px', // 🚨 EL MAX-HEIGHT DINÁMICO
             }}
             className={`fixed z-[99999] ${coords.transformOrigin} transition-all duration-300 rounded-[1.5rem] overflow-y-auto p-3
-            ${coords.isFlipped ? 'animate-in fade-in slide-in-from-bottom-2' : 'animate-in fade-in slide-in-from-top-2'} 
-            duration-200 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
+            ${isClosing
+                ? coords.isFlipped ? 'animate-out fade-out slide-out-to-bottom-2' : 'animate-out fade-out slide-out-to-top-2'
+                : coords.isFlipped ? 'animate-in fade-in slide-in-from-bottom-2' : 'animate-in fade-in slide-in-from-top-2'
+            }
+            duration-150 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
             ${isDark
                     ? 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]'
                     : 'bg-white/60 hover:bg-white/70 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'

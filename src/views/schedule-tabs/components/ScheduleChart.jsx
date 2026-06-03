@@ -28,32 +28,32 @@ const ScheduleChart = ({
                     </div>
                 </div>
 
-                {/* Días / Horas toggle */}
-                <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white/80 shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-6 shrink-0">
-                    {typeof chartView === 'number' && (
-                        <button onClick={() => setChartView('DAYS')}
-                            className="px-2 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:text-slate-800 flex items-center gap-0.5 hover:bg-white/50 active:scale-[0.97] transition-all">
-                            <ChevronLeft size={8} strokeWidth={3} />Días
+                {/* Días / Horas toggle + expand (inline, no overlap) */}
+                <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white/80 shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-6">
+                        {typeof chartView === 'number' && (
+                            <button onClick={() => setChartView('DAYS')}
+                                className="px-2 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:text-slate-800 flex items-center gap-0.5 hover:bg-white/50 active:scale-[0.97] transition-all">
+                                <ChevronLeft size={8} strokeWidth={3} />Días
+                            </button>
+                        )}
+                        <button onClick={() => setChartView('HOURS')}
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                            Horas
                         </button>
-                    )}
-                    <button onClick={() => setChartView('HOURS')}
-                        className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
-                        Horas
-                    </button>
-                    <button onClick={() => setChartView('DAYS')}
-                        className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
-                        Días
-                    </button>
+                        <button onClick={() => setChartView('DAYS')}
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                            Días
+                        </button>
+                    </div>
+                    <div className="opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200">
+                        <button onClick={() => openModal && openModal('viewWfmAnalytics')}
+                            className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all"
+                            title="Expandir Análisis">
+                            <Maximize2 size={10} strokeWidth={2.5} />
+                        </button>
+                    </div>
                 </div>
-            </div>
-
-            {/* Expand button */}
-            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
-                <button onClick={() => openModal && openModal('viewWfmAnalytics')}
-                    className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all"
-                    title="Expandir Análisis">
-                    <Maximize2 size={10} strokeWidth={2.5} />
-                </button>
             </div>
 
             {/* Bars — flex-1, labels inside each bar */}

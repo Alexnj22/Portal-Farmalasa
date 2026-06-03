@@ -33,6 +33,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const [lactationStart, setLactationStart] = useState(currentData?.lactationStart || '15:00');
 
     const [pos, setPos] = useState({ top: -9999, left: -9999, opacity: 0 });
+    const [isExiting, setIsExiting] = useState(false);
     const popoverRef = useRef(null);
 
     // 🚨 NUEVO: Referencia para rastrear cuando el usuario cambia el select manualmente
@@ -226,19 +227,24 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         };
     }, [onClose]);
 
+    const handleClose = () => {
+        setIsExiting(true);
+        setTimeout(() => onClose(), 160);
+    };
+
     const handleSave = () => {
         const isOffSelected = shiftId === 'OFF';
         const finalShiftId = (isOffSelected || shiftId === 'NO_SHIFTS') ? '' : shiftId;
         const finalIsOff = isOffSelected || (!finalShiftId && !customStart);
 
         onSave(dayId, {
-            shiftId: finalShiftId, 
-            customStart: finalIsOff ? '' : customStart, 
-            customEnd: finalIsOff ? '' : customEnd, 
-            hasLunch: finalIsOff ? false : hasLunch, 
+            shiftId: finalShiftId,
+            customStart: finalIsOff ? '' : customStart,
+            customEnd: finalIsOff ? '' : customEnd,
+            hasLunch: finalIsOff ? false : hasLunch,
             lunchStart: (hasLunch && !finalIsOff) ? lunchStart : null,
-            hasLactation: finalIsOff ? false : hasLactation, 
-            lactationStart: (hasLactation && !finalIsOff) ? lactationStart : null, 
+            hasLactation: finalIsOff ? false : hasLactation,
+            lactationStart: (hasLactation && !finalIsOff) ? lactationStart : null,
             isOff: finalIsOff
         });
         onClose();
@@ -284,17 +290,23 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 .editor-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(148, 163, 184, 0.4); border-radius: 10px; }
             `}</style>
             
-            <div className="fixed inset-0 z-[9990]" onClick={(e) => { e.stopPropagation(); onClose(); }}></div>
+            <div className="fixed inset-0 z-[9990]" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
 
             <div
                 ref={popoverRef}
-                style={{ top: pos.top, left: pos.left, opacity: pos.opacity, visibility: pos.opacity === 0 ? 'hidden' : 'visible' }}
-                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/95 backdrop-blur-3xl rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.3)] border border-white transition-opacity duration-200 flex flex-col cursor-default transform-gpu overflow-hidden"
+                style={{
+                    top: pos.top,
+                    left: pos.left,
+                    opacity: pos.opacity,
+                    transform: (pos.opacity === 0 || isExiting) ? 'scale(0.96) translateY(6px)' : 'scale(1) translateY(0)',
+                    visibility: pos.opacity === 0 ? 'hidden' : 'visible'
+                }}
+                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.82] backdrop-blur-2xl backdrop-saturate-[180%] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] border border-white/70 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-white/70 to-white/50 shrink-0 z-40">
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-white/30 bg-white/[0.35] backdrop-blur-sm shrink-0 z-40">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur-sm overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
                                 ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
                                 : <CircleUserRound size={18} className="text-slate-300" strokeWidth={1.5} />}
@@ -307,7 +319,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
+                    <button onClick={handleClose} className="w-8 h-8 rounded-full bg-white/60 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
                 </div>
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">
@@ -348,7 +360,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-slate-50 border rounded-2xl shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-slate-100'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.55] border rounded-2xl shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/50'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -380,7 +392,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white border border-orange-100 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.65] border border-orange-100/80 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -400,7 +412,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 onClick={() => setHasLactation(!hasLactation)}
-                                className="flex items-center justify-between bg-white border border-pink-100 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.65] border border-pink-100/80 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -436,7 +448,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
                 </div>
 
-                <div className="p-3 border-t border-slate-100 bg-white/50 shrink-0 z-30">
+                <div className="p-3 border-t border-white/30 bg-white/[0.35] shrink-0 z-30">
                     <button 
                         onClick={handleSave} 
                         disabled={isSaveDisabled}

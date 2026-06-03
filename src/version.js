@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.3.4';
+export const APP_VERSION = '1.3.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.3.5 — Horarios: calendar controls wrapped in Ventas filter pill standard
 // v1.3.4 — Fix JSX fragment/div mismatch in AppLayout sidebar footer (build error)
 // v1.3.3 — Version label in sidebar menu; controls pill moved to body (below header)
 // v1.3.2 — Fix TDZ error (validBranches before initialization) in SchedulesView

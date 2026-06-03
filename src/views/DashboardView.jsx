@@ -375,7 +375,7 @@ const initTabSizes = (userId) => {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, getScope } = useAuth();
   const navigate = useNavigate();
 
   const employees        = useStaff(s => s.employees);
@@ -758,6 +758,7 @@ const DashboardView = ({ openModal }) => {
   const [salesLoading,   setSalesLoading]   = useState(false);
   const [salesView,      setSalesView]      = useState('DAYS');
   const [shiftBranch,    setShiftBranch]    = useState('');
+  const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
@@ -1828,10 +1829,25 @@ const DashboardView = ({ openModal }) => {
     /* ── ANNULMENT REQUEST ── */
     if (wid === 'annulment_req') {
       if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
+      const ERP_ANN_MAP = { 4: 1, 25: 2, 27: 3, 28: 4, 2: 5, 29: 7 };
+      const isAnnAllScope = getScope('dash_annulment_req') === 'ALL';
+      const annBranchOpts = branches.filter(b => ERP_ANN_MAP[Number(b.id)]).map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
-        <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas">
+        <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas"
+          action={isAnnAllScope && annBranchOpts.length > 0 && (
+            <LiquidSelect
+              value={annulmentBranch}
+              onChange={val => setAnnulmentBranch(val ?? String(user?.branchId ?? user?.branch_id ?? ''))}
+              options={annBranchOpts}
+              placeholder="Sucursal..."
+              clearable={false}
+              compact
+              bare
+            />
+          )}
+        >
           <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetAnnulmentRequest />
+            <WidgetAnnulmentRequest selectedBranchId={isAnnAllScope ? annulmentBranch : null} />
           </div>
         </WidgetCard>
       , staggerIdx);

@@ -312,7 +312,7 @@ export default function WidgetInventorySearch() {
           value={query}
           onChange={e => handleInput(e.target.value)}
           placeholder="Buscar producto en todas las sucursales..."
-          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200/80 bg-white/80 backdrop-blur-sm text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
           spellCheck={false}
           autoComplete="off"
         />
@@ -375,7 +375,7 @@ export default function WidgetInventorySearch() {
               </div>
 
               {/* Products */}
-              <div className="space-y-0.5">
+              <div className="space-y-2">
                 {branch.products.map((prod, pi) => {
                   const lotTotal = prod.lots.reduce((s, r) => s + r.cantidad, 0);
                   const multiLot = prod.lots.length > 1;
@@ -389,8 +389,8 @@ export default function WidgetInventorySearch() {
                       {multiLot ? (
                         /* Multiple lots */
                         <div
-                          className="rounded-xl border border-white/60 overflow-hidden cursor-pointer group backdrop-blur-sm shadow-sm"
-                          style={{ background: 'rgba(255,255,255,0.32)' }}
+                          className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm shadow-sm"
+                          style={{ background: 'rgba(255,255,255,0.32)', border: '1px solid rgba(255,255,255,0.6)', borderLeft: `3px solid ${theme.dot}` }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
                           <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-white/30 transition-colors">
@@ -419,8 +419,8 @@ export default function WidgetInventorySearch() {
                       ) : (
                         /* Single lot */
                         <button
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border border-white/50 backdrop-blur-sm hover:bg-white/45 transition-colors group text-left shadow-sm"
-                          style={{ background: 'rgba(255,255,255,0.28)' }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-white/45 transition-colors group text-left shadow-sm"
+                          style={{ background: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.5)', borderLeft: `3px solid ${theme.dot}` }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
                           {prod.fotoUrl && (
